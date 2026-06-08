@@ -98,7 +98,7 @@ const SuperAdmin = () => {
 
                             <button
                                 type="submit"
-                                className="w-full bg-primary hover:opacity-90 text-white font-semibold py-3 rounded-lg transition"
+                                className="w-full bg-primary hover:opacity-90 text-white font-semibold py-3 rounded-md transition"
                             >
                                 Sign In
                             </button>
