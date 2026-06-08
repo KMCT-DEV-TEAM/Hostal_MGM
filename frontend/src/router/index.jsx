@@ -1,17 +1,22 @@
 import { createBrowserRouter } from 'react-router-dom';
 
-import SuperAdmin from '../pages/auth/SuperAdminLogin';
-import AdminLogin from '../pages/auth/AdminLogin';
+import SuperAdminLogin from '@/pages/auth/SuperAdminLogin';
+import AdminPortalLogin from '@/pages/auth/AdminPortalLogin';
+import UserPortalLogin from '@/pages/auth/UserPortalLogin';
 
 const router = createBrowserRouter([
     {
         path: '/super-admin/login',
-        element: <SuperAdmin />
+        element: <SuperAdminLogin />
     },
     {
         path: '/admin/login',
-        element: <AdminLogin />
+        element: <AdminPortalLogin />
     },
+    {
+        path: '/user/login',
+        element: <UserPortalLogin />
+    }
 ])
 
 export default router;

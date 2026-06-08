@@ -3,7 +3,7 @@ import logo from '@/assets/images/logo/logo.png';
 import hostelImage from '@/assets/images/auth/hostel.png';
 import { Link } from 'react-router-dom';
 
-const AdminLogin = () => {
+const UserPortalLogin = () => {
     return (
         <div className="min-h-screen flex font-sans bg-background">
             {/* Left Side */}
@@ -95,6 +95,14 @@ const AdminLogin = () => {
                                     placeholder="Password (default: password123)"
                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 />
+                                <div className="flex justify-end mt-2">
+                                    <Link
+                                        to="/admin/login"
+                                        className="text-sm text-primary hover:underline"
+                                    >
+                                        Forgot Password?
+                                    </Link>
+                                </div>
                             </div>
 
                             <button
@@ -104,13 +112,6 @@ const AdminLogin = () => {
                                 Sign In
                             </button>
                         </form>
-
-                        <p className="text-center text-xs text-text-secondary mt-6">
-                            Having Trouble ?
-                            <Link to="/super-admin/login" className='ml-1 text-accent font-medium'>
-                                Contact Administrator
-                            </Link>
-                        </p>
                     </div>
                 </div>
             </div>
@@ -118,4 +119,4 @@ const AdminLogin = () => {
     )
 }
 
-export default AdminLogin
+export default UserPortalLogin

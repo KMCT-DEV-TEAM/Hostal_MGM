@@ -1,8 +1,9 @@
 
 import logo from '@/assets/images/logo/logo.png';
 import hostelImage from '@/assets/images/auth/hostel.png';
+import { Link } from 'react-router-dom';
 
-const SuperAdminLogin = () => {
+const AdminPortalLogin = () => {
     return (
         <div className="min-h-screen flex font-sans bg-background">
             {/* Left Side */}
@@ -103,15 +104,18 @@ const SuperAdminLogin = () => {
                                 Sign In
                             </button>
                         </form>
-                    </div>
 
-                    <p className="text-center text-xs text-text-secondary mt-6">
-                        Powered by Hostel ERP
-                    </p>
+                        <p className="text-center text-xs text-text-secondary mt-6">
+                            Having Trouble ?
+                            <Link to="/super-admin/login" className='ml-1 text-accent font-medium'>
+                                Contact Administrator
+                            </Link>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     )
 }
 
-export default SuperAdminLogin;
+export default AdminPortalLogin
