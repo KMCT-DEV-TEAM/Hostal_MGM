@@ -1,6 +1,6 @@
 
-import logo from '../../assets/images/logo/logo.png';
-import hostelImage from '../../assets/images/auth/hostel.png';
+import logo from '@/assets/images/logo/logo.png';
+import hostelImage from '@/assets/images/auth/hostel.png';
 
 const SuperAdmin = () => {
     return (
