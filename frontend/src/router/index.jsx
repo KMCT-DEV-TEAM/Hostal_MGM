@@ -5,6 +5,8 @@ import AdminPortalLogin from '@/pages/auth/AdminPortalLogin';
 import UserPortalLogin from '@/pages/auth/UserPortalLogin';
 import ContactAdministrator from '@/pages/auth/ContactAdministrator';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
+import VerifyOtp from '@/pages/auth/VerifyOtp';
+import ResetPassword from '@/pages/auth/ResetPassword';
 
 const router = createBrowserRouter([
     {
@@ -26,6 +28,14 @@ const router = createBrowserRouter([
     {
         path: '/forgot-password',
         element: <ForgotPassword />
+    },
+    {
+        path: '/verify-otp',
+        element: <VerifyOtp />
+    },
+    {
+        path: '/reset-password',
+        element: <ResetPassword />
     }
 ])
 

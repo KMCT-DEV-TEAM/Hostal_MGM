@@ -1,5 +1,6 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '@/assets/images/logo/logo.png';
 import AuthLayout from './components/AuthLayout';
 import AuthSidebarSteps from './components/AuthSidebarSteps';
@@ -7,10 +8,13 @@ import AuthStepper from './components/AuthStepper';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
-const ForgotPassword = () => {
+const ResetPassword = () => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     return (
         <AuthLayout
-            leftPanel={<AuthSidebarSteps currentStep={1} />}
+            leftPanel={<AuthSidebarSteps currentStep={3} />}
             rightSideClassName="w-full lg:w-1/2 flex flex-col relative min-h-screen lg:min-h-0 bg-background lg:bg-transparent"
         >
             <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8 min-h-full">
@@ -23,39 +27,58 @@ const ForgotPassword = () => {
                     />
 
                     {/* Stepper */}
-                    <AuthStepper currentStep={1} />
+                    <AuthStepper currentStep={3} />
 
                     {/* Form Card */}
                     <div className="w-full bg-background lg:bg-white lg:rounded-xl lg:shadow-sm lg:px-12 lg:py-14 flex flex-col items-center">
                         <h1 className="text-2xl lg:text-[32px] font-bold text-primary mb-3 text-center">
-                            Forgot Password?
+                            Create new password
                         </h1>
                         <p className="text-gray-500 text-[13px] lg:text-sm text-center mb-8 max-w-[280px] leading-relaxed">
-                            Enter your email and we'll send you a verification code
+                            Choose a strong password to secure your account
                         </p>
 
                         <form className="w-full space-y-6">
                             <Input
-                                type="email"
-                                label="Email"
-                                placeholder="Enter Your Email"
+                                type={showPassword ? 'text' : 'password'}
+                                label="Password"
+                                placeholder="Enter your new password"
                                 className="w-full px-4 py-3.5 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-sm"
                                 labelClassName="block text-[13px] font-medium text-text-primary"
                                 containerClassName="space-y-2"
+                                endIcon={
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none hover:text-gray-600 transition-colors">
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                }
+                            />
+
+                            <Input
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                label="Confirm password"
+                                placeholder="Confirm your new password"
+                                className="w-full px-4 py-3.5 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-sm"
+                                labelClassName="block text-[13px] font-medium text-text-primary"
+                                containerClassName="space-y-2"
+                                endIcon={
+                                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="focus:outline-none hover:text-gray-600 transition-colors">
+                                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                }
                             />
 
                             <Button
                                 className="w-full bg-secondary hover:bg-primary text-white font-medium py-3.5 rounded-lg transition-colors duration-200 text-sm mt-2"
                             >
-                                Send verification code
+                                Update Password
                             </Button>
                         </form>
 
                         {/* Back to sign in - Desktop Only */}
-                        <button className="hidden lg:flex items-center gap-2 text-primary hover:opacity-80 transition-opacity text-[13px] font-medium mt-10">
+                        <Link to="/admin/login" className="hidden lg:flex items-center gap-2 text-primary hover:opacity-80 transition-opacity text-[13px] font-medium mt-10">
                             <ArrowLeft className="w-4 h-4" strokeWidth={2} />
                             Back to Sign in
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -68,4 +91,4 @@ const ForgotPassword = () => {
     );
 };
 
-export default ForgotPassword;
+export default ResetPassword;
