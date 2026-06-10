@@ -26,43 +26,45 @@ const ForgotPassword = () => {
                             Forgot Password? Reset in 3 simple steps
                         </h2>
 
-                        <div className="flex flex-col gap-4 items-center">
-                            {/* Step 1 */}
-                            <div className="flex gap-5 items-center justify-start">
-                                <div className="w-[42px] h-[42px] shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center font-semibold text-lg">
-                                    1
+                        <div className='flex justify-center'>
+                            <div className="flex flex-col gap-4 max-w-sm">
+                                {/* Step 1 */}
+                                <div className="flex gap-3 items-center w-fit">
+                                    <div className="w-10 h-10 shrink-0 rounded-full border border-white/30 flex items-center justify-center font-semibold text-lg">
+                                        1
+                                    </div>
+                                    <div className="pt-1 text-start">
+                                        <h3 className="font-semibold text-base mb-1">Enter your email</h3>
+                                        <p className="text-[13px] text-white/70 leading-relaxed">
+                                            we'll send a 6-digit code to your admin email.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="pt-1 text-start">
-                                    <h3 className="font-semibold text-base mb-1">Enter your email</h3>
-                                    <p className="text-[13px] text-white/70 leading-relaxed">
-                                        we'll send a 6-digit code to your admin email.
-                                    </p>
-                                </div>
-                            </div>
 
-                            {/* Step 2 */}
-                            <div className="flex gap-5 items-center justify-start">
-                                <div className="w-[42px] h-[42px] shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center font-semibold text-lg">
-                                    2
+                                {/* Step 2 */}
+                                <div className="flex gap-3 items-center">
+                                    <div className="w-10 h-10 shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center font-semibold text-lg">
+                                        2
+                                    </div>
+                                    <div className="pt-1 text-start">
+                                        <h3 className="font-semibold text-base mb-1">Verify with OTP</h3>
+                                        <p className="text-[13px] text-white/70 leading-relaxed">
+                                            Enter the code from your inbox. valid for 10 minutes.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="pt-1 text-start">
-                                    <h3 className="font-semibold text-base mb-1">Verify with OTP</h3>
-                                    <p className="text-[13px] text-white/70 leading-relaxed">
-                                        Enter the code from your inbox. valid for 10 minutes.
-                                    </p>
-                                </div>
-                            </div>
 
-                            {/* Step 3 */}
-                            <div className="flex gap-5 items-center justify-start">
-                                <div className="w-[42px] h-[42px] shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center font-semibold text-lg">
-                                    3
-                                </div>
-                                <div className="pt-1 text-start">
-                                    <h3 className="font-semibold text-base mb-1">Set a new password</h3>
-                                    <p className="text-[13px] text-white/70 leading-relaxed">
-                                        choose a strong password and you're back
-                                    </p>
+                                {/* Step 3 */}
+                                <div className="flex gap-3 items-center">
+                                    <div className="w-10 h-10 shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center font-semibold text-lg">
+                                        3
+                                    </div>
+                                    <div className="pt-1 text-start">
+                                        <h3 className="font-semibold text-base mb-1">Set a new password</h3>
+                                        <p className="text-[13px] text-white/70 leading-relaxed">
+                                            choose a strong password and you're back
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -71,7 +73,7 @@ const ForgotPassword = () => {
             </div>
 
             {/* Right Side */}
-            <div className="w-full lg:w-1/2 flex flex-col relative min-h-screen lg:min-h-0">
+            <div className="w-full  lg:w-1/2 flex flex-col relative min-h-screen lg:min-h-0">
                 <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8 min-h-full">
 
                     <div className="w-full max-w-[480px] flex flex-col items-center">
@@ -80,30 +82,30 @@ const ForgotPassword = () => {
                         <img
                             src={logo}
                             alt="KMCT Logo"
-                            className="h-[72px] mb-10 mt-8 lg:mt-0 object-contain"
+                            className="h-20 mb-10 mt-8 lg:mt-0 object-contain"
                         />
 
                         {/* Stepper */}
-                        <div className="flex items-start justify-between w-full max-w-[280px] mb-10 relative">
+                        <div className="flex items-start justify-between w-full max-w-xs mb-5 relative">
                             {/* Connecting Line Background */}
                             <div className="absolute top-[17px] left-6 right-6 h-px bg-gray-300 z-0"></div>
 
-                            <div className="flex flex-col items-center gap-2 relative z-10 bg-background lg:bg-background-secondary px-1">
-                                <div className="w-[34px] h-[34px] rounded-full bg-primary text-white flex items-center justify-center text-[13px] font-medium">
+                            <div className="flex flex-col items-center gap-2 relative z-10 px-1">
+                                <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-[13px] font-medium">
                                     1
                                 </div>
                                 <span className="text-[12px] text-text-primary">Email</span>
                             </div>
 
-                            <div className="flex flex-col items-center gap-2 relative z-10 bg-background lg:bg-background-secondary px-1">
-                                <div className="w-[34px] h-[34px] rounded-full border border-primary text-primary bg-white flex items-center justify-center text-[13px] font-medium">
+                            <div className="flex flex-col items-center gap-2 relative z-10 px-1">
+                                <div className="w-9 h-9 rounded-full border border-primary text-primary bg-white flex items-center justify-center text-[13px] font-medium">
                                     2
                                 </div>
                                 <span className="text-[12px] text-text-primary">Verify</span>
                             </div>
 
-                            <div className="flex flex-col items-center gap-2 relative z-10 bg-background lg:bg-background-secondary px-1">
-                                <div className="w-[34px] h-[34px] rounded-full border border-primary text-primary bg-white flex items-center justify-center text-[13px] font-medium">
+                            <div className="flex flex-col items-center gap-2 relative z-10 px-1">
+                                <div className="w-9 h-9 rounded-full border border-primary text-primary bg-white flex items-center justify-center text-[13px] font-medium">
                                     3
                                 </div>
                                 <span className="text-[12px] text-text-primary">Reset</span>
