@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import logo from '@/assets/images/logo/logo.png';
 import AuthLayout from './components/AuthLayout';
 import AuthSidebarSteps from './components/AuthSidebarSteps';
@@ -8,9 +11,26 @@ import AuthStepper from './components/AuthStepper';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
+const resetPasswordSchema = z.object({
+    password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
+    confirmPassword: z.string().min(8, { message: 'Confirm password is required' }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+});
+
 const ResetPassword = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const { register, handleSubmit, formState: { errors } } = useForm({
+        resolver: zodResolver(resetPasswordSchema)
+    });
+
+    const onSubmit = (data) => {
+        console.log("Reset Password Data:", data);
+        alert("Password updated successfully!");
+    };
 
     return (
         <AuthLayout
@@ -38,10 +58,12 @@ const ResetPassword = () => {
                             Choose a strong password to secure your account
                         </p>
 
-                        <form className="w-full space-y-6">
+                        <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-6">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
                                 label="Password"
+                                {...register('password')}
+                                error={errors.password?.message}
                                 placeholder="Enter your new password"
                                 className="w-full px-4 py-3.5 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-sm"
                                 labelClassName="block text-[13px] font-medium text-text-primary"
@@ -56,6 +78,8 @@ const ResetPassword = () => {
                             <Input
                                 type={showConfirmPassword ? 'text' : 'password'}
                                 label="Confirm password"
+                                {...register('confirmPassword')}
+                                error={errors.confirmPassword?.message}
                                 placeholder="Confirm your new password"
                                 className="w-full px-4 py-3.5 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-sm"
                                 labelClassName="block text-[13px] font-medium text-text-primary"
@@ -68,6 +92,7 @@ const ResetPassword = () => {
                             />
 
                             <Button
+                                type='submit'
                                 className="w-full bg-secondary hover:bg-primary text-white font-medium py-3.5 rounded-lg transition-colors duration-200 text-sm mt-2"
                             >
                                 Update Password

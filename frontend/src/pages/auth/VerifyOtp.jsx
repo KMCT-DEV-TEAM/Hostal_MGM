@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import logo from '@/assets/images/logo/logo.png';
 import AuthLayout from './components/AuthLayout';
 import AuthSidebarSteps from './components/AuthSidebarSteps';
@@ -8,8 +11,20 @@ import AuthStepper from './components/AuthStepper';
 import Button from '@/components/ui/Button';
 import OtpInput from '@/components/ui/OtpInput';
 
+const verifyOtpSchema = z.object({
+    otp: z.string().length(6, { message: 'OTP must be exactly 6 digits' }),
+});
+
 const VerifyOtp = () => {
-    const [otp, setOtp] = useState('');
+    const { control, handleSubmit, formState: { errors } } = useForm({
+        resolver: zodResolver(verifyOtpSchema),
+        defaultValues: { otp: '' }
+    });
+
+    const onSubmit = (data) => {
+        console.log("Verify OTP Data:", data);
+        alert("OTP Verified successfully!");
+    };
 
     return (
         <AuthLayout
@@ -40,8 +55,24 @@ const VerifyOtp = () => {
                             Expires in 10 minutes
                         </p>
 
-                        <form className="w-full space-y-8 flex flex-col items-center">
-                            <OtpInput value={otp} onChange={setOtp} length={6} />
+                        <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-8 flex flex-col items-center">
+                            <div className="w-full max-w-sm">
+                                <Controller
+                                    name="otp"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <OtpInput
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            length={6}
+                                            error={!!errors.otp}
+                                        />
+                                    )}
+                                />
+                                {errors.otp && (
+                                    <p className="text-red-500 text-xs mt-2 text-center">{errors.otp.message}</p>
+                                )}
+                            </div>
 
                             <p className="text-center text-[13px] text-text-secondary">
                                 Didn't receive it ?{' '}
@@ -51,6 +82,7 @@ const VerifyOtp = () => {
                             </p>
 
                             <Button
+                                type='submit'
                                 className="w-full bg-secondary hover:bg-primary text-white font-medium py-3.5 rounded-lg transition-colors duration-200 text-sm mt-2"
                             >
                                 Verify

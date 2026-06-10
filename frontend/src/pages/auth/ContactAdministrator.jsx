@@ -1,10 +1,30 @@
 import { useNavigate } from 'react-router-dom';
 import { Mail, Clock, ArrowLeft, Building2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
+const contactSchema = z.object({
+    fullName: z.string().min(1, { message: 'Full Name is required' }),
+    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
+    issueType: z.string().min(1, { message: 'Issue Type is required' }),
+    message: z.string().min(10, { message: 'Message must be at least 10 characters long' }),
+});
+
 const ContactAdministrator = () => {
     const navigate = useNavigate();
+    
+    const { register, handleSubmit, formState: { errors } } = useForm({
+        resolver: zodResolver(contactSchema),
+        defaultValues: { issueType: '' }
+    });
+
+    const onSubmit = (data) => {
+        console.log("Contact Administrator Data:", data);
+        alert("Request submitted successfully!");
+    };
 
     return (
         <div className="min-h-screen bg-background md:bg-background-secondary font-sans flex items-center justify-center p-0 md:p-4 md:py-12">
@@ -34,11 +54,13 @@ const ContactAdministrator = () => {
                 <hr className="my-8 md:my-10 border-gray-100" />
 
                 {/* Form Section */}
-                <form className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input
                             label="Full Name"
                             type="text"
+                            {...register('fullName')}
+                            error={errors.fullName?.message}
                             placeholder="Enter your name"
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm"
                             labelClassName="block text-sm text-text-primary"
@@ -47,6 +69,8 @@ const ContactAdministrator = () => {
                         <Input
                             label="Email"
                             type="email"
+                            {...register('email')}
+                            error={errors.email?.message}
                             placeholder="Enter your email"
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm"
                             labelClassName="block text-sm text-text-primary"
@@ -58,8 +82,8 @@ const ContactAdministrator = () => {
                         <label className="block text-sm text-text-primary">Issue Type</label>
                         <div className="relative">
                             <select
-                                defaultValue=""
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary appearance-none bg-transparent text-gray-500 text-sm"
+                                {...register('issueType')}
+                                className={`w-full px-4 py-3 rounded-lg border ${errors.issueType ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:border-secondary focus:ring-secondary/20'} focus:outline-none focus:ring-2 appearance-none bg-transparent ${!errors.issueType ? 'text-gray-500' : 'text-text-primary'} text-sm`}
                             >
                                 <option value="" disabled>Select an issue type</option>
                                 <option value="login">Login / Authentication</option>
@@ -73,18 +97,22 @@ const ContactAdministrator = () => {
                                 </svg>
                             </div>
                         </div>
+                        {errors.issueType && <p className="text-red-500 text-xs mt-1.5">{errors.issueType.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                         <label className="block text-sm text-text-primary">Message</label>
                         <textarea
+                            {...register('message')}
                             placeholder="Describe your issue in detail..."
                             rows={4}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm resize-none"
+                            className={`w-full px-4 py-3 rounded-lg border ${errors.message ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:border-secondary focus:ring-secondary/20'} placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors text-text-primary text-sm resize-none`}
                         ></textarea>
+                        {errors.message && <p className="text-red-500 text-xs mt-1.5">{errors.message.message}</p>}
                     </div>
 
                     <Button
+                        type="submit"
                         className="w-full bg-primary hover:bg-secondary text-white font-medium py-3.5 px-4 rounded-md transition-colors duration-200 text-sm mt-2"
                     >
                         Submit Request

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-const OtpInput = ({ length = 6, value, onChange }) => {
+const OtpInput = ({ length = 6, value, onChange, error }) => {
     const inputRefs = useRef([]);
 
     const handleChange = (e, index) => {
@@ -32,7 +32,11 @@ const OtpInput = ({ length = 6, value, onChange }) => {
                     value={value[i] || ''}
                     onChange={(e) => handleChange(e, i)}
                     onKeyDown={(e) => handleKeyDown(e, i)}
-                    className="w-[45px] h-12 sm:w-12 text-center rounded-lg border border-gray-300 text-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
+                    className={`w-[45px] h-12 sm:w-12 text-center rounded-lg border text-lg text-text-primary focus:outline-none focus:ring-2 transition-colors ${
+                        error 
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                            : 'border-gray-300 focus:ring-secondary/20 focus:border-secondary'
+                    }`}
                 />
             ))}
         </div>

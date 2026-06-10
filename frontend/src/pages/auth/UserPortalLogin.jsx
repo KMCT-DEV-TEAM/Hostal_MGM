@@ -1,11 +1,28 @@
 import logo from '@/assets/images/logo/logo.png';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import AuthLayout from './components/AuthLayout';
 import AuthSidebarFeatures from './components/AuthSidebarFeatures';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
+const userLoginSchema = z.object({
+    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
+    password: z.string().min(1, { message: 'Password is required' }),
+});
+
 const UserPortalLogin = () => {
+    const { register, handleSubmit, formState: { errors } } = useForm({
+        resolver: zodResolver(userLoginSchema)
+    });
+
+    const onSubmit = (data) => {
+        console.log("User Login Data:", data);
+        alert("Form submitted successfully!");
+    };
+
     return (
         <AuthLayout leftPanel={<AuthSidebarFeatures />}>
             <div className="w-full max-w-md">
@@ -30,10 +47,12 @@ const UserPortalLogin = () => {
                         </p>
                     </div>
 
-                    <form className="space-y-5">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <Input
                             type="email"
                             label="Email"
+                            {...register('email')}
+                            error={errors.email?.message}
                             placeholder="Enter Your Email"
                         />
 
@@ -41,6 +60,8 @@ const UserPortalLogin = () => {
                             <Input
                                 type="password"
                                 label="Password"
+                                {...register('password')}
+                                error={errors.password?.message}
                                 placeholder="Password (default: password123)"
                             />
                             <div className="flex justify-end mt-2">
