@@ -9,9 +9,9 @@ const UserPortalLogin = () => {
             {/* Left Side */}
             <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
                 {/* Decorative circles */}
-                <div className="absolute top-[-80px] left-[-80px] w-56 h-56 rounded-full bg-white/5" />
-                <div className="absolute top-10 right-[-60px] w-32 h-32 rounded-full bg-white/5" />
-                <div className="absolute bottom-10 right-10 w-20 h-20 rounded-full bg-white/5" />
+                <div className="absolute top-[-80px] left-[-80px] w-56 h-56 rounded-full bg-background/5" />
+                <div className="absolute top-10 right-[-60px] w-32 h-32 rounded-full bg-background/5" />
+                <div className="absolute bottom-10 right-10 w-20 h-20 rounded-full bg-background/5" />
 
                 <div className="flex flex-col items-center justify-center w-full px-10 text-center text-white">
                     {/* Hostel Illustration */}
@@ -30,17 +30,17 @@ const UserPortalLogin = () => {
                     </p>
 
                     <div className="flex gap-4">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-4">
+                        <div className="bg-background/10 backdrop-blur-sm rounded-lg px-6 py-4">
                             <div className="text-xl font-bold">300+</div>
                             <div className="text-xs">Students</div>
                         </div>
 
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-4">
+                        <div className="bg-background/10 backdrop-blur-sm rounded-lg px-6 py-4">
                             <div className="text-xl font-bold">500</div>
                             <div className="text-xs">Rooms</div>
                         </div>
 
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-4">
+                        <div className="bg-background/10 backdrop-blur-sm rounded-lg px-6 py-4">
                             <div className="text-xl font-bold">99%</div>
                             <div className="text-xs">Occupancy</div>
                         </div>
