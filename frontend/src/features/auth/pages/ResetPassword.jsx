@@ -3,21 +3,13 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import logo from '@/assets/images/logo/logo.png';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
 import AuthStepper from '@/features/auth/components/AuthStepper';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-
-const resetPasswordSchema = z.object({
-    password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
-    confirmPassword: z.string().min(8, { message: 'Confirm password is required' }),
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-});
+import { resetPasswordSchema } from '@/features/auth/validation/resetPasswordSchema';
 
 const ResetPassword = () => {
     const [showPassword, setShowPassword] = useState(false);

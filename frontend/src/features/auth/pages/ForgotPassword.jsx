@@ -2,17 +2,13 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import logo from '@/assets/images/logo/logo.png';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
 import AuthStepper from '@/features/auth/components/AuthStepper';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-
-const forgotPasswordSchema = z.object({
-    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
-});
+import { forgotPasswordSchema } from '@/features/auth/validation/forgotPasswordSchema';
 
 const ForgotPassword = () => {
     const { register, handleSubmit, formState: { errors } } = useForm({

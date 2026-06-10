@@ -3,17 +3,13 @@ import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import logo from '@/assets/images/logo/logo.png';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
 import AuthStepper from '@/features/auth/components/AuthStepper';
 import Button from '@/components/ui/Button';
 import OtpInput from '@/components/ui/OtpInput';
-
-const verifyOtpSchema = z.object({
-    otp: z.string().length(6, { message: 'OTP must be exactly 6 digits' }),
-});
+import { verifyOtpSchema } from '@/features/auth/validation/verifyOtpSchema';
 
 const VerifyOtp = () => {
     const { control, handleSubmit, formState: { errors } } = useForm({

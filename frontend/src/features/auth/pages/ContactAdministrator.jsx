@@ -2,16 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Clock, ArrowLeft, Building2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-
-const contactSchema = z.object({
-    fullName: z.string().min(1, { message: 'Full Name is required' }),
-    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
-    issueType: z.string().min(1, { message: 'Issue Type is required' }),
-    message: z.string().min(10, { message: 'Message must be at least 10 characters long' }),
-});
+import { contactSchema } from '@/features/auth/validation/contactSchema';
 
 const ContactAdministrator = () => {
     const navigate = useNavigate();

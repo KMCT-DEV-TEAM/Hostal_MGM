@@ -1,16 +1,11 @@
 import logo from '@/assets/images/logo/logo.png';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarFeatures from '@/features/auth/components/AuthSidebarFeatures';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-
-const superAdminSchema = z.object({
-    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Invalid email address' }),
-    password: z.string().min(1, { message: 'Password is required' }),
-});
+import { superAdminSchema } from '@/features/auth/validation/loginSchema';
 
 const SuperAdminLogin = () => {
     const { register, handleSubmit, formState: { errors } } = useForm({
