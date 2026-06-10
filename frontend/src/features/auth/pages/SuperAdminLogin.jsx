@@ -2,8 +2,8 @@ import logo from '@/assets/images/logo/logo.png';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import AuthLayout from './components/AuthLayout';
-import AuthSidebarFeatures from './components/AuthSidebarFeatures';
+import AuthLayout from '@/layouts/AuthLayout';
+import AuthSidebarFeatures from '@/features/auth/components/AuthSidebarFeatures';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 

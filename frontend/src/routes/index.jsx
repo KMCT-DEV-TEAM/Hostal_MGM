@@ -1,12 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom';
 
-import SuperAdminLogin from '@/pages/auth/SuperAdminLogin';
-import AdminPortalLogin from '@/pages/auth/AdminPortalLogin';
-import UserPortalLogin from '@/pages/auth/UserPortalLogin';
-import ContactAdministrator from '@/pages/auth/ContactAdministrator';
-import ForgotPassword from '@/pages/auth/ForgotPassword';
-import VerifyOtp from '@/pages/auth/VerifyOtp';
-import ResetPassword from '@/pages/auth/ResetPassword';
+import SuperAdminLogin from '@/features/auth/pages/SuperAdminLogin';
+import AdminPortalLogin from '@/features/auth/pages/AdminPortalLogin';
+import UserPortalLogin from '@/features/auth/pages/UserPortalLogin';
+import ContactAdministrator from '@/features/auth/pages/ContactAdministrator';
+import ForgotPassword from '@/features/auth/pages/ForgotPassword';
+import VerifyOtp from '@/features/auth/pages/VerifyOtp';
+import ResetPassword from '@/features/auth/pages/ResetPassword';
 
 const router = createBrowserRouter([
     {

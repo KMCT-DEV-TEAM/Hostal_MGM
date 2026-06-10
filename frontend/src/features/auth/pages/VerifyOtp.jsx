@@ -5,9 +5,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import logo from '@/assets/images/logo/logo.png';
-import AuthLayout from './components/AuthLayout';
-import AuthSidebarSteps from './components/AuthSidebarSteps';
-import AuthStepper from './components/AuthStepper';
+import AuthLayout from '@/layouts/AuthLayout';
+import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
+import AuthStepper from '@/features/auth/components/AuthStepper';
 import Button from '@/components/ui/Button';
 import OtpInput from '@/components/ui/OtpInput';
 
