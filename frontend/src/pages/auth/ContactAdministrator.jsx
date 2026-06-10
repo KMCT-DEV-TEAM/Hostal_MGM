@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Mail, Clock, ArrowLeft, Building2 } from 'lucide-react';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 const ContactAdministrator = () => {
     const navigate = useNavigate();
@@ -9,7 +11,7 @@ const ContactAdministrator = () => {
             <div className="bg-background max-w-[680px] w-full min-h-screen md:min-h-fit md:rounded-xl md:shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 py-10 md:p-14 flex flex-col relative">
 
                 {/* Mobile Back Button */}
-                <button onClick={navigate('/admin/login')} className="md:hidden absolute top-8 left-6 text-gray-600 hover:text-gray-900 transition-colors">
+                <button onClick={() => navigate('/admin/login')} className="md:hidden absolute top-8 left-6 text-gray-600 hover:text-gray-900 transition-colors">
                     <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
                 </button>
 
@@ -34,22 +36,22 @@ const ContactAdministrator = () => {
                 {/* Form Section */}
                 <form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="block text-sm text-text-primary">Full Name</label>
-                            <input
-                                type="text"
-                                placeholder="Enter your name"
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="block text-sm text-text-primary">Email</label>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm"
-                            />
-                        </div>
+                        <Input
+                            label="Full Name"
+                            type="text"
+                            placeholder="Enter your name"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm"
+                            labelClassName="block text-sm text-text-primary"
+                            containerClassName="space-y-2"
+                        />
+                        <Input
+                            label="Email"
+                            type="email"
+                            placeholder="Enter your email"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors text-text-primary text-sm"
+                            labelClassName="block text-sm text-text-primary"
+                            containerClassName="space-y-2"
+                        />
                     </div>
 
                     <div className="space-y-2">
@@ -82,12 +84,11 @@ const ContactAdministrator = () => {
                         ></textarea>
                     </div>
 
-                    <button
-                        type="button"
+                    <Button
                         className="w-full bg-primary hover:bg-secondary text-white font-medium py-3.5 px-4 rounded-md transition-colors duration-200 text-sm mt-2"
                     >
                         Submit Request
-                    </button>
+                    </Button>
                 </form>
 
                 <hr className="md:hidden my-8 border-gray-100" />
