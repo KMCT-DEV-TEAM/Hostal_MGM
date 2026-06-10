@@ -1,0 +1,60 @@
+const validateCreateStudent = (req, res, next) => {
+  const { 
+    organizationId,
+    name, 
+    email, 
+    phone, 
+    parentname, 
+    parentemail, 
+    parentnumber, 
+    parentrelationship 
+  } = req.body;
+
+  if (!organizationId) {
+    return res.status(400).json({ success: false, message: "organizationId is required" });
+  }
+
+  if (!name || !email || !phone) {
+    return res.status(400).json({ success: false, message: "Student name, email, and phone are required" });
+  }
+
+  if (!parentname || !parentemail || !parentnumber || !parentrelationship) {
+    return res.status(400).json({ success: false, message: "Parent name, email, number, and relationship are required" });
+  }
+
+  next();
+};
+
+import mongoose from "mongoose";
+
+const validateStudentIdParam = (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Student ID",
+    });
+  }
+
+  next();
+};
+
+const validateUpdateStudent = (req, res, next) => {
+  const { name, email, phone, gender, dob, course, department, address, status } = req.body;
+
+  if (!name && !email && !phone && !gender && !dob && !course && !department && !address && !status) {
+    return res.status(400).json({
+      success: false,
+      message: "At least one field must be provided for update",
+    });
+  }
+
+  next();
+};
+
+export {
+  validateCreateStudent,
+  validateStudentIdParam,
+  validateUpdateStudent
+};

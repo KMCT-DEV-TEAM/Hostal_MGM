@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
 
+    phone: {
+      type: String,
+    },
+
     password: {
       type: String,
       required: true,
@@ -28,6 +32,11 @@ const userSchema = new mongoose.Schema(
         "parent",
       ],
       default: "student",
+    },
+
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
     },
 
     isActive: {

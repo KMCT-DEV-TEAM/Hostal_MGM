@@ -1,26 +1,5 @@
-import Organization from "./organization.model.js";
-
-const findExistingOrganization = async (code, organisationNumber) => {
-  return await Organization.findOne({
-    $or: [{ code }, { organisationNumber }]
-  });
-};
-
-const createOrganizationDb = async (data) => {
-  return await Organization.create(data);
-};
-
-const getAllOrganizationsDb = async () => {
-  return await Organization.find().populate("adminId", "name email isActive");
-};
-
-const getOrganizationByIdDb = async (id) => {
-  return await Organization.findById(id).populate("adminId", "name email isActive");
-};
-
-const updateOrganizationDb = async (id, data) => {
-  return await Organization.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-};
+import mongoose from "mongoose";
+import Organization from "../organizations/organization.model.js";
 
 const getAggregateOrganizationDataDb = async (organizationId = null) => {
   const pipeline = [];
@@ -158,10 +137,5 @@ const getAggregateOrganizationDataDb = async (organizationId = null) => {
 };
 
 export {
-  findExistingOrganization,
-  createOrganizationDb,
-  getAllOrganizationsDb,
-  getOrganizationByIdDb,
-  updateOrganizationDb,
   getAggregateOrganizationDataDb
-}
+};
