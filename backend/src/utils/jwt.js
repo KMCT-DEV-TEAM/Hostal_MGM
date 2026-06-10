@@ -1,6 +1,13 @@
 import jwt from "jsonwebtoken";
 
-export const generateToken = (user) => {
+const getSecondsUntilMidnight = () => {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(23, 59, 59, 999);
+  return Math.floor((midnight.getTime() - now.getTime()) / 1000);
+};
+
+export const generateAccessToken = (user) => {
   return jwt.sign(
     {
       id: user._id,
@@ -8,7 +15,39 @@ export const generateToken = (user) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: getSecondsUntilMidnight(),
+    }
+  );
+};
+
+export const generateRefreshToken = (user) => {
+  let expiresIn = "7d";
+  
+  switch (user.role) {
+    case "super_admin":
+      expiresIn = "8h";
+      break;
+    case "admin":
+      expiresIn = "12h";
+      break;
+    case "warden":
+      expiresIn = "24h";
+      break;
+    case "student":
+    case "parent":
+    default:
+      expiresIn = "7d";
+      break;
+  }
+
+  return jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn,
     }
   );
 };

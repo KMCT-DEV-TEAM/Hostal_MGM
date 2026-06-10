@@ -3,14 +3,37 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-import { activateAdmin, createAdmin, deactivateAdmin, getAdminById, getAdmins, updateAdmin } from "./user.controller.js";
+import { 
+  createAdmin, 
+  getAdmins, 
+  getAdminById, 
+  updateAdmin, 
+  toggleAdminStatus,
+  createWarden,
+  getWardens,
+  getWardenById,
+  updateWarden,
+  toggleWardenStatus
+} from "./user.controller.js";
+
+import { 
+  validateCreateAdmin, 
+  validateAdminIdParam, 
+  validateUpdateAdmin,
+  validateCreateWarden,
+  validateWardenIdParam,
+  validateUpdateWarden
+} from "./user.validation.js";
 
 const router = express.Router();
+
+// --- ADMIN ROUTES ---
 
 router.post(
   "/admins",
   authMiddleware,
   roleMiddleware("super_admin"),
+  validateCreateAdmin,
   createAdmin
 );
 
@@ -25,6 +48,7 @@ router.get(
   "/admins/:id",
   authMiddleware,
   roleMiddleware("super_admin"),
+  validateAdminIdParam,
   getAdminById
 );
 
@@ -32,22 +56,60 @@ router.patch(
   "/admins/:id",
   authMiddleware,
   roleMiddleware("super_admin"),
+  validateAdminIdParam,
+  validateUpdateAdmin,
   updateAdmin
 );
 
 router.patch(
-  "/admins/:id/deactivate",
+  "/admins/:id/toggle-status",
   authMiddleware,
   roleMiddleware("super_admin"),
-  deactivateAdmin
+  validateAdminIdParam,
+  toggleAdminStatus
+);
+
+
+// --- WARDEN ROUTES ---
+
+router.post(
+  "/wardens",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateCreateWarden,
+  createWarden
+);
+
+router.get(
+  "/wardens",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  getWardens
+);
+
+router.get(
+  "/wardens/:id",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateWardenIdParam,
+  getWardenById
 );
 
 router.patch(
-  "/admins/:id/activate",
+  "/wardens/:id",
   authMiddleware,
   roleMiddleware("super_admin"),
-  activateAdmin
+  validateWardenIdParam,
+  validateUpdateWarden,
+  updateWarden
 );
 
+router.patch(
+  "/wardens/:id/toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateWardenIdParam,
+  toggleWardenStatus
+);
 
 export default router;

@@ -15,10 +15,15 @@ const organizationSchema = new mongoose.Schema(
       uppercase: true,
     },
 
+    organisationNumber: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
 
     email: {

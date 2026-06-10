@@ -1,45 +1,30 @@
-import bcrypt from "bcryptjs";
-import User from "../users/user.model.js";
-import { generateToken } from "../../utils/jwt.js";
+import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
+import jwt from "jsonwebtoken";
+import { findUserForLoginDb, verifyPassword, findUserByIdForRefreshDb } from "./auth.service.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 
-export const login = async (req, res) => {
-  try {
+const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and Password are required",
-      });
-    }
-
-    const user = await User.findOne({ email });
+    const user = await findUserForLoginDb(email);
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return sendError(res, 401, "Invalid credentials");
     }
 
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isMatch = await verifyPassword(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return sendError(res, 401, "Invalid credentials");
     }
 
-    const token = generateToken(user);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      token,
+    return sendSuccess(res, 200, "Login successful", {
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         name: user.name,
@@ -47,12 +32,25 @@ export const login = async (req, res) => {
         role: user.role,
       },
     });
-  } catch (error) {
-    console.error(error);
+});
 
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-};
+const refreshToken = asyncHandler(async (req, res) => {
+    const { token } = req.body;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const user = await findUserByIdForRefreshDb(decoded.id);
+
+    if (!user || !user.isActive) {
+      return sendError(res, 401, "Invalid token or user deactivated");
+    }
+
+    const accessToken = generateAccessToken(user);
+
+    return sendSuccess(res, 200, "Token refreshed successfully", { accessToken });
+});
+
+export {
+  login,
+  refreshToken,
+}
