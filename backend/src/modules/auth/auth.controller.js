@@ -10,7 +10,7 @@ const login = asyncHandler(async (req, res) => {
     const user = await findUserForLoginDb(email);
 
     if (!user) {
-      return sendError(res, 401, "Invalid credentials");
+      return sendError(res, 401, "Invalid credentialssssss");
     }
 
     const isMatch = await verifyPassword(password, user.password);
@@ -25,12 +25,6 @@ const login = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, "Login successful", {
       accessToken,
       refreshToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
     });
 });
 
