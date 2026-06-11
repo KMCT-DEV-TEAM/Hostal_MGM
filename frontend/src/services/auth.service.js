@@ -1,75 +1,73 @@
 import authApi from '@/features/auth/api/authApi';
+import { tokenStorage } from '@/features/auth/storage/tokenStorage';
 
-const TOKEN_KEY = 'auth_token';
+/**
+ * Performs login, stores the returned tokens in storage, and returns the response payload data.
+ * @param {Object} credentials - adminId/email and password
+ * @returns {Promise<Object>} response data containing user and tokens
+ */
+export async function login(credentials) {
+  const response = await authApi.login(credentials);
+  const data = response.data;
+
+  if (data) {
+    if (data.accessToken) {
+      tokenStorage.set(data.accessToken);
+    }
+    if (data.refreshToken) {
+      tokenStorage.setRefreshToken(data.refreshToken);
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Request verification OTP code for resetting password.
+ * @param {Object} payload - email address
+ */
+export function forgotPassword(payload) {
+  return authApi.forgotPassword(payload);
+}
+
+/**
+ * Verify the OTP code sent to user email.
+ * @param {Object} payload - OTP details
+ */
+export function verifyOtp(payload) {
+  return authApi.verifyOtp(payload);
+}
+
+/**
+ * Submit new password using verified OTP.
+ * @param {Object} payload - password details
+ */
+export function resetPassword(payload) {
+  return authApi.resetPassword(payload);
+}
+
+/**
+ * Check if user is authenticated (access token is present).
+ * @returns {boolean}
+ */
+export function isAuthenticated() {
+  return !!tokenStorage.get();
+}
+
+/**
+ * Log out and clear stored tokens.
+ */
+export function logout() {
+  tokenStorage.clear();
+}
 
 const authService = {
-  /**
-   * Performs login and stores the returned token.
-   * @param {Object} credentials - adminId/email and password
-   * @returns {Promise<Object>} user data and response
-   */
-  async login(credentials) {
-    const response = await authApi.login(credentials);
-    if (response && response.token) {
-      this.setToken(response.token);
-    }
-    return response;
-  },
-
-  /**
-   * Request verification OTP code for resetting password.
-   * @param {Object} payload - email address
-   */
-  forgotPassword(payload) {
-    return authApi.forgotPassword(payload);
-  },
-
-  /**
-   * Verify the OTP code sent to user email.
-   * @param {Object} payload - OTP details
-   */
-  verifyOtp(payload) {
-    return authApi.verifyOtp(payload);
-  },
-
-  /**
-   * Submit new password using verified OTP.
-   * @param {Object} payload - password details
-   */
-  resetPassword(payload) {
-    return authApi.resetPassword(payload);
-  },
-
-  /**
-   * Store JWT authentication token in local storage.
-   * @param {string} token 
-   */
-  setToken(token) {
-    localStorage.setItem(TOKEN_KEY, token);
-  },
-
-  /**
-   * Retrieve stored JWT token.
-   * @returns {string|null}
-   */
-  getToken() {
-    return localStorage.getItem(TOKEN_KEY);
-  },
-
-  /**
-   * Remove stored JWT token from local storage.
-   */
-  clearToken() {
-    localStorage.removeItem(TOKEN_KEY);
-  },
-
-  /**
-   * Check if token is present (authenticated status).
-   * @returns {boolean}
-   */
-  isAuthenticated() {
-    return !!this.getToken();
-  },
+  login,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
+  isAuthenticated,
+  logout,
 };
 
 export default authService;

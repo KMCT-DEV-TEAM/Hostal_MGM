@@ -54,7 +54,6 @@ const ForgotPassword = () => {
 
                             <Button
                                 type='submit'
-                                className="w-full bg-secondary hover:bg-primary text-white font-medium py-3.5 rounded-lg transition-colors duration-200 text-sm mt-2"
                             >
                                 Send verification code
                             </Button>
