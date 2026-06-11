@@ -1,6 +1,9 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
+import dns from 'dns';
 
- const connectDB = async () => {
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("MongoDB Connected");
@@ -11,4 +14,3 @@ import mongoose from "mongoose"
 };
 
 export default connectDB;
-
