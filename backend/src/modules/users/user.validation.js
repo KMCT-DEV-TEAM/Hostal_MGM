@@ -44,12 +44,19 @@ const validateUpdateAdmin = (req, res, next) => {
 // --- WARDEN VALIDATIONS ---
 
 const validateCreateWarden = (req, res, next) => {
-  const { name, email, password, organizationId } = req.body;
+  const { name, email, password, organizationId, hostelId } = req.body;
 
-  if (!name || !email || !password || !organizationId) {
+  if (!name || !email || !password || !organizationId || !hostelId) {
     return res.status(400).json({
       success: false,
-      message: "name, email, password, and organizationId are required",
+      message: "name, email, password, organizationId, and hostelId are required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hostelId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Hostel ID",
     });
   }
 

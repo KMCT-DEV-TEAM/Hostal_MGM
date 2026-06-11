@@ -11,6 +11,7 @@ import {
   updateUserByRoleDb,
   toggleUserActiveStatusByRoleDb
 } from "./user.service.js";
+import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
 
 // --- ADMIN CONTROLLERS ---
 
@@ -126,7 +127,7 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
 // --- WARDEN CONTROLLERS ---
 
 const createWarden = asyncHandler(async (req, res) => {
-    const { name, email, password, organizationId } = req.body;
+    const { name, email, password, organizationId, hostelId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -139,6 +140,15 @@ const createWarden = asyncHandler(async (req, res) => {
         return sendError(res, 404, "Organization not found");
     }
 
+    const hostelExists = await getHostelByIdDb(hostelId, organizationId);
+    if (!hostelExists) {
+        return sendError(res, 404, "Hostel not found in this organization");
+    }
+
+    if (hostelExists.wardenId) {
+        return sendError(res, 400, "Hostel already has a warden assigned");
+    }
+
     const hashedPassword = await hashPassword(password);
 
     const warden = await createUserDb({
@@ -148,7 +158,9 @@ const createWarden = asyncHandler(async (req, res) => {
         organization: organizationId,
     }, "warden");
 
-    return sendSuccess(res, 201, "Warden created successfully", { data: warden });
+    await updateHostelDb(hostelId, organizationId, { wardenId: warden._id });
+
+    return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
 });
 
 const getWardens = asyncHandler(async (req, res) => {
