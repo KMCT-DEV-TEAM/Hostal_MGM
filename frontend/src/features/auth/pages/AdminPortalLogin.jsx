@@ -1,9 +1,10 @@
-import logo from '@/assets/images/logo/logo.png';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarFeatures from '@/features/auth/components/AuthSidebarFeatures';
+import AuthLogo from '@/features/auth/components/AuthLogo';
+import AuthCard from '@/features/auth/components/AuthCard';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { adminLoginSchema } from '@/features/auth/validation/loginSchema';
@@ -22,32 +23,21 @@ const AdminPortalLogin = () => {
         <AuthLayout leftPanel={<AuthSidebarFeatures />}>
             <div className="w-full max-w-md">
                 {/* Logo */}
-                <div className="flex justify-center lg:mb-8 mb-4">
-                    <img
-                        src={logo}
-                        alt="Logo"
-                        className="h-20 w-auto"
-                    />
-                </div>
+                <AuthLogo isCentered={true} />
 
                 {/* Login Card */}
-                <div className=" rounded-xl lg:shadow-sm lg:p-8">
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-primary">
-                            Sign In
-                        </h2>
-
-                        <p className="text-text-secondary mt-2">
-                            Access your admin dashboard
-                        </p>
-                    </div>
-
+                <AuthCard
+                    variant="login"
+                    title="Sign In"
+                    subtitle="Access your admin dashboard"
+                >
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <Input
-                            label="Admin ID"
+                            label="Email"
+                            type="email"
                             {...register('adminId')}
                             error={errors.adminId?.message}
-                            placeholder="Enter your ID (default: admin123)"
+                            placeholder="Enter your email"
                         />
 
                         <Input
@@ -55,7 +45,7 @@ const AdminPortalLogin = () => {
                             type="password"
                             {...register('password')}
                             error={errors.password?.message}
-                            placeholder="Password (default: password123)"
+                            placeholder="Enter your password"
                         />
 
                         <Button type="submit">
@@ -69,7 +59,7 @@ const AdminPortalLogin = () => {
                             Contact Administrator
                         </Link>
                     </p>
-                </div>
+                </AuthCard>
             </div>
         </AuthLayout>
     )
