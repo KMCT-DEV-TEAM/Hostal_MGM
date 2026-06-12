@@ -20,10 +20,7 @@ const allowedOrigins = [
 ];
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-
-    // Check if the origin is in the whitelist
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {

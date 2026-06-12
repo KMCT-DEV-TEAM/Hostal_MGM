@@ -30,9 +30,10 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const refreshToken = asyncHandler(async (req, res) => {
-    const { token } = req.body;
+    const token = req.token;
+    
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN);
     
     const user = await findUserByIdForRefreshDb(decoded.id);
 
@@ -45,7 +46,18 @@ const refreshToken = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, "Token refreshed successfully", { accessToken });
 });
 
+const me = asyncHandler(async (req, res) => {
+    const user = await findUserByIdForRefreshDb(req.user.id);
+
+    if (!user || !user.isActive) {
+      return sendError(res, 401, "User not found or deactivated");
+    }
+
+    return sendSuccess(res, 200, "Token is Valid");
+});
+
 export {
   login,
   refreshToken,
+  me,
 }

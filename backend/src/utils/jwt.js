@@ -13,7 +13,7 @@ export const generateAccessToken = (user) => {
       id: user._id,
       role: user.role,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_ACCESS_TOKEN,
     {
       expiresIn: getSecondsUntilMidnight(),
     }
@@ -45,7 +45,7 @@ export const generateRefreshToken = (user) => {
       id: user._id,
       role: user.role,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_REFRESH_TOKEN,
     {
       expiresIn,
     }
