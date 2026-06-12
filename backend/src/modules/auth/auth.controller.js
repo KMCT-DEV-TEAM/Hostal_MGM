@@ -25,6 +25,7 @@ const login = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, "Login successful", {
       accessToken,
       refreshToken,
+      role: user.role,
     });
 });
 
