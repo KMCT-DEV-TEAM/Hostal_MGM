@@ -1,5 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarFeatures from '@/features/auth/components/AuthSidebarFeatures';
 import AuthLogo from '@/features/auth/components/AuthLogo';
@@ -9,13 +12,26 @@ import Button from '@/components/ui/Button';
 import { superAdminSchema } from '@/features/auth/validation/loginSchema';
 
 const SuperAdminLogin = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
+    const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(superAdminSchema)
     });
 
-    const onSubmit = (data) => {
-        console.log("Super Admin Login Data:", data);
-        alert("Form submitted successfully!");
+    const onSubmit = async (data) => {
+        try {
+            await login(data);
+            showSuccessToast('Login Successful', 'Welcome to the Admin Dashboard');
+            navigate('/super-admin/dashboard'); // Or wherever the dashboard route is
+        } catch (error) {
+            console.log("error from the login page", error);
+            showErrorToast('Login Failed', error?.message || 'Failed to sign in. Please check your credentials.');
+            setError('root', {
+                type: 'manual',
+                message: error?.message || 'Failed to sign in. Please check your credentials.'
+            });
+        }
     };
 
     return (
@@ -47,8 +63,14 @@ const SuperAdminLogin = () => {
                             placeholder="Enter your password"
                         />
 
-                        <Button type="submit">
-                            Sign In
+                        {errors.root && (
+                            <div className="text-red-500 text-sm font-medium">
+                                {errors.root.message}
+                            </div>
+                        )}
+
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'Signing in...' : 'Sign In'}
                         </Button>
                     </form>
                 </AuthCard>

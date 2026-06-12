@@ -10,10 +10,33 @@ import wardenRoutes from "./modules/wardens/warden.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import hostelRoutes from "./modules/hostels/hostel.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
+import cors from 'cors';
 
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Check if the origin is in the whitelist
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 app.use(express.json());
+app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));

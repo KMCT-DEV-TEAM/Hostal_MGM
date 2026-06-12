@@ -12,6 +12,9 @@ const authApi = {
 
   resetPassword: (payload) =>
     api.post("/auth/reset-password", payload),
+
+  getProfile: () =>
+    api.get("/auth/me"),
 };
 
 export default authApi;
