@@ -61,6 +61,15 @@ export function logout() {
   tokenStorage.clear();
 }
 
+/**
+ * Fetch the authenticated user's profile.
+ * @returns {Promise<Object>} user data
+ */
+export async function getProfile() {
+  const response = await authApi.getProfile();
+  return response.data;
+}
+
 const authService = {
   login,
   forgotPassword,
@@ -68,6 +77,7 @@ const authService = {
   resetPassword,
   isAuthenticated,
   logout,
+  getProfile,
 };
 
 export default authService;
