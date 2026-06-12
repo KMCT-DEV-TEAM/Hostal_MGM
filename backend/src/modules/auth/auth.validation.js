@@ -12,7 +12,9 @@ const validateLogin = (req, res, next) => {
 };
 
 const validateRefreshToken = (req, res, next) => {
-  const { token } = req.body;
+  const token =  req.headers.authorization?.split(" ")[1];
+
+  req.token=token;
 
   if (!token) {
     return res.status(400).json({
