@@ -1,19 +1,43 @@
 import mongoose from "mongoose";
 
 const validateCreateHostel = (req, res, next) => {
-  const { name, code } = req.body;
+  const { name, code, email, organizations, wardens, adminId } = req.body;
 
-  if (!name || !code) {
+  if (!name || !code || !email) {
     return res.status(400).json({
       success: false,
-      message: "Hostel name and code are required",
+      message: "Hostel name, code, and email are required",
     });
   }
 
-  if (req.body.wardenId && !mongoose.Types.ObjectId.isValid(req.body.wardenId)) {
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!isValidEmail) {
     return res.status(400).json({
       success: false,
-      message: "Invalid Warden ID",
+      message: "Invalid email format",
+    });
+  }
+
+  if (organizations && Array.isArray(organizations)) {
+    for (const orgId of organizations) {
+      if (!mongoose.Types.ObjectId.isValid(orgId)) {
+        return res.status(400).json({ success: false, message: "Invalid Organization ID in array" });
+      }
+    }
+  }
+
+  if (wardens && Array.isArray(wardens)) {
+    for (const wardenId of wardens) {
+      if (!mongoose.Types.ObjectId.isValid(wardenId)) {
+        return res.status(400).json({ success: false, message: "Invalid Warden ID in array" });
+      }
+    }
+  }
+
+  if (adminId && !mongoose.Types.ObjectId.isValid(adminId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Admin ID",
     });
   }
 
@@ -34,12 +58,15 @@ const validateHostelIdParam = (req, res, next) => {
 };
 
 const validateUpdateHostel = (req, res, next) => {
-  const { name, code, wardenId, location, capacity, isActive } = req.body;
+  const { name, code, email, organizations, wardens, adminId, location, capacity, isActive } = req.body;
 
   if (
     name === undefined &&
     code === undefined &&
-    wardenId === undefined &&
+    email === undefined &&
+    organizations === undefined &&
+    wardens === undefined &&
+    adminId === undefined &&
     location === undefined &&
     capacity === undefined &&
     isActive === undefined
@@ -50,10 +77,33 @@ const validateUpdateHostel = (req, res, next) => {
     });
   }
 
-  if (wardenId && !mongoose.Types.ObjectId.isValid(wardenId)) {
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({
       success: false,
-      message: "Invalid Warden ID",
+      message: "Invalid email format",
+    });
+  }
+
+  if (organizations && Array.isArray(organizations)) {
+    for (const orgId of organizations) {
+      if (!mongoose.Types.ObjectId.isValid(orgId)) {
+        return res.status(400).json({ success: false, message: "Invalid Organization ID in array" });
+      }
+    }
+  }
+
+  if (wardens && Array.isArray(wardens)) {
+    for (const wardenId of wardens) {
+      if (!mongoose.Types.ObjectId.isValid(wardenId)) {
+        return res.status(400).json({ success: false, message: "Invalid Warden ID in array" });
+      }
+    }
+  }
+
+  if (adminId && !mongoose.Types.ObjectId.isValid(adminId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Admin ID",
     });
   }
 

@@ -44,12 +44,13 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/super-admin", userRoutes);
 app.use("/api/super-admin/dashboard", dashboardRoutes);
+app.use("/api/super-admin/hostels", hostelRoutes);
 
 app.use("/api/organizations", organizationRoutes);
 
 app.use("/api/admin/students", studentRoutes);
 app.use("/api/admin/parents", parentRoutes);
-app.use("/api/admin/hostels", hostelRoutes);
+
 
 app.use("/api/warden", wardenRoutes);
 
