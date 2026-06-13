@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
     LayoutGrid,
     Shield,
@@ -12,6 +13,7 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Reusable component for the section headings
 const NavSection = ({ title, children }) => (
@@ -26,73 +28,85 @@ const NavSection = ({ title, children }) => (
 );
 
 // Reusable component for individual navigation links
-const NavItem = ({ icon: Icon, label, isActive, isDanger }) => {
-    // Default styles for inactive items
-    let textStyles = "text-gray-500 hover:text-gray-900 hover:bg-blue-50/50";
-    let iconStyles = "text-[#777777]";
+const NavItem = ({ icon: Icon, label, to, isDanger, onClick }) => {
+    // Default styles for items
+    let baseStyles = "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ";
 
-    // Override styles if the item is active
-    if (isActive) {
-        textStyles = "text-[#0A467F] font-medium";
-        iconStyles = "text-[#0A467F]";
-    }
-    // Override styles if the item is a danger action (like Logout)
-    else if (isDanger) {
-        textStyles = "text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors";
-        iconStyles = "text-red-500";
+    if (isDanger) {
+        return (
+            <button
+                onClick={onClick}
+                className={baseStyles + "text-red-500 hover:text-red-600 hover:bg-red-50 w-full text-left"}
+            >
+                <Icon className="w-5 h-5 text-red-500" strokeWidth={1.5} />
+                <span>{label}</span>
+            </button>
+        );
     }
 
     return (
-        <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-colors text-sm ${textStyles}`}>
-            <Icon className={`w-5 h-5 ${iconStyles}`} strokeWidth={1.5} />
-            <span>{label}</span>
-        </div>
+        <NavLink
+            to={to}
+            end
+            className={({ isActive }) =>
+                baseStyles + (isActive
+                    ? "text-[#0A467F] font-medium bg-blue-50/50"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-blue-50/50")
+            }
+        >
+            {({ isActive }) => (
+                <>
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-[#0A467F]' : 'text-text-secondary'}`} strokeWidth={1.5} />
+                    <span>{label}</span>
+                </>
+            )}
+        </NavLink>
     );
 };
 
 function Sidebar() {
+    const { logout } = useAuth();
+
     return (
         <aside className="fixed top-[82px] left-0 w-64 h-[calc(100vh-82px)] bg-white border-r">
 
-
             {/* Scrollable Main Content */}
-            <div className="flex-1  py-4 px-4">
+            <div className="flex-1  py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)]">
 
                 <NavSection title="Main">
-                    <NavItem icon={LayoutGrid} label="Dashboard" />
+                    <NavItem icon={LayoutGrid} label="Dashboard" to="/dashboard" />
                 </NavSection>
 
                 <NavSection title="User Management">
-                    {/* Active State Example */}
-                    <NavItem icon={Shield} label="Admins" isActive={true} />
-                    <NavItem icon={User} label="Wardens" />
-                    <NavItem icon={GraduationCap} label="Students" />
-                    <NavItem icon={Users} label="Parents" />
+                    <NavItem icon={Shield} label="Admins" to="/dashboard/administrators" />
+                    <NavItem icon={User} label="Wardens" to="/dashboard/wardens" />
+                    <NavItem icon={GraduationCap} label="Students" to="/dashboard/students" />
+                    <NavItem icon={Users} label="Parents" to="/dashboard/parents" />
                 </NavSection>
 
                 <NavSection title="Organizations">
-                    <NavItem icon={Building2} label="All Organizations" />
-                    <NavItem icon={Building} label="All Hostels" />
+                    <NavItem icon={Building2} label="All Organizations" to="/dashboard/organizations" />
+                    <NavItem icon={Building} label="All Hostels" to="/dashboard/hostels" />
                 </NavSection>
 
                 <NavSection title="Reports">
-                    <NavItem icon={BarChart2} label="System reports" />
+                    <NavItem icon={BarChart2} label="System reports" to="/dashboard/reports" />
                 </NavSection>
 
                 <NavSection title="Support">
-                    <NavItem icon={KeyRound} label="Password Requests" />
+                    <NavItem icon={KeyRound} label="Password Requests" to="/dashboard/password-requests" />
                 </NavSection>
 
             </div>
 
             {/* Bottom Sticky Section for Settings & Logout */}
             <div className="py-4 px-4 border-t border-gray-100 mt-auto space-y-1">
-                <NavItem icon={Settings} label="Settings" />
-                <NavItem icon={LogOut} label="Logout" isDanger={true} />
+                <NavItem icon={Settings} label="Settings" to="/dashboard/settings" />
+                <NavItem icon={LogOut} label="Logout" isDanger={true} onClick={logout} />
             </div>
 
         </aside>
     );
 }
 
-export default Sidebar
+export default Sidebar;

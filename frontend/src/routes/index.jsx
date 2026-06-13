@@ -1,49 +1,95 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy } from 'react';
 
-import SuperAdminLogin from '@/features/auth/pages/SuperAdminLogin';
-import AdminPortalLogin from '@/features/auth/pages/AdminPortalLogin';
-import UserPortalLogin from '@/features/auth/pages/UserPortalLogin';
-import ContactAdministrator from '@/features/auth/pages/ContactAdministrator';
-import ForgotPassword from '@/features/auth/pages/ForgotPassword';
-import VerifyOtp from '@/features/auth/pages/VerifyOtp';
-import ResetPassword from '@/features/auth/pages/ResetPassword';
-import DashboardLayout from '@/layouts/DashboardLayout';
+import Loadable from '@/components/Loadable';
+import GuestGuard from '@/components/guards/GuestGuard';
+import AuthGuard from '@/components/guards/AuthGuard';
 
+// Helper for lazy + Loadable
+const load = (path) => Loadable(lazy(() => import(path)));
+
+// Layouts
+const DashboardLayout = load('@/layouts/DashboardLayout');
+
+// Auth Pages
+const SuperAdminLogin = load('@/features/auth/pages/SuperAdminLogin');
+const AdminPortalLogin = load('@/features/auth/pages/AdminPortalLogin');
+const UserPortalLogin = load('@/features/auth/pages/UserPortalLogin');
+const ContactAdministrator = load('@/features/auth/pages/ContactAdministrator');
+const ForgotPassword = load('@/features/auth/pages/ForgotPassword');
+const VerifyOtp = load('@/features/auth/pages/VerifyOtp');
+const ResetPassword = load('@/features/auth/pages/ResetPassword');
+
+// Dashboard Pages
+const SuperAdminDashboard = load('@/features/dashboard/pages/SuperAdminDashboard');
+const Administrator = load('@/features/dashboard/components/Administrator');
+const Maintainance = load('@/features/dashboard/components/Maintainance');
+
+// Reusable route helper
+const guestRoute = (path, Component) => ({
+    path,
+    element: (
+        <GuestGuard>
+            <Component />
+        </GuestGuard>
+    )
+});
+
+const authRoutes = [
+    ['/super-admin/login', SuperAdminLogin],
+    ['/admin/login', AdminPortalLogin],
+    ['/user/login', UserPortalLogin],
+    ['/contact-administrator', ContactAdministrator],
+    ['/forgot-password', ForgotPassword],
+    ['/verify-otp', VerifyOtp],
+    ['/reset-password', ResetPassword]
+].map(([path, Component]) =>
+    guestRoute(path, Component)
+);
 
 const router = createBrowserRouter([
     {
-        path: '/super-admin/login',
-        element: <SuperAdminLogin />
-    },
-    {
-        path: '/admin/login',
-        element: <AdminPortalLogin />
-    },
-    {
-        path: '/user/login',
-        element: <UserPortalLogin />
-    },
-    {
-        path: '/contact-administrator',
-        element: <ContactAdministrator />
-    },
-    {
-        path: '/forgot-password',
-        element: <ForgotPassword />
-    },
-    {
-        path: '/verify-otp',
-        element: <VerifyOtp />
-    },
-    {
-        path: '/reset-password',
-        element: <ResetPassword />
-    },
-    {
-        path: '/dashboard-layout',
-        element: <DashboardLayout />
+        path: '/',
+        element: <Navigate to="/dashboard" replace />
     },
 
-])
+    ...authRoutes,
+
+    {
+        path: '/dashboard',
+        element: (
+            <AuthGuard>
+                <DashboardLayout />
+            </AuthGuard>
+        ),
+        children: [
+            {
+                index: true,
+                element: <SuperAdminDashboard />
+            },
+            {
+                path: 'administrators',
+                element: <Administrator />
+            },
+            {
+                path: 'maintenance',
+                element: <Maintainance />
+            },
+            {
+                path: '*',
+                element: (
+                    <div className="p-6 text-center text-gray-500">
+                        Page under construction
+                    </div>
+                )
+            }
+        ]
+    },
+
+    {
+        path: '*',
+        element: <div className="p-10 text-center text-2xl">404 Not Found</div>
+    }
+]);
 
 export default router;
