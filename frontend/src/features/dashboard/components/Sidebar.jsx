@@ -52,7 +52,8 @@ const NavItem = ({ icon: Icon, label, isActive, isDanger }) => {
 
 function Sidebar() {
     return (
-        <aside className="w-64 h-screen bg-white border-r border-gray-100 flex flex-col font-sans fixed">
+        <aside className="fixed top-[82px] left-0 w-64 h-[calc(100vh-82px)] bg-white border-r">
+
 
             {/* Scrollable Main Content */}
             <div className="flex-1  py-4 px-4">
