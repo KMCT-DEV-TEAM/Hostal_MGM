@@ -19,7 +19,7 @@ function Maintainance() {
                 Site is under maintenance
             </h1>
         </div>
-    );
+    )
 }
 
 export default Maintainance

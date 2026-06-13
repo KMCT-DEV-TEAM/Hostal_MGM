@@ -1,3 +1,10 @@
+import Administrator from "@/features/dashboard/components/Administrator";
+import Maintainance from "@/features/dashboard/components/Maintainance";
+import Navbar from "@/features/dashboard/components/Navbar";
+import Sidebar from "@/features/dashboard/components/Sidebar";
+import SuperAdminDashboard from "@/features/dashboard/pages/SuperAdminDashboard";
+import { useState } from "react";
+
 const DashboardLayout = () => {
     const [activePage, setActivePage] = useState("dashboard");
 
@@ -7,7 +14,7 @@ const DashboardLayout = () => {
             case "administrator":
                 return <Administrator />;
             case "maintenance":
-                return <Maintenance />;
+                return <Maintainance />;
             default:
                 return <SuperAdminDashboard />;
         }
