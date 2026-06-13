@@ -7,6 +7,8 @@ import ContactAdministrator from '@/features/auth/pages/ContactAdministrator';
 import ForgotPassword from '@/features/auth/pages/ForgotPassword';
 import VerifyOtp from '@/features/auth/pages/VerifyOtp';
 import ResetPassword from '@/features/auth/pages/ResetPassword';
+import DashboardLayout from '@/layouts/DashboardLayout';
+
 
 const router = createBrowserRouter([
     {
@@ -36,7 +38,12 @@ const router = createBrowserRouter([
     {
         path: '/reset-password',
         element: <ResetPassword />
-    }
+    },
+    {
+        path: '/dashboard-layout',
+        element: <DashboardLayout />
+    },
+
 ])
 
 export default router;
