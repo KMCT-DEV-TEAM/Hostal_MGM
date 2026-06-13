@@ -30,7 +30,7 @@ const AuthSidebarFeatures = () => {
                 </div>
 
                 <div className="bg-background/10 backdrop-blur-sm rounded-lg px-6 py-4">
-                    <div className="text-xl font-bold">99%</div>
+                    <div className="text-xl font-bold">90%</div>
                     <div className="text-xs">Occupancy</div>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
     LayoutGrid,
     Shield,
@@ -12,8 +13,9 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Reusable component for the section headings
+// Reusable component for section headings
 const NavSection = ({ title, children }) => (
     <div className="mb-1">
         <h3 className="text-xs font-semibold text-gray-400 mb-2 px-3 uppercase">
@@ -26,55 +28,65 @@ const NavSection = ({ title, children }) => (
 );
 
 // Reusable component for individual navigation links
-const NavItem = ({
-    icon: Icon,
-    label,
-    page,
-    activePage,
-    setActivePage,
-    isDanger,
-}) => {
-    const isActive = activePage === page;
-
-    let textStyles = "text-[#777777] hover:bg-blue-50";
-    let iconStyles = "text-[#777777]";
+const NavItem = ({ icon: Icon, label, to, isDanger, onClick }) => {
+    const baseStyles =
+        "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ";
 
     if (isDanger) {
-        textStyles = "text-[#EF4444] hover:text-red-600 hover:bg-red-50";
-        iconStyles = "text-[#EF4444]";
-    } else if (isActive) {
-        textStyles = "text-[#0A467F] font-medium";
-        iconStyles = "text-[#0A467F]";
+        return (
+            <button
+                onClick={onClick}
+                className={
+                    baseStyles +
+                    "text-red-500 hover:text-red-600 hover:bg-red-50 w-full text-left"
+                }
+            >
+                <Icon className="w-5 h-5 text-red-500" strokeWidth={1.5} />
+                <span>{label}</span>
+            </button>
+        );
     }
 
     return (
-        <div
-            onClick={() => page && setActivePage(page)}
-            className={`flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-colors text-sm ${textStyles}`}
+        <NavLink
+            to={to}
+            end
+            className={({ isActive }) =>
+                baseStyles +
+                (isActive
+                    ? "text-[#0A467F] font-medium bg-blue-50/50"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-blue-50/50")
+            }
         >
-            <Icon className={`w-5 h-5 ${iconStyles}`} strokeWidth={1.5} />
-            <span>{label}</span>
-        </div>
+            {({ isActive }) => (
+                <>
+                    <Icon
+                        className={`w-5 h-5 ${
+                            isActive
+                                ? "text-[#0A467F]"
+                                : "text-text-secondary"
+                        }`}
+                        strokeWidth={1.5}
+                    />
+                    <span>{label}</span>
+                </>
+            )}
+        </NavLink>
     );
 };
 
-function Sidebar({ activePage, setActivePage }) {
+function Sidebar() {
+    const { logout } = useAuth();
+
     return (
-        <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA]">
-
-
+        <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA] flex flex-col">
             {/* Scrollable Main Content */}
-            <div className="py-4 px-4">
-
-
-
+            <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)]">
                 <NavSection title="Main">
                     <NavItem
                         icon={LayoutGrid}
                         label="Dashboard"
-                        page="dashboard"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard"
                     />
                 </NavSection>
 
@@ -82,33 +94,22 @@ function Sidebar({ activePage, setActivePage }) {
                     <NavItem
                         icon={Shield}
                         label="Admins"
-                        page="administrator"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/administrators"
                     />
-
                     <NavItem
                         icon={User}
                         label="Wardens"
-                        page="wardens"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/wardens"
                     />
-
                     <NavItem
                         icon={GraduationCap}
                         label="Students"
-                        page="students"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/students"
                     />
-
                     <NavItem
                         icon={Users}
                         label="Parents"
-                        page="parents"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/parents"
                     />
                 </NavSection>
 
@@ -116,17 +117,12 @@ function Sidebar({ activePage, setActivePage }) {
                     <NavItem
                         icon={Building2}
                         label="All Organizations"
-                        page="organizations"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/organizations"
                     />
-
                     <NavItem
                         icon={Building}
                         label="All Hostels"
-                        page="hostels"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/hostels"
                     />
                 </NavSection>
 
@@ -134,9 +130,7 @@ function Sidebar({ activePage, setActivePage }) {
                     <NavItem
                         icon={BarChart2}
                         label="System Reports"
-                        page="reports"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/reports"
                     />
                 </NavSection>
 
@@ -144,33 +138,28 @@ function Sidebar({ activePage, setActivePage }) {
                     <NavItem
                         icon={KeyRound}
                         label="Password Requests"
-                        page="passwordRequests"
-                        activePage={activePage}
-                        setActivePage={setActivePage}
+                        to="/dashboard/password-requests"
                     />
                 </NavSection>
-
             </div>
 
-            {/* Bottom Sticky Section for Settings & Logout */}
-            <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 py-4 px-4">
+            {/* Bottom Section */}
+            <div className="py-4 px-4 border-t border-gray-100 space-y-1">
                 <NavItem
                     icon={Settings}
                     label="Settings"
-                    page="settings"
-                    activePage={activePage}
-                    setActivePage={setActivePage}
+                    to="/dashboard/settings"
                 />
 
                 <NavItem
                     icon={LogOut}
                     label="Logout"
                     isDanger
+                    onClick={logout}
                 />
             </div>
-
         </aside>
     );
 }
 
-export default Sidebar
+export default Sidebar;

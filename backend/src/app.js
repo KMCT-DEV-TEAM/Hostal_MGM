@@ -11,7 +11,7 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import hostelRoutes from "./modules/hostels/hostel.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
-
+import cookieParser from "cookie-parser";
 const app = express();
 
 const allowedOrigins = [
@@ -33,6 +33,7 @@ const corsOptions = {
 };
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV !== "production") {

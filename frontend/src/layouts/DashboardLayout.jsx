@@ -1,36 +1,17 @@
-import Administrator from "@/features/dashboard/components/Administrator";
-import Maintainance from "@/features/dashboard/components/Maintainance";
 import Navbar from "@/features/dashboard/components/Navbar";
 import Sidebar from "@/features/dashboard/components/Sidebar";
-import SuperAdminDashboard from "@/features/dashboard/pages/SuperAdminDashboard";
-import { useState } from "react";
+import { Outlet } from "react-router-dom";
 
 const DashboardLayout = () => {
-    const [activePage, setActivePage] = useState("dashboard");
-
-
-    const renderPage = () => {
-        switch (activePage) {
-            case "administrator":
-                return <Administrator />;
-            case "maintenance":
-                return <Maintainance />;
-            default:
-                return <SuperAdminDashboard />;
-        }
-    };
-
     return (
         <div className="h-screen overflow-hidden ">
             <Navbar />
 
-            <Sidebar
-                activePage={activePage}
-                setActivePage={setActivePage}
-            />
+            <Sidebar />
 
-            <main className="ml-64 mt-[82px] h-[calc(100vh-82px)] overflow-y-auto">
-                {renderPage()}
+
+            <main className="ml-64 mt-[82px] p-6">
+                <Outlet />
             </main>
         </div>
     );

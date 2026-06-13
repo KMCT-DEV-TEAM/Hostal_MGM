@@ -12,12 +12,12 @@ const validateLogin = (req, res, next) => {
 };
 
 const validateRefreshToken = (req, res, next) => {
-  const token =  req.headers.authorization?.split(" ")[1];
+  const token = req.cookies?.refreshToken;
 
-  req.token=token;
+  req.token = token;
 
   if (!token) {
-    return res.status(400).json({
+    return res.status(401).json({
       success: false,
       message: "Refresh token is required",
     });
