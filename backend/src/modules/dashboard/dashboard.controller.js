@@ -3,6 +3,7 @@ import { sendSuccess } from "../../utils/response.js";
 import User from "../users/user.model.js";
 import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
+import Student from "../students/student.model.js";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
   const [adminCount, wardenCount, studentCount, organizationCount, hostelCount] = await Promise.all([
@@ -21,7 +22,47 @@ const getSuperAdminStats = asyncHandler(async (req, res) => {
       students: studentCount,
       hostels: hostelCount,
     },
+});
+});
+
+const getStudentCountByOrganization = asyncHandler(async (req, res) => {
+  const stats = await Student.aggregate([
+    {
+      $group: {
+        _id: "$organizationId",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $lookup: {
+        from: "organizations",
+        localField: "_id",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+    {
+      $unwind: {
+        path: "$organization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: { $ifNull: ["$organization.name", "Unknown Organization"] },
+        count: 1,
+      },
+    },
+    {
+      $sort: { count: -1 },
+    },
+  ]);
+
+  return sendSuccess(res, 200, "Student count by organization fetched successfully", {
+    data: stats,
   });
 });
 
-export { getSuperAdminStats };
+
+export { getSuperAdminStats, getStudentCountByOrganization };

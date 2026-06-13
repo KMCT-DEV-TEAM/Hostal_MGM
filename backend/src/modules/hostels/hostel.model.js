@@ -16,13 +16,29 @@ const hostelSchema = new mongoose.Schema(
       trim: true,
     },
 
-    organizationId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
+    email: {
+      type: String,
       required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
     },
 
-    wardenId: {
+    organizations: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+      },
+    ],
+
+    wardens: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },

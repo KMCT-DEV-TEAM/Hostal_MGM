@@ -4,28 +4,38 @@ const checkExistingHostelCodeDb = async (code) => {
   return await Hostel.findOne({ code });
 };
 
+const checkExistingHostelEmailDb = async (email) => {
+  return await Hostel.findOne({ email });
+};
+
 const createHostelDb = async (data) => {
   const hostel = new Hostel(data);
   return await hostel.save();
 };
 
 const getHostelsDb = async (organizationId) => {
-  const query = organizationId ? { organizationId } : {};
-  return await Hostel.find(query).populate("wardenId", "name email");
+  const query = organizationId ? { organizations: organizationId } : {};
+  return await Hostel.find(query)
+    .populate("wardens", "name email")
+    .populate("adminId", "name email")
+    .populate("organizations", "name code");
 };
 
 const getHostelByIdDb = async (id, organizationId) => {
   const query = { _id: id };
   if (organizationId) {
-    query.organizationId = organizationId;
+    query.organizations = organizationId;
   }
-  return await Hostel.findOne(query).populate("wardenId", "name email");
+  return await Hostel.findOne(query)
+    .populate("wardens", "name email")
+    .populate("adminId", "name email")
+    .populate("organizations", "name code");
 };
 
 const updateHostelDb = async (id, organizationId, updateData) => {
   const query = { _id: id };
   if (organizationId) {
-    query.organizationId = organizationId;
+    query.organizations = organizationId;
   }
   return await Hostel.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
 };
@@ -33,7 +43,7 @@ const updateHostelDb = async (id, organizationId, updateData) => {
 const toggleHostelStatusDb = async (id, organizationId) => {
   const query = { _id: id };
   if (organizationId) {
-    query.organizationId = organizationId;
+    query.organizations = organizationId;
   }
   
   const hostel = await Hostel.findOne(query);
@@ -45,6 +55,7 @@ const toggleHostelStatusDb = async (id, organizationId) => {
 
 export {
   checkExistingHostelCodeDb,
+  checkExistingHostelEmailDb,
   createHostelDb,
   getHostelsDb,
   getHostelByIdDb,

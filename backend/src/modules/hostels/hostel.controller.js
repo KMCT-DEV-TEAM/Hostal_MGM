@@ -2,6 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import {
   checkExistingHostelCodeDb,
+  checkExistingHostelEmailDb,
   createHostelDb,
   getHostelsDb,
   updateHostelDb,
@@ -9,11 +10,20 @@ import {
 } from "./hostel.service.js";
 
 const createHostel = asyncHandler(async (req, res) => {
-  const { code } = req.body;
-  const organizationId = req.user.organization;
+  const { code, email, organizations } = req.body;
+  
+  let finalOrganizations = organizations;
+  if (!finalOrganizations || finalOrganizations.length === 0) {
+    if (req.user.organization) {
+      finalOrganizations = [req.user.organization];
+    } else {
+      return sendError(res, 400, "At least one Organization ID is required");
+    }
+  }
 
-  if (!organizationId) {
-    return sendError(res, 400, "Admin must be associated with an organization");
+  const existingEmail = await checkExistingHostelEmailDb(email);
+  if (existingEmail) {
+    return sendError(res, 400, "Hostel email already exists");
   }
 
   const existingHostel = await checkExistingHostelCodeDb(code);
@@ -23,7 +33,7 @@ const createHostel = asyncHandler(async (req, res) => {
 
   const newHostel = await createHostelDb({
     ...req.body,
-    organizationId,
+    organizations: finalOrganizations,
   });
 
   return sendSuccess(res, 201, "Hostel created successfully", {
@@ -48,6 +58,13 @@ const updateHostel = asyncHandler(async (req, res) => {
     const existingHostel = await checkExistingHostelCodeDb(req.body.code);
     if (existingHostel && existingHostel._id.toString() !== id) {
       return sendError(res, 400, "Hostel code already exists");
+    }
+  }
+
+  if (req.body.email) {
+    const existingEmail = await checkExistingHostelEmailDb(req.body.email);
+    if (existingEmail && existingEmail._id.toString() !== id) {
+      return sendError(res, 400, "Hostel email already exists");
     }
   }
 
