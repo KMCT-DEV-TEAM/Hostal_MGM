@@ -10,7 +10,7 @@ import {
 
 function Navbar() {
     return (
-        <header className="h-[82px] bg-white border-b border-[#EAEAEA] px-6 flex items-center">
+        <header className="fixed top-0 left-0 right-0 h-[82px] bg-white border-b border-[#D9D9D985] z-50 flex items-center px-6">
 
             {/* Left */}
             <div className="flex items-center gap-4">
