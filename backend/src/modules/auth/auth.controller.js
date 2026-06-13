@@ -22,9 +22,15 @@ const login = asyncHandler(async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     return sendSuccess(res, 200, "Login successful", {
       accessToken,
-      refreshToken,
       role: user.role,
     });
 });
