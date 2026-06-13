@@ -6,24 +6,24 @@ import GuestGuard from '@/components/guards/GuestGuard';
 import AuthGuard from '@/components/guards/AuthGuard';
 
 // Helper for lazy + Loadable
-const load = (path) => Loadable(lazy(() => import(path)));
+const load = (importer) => Loadable(lazy(importer));
 
 // Layouts
-const DashboardLayout = load('@/layouts/DashboardLayout');
+const DashboardLayout = load(() => import('@/layouts/DashboardLayout'));
 
 // Auth Pages
-const SuperAdminLogin = load('@/features/auth/pages/SuperAdminLogin');
-const AdminPortalLogin = load('@/features/auth/pages/AdminPortalLogin');
-const UserPortalLogin = load('@/features/auth/pages/UserPortalLogin');
-const ContactAdministrator = load('@/features/auth/pages/ContactAdministrator');
-const ForgotPassword = load('@/features/auth/pages/ForgotPassword');
-const VerifyOtp = load('@/features/auth/pages/VerifyOtp');
-const ResetPassword = load('@/features/auth/pages/ResetPassword');
+const SuperAdminLogin = load(() => import('@/features/auth/pages/SuperAdminLogin'));
+const AdminPortalLogin = load(() => import('@/features/auth/pages/AdminPortalLogin'));
+const UserPortalLogin = load(() => import('@/features/auth/pages/UserPortalLogin'));
+const ContactAdministrator = load(() => import('@/features/auth/pages/ContactAdministrator'));
+const ForgotPassword = load(() => import('@/features/auth/pages/ForgotPassword'));
+const VerifyOtp = load(() => import('@/features/auth/pages/VerifyOtp'));
+const ResetPassword = load(() => import('@/features/auth/pages/ResetPassword'));
 
 // Dashboard Pages
-const SuperAdminDashboard = load('@/features/dashboard/pages/SuperAdminDashboard');
-const Administrator = load('@/features/dashboard/components/Administrator');
-const Maintainance = load('@/features/dashboard/components/Maintainance');
+const SuperAdminDashboard = load(() => import('@/features/dashboard/pages/SuperAdminDashboard'));
+const Administrator = load(() => import('@/features/dashboard/components/Administrator'));
+const Maintainance = load(() => import('@/features/dashboard/components/Maintainance'));
 
 // Reusable route helper
 const guestRoute = (path, Component) => ({
@@ -58,9 +58,9 @@ const router = createBrowserRouter([
     {
         path: '/dashboard',
         element: (
-            <AuthGuard>
-                <DashboardLayout />
-            </AuthGuard>
+            // <AuthGuard>
+            <DashboardLayout />
+            // </AuthGuard>
         ),
         children: [
             {
