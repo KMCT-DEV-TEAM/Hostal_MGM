@@ -135,28 +135,28 @@ const quickSummary = [
         iconBg: "bg-indigo-50",
         title: "New Students",
         desc: "2 new students today",
-        descClass: "text-indigo-600",
+        descClass: "text-accent",
     },
     {
         icon: complaintIcon,
         iconBg: "bg-red-50",
         title: "Complaint Status",
         desc: "5 High Priority",
-        descClass: "text-red-600",
+        descClass: "text-danger",
     },
     {
         icon: passwordIcon,
         iconBg: "bg-amber-50",
         title: "Password Request",
         desc: "10 New Requests",
-        descClass: "text-amber-500",
+        descClass: "text-[#F59E0B]",
     },
     {
         icon: organizationIcon,
         iconBg: "bg-[#14B8A614]",
         title: "Inactive Organizations",
         desc: "2 inactive organizations",
-        descClass: "text-indigo-600",
+        descClass: "text-primary",
     },
 ];
 
@@ -264,7 +264,7 @@ function SuperAdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
                     {/* Hostel Bar Chart */}
                     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="flex justify-between mb-4">
                             <div>
                                 <h2 className="text-sm font-bold text-[#0A467F]">
                                     Hostel Overview
@@ -347,8 +347,8 @@ function SuperAdminDashboard() {
 
                 {/* Attendance + Complaint */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* Attendance Area Chart */}
 
+                    {/* Attendance Area Chart */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         {/* Header */}
                         <div className="flex justify-between items-start mb-6">
@@ -361,7 +361,7 @@ function SuperAdminDashboard() {
                                 </p>
                             </div>
 
-                            <select className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 outline-none bg-[#F8F8F8]">
+                            <select className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 outline-none bg-[#F8F8F8] ">
                                 <option>This Year</option>
                                 <option>Last Year</option>
                             </select>
@@ -425,7 +425,7 @@ function SuperAdminDashboard() {
                                     type="monotone"
                                     dataKey="value"
                                     stroke="#0A467F"
-                                    strokeWidth={1}
+                                    strokeWidth={3}
                                     fill="url(#attendanceGradient)"
                                     dot={false}
                                     activeDot={{
