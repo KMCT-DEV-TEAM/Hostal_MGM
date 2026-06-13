@@ -250,7 +250,7 @@ function SuperAdminDashboard() {
                                     </div>
                                 </div>
 
-                                <div className="text-[34px] font-semibold tracking-tight">
+                                <div className="text-[24px] font-semibold tracking-tight">
                                     {c.value}
                                 </div>
 
@@ -348,67 +348,90 @@ function SuperAdminDashboard() {
                 {/* Attendance + Complaint */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Attendance Area Chart */}
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                        <div className="flex justify-between items-start mb-4 flex-wrap gap-3">
+
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-6">
                             <div>
-                                <h2 className="text-sm font-bold text-[#777777]">
+                                <h2 className="text-[20px] font-bold text-black">
                                     Attendance Overview
                                 </h2>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-sm text-[#8F8F8F] mt-1">
                                     Overall attendance percentage across organizations.
                                 </p>
                             </div>
-                            <div className="flex gap-4">
-                                {[
-                                    ["91.2%", "Avg Rate", "text-[#2D7CC3]"],
-                                    ["95.8%", "Current Month", "text-[#0F6E56]"],
-                                    ["+2.3%", "vs Last", "text-[#0F6E56]"],
-                                ].map(([v, l, cls]) => (
-                                    <div key={l} className="text-center">
-                                        <div className={`text-sm font-bold ${cls}`}>{v}</div>
-                                        <div className="text-xs text-gray-400">{l}</div>
-                                    </div>
-                                ))}
+
+                            <select className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 outline-none bg-[#F8F8F8]">
+                                <option>This Year</option>
+                                <option>Last Year</option>
+                            </select>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex gap-3 mb-8">
+                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                                <div className="text-[#2D7CC3] font-bold text-sm">91.2%</div>
+                                <div className="text-xs text-[#8F8F8F] mt-1">Avg Rate</div>
+                            </div>
+
+                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                                <div className="text-[#0F6E56] font-bold text-sm">95.8%</div>
+                                <div className="text-xs text-[#8F8F8F] mt-1">Current Month</div>
+                            </div>
+
+                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                                <div className="text-[#0F6E56] font-bold text-sm">+2.3%</div>
+                                <div className="text-xs text-[#8F8F8F] mt-1">vs Last</div>
                             </div>
                         </div>
-                        <ResponsiveContainer width="100%" height={230}>
+
+                        {/* Chart */}
+                        <ResponsiveContainer width="100%" height={220}>
                             <AreaChart
                                 data={attendanceData}
-                                margin={{ top: 5, right: 0, left: -10, bottom: 0 }}
+                                margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                             >
                                 <defs>
-                                    <linearGradient id="attGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#4361EE" stopOpacity={0.12} />
-                                        <stop offset="95%" stopColor="#4361EE" stopOpacity={0} />
+                                    <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#0A467F" stopOpacity={0.15} />
+                                        <stop offset="95%" stopColor="#0A467F" stopOpacity={0.02} />
                                     </linearGradient>
                                 </defs>
+
                                 <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    stroke="#F0F1F3"
                                     vertical={false}
+                                    stroke="#EEF1F4"
                                 />
+
                                 <XAxis
                                     dataKey="month"
-                                    tick={{ fontSize: 10, fill: "#8898AA" }}
                                     axisLine={false}
                                     tickLine={false}
+                                    tick={{ fill: "#9CA3AF", fontSize: 12 }}
                                 />
+
                                 <YAxis
-                                    tick={{ fontSize: 10, fill: "#8898AA" }}
                                     axisLine={false}
                                     tickLine={false}
                                     domain={[0, 100]}
+                                    ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
                                     tickFormatter={(v) => `${v}%`}
-                                    ticks={[0, 20, 40, 60, 80, 100]}
+                                    tick={{ fill: "#9CA3AF", fontSize: 12 }}
                                 />
-                                <Tooltip formatter={(v) => `${v}%`} />
+
+                                <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+
                                 <Area
                                     type="monotone"
                                     dataKey="value"
-                                    stroke="#4361EE"
-                                    strokeWidth={2}
-                                    fill="url(#attGrad)"
+                                    stroke="#0A467F"
+                                    strokeWidth={1}
+                                    fill="url(#attendanceGradient)"
                                     dot={false}
+                                    activeDot={{
+                                        r: 5,
+                                        fill: "#0A467F",
+                                    }}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>

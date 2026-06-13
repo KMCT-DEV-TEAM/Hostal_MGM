@@ -21,7 +21,7 @@ const DashboardLayout = () => {
     };
 
     return (
-        <div className="bg-[#F8F9FB] min-h-screen">
+        <div className="h-screen overflow-hidden ">
             <Navbar />
 
             <Sidebar
@@ -29,7 +29,7 @@ const DashboardLayout = () => {
                 setActivePage={setActivePage}
             />
 
-            <main className="ml-64 mt-[82px] p-6">
+            <main className="ml-64 mt-[82px] h-[calc(100vh-82px)] overflow-y-auto">
                 {renderPage()}
             </main>
         </div>
