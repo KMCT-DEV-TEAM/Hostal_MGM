@@ -259,12 +259,28 @@ export default function Wardenmanagement() {
                                         )}
                                     </button>
                                 </th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Name</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Email</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Phone</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Hostel</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Status</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700 text-center">Action</th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Name
+                                </th>
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Email
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Phone
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Hostel
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Status
+                                </th>
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 text-sm">
@@ -294,14 +310,17 @@ export default function Wardenmanagement() {
                                                     {warden.name}
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-gray-500">{warden.email}</td>
-                                            <td className="p-4 text-gray-500">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Phone size={14} className="text-gray-400" /> {warden.phone}
-                                                </span>
+                                            <td className="p-4 text-center text-gray-500">
+                                                {warden.email}
                                             </td>
                                             <td className="p-4">
-                                                <div className="relative inline-block w-44">
+                                                <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                                    <Phone size={14} className="text-gray-400" />
+                                                    <span>{warden.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <div className="relative inline-block w-44 mx-auto">
                                                     <select
                                                         value={warden.hostel}
                                                         onChange={(e) => handleHostelChange(warden.id, e.target.value)}
@@ -314,8 +333,8 @@ export default function Wardenmanagement() {
                                                     <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
                                                 </div>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="relative inline-block">
+                                            <td className="p-4 text-center">
+                                                <div className="relative inline-block mx-auto">
                                                     <select
                                                         value={warden.status}
                                                         onChange={(e) => handleStatusChange(warden.id, e.target.value)}
@@ -452,7 +471,7 @@ export default function Wardenmanagement() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 ">Hostel<span className="text-red-500">*</span></label>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Hostel<span className="text-red-500">*</span></label>
                                     <div className="relative">
                                         <select
                                             value={wardenForm.hostel}

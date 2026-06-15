@@ -271,12 +271,28 @@ export default function Administrator() {
                                         )}
                                     </button>
                                 </th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Name</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Email</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Phone</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Organzation</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700">Status</th>
-                                <th className="p-4 normal-case text-sm font-semibold text-gray-700 text-center">Action</th>
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Name
+                                </th>
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Email
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Phone
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Organization
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Status
+                                </th>
+
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                    Action
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 text-sm">
@@ -313,14 +329,17 @@ export default function Administrator() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-gray-500">{admin.email}</td>
-                                            <td className="p-4 text-gray-500">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Phone size={14} className="text-gray-400" /> {admin.phone}
-                                                </span>
+                                            <td className="p-4 text-center text-gray-500">
+                                                {admin.email}
                                             </td>
                                             <td className="p-4">
-                                                <div className="relative w-[145px]">
+                                                <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                                    <Phone size={14} className="text-gray-400" />
+                                                    <span>{admin.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="relative w-[145px] mx-auto">
                                                     <select
                                                         value={admin.organization}
                                                         onChange={(e) =>
@@ -341,7 +360,7 @@ export default function Administrator() {
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <div className="relative">
+                                                <div className="relative w-fit mx-auto">
                                                     <select
                                                         value={admin.status}
                                                         onChange={(e) =>
@@ -496,9 +515,7 @@ export default function Administrator() {
                                             onChange={(e) => setAdminForm({ ...adminForm, hostel: e.target.value })}
                                             className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-700"
                                         >
-                                            {AVAILABLE_HOSTELS.map(h => (
-                                                <option key={h} value={h}>{h}</option>
-                                            ))}
+
                                         </select>
                                         <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
                                     </div>
