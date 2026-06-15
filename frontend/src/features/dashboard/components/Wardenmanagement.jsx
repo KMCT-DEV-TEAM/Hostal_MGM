@@ -338,9 +338,9 @@ export default function Wardenmanagement() {
                                                     <select
                                                         value={warden.status}
                                                         onChange={(e) => handleStatusChange(warden.id, e.target.value)}
-                                                        className={`appearance-none rounded-full px-3 py-1 text-xs font-semibold pr-7 focus:outline-none border cursor-pointer transition-colors ${warden.status === 'Active'
-                                                            ? 'bg-green-50 text-green-700 border-green-100 hover:bg-green-100/70'
-                                                            : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100/70'
+                                                        className={`appearance-none rounded-full px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${warden.status === 'Active'
+                                                            ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
+                                                            : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
                                                             }`}
                                                     >
                                                         <option value="Active">Active</option>

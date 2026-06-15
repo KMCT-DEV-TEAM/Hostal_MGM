@@ -137,11 +137,11 @@ const quickSummary = [
         iconBg: "bg-indigo-50",
         title: "New Students",
         desc: "2 new students today",
-        descClass: "text-accent",
+        descClass: "text-primary",
     },
     {
         icon: complaintIcon,
-        iconBg: "bg-red-50",
+        iconBg: "bg-danger",
         title: "Complaint Status",
         desc: "5 High Priority",
         descClass: "text-danger",
@@ -174,7 +174,7 @@ const statCards = [
         label: "Total Admins",
         value: "2050",
         sub: "+1 Added this month",
-        icon: <ShieldCheck size={18} className="text-[#0A467F]" />,
+        icon: <ShieldCheck size={18} className="text-primary" />,
         iconBg: "bg-indigo-50",
     },
     {
@@ -260,7 +260,7 @@ function SuperAdminDashboard() {
 
                     <p className="text-sm text-gray-500">
                         Welcome back{" "}
-                        <span className="text-[#0A467F] font-semibold">Arjun</span>, here's
+                        <span className="text-primary font-semibold">Arjun</span>, here's
                         what's happening today
                     </p>
                 </div>
@@ -269,14 +269,14 @@ function SuperAdminDashboard() {
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setIsHostelModalOpen(true)}
-                        className="px-4 py-2 rounded-md bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
                     >
                         + Add Hostel
                     </button>
 
                     <button
                         onClick={() => setIsOrgModalOpen(true)}
-                        className="px-4 py-2 rounded-md bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
                     >
                         + Add Organization
                     </button>
@@ -327,7 +327,7 @@ function SuperAdminDashboard() {
                     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
                         <div className="flex justify-between mb-4">
                             <div>
-                                <h2 className="text-sm font-bold text-[#0A467F]">
+                                <h2 className="text-sm font-bold text-primary">
                                     Hostel Overview
                                 </h2>
                                 <p className="text-xs text-gray-400 mt-0.5">
@@ -662,7 +662,7 @@ function SuperAdminDashboard() {
                                     placeholder="Enter hostel name"
                                     value={hostelName}
                                     onChange={(e) => setHostelName(e.target.value)}
-                                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#0A467F] focus:ring-1 focus:ring-[#0A467F] transition-shadow text-sm"
+                                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
                                 />
                             </div>
 
@@ -678,7 +678,7 @@ function SuperAdminDashboard() {
                                             required
                                             value={hostelType}
                                             onChange={(e) => setHostelType(e.target.value)}
-                                            className="w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-xl bg-white text-gray-600 focus:outline-none focus:border-[#0A467F] text-sm pr-10 cursor-pointer"
+                                            className="w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-xl bg-white text-gray-600 focus:outline-none focus:border-primary text-sm pr-10 cursor-pointer"
                                         >
                                             <option value="" disabled hidden>Select</option>
                                             <option value="Boys">Boys Hostel</option>
@@ -701,7 +701,7 @@ function SuperAdminDashboard() {
                                             required
                                             value={capacity}
                                             onChange={(e) => setCapacity(e.target.value)}
-                                            className="w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-xl bg-white text-gray-600 focus:outline-none focus:border-[#0A467F] text-sm pr-10 cursor-pointer"
+                                            className="w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-xl bg-white text-gray-600 focus:outline-none focus:border-primary text-sm pr-10 cursor-pointer"
                                         >
                                             <option value="" disabled hidden>Select</option>
                                             <option value="100">100 Students</option>
@@ -720,14 +720,14 @@ function SuperAdminDashboard() {
                             <div className="flex items-center justify-end gap-4 pt-4 mt-4">
                                 <button
                                     type="submit"
-                                    className="px-8 py-3 bg-[#0A467F] hover:bg-[#1565B3] text-white font-medium rounded-xl transition-colors min-w-[120px] text-sm text-center cursor-pointer"
+                                    className="px-8 py-3 bg-primary hover:bg-[#1565B3] text-white font-medium rounded-xl transition-colors min-w-[120px] text-sm text-center cursor-pointer"
                                 >
                                     save
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setIsHostelModalOpen(false)}
-                                    className="px-8 py-3 bg-white border border-[#0A467F] text-[#0A467F] hover:bg-[#1565B3] hover:text-white font-medium rounded-xl transition-colors min-w-[120px] text-sm text-center cursor-pointer"
+                                    className="px-8 py-3 bg-white border border-primary text-primary hover:bg-[#1565B3] hover:text-white font-medium rounded-xl transition-colors min-w-[120px] text-sm text-center cursor-pointer"
                                 >
                                     Cancel
                                 </button>
@@ -772,7 +772,7 @@ function SuperAdminDashboard() {
                                         placeholder="Eg : A78748"
                                         value={orgId}
                                         onChange={(e) => setOrgId(e.target.value)}
-                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#0A467F] focus:ring-1 focus:ring-[#0A467F] transition-shadow text-sm"
+                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
                                     />
                                 </div>
 
@@ -786,7 +786,7 @@ function SuperAdminDashboard() {
                                         placeholder="Enter Organization name"
                                         value={orgName}
                                         onChange={(e) => setOrgName(e.target.value)}
-                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#0A467F] focus:ring-1 focus:ring-[#0A467F] transition-shadow text-sm"
+                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
                                     />
                                 </div>
                             </div>
@@ -797,7 +797,7 @@ function SuperAdminDashboard() {
                                     <label className="block text-sm font-semibold text-gray-800">
                                         Phone Number<span className="text-red-500 ml-0.5">*</span>
                                     </label>
-                                    <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#0A467F] focus-within:ring-1 focus-within:ring-[#0A467F] transition-shadow">
+                                    <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-shadow">
                                         <div className="flex items-center gap-1 bg-white px-3 border-r border-gray-200 text-gray-600 text-sm">
                                             <span className="text-base">🇮🇳</span>
                                             <span>+91</span>
@@ -823,7 +823,7 @@ function SuperAdminDashboard() {
                                         placeholder="enter email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#0A467F] focus:ring-1 focus:ring-[#0A467F] transition-shadow text-sm"
+                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
                                     />
                                 </div>
                             </div>
@@ -839,7 +839,7 @@ function SuperAdminDashboard() {
                                     placeholder="Text the address"
                                     value={address}
                                     onChange={(e) => setAddress(e.target.value)}
-                                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#0A467F] focus:ring-1 focus:ring-[#0A467F] transition-shadow text-sm resize-none"
+                                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm resize-none"
                                 />
                             </div>
 
@@ -847,14 +847,14 @@ function SuperAdminDashboard() {
                             <div className="flex items-center justify-end gap-4 pt-4">
                                 <button
                                     type="submit"
-                                    className="px-10 py-2.5 rounded-lg bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer min-w-[100px] text-center"
+                                    className="px-10 py-2.5 rounded-lg bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer min-w-[100px] text-center"
                                 >
                                     save
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setIsOrgModalOpen(false)}
-                                    className="px-8 py-2.5 rounded-lg border border-[#0A467F] text-[#0A467F] font-medium text-sm hover:bg-[#0A467F] hover:text-white     transition-colors cursor-pointer"
+                                    className="px-8 py-2.5 rounded-lg border border-primary text-primary font-medium text-sm hover:bg-primary hover:text-white     transition-colors cursor-pointer"
                                 >
                                     Cancel
                                 </button>

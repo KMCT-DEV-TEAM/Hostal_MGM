@@ -2,7 +2,7 @@
 
 @theme {
     /* Brand Colors */
-    --color-primary: #1A237E;
+    --color-primary: #0A467F;
     --color-secondary: #185EA5;
     --color-accent: #185EA5;
 
@@ -25,6 +25,22 @@
 
 body {
     font-size: 14px;
+}
+
+@layer utilities {
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
 }
 
 

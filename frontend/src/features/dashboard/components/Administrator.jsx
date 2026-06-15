@@ -380,8 +380,8 @@ export default function Administrator() {
                                                         size={12}
                                                         className={`absolute right-3 top-2
         ${admin.status === "Active"
-                                                                ? "text-green-500"
-                                                                : "text-red-500"
+                                                                ? "text-success"
+                                                                : "text-error"
                                                             }`}
                                                     />
                                                 </div>

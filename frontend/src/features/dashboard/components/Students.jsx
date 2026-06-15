@@ -24,7 +24,7 @@ export default function Students() {
                     <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white rounded-lg text-sm font-medium hover:bg-gray-50">
                         <Pencil className="w-4 h-4" /> Edit
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 bg-red-50 rounded-lg text-sm font-medium hover:bg-red-100">
+                    <button className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50 rounded-lg text-sm font-medium hover:bg-red-100">
                         <Trash2 className="w-4 h-4" /> Delete
                     </button>
                 </div>
@@ -45,7 +45,7 @@ export default function Students() {
                     <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600">
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-[#0A467F] text-white rounded-lg text-sm">
                         <Plus className="w-4 h-4" /> Add New
                     </button>
                 </div>
@@ -85,8 +85,8 @@ export default function Students() {
                                     </span>
                                 </td>
                                 <td className="p-4 flex gap-3 text-gray-400">
-                                    <Trash2 className="w-4 h-4 cursor-pointer hover:text-red-500" />
-                                    <Pencil className="w-4 h-4 cursor-pointer hover:text-blue-500" />
+                                    <Trash2 className="w-4 h-4 cursor-pointer text-danger" />
+                                    <Pencil className="w-4 h-4 cursor-pointer text-accent" />
                                 </td>
                             </tr>
                         ))}
