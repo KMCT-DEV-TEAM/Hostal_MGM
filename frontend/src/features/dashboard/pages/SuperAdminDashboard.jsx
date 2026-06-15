@@ -29,6 +29,8 @@ import {
     UserCheck,
     AlertTriangle,
     MessageSquare,
+    X,
+    ChevronDown,
 } from "lucide-react";
 
 
@@ -135,11 +137,11 @@ const quickSummary = [
         iconBg: "bg-indigo-50",
         title: "New Students",
         desc: "2 new students today",
-        descClass: "text-accent",
+        descClass: "text-primary",
     },
     {
         icon: complaintIcon,
-        iconBg: "bg-red-50",
+        iconBg: "bg-danger",
         title: "Complaint Status",
         desc: "5 High Priority",
         descClass: "text-danger",
@@ -172,7 +174,7 @@ const statCards = [
         label: "Total Admins",
         value: "2050",
         sub: "+1 Added this month",
-        icon: <ShieldCheck size={18} className="text-[#0A467F]" />,
+        icon: <ShieldCheck size={18} className="text-primary" />,
         iconBg: "bg-indigo-50",
     },
     {
@@ -198,10 +200,53 @@ const statCards = [
     },
 ];
 
+
+
 function SuperAdminDashboard() {
 
 
     const [period, setPeriod] = useState("This Year");
+
+    // State to toggle the "Add Hostel" Modal
+    const [isHostelModalOpen, setIsHostelModalOpen] = useState(false);
+    const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
+
+    // Form states for the modal inputs
+    const [hostelName, setHostelName] = useState("");
+    const [hostelType, setHostelType] = useState("");
+    const [capacity, setCapacity] = useState("");
+
+    // Form states for Add Organization Modal
+    const [orgId, setOrgId] = useState("");
+    const [orgName, setOrgName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [email, setEmail] = useState("");
+    const [address, setAddress] = useState("");
+
+    const handleAddHostelSubmit = (e) => {
+        e.preventDefault();
+        // Handle your creation logic here (API calls, state updates, etc.)
+        console.log({ hostelName, hostelType, capacity });
+
+        // Reset and close modal
+        setHostelName("");
+        setHostelType("");
+        setCapacity("");
+        setIsHostelModalOpen(false);
+    };
+
+    const handleAddOrgSubmit = (e) => {
+        e.preventDefault();
+        console.log({ orgId, orgName, phone, email, address });
+
+        // Reset and close modal
+        setOrgId("");
+        setOrgName("");
+        setPhone("");
+        setEmail("");
+        setAddress("");
+        setIsOrgModalOpen(false);
+    };
 
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
@@ -215,18 +260,24 @@ function SuperAdminDashboard() {
 
                     <p className="text-sm text-gray-500">
                         Welcome back{" "}
-                        <span className="text-[#0A467F] font-semibold">Arjun</span>, here's
+                        <span className="text-primary font-semibold">Arjun</span>, here's
                         what's happening today
                     </p>
                 </div>
 
                 {/* Right Section */}
                 <div className="flex flex-wrap gap-2">
-                    <button className="px-4 py-2 rounded-md bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors">
+                    <button
+                        onClick={() => setIsHostelModalOpen(true)}
+                        className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                    >
                         + Add Hostel
                     </button>
 
-                    <button className="px-4 py-2 rounded-md bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors">
+                    <button
+                        onClick={() => setIsOrgModalOpen(true)}
+                        className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                    >
                         + Add Organization
                     </button>
                 </div>
@@ -276,7 +327,7 @@ function SuperAdminDashboard() {
                     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
                         <div className="flex justify-between mb-4">
                             <div>
-                                <h2 className="text-sm font-bold text-[#0A467F]">
+                                <h2 className="text-sm font-bold text-primary">
                                     Hostel Overview
                                 </h2>
                                 <p className="text-xs text-gray-400 mt-0.5">
@@ -574,6 +625,244 @@ function SuperAdminDashboard() {
                     ))}
                 </div>
             </div>
+
+            {isHostelModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+                    {/* Modal Content container wrapper matching the UI design template */}
+                    <div className="bg-white rounded-[24px] max-w-4xl w-full shadow-2xl p-8 md:p-10 relative border border-gray-100 transition-transform transform scale-100">
+
+                        {/* Close button top right corner */}
+                        <button
+                            onClick={() => setIsHostelModalOpen(false)}
+                            className="absolute top-8 right-8 p-2 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                            <X size={16} />
+                        </button>
+
+                        {/* Title and Subtitle */}
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Add New Hostel</h2>
+                            <p className="text-sm text-gray-400 mt-1">Fill in the details to manually create a new Hostel</p>
+                        </div>
+
+                        {/* Divider Line */}
+                        <div className="w-full h-[1px] bg-gray-100 mb-8" />
+
+                        {/* Form elements structure */}
+                        <form onSubmit={handleAddHostelSubmit} className="space-y-6">
+
+                            {/* Row 1: Full-width Hostel Name */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Hostel Name<span className="text-red-500 ml-0.5">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Enter hostel name"
+                                    value={hostelName}
+                                    onChange={(e) => setHostelName(e.target.value)}
+                                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
+                                />
+                            </div>
+
+                            {/* Row 2: Grid Split layout (Hostel Type & Capacity) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Hostel Type dropdown menu option fields */}
+                                <div className="space-y-2 relative">
+                                    <label className="block text-sm font-semibold text-gray-800">
+                                        Hostel Type<span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            required
+                                            value={hostelType}
+                                            onChange={(e) => setHostelType(e.target.value)}
+                                            className="w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-xl bg-white text-gray-600 focus:outline-none focus:border-primary text-sm pr-10 cursor-pointer"
+                                        >
+                                            <option value="" disabled hidden>Select</option>
+                                            <option value="Boys">Boys Hostel</option>
+                                            <option value="Girls">Girls Hostel</option>
+                                            <option value="Co-Ed">Co-Ed Hostel</option>
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <ChevronDown size={18} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Capacity selection dropdown box */}
+                                <div className="space-y-2 relative">
+                                    <label className="block text-sm font-semibold text-gray-800">
+                                        Capacity<span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            required
+                                            value={capacity}
+                                            onChange={(e) => setCapacity(e.target.value)}
+                                            className="w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-xl bg-white text-gray-600 focus:outline-none focus:border-primary text-sm pr-10 cursor-pointer"
+                                        >
+                                            <option value="" disabled hidden>Select</option>
+                                            <option value="100">100 Students</option>
+                                            <option value="250">250 Students</option>
+                                            <option value="500">500 Students</option>
+                                            <option value="1000">1000+ Students</option>
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <ChevronDown size={18} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons Container aligned exactly to the right floor */}
+                            <div className="flex items-center justify-end gap-4 pt-4 mt-4">
+                                <button
+                                    type="submit"
+                                    className="px-8 py-3 bg-primary hover:bg-[#1565B3] text-white font-medium rounded-xl transition-colors min-w-[120px] text-sm text-center cursor-pointer"
+                                >
+                                    save
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsHostelModalOpen(false)}
+                                    className="px-8 py-3 bg-white border border-primary text-primary hover:bg-[#1565B3] hover:text-white font-medium rounded-xl transition-colors min-w-[120px] text-sm text-center cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isOrgModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white rounded-[24px] max-w-4xl w-full shadow-2xl p-8 md:p-10 relative border border-gray-100 transition-transform transform scale-100">
+                        {/* Close button top right corner */}
+                        <button
+                            onClick={() => setIsOrgModalOpen(false)}
+                            className="absolute top-8 right-8 p-2 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                            <X size={16} />
+                        </button>
+
+                        {/* Title and Subtitle */}
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Add New Organization</h2>
+                            <p className="text-sm text-gray-400 mt-1">Fill in the details to manually create a new Organization</p>
+                        </div>
+
+                        {/* Divider Line */}
+                        <div className="w-full h-[1px] bg-gray-100 mb-8" />
+
+                        {/* Form structure matches the template image blueprint exactly */}
+                        <form onSubmit={handleAddOrgSubmit} className="space-y-6">
+
+                            {/* Row 1: Organization Id & Organization Name */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-800">
+                                        Organization Id<span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Eg : A78748"
+                                        value={orgId}
+                                        onChange={(e) => setOrgId(e.target.value)}
+                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-800">
+                                        Organization Name<span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Enter Organization name"
+                                        value={orgName}
+                                        onChange={(e) => setOrgName(e.target.value)}
+                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Row 2: Phone Number & Email Address */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-800">
+                                        Phone Number<span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-shadow">
+                                        <div className="flex items-center gap-1 bg-white px-3 border-r border-gray-200 text-gray-600 text-sm">
+                                            <span className="text-base">🇮🇳</span>
+                                            <span>+91</span>
+                                            <ChevronDown size={12} className="text-gray-400 ml-0.5" />
+                                        </div>
+                                        <input
+                                            type="tel"
+                                            required
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            className="w-full px-4 py-3.5 bg-white text-gray-700 placeholder-gray-400 focus:outline-none text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-800">
+                                        Email Address<span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        placeholder="enter email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Row 3: Full Address Textarea */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Full Address<span className="text-red-500 ml-0.5">*</span>
+                                </label>
+                                <textarea
+                                    required
+                                    rows={3}
+                                    placeholder="Text the address"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-sm resize-none"
+                                />
+                            </div>
+
+                            {/* Row 4: Action Buttons aligned perfectly to the template image blueprint */}
+                            <div className="flex items-center justify-end gap-4 pt-4">
+                                <button
+                                    type="submit"
+                                    className="px-10 py-2.5 rounded-lg bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer min-w-[100px] text-center"
+                                >
+                                    save
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsOrgModalOpen(false)}
+                                    className="px-8 py-2.5 rounded-lg border border-primary text-primary font-medium text-sm hover:bg-primary hover:text-white     transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
