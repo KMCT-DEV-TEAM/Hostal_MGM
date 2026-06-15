@@ -206,16 +206,26 @@ function SuperAdminDashboard() {
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
             {/* Topbar */}
-            <div className=" px-4 md:px-7 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <p className="text-sm text-gray-500">
-                    Welcome back{" "}
-                    <span className="text-[#0A467F] font-semibold">Arjun</span>, here's
-                    what's happening today
-                </p>
+            <div className="px-4 md:px-7 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {/* Left Section */}
+                <div>
+                    <h1 className="text-2xl font-bold text-black mb-1">
+                        Dashboard
+                    </h1>
+
+                    <p className="text-sm text-gray-500">
+                        Welcome back{" "}
+                        <span className="text-[#0A467F] font-semibold">Arjun</span>, here's
+                        what's happening today
+                    </p>
+                </div>
+
+                {/* Right Section */}
                 <div className="flex flex-wrap gap-2">
-                    <button className="px-4 py-2 rounded-md border bg-[#0A467F] text-[#ffffff] font-medium text-sm hover:bg-[#1565B3] transition-colors">
+                    <button className="px-4 py-2 rounded-md bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors">
                         + Add Hostel
                     </button>
+
                     <button className="px-4 py-2 rounded-md bg-[#0A467F] text-white font-medium text-sm hover:bg-[#1565B3] transition-colors">
                         + Add Organization
                     </button>
