@@ -8,21 +8,25 @@ import {
   getAdmins, 
   getAdminById, 
   updateAdmin, 
+  updateAdminEmail,
   toggleAdminStatus,
   createWarden,
   getWardens,
   getWardenById,
   updateWarden,
-  toggleWardenStatus
+  toggleWardenStatus,
+  updateAdminOrganization
 } from "./user.controller.js";
 
 import { 
   validateCreateAdmin, 
   validateAdminIdParam, 
   validateUpdateAdmin,
+  validateUpdateAdminEmail,
   validateCreateWarden,
   validateWardenIdParam,
-  validateUpdateWarden
+  validateUpdateWarden,
+  validateUpdateAdminOrganization
 } from "./user.validation.js";
 
 const router = express.Router();
@@ -59,6 +63,24 @@ router.patch(
   validateAdminIdParam,
   validateUpdateAdmin,
   updateAdmin
+);
+
+router.patch(
+  "/admins/:id/email",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateAdminIdParam,
+  validateUpdateAdminEmail,
+  updateAdminEmail
+);
+
+router.patch(
+  "/admins/:id/organization",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateAdminIdParam,
+  validateUpdateAdminOrganization,
+  updateAdminOrganization
 );
 
 router.patch(

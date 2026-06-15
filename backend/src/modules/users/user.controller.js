@@ -79,20 +79,13 @@ const getAdminById = asyncHandler(async (req, res) => {
 
 const updateAdmin = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, email } = req.body;
+    const { name, phone } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Admin ID");
     }
 
-    if (email) {
-      const existingEmail = await findExistingUserByEmail(email);
-      if (existingEmail && existingEmail._id.toString() !== id) {
-        return sendError(res, 400, "Email already exists");
-      }
-    }
-
-    const admin = await updateUserByRoleDb(id, "admin", { name, email });
+    const admin = await updateUserByRoleDb(id, "admin", { name, phone });
 
     if (!admin) {
       return sendError(res, 404, "Admin not found");
@@ -103,11 +96,92 @@ const updateAdmin = asyncHandler(async (req, res) => {
         _id: admin._id,
         name: admin.name,
         email: admin.email,
+        phone: admin.phone,
         role: admin.role,
         isActive: admin.isActive,
       }
     });
 });
+
+const updateAdminEmail = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { oldEmail, newEmail } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Admin ID");
+    }
+
+    const admin = await getUserByIdAndRoleDb(id, "admin");
+
+    if (!admin) {
+      return sendError(res, 404, "Admin not found");
+    }
+
+    if (admin.email !== oldEmail) {
+      return sendError(res, 400, "Old email does not match");
+    }
+
+    const existingNewEmail = await findExistingUserByEmail(newEmail);
+    if (existingNewEmail && existingNewEmail._id.toString() !== id) {
+      return sendError(res, 400, "New email already in use");
+    }
+
+    const updatedAdmin = await updateUserByRoleDb(id, "admin", { email: newEmail });
+
+    return sendSuccess(res, 200, "Admin email updated successfully", {
+      data: {
+        _id: updatedAdmin._id,
+        name: updatedAdmin.name,
+        email: updatedAdmin.email,
+        phone: updatedAdmin.phone,
+        role: updatedAdmin.role,
+        isActive: updatedAdmin.isActive,
+      }
+    });
+});
+
+const updateAdminOrganization = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { organizationId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Admin ID");
+    }
+
+    const admin = await getUserByIdAndRoleDb(id, "admin");
+
+    if (!admin) {
+      return sendError(res, 404, "Admin not found");
+    }
+
+    const organizationExists = await getOrganizationByIdDb(organizationId);
+    if (!organizationExists) {
+        return sendError(res, 404, "Organization not found");
+    }
+
+    const oldOrganizationId = admin.organization;
+
+    if (oldOrganizationId && oldOrganizationId.toString() !== organizationId) {
+      await updateOrganizationDb(oldOrganizationId, { adminId: null });
+    }
+
+    await updateOrganizationDb(organizationId, { adminId: admin._id });
+
+    const updatedAdmin = await updateUserByRoleDb(id, "admin", { organization: organizationId });
+
+    return sendSuccess(res, 200, "Admin organization updated successfully", {
+      data: {
+        _id: updatedAdmin._id,
+        name: updatedAdmin.name,
+        email: updatedAdmin.email,
+        phone: updatedAdmin.phone,
+        organization: updatedAdmin.organization,
+        role: updatedAdmin.role,
+        isActive: updatedAdmin.isActive,
+      }
+    });
+});
+
 
 const toggleAdminStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -262,6 +336,8 @@ export {
   getAdmins,
   getAdminById,
   updateAdmin,
+  updateAdminEmail,
+  updateAdminOrganization,
   toggleAdminStatus,
   createWarden,
   getWardens,
