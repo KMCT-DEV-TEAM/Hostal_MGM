@@ -4,6 +4,7 @@ import { lazy } from 'react';
 import Loadable from '@/components/Loadable';
 import GuestGuard from '@/components/guards/GuestGuard';
 import AuthGuard from '@/components/guards/AuthGuard';
+import Wardenmanagement from '@/features/dashboard/components/Wardenmanagement';
 
 // Helper for lazy + Loadable
 const load = (importer) => Loadable(lazy(importer));
@@ -70,6 +71,10 @@ const router = createBrowserRouter([
             {
                 path: 'administrators',
                 element: <Administrator />
+            },
+            {
+                path: 'wardens',
+                element: <Wardenmanagement />
             },
             {
                 path: 'maintenance',

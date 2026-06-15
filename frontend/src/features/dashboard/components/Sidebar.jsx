@@ -47,6 +47,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
             >
                 <div className="flex items-center gap-3">
                     <Icon className="w-5 h-5 text-red-500" strokeWidth={1.5} />
+
                     <span>{label}</span>
                 </div>
             </button>
@@ -115,6 +116,7 @@ function Sidebar() {
                         label="Wardens"
                         to="/dashboard/wardens"
                     />
+
                     <NavItem
                         icon={GraduationCap}
                         label="Students"
