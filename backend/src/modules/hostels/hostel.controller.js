@@ -10,16 +10,16 @@ import {
 } from "./hostel.service.js";
 
 const createHostel = asyncHandler(async (req, res) => {
-  const { code, email, organizations } = req.body;
+  const { code, email } = req.body;
   
-  let finalOrganizations = organizations;
-  if (!finalOrganizations || finalOrganizations.length === 0) {
-    if (req.user.organization) {
-      finalOrganizations = [req.user.organization];
-    } else {
-      return sendError(res, 400, "At least one Organization ID is required");
-    }
-  }
+  // let finalOrganizations = organizations;
+  // if (!finalOrganizations || finalOrganizations.length === 0) {
+  //   if (req.user.organization) {
+  //     finalOrganizations = [req.user.organization];
+  //   } else {
+  //     return sendError(res, 400, "At least one Organization ID is required");
+  //   }
+  // }
 
   const existingEmail = await checkExistingHostelEmailDb(email);
   if (existingEmail) {
@@ -33,7 +33,7 @@ const createHostel = asyncHandler(async (req, res) => {
 
   const newHostel = await createHostelDb({
     ...req.body,
-    organizations: finalOrganizations,
+    // organizations: finalOrganizations,
   });
 
   return sendSuccess(res, 201, "Hostel created successfully", {

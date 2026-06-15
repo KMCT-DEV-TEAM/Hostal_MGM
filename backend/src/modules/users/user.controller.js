@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { getOrganizationByIdDb, updateOrganizationDb } from "../organizations/organization.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { hashPassword } from "../../utils/hash.js";
+import { sendMail } from "../../utils/mailer.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import {
   findExistingUserByEmail,
@@ -16,7 +17,7 @@ import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
 // --- ADMIN CONTROLLERS ---
 
 const createAdmin = asyncHandler(async (req, res) => {
-    const { name, email, password, organizationId } = req.body;
+    const { name, email, organizationId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -29,18 +30,30 @@ const createAdmin = asyncHandler(async (req, res) => {
         return sendError(res, 404, "Organization not found");
     }
 
-    const hashedPassword = await hashPassword(password);
+    const temporaryPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await hashPassword(temporaryPassword);
 
     const admin = await createUserDb({
         name,
         email,
         password: hashedPassword,
         organization: organizationId,
+        temppass: true,
     }, "admin");
 
     await updateOrganizationDb(organizationId, { adminId: admin._id });
 
-    return sendSuccess(res, 201, "Admin created successfully", { data: admin });
+    const subject = "Your Admin Account Details";
+    const text = `Hello ${name}\n\nYour admin account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+    const html = `<p>Hello ${name},</p><p>Your admin account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+    try {
+        await sendMail(email, subject, text, html);
+    } catch (error) {
+        console.error("Failed to send temporary password email:", error);
+    }
+
+    return sendSuccess(res, 201, "Admin created successfully and email sent");
 });
 
 const getAdmins = asyncHandler(async (req, res) => {
