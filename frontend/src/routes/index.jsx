@@ -62,9 +62,9 @@ const router = createBrowserRouter([
     {
         path: '/dashboard',
         element: (
-            // <AuthGuard>
-            <DashboardLayout />
-            // </AuthGuard>
+            <AuthGuard>
+                <DashboardLayout />
+            </AuthGuard>
         ),
         children: [
             {

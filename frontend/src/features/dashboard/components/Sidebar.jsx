@@ -17,7 +17,7 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // Reusable component for section headings
 const NavSection = ({ title, children }) => (
@@ -91,7 +91,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
 };
 
 function Sidebar() {
-    const { logout } = useAuth();
+    const { logout } = useAuthStore();
 
     return (
         <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA] flex flex-col justify-between">

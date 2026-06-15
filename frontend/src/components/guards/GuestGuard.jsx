@@ -1,16 +1,16 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 import Loading from '@/components/ui/Loading';
 
-const GuestGuard = ({ children }) => {
-    const { user, loading } = useAuth();
+function GuestGuard({ children }) {
+    const { authenticated, loading } = useAuthStore();
 
     if (loading) {
         return <Loading />;
     }
 
-    if (user) {
-        return <Navigate to="/dashboard-layout" replace />;
+    if (authenticated) {
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

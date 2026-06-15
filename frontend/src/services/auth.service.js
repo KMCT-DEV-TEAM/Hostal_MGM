@@ -10,13 +10,8 @@ export async function login(credentials) {
   const response = await authApi.login(credentials);
   const data = response.data;
 
-  if (data) {
-    if (data.accessToken) {
-      tokenStorage.set(data.accessToken);
-    }
-    if (data.refreshToken) {
-      tokenStorage.setRefreshToken(data.refreshToken);
-    }
+  if (data?.accessToken) {
+    tokenStorage.setAccessToken(data.accessToken);
   }
 
   return data;
@@ -47,18 +42,19 @@ export function resetPassword(payload) {
 }
 
 /**
- * Check if user is authenticated (access token is present).
- * @returns {boolean}
- */
-export function isAuthenticated() {
-  return !!tokenStorage.get();
-}
-
-/**
  * Log out and clear stored tokens.
  */
-export function logout() {
-  tokenStorage.clear();
+export async function logout() {
+  try {
+    // Assuming authApi.logout() exists. If not, this is a placeholder.
+    if (authApi.logout) {
+      await authApi.logout();
+    }
+  } catch (error) {
+    console.error("Logout API failed", error);
+  } finally {
+    tokenStorage.clear();
+  }
 }
 
 /**
@@ -75,7 +71,6 @@ const authService = {
   forgotPassword,
   verifyOtp,
   resetPassword,
-  isAuthenticated,
   logout,
   getProfile,
 };
