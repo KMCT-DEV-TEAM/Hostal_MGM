@@ -1,9 +1,9 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 import Loading from '@/components/ui/Loading';
 
 const RoleGuard = ({ requiredRoles, children }) => {
-    const { user, loading } = useAuth();
+    const { user, loading } = useAuthStore();
 
     if (loading) {
         return <Loading />;

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const ProtectedRoute = ({ children, redirectTo = '/user/login' }) => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthStore();
   const location = useLocation();
 
   if (loading) {
