@@ -4,6 +4,10 @@ import { lazy } from 'react';
 import Loadable from '@/components/Loadable';
 import GuestGuard from '@/components/guards/GuestGuard';
 import AuthGuard from '@/components/guards/AuthGuard';
+import Wardenmanagement from '@/features/dashboard/components/Wardenmanagement';
+import Parents from '@/features/dashboard/components/Parents';
+import Students from '@/features/dashboard/components/Students';
+import Organizationmanagement from '@/features/dashboard/components/Organizationmanagement';
 
 // Helper for lazy + Loadable
 const load = (importer) => Loadable(lazy(importer));
@@ -70,6 +74,22 @@ const router = createBrowserRouter([
             {
                 path: 'administrators',
                 element: <Administrator />
+            },
+            {
+                path: 'wardens',
+                element: <Wardenmanagement />
+            },
+            {
+                path: 'parents',
+                element: <Parents />
+            },
+            {
+                path: 'students',
+                element: <Students />
+            },
+            {
+                path: 'organizations',
+                element: <Organizationmanagement />
             },
             {
                 path: 'maintenance',

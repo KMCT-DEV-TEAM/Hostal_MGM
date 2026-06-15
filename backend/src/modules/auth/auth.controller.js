@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { findUserForLoginDb, verifyPassword, findUserByIdForRefreshDb } from "./auth.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { hashPassword } from "../../utils/hash.js";
+import User from "../users/user.model.js";
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -53,17 +55,46 @@ const refreshToken = asyncHandler(async (req, res) => {
 });
 
 const me = asyncHandler(async (req, res) => {
-  const user = await findUserByIdForRefreshDb(req.user.id);
+
+  const user = await User.findOne({_id:req.user.id}).select("-password");
 
   if (!user || !user.isActive) {
     return sendError(res, 401, "User not found or deactivated");
   }
 
-  return sendSuccess(res, 200, "Token is Valid");
+
+  return sendSuccess(res, 200, "Token is valid", {user:user._doc});
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!oldPassword || !newPassword) {
+    return sendError(res, 400, "Old and new password are required");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
+
+  const isMatch = await verifyPassword(oldPassword, user.password);
+  if (!isMatch) {
+    return sendError(res, 401, "Invalid old password");
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+  user.password = hashedPassword;
+  user.temppass = false;
+  await user.save();
+
+  return sendSuccess(res, 200, "Password changed successfully");
 });
 
 export {
   login,
   refreshToken,
   me,
+  changePassword,
 }

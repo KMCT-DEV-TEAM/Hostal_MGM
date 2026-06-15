@@ -3,12 +3,12 @@ import mongoose from "mongoose";
 // --- ADMIN VALIDATIONS ---
 
 const validateCreateAdmin = (req, res, next) => {
-  const { name, email, password, organizationId } = req.body;
+  const { name, email, organizationId } = req.body;
 
-  if (!name || !email || !password || !organizationId) {
+  if (!name || !email || !organizationId) {
     return res.status(400).json({
       success: false,
-      message: "name, email, password, and organizationId are required",
+      message: "name, email, and organizationId are required",
     });
   }
 
@@ -29,12 +29,45 @@ const validateAdminIdParam = (req, res, next) => {
 };
 
 const validateUpdateAdmin = (req, res, next) => {
-  const { name, email } = req.body;
+  const { name, phone } = req.body;
 
-  if (!name && !email) {
+  if (!name && !phone) {
     return res.status(400).json({
       success: false,
-      message: "At least one field (name or email) must be provided for update",
+      message: "At least one field (name or phone) must be provided for update",
+    });
+  }
+
+  next();
+};
+
+const validateUpdateAdminEmail = (req, res, next) => {
+  const { oldEmail, newEmail } = req.body;
+
+  if (!oldEmail || !newEmail) {
+    return res.status(400).json({
+      success: false,
+      message: "oldEmail and newEmail are required",
+    });
+  }
+
+  next();
+};
+
+const validateUpdateAdminOrganization = (req, res, next) => {
+  const { organizationId } = req.body;
+
+  if (!organizationId) {
+    return res.status(400).json({
+      success: false,
+      message: "organizationId is required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid organizationId",
     });
   }
 
@@ -93,6 +126,8 @@ export {
   validateCreateAdmin,
   validateAdminIdParam,
   validateUpdateAdmin,
+  validateUpdateAdminEmail,
+  validateUpdateAdminOrganization,
   validateCreateWarden,
   validateWardenIdParam,
   validateUpdateWarden
