@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    temppass: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

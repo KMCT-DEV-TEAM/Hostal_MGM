@@ -3,12 +3,12 @@ import mongoose from "mongoose";
 // --- ADMIN VALIDATIONS ---
 
 const validateCreateAdmin = (req, res, next) => {
-  const { name, email, password, organizationId } = req.body;
+  const { name, email, organizationId } = req.body;
 
-  if (!name || !email || !password || !organizationId) {
+  if (!name || !email || !organizationId) {
     return res.status(400).json({
       success: false,
-      message: "name, email, password, and organizationId are required",
+      message: "name, email, and organizationId are required",
     });
   }
 

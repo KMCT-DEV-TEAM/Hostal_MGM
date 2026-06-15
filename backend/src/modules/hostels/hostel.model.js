@@ -52,7 +52,11 @@ const hostelSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
-
+    hosteltype:{
+      type: String,
+      required: true,
+      enum: ["boys", "girls"],
+    },
     isActive: {
       type: Boolean,
       default: true,
