@@ -4,13 +4,13 @@ import { Outlet } from "react-router-dom";
 
 const DashboardLayout = () => {
     return (
-        <div className="h-screen overflow-hidden ">
+        <div className="h-screen  ">
             <Navbar />
 
             <Sidebar />
 
 
-            <main className="ml-64 mt-[82px] p-6">
+            <main className="ml-64 mt-[82px] ">
                 <Outlet />
             </main>
         </div>
