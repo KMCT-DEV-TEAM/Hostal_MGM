@@ -18,7 +18,7 @@ const RoleGuard = ({ requiredRoles, children }) => {
     if (!requiredRoles.includes(user.role)) {
         // You might want to create an Error page for 403 Forbidden
         // For now, redirect to dashboard root.
-        return <Navigate to="/dashboard-layout" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

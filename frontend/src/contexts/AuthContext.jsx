@@ -1,74 +1,88 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import {
+  createContext, useContext, useEffect, useMemo, useState,
+} from 'react';
+
 import authService from '@/services/auth.service';
 import { authEventBus } from '@/services/eventBus';
 import { tokenStorage } from '@/features/auth/storage/tokenStorage';
 
 export const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async () => {
-    try {
-      if (tokenStorage.get()) {
-        const profileData = await authService.getProfile();
-        setUser(profileData);
-      }
-    } catch (error) {
-      console.error('Failed to fetch user profile on load', error);
-      // If profile fetch fails (e.g. 401 and refresh fails), we clear user state
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    // Initial profile fetch
-    fetchProfile();
+    let mounted = true;
 
-    // Listen to global logout event from Axios interceptor
-    const handleLogout = () => {
-      setUser(null);
-      // If you are using React Router, you can't navigate here easily without useLocation/useNavigate
-      // Usually the ProtectedRoute will automatically redirect if `user` becomes null.
-    };
+    async function init() {
+      try {
+        if (tokenStorage.getAccessToken()) {
+          const profile = await authService.getProfile();
+
+          if (mounted) setUser(profile);
+        }
+      } catch {
+        tokenStorage.clear();
+
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    init();
+
+    const handleLogout = () => setUser(null);
 
     authEventBus.addEventListener('logout', handleLogout);
 
     return () => {
+      mounted = false;
       authEventBus.removeEventListener('logout', handleLogout);
     };
   }, []);
 
   const login = async (credentials) => {
     const data = await authService.login(credentials);
-    // After login, we fetch the profile or use returned user data if available
-    if (data.user) {
-      setUser(data.user);
-    } else {
-      await fetchProfile();
-    }
+
+    setUser(data.user);
+
     return data;
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      setUser(null);
+    }
   };
 
+  const value = useMemo(
+    () => ({
+      user,
+      authenticated: !!user,
+      loading,
+      login,
+      logout,
+    }),
+    [user, loading]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
+
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within AuthProvider');
   }
+
   return context;
-};
+}

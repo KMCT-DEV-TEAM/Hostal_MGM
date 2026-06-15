@@ -10,7 +10,7 @@ const GuestGuard = ({ children }) => {
     }
 
     if (user) {
-        return <Navigate to="/dashboard-layout" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;
