@@ -46,7 +46,8 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     const data = await authService.login(credentials);
 
-    setUser(data.user);
+    const profile = await authService.getProfile();
+    setUser(profile);
 
     return data;
   };

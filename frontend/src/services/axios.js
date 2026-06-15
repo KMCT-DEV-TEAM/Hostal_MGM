@@ -75,7 +75,7 @@ async function refreshAccessToken() {
   const response = await refreshClient.post('/auth/refresh');
 
   const accessToken =
-    response.data?.data?.accessToken;
+    response.data?.accessToken;
 
   if (!accessToken) {
     clearSession();
@@ -141,12 +141,7 @@ apiClient.interceptors.response.use(
       url.includes('/auth/login') ||
       url.includes('/auth/refresh');
 
-    const shouldRefresh =
-      response.status === 401 &&
-      (
-        response.data?.code === 'TOKEN_EXPIRED' ||
-        !response.data?.code
-      );
+    const shouldRefresh = response.status === 401;
 
     if (
       shouldRefresh &&
