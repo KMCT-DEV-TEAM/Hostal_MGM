@@ -132,7 +132,7 @@ function Sidebar() {
                 <NavSection title="Organizations">
                     <NavItem
                         icon={Building2}
-                        label="All Organizations"
+                        label="organizations"
                         to="/dashboard/organizations"
                     />
                     <NavItem

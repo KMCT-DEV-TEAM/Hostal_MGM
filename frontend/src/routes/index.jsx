@@ -7,6 +7,7 @@ import AuthGuard from '@/components/guards/AuthGuard';
 import Wardenmanagement from '@/features/dashboard/components/Wardenmanagement';
 import Parents from '@/features/dashboard/components/Parents';
 import Students from '@/features/dashboard/components/Students';
+import Organizationmanagement from '@/features/dashboard/components/Organizationmanagement';
 
 // Helper for lazy + Loadable
 const load = (importer) => Loadable(lazy(importer));
@@ -85,6 +86,10 @@ const router = createBrowserRouter([
             {
                 path: 'students',
                 element: <Students />
+            },
+            {
+                path: 'organizations',
+                element: <Organizationmanagement />
             },
             {
                 path: 'maintenance',
