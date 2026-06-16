@@ -17,7 +17,6 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
-import { useAuthStore } from '@/store/useAuthStore';
 
 // Reusable component for section headings
 const NavSection = ({ title, children }) => (
@@ -61,7 +60,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
             className={({ isActive }) =>
                 baseStyles +
                 (isActive
-                    ? "text-[#0A467F] font-medium bg-blue-50/50"
+                    ? "text-primary font-medium bg-blue-50/50"
                     : "text-gray-500 hover:text-gray-900 hover:bg-blue-50/50")
             }
         >
@@ -70,7 +69,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
                     <div className="flex items-center gap-3">
                         <Icon
                             className={`w-5 h-5 ${isActive
-                                ? "text-[#0A467F]"
+                                ? "text-primary"
                                 : "text-gray-400" /* Fixed undefined token text-text-secondary */
                                 }`}
                             strokeWidth={1.5}
@@ -91,7 +90,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
 };
 
 function Sidebar() {
-    const { logout } = useAuthStore();
+
 
     return (
         <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA] flex flex-col justify-between">
@@ -101,7 +100,7 @@ function Sidebar() {
                     <NavItem
                         icon={LayoutGrid}
                         label="Dashboard"
-                        to="/dashboard"
+                        to="/super-admin/dashboard"
                     />
                 </NavSection>
 
@@ -109,23 +108,23 @@ function Sidebar() {
                     <NavItem
                         icon={Shield}
                         label="Admins"
-                        to="/dashboard/administrators"
+                        to="/super-admin/dashboard/administrators"
                     />
                     <NavItem
                         icon={User}
                         label="Wardens"
-                        to="/dashboard/wardens"
+                        to="/super-admin/dashboard/wardens"
                     />
 
                     <NavItem
                         icon={GraduationCap}
                         label="Students"
-                        to="/dashboard/students"
+                        to="/super-admin/dashboard/students"
                     />
                     <NavItem
                         icon={Users}
                         label="Parents"
-                        to="/dashboard/parents"
+                        to="/super-admin/dashboard/parents"
                     />
                 </NavSection>
 
@@ -133,12 +132,12 @@ function Sidebar() {
                     <NavItem
                         icon={Building2}
                         label="organizations"
-                        to="/dashboard/organizations"
+                        to="/super-admin/dashboard/organizations"
                     />
                     <NavItem
                         icon={Building}
                         label="All Hostels"
-                        to="/dashboard/hostels"
+                        to="/super-admin/dashboard/hostels"
                     />
                 </NavSection>
 
@@ -147,24 +146,24 @@ function Sidebar() {
                     <NavItem
                         icon={AlertTriangle}
                         label="Complaints"
-                        to="/dashboard/complaints"
+                        to="/super-admin/dashboard/complaints"
                         badge={{ count: 12, variant: 'danger' }}
                     />
                     <NavItem
                         icon={Calendar}
                         label="Attendance"
-                        to="/dashboard/attendance"
+                        to="/super-admin/dashboard/attendance"
                     />
                     <NavItem
                         icon={CalendarX}
                         label="Leave Requests"
-                        to="/dashboard/leave-requests"
+                        to="/super-admin/dashboard/leave-requests"
                         badge={{ count: 7, variant: 'warning' }}
                     />
                     <NavItem
                         icon={UtensilsCrossed}
                         label="Mess Management"
-                        to="/dashboard/mess-management"
+                        to="/super-admin/dashboard/mess-management"
                     />
                 </NavSection>
 
@@ -172,7 +171,7 @@ function Sidebar() {
                     <NavItem
                         icon={BarChart2}
                         label="System Reports"
-                        to="/dashboard/reports"
+                        to="/super-admin/dashboard/reports"
                     />
                 </NavSection>
 
@@ -180,7 +179,7 @@ function Sidebar() {
                     <NavItem
                         icon={KeyRound}
                         label="Password Requests"
-                        to="/dashboard/password-requests"
+                        to="/super-admin/dashboard/password-requests"
                     />
                 </NavSection>
             </div>
@@ -190,14 +189,13 @@ function Sidebar() {
                 <NavItem
                     icon={Settings}
                     label="Settings"
-                    to="/dashboard/settings"
+                    to="/super-admin/dashboard/settings"
                 />
 
                 <NavItem
                     icon={LogOut}
                     label="Logout"
                     isDanger
-                    onClick={logout}
                 />
             </div>
         </aside>

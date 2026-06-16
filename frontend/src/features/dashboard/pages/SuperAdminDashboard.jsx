@@ -16,7 +16,8 @@ import {
     Area,
     PieChart,
     Pie,
-    Cell,
+    Cell
+
 } from "recharts";
 
 import {
@@ -31,6 +32,7 @@ import {
     MessageSquare,
     X,
     ChevronDown,
+    KeyRound,
 } from "lucide-react";
 
 
@@ -133,29 +135,33 @@ const activities = [
 
 const quickSummary = [
     {
-        icon: newStudentIcon,
-        iconBg: "bg-indigo-50",
+        icon: Users,
+        iconBg: "bg-primary/10",
+        iconColor: "text-primary",
         title: "New Students",
         desc: "2 new students today",
         descClass: "text-primary",
     },
     {
-        icon: complaintIcon,
-        iconBg: "bg-danger",
+        icon: AlertTriangle,
+        iconBg: "bg-danger/10",
+        iconColor: "text-danger",
         title: "Complaint Status",
         desc: "5 High Priority",
         descClass: "text-danger",
     },
     {
-        icon: passwordIcon,
-        iconBg: "bg-amber-50",
+        icon: KeyRound,
+        iconBg: "bg-warning/10",
+        iconColor: "text-warning",
         title: "Password Request",
         desc: "10 New Requests",
-        descClass: "text-[#F59E0B]",
+        descClass: "text-warning",
     },
     {
-        icon: organizationIcon,
-        iconBg: "bg-[#14B8A614]",
+        icon: Building2,
+        iconBg: "bg-success/10",
+        iconColor: "text-success",
         title: "Inactive Organizations",
         desc: "2 inactive organizations",
         descClass: "text-primary",
@@ -384,19 +390,12 @@ function SuperAdminDashboard() {
                                 key={i}
                                 className={`flex items-center gap-3 py-3 ${i < quickSummary.length - 1 ? "border-b border-gray-50" : ""}`}
                             >
-                                <div
-                                    className={`w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center flex-shrink-0`}
-                                >
-                                    <img
-                                        src={item.icon}
-                                        alt={item.title}
-                                        className="w-5 h-5 object-contain"
-                                    />
+                                <div className={`w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
+                                    {/* Render component directly */}
+                                    <item.icon className={`w-5 h-5 ${item.iconColor}`} />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-semibold text-[#777777]">
-                                        {item.title}
-                                    </p>
+                                    <p className="text-xs font-semibold text-[#777777]">{item.title}</p>
                                     <p className={`text-xs font-medium mt-0.5 ${item.descClass}`}>
                                         {item.desc}
                                     </p>
@@ -410,7 +409,7 @@ function SuperAdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Attendance Area Chart */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white rounded-2xl p-6">
                         {/* Header */}
                         <div className="flex justify-between items-start mb-6">
                             <div>
