@@ -41,7 +41,7 @@ const updateUserByRoleDb = async (id, role, data) => {
   if (!user) return null;
 
   if (data.name) user.name = data.name;
-  if (data.email) user.email = data.email;
+  if (data.phone) user.phone = data.phone;
 
   await user.save();
   return user;

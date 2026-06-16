@@ -110,12 +110,12 @@ const validateWardenIdParam = (req, res, next) => {
 };
 
 const validateUpdateWarden = (req, res, next) => {
-  const { name, email } = req.body;
+  const { name, phone } = req.body;
 
-  if (!name && !email) {
+  if (!name && !phone) {
     return res.status(400).json({
       success: false,
-      message: "At least one field (name or email) must be provided for update",
+      message: "At least one field (name or phone) must be provided for update",
     });
   }
 

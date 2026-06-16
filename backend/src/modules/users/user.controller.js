@@ -278,20 +278,13 @@ const getWardenById = asyncHandler(async (req, res) => {
 
 const updateWarden = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, email } = req.body;
+    const { name, phone } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Warden ID");
     }
 
-    if (email) {
-      const existingEmail = await findExistingUserByEmail(email);
-      if (existingEmail && existingEmail._id.toString() !== id) {
-        return sendError(res, 400, "Email already exists");
-      }
-    }
-
-    const warden = await updateUserByRoleDb(id, "warden", { name, email });
+    const warden = await updateUserByRoleDb(id, "warden", { name, phone });
 
     if (!warden) {
       return sendError(res, 404, "Warden not found");
@@ -302,6 +295,7 @@ const updateWarden = asyncHandler(async (req, res) => {
         _id: warden._id,
         name: warden.name,
         email: warden.email,
+        phone: warden.phone,
         role: warden.role,
         isActive: warden.isActive,
       }
