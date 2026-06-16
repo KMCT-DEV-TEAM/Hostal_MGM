@@ -214,7 +214,7 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
 // --- WARDEN CONTROLLERS ---
 
 const createWarden = asyncHandler(async (req, res) => {
-    const { name, email, password, organizationId, hostelId } = req.body;
+    const { name, email, phone, hostelId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -222,37 +222,42 @@ const createWarden = asyncHandler(async (req, res) => {
         return sendError(res, 400, "Email already exists");
     }
 
-    const organizationExists = await getOrganizationByIdDb(organizationId);
-    if (!organizationExists) {
-        return sendError(res, 404, "Organization not found");
-    }
-
-    const hostelExists = await getHostelByIdDb(hostelId, organizationId);
+    const hostelExists = await getHostelByIdDb(hostelId);
     if (!hostelExists) {
-        return sendError(res, 404, "Hostel not found in this organization");
+        return sendError(res, 404, "Hostel not found");
     }
 
-    if (hostelExists.wardenId) {
-        return sendError(res, 400, "Hostel already has a warden assigned");
-    }
+    
 
-    const hashedPassword = await hashPassword(password);
+    const temporaryPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await hashPassword(temporaryPassword);
 
     const warden = await createUserDb({
         name,
         email,
+        phone,
         password: hashedPassword,
-        organization: organizationId,
+        temppass: true,
     }, "warden");
 
-    await updateHostelDb(hostelId, organizationId, { wardenId: warden._id });
+    await updateHostelDb(hostelId, null, { $push: { wardens: warden._id } });
+
+    const subject = "Your Warden Account Details";
+    const text = `Hello ${name}\n\nYour warden account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+    const html = `<p>Hello ${name},</p><p>Your warden account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+    try {
+        await sendMail(email, subject, text, html);
+    } catch (error) {
+        console.error("Failed to send temporary password email:", error);
+    }
 
     return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
 });
 
 const getWardens = asyncHandler(async (req, res) => {
     const wardens = await getAllUsersByRoleDb("warden");
-    return sendSuccess(res, 200, "Wardens fetched successfully", { count: wardens.length, data: wardens });
+    return sendSuccess(res, 200, "Wardens fetched successfully", { count: wardens.length , data: wardens});
 });
 
 const getWardenById = asyncHandler(async (req, res) => {
