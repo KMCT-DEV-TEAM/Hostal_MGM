@@ -12,6 +12,7 @@ import {
 import {
   createHostel,
   getHostels,
+  getHostelById,
   updateHostel,
   toggleHostelStatus,
 } from "./hostel.controller.js";
@@ -31,6 +32,14 @@ router.get(
   authMiddleware,
   roleMiddleware("admin", "super_admin"),
   getHostels
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateHostelIdParam,
+  getHostelById
 );
 
 router.patch(

@@ -8,6 +8,7 @@ import {
   findExistingUserByEmail,
   createUserDb,
   getAllUsersByRoleDb,
+  getPaginatedUsersByRoleDb,
   getUserByIdAndRoleDb,
   getUserByIdDb,
   updateUserByRoleDb,
@@ -59,8 +60,18 @@ const createAdmin = asyncHandler(async (req, res) => {
 });
 
 const getAdmins = asyncHandler(async (req, res) => {
-    const admins = await getAllUsersByRoleDb("admin");
-    return sendSuccess(res, 200, "Admins fetched successfully", { count: admins.length, data: admins });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("admin", page, limit);
+
+    return sendSuccess(res, 200, "Admins fetched successfully", { 
+      count: users.length, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      data: users 
+    });
 });
 
 const getAdminById = asyncHandler(async (req, res) => {
@@ -258,8 +269,18 @@ const createWarden = asyncHandler(async (req, res) => {
 });
 
 const getWardens = asyncHandler(async (req, res) => {
-    const wardens = await getAllUsersByRoleDb("warden");
-    return sendSuccess(res, 200, "Wardens fetched successfully", { count: wardens.length , data: wardens});
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit);
+
+    return sendSuccess(res, 200, "Wardens fetched successfully", { 
+      count: users.length, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      data: users 
+    });
 });
 
 const getWardenById = asyncHandler(async (req, res) => {
