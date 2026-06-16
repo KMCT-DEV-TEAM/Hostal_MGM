@@ -4,6 +4,7 @@ import User from "../users/user.model.js";
 import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Student from "../students/student.model.js";
+import hostelModel from "../hostels/hostel.model.js";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
   const [adminCount, wardenCount, studentCount, organizationCount, hostelCount] = await Promise.all([
@@ -65,4 +66,34 @@ const getStudentCountByOrganization = asyncHandler(async (req, res) => {
 });
 
 
-export { getSuperAdminStats, getStudentCountByOrganization };
+// admin controllers
+const getAdminStats = asyncHandler(async (req, res) => {
+  const organizationId = req.user.organization;
+
+  const [wardenCount, studentCount, hostelCount] = await Promise.all([
+    User.countDocuments({ 
+      role: "warden",
+      organization: organizationId 
+    }),
+    User.countDocuments({ 
+      role: "student", 
+      organization: organizationId 
+    }),
+    hostelModel.countDocuments({ organizations: organizationId }),
+  ]);
+
+  return sendSuccess(res, 200, "Dashboard stats fetched successfully", {
+    data: {
+      wardens: wardenCount,
+      students: studentCount,
+      hostels: hostelCount,
+    },
+  });
+});
+
+
+export {
+  getSuperAdminStats,
+  getStudentCountByOrganization,
+  getAdminStats,
+};
