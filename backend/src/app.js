@@ -50,6 +50,7 @@ app.use("/api/super-admin/hostels", hostelRoutes);
 
 app.use("/api/organizations", organizationRoutes);
 
+app.use("/api/admin/dashboard",dashboardRoutes );
 app.use("/api/admin/students", studentRoutes);
 app.use("/api/admin/parents", parentRoutes);
 
