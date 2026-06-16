@@ -10,7 +10,7 @@ const DashboardLayout = () => {
             <Sidebar />
 
 
-            <main className="ml-64 mt-[82px] ">
+            <main className="ml-64 mt-[82px] min-h-[calc(100vh-82px)]">
                 <Outlet />
             </main>
         </div>

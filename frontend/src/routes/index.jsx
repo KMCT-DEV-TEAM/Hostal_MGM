@@ -4,6 +4,9 @@ import { lazy } from 'react';
 import Loadable from '@/components/Loadable';
 import GuestGuard from '@/components/guards/GuestGuard';
 import AuthGuard from '@/components/guards/AuthGuard';
+import RoleGuard from '@/components/guards/RoleGuard';
+import { ROLES } from '@/constants/roles';
+
 import Wardenmanagement from '@/features/dashboard/components/Wardenmanagement';
 import Parents from '@/features/dashboard/components/Parents';
 import Students from '@/features/dashboard/components/Students';
@@ -28,6 +31,9 @@ const ResetPassword = load(() => import('@/features/auth/pages/ResetPassword'));
 const SuperAdminDashboard = load(() => import('@/features/dashboard/pages/SuperAdminDashboard'));
 const Administrator = load(() => import('@/features/dashboard/components/Administrator'));
 const Maintainance = load(() => import('@/features/dashboard/components/Maintainance'));
+// const Hostels = load(() => import('@/features/dashboard/components/Hostels').catch(() => {
+//     return { default: () => <div className="p-6 text-center text-gray-500">Hostels under construction</div> };
+// }));
 
 // Reusable route helper
 const guestRoute = (path, Component) => ({
@@ -69,31 +75,67 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <SuperAdminDashboard />
+                element: (
+                    <RoleGuard roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN]}>
+                        <SuperAdminDashboard />
+                    </RoleGuard>
+                )
             },
             {
                 path: 'administrators',
-                element: <Administrator />
+                element: (
+                    <RoleGuard roles={[ROLES.SUPER_ADMIN]}>
+                        <Administrator />
+                    </RoleGuard>
+                )
             },
             {
                 path: 'wardens',
-                element: <Wardenmanagement />
+                element: (
+                    <RoleGuard roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+                        <Wardenmanagement />
+                    </RoleGuard>
+                )
             },
             {
                 path: 'parents',
-                element: <Parents />
+                element: (
+                    <RoleGuard roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN]}>
+                        <Parents />
+                    </RoleGuard>
+                )
             },
             {
                 path: 'students',
-                element: <Students />
+                element: (
+                    <RoleGuard roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN]}>
+                        <Students />
+                    </RoleGuard>
+                )
             },
             {
                 path: 'organizations',
-                element: <Organizationmanagement />
+                element: (
+                    <RoleGuard roles={[ROLES.SUPER_ADMIN]}>
+                        <Organizationmanagement />
+                    </RoleGuard>
+                )
             },
+            // {
+            //     path: 'hostels',
+            //     element: (
+            //         <RoleGuard roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+            //             <Hostels />
+            //         </RoleGuard>
+            //     )
+            // },
             {
                 path: 'maintenance',
-                element: <Maintainance />
+                element: (
+                    <RoleGuard roles={[ROLES.WARDEN]}>
+                        <Maintainance />
+                    </RoleGuard>
+                )
             },
             {
                 path: '*',
