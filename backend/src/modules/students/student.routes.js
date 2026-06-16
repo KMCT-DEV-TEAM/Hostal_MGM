@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent } from "./student.validation.js";
-import { createStudent, updateStudent, toggleStudentStatus, getAdminOrganizationData, getAdminStats } from "./student.controller.js";
+import { createStudent, updateStudent, toggleStudentStatus, updateStudentHostel, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin } from "./student.controller.js";
 
 const router = express.Router(); 
 
@@ -47,4 +47,26 @@ router.patch(
   toggleStudentStatus
 );
 
+router.get(
+  "/admin",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getStudentsByAdmin
+)
+
+
+router.get(
+  "/super-admin",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  getStudentsBySuperAdmin
+)
+
+router.patch(
+  "/:id/update-hostel",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateStudentIdParam,
+  updateStudentHostel
+)
 export default router;
