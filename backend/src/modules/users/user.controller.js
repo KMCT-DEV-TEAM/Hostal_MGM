@@ -9,7 +9,9 @@ import {
   createUserDb,
   getAllUsersByRoleDb,
   getUserByIdAndRoleDb,
+  getUserByIdDb,
   updateUserByRoleDb,
+  updateUserDb,
   toggleUserActiveStatusByRoleDb
 } from "./user.service.js";
 import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
@@ -103,21 +105,21 @@ const updateAdmin = asyncHandler(async (req, res) => {
     });
 });
 
-const updateAdminEmail = asyncHandler(async (req, res) => {
+const updateUserEmail = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { oldEmail, newEmail } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return sendError(res, 400, "Invalid Admin ID");
+      return sendError(res, 400, "Invalid User ID");
     }
 
-    const admin = await getUserByIdAndRoleDb(id, "admin");
+    const user = await getUserByIdDb(id);
 
-    if (!admin) {
-      return sendError(res, 404, "Admin not found");
+    if (!user) {
+      return sendError(res, 404, "User not found");
     }
 
-    if (admin.email !== oldEmail) {
+    if (user.email !== oldEmail) {
       return sendError(res, 400, "Old email does not match");
     }
 
@@ -126,16 +128,16 @@ const updateAdminEmail = asyncHandler(async (req, res) => {
       return sendError(res, 400, "New email already in use");
     }
 
-    const updatedAdmin = await updateUserByRoleDb(id, "admin", { email: newEmail });
+    const updatedUser = await updateUserDb(id, { email: newEmail });
 
-    return sendSuccess(res, 200, "Admin email updated successfully", {
+    return sendSuccess(res, 200, "User email updated successfully", {
       data: {
-        _id: updatedAdmin._id,
-        name: updatedAdmin.name,
-        email: updatedAdmin.email,
-        phone: updatedAdmin.phone,
-        role: updatedAdmin.role,
-        isActive: updatedAdmin.isActive,
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive,
       }
     });
 });
@@ -335,7 +337,7 @@ export {
   getAdmins,
   getAdminById,
   updateAdmin,
-  updateAdminEmail,
+  updateUserEmail,
   updateAdminOrganization,
   toggleAdminStatus,
   createWarden,

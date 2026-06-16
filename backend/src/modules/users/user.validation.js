@@ -41,7 +41,7 @@ const validateUpdateAdmin = (req, res, next) => {
   next();
 };
 
-const validateUpdateAdminEmail = (req, res, next) => {
+const validateUpdateUserEmail = (req, res, next) => {
   const { oldEmail, newEmail } = req.body;
 
   if (!oldEmail || !newEmail) {
@@ -126,7 +126,7 @@ export {
   validateCreateAdmin,
   validateAdminIdParam,
   validateUpdateAdmin,
-  validateUpdateAdminEmail,
+  validateUpdateUserEmail,
   validateUpdateAdminOrganization,
   validateCreateWarden,
   validateWardenIdParam,

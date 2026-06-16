@@ -8,7 +8,7 @@ import {
   getAdmins, 
   getAdminById, 
   updateAdmin, 
-  updateAdminEmail,
+  updateUserEmail,
   toggleAdminStatus,
   createWarden,
   getWardens,
@@ -22,7 +22,7 @@ import {
   validateCreateAdmin, 
   validateAdminIdParam, 
   validateUpdateAdmin,
-  validateUpdateAdminEmail,
+  validateUpdateUserEmail,
   validateCreateWarden,
   validateWardenIdParam,
   validateUpdateWarden,
@@ -66,12 +66,12 @@ router.patch(
 );
 
 router.patch(
-  "/admins/:id/email",
+  "/:id/email",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin","admin"),
   validateAdminIdParam,
-  validateUpdateAdminEmail,
-  updateAdminEmail
+  validateUpdateUserEmail,
+  updateUserEmail
 );
 
 router.patch(

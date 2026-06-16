@@ -32,6 +32,10 @@ const getUserByIdAndRoleDb = async (id, role) => {
   }).select("-password");
 };
 
+const getUserByIdDb = async (id) => {
+  return await User.findById(id).select("-password");
+};
+
 const updateUserByRoleDb = async (id, role, data) => {
   const user = await User.findOne({
     _id: id,
@@ -42,6 +46,20 @@ const updateUserByRoleDb = async (id, role, data) => {
 
   if (data.name) user.name = data.name;
   if (data.phone) user.phone = data.phone;
+  if (data.email) user.email = data.email;
+
+  await user.save();
+  return user;
+};
+
+const updateUserDb = async (id, data) => {
+  const user = await User.findById(id);
+
+  if (!user) return null;
+
+  if (data.name) user.name = data.name;
+  if (data.phone) user.phone = data.phone;
+  if (data.email) user.email = data.email;
 
   await user.save();
   return user;
@@ -66,6 +84,8 @@ export {
   createUserDb,
   getAllUsersByRoleDb,
   getUserByIdAndRoleDb,
+  getUserByIdDb,
   updateUserByRoleDb,
+  updateUserDb,
   toggleUserActiveStatusByRoleDb
 }
