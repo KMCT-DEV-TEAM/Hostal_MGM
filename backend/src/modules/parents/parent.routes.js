@@ -3,10 +3,18 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-import { validateParentIdParam, validateUpdateParent } from "./parent.validation.js";
-import { updateParent, toggleParentStatus } from "./parent.controller.js";
+import { validateParentIdParam, validateUpdateParent, validateCreateParent } from "./parent.validation.js";
+import { createParent, updateParent, toggleParentStatus } from "./parent.controller.js";
 
 const router = express.Router();
+
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateCreateParent,
+  createParent
+);
 
 router.patch(
   "/:id",

@@ -1,5 +1,22 @@
 import mongoose from "mongoose";
 
+const validateCreateParent = (req, res, next) => {
+  const { studentId, parentName, phone, relationship, email } = req.body;
+
+  if (!studentId) {
+    return res.status(400).json({ success: false, message: "studentId is required" });
+  }
+
+  if (!parentName || !phone || !relationship || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "studentId, parentName, relationship, phone, and email are required",
+    });
+  }
+
+  next();
+};
+
 const validateParentIdParam = (req, res, next) => {
   const { id } = req.params;
 
@@ -14,9 +31,9 @@ const validateParentIdParam = (req, res, next) => {
 };
 
 const validateUpdateParent = (req, res, next) => {
-  const { name, email, phone, relationship, address } = req.body;
+  const { name, parentName, email, phone, relationship, address, defaultGuardian } = req.body;
 
-  if (!name && !email && !phone && !relationship && !address) {
+  if (!name && !parentName && !email && !phone && !relationship && !address && typeof defaultGuardian === "undefined") {
     return res.status(400).json({
       success: false,
       message: "At least one field must be provided for update",
@@ -28,5 +45,6 @@ const validateUpdateParent = (req, res, next) => {
 
 export {
   validateParentIdParam,
-  validateUpdateParent
+  validateUpdateParent,
+  validateCreateParent
 };
