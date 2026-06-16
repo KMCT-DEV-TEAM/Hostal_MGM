@@ -1,6 +1,6 @@
 import React from 'react'
 
-function Maintainance() {
+const Maintenance = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#F4F6F9]">
             {/* Shield + Wrench Illustration */}
@@ -22,4 +22,4 @@ function Maintainance() {
     )
 }
 
-export default Maintainance
+export default Maintenance

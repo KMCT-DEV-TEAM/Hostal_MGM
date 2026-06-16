@@ -10,7 +10,7 @@ const INITIAL_ORGS = [
     // ... add more as needed
 ];
 
-export default function Organizationmanagement() {
+const OrganizationManagement = () => {
     const [orgs] = useState(INITIAL_ORGS);
 
     return (
@@ -112,3 +112,5 @@ export default function Organizationmanagement() {
         </div>
     );
 }
+
+export default OrganizationManagement;

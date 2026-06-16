@@ -33,7 +33,7 @@ const AVAILABLE_HOSTELS = [
     'Kmct Hostel 6', 'Kmct Hostel 7', 'Kmct Hostel 8', 'Kmct Hostel 9', 'Kmct Hostel 10'
 ];
 
-export default function Wardenmanagement() {
+export default function WardenManagement() {
     // State management
     const [wardens, setWardens] = useState(INITIAL_WARDENS);
     const [selectedIds, setSelectedIds] = useState([]);
