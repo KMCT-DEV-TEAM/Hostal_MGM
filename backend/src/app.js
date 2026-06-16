@@ -9,6 +9,7 @@ import parentRoutes from "./modules/parents/parent.routes.js";
 import wardenRoutes from "./modules/wardens/warden.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import hostelRoutes from "./modules/hostels/hostel.routes.js";
+import otpRoutes from "./modules/otp/otp.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -41,6 +42,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 app.use("/api/auth", authRoutes);
+app.use("/api/otp", otpRoutes);
 
 app.use("/api/super-admin", userRoutes);
 app.use("/api/super-admin/dashboard", dashboardRoutes);

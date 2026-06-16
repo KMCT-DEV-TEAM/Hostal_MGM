@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarFeatures from '@/features/auth/components/AuthSidebarFeatures';
@@ -13,7 +13,7 @@ import { superAdminSchema } from '@/features/auth/validation/loginSchema';
 
 const SuperAdminLogin = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login } = useAuthStore();
 
     const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(superAdminSchema)

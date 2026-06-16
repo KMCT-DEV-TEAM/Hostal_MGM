@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
 
     phone: {
       type: String,
+    
     },
 
     password: {
@@ -42,6 +43,11 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    temppass: {
+      type: Boolean,
+      default: false,
     },
   },
   {

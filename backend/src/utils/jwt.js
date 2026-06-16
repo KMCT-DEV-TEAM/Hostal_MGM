@@ -22,7 +22,7 @@ export const generateAccessToken = (user) => {
 
 export const generateRefreshToken = (user) => {
   let expiresIn = "7d";
-  
+
   switch (user.role) {
     case "super_admin":
       expiresIn = "8h";

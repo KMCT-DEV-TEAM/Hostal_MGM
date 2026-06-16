@@ -1,10 +1,12 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 import Loading from '@/components/ui/Loading';
 
 const AuthGuard = ({ children }) => {
-    const { user, loading } = useAuth();
+    const { user, loading } = useAuthStore();
     const location = useLocation();
+
+    console.log('User:', user)
 
     if (loading) {
         return <Loading />;
