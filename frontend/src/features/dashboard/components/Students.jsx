@@ -45,7 +45,7 @@ export default function Students() {
                     <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600">
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-[#0A467F] text-white rounded-lg text-sm">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm">
                         <Plus className="w-4 h-4" /> Add New
                     </button>
                 </div>
@@ -68,7 +68,7 @@ export default function Students() {
                                 <td className="p-4"><Square className="w-5 h-5 text-gray-300" /></td>
                                 <td className="p-4">{s.admissionNo}</td>
                                 <td className="p-4 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-[10px]">NM</div>
+                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-[10px]">NM</div>
                                     {s.name}
                                 </td>
                                 <td className="p-4 text-gray-600">{s.course}</td>
@@ -80,13 +80,35 @@ export default function Students() {
                                     </select>
                                 </td>
                                 <td className="p-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${s.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                                        {s.status}
-                                    </span>
+                                    <div className="relative w-fit mx-auto">
+                                        <select
+                                            value={s.status}
+                                            onChange={(e) =>
+                                                handleStatusChange(s.id, e.target.value)
+                                            }
+                                            className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border
+                                       ${s.status === "Active"
+                                                    ? "bg-green-50 text-success border-green-100"
+                                                    : "bg-red-50 text-danger border-red-100"
+                                                }`}
+                                        >
+                                            <option>Active</option>
+                                            <option>Inactive</option>
+                                        </select>
+
+                                        <ChevronDown
+                                            size={12}
+                                            className={`absolute right-3 top-2
+                                       ${s.status === "Active"
+                                                    ? "text-success"
+                                                    : "text-danger"
+                                                }`}
+                                        />
+                                    </div>
                                 </td>
                                 <td className="p-4 flex gap-3 text-gray-400">
-                                    <Trash2 className="w-4 h-4 cursor-pointer text-danger" />
-                                    <Pencil className="w-4 h-4 cursor-pointer text-accent" />
+                                    <Trash2 className="w-4 h-4 cursor-pointer text-secondary" />
+                                    <Pencil className="w-4 h-4 cursor-pointer text-secondary" />
                                 </td>
                             </tr>
                         ))}

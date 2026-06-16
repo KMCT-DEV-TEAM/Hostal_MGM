@@ -17,8 +17,10 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
+
 import { useAuthStore } from '@/store/useAuthStore';
 import { DASHBOARD_NAV } from '@/features/dashboard/config/dashboardNavigation';
+
 
 // Reusable component for section headings
 const NavSection = ({ title, children }) => (
@@ -62,7 +64,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
             className={({ isActive }) =>
                 baseStyles +
                 (isActive
-                    ? "text-[#0A467F] font-medium bg-blue-50/50"
+                    ? "text-primary font-medium bg-blue-50/50"
                     : "text-gray-500 hover:text-gray-900 hover:bg-blue-50/50")
             }
         >
@@ -71,7 +73,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
                     <div className="flex items-center gap-3">
                         <Icon
                             className={`w-5 h-5 ${isActive
-                                ? "text-[#0A467F]"
+                                ? "text-primary"
                                 : "text-gray-400" /* Fixed undefined token text-text-secondary */
                                 }`}
                             strokeWidth={1.5}
@@ -92,14 +94,17 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
 };
 
 function Sidebar() {
+
     const { user, logout } = useAuthStore();
 
     const sections = DASHBOARD_NAV[user?.role] || [];
+
 
     return (
         <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA] flex flex-col justify-between">
             {/* Scrollable Main Content */}
             <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+
                 {sections.map((section) => (
                     <NavSection key={section.section} title={section.section}>
                         {section.items.map((item) => (
@@ -112,6 +117,7 @@ function Sidebar() {
                         ))}
                     </NavSection>
                 ))}
+
             </div>
 
             {/* Bottom Section */}
@@ -119,14 +125,13 @@ function Sidebar() {
                 <NavItem
                     icon={Settings}
                     label="Settings"
-                    to="/dashboard/settings"
+                    to="/super-admin/dashboard/settings"
                 />
 
                 <NavItem
                     icon={LogOut}
                     label="Logout"
                     isDanger
-                    onClick={logout}
                 />
             </div>
         </aside>

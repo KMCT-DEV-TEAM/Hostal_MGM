@@ -247,7 +247,7 @@ export default function Administrator() {
                         </button>
                         <button
                             onClick={openAddAdminModal}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-[#083561] transition-colors text-sm font-medium shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
                         >
                             <Plus className="w-4 h-4" />
                             Add New
@@ -368,8 +368,8 @@ export default function Administrator() {
                                                         }
                                                         className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border
         ${admin.status === "Active"
-                                                                ? "bg-green-50 text-green-600 border-green-100"
-                                                                : "bg-red-50 text-red-500 border-red-100"
+                                                                ? "bg-green-50 text-success border-green-100"
+                                                                : "bg-red-50 text-danger border-red-100"
                                                             }`}
                                                     >
                                                         <option>Active</option>
@@ -381,17 +381,17 @@ export default function Administrator() {
                                                         className={`absolute right-3 top-2
         ${admin.status === "Active"
                                                                 ? "text-success"
-                                                                : "text-error"
+                                                                : "text-danger"
                                                             }`}
                                                     />
                                                 </div>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center justify-center gap-3 text-gray-400">
-                                                    <button onClick={() => openEditAdminModal(admin)} className="hover:text-blue-600 transition-colors" title="Edit row item">
+                                                    <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                         <Pencil className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => handleDeleteAdmin(admin.id)} className="hover:text-red-500 transition-colors" title="Delete row item">
+                                                    <button onClick={() => handleDeleteAdmin(admin.id)} className="text-secondary cursor-pointer transition-colors" title="Delete row item">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -449,163 +449,128 @@ export default function Administrator() {
             </div>
 
             {/* ==========================================
-             MODAL 1: ADMINS (ADD & EDIT WORKFLOWS)
-             ========================================== */}
+    MODAL 1: ADMINS (ADD & EDIT WORKFLOWS)
+    ========================================== */}
+
             {activeModal === 'admin' && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
                     <form
                         onSubmit={handleSaveAdmin}
-                        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-150"
+                        // Reduced max-width from 2xl to lg and padding from 8 to 6
+                        className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
                     >
-                        <button
-                            type="button"
-                            onClick={() => setActiveModal(null)}
-                            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg p-1.5"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-
-                        <h2 className="text-xl font-bold text-gray-900">{editingAdmin ? 'Edit Admin Profile' : 'Add New Admin'}</h2>
-                        <p className="text-xs text-gray-400 mt-0.5 mb-6">Provide deployment information below to maintain clean administrative records</p>
-
-                        <div className="space-y-4">
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-start mb-6">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Admin Full Name<span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Enter full name"
-                                    value={adminForm.name}
-                                    onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                />
+                                <h2 className="text-xl font-semibold text-gray-900">
+                                    {editingAdmin ? 'Edit Admin' : 'Add New Admin'}
+                                </h2>
+                                <p className="text-xs text-[#777777] mt-0.5">
+                                    Create a new Admin account
+                                </p>
                             </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address<span className="text-red-500">*</span></label>
-                                    <input
-                                        type="email"
-                                        required
-                                        placeholder="name@gmail.com"
-                                        value={adminForm.email}
-                                        onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number<span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Enter 10-digit number"
-                                        value={adminForm.phone}
-                                        onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Hostel<span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <select
-                                            value={adminForm.hostel}
-                                            onChange={(e) => setAdminForm({ ...adminForm, hostel: e.target.value })}
-                                            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-700"
-                                        >
-
-                                        </select>
-                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Operational Status<span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <select
-                                            value={adminForm.status}
-                                            onChange={(e) => setAdminForm({ ...adminForm, status: e.target.value })}
-                                            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-700"
-                                        >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
-                                        </select>
-                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setActiveModal(false)}
+                                className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
                         </div>
 
-                        <div className="flex justify-end gap-3 mt-8">
+                        {/* Form Sections: Tightened spacing */}
+                        {/* Form Sections */}
+                        <div className="space-y-6">
+                            <section>
+                                <h3 className="text-xs font-semibold text-primary mb-1">Basic Info</h3>
+                                <h5 className='text-xs text-[#777777] mb-4'>Basic contact information of the Admin</h5>
+                                <div className="border-b border-gray-100 mb-4" />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-1">
+                                        <label className="block text-[10px] font-medium text-black mb-1">First Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="First name"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-[10px] font-medium text-black mb-1">Last Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="Last name"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-[10px] font-medium text-gray-500 mb-1">Phone Number *</label>
+                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50">
+                                            <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
+                                                <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
+                                                +91
+                                            </div>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="00000 00000"
+                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Conditionally hide Email if editing */}
+                                    {!editingAdmin && (
+                                        <div className="col-span-2">
+                                            <label className="block text-[10px] font-medium text-gray-500 mb-1">Email Address *</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                placeholder="admin@example.com"
+                                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* Conditionally hide Organization section if editing */}
+                            {!editingAdmin && (
+                                <section>
+                                    <h3 className="text-xs font-semibold text-[#0A437A] mb-2">Organization</h3>
+                                    <div className="border-b border-gray-100 mb-4" />
+                                    <label className="block text-[10px] font-medium text-gray-500 mb-1">Assign Organization *</label>
+                                    <div className="relative">
+                                        <select className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]">
+                                            <option>Select an Organization</option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
+                                    </div>
+                                </section>
+                            )}
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561]"
+                            >
+                                Save
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveModal(null)}
-                                className="px-5 py-2 border border-[#0A437A] text-[#0A437A] bg-white rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
-                            <button
-                                type="submit"
-                                className="px-7 py-2 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#083561] transition-colors shadow-sm"
-                            >
-                                Save Changes
-                            </button>
+
                         </div>
                     </form>
                 </div>
             )}
-
-            {/* ==========================================
-             MODAL 2: ADD NEW ORGANIZATION POPUP
-             ========================================== */}
-            {activeModal === 'organization' && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-150">
-                        <button onClick={() => setActiveModal(null)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg p-1.5">
-                            <X className="w-4 h-4" />
-                        </button>
-                        <h2 className="text-xl font-bold text-gray-900">Add New Organization</h2>
-                        <p className="text-xs text-gray-400 mt-0.5 mb-6">Fill in the details to manually create a new Organization</p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Organization Id<span className="text-red-500">*</span></label>
-                                <input type="text" placeholder="Eg : A78748" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Organization Name<span className="text-red-500">*</span></label>
-                                <input type="text" placeholder="Enter Organization name" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number<span className="text-red-500">*</span></label>
-                                <div className="flex gap-2">
-                                    <div className="relative w-24 flex-shrink-0">
-                                        <div className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white flex items-center gap-1.5 text-gray-600 select-none">
-                                            <span>🇮🇳</span><span>+91</span>
-                                        </div>
-                                    </div>
-                                    <input type="text" placeholder="Phone Number" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address<span className="text-red-500">*</span></label>
-                                <input type="email" placeholder="enter email" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Full Address<span className="text-red-500">*</span></label>
-                                <textarea rows="3" placeholder="Text the address" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 resize-none"></textarea>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={() => setActiveModal(null)} className="px-5 py-2 border border-[#0A437A] text-[#0A437A] bg-white rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
-                            <button onClick={() => setActiveModal(null)} className="px-7 py-2 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#083561]">save</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
         </div>
     );
 }
