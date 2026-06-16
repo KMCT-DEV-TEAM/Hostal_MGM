@@ -125,7 +125,7 @@ function Sidebar() {
                 <NavItem
                     icon={Settings}
                     label="Settings"
-                    to="/super-admin/dashboard/settings"
+                    to="/dashboard/settings"
                 />
 
                 <NavItem

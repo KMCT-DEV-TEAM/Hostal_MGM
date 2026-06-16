@@ -66,7 +66,7 @@ const router = createBrowserRouter([
     ...authRoutes,
 
     {
-        path: '/super-admin/dashboard',
+        path: '/dashboard',
         element: (
             <AuthGuard>
                 <DashboardLayout />
