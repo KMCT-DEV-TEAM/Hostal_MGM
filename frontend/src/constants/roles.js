@@ -1,8 +1,7 @@
 export const ROLES = {
-  SUPER_ADMIN: 'SUPER_ADMIN',
-  ADMIN: 'ADMIN',
-  WARDEN: 'WARDEN',
-  ORGANISATION: 'ORGANISATION',
-  STUDENT: 'STUDENT',
-  GUARDIAN: 'GUARDIAN',
+    SUPER_ADMIN: 'super_admin',
+    ADMIN: 'admin',
+    WARDEN: 'warden',
+    STUDENT: 'student',
+    PARENT: 'parent',
 };

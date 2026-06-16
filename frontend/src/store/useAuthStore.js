@@ -12,7 +12,7 @@ export const useAuthStore = create((set) => ({
     try {
       if (tokenStorage.getAccessToken()) {
         const profile = await authService.getProfile();
-        set({ user: profile, authenticated: true });
+        set({ user: profile.user, authenticated: true });
       } else {
         set({ user: null, authenticated: false });
       }
@@ -27,7 +27,7 @@ export const useAuthStore = create((set) => ({
   login: async (credentials) => {
     const data = await authService.login(credentials);
     const profile = await authService.getProfile();
-    set({ user: profile, authenticated: true });
+    set({ user: profile.user, authenticated: true });
     return data;
   },
 

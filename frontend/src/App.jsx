@@ -11,5 +11,3 @@ function App() {
 }
 
 export default App;
-
-// Minor update.

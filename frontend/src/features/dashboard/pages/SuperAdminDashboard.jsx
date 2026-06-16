@@ -32,6 +32,7 @@ import {
     X,
     ChevronDown,
 } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
 
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -248,6 +249,16 @@ function SuperAdminDashboard() {
         setIsOrgModalOpen(false);
     };
 
+    const { user } = useAuthStore();
+
+    const titles = {
+        SUPER_ADMIN: 'System Overview',
+        ADMIN: 'Organization Overview',
+        WARDEN: 'Hostel Overview'
+    };
+
+    const title = titles[user?.role] || 'Dashboard';
+
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
             {/* Topbar */}
@@ -255,7 +266,7 @@ function SuperAdminDashboard() {
                 {/* Left Section */}
                 <div>
                     <h1 className="text-2xl font-bold text-black mb-1">
-                        Dashboard
+                        {title}
                     </h1>
 
                     <p className="text-sm text-gray-500">
