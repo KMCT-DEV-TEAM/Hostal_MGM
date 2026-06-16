@@ -1,5 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import Swal from 'sweetalert2';
+
+import { useAuthStore } from '@/store/useAuthStore';
+import { DASHBOARD_NAV } from '@/features/dashboard/config/dashboardNavigation';
+
 import {
     LayoutGrid,
     Shield,
@@ -17,10 +22,6 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
-
-import { useAuthStore } from '@/store/useAuthStore';
-import { DASHBOARD_NAV } from '@/features/dashboard/config/dashboardNavigation';
-
 
 // Reusable component for section headings
 const NavSection = ({ title, children }) => (
@@ -99,7 +100,21 @@ function Sidebar() {
 
     const sections = DASHBOARD_NAV[user?.role] || [];
 
-
+    const handleLogout = () => {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out of your account.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0A467F',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, log out!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                logout();
+            }
+        });
+    };
     return (
         <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA] flex flex-col justify-between">
             {/* Scrollable Main Content */}
@@ -132,6 +147,7 @@ function Sidebar() {
                     icon={LogOut}
                     label="Logout"
                     isDanger
+                    onClick={handleLogout}
                 />
             </div>
         </aside>

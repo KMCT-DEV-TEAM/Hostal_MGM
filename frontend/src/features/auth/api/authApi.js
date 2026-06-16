@@ -1,3 +1,4 @@
+import { logout } from '@/services/auth.service';
 import api from '@/services/axios';
 
 const authApi = {
@@ -15,6 +16,8 @@ const authApi = {
 
   getProfile: () =>
     api.get("/auth/me"),
+
+  logout: () => api.post("/auth/logout"),
 };
 
 export default authApi;
