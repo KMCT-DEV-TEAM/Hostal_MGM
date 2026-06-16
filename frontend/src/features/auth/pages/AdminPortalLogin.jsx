@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { getDashboardRoute } from '@/utils/getDashboardRoute';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarFeatures from '@/features/auth/components/AuthSidebarFeatures';
 import AuthLogo from '@/features/auth/components/AuthLogo';
@@ -26,8 +27,9 @@ const AdminPortalLogin = () => {
                 password: data.password
             };
             await login(payload);
+            const user = useAuthStore.getState().user;
             showSuccessToast('Login Successful', 'Welcome to the Admin Dashboard');
-            navigate('/admin/dashboard'); 
+            navigate(getDashboardRoute(user.role));
         } catch (error) {
             console.log("error from the login page", error);
             showErrorToast('Login Failed', error?.message || 'Failed to sign in. Please check your credentials.');

@@ -28,7 +28,7 @@ const VerifyOtp = load(() => import('@/features/auth/pages/VerifyOtp'));
 const ResetPassword = load(() => import('@/features/auth/pages/ResetPassword'));
 
 // Dashboard Pages
-const SuperAdminDashboard = load(() => import('@/features/dashboard/pages/SuperAdminDashboard'));
+const DashboardOverview = load(() => import('@/features/dashboard/pages/DashboardOverview'));
 const Administrator = load(() => import('@/features/dashboard/components/Administrator'));
 const Maintainance = load(() => import('@/features/dashboard/components/Maintainance'));
 // const Hostels = load(() => import('@/features/dashboard/components/Hostels').catch(() => {
@@ -77,7 +77,7 @@ const router = createBrowserRouter([
                 index: true,
                 element: (
                     <RoleGuard roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN]}>
-                        <SuperAdminDashboard />
+                        <DashboardOverview />
                     </RoleGuard>
                 )
             },
