@@ -131,7 +131,7 @@ router.patch(
   authMiddleware,
   roleMiddleware("super_admin"),
   validateWardenIdParam,
-  toggleWardenStatus
+  toggleWardenStatus 
 );
 
 export default router;
