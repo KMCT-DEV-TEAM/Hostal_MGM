@@ -34,7 +34,6 @@ import {
     ChevronDown,
     KeyRound,
 } from "lucide-react";
-import { useAuthStore } from "@/store/useAuthStore";
 
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -255,16 +254,6 @@ function SuperAdminDashboard() {
         setIsOrgModalOpen(false);
     };
 
-    const { user } = useAuthStore();
-
-    const titles = {
-        SUPER_ADMIN: 'System Overview',
-        ADMIN: 'Organization Overview',
-        WARDEN: 'Hostel Overview'
-    };
-
-    const title = titles[user?.role] || 'Dashboard';
-
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
             {/* Topbar */}
@@ -272,7 +261,7 @@ function SuperAdminDashboard() {
                 {/* Left Section */}
                 <div>
                     <h1 className="text-2xl font-bold text-black mb-1">
-                        {title}
+                        Dashboard
                     </h1>
 
                     <p className="text-sm text-gray-500">
@@ -420,7 +409,7 @@ function SuperAdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Attendance Area Chart */}
-                    <div className="bg-white rounded-2xl p-6">
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         {/* Header */}
                         <div className="flex justify-between items-start mb-6">
                             <div>
