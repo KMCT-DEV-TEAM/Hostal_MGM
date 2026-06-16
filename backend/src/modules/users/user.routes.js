@@ -118,7 +118,7 @@ router.get(
 );
 
 router.patch(
-  "/wardens/:id",
+  "/wardens/:id", 
   authMiddleware,
   roleMiddleware("super_admin"),
   validateWardenIdParam,
