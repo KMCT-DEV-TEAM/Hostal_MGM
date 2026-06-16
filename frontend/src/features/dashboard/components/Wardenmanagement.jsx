@@ -304,7 +304,7 @@ export default function Wardenmanagement() {
                                             </td>
                                             <td className="p-4 font-medium text-gray-800">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-bold shrink-0">
                                                         {warden.name ? warden.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'W'}
                                                     </div>
                                                     {warden.name}
@@ -351,10 +351,10 @@ export default function Wardenmanagement() {
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center justify-center gap-3 text-gray-400">
-                                                    <button onClick={() => openEditWardenModal(warden)} className="hover:text-blue-600 transition-colors" title="Edit row item">
+                                                    <button onClick={() => openEditWardenModal(warden)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                         <Pencil className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => handleDeleteWarden(warden.id)} className="hover:text-red-500 transition-colors" title="Delete row item">
+                                                    <button onClick={() => handleDeleteWarden(warden.id)} className="text-secondary cursor-pointer transition-colors" title="Delete row item">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -415,161 +415,129 @@ export default function Wardenmanagement() {
              MODAL 1: WARDEN (ADD & EDIT WORKFLOWS)
              ========================================== */}
             {activeModal === 'warden' && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
                     <form
                         onSubmit={handleSaveWarden}
-                        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-150"
+                        // Reduced max-width from 2xl to lg and padding from 8 to 6
+                        className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
                     >
-                        <button
-                            type="button"
-                            onClick={() => setActiveModal(null)}
-                            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg p-1.5"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-
-                        <h2 className="text-xl font-bold text-gray-900">{editingWarden ? 'Edit Warden Profile' : 'Add New Warden'}</h2>
-                        <p className="text-xs text-gray-400 mt-0.5 mb-6">Provide deployment information below to maintain clean administrative records</p>
-
-                        <div className="space-y-4">
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-start mb-6">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Warden Full Name<span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Enter full name"
-                                    value={wardenForm.name}
-                                    onChange={(e) => setWardenForm({ ...wardenForm, name: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                />
+                                <h2 className="text-xl font-semibold text-gray-900">
+                                    {editingWarden ? 'Edit Warden' : 'Add New Warden'}
+                                </h2>
+                                <p className="text-xs text-[#777777] mt-0.5">
+                                    Create a new Warden account
+                                </p>
                             </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address<span className="text-red-500">*</span></label>
-                                    <input
-                                        type="email"
-                                        required
-                                        placeholder="name@gmail.com"
-                                        value={wardenForm.email}
-                                        onChange={(e) => setWardenForm({ ...wardenForm, email: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number<span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Enter 10-digit number"
-                                        value={wardenForm.phone}
-                                        onChange={(e) => setWardenForm({ ...wardenForm, phone: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Hostel<span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <select
-                                            value={wardenForm.hostel}
-                                            onChange={(e) => setWardenForm({ ...wardenForm, hostel: e.target.value })}
-                                            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-700"
-                                        >
-                                            {AVAILABLE_HOSTELS.map(h => (
-                                                <option key={h} value={h}>{h}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Operational Status<span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <select
-                                            value={wardenForm.status}
-                                            onChange={(e) => setWardenForm({ ...wardenForm, status: e.target.value })}
-                                            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-700"
-                                        >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
-                                        </select>
-                                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setActiveModal(false)}
+                                className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
                         </div>
 
-                        <div className="flex justify-end gap-3 mt-8">
+
+                        {/* Form Sections */}
+                        <div className="space-y-6">
+                            <section>
+                                <h3 className="text-sm font-semibold text-primary mb-1">Basic Info</h3>
+                                <h5 className='text-xs text-[#777777] mb-4'>Basic contact information of the Warden</h5>
+                                <div className="border-b border-gray-100 mb-4" />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-1">
+                                        <label className="block text-[10px] font-medium text-black mb-1">First Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="First name"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-[10px] font-medium text-black mb-1">Last Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="Last name"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-[10px] font-medium text-black mb-1">Phone Number *</label>
+                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50">
+                                            <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
+                                                <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
+                                                +91
+                                            </div>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="00000 00000"
+                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Conditionally hide Email if editing */}
+                                    {!editingWarden && (
+                                        <div className="col-span-2">
+                                            <label className="block text-[10px] font-medium text-black mb-1">Email Address *</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                placeholder="warden@example.com"
+                                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* Conditionally hide Organization section if editing */}
+                            {!editingWarden && (
+                                <section>
+                                    <h3 className="text-sm font-semibold text-[#0A437A] mb-2">Hostel Assignment</h3>
+                                    <h5 className='text-xs text-[#777777]'>Assign an Hostel to this administrator</h5>
+                                    <div className="border-b border-gray-100 mb-4" />
+                                    <label className="block text-[10px] font-medium text-black mb-1">Assign Hostel*</label>
+                                    <div className="relative">
+                                        <select className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-[#777777] focus:outline-none focus:border-[#0A437A]">
+                                            <option>Select an organization</option>
+                                            <option className="text-[#777777]">Hostel 1</option>
+                                            <option>Hostel 2</option>
+                                            <option>Hostel 3</option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
+                                    </div>
+                                </section>
+                            )}
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-[rgb(10,67,122)] text-white rounded-lg text-xs font-medium hover:bg-[#083561]"
+                            >
+                                Save
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveModal(null)}
-                                className="px-5 py-2 border border-[#0A437A] text-[#0A437A] bg-white rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-primary hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
-                            <button
-                                type="submit"
-                                className="px-7 py-2 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#083561] transition-colors shadow-sm"
-                            >
-                                Save Changes
-                            </button>
+
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* ==========================================
-             MODAL 2: ADD NEW ORGANIZATION POPUP
-             ========================================== */}
-            {activeModal === 'organization' && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-150">
-                        <button onClick={() => setActiveModal(null)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg p-1.5">
-                            <X className="w-4 h-4" />
-                        </button>
-                        <h2 className="text-xl font-bold text-gray-900">Add New Organization</h2>
-                        <p className="text-xs text-gray-400 mt-0.5 mb-6">Fill in the details to manually create a new Organization</p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Organization Id<span className="text-red-500">*</span></label>
-                                <input type="text" placeholder="Eg : A78748" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Organization Name<span className="text-red-500">*</span></label>
-                                <input type="text" placeholder="Enter Organization name" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number<span className="text-red-500">*</span></label>
-                                <div className="flex gap-2">
-                                    <div className="relative w-24 flex-shrink-0">
-                                        <div className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white flex items-center gap-1.5 text-gray-600 select-none">
-                                            <span>🇮🇳</span><span>+91</span>
-                                        </div>
-                                    </div>
-                                    <input type="text" placeholder="Phone Number" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address<span className="text-red-500">*</span></label>
-                                <input type="email" placeholder="enter email" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Full Address<span className="text-red-500">*</span></label>
-                                <textarea rows="3" placeholder="Text the address" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 resize-none"></textarea>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={() => setActiveModal(null)} className="px-5 py-2 border border-[#0A437A] text-[#0A437A] bg-white rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
-                            <button onClick={() => setActiveModal(null)} className="px-7 py-2 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#083561]">save</button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
         </div>
     );

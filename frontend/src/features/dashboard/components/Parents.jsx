@@ -72,7 +72,7 @@ export default function Parents() {
                             <tr key={p.id} className="hover:bg-gray-50/40">
                                 <td className="p-4"><Square className="w-5 h-5 text-gray-300" /></td>
                                 <td className="p-4 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs">JT</div>
+                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs">JT</div>
                                     {p.name}
                                 </td>
                                 <td className="p-4 text-gray-500"><Mail className="w-3 h-3 inline mr-2" />{p.email}</td>
@@ -84,13 +84,35 @@ export default function Parents() {
                                     </select>
                                 </td>
                                 <td className="p-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${p.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                                        {p.status}
-                                    </span>
+                                    <div className="relative w-fit mx-auto">
+                                        <select
+                                            value={p.status}
+                                            onChange={(e) =>
+                                                handleStatusChange(o.id, e.target.value)
+                                            }
+                                            className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border
+                                      ${p.status === "Active"
+                                                    ? "bg-green-50 text-success border-green-100"
+                                                    : "bg-red-50 text-danger border-red-100"
+                                                }`}
+                                        >
+                                            <option>Active</option>
+                                            <option>Inactive</option>
+                                        </select>
+
+                                        <ChevronDown
+                                            size={12}
+                                            className={`absolute right-3 top-2
+                                      ${p.status === "Active"
+                                                    ? "text-success"
+                                                    : "text-danger"
+                                                }`}
+                                        />
+                                    </div>
                                 </td>
                                 <td className="p-4 flex gap-3 text-gray-400">
-                                    <Trash2 className="w-4 h-4 cursor-pointer hover:text-danger" />
-                                    <Pencil className="w-4 h-4 cursor-pointer hover:text-blue-500" />
+                                    <Trash2 className="w-4 h-4 cursor-pointer text-secondary" />
+                                    <Pencil className="w-4 h-4 cursor-pointer text-secondary" />
                                 </td>
                             </tr>
                         ))}
