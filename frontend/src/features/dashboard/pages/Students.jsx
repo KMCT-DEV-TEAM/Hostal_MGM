@@ -94,14 +94,14 @@ export default function Students() {
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className=" text-[#222222] text-xs font-semibold border-b border-gray-50">
+                        <tr className=" text-[#222222] text-sm font-semibold border-b border-gray-50">
                             <th className="p-4 text-gray-300"><button onClick={handleSelectAll}>{selectedIds.length === students.length ? <CheckSquare className=" h-5 w-5 text-[#0A437A]" /> : <Square className="h-5 w-5 text-gray-300" />}</button></th>
                             {['Admission No', 'Name', 'Course', 'Department', 'Org Id', 'Hostel', 'Status', 'Action'].map(h => <th key={h} className="p-4">{h}</th>)}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-sm">
                         {students.map(s => (
-                            <tr key={s.id} className="hover:bg-gray-50">
+                            <tr key={s.id} className="hover:bg-gray-50 text-[#777777]">
                                 <td className="p-4"><button onClick={() => handleSelectRow(s.id)}>{selectedIds.includes(s.id) ? <CheckSquare className=" h-5 w-5 text-[#0A437A]" /> : <Square className="h-5 w-5 text-gray-300" />}</button></td>
                                 <td className="p-4">{s.admissionNo}</td>
                                 <td className="p-4 flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-[10px]">NM</div>{s.name}</td>

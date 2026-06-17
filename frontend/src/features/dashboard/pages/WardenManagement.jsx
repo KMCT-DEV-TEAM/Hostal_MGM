@@ -302,7 +302,7 @@ export default function WardenManagement() {
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="p-4 font-medium text-gray-800">
+                                            <td className="p-4 font-medium text-[#777777]">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-bold shrink-0">
                                                         {warden.name ? warden.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'W'}
