@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ROLES } from "@/constants/roles";
+import adminService from "@/services/admin.service";
+import wardenService from "@/services/warden.service";
+import organizationService from "@/services/organization.service";
+import hostelService from "@/services/hostel.service";
+
 import newStudentIcon from "../../../assets/images/dashboard/Frame.png";
 import complaintIcon from "../../../assets/images/dashboard/Vector (1).png";
 import passwordIcon from "../../../assets/images/dashboard/Group 719.png";
@@ -168,50 +175,142 @@ const quickSummary = [
     },
 ];
 
-const statCards = [
-    {
-        label: "Total Organizations",
-        value: "30",
-        sub: "+1 Added this month",
-        icon: <Building2 size={18} className="text-[#2D7CC3]" />,
-        iconBg: "bg-blue-50",
-    },
-    {
-        label: "Total Admins",
-        value: "2050",
-        sub: "+1 Added this month",
-        icon: <ShieldCheck size={18} className="text-primary" />,
-        iconBg: "bg-indigo-50",
-    },
-    {
-        label: "Total Wardens",
-        value: "50",
-        sub: "+4 Added this month",
-        icon: <Users size={18} className="text-[#9747FF]" />,
-        iconBg: "bg-violet-50",
-    },
-    {
-        label: "Total Students",
-        value: "3000",
-        sub: "+45 This month",
-        icon: <GraduationCap size={18} className="text-[#446015]" />,
-        iconBg: "bg-green-50",
-    },
-    {
-        label: "Total Hostels",
-        value: "15",
-        sub: "+1 Added this month",
-        icon: <House size={18} className="text-[#14B8A6] " />,
-        iconBg: "bg-teal-50",
-    },
-];
-
-
-
 function DashboardOverview() {
-
-
+    const { user } = useAuthStore();
     const [period, setPeriod] = useState("This Year");
+    const [dashboardStats, setDashboardStats] = useState({
+        organizations: 0, admins: 0, wardens: 0, students: 0, hostels: 0,
+        parents: 0, pendingComplaints: 0, leaveRequests: 0, presentToday: 0, absent: 0
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                if (user?.role === ROLES.SUPER_ADMIN) {
+                    const { data: stats } = await adminService.getSuperAdminDashboardStats();
+                    console.log('stats from super admin', stats)
+
+                    setDashboardStats(prev => ({
+                        ...prev,
+                        organizations: stats?.organizations || 0,
+                        admins: stats?.admins || 0,
+                        wardens: stats?.wardens || 0,
+                        hostels: stats?.hostels || 0,
+                        students: stats?.students || 0
+                    }));
+                } else if (user?.role === ROLES.ADMIN) {
+                    const { data: stats } = await adminService.getDashboardStats();
+                    console.log('stats from admin', stats)
+
+                    setDashboardStats(prev => ({
+                        ...prev,
+                        wardens: stats?.wardens || 0,
+                        students: stats?.students || 0,
+                        parents: stats?.parents || 0,
+                        pendingComplaints: stats?.pendingComplaints || 0,
+                        leaveRequests: stats?.leaveRequests || 0
+                    }));
+                } else if (user?.role === ROLES.WARDEN) {
+                    const { data: stats } = await wardenService.getWardenDashboardStats();
+                    console.log('stats from warden', stats)
+
+                    setDashboardStats(prev => ({
+                        ...prev,
+                        students: stats?.students || 0,
+                        presentToday: stats?.presentToday || 0,
+                        absent: stats?.absent || 0,
+                        pendingComplaints: stats?.pendingComplaints || 0,
+                        leaveRequests: stats?.leaveRequests || 0
+                    }));
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard stats", error);
+            }
+        };
+
+        fetchStats();
+    }, [user?.role]);
+
+    const getStatCards = () => {
+        if (user?.role === ROLES.SUPER_ADMIN) {
+            return [
+                {
+                    label: "Total Organizations", value: dashboardStats.organizations, sub: "+1 Added this month",
+                    icon: <Building2 size={18} className="text-[#2D7CC3]" />, iconBg: "bg-blue-50"
+                },
+                {
+                    label: "Total Admins", value: dashboardStats.admins, sub: "+1 Added this month",
+                    icon: <ShieldCheck size={18} className="text-primary" />, iconBg: "bg-indigo-50"
+                },
+                {
+                    label: "Total Wardens", value: dashboardStats.wardens, sub: "+4 Added this month",
+                    icon: <Users size={18} className="text-[#9747FF]" />, iconBg: "bg-violet-50"
+                },
+                {
+                    label: "Total Students", value: dashboardStats.students, sub: "+45 This month",
+                    icon: <GraduationCap size={18} className="text-[#446015]" />, iconBg: "bg-green-50"
+                },
+                {
+                    label: "Total Hostels", value: dashboardStats.hostels, sub: "+1 Added this month",
+                    icon: <House size={18} className="text-[#14B8A6] " />, iconBg: "bg-teal-50"
+                }
+            ];
+        }
+
+        if (user?.role === ROLES.ADMIN) {
+            return [
+                {
+                    label: "Total Students", value: dashboardStats.students, sub: "+45 This month",
+                    icon: <GraduationCap size={18} className="text-[#446015]" />, iconBg: "bg-green-50"
+                },
+                {
+                    label: "Total Wardens", value: dashboardStats.wardens, sub: "+4 Added this month",
+                    icon: <Users size={18} className="text-[#9747FF]" />, iconBg: "bg-violet-50"
+                },
+                {
+                    label: "Total Parents", value: dashboardStats.parents, sub: "+10 Added this month",
+                    icon: <Users size={18} className="text-[#2D7CC3]" />, iconBg: "bg-blue-50"
+                },
+                {
+                    label: "Pending Complaints", value: dashboardStats.pendingComplaints, sub: "5 High Priority",
+                    icon: <AlertTriangle size={18} className="text-[#F59E0B]" />, iconBg: "bg-[#FFF4E5]"
+                },
+                {
+                    label: "Total Leave Requests", value: dashboardStats.leaveRequests, sub: "12 Pending",
+                    icon: <MessageSquare size={18} className="text-[#2D7CC3]" />, iconBg: "bg-[#EAF3FF]"
+                }
+            ];
+        }
+
+        if (user?.role === ROLES.WARDEN) {
+            return [
+                {
+                    label: "Total Students", value: dashboardStats.students, sub: "+45 This month",
+                    icon: <GraduationCap size={18} className="text-[#446015]" />, iconBg: "bg-green-50"
+                },
+                {
+                    label: "Present Today", value: dashboardStats.presentToday, sub: "92% Attendance",
+                    icon: <UserCheck size={18} className="text-[#6B8E23]" />, iconBg: "bg-[#EEF7E7]"
+                },
+                {
+                    label: "Absent", value: dashboardStats.absent, sub: "8% Absent",
+                    icon: <X size={18} className="text-[#EF4444]" />, iconBg: "bg-[#FEE2E2]"
+                },
+                {
+                    label: "Pending Complaints", value: dashboardStats.pendingComplaints, sub: "2 High Priority",
+                    icon: <AlertTriangle size={18} className="text-[#F59E0B]" />, iconBg: "bg-[#FFF4E5]"
+                },
+                {
+                    label: "Total Leave Requests", value: dashboardStats.leaveRequests, sub: "5 Pending",
+                    icon: <MessageSquare size={18} className="text-[#2D7CC3]" />, iconBg: "bg-[#EAF3FF]"
+                }
+            ];
+        }
+
+        return [];
+    };
+
+    const dynamicStatCards = getStatCards();
 
     // State to toggle the "Add Hostel" Modal
     const [isHostelModalOpen, setIsHostelModalOpen] = useState(false);
@@ -266,32 +365,36 @@ function DashboardOverview() {
 
                     <p className="text-sm text-gray-500">
                         Welcome back{" "}
-                        <span className="text-primary font-semibold">Arjun</span>, here's
+                        <span className="text-primary font-semibold">{user?.name || "User"}</span>, here's
                         what's happening today
                     </p>
                 </div>
 
                 {/* Right Section */}
                 <div className="flex flex-wrap gap-2">
-                    <button
-                        onClick={() => setIsHostelModalOpen(true)}
-                        className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
-                    >
-                        + Add Hostel
-                    </button>
+                    {(user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN) && (
+                        <button
+                            onClick={() => setIsHostelModalOpen(true)}
+                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                        >
+                            + Add Hostel
+                        </button>
+                    )}
 
-                    <button
-                        onClick={() => setIsOrgModalOpen(true)}
-                        className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
-                    >
-                        + Add Organization
-                    </button>
+                    {user?.role === ROLES.SUPER_ADMIN && (
+                        <button
+                            onClick={() => setIsOrgModalOpen(true)}
+                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                        >
+                            + Add Organization
+                        </button>
+                    )}
                 </div>
             </div>
 
             <div className="p-6 md:p-8 flex flex-col gap-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {statCards.map((c, index) => {
+                    {dynamicStatCards.map((c, index) => {
                         const borderColors = [
                             "border-t-[#2D7CC3]", // 1st box
                             "border-t-[#0A467F]", // 2nd box

@@ -18,6 +18,12 @@ const adminApi = {
 
   updateOrganization: (id, payload) =>
     api.patch(`/super-admin/admins/${id}/organization`, payload),
+
+  getDashboardStats: () =>
+    api.get("/admin/dashboard/stats"),
+
+  getSuperAdminDashboardStats: () =>
+    api.get("/super-admin/dashboard/stats"),
 };
 
 export default adminApi;

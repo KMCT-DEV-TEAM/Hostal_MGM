@@ -46,12 +46,21 @@ export async function toggleStatus(id) {
   return response.data;
 }
 
+/**
+ * Fetch Dashboard Stats for Warden
+ */
+export async function getWardenDashboardStats() {
+  const response = await wardenApi.getWardenDashboardStats();
+  return response.data;
+}
+
 const wardenService = {
   createWarden,
   getWardens,
   getWardenById,
   updateWarden,
   toggleStatus,
+  getWardenDashboardStats,
 };
 
 export default wardenService;
