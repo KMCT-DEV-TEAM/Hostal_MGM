@@ -9,9 +9,16 @@ const validateCreateStudent = (req, res, next) => {
     parentPhone, 
     relationship 
   } = req.body;
-  console.log(req.body)
-  if (!organizationId) {
+
+  if (req.user?.role === "super_admin" && !organizationId) {
     return res.status(400).json({ success: false, message: "organizationId is required" });
+  }
+
+  if (organizationId && !mongoose.Types.ObjectId.isValid(organizationId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid organizationId",
+    });
   }
 
   if (!name || !email || !phone) {
@@ -53,8 +60,29 @@ const validateUpdateStudent = (req, res, next) => {
   next();
 };
 
+const validateUpdateStudentOrganization = (req, res, next) => {
+  const { organizationId } = req.body;
+
+  if (!organizationId) {
+    return res.status(400).json({
+      success: false,
+      message: "organizationId is required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid organizationId",
+    });
+  }
+
+  next();
+};
+
 export {
   validateCreateStudent,
   validateStudentIdParam,
-  validateUpdateStudent
+  validateUpdateStudent,
+  validateUpdateStudentOrganization
 };

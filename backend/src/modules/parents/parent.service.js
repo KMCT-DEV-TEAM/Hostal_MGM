@@ -35,7 +35,10 @@ const createParentDb = async (data) => {
   const parentTemporaryPassword = generateRandomPassword();
   const hashedParentPassword = await hashPassword(parentTemporaryPassword);
 
-  if (defaultGuardian) {
+  const parentCount = await Parent.countDocuments({ studentId });
+  const shouldDefaultGuardian = defaultGuardian || parentCount === 0;
+
+  if (shouldDefaultGuardian) {
     await Parent.updateMany({ studentId }, { defaultGuardian: false });
   }
 
@@ -46,7 +49,7 @@ const createParentDb = async (data) => {
     phone,
     email,
     address,
-    defaultGuardian,
+    defaultGuardian: shouldDefaultGuardian,
     password: hashedParentPassword,
     tempPassword: true,
   });
@@ -71,8 +74,6 @@ const updateParentDb = async (parentProfileId, data) => {
 
   if (data.parentName !== undefined) {
     parentProfile.parentName = data.parentName;
-  } else if (data.name !== undefined) {
-    parentProfile.parentName = data.name;
   }
 
   if (data.phone !== undefined) parentProfile.phone = data.phone;
@@ -83,12 +84,237 @@ const updateParentDb = async (parentProfileId, data) => {
     await Parent.updateMany({ studentId: parentProfile.studentId }, { defaultGuardian: false });
     parentProfile.defaultGuardian = true;
   } else if (data.defaultGuardian === false) {
-    parentProfile.defaultGuardian = false;
+    const parentCount = await Parent.countDocuments({ studentId: parentProfile.studentId });
+
+    if (parentCount <= 1) {
+      parentProfile.defaultGuardian = true;
+    } else {
+      parentProfile.defaultGuardian = false;
+      const otherDefault = await Parent.findOne({
+        studentId: parentProfile.studentId,
+        _id: { $ne: parentProfileId },
+        defaultGuardian: true,
+      });
+
+      if (!otherDefault) {
+        const nextParent = await Parent.findOne({
+          studentId: parentProfile.studentId,
+          _id: { $ne: parentProfileId },
+        });
+        if (nextParent) {
+          nextParent.defaultGuardian = true;
+          await nextParent.save();
+        }
+      }
+    }
   }
 
   await parentProfile.save();
 
   return { parentProfile };
+};
+
+const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => {
+  const parentProfile = await Parent.findById(parentProfileId);
+  if (!parentProfile) return null;
+
+  const studentId = parentProfile.studentId;
+  const parentCount = await Parent.countDocuments({ studentId });
+
+  if (defaultGuardian === true) {
+    await Parent.updateMany({ studentId }, { defaultGuardian: false });
+    parentProfile.defaultGuardian = true;
+  } else {
+    if (parentCount <= 1) {
+      parentProfile.defaultGuardian = true;
+    } else {
+      parentProfile.defaultGuardian = false;
+      const otherDefault = await Parent.findOne({
+        studentId,
+        _id: { $ne: parentProfileId },
+        defaultGuardian: true,
+      });
+
+      if (!otherDefault) {
+        const nextParent = await Parent.findOne({
+          studentId,
+          _id: { $ne: parentProfileId },
+        });
+        if (nextParent) {
+          nextParent.defaultGuardian = true;
+          await nextParent.save();
+        }
+      }
+    }
+  }
+
+  await parentProfile.save();
+  return { parentProfile };
+};
+
+const getParentsService = async ({ organizationId, query }) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const parentMatch = {};
+
+  if (relationship) {
+    parentMatch.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    parentMatch.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    parentMatch.isActive = isActive === "true";
+  }
+
+  if (studentId && mongoose.Types.ObjectId.isValid(studentId)) {
+    parentMatch.studentId = new mongoose.Types.ObjectId(studentId);
+  }
+
+  if (organizationId && mongoose.Types.ObjectId.isValid(organizationId)) {
+    parentMatch["student.organizationId"] = new mongoose.Types.ObjectId(organizationId);
+  }
+
+  const pipeline = [
+    
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student",
+      },
+    },
+    {
+      $match: parentMatch,
+    },
+    {
+      $unwind: {
+        path: "$student",
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+  ];
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          {
+            parentName: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            email: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            phone: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            relationship: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            "student.name": {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            "student.email": {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            "student.studentId": {
+              $regex: search,
+              $options: "i",
+            },
+          },
+        ],
+      },
+    });
+  }
+  console.log(pipeline)
+  const parents = await Parent.aggregate([
+    ...pipeline,
+    {
+      $project: {
+        _id: 1,
+        parentName: 1,
+        relationship: 1,
+        phone: 1,
+        email: 1,
+        defaultGuardian: 1,
+        isActive: 1,
+        createdAt: 1,
+        student: {
+          _id: "$student._id",
+          studentId: "$student.studentId",
+          name: "$student.name",
+          email: "$student.email",
+          organizationId: "$student.organizationId",
+        },
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limitNumber,
+    },
+  ]);
+
+  const totalResult = await Parent.aggregate([
+    ...pipeline,
+    {
+      $count: "total",
+    },
+  ]);
+
+  const totalRecords = totalResult[0]?.total || 0;
+
+  return {
+    parents,
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limitNumber),
+      hasNextPage: pageNumber < Math.ceil(totalRecords / limitNumber),
+      hasPreviousPage: pageNumber > 1,
+    },
+  };
 };
 
 const toggleParentStatusDb = async (parentProfileId) => {
@@ -104,5 +330,7 @@ const toggleParentStatusDb = async (parentProfileId) => {
 export {
   createParentDb,
   updateParentDb,
-  toggleParentStatusDb
+  setDefaultGuardianDb,
+  getParentsService,
+  toggleParentStatusDb,
 };

@@ -80,8 +80,8 @@ const studentSchema = new mongoose.Schema(
 
     hostelStatus: {
       type: String,
-      enum: [ "active" , " in_active"], 
-      default: "in_active",
+      enum: ["active", "inactive"],
+      default: "inactive",
     },
 
     isActive: {
@@ -99,7 +99,6 @@ const studentSchema = new mongoose.Schema(
   }
 );
 
-studentSchema.index({ studentId: 1 });
 studentSchema.index({ organizationId: 1 });
 studentSchema.index({ hostelId: 1 });
 

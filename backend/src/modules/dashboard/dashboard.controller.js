@@ -5,25 +5,73 @@ import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Student from "../students/student.model.js";
 import hostelModel from "../hostels/hostel.model.js";
+import mongoose from "mongoose";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
-  const [adminCount, wardenCount, studentCount, organizationCount, hostelCount] = await Promise.all([
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+  const [
+    admins,
+    wardens,
+    students,
+    organizations,
+    hostels,
+    adminLastMonthCount,
+    wardenLastMonthCount,
+    studentLastMonthCount,
+    organizationLastMonthCount,
+    hostelLastMonthCount,
+  ] = await Promise.all([
     User.countDocuments({ role: "admin" }),
     User.countDocuments({ role: "warden" }),
-    User.countDocuments({ role: "student" }),
+    Student.countDocuments(),
     Organization.countDocuments(),
     Hostel.countDocuments(),
+
+    User.countDocuments({
+      role: "admin",
+      createdAt: { $gte: lastMonth },
+    }),
+
+    User.countDocuments({
+      role: "warden",
+      createdAt: { $gte: lastMonth },
+    }),
+
+    Student.countDocuments({
+      createdAt: { $gte: lastMonth },
+    }),
+
+    Organization.countDocuments({
+      createdAt: { $gte: lastMonth },
+    }),
+
+    Hostel.countDocuments({
+      createdAt: { $gte: lastMonth },
+    }),
   ]);
 
-  return sendSuccess(res, 200, "Dashboard stats fetched successfully", {
-    data: {
-      organizations: organizationCount,
-      admins: adminCount,
-      wardens: wardenCount,
-      students: studentCount,
-      hostels: hostelCount,
-    },
-});
+  return sendSuccess(
+    res,
+    200,
+    "Dashboard stats fetched successfully",
+    {
+      data: {
+        organizations,
+        admins,
+        wardens,
+        students,
+        hostels,
+
+        organizationLastMonthCount,
+        adminLastMonthCount,
+        wardenLastMonthCount,
+        studentLastMonthCount,
+        hostelLastMonthCount,
+      },
+    }
+  );
 });
 
 const getStudentCountByOrganization = asyncHandler(async (req, res) => {
@@ -68,27 +116,75 @@ const getStudentCountByOrganization = asyncHandler(async (req, res) => {
 
 // admin controllers
 const getAdminStats = asyncHandler(async (req, res) => {
-  const organizationId = req.user.organization;
+  const admin = await User.findById(req.user.id)
+    .select("organization")
+    .lean();
 
-  const [wardenCount, studentCount, hostelCount] = await Promise.all([
-    User.countDocuments({ 
+  if (!admin?.organization) {
+    return sendError(
+      res,
+      400,
+      "Admin is not assigned to any organization"
+    );
+  }
+
+  const organizationId = admin.organization;
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+  const [
+    wardens,
+    students,
+    hostels,
+    wardenLastMonthCount,
+    studentLastMonthCount,
+    hostelLastMonthCount,
+  ] = await Promise.all([
+    User.countDocuments({
       role: "warden",
-      organization: organizationId 
+      organization: organizationId,
     }),
-    User.countDocuments({ 
-      role: "student", 
-      organization: organizationId 
+
+    Student.countDocuments({
+      organizationId,
     }),
-    hostelModel.countDocuments({ organizations: organizationId }),
+
+    hostelModel.countDocuments({
+      organizations: organizationId,
+    }),
+
+    User.countDocuments({
+      role: "warden",
+      organization: organizationId,
+      createdAt: { $gte: lastMonth },
+    }),
+
+    Student.countDocuments({
+      organizationId,
+      createdAt: { $gte: lastMonth },
+    }),
+
+    hostelModel.countDocuments({
+      organizations: organizationId,
+      createdAt: { $gte: lastMonth },
+    }),
   ]);
 
-  return sendSuccess(res, 200, "Dashboard stats fetched successfully", {
-    data: {
-      wardens: wardenCount,
-      students: studentCount,
-      hostels: hostelCount,
-    },
-  });
+  return sendSuccess(
+    res,
+    200,
+    "Dashboard stats fetched successfully",
+    {
+      data: {
+        wardens,
+        students,
+        hostels,
+        wardenLastMonthCount,
+        studentLastMonthCount,
+        hostelLastMonthCount,
+      },
+    }
+  );
 });
 
 
