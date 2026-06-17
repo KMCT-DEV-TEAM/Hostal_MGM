@@ -7,12 +7,26 @@ import { hashPassword } from "../../utils/hash.js";
 import User from "../users/user.model.js";
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
+
+  if (!['super_admin', 'admin'].includes(role)) {
+    return sendError(res, 400, "Invalid login portal");
+  }
 
   const user = await findUserForLoginDb(email);
 
   if (!user) {
-    return sendError(res, 401, "Invalid credentialssssss");
+    return sendError(res, 401, "Invalid credentials");
+  }
+
+  // Super admin portal → only super_admin
+  if (role === 'super_admin' && user.role !== 'super_admin') {
+    return sendError(res, 401, "You are not authorized to login as Super Admin. Check URL");
+  }
+
+  // Admin/Warden portal → allow admin + warden
+  if (role === 'admin' && !['admin', 'warden'].includes(user.role)) {
+    return sendError(res, 401, "You are not authorized to login from here. Check URL");
   }
 
   const isMatch = await verifyPassword(password, user.password);
@@ -56,14 +70,14 @@ const refreshToken = asyncHandler(async (req, res) => {
 
 const me = asyncHandler(async (req, res) => {
 
-  const user = await User.findOne({_id:req.user.id}).select("-password");
+  const user = await User.findOne({ _id: req.user.id }).select("-password");
 
   if (!user || !user.isActive) {
     return sendError(res, 401, "User not found or deactivated");
   }
 
 
-  return sendSuccess(res, 200, "Token is valid", {user:user._doc});
+  return sendSuccess(res, 200, "Token is valid", { user: user._doc });
 });
 
 const changePassword = asyncHandler(async (req, res) => {
