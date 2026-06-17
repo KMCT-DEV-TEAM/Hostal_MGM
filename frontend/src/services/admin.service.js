@@ -57,6 +57,22 @@ export async function updateOrganization(id, payload) {
   return response.data;
 }
 
+/**
+ * Fetch Dashboard Stats for Admin
+ */
+export async function getDashboardStats() {
+  const response = await adminApi.getDashboardStats();
+  return response.data;
+}
+
+/**
+ * Fetch Dashboard Stats for Super Admin
+ */
+export async function getSuperAdminDashboardStats() {
+  const response = await adminApi.getSuperAdminDashboardStats();
+  return response.data;
+}
+
 const adminService = {
   createAdmin,
   getAdmins,
@@ -64,6 +80,8 @@ const adminService = {
   updateEmail,
   toggleStatus,
   updateOrganization,
+  getDashboardStats,
+  getSuperAdminDashboardStats,
 };
 
 export default adminService;

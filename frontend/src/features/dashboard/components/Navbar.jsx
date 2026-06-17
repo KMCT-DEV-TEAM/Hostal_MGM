@@ -1,14 +1,16 @@
 import React from "react";
+import { useAuthStore } from "@/store/useAuthStore";
 import logo from "../../../assets/images/dashboard/logo.png"; // adjust path
 import bellIcon from "../../../assets/images/dashboard/bell.png"; // adjust path
 import {
     Menu,
     Search,
-    Bell,
-    ChevronDown,
 } from "lucide-react";
 
 function Navbar() {
+    const { user } = useAuthStore();
+    const role = user?.role.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
     return (
         <header className="fixed top-0 left-0 right-0 h-[82px] bg-white border-b border-[#D9D9D985] z-50 flex items-center px-6">
 
@@ -33,7 +35,7 @@ function Navbar() {
                     <div className="relative w-full">
                         <Search
                             size={18}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-[#777777]"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
                         />
 
                         <input
@@ -56,16 +58,24 @@ function Navbar() {
 
                 {/* Profile */}
                 <div className="flex items-center gap-3 cursor-pointer">
-                    <div className="w-10 h-10 rounded-full bg-[#0A467F] flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">AK</span>
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">
+                            {user?.name
+                                ? user.name
+                                    .split(' ')
+                                    .map(word => word.charAt(0).toUpperCase())
+                                    .slice(0, 2)
+                                    .join('')
+                                : 'A'}
+                        </span>
                     </div>
 
                     <div className="hidden md:block">
                         <p className="text-sm font-medium text-[#111827]">
-                            Arjun Kumar
+                            {user?.name}
                         </p>
                         <p className="text-xs text-[#6B7280]">
-                            Super Admin
+                            {role}
                         </p>
                     </div>
                 </div>

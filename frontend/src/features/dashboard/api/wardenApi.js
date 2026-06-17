@@ -15,6 +15,9 @@ const wardenApi = {
 
   toggleStatus: (id) =>
     api.patch(`/super-admin/wardens/${id}/toggle-status`),
+
+  getWardenDashboardStats: () =>
+    api.get("/warden/dashboard/stats"),
 };
 
 export default wardenApi;

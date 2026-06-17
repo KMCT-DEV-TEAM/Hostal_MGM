@@ -24,7 +24,8 @@ const AdminPortalLogin = () => {
         try {
             const payload = {
                 email: data.adminId,
-                password: data.password
+                password: data.password,
+                role: 'admin'
             };
             await login(payload);
             const user = useAuthStore.getState().user;

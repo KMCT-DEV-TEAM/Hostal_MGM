@@ -13,6 +13,9 @@ const load = (importer) => Loadable(lazy(importer));
 // Layouts
 const DashboardLayout = load(() => import('@/layouts/DashboardLayout'));
 
+// Pages
+const ForcePasswordChange = load(() => import('@/features/auth/pages/ForcePasswordChange'));
+
 // Reusable protected route helper
 const protectedRoute = (Component, roles) => ({
     element: (
@@ -29,6 +32,15 @@ const router = createBrowserRouter([
     },
 
     ...authRoutes,
+
+    {
+        path: '/force-password-change',
+        element: (
+            <AuthGuard>
+                <ForcePasswordChange />
+            </AuthGuard>
+        )
+    },
 
     {
         path: '/dashboard',
