@@ -1,0 +1,20 @@
+import api from '@/services/axios';
+
+const hostelApi = {
+  createHostel: (payload) =>
+    api.post("/super-admin/hostels", payload),
+
+  getHostels: (params) =>
+    api.get("/super-admin/hostels", { params }),
+
+  getHostelById: (id) =>
+    api.get(`/super-admin/hostels/${id}`),
+
+  updateHostel: (id, payload) =>
+    api.patch(`/super-admin/hostels/${id}`, payload),
+
+  toggleStatus: (id) =>
+    api.patch(`/super-admin/hostels/${id}/toggle-status`),
+};
+
+export default hostelApi;

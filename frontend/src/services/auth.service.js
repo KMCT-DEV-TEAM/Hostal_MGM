@@ -18,11 +18,11 @@ export async function login(credentials) {
 }
 
 /**
- * Request verification OTP code for resetting password.
+ * Request OTP code for resetting password.
  * @param {Object} payload - email address
  */
-export function forgotPassword(payload) {
-  return authApi.forgotPassword(payload);
+export function sendOtp(payload) {
+  return authApi.sendOtp(payload);
 }
 
 /**
@@ -39,6 +39,14 @@ export function verifyOtp(payload) {
  */
 export function resetPassword(payload) {
   return authApi.resetPassword(payload);
+}
+
+/**
+ * Change temporary password.
+ * @param {Object} payload - oldPassword and newPassword
+ */
+export function changePassword(payload) {
+  return authApi.changePassword(payload);
 }
 
 /**
@@ -68,9 +76,10 @@ export async function getProfile() {
 
 const authService = {
   login,
-  forgotPassword,
+  sendOtp,
   verifyOtp,
   resetPassword,
+  changePassword,
   logout,
   getProfile,
 };
