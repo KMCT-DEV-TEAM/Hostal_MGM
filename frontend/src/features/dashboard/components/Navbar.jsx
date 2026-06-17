@@ -9,7 +9,7 @@ import {
 
 function Navbar() {
     const { user } = useAuthStore();
-    const role = user?.role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const role = user?.role.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
     return (
         <header className="fixed top-0 left-0 right-0 h-[82px] bg-white border-b border-[#D9D9D985] z-50 flex items-center px-6">
@@ -59,7 +59,15 @@ function Navbar() {
                 {/* Profile */}
                 <div className="flex items-center gap-3 cursor-pointer">
                     <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">{user?.name.charAt(0).toUpperCase() + user?.name.split(' ')[1].charAt(0).toUpperCase()}</span>
+                        <span className="text-white text-sm font-semibold">
+                            {user?.name
+                                ? user.name
+                                    .split(' ')
+                                    .map(word => word.charAt(0).toUpperCase())
+                                    .slice(0, 2)
+                                    .join('')
+                                : 'A'}
+                        </span>
                     </div>
 
                     <div className="hidden md:block">
