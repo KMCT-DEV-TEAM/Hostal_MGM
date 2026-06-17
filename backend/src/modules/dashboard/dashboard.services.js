@@ -9,7 +9,7 @@ const getDashboardStats = asyncHandler(async (req, res, next) => {
         admin: getAdminStats,
     };
     const handler = roleHandlers[req.user?.role];
-
+    console.log(handler)
     if (!handler) {
         return res.status(403).json({
             success: false,
