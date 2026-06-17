@@ -1,16 +1,14 @@
 import asyncHandler from "../../utils/asyncHandler.js";
-import { sendSuccess } from "../../utils/response.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
 import User from "../users/user.model.js";
 import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Student from "../students/student.model.js";
-import hostelModel from "../hostels/hostel.model.js";
-import mongoose from "mongoose";
+import Parent from "../parents/parent.model.js";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
-
   const [
     admins,
     wardens,
@@ -119,7 +117,6 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const admin = await User.findById(req.user.id)
     .select("organization")
     .lean();
-
   if (!admin?.organization) {
     return sendError(
       res,
@@ -135,10 +132,10 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const [
     wardens,
     students,
-    hostels,
+    parents,
     wardenLastMonthCount,
     studentLastMonthCount,
-    hostelLastMonthCount,
+    parentLastMonthCount,
   ] = await Promise.all([
     User.countDocuments({
       role: "warden",
@@ -149,9 +146,27 @@ const getAdminStats = asyncHandler(async (req, res) => {
       organizationId,
     }),
 
-    hostelModel.countDocuments({
-      organizations: organizationId,
-    }),
+    Parent.aggregate([
+      {
+        $lookup: {
+          from: "students",
+          localField: "studentId",
+          foreignField: "_id",
+          as: "student",
+        },
+      },
+      {
+        $unwind: "$student",
+      },
+      {
+        $match: {
+          "student.organizationId": organizationId,
+        },
+      },
+      {
+        $count: "total",
+      },
+    ]),
 
     User.countDocuments({
       role: "warden",
@@ -164,11 +179,30 @@ const getAdminStats = asyncHandler(async (req, res) => {
       createdAt: { $gte: lastMonth },
     }),
 
-    hostelModel.countDocuments({
-      organizations: organizationId,
-      createdAt: { $gte: lastMonth },
-    }),
+    Parent.aggregate([
+      {
+        $lookup: {
+          from: "students",
+          localField: "studentId",
+          foreignField: "_id",
+          as: "student",
+        },
+      },
+      {
+        $unwind: "$student",
+      },
+      {
+        $match: {
+          "student.organizationId": organizationId,
+          createdAt: { $gte: lastMonth },
+        },
+      },
+      {
+        $count: "total",
+      },
+    ]),
   ]);
+
 
   return sendSuccess(
     res,
@@ -178,10 +212,10 @@ const getAdminStats = asyncHandler(async (req, res) => {
       data: {
         wardens,
         students,
-        hostels,
+        parents: parents[0]?.total || 0,
         wardenLastMonthCount,
         studentLastMonthCount,
-        hostelLastMonthCount,
+        parentLastMonthCount: parentLastMonthCount[0]?.total || 0,
       },
     }
   );
