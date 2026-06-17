@@ -1,6 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb } from "./parent.service.js";
+import User from "../users/user.model.js";
+import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService } from "./parent.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
   let result;
@@ -82,6 +83,43 @@ const toggleParentStatus = asyncHandler(async (req, res) => {
   });
 });
 
+const getParentsByAdmin = asyncHandler(async (req, res) => {
+  const admin = await User.findById(req.user.id)
+    .select("organization")
+    .lean();
+
+  if (!admin?.organization) {
+    return sendError(
+      res,
+      400,
+      "Admin is not assigned to any organization"
+    );
+  }
+  const organizationId = admin.organization;
+
+  if (!organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const result = await getParentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
+const getParentsBySuperAdmin = asyncHandler(async (req, res) => {
+  const { organizationId } = req.query;
+
+  const result = await getParentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
 const setDefaultGuardian = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { defaultGuardian } = req.body;
@@ -113,4 +151,6 @@ export {
   updateParent,
   toggleParentStatus,
   setDefaultGuardian,
+  getParentsByAdmin,
+  getParentsBySuperAdmin,
 };

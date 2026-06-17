@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateParentIdParam, validateUpdateParent, validateCreateParent } from "./parent.validation.js";
-import { createParent, updateParent, toggleParentStatus, setDefaultGuardian } from "./parent.controller.js";
+import { createParent, updateParent, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin } from "./parent.controller.js";
 
 const router = express.Router();
 
@@ -40,6 +40,20 @@ router.patch(
   validateParentIdParam,
   validateUpdateParent,
   setDefaultGuardian
+);
+
+router.get(
+  "/admin",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getParentsByAdmin
+);
+
+router.get(
+  "/super-admin",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  getParentsBySuperAdmin
 );
 
 export default router;
