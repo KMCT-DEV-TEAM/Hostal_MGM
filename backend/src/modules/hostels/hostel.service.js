@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Hostel from "./hostel.model.js";
 
 const checkExistingHostelCodeDb = async (code) => {
@@ -21,9 +22,22 @@ const getHostelsDb = async (organizationId) => {
     .populate("organizations", "name code");
 };
 
-const getPaginatedHostelsDb = async (organizationId, page = 1, limit = 10) => {
+const getPaginatedHostelsDb = async (organizationId, page = 1, limit = 10, search = "", status = "") => {
   const skip = (page - 1) * limit;
   const query = organizationId ? { organizations: organizationId } : {};
+
+  if (status && status !== "All") {
+    query.isActive = status === "Active";
+  }
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { phone: { $regex: search, $options: "i" } },
+      { code: { $regex: search, $options: "i" } },
+    ];
+  }
 
   const [hostels, totalCount] = await Promise.all([
     Hostel.find(query)
@@ -71,6 +85,22 @@ const toggleHostelStatusDb = async (id, organizationId) => {
   return await hostel.save();
 };
 
+const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId) => {
+  try {
+    const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+    const query = { _id: { $in: objectIds } };
+    if (organizationId) {
+      query.organizations = organizationId;
+    }
+    const result = await Hostel.updateMany(query, { $set: { isActive } });
+    console.log("bulkUpdateHostelStatusDb inside service result:", result);
+    return result;
+  } catch (error) {
+    console.error("bulkUpdateHostelStatusDb error:", error);
+    throw error;
+  }
+};
+
 export {
   checkExistingHostelCodeDb,
   checkExistingHostelEmailDb,
@@ -79,5 +109,6 @@ export {
   getPaginatedHostelsDb,
   getHostelByIdDb,
   updateHostelDb,
-  toggleHostelStatusDb
+  toggleHostelStatusDb,
+  bulkUpdateHostelStatusDb
 };

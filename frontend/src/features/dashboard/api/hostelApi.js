@@ -15,6 +15,9 @@ const hostelApi = {
 
   toggleStatus: (id) =>
     api.patch(`/super-admin/hostels/${id}/toggle-status`),
+
+  bulkToggleStatus: ({ids, isActive}) =>
+    api.patch("/super-admin/hostels/bulk-status", {ids, isActive}),
 };
 
 export default hostelApi;

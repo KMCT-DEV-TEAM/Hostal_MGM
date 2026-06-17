@@ -8,20 +8,21 @@ import {
   getPaginatedHostelsDb,
   getHostelByIdDb,
   updateHostelDb,
-  toggleHostelStatusDb
+  toggleHostelStatusDb,
+  bulkUpdateHostelStatusDb
 } from "./hostel.service.js";
 
 const createHostel = asyncHandler(async (req, res) => {
-  const { code, email } = req.body;
+  const { code, email, organization } = req.body;
   
-  // let finalOrganizations = organizations;
-  // if (!finalOrganizations || finalOrganizations.length === 0) {
-  //   if (req.user.organization) {
-  //     finalOrganizations = [req.user.organization];
-  //   } else {
-  //     return sendError(res, 400, "At least one Organization ID is required");
-  //   }
-  // }
+  let finalOrganizations = [];
+  if (organization) {
+    finalOrganizations = [organization];
+  } else if (req.user.organization) {
+    finalOrganizations = [req.user.organization];
+  } else {
+    return sendError(res, 400, "Organization ID is required");
+  }
 
   const existingEmail = await checkExistingHostelEmailDb(email);
   if (existingEmail) {
@@ -35,7 +36,7 @@ const createHostel = asyncHandler(async (req, res) => {
 
   const newHostel = await createHostelDb({
     ...req.body,
-    // organizations: finalOrganizations,
+    organizations: finalOrganizations,
   });
 
   return sendSuccess(res, 201, "Hostel created successfully", {
@@ -46,15 +47,17 @@ const createHostel = asyncHandler(async (req, res) => {
 const getHostels = asyncHandler(async (req, res) => {
   const organizationId = req.user.organization;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 10;
+  const search = req.query.search || "";
+  const status = req.query.status || "";
   
-  const { hostels, totalCount } = await getPaginatedHostelsDb(organizationId, page, limit);
+  const { hostels, totalCount } = await getPaginatedHostelsDb(organizationId, page, limit, search, status);
 
   return sendSuccess(res, 200, "Hostels fetched successfully", {
     count: hostels.length,
     totalCount,
     currentPage: page,
-    totalPages: Math.ceil(totalCount / limit),
+    totalPages: limit === 0 ? 1 : Math.ceil(totalCount / limit),
     data: hostels,
   });
 });
@@ -77,7 +80,7 @@ const getHostelById = asyncHandler(async (req, res) => {
 const updateHostel = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const organizationId = req.user.role === "admin" ? req.user.organization : null;
-  const { name, code, email, location, capacity, hosteltype } = req.body;
+  const { name, code, email, phone, location, capacity, hosteltype } = req.body;
 
   if (code) {
     const existingHostel = await checkExistingHostelCodeDb(code);
@@ -98,6 +101,7 @@ const updateHostel = asyncHandler(async (req, res) => {
   if (name !== undefined) updatePayload.name = name;
   if (code !== undefined) updatePayload.code = code;
   if (email !== undefined) updatePayload.email = email;
+  if (phone !== undefined) updatePayload.phone = phone;
   if (location !== undefined) updatePayload.location = location;
   if (capacity !== undefined) updatePayload.capacity = capacity;
   if (hosteltype !== undefined) updatePayload.hosteltype = hosteltype;
@@ -115,21 +119,37 @@ const updateHostel = asyncHandler(async (req, res) => {
 
 const toggleHostelStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const organizationId = req.user.organization;
+  const organizationId = req.user.role === "admin" ? req.user.organization : null;
 
   const hostel = await toggleHostelStatusDb(id, organizationId);
-
+  
   if (!hostel) {
     return sendError(res, 404, "Hostel not found");
   }
 
-  const message = hostel.isActive
-    ? "Hostel activated successfully"
-    : "Hostel deactivated successfully";
-
-  return sendSuccess(res, 200, message, {
+  return sendSuccess(res, 200, `Hostel status updated to ${hostel.isActive ? 'Active' : 'Inactive'}`, {
     data: hostel,
   });
+});
+
+const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+  console.log("Active Status", req.body);
+  
+  const organizationId = req.user.role === "admin" ? req.user.organization : null;
+  console.log("Organization ID", organizationId);
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return sendError(res, 400, "Please provide an array of hostel IDs");
+  }
+
+  if (typeof isActive !== "boolean") {
+    return sendError(res, 400, "Please provide a valid boolean for isActive");
+  }
+
+  const result = await bulkUpdateHostelStatusDb(ids, isActive, organizationId);
+  console.log("bulkUpdateHostelStatus result:", result);
+
+  return sendSuccess(res, 200, `Successfully updated ${ids.length} hostels to ${isActive ? 'Active' : 'Inactive'} status`, { result });
 });
 
 export {
@@ -137,5 +157,6 @@ export {
   getHostels,
   getHostelById,
   updateHostel,
-  toggleHostelStatus
+  toggleHostelStatus,
+  bulkUpdateHostelStatus,
 };
