@@ -33,7 +33,8 @@ export const useAuthStore = create((set) => ({
 
   logout: async () => {
     try {
-      await authService.logout();
+      const response = await authService.logout();
+      console.log('logout response:', response);
     } finally {
       set({ user: null, authenticated: false });
     }

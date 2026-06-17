@@ -23,7 +23,7 @@ const SuperAdminLogin = () => {
         try {
             await login(data);
             showSuccessToast('Login Successful', 'Welcome to the Admin Dashboard');
-            navigate('/super-admin/dashboard'); // Or wherever the dashboard route is
+            navigate('/dashboard'); // Or wherever the dashboard route is
         } catch (error) {
             console.log("error from the login page", error);
             showErrorToast('Login Failed', error?.message || 'Failed to sign in. Please check your credentials.');

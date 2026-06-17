@@ -6,6 +6,19 @@ const findExistingOrganization = async (code, organisationNumber) => {
   });
 };
 
+const findExistingOrganizationWithExclude = async (code, organisationNumber, excludeId) => {
+  const orConditions = [];
+  if (code) orConditions.push({ code });
+  if (organisationNumber) orConditions.push({ organisationNumber });
+
+  if (orConditions.length === 0) return null;
+
+  return await Organization.findOne({
+    _id: { $ne: excludeId },
+    $or: orConditions
+  });
+};
+
 const createOrganizationDb = async (data) => {
   return await Organization.create(data);
 };
@@ -14,12 +27,35 @@ const getAllOrganizationsDb = async () => {
   return await Organization.find().populate("adminId", "name email isActive");
 };
 
+const getPaginatedOrganizationsDb = async (page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+
+  const [organizations, totalCount] = await Promise.all([
+    Organization.find()
+      .populate("adminId", "name email isActive")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }),
+    Organization.countDocuments(),
+  ]);
+
+  return { organizations, totalCount };
+};
+
 const getOrganizationByIdDb = async (id) => {
   return await Organization.findById(id).populate("adminId", "name email isActive");
 };
 
 const updateOrganizationDb = async (id, data) => {
   return await Organization.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+};
+
+const toggleOrganizationStatusDb = async (id) => {
+  const org = await Organization.findById(id);
+  if (!org) return null;
+
+  org.isActive = !org.isActive;
+  return await org.save();
 };
 
 const getAggregateOrganizationDataDb = async (organizationId = null) => {
@@ -159,9 +195,12 @@ const getAggregateOrganizationDataDb = async (organizationId = null) => {
 
 export {
   findExistingOrganization,
+  findExistingOrganizationWithExclude,
   createOrganizationDb,
   getAllOrganizationsDb,
+  getPaginatedOrganizationsDb,
   getOrganizationByIdDb,
   updateOrganizationDb,
+  toggleOrganizationStatusDb,
   getAggregateOrganizationDataDb
 }

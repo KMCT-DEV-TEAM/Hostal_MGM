@@ -41,7 +41,7 @@ const validateUpdateAdmin = (req, res, next) => {
   next();
 };
 
-const validateUpdateAdminEmail = (req, res, next) => {
+const validateUpdateUserEmail = (req, res, next) => {
   const { oldEmail, newEmail } = req.body;
 
   if (!oldEmail || !newEmail) {
@@ -77,12 +77,12 @@ const validateUpdateAdminOrganization = (req, res, next) => {
 // --- WARDEN VALIDATIONS ---
 
 const validateCreateWarden = (req, res, next) => {
-  const { name, email, password, organizationId, hostelId } = req.body;
+  const { name, email, phone, hostelId } = req.body;
 
-  if (!name || !email || !password || !organizationId || !hostelId) {
+  if (!name || !email || !phone || !hostelId) {
     return res.status(400).json({
       success: false,
-      message: "name, email, password, organizationId, and hostelId are required",
+      message: "name, email, phone, and hostelId are required",
     });
   }
 
@@ -110,12 +110,12 @@ const validateWardenIdParam = (req, res, next) => {
 };
 
 const validateUpdateWarden = (req, res, next) => {
-  const { name, email } = req.body;
+  const { name, phone } = req.body;
 
-  if (!name && !email) {
+  if (!name && !phone) {
     return res.status(400).json({
       success: false,
-      message: "At least one field (name or email) must be provided for update",
+      message: "At least one field (name or phone) must be provided for update",
     });
   }
 
@@ -126,7 +126,7 @@ export {
   validateCreateAdmin,
   validateAdminIdParam,
   validateUpdateAdmin,
-  validateUpdateAdminEmail,
+  validateUpdateUserEmail,
   validateUpdateAdminOrganization,
   validateCreateWarden,
   validateWardenIdParam,

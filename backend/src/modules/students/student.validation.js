@@ -4,12 +4,12 @@ const validateCreateStudent = (req, res, next) => {
     name, 
     email, 
     phone, 
-    parentname, 
-    parentemail, 
-    parentnumber, 
-    parentrelationship 
+    parentName, 
+    parentEmail, 
+    parentPhone, 
+    relationship 
   } = req.body;
-
+  console.log(req.body)
   if (!organizationId) {
     return res.status(400).json({ success: false, message: "organizationId is required" });
   }
@@ -18,7 +18,7 @@ const validateCreateStudent = (req, res, next) => {
     return res.status(400).json({ success: false, message: "Student name, email, and phone are required" });
   }
 
-  if (!parentname || !parentemail || !parentnumber || !parentrelationship) {
+  if (!parentName || !parentEmail || !parentPhone || !relationship) {
     return res.status(400).json({ success: false, message: "Parent name, email, number, and relationship are required" });
   }
 

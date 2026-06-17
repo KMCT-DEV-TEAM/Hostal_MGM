@@ -8,8 +8,11 @@ import {
   findExistingUserByEmail,
   createUserDb,
   getAllUsersByRoleDb,
+  getPaginatedUsersByRoleDb,
   getUserByIdAndRoleDb,
+  getUserByIdDb,
   updateUserByRoleDb,
+  updateUserDb,
   toggleUserActiveStatusByRoleDb
 } from "./user.service.js";
 import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
@@ -57,8 +60,18 @@ const createAdmin = asyncHandler(async (req, res) => {
 });
 
 const getAdmins = asyncHandler(async (req, res) => {
-    const admins = await getAllUsersByRoleDb("admin");
-    return sendSuccess(res, 200, "Admins fetched successfully", { count: admins.length, data: admins });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("admin", page, limit);
+
+    return sendSuccess(res, 200, "Admins fetched successfully", { 
+      count: users.length, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      data: users 
+    });
 });
 
 const getAdminById = asyncHandler(async (req, res) => {
@@ -103,21 +116,21 @@ const updateAdmin = asyncHandler(async (req, res) => {
     });
 });
 
-const updateAdminEmail = asyncHandler(async (req, res) => {
+const updateUserEmail = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { oldEmail, newEmail } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return sendError(res, 400, "Invalid Admin ID");
+      return sendError(res, 400, "Invalid User ID");
     }
 
-    const admin = await getUserByIdAndRoleDb(id, "admin");
+    const user = await getUserByIdDb(id);
 
-    if (!admin) {
-      return sendError(res, 404, "Admin not found");
+    if (!user) {
+      return sendError(res, 404, "User not found");
     }
 
-    if (admin.email !== oldEmail) {
+    if (user.email !== oldEmail) {
       return sendError(res, 400, "Old email does not match");
     }
 
@@ -126,16 +139,16 @@ const updateAdminEmail = asyncHandler(async (req, res) => {
       return sendError(res, 400, "New email already in use");
     }
 
-    const updatedAdmin = await updateUserByRoleDb(id, "admin", { email: newEmail });
+    const updatedUser = await updateUserDb(id, { email: newEmail });
 
-    return sendSuccess(res, 200, "Admin email updated successfully", {
+    return sendSuccess(res, 200, "User email updated successfully", {
       data: {
-        _id: updatedAdmin._id,
-        name: updatedAdmin.name,
-        email: updatedAdmin.email,
-        phone: updatedAdmin.phone,
-        role: updatedAdmin.role,
-        isActive: updatedAdmin.isActive,
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive,
       }
     });
 });
@@ -214,7 +227,7 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
 // --- WARDEN CONTROLLERS ---
 
 const createWarden = asyncHandler(async (req, res) => {
-    const { name, email, password, organizationId, hostelId } = req.body;
+    const { name, email, phone, hostelId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -222,37 +235,52 @@ const createWarden = asyncHandler(async (req, res) => {
         return sendError(res, 400, "Email already exists");
     }
 
-    const organizationExists = await getOrganizationByIdDb(organizationId);
-    if (!organizationExists) {
-        return sendError(res, 404, "Organization not found");
-    }
-
-    const hostelExists = await getHostelByIdDb(hostelId, organizationId);
+    const hostelExists = await getHostelByIdDb(hostelId);
     if (!hostelExists) {
-        return sendError(res, 404, "Hostel not found in this organization");
+        return sendError(res, 404, "Hostel not found");
     }
 
-    if (hostelExists.wardenId) {
-        return sendError(res, 400, "Hostel already has a warden assigned");
-    }
+    
 
-    const hashedPassword = await hashPassword(password);
+    const temporaryPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await hashPassword(temporaryPassword);
 
     const warden = await createUserDb({
         name,
         email,
+        phone,
         password: hashedPassword,
-        organization: organizationId,
+        temppass: true,
     }, "warden");
 
-    await updateHostelDb(hostelId, organizationId, { wardenId: warden._id });
+    await updateHostelDb(hostelId, null, { $push: { wardens: warden._id } });
+
+    const subject = "Your Warden Account Details";
+    const text = `Hello ${name}\n\nYour warden account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+    const html = `<p>Hello ${name},</p><p>Your warden account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+    try {
+        await sendMail(email, subject, text, html);
+    } catch (error) {
+        console.error("Failed to send temporary password email:", error);
+    }
 
     return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
 });
 
 const getWardens = asyncHandler(async (req, res) => {
-    const wardens = await getAllUsersByRoleDb("warden");
-    return sendSuccess(res, 200, "Wardens fetched successfully", { count: wardens.length, data: wardens });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit);
+
+    return sendSuccess(res, 200, "Wardens fetched successfully", { 
+      count: users.length, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      data: users 
+    });
 });
 
 const getWardenById = asyncHandler(async (req, res) => {
@@ -273,20 +301,13 @@ const getWardenById = asyncHandler(async (req, res) => {
 
 const updateWarden = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, email } = req.body;
+    const { name, phone } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Warden ID");
     }
 
-    if (email) {
-      const existingEmail = await findExistingUserByEmail(email);
-      if (existingEmail && existingEmail._id.toString() !== id) {
-        return sendError(res, 400, "Email already exists");
-      }
-    }
-
-    const warden = await updateUserByRoleDb(id, "warden", { name, email });
+    const warden = await updateUserByRoleDb(id, "warden", { name, phone });
 
     if (!warden) {
       return sendError(res, 404, "Warden not found");
@@ -297,6 +318,7 @@ const updateWarden = asyncHandler(async (req, res) => {
         _id: warden._id,
         name: warden.name,
         email: warden.email,
+        phone: warden.phone,
         role: warden.role,
         isActive: warden.isActive,
       }
@@ -336,7 +358,7 @@ export {
   getAdmins,
   getAdminById,
   updateAdmin,
-  updateAdminEmail,
+  updateUserEmail,
   updateAdminOrganization,
   toggleAdminStatus,
   createWarden,

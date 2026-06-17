@@ -21,6 +21,24 @@ const getHostelsDb = async (organizationId) => {
     .populate("organizations", "name code");
 };
 
+const getPaginatedHostelsDb = async (organizationId, page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+  const query = organizationId ? { organizations: organizationId } : {};
+
+  const [hostels, totalCount] = await Promise.all([
+    Hostel.find(query)
+      .populate("wardens", "name email")
+      .populate("adminId", "name email")
+      .populate("organizations", "name code")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }),
+    Hostel.countDocuments(query),
+  ]);
+
+  return { hostels, totalCount };
+};
+
 const getHostelByIdDb = async (id, organizationId) => {
   const query = { _id: id };
   if (organizationId) {
@@ -58,6 +76,7 @@ export {
   checkExistingHostelEmailDb,
   createHostelDb,
   getHostelsDb,
+  getPaginatedHostelsDb,
   getHostelByIdDb,
   updateHostelDb,
   toggleHostelStatusDb
