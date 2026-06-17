@@ -46,12 +46,22 @@ export async function toggleStatus(id) {
   return response.data;
 }
 
+/**
+ * Bulk toggle status of Hostels
+ * @param {Object} payload - { ids: [id1, id2], isActive: boolean }
+ */
+export async function bulkToggleStatus({ids, isActive}) {
+  const response = await hostelApi.bulkToggleStatus({ids, isActive});
+  return response.data;
+}
+
 const hostelService = {
   createHostel,
   getHostels,
   getHostelById,
   updateHostel,
   toggleStatus,
+  bulkToggleStatus,
 };
 
 export default hostelService;

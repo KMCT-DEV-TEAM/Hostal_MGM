@@ -24,6 +24,11 @@ const hostelSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    phone: {
+      type: String,
+      trim: true,
+    },
+
     organizations: [
       {
         type: mongoose.Schema.Types.ObjectId,

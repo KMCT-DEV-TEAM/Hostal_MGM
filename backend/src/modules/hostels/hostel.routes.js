@@ -15,6 +15,7 @@ import {
   getHostelById,
   updateHostel,
   toggleHostelStatus,
+  bulkUpdateHostelStatus,
 } from "./hostel.controller.js";
 
 const router = express.Router();
@@ -40,6 +41,13 @@ router.get(
   roleMiddleware("admin", "super_admin"),
   validateHostelIdParam,
   getHostelById
+);
+
+router.patch(
+  "/bulk-status",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  bulkUpdateHostelStatus
 );
 
 router.patch(
