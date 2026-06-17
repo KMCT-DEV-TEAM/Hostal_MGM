@@ -34,7 +34,7 @@ const createOrganization = asyncHandler(async (req, res) => {
 
 const getOrganizations = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 10;
 
     const { organizations, totalCount } = await getPaginatedOrganizationsDb(page, limit);
 
