@@ -271,26 +271,26 @@ export default function Administrator() {
                                         )}
                                     </button>
                                 </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                                     Name
                                 </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                                     Email
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                                     Phone
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                                     Organization
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                                     Status
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-gray-700">
+                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                                     Action
                                 </th>
                             </tr>
@@ -314,7 +314,7 @@ export default function Administrator() {
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="p-4 font-medium text-gray-800">
+                                            <td className="p-4 font-medium text-[#777777]">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-6 h-6 rounded-full bg-[#0A437A] flex items-center justify-center text-white text-[9px] font-semibold">
                                                         {admin.name
@@ -324,12 +324,12 @@ export default function Administrator() {
                                                             .slice(0, 2)}
                                                     </div>
 
-                                                    <span className="text-sm text-gray-700 font-medium">
+                                                    <span className="text-sm text-[#777777] font-medium">
                                                         {admin.name}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-center text-gray-500">
+                                            <td className="p-4 text-start text-gray-500">
                                                 {admin.email}
                                             </td>
                                             <td className="p-4">
