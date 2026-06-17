@@ -25,11 +25,40 @@ const getAllUsersByRoleDb = async (role) => {
   ).populate("organization", "name code organisationNumber email phone");
 };
 
+const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+
+  const [users, totalCount] = await Promise.all([
+    User.find(
+      { role },
+      {
+        name: 1,
+        email: 1,
+        role: 1,
+        isActive: 1,
+        createdAt: 1,
+        organization: 1,
+      }
+    )
+      .populate("organization", "name code organisationNumber email phone")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }),
+    User.countDocuments({ role }),
+  ]);
+
+  return { users, totalCount };
+};
+
 const getUserByIdAndRoleDb = async (id, role) => {
   return await User.findOne({
     _id: id,
     role,
   }).select("-password");
+};
+
+const getUserByIdDb = async (id) => {
+  return await User.findById(id).select("-password");
 };
 
 const updateUserByRoleDb = async (id, role, data) => {
@@ -41,6 +70,20 @@ const updateUserByRoleDb = async (id, role, data) => {
   if (!user) return null;
 
   if (data.name) user.name = data.name;
+  if (data.phone) user.phone = data.phone;
+  if (data.email) user.email = data.email;
+
+  await user.save();
+  return user;
+};
+
+const updateUserDb = async (id, data) => {
+  const user = await User.findById(id);
+
+  if (!user) return null;
+
+  if (data.name) user.name = data.name;
+  if (data.phone) user.phone = data.phone;
   if (data.email) user.email = data.email;
 
   await user.save();
@@ -65,7 +108,10 @@ export {
   findExistingUserByEmail,
   createUserDb,
   getAllUsersByRoleDb,
+  getPaginatedUsersByRoleDb,
   getUserByIdAndRoleDb,
+  getUserByIdDb,
   updateUserByRoleDb,
+  updateUserDb,
   toggleUserActiveStatusByRoleDb
 }

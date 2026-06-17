@@ -31,7 +31,37 @@ const getWardenStats = asyncHandler(async (req, res) => {
   });
 });
 
+
+const getWardenByAdmin = asyncHandler(async (req, res) => {
+  const admin = await User.findById(req.user.id)
+    .select("organization")
+    .lean();
+
+  if (!admin?.organization) {
+    return sendError(
+      res,
+      400,
+      "Admin is not assigned to any organization"
+    );
+  }
+
+  const wardens = await User.find({
+    role: "warden",
+    organization: admin.organization,
+  })
+    .lean();
+
+  return sendSuccess(res, 200, "Warden fetched successfully", {
+    data: {
+      wardens,
+    },
+  });
+
+
+})
+
 export {
   getOrganizationData,
-  getWardenStats
+  getWardenStats,
+  getWardenByAdmin
 };

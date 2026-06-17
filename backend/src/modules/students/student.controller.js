@@ -1,80 +1,165 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { checkExistingUser, createStudentWithParentDb, updateStudentDb, toggleStudentStatusDb } from "./student.service.js";
+import { checkExistingUser, createStudentWithParentDb, updateStudentDb, getStudentsService } from "./student.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import User from "../users/user.model.js";
+import Student from "./student.model.js";
+import Hostel from "../hostels/hostel.model.js";
+
+import mongoose from "mongoose";
+import Parent from "../parents/parent.model.js";
 
 const createStudent = asyncHandler(async (req, res) => {
-  const { email, parentemail } = req.body;
+  const session = await mongoose.startSession();
 
-  const existingStudent = await checkExistingUser(email);
-  if (existingStudent) {
-    return sendError(res, 400, "Student email already exists");
-  }
+  try {
+    session.startTransaction();
+    const { email, parentEmail } = req.body;
 
-  const existingParent = await checkExistingUser(parentemail);
-  if (existingParent) {
-    return sendError(res, 400, "Parent email already exists");
-  }
-
-  const result = await createStudentWithParentDb(req.body);
-
-  return sendSuccess(res, 201, "Student and Parent created successfully", {
-    data: {
-      studentId: result.studentProfile._id,
-      studentUserId: result.studentUser._id,
-      parentId: result.parentProfile._id,
-      parentUserId: result.parentUser._id,
-      name: result.studentUser.name,
-      email: result.studentUser.email,
+    if (email === parentEmail) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Student and parent email must be different"
+      );
     }
-  });
+
+    const existingUser = await User.findOne({
+      email: { $in: [email, parentEmail] },
+    }).session(session);
+
+    if (existingUser) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Email already exists"
+      );
+    }
+
+    const existingStudent = await Student.findOne({
+      email,
+    }).session(session);
+    if (existingStudent) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Student email already exists"
+      );
+    }
+
+    const existingParent = await Parent.findOne({
+      email: parentEmail,
+    }).session(session);
+
+    if (existingParent) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Parent email already exists"
+      );
+    }
+
+    const result = await createStudentWithParentDb(
+      req.body,
+      session
+    );
+
+    await session.commitTransaction();
+
+    return sendSuccess(
+      res,
+      201,
+      "Student and parent created successfully",
+      result
+    );
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 });
 
 const updateStudent = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  let result;
-  try {
-    result = await updateStudentDb(id, req.body);
-  } catch (error) {
-    if (error.message === "Student email already exists") {
-      return sendError(res, 400, error.message);
-    }
-    throw error;
-  }
+  const result = await updateStudentDb(id, req.body);
 
   if (!result) {
     return sendError(res, 404, "Student not found");
   }
 
-  return sendSuccess(res, 200, "Student updated successfully", {
-    data: {
-      studentId: result.studentProfile._id,
-      name: result.user.name,
-      email: result.user.email,
+  return sendSuccess(
+    res,
+    200,
+    "Student updated successfully",
+    {
+      studentId: result.studentId,
+      name: result.name,
+      email: result.email,
     }
-  });
+  );
 });
 
-const toggleStudentStatus = asyncHandler(async (req, res) => {
+const toggleStudentStatus =  asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { hostelStatus } = req.body;
 
-  const result = await toggleStudentStatusDb(id);
+  if (!["active", "inactive"].includes(hostelStatus)) {
+    return sendError(res, 400, "Invalid status");
+  }
 
-  if (!result) {
+  const student = await Student.findByIdAndUpdate(
+    id,
+    { hostelStatus },
+    { new: true }
+  );
+
+  if (!student) {
     return sendError(res, 404, "Student not found");
   }
 
-  const message = result.user.isActive 
-    ? "Student activated successfully" 
-    : "Student deactivated successfully";
-
-  return sendSuccess(res, 200, message, {
-    data: {
-      studentId: result.studentProfile._id,
-      isActive: result.user.isActive,
+  return sendSuccess(
+    res,
+    200,
+    "Student status updated successfully",
+    {
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
     }
+  );
+});
+
+const updateStudentHostel = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { hostelId } = req.body;
+
+  if (!hostelId || !mongoose.Types.ObjectId.isValid(hostelId)) {
+    return sendError(res, 400, "Invalid hostelId");
+  }
+
+  const hostel = await Hostel.findById(hostelId);
+  if (!hostel) {
+    return sendError(res, 404, "Hostel not found");
+  }
+
+  const student = await Student.findById(id);
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  student.hostelId = hostelId;
+  await student.save();
+
+  return sendSuccess(res, 200, "Student hostel updated successfully", {
+    studentId: student.studentId,
+    name: student.name,
+    hostelId: student.hostelId,
   });
 });
 
@@ -103,9 +188,9 @@ const getAdminStats = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Admin is not assigned to any organization");
   }
 
-  const studentCount = await User.countDocuments({ 
-    role: "student", 
-    organization: organizationId 
+  const studentCount = await User.countDocuments({
+    role: "student",
+    organization: organizationId
   });
 
   return sendSuccess(res, 200, "Admin stats fetched successfully", {
@@ -115,10 +200,59 @@ const getAdminStats = asyncHandler(async (req, res) => {
   });
 });
 
+const getStudentsByAdmin = asyncHandler(async (req, res) => {
+  const admin = await User.findById(req.user.id)
+    .select("organization")
+    .lean();
+
+  if (!admin?.organization) {
+    return sendError(
+      res,
+      400,
+      "Admin is not assigned to any organization"
+    );
+  }
+
+  const result = await getStudentsService({
+    organizationId: admin.organization,
+    query: req.query,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Students fetched successfully",
+    result
+  );
+});
+
+const getStudentsBySuperAdmin = asyncHandler(
+  async (req, res) => {
+    const { organizationId } = req.query;
+
+    const result = await getStudentsService({
+      organizationId,
+      query: req.query,
+    });
+
+    return sendSuccess(
+      res,
+      200,
+      "Students fetched successfully",
+      result
+    );
+  }
+);
+
+
+
 export {
   createStudent,
   updateStudent,
   toggleStudentStatus,
+  updateStudentHostel,
   getAdminOrganizationData,
-  getAdminStats
+  getAdminStats,
+  getStudentsByAdmin,
+  getStudentsBySuperAdmin,
 };

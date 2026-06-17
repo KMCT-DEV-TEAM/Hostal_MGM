@@ -7,7 +7,8 @@ import {
   createOrganization,
   getOrganizations,
   getOrganizationById,
-  updateOrganization
+  updateOrganization,
+  toggleOrganizationStatus
 } from "./organization.controller.js";
 
 import {
@@ -48,6 +49,14 @@ router.patch(
   validateOrganizationIdParam,
   validateUpdateOrganization,
   updateOrganization
+);
+
+router.patch(
+  "/:id/toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateOrganizationIdParam,
+  toggleOrganizationStatus
 );
 
 export default router;
