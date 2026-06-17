@@ -298,19 +298,18 @@ const OrganizationManagement = () => {
 
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] p-6 text-black">
+        <div className="w-full min-h-screen bg-[#F8FAFC] p-4 md:p-6 text-black">
             {/* Header Section */}
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-black">Organization</h1>
                     <p className="text-xs text-[#777777] mt-1">Manage all organizations</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                     {selectedIds.length > 0 && (
                         <button
-                            // Assuming you want to trigger a bulk status change here
                             onClick={() => { /* Implement bulk update logic */ }}
-                            className="flex items-center gap-2 px-4 py-2 border border-success text-success bg-green-50/40 rounded-lg hover:bg-green-50 transition-colors text-sm font-medium"
+                            className="hidden md:flex items-center gap-2 px-4 py-2 border border-success text-success bg-green-50/40 rounded-lg hover:bg-green-50 transition-colors text-sm font-medium"
                         >
                             Active ({selectedIds.length})
                         </button>
@@ -318,9 +317,8 @@ const OrganizationManagement = () => {
 
                     {selectedIds.length > 0 && (
                         <button
-                            className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
+                            className="hidden md:flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
                         >
-
                             Inactive({selectedIds.length})
                         </button>
                     )}
@@ -328,37 +326,35 @@ const OrganizationManagement = () => {
             </div>
 
             {/* Filter and Action Bar */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm mb-6">
-                <div className="p-4 flex items-center justify-between border-b border-gray-50">
-                    <div className="relative inline-block w-32">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm mb-6">
+                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50">
+                    <div className="relative inline-block w-full sm:w-32 bg-white border border-gray-100 md:border-gray-200 rounded-lg shadow-sm md:shadow-none">
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 pr-8 text-sm text-[#777777] font-medium outline-none focus:border-[#0A437A]"
+                            className="w-full appearance-none bg-transparent rounded-lg px-3 py-2 pr-8 text-sm text-[#777777] font-medium outline-none focus:border-[#0A437A]"
                         >
                             <option value="All">All</option>
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                         </select>
-
-                        {/* Custom Arrow */}
                         <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    <div className="flex gap-3">
-                        <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3 top-3 text-[#777777]" />
-                            <input className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64" placeholder="Search" />
+                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
+                        <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
+                            <input className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none" placeholder="Search Organization..." />
                         </div>
                         <button
-                            onClick={initiateExport} // Call the new handler
-                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors"
+                            onClick={initiateExport}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none"
                         >
                             <Download className="w-4 h-4" /> Export
                         </button>
                         <button
                             onClick={() => openModal('add')}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none"
                         >
                             <Plus className="w-4 h-4" /> Add New
                         </button>
@@ -366,7 +362,7 @@ const OrganizationManagement = () => {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-start">
                         <thead>
                             <tr className="text-[#222222] text-center text-sm  font-semibold border-b border-gray-50 bg-gray-50/50">
@@ -379,12 +375,12 @@ const OrganizationManagement = () => {
                                         )}
                                     </button>
                                 </th>
-                                <th className="p-4">Name</th>
-                                <th className="p-4">Email</th>
-                                <th className="p-4">Phone</th>
-                                <th className="p-4">Address</th>
-                                <th className="p-4 text-center">Status</th>
-                                <th className="p-4 text-center rounded-tr-lg">Action</th>
+                                <th className="p-4 text-start">Name</th>
+                                <th className="p-4 text-start">Email</th>
+                                <th className="p-4 text-start">Phone</th>
+                                <th className="p-4 text-start">Address</th>
+                                <th className="p-4 text-start">Status</th>
+                                <th className="p-4 text-start rounded-tr-lg">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 text-sm">
@@ -480,6 +476,68 @@ const OrganizationManagement = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Cards for Mobile */}
+                <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0">
+                    {error ? (
+                        <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error}</div>
+                    ) : filteredOrgs.length === 0 ? (
+                        <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No organizations match the selected filter.</div>
+                    ) : (
+                        filteredOrgs.map((o) => (
+                            <div key={o._id} className="bg-white p-4 rounded-xl shadow-sm flex flex-col relative">
+                                <button
+                                    onClick={() => openModal('edit', o)}
+                                    className="absolute top-4 right-4 text-blue-400 hover:text-[#0A437A]"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase shrink-0 mt-1">
+                                        {o.name ? o.name.substring(0, 2) : 'NA'}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0 pr-6">
+                                        <div
+                                            className="font-bold text-gray-900 text-base mb-1 cursor-pointer truncate"
+                                            onClick={() => {
+                                                setSelectedOrganizationDetail(o);
+                                                setView('detail');
+                                            }}
+                                        >
+                                            {o.name}
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[10px] sm:text-xs text-gray-500 mb-2">
+                                            <div className="flex items-center gap-1">
+                                                <Mail className="w-3 h-3" />
+                                                <span className="truncate max-w-[120px]">{o.email}</span>
+                                            </div>
+                                            <span className="hidden sm:inline">-</span>
+                                            <div className="flex items-center gap-1">
+                                                <Phone className="w-3 h-3" />
+                                                <span>{o.phone || 'N/A'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-[10px] sm:text-xs text-gray-400 mb-3 truncate">
+                                            {o.address}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end mt-auto">
+                                    <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium
+                                        ${o.isActive ? 'bg-green-50 text-success' : 'bg-red-50 text-danger'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${o.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
+                                        {o.isActive ? "Active" : "Inactive"}
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -626,7 +684,7 @@ const OrganizationManagement = () => {
                                     className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083660] transition-colors flex items-center gap-2"
                                 >
                                     {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                                    {isEditMode ? 'Update' : 'Create'} Organization
+                                    {isEditMode ? 'Save changes' : 'Create'}
                                 </button>
                             </div>
                         </div>
