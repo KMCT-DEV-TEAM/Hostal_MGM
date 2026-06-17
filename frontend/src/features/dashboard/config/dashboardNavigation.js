@@ -1,7 +1,7 @@
 import {
     LayoutGrid,
-    ShieldUser,
-    UserRoundCheck,
+    Shield,
+    User,
     GraduationCap,
     Users,
     Building2,
@@ -36,13 +36,13 @@ export const DASHBOARD_NAV = {
 
             items: [
                 {
-                    icon: ShieldUser,
+                    icon: Shield,
                     label: 'Admins',
                     path: '/dashboard/administrators'
                 },
 
                 {
-                    icon: UserRoundCheck,
+                    icon: User,
                     label: 'Wardens',
                     path: '/dashboard/wardens'
                 },
@@ -77,56 +77,6 @@ export const DASHBOARD_NAV = {
                     path: '/dashboard/hostels'
                 }
             ]
-        },
-
-        {
-            section: 'OPERATIONS',
-
-            items: [
-                {
-                    icon: AlertTriangle,
-                    label: 'Complaints',
-                    path: '/dashboard/complaints'
-                },
-                {
-                    icon: Calendar,
-                    label: 'Attendance',
-                    path: '/dashboard/attendance'
-                },
-                {
-                    icon: CalendarX,
-                    label: 'Leave Requests',
-                    path: '/dashboard/leaves'
-                },
-                {
-                    icon: UtensilsCrossed,
-                    label: 'Mess Management',
-                    path: '/dashboard/mess-management'
-                },
-
-            ]
-        },
-
-        {
-            section: 'REPORTS',
-            items: [
-                {
-                    icon: BarChart2,
-                    label: 'Reports',
-                    path: '/dashboard/reports'
-                }
-            ]
-        },
-
-        {
-            section: 'SUPPORT',
-            items: [
-                {
-                    icon: KeyRound,
-                    label: 'Password Request',
-                    path: '/dashboard/password-request'
-                }
-            ]
         }
     ],
 
@@ -149,7 +99,7 @@ export const DASHBOARD_NAV = {
 
             items: [
                 {
-                    icon: UserRoundCheck,
+                    icon: User,
                     label: 'Wardens',
                     path: '/dashboard/wardens'
                 },
@@ -178,46 +128,7 @@ export const DASHBOARD_NAV = {
                     path: '/dashboard/hostels'
                 }
             ]
-        },
-
-        {
-            section: 'OPERATIONS',
-
-            items: [
-                {
-                    icon: AlertTriangle,
-                    label: 'Complaints',
-                    path: '/dashboard/complaints'
-                },
-                {
-                    icon: Calendar,
-                    label: 'Attendance',
-                    path: '/dashboard/attendance'
-                },
-                {
-                    icon: CalendarX,
-                    label: 'Leave Requests',
-                    path: '/dashboard/leaves'
-                },
-                {
-                    icon: UtensilsCrossed,
-                    label: 'Mess Management',
-                    path: '/dashboard/mess-management'
-                },
-
-            ]
-        },
-
-        {
-            section: 'REPORTS',
-            items: [
-                {
-                    icon: BarChart2,
-                    label: 'Reports',
-                    path: '/dashboard/reports'
-                }
-            ]
-        },
+        }
     ],
 
 
@@ -235,7 +146,7 @@ export const DASHBOARD_NAV = {
         },
 
         {
-            section: 'USER MANAGEMENT',
+            section: 'STUDENT',
 
             items: [
                 {
@@ -250,46 +161,7 @@ export const DASHBOARD_NAV = {
                     path: '/dashboard/parents'
                 }
             ]
-        },
-
-        {
-            section: 'OPERATIONS',
-
-            items: [
-                {
-                    icon: AlertTriangle,
-                    label: 'Complaints',
-                    path: '/dashboard/complaints'
-                },
-                {
-                    icon: Calendar,
-                    label: 'Attendance',
-                    path: '/dashboard/attendance'
-                },
-                {
-                    icon: CalendarX,
-                    label: 'Leave Requests',
-                    path: '/dashboard/leaves'
-                },
-                {
-                    icon: UtensilsCrossed,
-                    label: 'Mess Management',
-                    path: '/dashboard/mess-management'
-                },
-
-            ]
-        },
-
-        {
-            section: 'REPORTS',
-            items: [
-                {
-                    icon: BarChart2,
-                    label: 'Reports',
-                    path: '/dashboard/reports'
-                }
-            ]
-        },
+        }
     ]
 
 };
