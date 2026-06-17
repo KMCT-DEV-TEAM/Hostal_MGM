@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createParentDb, updateParentDb, toggleParentStatusDb } from "./parent.service.js";
+import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb } from "./parent.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
   let result;
@@ -82,8 +82,35 @@ const toggleParentStatus = asyncHandler(async (req, res) => {
   });
 });
 
+const setDefaultGuardian = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { defaultGuardian } = req.body;
+
+  if (typeof defaultGuardian !== "boolean") {
+    return sendError(res, 400, "defaultGuardian must be a boolean");
+  }
+
+  const result = await setDefaultGuardianDb(id, defaultGuardian);
+
+  if (!result) {
+    return sendError(res, 404, "Parent not found");
+  }
+
+  const message = defaultGuardian
+    ? "Parent set as default guardian successfully"
+    : "Parent removed as default guardian successfully";
+
+  return sendSuccess(res, 200, message, {
+    data: {
+      parentId: result.parentProfile._id,
+      defaultGuardian: result.parentProfile.defaultGuardian,
+    }
+  });
+});
+
 export {
   createParent,
   updateParent,
-  toggleParentStatus
+  toggleParentStatus,
+  setDefaultGuardian,
 };

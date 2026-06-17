@@ -35,7 +35,10 @@ const createParentDb = async (data) => {
   const parentTemporaryPassword = generateRandomPassword();
   const hashedParentPassword = await hashPassword(parentTemporaryPassword);
 
-  if (defaultGuardian) {
+  const parentCount = await Parent.countDocuments({ studentId });
+  const shouldDefaultGuardian = defaultGuardian || parentCount === 0;
+
+  if (shouldDefaultGuardian) {
     await Parent.updateMany({ studentId }, { defaultGuardian: false });
   }
 
@@ -46,7 +49,7 @@ const createParentDb = async (data) => {
     phone,
     email,
     address,
-    defaultGuardian,
+    defaultGuardian: shouldDefaultGuardian,
     password: hashedParentPassword,
     tempPassword: true,
   });
@@ -83,11 +86,71 @@ const updateParentDb = async (parentProfileId, data) => {
     await Parent.updateMany({ studentId: parentProfile.studentId }, { defaultGuardian: false });
     parentProfile.defaultGuardian = true;
   } else if (data.defaultGuardian === false) {
-    parentProfile.defaultGuardian = false;
+    const parentCount = await Parent.countDocuments({ studentId: parentProfile.studentId });
+
+    if (parentCount <= 1) {
+      parentProfile.defaultGuardian = true;
+    } else {
+      parentProfile.defaultGuardian = false;
+      const otherDefault = await Parent.findOne({
+        studentId: parentProfile.studentId,
+        _id: { $ne: parentProfileId },
+        defaultGuardian: true,
+      });
+
+      if (!otherDefault) {
+        const nextParent = await Parent.findOne({
+          studentId: parentProfile.studentId,
+          _id: { $ne: parentProfileId },
+        });
+        if (nextParent) {
+          nextParent.defaultGuardian = true;
+          await nextParent.save();
+        }
+      }
+    }
   }
 
   await parentProfile.save();
 
+  return { parentProfile };
+};
+
+const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => {
+  const parentProfile = await Parent.findById(parentProfileId);
+  if (!parentProfile) return null;
+
+  const studentId = parentProfile.studentId;
+  const parentCount = await Parent.countDocuments({ studentId });
+
+  if (defaultGuardian === true) {
+    await Parent.updateMany({ studentId }, { defaultGuardian: false });
+    parentProfile.defaultGuardian = true;
+  } else {
+    if (parentCount <= 1) {
+      parentProfile.defaultGuardian = true;
+    } else {
+      parentProfile.defaultGuardian = false;
+      const otherDefault = await Parent.findOne({
+        studentId,
+        _id: { $ne: parentProfileId },
+        defaultGuardian: true,
+      });
+
+      if (!otherDefault) {
+        const nextParent = await Parent.findOne({
+          studentId,
+          _id: { $ne: parentProfileId },
+        });
+        if (nextParent) {
+          nextParent.defaultGuardian = true;
+          await nextParent.save();
+        }
+      }
+    }
+  }
+
+  await parentProfile.save();
   return { parentProfile };
 };
 
@@ -104,5 +167,6 @@ const toggleParentStatusDb = async (parentProfileId) => {
 export {
   createParentDb,
   updateParentDb,
+  setDefaultGuardianDb,
   toggleParentStatusDb
 };
