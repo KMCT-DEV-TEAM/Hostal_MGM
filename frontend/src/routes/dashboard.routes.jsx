@@ -7,6 +7,7 @@ import Parents from '@/features/dashboard/pages/Parents';
 import Students from '@/features/dashboard/pages/Students';
 import OrganizationManagement from '@/features/dashboard/pages/OrganizationManagement';
 import Maintenance from '@/features/dashboard/pages/Maintenance';
+import HostelManagement from '@/features/dashboard/pages/HostelManagement';
 
 export const dashboardRoutes = [
 
@@ -63,6 +64,13 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: OrganizationManagement
+    },
+    {
+        path: 'hostels',
+        roles: [
+            ROLES.SUPER_ADMIN
+        ],
+        element: HostelManagement
     },
 
     {
