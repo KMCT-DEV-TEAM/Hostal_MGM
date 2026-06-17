@@ -9,9 +9,16 @@ const validateCreateStudent = (req, res, next) => {
     parentPhone, 
     relationship 
   } = req.body;
-  console.log(req.body)
-  if (!organizationId) {
+
+  if (req.user?.role === "super_admin" && !organizationId) {
     return res.status(400).json({ success: false, message: "organizationId is required" });
+  }
+
+  if (organizationId && !mongoose.Types.ObjectId.isValid(organizationId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid organizationId",
+    });
   }
 
   if (!name || !email || !phone) {

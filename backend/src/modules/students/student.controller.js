@@ -15,7 +15,8 @@ const createStudent = asyncHandler(async (req, res) => {
 
   try {
     session.startTransaction();
-    const { email, parentEmail } = req.body;
+    const { email, parentEmail, hostelId } = req.body;
+    let { organizationId } = req.body;
 
     if (email === parentEmail) {
       await session.abortTransaction();
@@ -25,8 +26,43 @@ const createStudent = asyncHandler(async (req, res) => {
         "Student and parent email must be different"
       );
     }
+    if (req.user.role === "admin") {
+      const admin = await User.findById(req.user.id)
+        .select("organization")
+        .session(session);
 
-  
+      if (!admin?.organization) {
+        await session.abortTransaction();
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+
+      const adminOrganizationId = admin.organization.toString();
+
+      if (organizationId && organizationId !== adminOrganizationId) {
+        await session.abortTransaction();
+        return sendError(
+          res,
+          403,
+          "Admin can create students only for their own organization"
+        );
+      }
+
+      organizationId = adminOrganizationId;
+      req.body.organizationId = adminOrganizationId;
+    }
+
+    const organization = await Organization.findById(organizationId).session(session);
+    if (!organization) {
+      await session.abortTransaction();
+      return sendError(res, 404, "Organization not found");
+    }
+
+    if (!organization.isActive) {
+      await session.abortTransaction();
+      return sendError(res, 400, "Cannot create student in inactive organization");
+    }
+
+    
 
     const existingStudent = await Student.findOne({
       email,
