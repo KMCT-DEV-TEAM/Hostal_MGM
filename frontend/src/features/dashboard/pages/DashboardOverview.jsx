@@ -208,7 +208,7 @@ const statCards = [
 
 
 
-function SuperAdminDashboard() {
+function DashboardOverview() {
 
 
     const [period, setPeriod] = useState("This Year");
@@ -866,4 +866,4 @@ function SuperAdminDashboard() {
     );
 }
 
-export default SuperAdminDashboard
+export default DashboardOverview;
