@@ -31,9 +31,11 @@ const validateParentIdParam = (req, res, next) => {
 };
 
 const validateUpdateParent = (req, res, next) => {
-  const { name, parentName, email, phone, relationship, address, defaultGuardian } = req.body;
 
-  if (!name && !parentName && !email && !phone && !relationship && !address && typeof defaultGuardian === "undefined") {
+  console.log(req.body)
+  const {  parentName, email, phone, relationship, address, defaultGuardian } = req.body;
+
+  if ( !parentName && !email && !phone && !relationship && !address && typeof defaultGuardian === "undefined") {
     return res.status(400).json({
       success: false,
       message: "At least one field must be provided for update",

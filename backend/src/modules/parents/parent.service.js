@@ -74,8 +74,6 @@ const updateParentDb = async (parentProfileId, data) => {
 
   if (data.parentName !== undefined) {
     parentProfile.parentName = data.parentName;
-  } else if (data.name !== undefined) {
-    parentProfile.parentName = data.name;
   }
 
   if (data.phone !== undefined) parentProfile.phone = data.phone;

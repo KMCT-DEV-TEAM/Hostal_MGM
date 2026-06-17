@@ -5,6 +5,7 @@ import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Student from "../students/student.model.js";
 import hostelModel from "../hostels/hostel.model.js";
+import mongoose from "mongoose";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
   const [adminCount, wardenCount, studentCount, organizationCount, hostelCount] = await Promise.all([
@@ -23,7 +24,7 @@ const getSuperAdminStats = asyncHandler(async (req, res) => {
       students: studentCount,
       hostels: hostelCount,
     },
-});
+  });
 });
 
 const getStudentCountByOrganization = asyncHandler(async (req, res) => {
@@ -71,24 +72,25 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const organizationId = req.user.organization;
 
   const [wardenCount, studentCount, hostelCount] = await Promise.all([
-    User.countDocuments({ 
+    User.countDocuments({
       role: "warden",
-      organization: organizationId 
+      organization: organizationId
     }),
-    User.countDocuments({ 
-      role: "student", 
-      organization: organizationId 
+    Student.countDocuments({
+      organization: organizationId
     }),
-    hostelModel.countDocuments({ organizations: organizationId }),
+    hostelModel.countDocuments({
+      organizations: new mongoose.Types.ObjectId(organizationId),
+    })
   ]);
 
-  return sendSuccess(res, 200, "Dashboard stats fetched successfully", {
-    data: {
-      wardens: wardenCount,
-      students: studentCount,
-      hostels: hostelCount,
-    },
-  });
+return sendSuccess(res, 200, "Dashboard stats fetched successfully", {
+  data: {
+    wardens: wardenCount,
+    students: studentCount,
+    hostels: hostelCount,
+  },
+});
 });
 
 

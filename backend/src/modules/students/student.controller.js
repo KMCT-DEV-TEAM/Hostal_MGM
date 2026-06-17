@@ -105,18 +105,47 @@ const updateStudent = asyncHandler(async (req, res) => {
   );
 });
 
-const toggleStudentStatus =  asyncHandler(async (req, res) => {
+const toggleStudentStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const student = await Student.findById(id);
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  student.isActive = !student.isActive;
+  await student.save();
+
+  const message = student.isActive
+    ? "Student activated successfully"
+    : "Student deactivated successfully";
+
+  return sendSuccess(
+    res,
+    200,
+    message,
+    {
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      isActive: student.isActive,
+    }
+  );
+});
+
+const updateStudentHostelStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { hostelStatus } = req.body;
 
   if (!["active", "inactive"].includes(hostelStatus)) {
-    return sendError(res, 400, "Invalid status");
+    return sendError(res, 400, "Invalid hostelStatus");
   }
 
   const student = await Student.findByIdAndUpdate(
     id,
     { hostelStatus },
-    { new: true }
+    { new: true, runValidators: true }
   );
 
   if (!student) {
@@ -126,11 +155,12 @@ const toggleStudentStatus =  asyncHandler(async (req, res) => {
   return sendSuccess(
     res,
     200,
-    "Student status updated successfully",
+    "Student hostel status updated successfully",
     {
       studentId: student.studentId,
       name: student.name,
       email: student.email,
+      hostelStatus: student.hostelStatus,
     }
   );
 });
@@ -250,6 +280,7 @@ export {
   createStudent,
   updateStudent,
   toggleStudentStatus,
+  updateStudentHostelStatus,
   updateStudentHostel,
   getAdminOrganizationData,
   getAdminStats,
