@@ -20,6 +20,14 @@ const AuthGuard = ({ children }) => {
         return <Navigate to="/user/login" state={{ from: location }} replace />;
     }
 
+    if (user.temppass && location.pathname !== '/force-password-change') {
+        return <Navigate to="/force-password-change" replace />;
+    }
+
+    if (!user.temppass && location.pathname === '/force-password-change') {
+        return <Navigate to="/dashboard" replace />;
+    }
+
     return children;
 };
 
