@@ -6,6 +6,12 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { hashPassword } from "../../utils/hash.js";
 import User from "../users/user.model.js";
 
+const refreshTokenCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+};
+
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -25,9 +31,7 @@ const login = asyncHandler(async (req, res) => {
   const refreshToken = generateRefreshToken(user);
 
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    ...refreshTokenCookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 
@@ -52,6 +56,12 @@ const refreshToken = asyncHandler(async (req, res) => {
   const accessToken = generateAccessToken(user);
 
   return sendSuccess(res, 200, "Token refreshed successfully", { accessToken });
+});
+
+const logout = asyncHandler(async (req, res) => {
+  res.clearCookie("refreshToken", refreshTokenCookieOptions);
+
+  return sendSuccess(res, 200, "Logout successful");
 });
 
 const me = asyncHandler(async (req, res) => {
@@ -95,6 +105,7 @@ const changePassword = asyncHandler(async (req, res) => {
 export {
   login,
   refreshToken,
+  logout,
   me,
   changePassword,
 }
