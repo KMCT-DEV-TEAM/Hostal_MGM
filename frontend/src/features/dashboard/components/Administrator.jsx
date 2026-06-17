@@ -388,12 +388,13 @@ export default function Administrator() {
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center justify-center gap-3 text-gray-400">
-                                                    <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
-                                                        <Pencil className="w-4 h-4" />
-                                                    </button>
                                                     <button onClick={() => handleDeleteAdmin(admin.id)} className="text-secondary cursor-pointer transition-colors" title="Delete row item">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
+                                                    <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+
                                                 </div>
                                             </td>
                                         </tr>
@@ -454,10 +455,10 @@ export default function Administrator() {
 
             {activeModal === 'admin' && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+
                     <form
                         onSubmit={handleSaveAdmin}
-                        // Reduced max-width from 2xl to lg and padding from 8 to 6
-                        className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
+                        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
                     >
                         {/* Modal Header */}
                         <div className="flex justify-between items-start mb-6">
@@ -478,7 +479,7 @@ export default function Administrator() {
                             </button>
                         </div>
 
-                        {/* Form Sections: Tightened spacing */}
+
                         {/* Form Sections */}
                         <div className="space-y-6">
                             <section>

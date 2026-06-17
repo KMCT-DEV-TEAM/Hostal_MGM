@@ -50,9 +50,6 @@ export default function Parents() {
                     <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm">
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm">
-                        <Plus className="w-4 h-4" /> Add New
-                    </button>
                 </div>
             </div>
 
@@ -60,8 +57,8 @@ export default function Parents() {
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="text-gray-400 text-xs uppercase font-semibold border-b border-gray-50">
-                            <th className="p-4 w-12"><Square className="w-5 h-5" /></th>
+                        <tr className="text-[#222222] text-xs font-semibold border-b border-gray-50">
+                            <th className="text-gray-300 p-4 w-12"><Square className="w-5 h-5" /></th>
                             {['Name', 'Email', 'Phone', 'Student', 'Relation', 'Status', 'Action'].map(h => (
                                 <th key={h} className="p-4">{h}</th>
                             ))}
