@@ -37,6 +37,9 @@ export default function HostelManagement() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeModal, setActiveModal] = useState(null);
     const [editingHostel, setEditingHostel] = useState(null); // Holds object being edited
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedHostelDetail, setSelectedHostelDetail] = useState(null);
@@ -62,8 +65,8 @@ export default function HostelManagement() {
     const fetchHostels = async () => {
         try {
             setLoading(true);
-            const res = await hostelService.getHostels({ 
-                page: currentPage, 
+            const res = await hostelService.getHostels({
+                page: currentPage,
                 limit: itemsPerPage,
                 search: debouncedSearch,
                 status: statusFilter
@@ -130,8 +133,16 @@ export default function HostelManagement() {
         }
     };
 
-    const handleSaveHostel = async (e) => {
+    const handleSaveHostel = (e) => {
         e.preventDefault();
+        if (editingHostel) {
+            setIsEditConfirmOpen(true);
+        } else {
+            saveHostel();
+        }
+    };
+
+    const saveHostel = async () => {
         try {
             setIsSubmitting(true);
             const payload = {
@@ -144,6 +155,7 @@ export default function HostelManagement() {
                 await hostelService.createHostel(payload);
             }
             setActiveModal(null);
+            setIsEditConfirmOpen(false);
             fetchHostels();
         } catch (error) {
             console.error("Failed to save hostel:", error);
@@ -151,6 +163,23 @@ export default function HostelManagement() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleCancel = () => {
+        if (editingHostel) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            setActiveModal(null);
+        }
+    };
+
+    const confirmDiscard = () => {
+        setIsDiscardConfirmOpen(false);
+        setActiveModal(null);
+    };
+
+    const initiateExport = () => {
+        setIsExportConfirmOpen(true);
     };
 
     const handleStatusChange = async (id) => {
@@ -180,13 +209,13 @@ export default function HostelManagement() {
     const handleExport = async () => {
         try {
             setLoading(true);
-            const res = await hostelService.getHostels({ 
-                limit: 0, 
-                status: statusFilter, 
-                search: debouncedSearch 
+            const res = await hostelService.getHostels({
+                limit: 0,
+                status: statusFilter,
+                search: debouncedSearch
             });
             const dataToExport = res.data || [];
-            
+
             if (dataToExport.length === 0) {
                 alert("No data available to export.");
                 return;
@@ -394,7 +423,7 @@ export default function HostelManagement() {
                             />
                         </div>
                         <button
-                            onClick={handleExport}
+                            onClick={initiateExport}
                             className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 transition-colors"
                         >
                             <Download className="w-4 h-4" />
@@ -427,48 +456,48 @@ export default function HostelManagement() {
                                     </button>
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Name
                                 </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Email
                                 </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Phone
                                 </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Type
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Capacity
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Students
                                 </th>
 
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Status
                                 </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                                <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50 text-sm">
+                        <tbody className="divide-y divide-gray-50 text-sm text-center">
                             {loading ? (
-                                <td colSpan="7" className="p-8 text-center text-gray-500">
+                                <td colSpan="7" className="p-8 text-start text-gray-500">
                                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
                                     Loading hostels...
                                 </td>
                             ) : error ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-red-500">{error}</td>
+                                    <td colSpan="7" className="p-8 text-start text-red-500">{error}</td>
                                 </tr>
                             ) : hostels.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your search criteria.</td>
+                                    <td colSpan="7" className="p-8 text-start text-gray-400">No records found matching your search criteria.</td>
                                 </tr>
                             ) : (
                                 hostels.map((hostel) => {
@@ -498,16 +527,16 @@ export default function HostelManagement() {
                                                     {hostel.name}
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-center text-gray-500">
+                                            <td className="p-4 text-start text-gray-500">
                                                 {hostel.email}
                                             </td>
                                             <td className="p-4">
-                                                <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                                <div className="flex items-start justify-start gap-1.5 text-gray-500">
                                                     <Phone size={14} className="text-gray-400" />
                                                     <span>{hostel.phone || 'N/A'}</span>
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-center text-gray-500">
+                                            <td className="p-4 text-start text-gray-500">
                                                 {hostel.hosteltype}
                                             </td>
                                             <td className="p-4 text-center text-gray-500">
@@ -551,45 +580,45 @@ export default function HostelManagement() {
 
                 {/* PAGINATION BAR FOOTER */}
                 <div className="p-4 bg-white border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-500">
-                        <div>
-                            Showing {totalHostels === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{" "}
-                            {Math.min(currentPage * itemsPerPage, totalHostels)} of {totalHostels} entries
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                            <button
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-
-                            {Array.from({ length: totalPages }, (_, index) => {
-                                const pageNum = index + 1;
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => setCurrentPage(pageNum)}
-                                        className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                            ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                            : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
-
-                            <button
-                                disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
+                    <div>
+                        Showing {totalHostels === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{" "}
+                        {Math.min(currentPage * itemsPerPage, totalHostels)} of {totalHostels} entries
                     </div>
+
+                    <div className="flex items-center gap-1">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+
+                        {Array.from({ length: totalPages }, (_, index) => {
+                            const pageNum = index + 1;
+                            return (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            );
+                        })}
+
+                        <button
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* ==========================================
@@ -609,7 +638,7 @@ export default function HostelManagement() {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setActiveModal(false)}
+                                onClick={handleCancel}
                                 className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
                             >
                                 <X size={14} />
@@ -775,11 +804,11 @@ export default function HostelManagement() {
                                 disabled={isSubmitting}
                                 className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save changes'}
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setActiveModal(null)}
+                                onClick={handleCancel}
                                 className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-primary hover:bg-gray-50"
                             >
                                 Cancel
@@ -787,6 +816,83 @@ export default function HostelManagement() {
 
                         </div>
                     </form>
+                </div>
+            )}
+            {isEditConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Save Changes</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to save these changes?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsEditConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveHostel}
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDiscardConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to discard your changes? Any unsaved edits will be lost.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsDiscardConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Continue Editing
+                            </button>
+                            <button
+                                onClick={confirmDiscard}
+                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Discard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {isExportConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to download the organization list?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsExportConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleExport();
+                                    setIsExportConfirmOpen(false);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Export
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
