@@ -53,8 +53,29 @@ const validateUpdateStudent = (req, res, next) => {
   next();
 };
 
+const validateUpdateStudentOrganization = (req, res, next) => {
+  const { organizationId } = req.body;
+
+  if (!organizationId) {
+    return res.status(400).json({
+      success: false,
+      message: "organizationId is required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid organizationId",
+    });
+  }
+
+  next();
+};
+
 export {
   validateCreateStudent,
   validateStudentIdParam,
-  validateUpdateStudent
+  validateUpdateStudent,
+  validateUpdateStudentOrganization
 };

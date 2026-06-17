@@ -3,8 +3,8 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent } from "./student.validation.js";
-import { createStudent, updateStudent, toggleStudentStatus, updateStudentHostelStatus, updateStudentHostel, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin } from "./student.controller.js";
+import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent, validateUpdateStudentOrganization } from "./student.validation.js";
+import { createStudent, updateStudent, toggleStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin } from "./student.controller.js";
 
 const router = express.Router(); 
 
@@ -77,4 +77,16 @@ router.patch(
   validateStudentIdParam,
   updateStudentHostel
 )
+
+
+// super admin change orgonisation
+router.patch(
+  "/:id/update-organization",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateStudentIdParam,
+  validateUpdateStudentOrganization,
+  updateStudentOrganization
+)
+
 export default router;

@@ -5,6 +5,7 @@ import { getAggregateOrganizationDataDb } from "../organizations/organization.se
 import User from "../users/user.model.js";
 import Student from "./student.model.js";
 import Hostel from "../hostels/hostel.model.js";
+import Organization from "../organizations/organization.model.js";
 
 import mongoose from "mongoose";
 import Parent from "../parents/parent.model.js";
@@ -25,18 +26,7 @@ const createStudent = asyncHandler(async (req, res) => {
       );
     }
 
-    const existingUser = await User.findOne({
-      email: { $in: [email, parentEmail] },
-    }).session(session);
-
-    if (existingUser) {
-      await session.abortTransaction();
-      return sendError(
-        res,
-        400,
-        "Email already exists"
-      );
-    }
+  
 
     const existingStudent = await Student.findOne({
       email,
@@ -193,6 +183,47 @@ const updateStudentHostel = asyncHandler(async (req, res) => {
   });
 });
 
+const updateStudentOrganization = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { organizationId } = req.body;
+
+  const organization = await Organization.findById(organizationId);
+  if (!organization) {
+    return sendError(res, 404, "Organization not found");
+  }
+
+  if (!organization.isActive) {
+    return sendError(res, 400, "Cannot move student to inactive organization");
+  }
+
+  const student = await Student.findById(id);
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  if (student.organizationId.toString() === organizationId) {
+    return sendError(res, 400, "Student is already assigned to this organization");
+  }
+
+ 
+
+
+
+  student.organizationId = organizationId;
+
+  await student.save();
+
+  return sendSuccess(res, 200, "Student organization updated successfully", {
+    data: {
+      _id: student._id,
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      organizationId: student.organizationId,
+    },
+  });
+});
+
 const getAdminOrganizationData = asyncHandler(async (req, res) => {
   const organizationId = req.user.organization;
 
@@ -282,6 +313,7 @@ export {
   toggleStudentStatus,
   updateStudentHostelStatus,
   updateStudentHostel,
+  updateStudentOrganization,
   getAdminOrganizationData,
   getAdminStats,
   getStudentsByAdmin,

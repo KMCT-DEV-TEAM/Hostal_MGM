@@ -99,7 +99,6 @@ const studentSchema = new mongoose.Schema(
   }
 );
 
-studentSchema.index({ studentId: 1 });
 studentSchema.index({ organizationId: 1 });
 studentSchema.index({ hostelId: 1 });
 
