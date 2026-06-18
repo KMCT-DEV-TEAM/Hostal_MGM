@@ -23,6 +23,7 @@ import {
     FileDown
 } from 'lucide-react';
 import hostelService from '../../../services/hostel.service';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import * as XLSX from 'xlsx';
 
 import HostelHeader from '../components/Hostel/HostelHeader';
@@ -176,15 +177,17 @@ export default function HostelManagement() {
             };
             if (editingHostel) {
                 await hostelService.updateHostel(editingHostel._id, payload);
+                showSuccessToast('Hostel Updated', 'Hostel details saved successfully');
             } else {
                 await hostelService.createHostel(payload);
+                showSuccessToast('Hostel Added', 'New hostel registered successfully');
             }
             setActiveModal(null);
             setIsEditConfirmOpen(false);
             fetchHostels();
         } catch (error) {
             console.error("Failed to save hostel:", error);
-            alert("Failed to save hostel. Please try again.");
+            showErrorToast('Action Failed', error?.response?.data?.message || 'Failed to save hostel. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -218,10 +221,11 @@ export default function HostelManagement() {
             await hostelService.toggleStatus(statusToUpdate.id);
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
+            showSuccessToast('Status Updated', 'Hostel status changed successfully');
             fetchHostels(); // refresh after update
         } catch (error) {
             console.error("Failed to update status:", error);
-            alert("Failed to update status.");
+            showErrorToast('Action Failed', 'Failed to update status.');
         }
     };
 
@@ -235,13 +239,15 @@ export default function HostelManagement() {
         try {
             setLoading(true);
             await hostelService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
+            const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
+            showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} hostels`);
             setSelectedIds([]); // clear selection
             setIsBulkStatusConfirmOpen(false);
             setBulkStatusToUpdate(null);
             fetchHostels(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
-            alert("Failed to bulk update status. Please try again.");
+            showErrorToast('Action Failed', 'Failed to bulk update status. Please try again.');
             setLoading(false);
         }
     };
@@ -257,7 +263,7 @@ export default function HostelManagement() {
             const dataToExport = res.data || [];
 
             if (dataToExport.length === 0) {
-                alert("No data available to export.");
+                showErrorToast('Export Failed', 'No data available to export.');
                 return;
             }
 
@@ -278,9 +284,10 @@ export default function HostelManagement() {
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Hostels");
             XLSX.writeFile(workbook, "Hostels_List.xlsx");
+            showSuccessToast('Export Successful', 'The hostel list has been downloaded.');
         } catch (error) {
             console.error("Export failed:", error);
-            alert("Failed to export data. Please try again.");
+            showErrorToast('Export Failed', 'Failed to export data. Please try again.');
         } finally {
             setLoading(false);
             fetchHostels();

@@ -11,6 +11,7 @@ import {
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import organizationService from '../../../services/organization.service';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import OrganizationTable from '../components/organization/OrganizationTable';
 import OrganizationMobileList from '../components/organization/OrganizationMobileList';
 import OrganizationDetailView from '../components/organization/OrganizationDetailView';
@@ -102,9 +103,10 @@ const OrganizationManagement = () => {
             );
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
+            showSuccessToast('Status Updated', 'Organization status changed successfully');
         } catch (err) {
             console.error("Failed to toggle status:", err);
-            alert("Failed to update status. Please try again.");
+            showErrorToast('Action Failed', 'Failed to update status. Please try again.');
         }
     };
 
@@ -153,15 +155,17 @@ const OrganizationManagement = () => {
             setIsSubmitting(true);
             if (isEditMode && editingId) {
                 await organizationService.updateOrganization(editingId, formData);
+                showSuccessToast('Organization Updated', 'Organization details saved successfully');
             } else {
                 await organizationService.createOrganization(formData);
+                showSuccessToast('Organization Added', 'New organization registered successfully');
             }
             setIsModalOpen(false);
             setIsEditConfirmOpen(false);
             fetchOrganizations(); // Refresh list after saving
         } catch (err) {
             console.error("Failed to save organization:", err);
-            alert("Failed to save organization. Please try again.");
+            showErrorToast('Action Failed', err?.response?.data?.message || 'Failed to save organization. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -209,13 +213,15 @@ const OrganizationManagement = () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
             await organizationService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
+            const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
+            showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} organizations`);
             setSelectedIds([]); // clear selection
             setIsBulkStatusConfirmOpen(false);
             setBulkStatusToUpdate(null);
             fetchOrganizations(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
-            alert("Failed to bulk update status. Please try again.");
+            showErrorToast('Action Failed', 'Failed to bulk update status. Please try again.');
         }
     };
 
@@ -251,10 +257,13 @@ const OrganizationManagement = () => {
                 const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
                 const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
                 saveAs(data, `Organizations_Export_${new Date().getTime()}.xlsx`);
+                showSuccessToast('Export Successful', 'The organization list has been downloaded.');
+            } else {
+                showErrorToast('Export Failed', 'No data available to export.');
             }
         } catch (err) {
             console.error("Failed to export organizations:", err);
-            alert("Failed to export organizations. Please try again.");
+            showErrorToast('Export Failed', 'Failed to export organizations. Please try again.');
         }
     };
 

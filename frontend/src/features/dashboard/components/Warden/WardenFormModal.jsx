@@ -54,16 +54,27 @@ export default function WardenFormModal({
                                 <input
                                     type="text"
                                     required
-                                    value={wardenForm.name || ''}
-                                    onChange={(e) => setWardenForm({ ...wardenForm, name: e.target.value })}
-                                    placeholder="Full name"
+                                    placeholder="First name"
+                                    value={wardenForm.name ? wardenForm.name.split(' ')[0] : ''}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, name: `${e.target.value} ${wardenForm.name ? wardenForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() })}
                                     className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">Phone Number *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">Last Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Last name"
+                                    value={wardenForm.name ? wardenForm.name.split(' ').slice(1).join(' ') : ''}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, name: `${wardenForm.name ? wardenForm.name.split(' ')[0] : ''} ${e.target.value}`.trim() })}
+                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-[10px] font-medium text-gray-500 mb-1">Phone Number *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                    <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
+                                    <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
                                         +91
                                     </div>

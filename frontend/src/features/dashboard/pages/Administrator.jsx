@@ -238,7 +238,8 @@ export default function Administrator() {
                 setAdmins(admins.map(admin =>
                     selectedIds.includes(admin._id) ? { ...admin, isActive: bulkStatusToUpdate } : admin
                 ));
-                showSuccessToast('Bulk Status Updated', `Updated status for ${selectedIds.length} administrators`);
+                const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
+                showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} administrators`);
             }
         } catch (error) {
             console.error("Failed to bulk update status:", error);
@@ -730,8 +731,9 @@ export default function Administrator() {
                                 <input
                                     type="email"
                                     required
+                                    disabled={isEmailVerified}
                                     placeholder="Enter your new email"
-                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200"
                                 />
                                 {isEmailVerified ? (
                                     <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
