@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
+import ParentFormModal from '../components/parents/ParentFormModal';
+import ParentDetailsModal from '../components/parents/ParentDetailsModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const INITIAL_PARENTS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', student: 'Nila Mohan', relation: 'Father', status: 'Active' },
@@ -12,26 +15,55 @@ const INITIAL_PARENTS = [
 export default function Parents() {
     const [parents, setParents] = useState(INITIAL_PARENTS);
     const [selectedIds, setSelectedIds] = useState([]);
+    
+    // Modal states
+    const [activeModal, setActiveModal] = useState(null);
+    const [editingParent, setEditingParent] = useState(null);
+    const [pendingStatusChange, setPendingStatusChange] = useState(null);
 
     const handleSelectAll = () => {
         setSelectedIds(selectedIds.length === parents.length ? [] : parents.map(p => p.id));
     };
 
     const handleSelect = (id) => {
-        setSelectedIds(prev => 
+        setSelectedIds(prev =>
             prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
         );
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        setParents(prev => prev.map(p => 
-            p.id === id ? { ...p, status: newStatus } : p
-        ));
+    const handleStatusChangeRequest = (parent, newStatus) => {
+        setPendingStatusChange({ parent, newStatus });
+        setActiveModal('confirm-status');
+    };
+
+    const confirmStatusChange = () => {
+        if (pendingStatusChange) {
+            setParents(prev => prev.map(p =>
+                p.id === pendingStatusChange.parent.id ? { ...p, status: pendingStatusChange.newStatus } : p
+            ));
+        }
+    };
+
+    const handleAdd = () => {
+        setEditingParent(null);
+        setActiveModal('edit');
     };
 
     const handleEdit = (parent) => {
-        console.log("Edit parent:", parent);
-        // openEditParentModal(parent);
+        setEditingParent(parent);
+        setActiveModal('edit');
+    };
+
+    const handleView = (parent) => {
+        setEditingParent(parent); // We can reuse editingParent to store the selected parent, or create a new state `viewingParent`. Reusing is fine since modals are mutually exclusive.
+        setActiveModal('view');
+    };
+
+    const handleSaveParent = () => {
+        // Implement save logic here
+        console.log("Saving parent data...");
+        setActiveModal(null);
+        setEditingParent(null);
     };
 
     const handleDelete = (parent) => {
@@ -53,27 +85,53 @@ export default function Parents() {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] p-6 text-gray-700">
-            <ParentsHeader 
-                selectedIds={selectedIds} 
-                parents={parents} 
-                onEdit={handleEdit} 
-                onDeleteSelected={handleDeleteSelected} 
+        <div className="w-full bg-[#F8FAFC] p-6 text-gray-700">
+            <ParentsHeader
+                selectedIds={selectedIds}
+                parents={parents}
+                onEdit={handleEdit}
+                onDeleteSelected={handleDeleteSelected}
             />
 
-            <ParentsToolbar 
-                onSearch={handleSearch} 
-                onExport={handleExport} 
+            <ParentsToolbar
+                onSearch={handleSearch}
+                onExport={handleExport}
+                onAddClick={handleAdd}
             />
 
-            <ParentsTable 
-                parents={parents} 
-                selectedIds={selectedIds} 
-                onSelectAll={handleSelectAll} 
-                onSelect={handleSelect} 
-                onStatusChange={handleStatusChange} 
-                onEdit={handleEdit} 
-                onDelete={handleDelete} 
+            <ParentsTable
+                parents={parents}
+                selectedIds={selectedIds}
+                onSelectAll={handleSelectAll}
+                onSelect={handleSelect}
+                onStatusChangeRequest={handleStatusChangeRequest}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onView={handleView}
+            />
+
+            {/* Modals */}
+            {activeModal === 'view' && (
+                <ParentDetailsModal 
+                    parent={editingParent}
+                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                />
+            )}
+
+            {activeModal === 'edit' && (
+                <ParentFormModal 
+                    editingParent={editingParent}
+                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                    onSave={handleSaveParent}
+                />
+            )}
+
+            <ConfirmationModal 
+                isOpen={activeModal === 'confirm-status'}
+                onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
+                onConfirm={confirmStatusChange}
+                title="Confirm Status Change"
+                message={`Are you sure you want to change the status of ${pendingStatusChange?.parent?.name} to ${pendingStatusChange?.newStatus}?`}
             />
         </div>
     );

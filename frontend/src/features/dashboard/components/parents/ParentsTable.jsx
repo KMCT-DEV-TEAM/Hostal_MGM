@@ -6,9 +6,10 @@ export default function ParentsTable({
     selectedIds,
     onSelectAll,
     onSelect,
-    onStatusChange,
+    onStatusChangeRequest,
     onEdit,
-    onDelete
+    onDelete,
+    onView
 }) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -41,7 +42,10 @@ export default function ParentsTable({
                                         }
                                     </button>
                                 </td>
-                                <td className="p-4 flex items-center gap-3 font-medium text-gray-700">
+                                <td 
+                                    className="p-4 flex items-center gap-3 font-medium text-gray-700 cursor-pointer hover:text-[#0A437A] transition-colors"
+                                    onClick={() => onView && onView(p)}
+                                >
                                     <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                                         {p.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                     </div>
@@ -59,7 +63,7 @@ export default function ParentsTable({
                                     <div className="relative w-fit">
                                         <select
                                             value={p.status}
-                                            onChange={(e) => onStatusChange && onStatusChange(p.id, e.target.value)}
+                                            onChange={(e) => onStatusChangeRequest && onStatusChangeRequest(p, e.target.value)}
                                             className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
                                                 ${p.status === "Active"
                                                     ? "bg-green-50 text-success border-green-200/60"
@@ -79,10 +83,10 @@ export default function ParentsTable({
                                 </td>
                                 <td className="p-4">
                                     <div className="flex gap-3 text-gray-400 items-center">
-                                        <button onClick={() => onDelete && onDelete(p)} className="hover:text-danger focus:outline-none transition-colors p-1">
+                                        <button onClick={() => onDelete && onDelete(p)} className="hover:text-danger focus:outline-none transition-colors p-1 cursor-pointer">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1">
+                                        <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
                                             <Pencil className="w-4 h-4" />
                                         </button>
                                     </div>

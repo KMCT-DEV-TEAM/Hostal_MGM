@@ -32,7 +32,7 @@ export default function Modal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                            className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                             <X size={14} />
                         </button>
