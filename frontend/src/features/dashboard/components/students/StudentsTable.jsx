@@ -1,5 +1,5 @@
 import React from "react";
-import { Square, CheckSquare, Pencil, Trash2, ChevronDown } from "lucide-react";
+import { Square, CheckSquare, Pencil, ChevronDown } from "lucide-react";
 
 const COLUMNS = [
   "Admission No",
@@ -15,15 +15,15 @@ export default function StudentsTable({
   error,
   canEdit,
   canDelete,
+  showOrganizationColumn = false,
   selectedIds,
   onSelectAll,
   onSelectRow,
   onEditClick,
-  onDeleteClick,
   onStatusChange,
   statusLoadingIds = [],
 }) {
-  const showActionsColumn = canEdit || canDelete;
+  const showActionsColumn = canEdit;
   const getStudentId = (student) => student._id ?? student.id;
   const getHostelName = (hostel) => {
     if (!hostel || typeof hostel !== "object") return hostel || "-";
@@ -56,12 +56,12 @@ export default function StudentsTable({
     );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <table className="w-full text-left">
-        <thead>
+    <div className="bg-white  border border-gray-100 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <table className="w-full text-left relative">
+        <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
           <tr className="text-[#222222] text-sm font-semibold border-b border-gray-50">
             <th className="p-4 text-gray-300">
-              <button onClick={onSelectAll}>
+              <button onClick={onSelectAll} className="focus:outline-none">
                 {selectedIds.length === students.length ? (
                   <CheckSquare className="h-5 w-5 text-[#0A437A]" />
                 ) : (
@@ -69,7 +69,7 @@ export default function StudentsTable({
                 )}
               </button>
             </th>
-            {COLUMNS.map((h) => (
+            {COLUMNS.filter((h) => h !== 'Organization' || showOrganizationColumn).map((h) => (
               <th key={h} className="p-4">
                 {h}
               </th>
@@ -97,9 +97,11 @@ export default function StudentsTable({
                 </td>
                 <td className="p-4">{s.studentId || "-"}</td>
                 <td className="p-4 ">{s.name || "-"}</td>
-                               <td className="p-4">
-                  {getOrganizationName(s.organization, s.organizationId)}
-                </td>
+                {showOrganizationColumn && (
+                  <td className="p-4">
+                    {getOrganizationName(s.organization, s.organizationId)}
+                  </td>
+                )}
                 <td className="p-4">{getHostelName(s.hostel)}</td>
                 <td className="p-4">
                   <div className="relative w-fit">
@@ -137,13 +139,7 @@ export default function StudentsTable({
                 </td>
                 {showActionsColumn && (
                   <td className="p-4 flex gap-3 text-secondary">
-                    {canDelete && (
-                      <Trash2
-                        className={`w-4 h-4 ${isStatusLoading ? "cursor-wait opacity-50" : "cursor-pointer"}`}
-                        aria-disabled={isStatusLoading}
-                        onClick={() => !isStatusLoading && onDeleteClick(studentId)}
-                      />
-                    )}
+                   
                     {canEdit && (
                       <Pencil
                         className={`w-4 h-4 ${isStatusLoading ? "cursor-wait opacity-50" : "cursor-pointer"}`}

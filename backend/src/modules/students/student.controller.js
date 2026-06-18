@@ -1,6 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { checkExistingUser, createStudentWithParentDb, updateStudentDb, bulkUpdateStudentStatusDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
+import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import User from "../users/user.model.js";
 import Student from "./student.model.js";
@@ -89,8 +90,25 @@ const createStudent = asyncHandler(async (req, res) => {
       );
     }
 
+    const { studentOtp, parentOtp } = req.body;
+
+    const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
+    const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp);
+
+    if (!isStudentOtpValid || !isParentOtpValid) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Invalid or expired OTP for student or parent email"
+      );
+    }
+
+    await deleteOtpDb(email);
+    await deleteOtpDb(parentEmail);
+
     const result = await createStudentWithParentDb(
-      req.body,
+      { ...req.body, isVerified: true },
       session
     );
 

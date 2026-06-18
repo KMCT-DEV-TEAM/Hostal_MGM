@@ -19,7 +19,7 @@ export default function Modal({
     return (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
             <Wrapper
-                className={`bg-white rounded-2xl w-full ${maxWidth} max-h-[90vh]  max-h-[80vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
+                className={`bg-white rounded-2xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
                 onSubmit={asForm ? onSubmit : undefined}
             >
                 {/* Header */}
