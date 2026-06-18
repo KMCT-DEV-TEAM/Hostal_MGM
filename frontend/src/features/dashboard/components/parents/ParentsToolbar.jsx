@@ -20,8 +20,17 @@ export default function ParentsToolbar({ onSearch, onFilterChange, onExport, can
     ];
 
     return (
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
-            <div className="flex gap-3">
+        <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
+            <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+                <input
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none"
+                    placeholder="Search Parents..."
+                    onChange={(e) => onSearch && onSearch(e.target.value)}
+                />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                 <Dropdown
                     options={statusOptions}
                     value={statusFilter}
@@ -30,7 +39,7 @@ export default function ParentsToolbar({ onSearch, onFilterChange, onExport, can
                         onFilterChange?.('isActive', val === 'Active' ? 'true' : val === 'Inactive' ? 'false' : '');
                     }}
                     placeholder="All Status"
-                    minWidth="w-[140px]"
+                    minWidth="w-32"
                 />
                 <Dropdown
                     options={relationOptions}
@@ -40,21 +49,11 @@ export default function ParentsToolbar({ onSearch, onFilterChange, onExport, can
                         onFilterChange?.('relationship', val === 'Father' ? 'father' : val === 'Mother' ? 'mother' : val === 'Guardian' ? 'guardian' : '');
                     }}
                     placeholder="All Relations"
-                    minWidth="w-[140px]"
+                    minWidth="w-32"
                 />
-            </div>
-            <div className="flex gap-3">
-                <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                    <input
-                        className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64 outline-none focus:border-secondary"
-                        placeholder="Search"
-                        onChange={(e) => onSearch && onSearch(e.target.value)}
-                    />
-                </div>
                 <button
                     onClick={onExport}
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 transition-colors rounded-lg text-sm font-medium text-gray-700"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                 >
                     <Download className="w-4 h-4" /> Export
                 </button>

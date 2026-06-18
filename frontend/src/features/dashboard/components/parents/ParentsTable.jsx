@@ -12,9 +12,9 @@ export default function ParentsTable({
     statusLoadingIds = []
 }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <table className="w-full text-left">
-                <thead>
+        <div className="hidden md:block h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
+            <table className="w-full text-start relative">
+                <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
                     <tr className="text-text-primary text-sm font-semibold border-b border-gray-50">
                         <th className="text-gray-300 p-4 w-12">
                             <button onClick={onSelectAll} className="focus:outline-none flex items-center justify-center">

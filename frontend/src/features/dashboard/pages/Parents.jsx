@@ -24,7 +24,7 @@ export default function Parents() {
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
-    
+
     const debouncedSearch = useDebounce(filters.search, 500);
 
     const handleFilterChange = useCallback((key, value) => {
@@ -32,10 +32,10 @@ export default function Parents() {
         setPage(1); // Reset page on filter change
     }, []);
 
-    const { parents, setParents, pagination, loading, error, refetch } = useParents({ 
-        ...filters, 
-        search: debouncedSearch, 
-        page 
+    const { parents, setParents, pagination, loading, error, refetch } = useParents({
+        ...filters,
+        search: debouncedSearch,
+        page
     });
 
     const getParentId = (parent) => parent._id ?? parent.id;
@@ -140,7 +140,7 @@ export default function Parents() {
     };
 
     return (
-        <div className="w-full bg-[#F8FAFC] p-6 text-gray-700 min-h-screen flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
             <ParentsHeader
                 selectedIds={selectedIds}
                 parents={parents}
@@ -150,41 +150,43 @@ export default function Parents() {
                 canDelete={canDelete}
             />
 
-            <ParentsToolbar
-                onSearch={handleSearch}
-                onFilterChange={handleFilterChange}
-                onExport={handleExport}
-                canCreate={canCreate}
-            />
-
-            {loading ? (
-                <div className="flex justify-center p-8">Loading parents...</div>
-            ) : error ? (
-                <div className="flex justify-center p-8 text-red-500">Error loading parents: {error.message}</div>
-            ) : (
-                <ParentsTable
-                    parents={parents}
-                    selectedIds={selectedIds}
-                    onSelectAll={handleSelectAll}
-                    onSelect={handleSelect}
-                    onStatusChangeRequest={handleStatusChangeRequest}
-                    onEdit={handleEdit}
-                    onView={handleView}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    statusLoadingIds={statusLoadingIds}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+                <ParentsToolbar
+                    onSearch={handleSearch}
+                    onFilterChange={handleFilterChange}
+                    onExport={handleExport}
+                    canCreate={canCreate}
                 />
-            )}
 
-            {parents.length > 0 && !loading && !error && (
-                <Pagination
-                    page={page}
-                    setPage={setPage}
-                    limit={pagination.limit || 10}
-                    totalItems={pagination.totalRecords || 0}
-                    totalPages={pagination.totalPages || 0}
-                />
-            )}
+                {loading ? (
+                    <div className="flex justify-center p-8">Loading parents...</div>
+                ) : error ? (
+                    <div className="flex justify-center p-8 text-red-500">Error loading parents: {error.message}</div>
+                ) : (
+                    <ParentsTable
+                        parents={parents}
+                        selectedIds={selectedIds}
+                        onSelectAll={handleSelectAll}
+                        onSelect={handleSelect}
+                        onStatusChangeRequest={handleStatusChangeRequest}
+                        onEdit={handleEdit}
+                        onView={handleView}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
+                        statusLoadingIds={statusLoadingIds}
+                    />
+                )}
+
+                {parents.length > 0 && !loading && !error && (
+                    <Pagination
+                        page={page}
+                        setPage={setPage}
+                        limit={pagination.limit || 10}
+                        totalItems={pagination.totalRecords || 0}
+                        totalPages={pagination.totalPages || 0}
+                    />
+                )}
+            </div>
 
             {/* Modals */}
             {activeModal === 'view' && (
