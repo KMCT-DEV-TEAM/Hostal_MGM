@@ -8,7 +8,10 @@ const AdminFormModal = ({
     adminForm,
     setAdminForm,
     handleSaveAdmin,
-    handleCancel
+    handleCancel,
+    organizations = [],
+    isEmailVerified,
+    handleVerifyClick
 }) => {
     if (activeModal !== 'admin') return null;
 
@@ -88,15 +91,32 @@ const AdminFormModal = ({
                             {/* Conditionally hide Email if editing */}
                             {!editingAdmin && (
                                 <div className="col-span-2">
-                                    <label className="block text-[10px] font-medium text-gray-500 mb-1">Email Address *</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        placeholder="admin@example.com"
-                                        value={adminForm.email}
-                                        onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                                        className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                    />
+                                    <label className="block text-[10px] font-medium text-black mb-1">Email Address *</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="email"
+                                            required
+                                            value={adminForm.email || ''}
+                                            onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                                            placeholder="johndoe@example.com"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                            disabled={isEmailVerified}
+                                        />
+                                        {isEmailVerified ? (
+                                            <button type="button" className="px-4 py-2 bg-green-500 text-white text-xs font-medium rounded-lg flex items-center gap-1 cursor-default">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Verified
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')} 
+                                                className="px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer"
+                                            >
+                                                Verify
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -109,14 +129,16 @@ const AdminFormModal = ({
                             <div className="border-b border-gray-100 mb-4" />
                             <label className="block text-[10px] font-medium text-gray-500 mb-1">Assign Organization *</label>
                             <div className="relative">
-                                <select 
+                                <select
                                     className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]"
+                                    value={adminForm.organization || ''}
+                                    onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
+                                    required
                                 >
-                                    <option>Select an Organization</option>
-                                    <option>Kmct Engineering</option>
-                                    <option>Kmct Medical</option>
-                                    <option>Kmct Nursing</option>
-                                    <option>Kmct Dental</option>
+                                    <option value="" disabled>Select an Organization</option>
+                                    {organizations.map(org => (
+                                        <option key={org._id} value={org._id}>{org.name}</option>
+                                    ))}
                                 </select>
                                 <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
                             </div>
@@ -130,7 +152,7 @@ const AdminFormModal = ({
                         type="submit"
                         className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
                     >
-                        Save
+                        {editingAdmin ? 'Save Changes' : 'Save'}
                     </button>
                     <button
                         type="button"

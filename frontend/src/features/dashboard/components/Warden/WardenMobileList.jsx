@@ -1,29 +1,67 @@
 import React from 'react';
-import { Pencil, Mail, Phone, MapPin } from 'lucide-react';
+import { Pencil, Mail, Phone, MapPin, Square, CheckSquare, Loader2 } from 'lucide-react';
 
 export default function WardenMobileList({
     paginatedWardens,
     selectedIds,
+    handleSelectAll,
     handleSelectRow,
     setSelectedWardenDetail,
     setView,
     handleStatusChangeClick,
-    openEditWardenModal
+    openEditWardenModal,
+    loading,
+    error,
+    availableHostels = [],
+    handleHostelChange
 }) {
+    const isAllSelected = paginatedWardens.length > 0 && paginatedWardens.every(w => selectedIds.includes(w.id));
+
     return (
-        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0">
-            {paginatedWardens.length === 0 ? (
+        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {paginatedWardens.length > 0 && (
+                <div className="flex items-center gap-2 px-1 mb-1">
+                    <button onClick={handleSelectAll} className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2">
+                        {isAllSelected ? (
+                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                        ) : (
+                            <Square className="w-5 h-5" />
+                        )}
+                        <span className="text-sm font-medium text-gray-600">Select All</span>
+                    </button>
+                </div>
+            )}
+            {loading ? (
+                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
+                    Loading wardens...
+                </div>
+            ) : error ? (
+                <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
+            ) : paginatedWardens.length === 0 ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No records found matching your search criteria.</div>
             ) : (
-                paginatedWardens.map((warden) => (
-                    <div key={warden.id} className="bg-white p-4 rounded-xl shadow-sm flex flex-col relative border border-gray-100">
-                        <div className="absolute top-4 right-4 flex gap-2">
-                            <input
-                                type="checkbox"
-                                checked={selectedIds.includes(warden.id)}
-                                onChange={() => handleSelectRow(warden.id)}
-                                className="w-4 h-4 rounded border-gray-300 text-[#0A437A] focus:ring-[#0A437A] cursor-pointer"
-                            />
+                paginatedWardens.map((warden) => {
+                    const isSelected = selectedIds.includes(warden.id);
+                    return (
+                    <div key={warden.id} className={`bg-white p-4 rounded-xl shadow-sm flex flex-col relative border ${isSelected ? 'border-[#0A437A] bg-blue-50/20' : 'border-transparent'}`}>
+                        <div className="flex justify-between items-start mb-3">
+                            <button
+                                onClick={() => handleSelectRow(warden.id)}
+                                className="focus:outline-none text-gray-300 cursor-pointer"
+                            >
+                                {isSelected ? (
+                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                ) : (
+                                    <Square className="w-5 h-5" />
+                                )}
+                            </button>
+                            <button
+                                onClick={() => openEditWardenModal(warden)}
+                                className="text-blue-400 hover:text-[#0A437A] cursor-pointer"
+                            >
+                                <Pencil className="w-4 h-4" />
+                            </button>
                         </div>
 
                         <div className="flex items-start gap-4">
@@ -59,24 +97,26 @@ export default function WardenMobileList({
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-                                        <span className="truncate text-primary font-medium">{warden.hostel || 'N/A'}</span>
+                                        <select
+                                            value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
+                                            onChange={(e) => handleHostelChange(warden.id, e.target.value)}
+                                            className="appearance-none bg-transparent border-none text-[10px] sm:text-xs font-medium text-[#0A437A] cursor-pointer focus:outline-none"
+                                        >
+                                            <option value="Not Assigned">Not Assigned</option>
+                                            {availableHostels.map(h => (
+                                                <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
-                            <button
-                                onClick={() => openEditWardenModal(warden)}
-                                className="text-gray-400 hover:text-[#0A437A] p-1 transition-colors cursor-pointer"
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </button>
-
+                        <div className="flex justify-end mt-auto pt-3 border-t border-gray-50">
                             <button 
                                 type="button"
                                 onClick={() => handleStatusChangeClick(warden.id, warden.status)}
-                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium cursor-pointer transition-colors
+                                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
                                         ${warden.status === 'Active' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-red-50 text-danger hover:bg-red-100'}`}
                             >
                                 <span className={`w-1.5 h-1.5 rounded-full ${warden.status === 'Active' ? 'bg-green-600' : 'bg-red-600'}`}></span>
@@ -84,7 +124,7 @@ export default function WardenMobileList({
                             </button>
                         </div>
                     </div>
-                ))
+                )})
             )}
         </div>
     );

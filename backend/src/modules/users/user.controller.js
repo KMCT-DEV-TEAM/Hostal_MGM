@@ -13,14 +13,16 @@ import {
   getUserByIdDb,
   updateUserByRoleDb,
   updateUserDb,
-  toggleUserActiveStatusByRoleDb
+  toggleUserActiveStatusByRoleDb,
+  bulkToggleUserStatusByRoleDb
 } from "./user.service.js";
 import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
+import Hostel from "../hostels/hostel.model.js";
 
 // --- ADMIN CONTROLLERS ---
 
 const createAdmin = asyncHandler(async (req, res) => {
-    const { name, email, organizationId } = req.body;
+    const { name, email, phone, organizationId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -39,6 +41,7 @@ const createAdmin = asyncHandler(async (req, res) => {
     const admin = await createUserDb({
         name,
         email,
+        phone,
         password: hashedPassword,
         organization: organizationId,
         temppass: true,
@@ -56,14 +59,16 @@ const createAdmin = asyncHandler(async (req, res) => {
         console.error("Failed to send temporary password email:", error);
     }
 
-    return sendSuccess(res, 201, "Admin created successfully and email sent");
+    return sendSuccess(res, 201, "Admin created successfully and email sent", admin);
 });
 
 const getAdmins = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
     
-    const { users, totalCount } = await getPaginatedUsersByRoleDb("admin", page, limit);
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("admin", page, limit, status, search);
 
     return sendSuccess(res, 200, "Admins fetched successfully", { 
       count: users.length, 
@@ -224,6 +229,22 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
     });
 });
 
+const bulkToggleAdminStatus = asyncHandler(async (req, res) => {
+    const { ids, isActive } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendError(res, 400, "Please provide an array of Admin IDs");
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return sendError(res, 400, "Please provide isActive boolean status");
+    }
+
+    await bulkToggleUserStatusByRoleDb(ids, "admin", isActive);
+
+    return sendSuccess(res, 200, "Bulk admin status updated successfully");
+});
+
 // --- WARDEN CONTROLLERS ---
 
 const createWarden = asyncHandler(async (req, res) => {
@@ -271,15 +292,29 @@ const createWarden = asyncHandler(async (req, res) => {
 const getWardens = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
     
-    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit);
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit, status, search);
+
+    const wardenIds = users.map(u => u._id);
+    const hostels = await Hostel.find({ wardens: { $in: wardenIds } });
+    
+    const usersWithHostel = users.map(user => {
+        const userObj = user.toObject ? user.toObject() : user;
+        const hostel = hostels.find(h => h.wardens.some(w => w.toString() === user._id.toString()));
+        if (hostel) {
+            userObj.hostel = hostel;
+        }
+        return userObj;
+    });
 
     return sendSuccess(res, 200, "Wardens fetched successfully", { 
       count: users.length, 
       totalCount,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
-      data: users 
+      data: usersWithHostel 
     });
 });
 
@@ -325,6 +360,36 @@ const updateWarden = asyncHandler(async (req, res) => {
     });
 });
 
+const updateWardenHostel = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { hostelId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return sendError(res, 400, "Invalid Warden ID");
+    }
+
+    const hostelExists = await getHostelByIdDb(hostelId);
+    if (!hostelExists) {
+        return sendError(res, 404, "Hostel not found");
+    }
+
+    const warden = await getUserByIdAndRoleDb(id, "warden");
+
+    if (!warden) {
+        return sendError(res, 404, "Warden not found");
+    }
+
+    // Remove warden from previous hostel
+    await Hostel.updateMany({ wardens: id }, { $pull: { wardens: id } });
+
+    // Add warden to new hostel
+    await Hostel.findByIdAndUpdate(hostelId, { $push: { wardens: id } });
+
+    return sendSuccess(res, 200, "Warden hostel updated successfully", {
+        data: warden
+    });
+});
+
 const toggleWardenStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -353,6 +418,22 @@ const toggleWardenStatus = asyncHandler(async (req, res) => {
     });
 });
 
+const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
+    const { ids, isActive } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendError(res, 400, "Please provide an array of Warden IDs");
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return sendError(res, 400, "Please provide isActive boolean status");
+    }
+
+    await bulkToggleUserStatusByRoleDb(ids, "warden", isActive);
+
+    return sendSuccess(res, 200, "Bulk warden status updated successfully");
+});
+
 export {
   createAdmin,
   getAdmins,
@@ -361,9 +442,12 @@ export {
   updateUserEmail,
   updateAdminOrganization,
   toggleAdminStatus,
+  bulkToggleAdminStatus,
   createWarden,
   getWardens,
   getWardenById,
   updateWarden,
-  toggleWardenStatus
+  updateWardenHostel,
+  toggleWardenStatus,
+  bulkToggleWardenStatus
 }

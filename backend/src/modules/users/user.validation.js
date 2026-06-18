@@ -122,6 +122,26 @@ const validateUpdateWarden = (req, res, next) => {
   next();
 };
 
+const validateUpdateWardenHostel = (req, res, next) => {
+  const { hostelId } = req.body;
+
+  if (!hostelId) {
+    return res.status(400).json({
+      success: false,
+      message: "hostelId is required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hostelId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid hostelId",
+    });
+  }
+
+  next();
+};
+
 export {
   validateCreateAdmin,
   validateAdminIdParam,
@@ -130,5 +150,6 @@ export {
   validateUpdateAdminOrganization,
   validateCreateWarden,
   validateWardenIdParam,
-  validateUpdateWarden
+  validateUpdateWarden,
+  validateUpdateWardenHostel
 }

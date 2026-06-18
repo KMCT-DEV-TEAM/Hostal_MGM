@@ -47,6 +47,11 @@ export async function toggleStatus(id) {
   return response.data;
 }
 
+export async function bulkToggleStatus(payload) {
+  const response = await adminApi.bulkToggleStatus(payload);
+  return response.data;
+}
+
 /**
  * Update Admin Organization
  * @param {string} id 
@@ -87,6 +92,7 @@ const adminService = {
   updateAdmin,
   updateEmail,
   toggleStatus,
+  bulkToggleStatus,
   updateOrganization,
   getDashboardStats,
   getSuperAdminDashboardStats,

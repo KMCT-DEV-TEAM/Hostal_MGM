@@ -1,5 +1,5 @@
 import React from 'react';
-import { Square, CheckSquare, Pencil, Trash2, Phone, ChevronDown, Mail } from 'lucide-react';
+import { Square, CheckSquare, Pencil, Trash2, Phone, ChevronDown, Mail, Loader2 } from 'lucide-react';
 
 export default function WardenTable({
     paginatedWardens,
@@ -9,9 +9,11 @@ export default function WardenTable({
     setSelectedWardenDetail,
     setView,
     handleHostelChange,
-    AVAILABLE_HOSTELS,
     handleStatusChangeClick,
-    openEditWardenModal
+    openEditWardenModal,
+    loading,
+    error,
+    availableHostels = []
 }) {
     return (
         <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -36,8 +38,19 @@ export default function WardenTable({
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                    {paginatedWardens.length === 0 ? (
+                <tbody className="divide-y divide-gray-50 text-sm text-center">
+                    {loading ? (
+                        <tr>
+                            <td colSpan="7" className="p-8 text-start text-gray-500">
+                                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
+                                Loading wardens...
+                            </td>
+                        </tr>
+                    ) : error ? (
+                        <tr>
+                            <td colSpan="7" className="p-8 text-start text-red-500">{error}</td>
+                        </tr>
+                    ) : paginatedWardens.length === 0 ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your search criteria.</td>
                         </tr>
@@ -84,12 +97,13 @@ export default function WardenTable({
                                     <td className="p-4 text-center">
                                         <div className="relative inline-block w-44 mx-auto">
                                             <select
-                                                value={warden.hostel}
+                                                value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
                                                 onChange={(e) => handleHostelChange(warden.id, e.target.value)}
                                                 className="w-full appearance-none border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-medium bg-white pr-8 focus:outline-none text-gray-700 cursor-pointer hover:border-gray-300 transition-colors"
                                             >
-                                                {AVAILABLE_HOSTELS.map(h => (
-                                                    <option key={h} value={h}>{h}</option>
+                                                <option value="Not Assigned">Not Assigned</option>
+                                                {availableHostels.map(h => (
+                                                    <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
@@ -100,7 +114,7 @@ export default function WardenTable({
                                             <select
                                                 value={warden.status}
                                                 onChange={(e) => handleStatusChangeClick(warden.id, warden.status)}
-                                                className={`appearance-none rounded-full px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${warden.status === 'Active'
+                                                className={`appearance-none rounded-lg px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${warden.status === 'Active'
                                                     ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
                                                     : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
                                                     }`}

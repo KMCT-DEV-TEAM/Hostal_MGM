@@ -96,7 +96,7 @@ const OrganizationTable = ({
                                         <select
                                             value={o.isActive ? "Active" : "Inactive"}
                                             onChange={() => handleStatusChangeClick(o._id, o.isActive)}
-                                            className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-regular border transition-colors cursor-pointer outline-none
+                                            className={`appearance-none rounded-lg pl-3 pr-8 py-1.5 text-xs font-regular border transition-colors cursor-pointer outline-none
                                             ${o.isActive
                                                     ? "bg-green-50 text-success border-green-200 hover:bg-green-100"
                                                     : "bg-red-50 text-danger border-red-200 hover:bg-red-100"

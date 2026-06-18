@@ -10,11 +10,14 @@ import {
   updateAdmin, 
   updateUserEmail,
   toggleAdminStatus,
+  bulkToggleAdminStatus,
   createWarden,
   getWardens,
   getWardenById,
   updateWarden,
+  updateWardenHostel,
   toggleWardenStatus,
+  bulkToggleWardenStatus,
   updateAdminOrganization
 } from "./user.controller.js";
 
@@ -26,6 +29,7 @@ import {
   validateCreateWarden,
   validateWardenIdParam,
   validateUpdateWarden,
+  validateUpdateWardenHostel,
   validateUpdateAdminOrganization
 } from "./user.validation.js";
 
@@ -91,6 +95,12 @@ router.patch(
   toggleAdminStatus
 );
 
+router.post(
+  "/admins/bulk-toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  bulkToggleAdminStatus
+);
 
 // --- WARDEN ROUTES ---
 
@@ -123,7 +133,17 @@ router.patch(
   roleMiddleware("super_admin"),
   validateWardenIdParam,
   validateUpdateWarden,
+  validateUpdateWarden,
   updateWarden
+);
+
+router.patch(
+  "/wardens/:id/hostel",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateWardenIdParam,
+  validateUpdateWardenHostel,
+  updateWardenHostel
 );
 
 router.patch(
@@ -132,6 +152,13 @@ router.patch(
   roleMiddleware("super_admin"),
   validateWardenIdParam,
   toggleWardenStatus 
+);
+
+router.post(
+  "/wardens/bulk-toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  bulkToggleWardenStatus
 );
 
 export default router;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Download, Plus, ChevronDown } from 'lucide-react';
 
 export default function WardenToolbar({
@@ -10,14 +10,27 @@ export default function WardenToolbar({
     initiateExport,
     openAddWardenModal
 }) {
+    const [localSearch, setLocalSearch] = useState(searchQuery);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localSearch !== searchQuery) {
+                setSearchQuery(localSearch);
+                setCurrentPage(1);
+            }
+        }, 500); // 500ms debounce
+        
+        return () => clearTimeout(timer);
+    }, [localSearch, searchQuery, setSearchQuery, setCurrentPage]);
+
     return (
         <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
             <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
                 <input
                     type="text"
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    value={localSearch}
+                    onChange={(e) => setLocalSearch(e.target.value)}
                     placeholder="Search Wardens..."
                     className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
                 />
