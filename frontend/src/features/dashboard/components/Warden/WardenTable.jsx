@@ -83,18 +83,23 @@ export default function WardenTable({
                                         </div>
                                     </td>
                                     <td className="p-4 text-start text-gray-500">
+
                                         <div className="flex items-center justify-start gap-1.5 text-gray-500">
+
                                             <Mail size={14} className="text-gray-400" />
                                             <span>{warden.email}</span>
                                         </div>
                                     </td>
+
                                     <td className="p-4 text-start">
                                         <div className="flex items-center justify-start gap-1.5 text-gray-500">
                                             <Phone size={14} className="text-gray-400" />
                                             <span>{warden.phone}</span>
                                         </div>
                                     </td>
+
                                     <td className="p-4 text-start">
+
                                         <div className="relative inline-block w-44">
                                             <select
                                                 value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
@@ -109,7 +114,9 @@ export default function WardenTable({
                                             <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
                                         </div>
                                     </td>
+
                                     <td className="p-4 text-start">
+
                                         <div className="relative inline-block">
                                             <select
                                                 value={warden.status}
@@ -125,8 +132,10 @@ export default function WardenTable({
                                             <ChevronDown className={`w-3 h-3 absolute right-2 top-2.5 pointer-events-none ${warden.status === 'Active' ? 'text-green-600' : 'text-red-500'}`} />
                                         </div>
                                     </td>
+
                                     <td className="p-4 text-start">
                                         <div className="flex items-center justify-start gap-3 text-gray-400">
+
                                             <button onClick={() => openEditWardenModal(warden)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
