@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 import { getStudentPermissions } from '@/features/dashboard/config/studentPermissions';
 import { useStudents } from '@/features/dashboard/hooks/useStudents';
 import { createStudent, toggleStudentStatus, bulkUpdateStudentStatus, updateStudent } from '@/services/student.service';
@@ -20,9 +21,12 @@ export default function Students() {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [pendingConfirm, setPendingConfirm] = useState(null);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
     const [filters, setFilters] = useState({ search: '', course: '', department: '', hostelId: '', organizationId: '', isActive: '' });
 
-    const { students, setStudents, loading, error, refetch } = useStudents(filters);
+    const studentQuery = useMemo(() => ({ ...filters, page, limit }), [filters, page, limit]);
+    const { students, setStudents, loading, error, pagination, refetch } = useStudents(studentQuery);
     const getStudentId = (student) => student._id ?? student.id;
     const applyStatusChange = (ids, response) => {
         const changedIds = new Set(Array.isArray(ids) ? ids : [ids]);
@@ -139,10 +143,12 @@ export default function Students() {
     };
 
     const handleSearch = useCallback((query) => {
+        setPage(1);
         setFilters((prev) => ({ ...prev, search: query }));
     }, []);
 
     const handleApplyFilter = (next) => {
+        setPage(1);
         setFilters((prev) => ({ ...prev, ...next }));
         setIsFilterModalOpen(false);
     };
@@ -182,7 +188,7 @@ export default function Students() {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] p-6 text-gray-700">
+        <div className="w-full sticky   h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             <StudentsHeader
                 selectedIds={selectedIds}
                 students={students}
@@ -208,6 +214,7 @@ export default function Students() {
                 error={error}
                 canEdit={canEdit}
                 canDelete={canDelete}
+                showOrganizationColumn={role === ROLES.SUPER_ADMIN}
                 selectedIds={selectedIds}
                 onSelectAll={handleSelectAll}
                 onSelectRow={handleSelectRow}
@@ -216,6 +223,44 @@ export default function Students() {
                 onStatusChange={handleStatusChange}
                 statusLoadingIds={statusLoadingIds}
             />
+
+            <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm  gap-3">
+                <div>
+                    Showing {pagination.totalRecords === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, pagination.totalRecords)} of {pagination.totalRecords} entries
+                </div>
+
+                <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                        className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        Previous
+                    </button>
+                    {Array.from({ length: pagination.totalPages }, (_, index) => {
+                        const pageNum = index + 1;
+                        return (
+                            <button
+                                key={pageNum}
+                                onClick={() => setPage(pageNum)}
+                                className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
+                                    ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                    : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {pageNum}
+                            </button>
+                        );
+                    })}
+                    <button
+                        disabled={!pagination.hasNextPage}
+                        onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                        className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
 
             {activeModal === 'student' && (
                 <StudentFormModal

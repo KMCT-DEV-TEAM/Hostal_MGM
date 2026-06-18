@@ -15,7 +15,7 @@ export default function StudentsToolbar({ canCreate, searchValue = '', onSearch,
     }, [debouncedSearchTerm, onSearch]);
 
     return (
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
+        <div className="bg-white p-4 rounded-t-xl border border-gray-100 shadow-sm  flex items-center justify-between">
             <div className="flex gap-3">
                 <div className="relative w-64">
                     <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
