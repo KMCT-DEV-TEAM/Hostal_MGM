@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/useParents';
+import { useDebounce } from '@/hooks/useDebounce';
 import { createParent, toggleParentStatus, updateParent } from '@/services/parent.service';
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
@@ -23,13 +24,19 @@ export default function Parents() {
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
+    
+    const debouncedSearch = useDebounce(filters.search, 500);
 
     const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
         setPage(1); // Reset page on filter change
     }, []);
 
-    const { parents, setParents, pagination, loading, error, refetch } = useParents({ ...filters, page });
+    const { parents, setParents, pagination, loading, error, refetch } = useParents({ 
+        ...filters, 
+        search: debouncedSearch, 
+        page 
+    });
 
     const getParentId = (parent) => parent._id ?? parent.id;
 
