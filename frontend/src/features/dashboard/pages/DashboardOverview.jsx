@@ -43,25 +43,6 @@ import {
 } from "lucide-react";
 
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-const hostelData = [
-    { month: "ENG", value: 210 },
-    { month: "MED", value: 235 },
-    { month: "DEN", value: 250 },
-    { month: "NUR", value: 265 },
-    { month: "PHARM", value: 195 },
-    { month: "ARCH", value: 185 },
-    { month: "POLY", value: 210 },
-    { month: "AHS", value: 220 },
-    { month: "LAW", value: 215 },
-    { month: "JETM", value: 260 },
-    { month: "HM", value: 265 },
-    { month: "ITM", value: 250 },
-    { month: "SD", value: 235 },
-    { month: "CEW", value: 215 },
-    { month: "NCP", value: 180 },
-];
-
 const attendanceData = [
     { month: "Jan", value: 70 },
     { month: "Feb", value: 72 },
@@ -182,12 +163,16 @@ function DashboardOverview() {
         organizations: 0, admins: 0, wardens: 0, students: 0, hostels: 0,
         parents: 0, pendingComplaints: 0, leaveRequests: 0, presentToday: 0, absent: 0
     });
+    const [studentChartData, setStudentChartData] = useState([]);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 if (user?.role === ROLES.SUPER_ADMIN) {
-                    const { data: stats } = await adminService.getSuperAdminDashboardStats();
+                    const [{ data: stats }, { data: chartData }] = await Promise.all([
+                        adminService.getSuperAdminDashboardStats(),
+                        adminService.getStudentCountByOrganization()
+                    ]);
                     console.log('stats from super admin', stats)
 
                     setDashboardStats(prev => ({
@@ -198,6 +183,14 @@ function DashboardOverview() {
                         hostels: stats?.hostels || 0,
                         students: stats?.students || 0
                     }));
+
+                    if (chartData && Array.isArray(chartData)) {
+                        const formatted = chartData.map(item => ({
+                            name: item.name.length > 8 ? item.name.substring(0, 8) + '..' : item.name,
+                            value: item.count
+                        }));
+                        setStudentChartData(formatted);
+                    }
                 } else if (user?.role === ROLES.ADMIN) {
                     const { data: stats } = await adminService.getDashboardStats();
                     console.log('stats from admin', stats)
@@ -432,15 +425,15 @@ function DashboardOverview() {
 
                 {/* Hostel Overview + Quick Summary */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-                    {/* Hostel Bar Chart */}
+                    {/* Organization Bar Chart */}
                     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
                         <div className="flex justify-between mb-4">
                             <div>
                                 <h2 className="text-sm font-bold text-primary">
-                                    Hostel Overview
+                                    Organization Overview
                                 </h2>
                                 <p className="text-xs text-gray-400 mt-0.5">
-                                    View student distribution across hostels.
+                                    View student distribution across organizations.
                                 </p>
                             </div>
                             <select
@@ -454,7 +447,7 @@ function DashboardOverview() {
                         </div>
                         <ResponsiveContainer width="100%" height={240}>
                             <BarChart
-                                data={hostelData}
+                                data={studentChartData}
                                 barSize={18}
                                 margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
                             >
@@ -464,7 +457,7 @@ function DashboardOverview() {
                                     vertical={false}
                                 />
                                 <XAxis
-                                    dataKey="month"
+                                    dataKey="name"
                                     tick={{ fontSize: 10, fill: "#8898AA" }}
                                     axisLine={false}
                                     tickLine={false}
@@ -473,8 +466,6 @@ function DashboardOverview() {
                                     tick={{ fontSize: 10, fill: "#8898AA" }}
                                     axisLine={false}
                                     tickLine={false}
-                                    domain={[0, 300]}
-                                    ticks={[0, 50, 100, 150, 200, 250, 300]}
                                 />
                                 <Tooltip cursor={{ fill: "#F0F4FF" }} />
                                 <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
