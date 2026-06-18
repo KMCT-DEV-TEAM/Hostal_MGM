@@ -42,6 +42,7 @@ export default function WardenManagement() {
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
+    const [otpSource, setOtpSource] = useState(null); // 'emailChange' | 'addWarden'
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -312,6 +313,9 @@ export default function WardenManagement() {
                 handleSaveWarden={handleSaveWarden}
                 handleCancel={handleCancel}
                 AVAILABLE_HOSTELS={AVAILABLE_HOSTELS}
+                isEmailVerified={isEmailVerified}
+                setIsOtpModalOpen={setIsOtpModalOpen}
+                setOtpSource={setOtpSource}
             />
 
             {isEditConfirmOpen && (
@@ -492,7 +496,7 @@ export default function WardenManagement() {
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => { setIsEmailChangeModalOpen(false); setIsOtpModalOpen(true); }} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
+                                    <button type="button" onClick={() => { setIsEmailChangeModalOpen(false); setOtpSource('emailChange'); setIsOtpModalOpen(true); }} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
                                         Verify
                                     </button>
                                 )}
@@ -516,13 +520,20 @@ export default function WardenManagement() {
                         e.preventDefault();
                         setIsOtpModalOpen(false);
                         setIsEmailVerified(true);
-                        setIsEmailChangeModalOpen(true);
+                        if (otpSource === 'emailChange') {
+                            setIsEmailChangeModalOpen(true);
+                        }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         {/* Top action buttons */}
                         <div className="flex justify-between items-center mb-6">
                             <button
                                 type="button"
-                                onClick={() => { setIsOtpModalOpen(false); setIsEmailChangeModalOpen(true); }}
+                                onClick={() => { 
+                                    setIsOtpModalOpen(false); 
+                                    if (otpSource === 'emailChange') {
+                                        setIsEmailChangeModalOpen(true); 
+                                    }
+                                }}
                                 className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                             >
                                 <ArrowLeft size={24} strokeWidth={1.5} />
