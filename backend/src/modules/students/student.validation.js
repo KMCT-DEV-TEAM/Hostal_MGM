@@ -7,7 +7,9 @@ const validateCreateStudent = (req, res, next) => {
     parentName, 
     parentEmail, 
     parentPhone, 
-    relationship 
+    relationship,
+    studentOtp,
+    parentOtp,
   } = req.body;
 
   if (req.user?.role === "super_admin" && !organizationId) {
@@ -27,6 +29,10 @@ const validateCreateStudent = (req, res, next) => {
 
   if (!parentName || !parentEmail || !parentPhone || !relationship) {
     return res.status(400).json({ success: false, message: "Parent name, email, number, and relationship are required" });
+  }
+
+  if (!studentOtp || !parentOtp) {
+    return res.status(400).json({ success: false, message: "Student OTP and parent OTP are required" });
   }
 
   next();
