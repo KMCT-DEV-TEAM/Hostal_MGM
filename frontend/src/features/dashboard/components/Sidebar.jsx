@@ -36,14 +36,17 @@ const NavSection = ({ title, children }) => (
 );
 
 // Reusable component for individual navigation links
-const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
+const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose }) => {
     const baseStyles =
         "flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm w-full ";
 
     if (isDanger) {
         return (
             <button
-                onClick={onClick}
+                onClick={(e) => {
+                    if (onClose) onClose(e);
+                    if (onClick) onClick(e);
+                }}
                 className={
                     baseStyles +
                     "text-red-500 hover:text-red-600 hover:bg-red-50 text-left"
@@ -62,6 +65,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
         <NavLink
             to={to}
             end
+            onClick={onClose}
             className={({ isActive }) =>
                 baseStyles +
                 (isActive
@@ -94,7 +98,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge }) => {
     );
 };
 
-function Sidebar() {
+function Sidebar({ isOpen, setIsOpen }) {
 
     const { user, logout } = useAuthStore();
 
@@ -116,9 +120,18 @@ function Sidebar() {
         });
     };
     return (
-        <aside className="fixed top-[82px] left-0 bottom-0 w-64 bg-white border-r border-[#EAEAEA] flex flex-col justify-between">
-            {/* Scrollable Main Content */}
-            <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <>
+            {/* Mobile Overlay */}
+            {isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            <aside className={`fixed top-[82px] left-0 bottom-0 w-[250px] bg-white border-r border-[#EAEAEA] flex flex-col justify-between z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                {/* Scrollable Main Content */}
+                <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
                 {sections.map((section) => (
                     <NavSection key={section.section} title={section.section}>
@@ -128,6 +141,7 @@ function Sidebar() {
                                 icon={item.icon}
                                 label={item.label}
                                 to={item.path}
+                                onClose={() => setIsOpen(false)}
                             />
                         ))}
                     </NavSection>
@@ -141,6 +155,7 @@ function Sidebar() {
                     icon={Settings}
                     label="Settings"
                     to="/dashboard/settings"
+                    onClose={() => setIsOpen(false)}
                 />
 
                 <NavItem
@@ -148,9 +163,11 @@ function Sidebar() {
                     label="Logout"
                     isDanger
                     onClick={handleLogout}
+                    onClose={() => setIsOpen(false)}
                 />
             </div>
-        </aside>
+            </aside>
+        </>
     );
 }
 

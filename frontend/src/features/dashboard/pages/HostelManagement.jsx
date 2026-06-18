@@ -402,6 +402,7 @@ export default function HostelManagement() {
             {/* ==========================================
              FILTER & UTILITY TOOLBAR
              ========================================== */}
+
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
                 <HostelToolbar
                     statusFilter={statusFilter}
