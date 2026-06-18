@@ -3,9 +3,7 @@ import { Square, CheckSquare, Pencil, Trash2, ChevronDown } from "lucide-react";
 
 const COLUMNS = [
   "Admission No",
-  "Name",
-  "Course",
-  "Department",
+  "Student Name",
   "Organization",
   "Hostel",
   "Status",
@@ -99,9 +97,7 @@ export default function StudentsTable({
                 </td>
                 <td className="p-4">{s.studentId || "-"}</td>
                 <td className="p-4 ">{s.name || "-"}</td>
-                <td className="p-4">{s.course || "-"}</td>
-                <td className="p-4">{s.department || "-"}</td>
-                <td className="p-4">
+                               <td className="p-4">
                   {getOrganizationName(s.organization, s.organizationId)}
                 </td>
                 <td className="p-4">{getHostelName(s.hostel)}</td>
