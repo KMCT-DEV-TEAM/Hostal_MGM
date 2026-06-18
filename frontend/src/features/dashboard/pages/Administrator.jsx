@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Square,
     CheckSquare,
@@ -16,6 +16,11 @@ import {
     User
 } from 'lucide-react';
 
+import AdminTable from '../components/admin/AdminTable';
+import AdminMobileList from '../components/admin/AdminMobileList';
+import AdminFormModal from '../components/admin/AdminFormModal';
+import AdminDetailView from '../components/admin/AdminDetailView';
+
 const INITIAL_ADMINS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 1', status: 'Active' },
     { id: 2, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 2', status: 'Inactive' },
@@ -31,6 +36,9 @@ const INITIAL_ADMINS = [
 
 
 
+import adminService from '../../../services/admin.service';
+import organizationService from '../../../services/organization.service';
+
 export default function Administrator() {
     const [activeModal, setActiveModal] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -44,18 +52,15 @@ export default function Administrator() {
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
+    const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
+    const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
 
-    const [admins, setAdmins] = useState([
-        { id: 1, name: "Anil Kumar", email: "anilkumar@gmail.com", phone: "9987898789", organization: "KMCT Engineering", status: "Active" },
-        { id: 2, name: "Jacob Tarakan", email: "jacob@gmail.com", phone: "9987898789", organization: "MES College", status: "Inactive" },
-        { id: 3, name: "Suresh Raina", email: "suresh.r@gmail.com", phone: "9987898789", organization: "Calicut University", status: "Active" },
-        { id: 4, name: "Anil Kumar", email: "anilkumar@gmail.com", phone: "9987898789", organization: "KMCT Medical College", status: "Inactive" },
-        { id: 5, name: "Jacob Tarakan", email: "jacob@gmail.com", phone: "9987898789", organization: "KMCT Engineering", status: "Active" },
-        { id: 6, name: "Manoj Kumar", email: "manoj.k@gmail.com", phone: "9987898789", organization: "MES College", status: "Active" },
-        { id: 7, name: "Suresh Raina", email: "suresh.r@gmail.com", phone: "9987898789", organization: "Calicut University", status: "Inactive" },
-        { id: 8, name: "Anil Kumar", email: "anilkumar@gmail.com", phone: "9987898789", organization: "KMCT Engineering", status: "Active" },
-        { id: 9, name: "Manoj Kumar", email: "manoj.k@gmail.com", phone: "9987898789", organization: "Calicut University", status: "Active" },
-        { id: 10, name: "Jacob Tarakan", email: "jacob@gmail.com", phone: "9987898789", organization: "MES College", status: "Active" },]);
+    const [admins, setAdmins] = useState([]);
+    const [totalAdmins, setTotalAdmins] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [error, setError] = useState(null);
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [organizations, setOrganizations] = useState([]);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -70,34 +75,56 @@ export default function Administrator() {
         status: 'Active'
     });
 
-    // ==========================================
-    // FILTERING & PAGINATION LOGIC
-    // ==========================================
-    const filteredAdmins = useMemo(() => {
-        return admins.filter(admin => {
-            const matchesSearch =
-                admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                admin.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                admin.phone.includes(searchQuery);
+    const fetchAdmins = async () => {
+        try {
+            const res = await adminService.getAdmins({
+                page: currentPage,
+                limit: itemsPerPage,
+                search: debouncedSearch,
+                status: statusFilter
+            });
+            if (res && res.data) {
+                setAdmins(res.data);
+                setTotalAdmins(res.totalCount || 0);
+                setTotalPages(res.totalPages || 1);
+            }
+        } catch (err) {
+            console.error("Failed to fetch admins:", err);
+            setError("Failed to fetch admins. Please try again.");
+        }
+    };
 
-            const matchesStatus = statusFilter === 'All' || admin.status === statusFilter;
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
-            return matchesSearch && matchesStatus;
-        });
-    }, [admins, searchQuery, statusFilter]);
+    useEffect(() => {
+        const fetchOrganizations = async () => {
+            try {
+                const res = await organizationService.getOrganizations({ limit: 100, status: 'Active' });
+                if (res && res.data) {
+                    setOrganizations(res.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch organizations:", err);
+            }
+        };
+        fetchOrganizations();
+    }, []);
 
-    const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage) || 1;
-
-    const paginatedAdmins = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return filteredAdmins.slice(startIndex, startIndex + itemsPerPage);
-    }, [filteredAdmins, currentPage]);
+    useEffect(() => {
+        fetchAdmins();
+    }, [currentPage, debouncedSearch, statusFilter]);
 
     // ==========================================
     // SELECTION & ACTION HANDLERS
     // ==========================================
     const handleSelectAll = () => {
-        const currentVisibleIds = paginatedAdmins.map(w => w.id);
+        const currentVisibleIds = admins.map(w => w._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -143,14 +170,35 @@ export default function Administrator() {
         setStatusToUpdate(null);
     };
 
-    const handleOrganizationChange = (id, organization) => {
-        setAdmins(
-            admins.map(admin =>
-                admin.id === id
-                    ? { ...admin, organization }
-                    : admin
-            )
-        );
+    const handleBulkStatusClick = (isActive) => {
+        setBulkStatusToUpdate(isActive);
+        setIsBulkStatusConfirmOpen(true);
+    };
+
+    const confirmBulkStatusChange = () => {
+        if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
+        const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
+        setAdmins(admins.map(admin => 
+            selectedIds.includes(admin.id) ? { ...admin, status: newStatus } : admin
+        ));
+        setSelectedIds([]);
+        setIsBulkStatusConfirmOpen(false);
+        setBulkStatusToUpdate(null);
+    };
+
+    const handleOrganizationChange = async (id, organizationId) => {
+        try {
+            const res = await adminService.updateOrganization(id, { organizationId });
+            if (res && res.data) {
+                const newOrg = organizations.find(o => o._id === organizationId);
+                setAdmins(admins.map(admin => 
+                    admin._id === id ? { ...admin, organization: newOrg ? newOrg : { _id: organizationId } } : admin
+                ));
+            }
+        } catch (err) {
+            console.error("Failed to update organization:", err);
+            alert("Failed to update organization");
+        }
     };
 
     // ==========================================
@@ -222,39 +270,33 @@ export default function Administrator() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] flex flex-col bg-[#F8FAFC] p-6 text-gray-700 font-sans relative overflow-hidden">
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
             {/* ==========================================
              HEADER ACTION SECTION
              ========================================== */}
-            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Admins</h1>
-                    <p className="text-xs text-gray-400 mt-0.5">Manage all registered hostel administrators</p>
+                    <p className="text-xs text-[#777777] mt-1">Manage all registered hostel administrators</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {selectedIds.length === 1 && (
-                        <button
-                            onClick={() => {
-                                const target = admins.find(w => w.id === selectedIds[0]);
-                                if (target) openEditAdminModal(target);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 border border-[#0A437A] text-[#0A437A] bg-blue-50/40 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
-                        >
-                            <Pencil className="w-4 h-4" />
-                            Edit
-                        </button>
-                    )}
-
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                     {selectedIds.length > 0 && (
-                        <button
-                            onClick={handleDeleteSelected}
-                            className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium cursor-pointer"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Delete ({selectedIds.length})
-                        </button>
+                        <div className="flex items-center gap-2 mr-2">
+                            <button
+                                onClick={() => handleBulkStatusClick(true)}
+                                className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                                Active ({selectedIds.length})
+                            </button>
+                            <button
+                                onClick={() => handleBulkStatusClick(false)}
+                                className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                                Inactive ({selectedIds.length})
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -262,45 +304,44 @@ export default function Administrator() {
             {/* ==========================================
              FILTER & UTILITY TOOLBAR
              ========================================== */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
-                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 flex-shrink-0">
-                    <div className="relative inline-block w-28">
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                            className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-gray-600 pr-8 font-medium cursor-pointer"
-                        >
-                            <option value="All">All</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2.5 top-3 pointer-events-none" />
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
+                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
+                    <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                            type="text"
+                            placeholder="Search Name, Email or Phone..."
+                            value={searchQuery}
+                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
+                        />
                     </div>
 
-                    <div className="flex items-center gap-3 flex-1 justify-end">
-                        <div className="relative w-full max-w-xs">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                            <input
-                                type="text"
-                                placeholder="Search Name, Email or Phone..."
-                                value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none placeholder-gray-400 cursor-pointer"
-                            />
+                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
+                        <div className="relative inline-block w-32 bg-white border border-gray-100 md:border-gray-200 rounded-lg shadow-sm md:shadow-none">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                                className="w-full appearance-none bg-transparent rounded-lg px-3 py-2 pr-8 text-sm text-[#777777] font-medium outline-none focus:border-[#0A437A] cursor-pointer"
+                            >
+                                <option value="All">All</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
+
                         <button
                             onClick={initiateExport}
-                            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
-                            <Download className="w-4 h-4" />
-                            Export
+                            <Download className="w-4 h-4" /> Export
                         </button>
                         <button
                             onClick={openAddAdminModal}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
-                            <Plus className="w-4 h-4" />
-                            Add New
+                            <Plus className="w-4 h-4" /> Add New
                         </button>
                     </div>
                 </div>
@@ -309,159 +350,38 @@ export default function Administrator() {
                 DATA TABLE LAYOUT
                 ========================================== */}
 
-                <div className="overflow-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-
-                    <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                            <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
-                                <th className="p-4 w-12 text-center">
-                                    <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500 cursor-pointer">
-                                        {paginatedAdmins.length > 0 && paginatedAdmins.every(w => selectedIds.includes(w.id)) ? (
-                                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                        ) : (
-                                            <Square className="w-5 h-5" />
-                                        )}
-                                    </button>
-                                </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                                    Name
-                                </th>
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                                    Email
-                                </th>
-
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                                    Phone
-                                </th>
-
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                                    Organization
-                                </th>
-
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                                    Status
-                                </th>
-
-                                <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 text-sm">
-                            {paginatedAdmins.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your matching layout search criteria.</td>
-                                </tr>
-                            ) : (
-                                paginatedAdmins.map((admin) => {
-                                    const isSelected = selectedIds.includes(admin.id);
-                                    return (
-                                        <tr key={admin.id} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
-                                            <td className="p-4 text-center">
-                                                <button onClick={() => handleSelectRow(admin.id)} className="focus:outline-none text-gray-300 cursor-pointer">
-                                                    {isSelected ? (
-                                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                                    ) : (
-                                                        <Square className="w-5 h-5" />
-                                                    )}
-                                                </button>
-                                            </td>
-                                            <td className="p-4 font-medium text-[#777777]">
-                                                <div 
-                                                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-                                                    onClick={() => {
-                                                        setSelectedAdminDetail(admin);
-                                                        setView('detail');
-                                                    }}
-                                                >
-                                                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                                                        {admin.name ? admin.name.substring(0, 2) : 'NA'}
-                                                    </div>
-                                                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{admin.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-start text-gray-500">
-                                                {admin.email}
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center justify-center gap-1.5 text-gray-500">
-                                                    <Phone size={14} className="text-gray-400" />
-                                                    <span>{admin.phone}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="relative w-[145px] mx-auto">
-                                                    <select
-                                                        value={admin.organization}
-                                                        onChange={(e) =>
-                                                            handleOrganizationChange(admin.id, e.target.value)
-                                                        }
-                                                        className="w-full appearance-none rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs text-gray-700 focus:outline-none"
-                                                    >
-                                                        <option>Kmct Engineering</option>
-                                                        <option>Kmct Medical</option>
-                                                        <option>Kmct Nursing</option>
-                                                        <option>Kmct Dental</option>
-                                                    </select>
-
-                                                    <ChevronDown
-                                                        size={14}
-                                                        className="absolute right-3 top-2 text-gray-400 pointer-events-none"
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="relative w-fit mx-auto">
-                                                    <select
-                                                        value={admin.status}
-                                                        onChange={(e) =>
-                                                            handleStatusChangeClick(admin.id, admin.status)
-                                                        }
-                                                        className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border cursor-pointer
-        ${admin.status === "Active"
-                                                                ? "bg-green-50 text-success border-green-100"
-                                                                : "bg-red-50 text-danger border-red-100"
-                                                            }`}
-                                                    >
-                                                        <option>Active</option>
-                                                        <option>Inactive</option>
-                                                    </select>
-
-                                                    <ChevronDown
-                                                        size={12}
-                                                        className={`absolute right-3 top-2
-        ${admin.status === "Active"
-                                                                ? "text-success"
-                                                                : "text-danger"
-                                                            }`}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center justify-center gap-3 text-gray-400">
-                                                    <button onClick={() => handleDeleteAdmin(admin.id)} className="text-secondary cursor-pointer transition-colors" title="Delete row item">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
-                                                        <Pencil className="w-4 h-4" />
-                                                    </button>
-
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <AdminTable
+                    paginatedAdmins={admins}
+                    organizations={organizations}
+                    selectedIds={selectedIds}
+                    handleSelectAll={handleSelectAll}
+                    handleSelectRow={handleSelectRow}
+                    setSelectedAdminDetail={setSelectedAdminDetail}
+                    setView={setView}
+                    handleOrganizationChange={handleOrganizationChange}
+                    handleStatusChangeClick={handleStatusChangeClick}
+                    handleDeleteAdmin={handleDeleteAdmin}
+                    openEditAdminModal={openEditAdminModal}
+                />
+                
+                <AdminMobileList
+                    paginatedAdmins={admins}
+                    organizations={organizations}
+                    openEditAdminModal={openEditAdminModal}
+                    setSelectedAdminDetail={setSelectedAdminDetail}
+                    setView={setView}
+                    selectedIds={selectedIds}
+                    handleSelectAll={handleSelectAll}
+                    handleSelectRow={handleSelectRow}
+                    handleOrganizationChange={handleOrganizationChange}
+                />
 
                 {/* ==========================================
                 PAGINATION BAR FOOTER
                 ========================================== */}
-                <div className="p-4 bg-white border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-500 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
                     <div>
-                        Showing {filteredAdmins.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredAdmins.length)} of {filteredAdmins.length} entries
+                        Showing {totalAdmins === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalAdmins)} of {totalAdmins} entries
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -504,125 +424,15 @@ export default function Administrator() {
     MODAL 1: ADMINS (ADD & EDIT WORKFLOWS)
     ========================================== */}
 
-            {activeModal === 'admin' && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
-
-                    <form
-                        onSubmit={handleSaveAdmin}
-                        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
-                    >
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900">
-                                    {editingAdmin ? 'Edit Admin' : 'Add New Admin'}
-                                </h2>
-                                <p className="text-xs text-[#777777] mt-0.5">
-                                    Create a new Admin account
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setActiveModal(false)}
-                                className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
-
-
-                        {/* Form Sections */}
-                        <div className="space-y-6">
-                            <section>
-                                <h3 className="text-xs font-semibold text-primary mb-1">Basic Info</h3>
-                                <h5 className='text-xs text-[#777777] mb-4'>Basic contact information of the Admin</h5>
-                                <div className="border-b border-gray-100 mb-4" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">First Name *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="First name"
-                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                        />
-                                    </div>
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Last Name *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="Last name"
-                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-[10px] font-medium text-gray-500 mb-1">Phone Number *</label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50">
-                                            <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
-                                                <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
-                                                +91
-                                            </div>
-                                            <input
-                                                type="text"
-                                                required
-                                                placeholder="00000 00000"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Conditionally hide Email if editing */}
-                                    {!editingAdmin && (
-                                        <div className="col-span-2">
-                                            <label className="block text-[10px] font-medium text-gray-500 mb-1">Email Address *</label>
-                                            <input
-                                                type="email"
-                                                required
-                                                placeholder="admin@example.com"
-                                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </section>
-
-                            {/* Conditionally hide Organization section if editing */}
-                            {!editingAdmin && (
-                                <section>
-                                    <h3 className="text-xs font-semibold text-[#0A437A] mb-2">Organization</h3>
-                                    <div className="border-b border-gray-100 mb-4" />
-                                    <label className="block text-[10px] font-medium text-gray-500 mb-1">Assign Organization *</label>
-                                    <div className="relative">
-                                        <select className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]">
-                                            <option>Select an Organization</option>
-                                        </select>
-                                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
-                                    </div>
-                                </section>
-                            )}
-                        </div>
-
-                        {/* Footer Buttons */}
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
-                            >
-                                Save
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-
-                        </div>
-                    </form>
-                </div>
-            )}
+            <AdminFormModal
+                activeModal={activeModal}
+                setActiveModal={setActiveModal}
+                editingAdmin={editingAdmin}
+                adminForm={adminForm}
+                setAdminForm={setAdminForm}
+                handleSaveAdmin={handleSaveAdmin}
+                handleCancel={handleCancel}
+            />
 
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
@@ -726,69 +536,40 @@ export default function Administrator() {
                     </div>
                 </div>
             )}
-            
-            {view === 'detail' && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl max-w-4xl w-full p-8 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
-                        {/* Close Button */}
-                        <button
-                            onClick={() => setView('list')}
-                            className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                            <X size={14} />
-                        </button>
 
-                        {/* Header */}
-                        <div className="mb-8">
-                            <div className="flex items-center gap-3 mb-1">
-                                <div className="w-8 h-8 bg-[#0A437A] rounded-lg flex items-center justify-center text-white">
-                                    <User size={18} />
-                                </div>
-                                <h1 className="text-2xl font-bold text-gray-900">{selectedAdminDetail?.name}</h1>
-                            </div>
-                            <p className="text-gray-400 text-sm ml-11">Administrator Details</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            {/* Main Content Area */}
-                            <div className="md:col-span-2 space-y-4">
-                                {/* Basic Info Section */}
-                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                                    <h3 className="text-lg font-semibold text-primary mb-4">Basic Info</h3>
-                                    <p className="text-xs text-gray-400 mb-6">Basic contact information of the Administrator</p>
-                                    <div className="grid grid-cols-2 gap-y-4">
-                                        <div className="text-sm"><span className="text-gray-500">Name</span></div>
-                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.name}</div>
-
-                                        <div className="text-sm"><span className="text-gray-500">Email</span></div>
-                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.email || 'N/A'}</div>
-
-                                        <div className="text-sm"><span className="text-gray-500">Phone Number</span></div>
-                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</div>
-
-                                        <div className="text-sm"><span className="text-gray-500">Organization</span></div>
-                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.organization || 'N/A'}</div>
-
-                                        <div className="text-sm"><span className="text-gray-500">Status</span></div>
-                                        <div className="flex items-center text-sm font-medium text-gray-900">
-                                            : <span className="ml-2 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedAdminDetail?.status}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Summary Sidebar */}
-                            <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 h-fit">
-                                <h3 className="text-lg font-semibold text-primary mb-6">Admin Summary</h3>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Name</span> <span className="font-medium text-gray-900">{selectedAdminDetail?.name}</span></div>
-                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Organization</span> <span className="font-medium text-gray-900">{selectedAdminDetail?.organization}</span></div>
-                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Status</span> <span className="font-medium text-gray-900 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedAdminDetail?.status}</span></div>
-                                </div>
-                            </div>
+            {isBulkStatusConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the status for the {selectedIds.length} selected admin(s)?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsBulkStatusConfirmOpen(false);
+                                    setBulkStatusToUpdate(null);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmBulkStatusChange}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                            >
+                                Confirm
+                            </button>
                         </div>
                     </div>
                 </div>
+            )}
+            
+            {view === 'detail' && (
+                <AdminDetailView
+                    selectedAdminDetail={selectedAdminDetail}
+                    setView={setView}
+                />
             )}
         </div>
     );
