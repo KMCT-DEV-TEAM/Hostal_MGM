@@ -60,6 +60,34 @@ const validateUpdateStudent = (req, res, next) => {
   next();
 };
 
+const validateBulkStudentStatus = (req, res, next) => {
+  const { ids, isActive } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Please provide a non-empty array of student IDs",
+    });
+  }
+
+  const invalidId = ids.find((id) => !mongoose.Types.ObjectId.isValid(id));
+  if (invalidId) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid student ID: ${invalidId}`,
+    });
+  }
+
+  if (typeof isActive !== "boolean") {
+    return res.status(400).json({
+      success: false,
+      message: "Please provide a boolean value for isActive",
+    });
+  }
+
+  next();
+};
+
 const validateUpdateStudentOrganization = (req, res, next) => {
   const { organizationId } = req.body;
 
@@ -84,5 +112,6 @@ export {
   validateCreateStudent,
   validateStudentIdParam,
   validateUpdateStudent,
+  validateBulkStudentStatus,
   validateUpdateStudentOrganization
 };

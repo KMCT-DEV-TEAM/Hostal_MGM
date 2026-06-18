@@ -1,141 +1,138 @@
 import React, { useState } from 'react';
-import {
-    Square, CheckSquare, Pencil, Trash2, Plus,
-    Search, ChevronDown, Download, Phone, Mail, User
-} from 'lucide-react';
+import ParentsHeader from '../components/parents/ParentsHeader';
+import ParentsToolbar from '../components/parents/ParentsToolbar';
+import ParentsTable from '../components/parents/ParentsTable';
+import ParentFormModal from '../components/parents/ParentFormModal';
+import ParentDetailsModal from '../components/parents/ParentDetailsModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const INITIAL_PARENTS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', student: 'Nila Mohan', relation: 'Father', status: 'Active' },
     { id: 2, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', student: 'Nila Mohan', relation: 'Mother', status: 'Inactive' },
     // ... add more as needed
 ];
-const handleSelectAll = () => {
-    setSelectedIds(selectedIds.length === parents.length ? [] : parents.map(p => p.id));
-};
 
 export default function Parents() {
-    const [parents] = useState(INITIAL_PARENTS);
+    const [parents, setParents] = useState(INITIAL_PARENTS);
     const [selectedIds, setSelectedIds] = useState([]);
+    
+    // Modal states
+    const [activeModal, setActiveModal] = useState(null);
+    const [editingParent, setEditingParent] = useState(null);
+    const [pendingStatusChange, setPendingStatusChange] = useState(null);
+
+    const handleSelectAll = () => {
+        setSelectedIds(selectedIds.length === parents.length ? [] : parents.map(p => p.id));
+    };
+
+    const handleSelect = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+        );
+    };
+
+    const handleStatusChangeRequest = (parent, newStatus) => {
+        setPendingStatusChange({ parent, newStatus });
+        setActiveModal('confirm-status');
+    };
+
+    const confirmStatusChange = () => {
+        if (pendingStatusChange) {
+            setParents(prev => prev.map(p =>
+                p.id === pendingStatusChange.parent.id ? { ...p, status: pendingStatusChange.newStatus } : p
+            ));
+        }
+    };
+
+    const handleAdd = () => {
+        setEditingParent(null);
+        setActiveModal('edit');
+    };
+
+    const handleEdit = (parent) => {
+        setEditingParent(parent);
+        setActiveModal('edit');
+    };
+
+    const handleView = (parent) => {
+        setEditingParent(parent); // We can reuse editingParent to store the selected parent, or create a new state `viewingParent`. Reusing is fine since modals are mutually exclusive.
+        setActiveModal('view');
+    };
+
+    const handleSaveParent = () => {
+        // Implement save logic here
+        console.log("Saving parent data...");
+        setActiveModal(null);
+        setEditingParent(null);
+    };
+
+    const handleDelete = (parent) => {
+        console.log("Delete parent:", parent);
+        // showConfirmDelete(parent);
+    };
+
+    const handleDeleteSelected = () => {
+        console.log("Delete selected:", selectedIds);
+        // showConfirmDeleteMultiple(selectedIds);
+    };
+
+    const handleSearch = (query) => {
+        console.log("Search query:", query);
+    };
+
+    const handleExport = () => {
+        console.log("Exporting data...");
+    };
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] p-6 text-gray-700">
-            {/* Header Section */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Parents</h1>
-                    <p className="text-xs text-gray-400 mt-1">Manage all Parents</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    {selectedIds.length === 1 && (
-                        <button
-                            onClick={() => {
-                                const target = parents.find(w => w.id === selectedIds[0]);
-                                if (target) openEditParentModal(target);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 border border-[#0A437A] text-[#0A437A] bg-blue-50/40 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
-                        >
-                            <Pencil className="w-4 h-4" />
-                            Edit
-                        </button>
-                    )}
+        <div className="w-full bg-[#F8FAFC] p-6 text-gray-700">
+            <ParentsHeader
+                selectedIds={selectedIds}
+                parents={parents}
+                onEdit={handleEdit}
+                onDeleteSelected={handleDeleteSelected}
+            />
 
-                    {selectedIds.length > 0 && (
-                        <button
-                            onClick={handleDeleteSelected}
-                            className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Delete ({selectedIds.length})
-                        </button>
-                    )}
-                </div>
-            </div>
+            <ParentsToolbar
+                onSearch={handleSearch}
+                onExport={handleExport}
+                onAddClick={handleAdd}
+            />
 
-            {/* Toolbar */}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
-                <div className="flex gap-3">
-                    <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
-                        <option>All</option>
-                    </select>
-                    <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
-                        <option>Relation</option>
-                    </select>
-                </div>
-                <div className="flex gap-3">
-                    <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                        <input className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64" placeholder="Search" />
-                    </div>
-                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm">
-                        <Download className="w-4 h-4" /> Export
-                    </button>
-                </div>
-            </div>
+            <ParentsTable
+                parents={parents}
+                selectedIds={selectedIds}
+                onSelectAll={handleSelectAll}
+                onSelect={handleSelect}
+                onStatusChangeRequest={handleStatusChangeRequest}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onView={handleView}
+            />
 
-            {/* Table */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="text-[#222222] text-sm font-semibold border-b border-gray-50">
-                            <th className="text-gray-300 p-4 w-12"><button onClick={handleSelectAll}>{selectedIds.length === parents.length ? <CheckSquare className=" h-5 w-5 text-[#0A437A]" /> : <Square className="h-5 w-5 text-gray-300" />}</button></th>
-                            {['Name', 'Email', 'Phone', 'Student', 'Relation', 'Status', 'Action'].map(h => (
-                                <th key={h} className="p-4">{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50 text-sm text-[#777777]">
-                        {parents.map((p) => (
-                            <tr key={p.id} className="hover:bg-gray-50/40">
-                                <td className="p-4"><Square className="w-5 h-5 text-gray-300" /></td>
-                                <td className="p-4 flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs">JT</div>
-                                    {p.name}
-                                </td>
-                                <td className="p-4 text-gray-500"><Mail className="w-3 h-3 inline mr-2" />{p.email}</td>
-                                <td className="p-4 text-gray-500"><Phone className="w-3 h-3 inline mr-2" />{p.phone}</td>
-                                <td className="p-4 text-gray-500">{p.student}</td>
-                                <td className="p-4">
-                                    <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs">
-                                        <option>{p.relation}</option>
-                                    </select>
-                                </td>
-                                <td className="p-4">
-                                    <div className="relative w-fit mx-auto">
-                                        <select
-                                            value={p.status}
-                                            onChange={(e) =>
-                                                handleStatusChange(o.id, e.target.value)
-                                            }
-                                            className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border
-                                      ${p.status === "Active"
-                                                    ? "bg-green-50 text-success border-green-100"
-                                                    : "bg-red-50 text-danger border-red-100"
-                                                }`}
-                                        >
-                                            <option>Active</option>
-                                            <option>Inactive</option>
-                                        </select>
+            {/* Modals */}
+            {activeModal === 'view' && (
+                <ParentDetailsModal 
+                    parent={editingParent}
+                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                />
+            )}
 
-                                        <ChevronDown
-                                            size={12}
-                                            className={`absolute right-3 top-2
-                                      ${p.status === "Active"
-                                                    ? "text-success"
-                                                    : "text-danger"
-                                                }`}
-                                        />
-                                    </div>
-                                </td>
-                                <td className="p-4 flex gap-3 text-gray-400">
-                                    <Trash2 className="w-4 h-4 cursor-pointer text-secondary" />
-                                    <Pencil className="w-4 h-4 cursor-pointer text-secondary" />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {activeModal === 'edit' && (
+                <ParentFormModal 
+                    editingParent={editingParent}
+                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                    onSave={handleSaveParent}
+                />
+            )}
+
+            <ConfirmationModal 
+                isOpen={activeModal === 'confirm-status'}
+                onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
+                onConfirm={confirmStatusChange}
+                title="Confirm Status Change"
+                message={`Are you sure you want to change the status of ${pendingStatusChange?.parent?.name} to ${pendingStatusChange?.newStatus}?`}
+            />
         </div>
     );
 }
-
