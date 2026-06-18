@@ -10,7 +10,10 @@ export default function WardenFormModal({
     AVAILABLE_HOSTELS,
     isEmailVerified,
     setIsOtpModalOpen,
-    setOtpSource
+    setOtpSource,
+    wardenForm,
+    setWardenForm,
+    handleVerifyClick
 }) {
     if (activeModal !== 'warden') return null;
 
@@ -51,20 +54,13 @@ export default function WardenFormModal({
                                 <input
                                     type="text"
                                     required
-                                    placeholder="First name"
+                                    value={wardenForm.name || ''}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, name: e.target.value })}
+                                    placeholder="Full name"
                                     className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">Last Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Last name"
-                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                />
-                            </div>
-                            <div className="col-span-2">
                                 <label className="block text-[10px] font-medium text-black mb-1">Phone Number *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
@@ -74,6 +70,8 @@ export default function WardenFormModal({
                                     <input
                                         type="text"
                                         required
+                                        value={wardenForm.phone || ''}
+                                        onChange={(e) => setWardenForm({ ...wardenForm, phone: e.target.value })}
                                         placeholder="00000 00000"
                                         className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                     />
@@ -88,8 +86,11 @@ export default function WardenFormModal({
                                         <input
                                             type="email"
                                             required
+                                            disabled={isEmailVerified}
+                                            value={wardenForm.email || ''}
+                                            onChange={(e) => setWardenForm({ ...wardenForm, email: e.target.value })}
                                             placeholder="warden@example.com"
-                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] disabled:bg-gray-100 disabled:text-gray-500"
                                         />
                                         {isEmailVerified ? (
                                             <button 
@@ -101,10 +102,7 @@ export default function WardenFormModal({
                                         ) : (
                                             <button 
                                                 type="button"
-                                                onClick={() => {
-                                                    setOtpSource('addWarden');
-                                                    setIsOtpModalOpen(true);
-                                                }}
+                                                onClick={() => handleVerifyClick(wardenForm.email)}
                                                 className="px-4 py-2 bg-[#0A437A] text-white text-[10px] font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer"
                                             >
                                                 Verify
@@ -124,10 +122,14 @@ export default function WardenFormModal({
                             <div className="border-b border-gray-100 mb-4" />
                             <label className="block text-[10px] font-medium text-black mb-1">Assign Hostel*</label>
                             <div className="relative">
-                                <select className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-[#777777] focus:outline-none focus:border-[#0A437A] cursor-pointer">
-                                    <option>Select an organization</option>
+                                <select 
+                                    value={wardenForm.hostel}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, hostel: e.target.value })}
+                                    className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-[#777777] focus:outline-none focus:border-[#0A437A] cursor-pointer"
+                                >
+                                    <option value="">Select a hostel</option>
                                     {AVAILABLE_HOSTELS.map(h => (
-                                        <option key={h} value={h}>{h}</option>
+                                        <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
                                     ))}
                                 </select>
                                 <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />

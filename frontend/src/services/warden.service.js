@@ -37,12 +37,31 @@ export async function updateWarden(id, payload) {
   return response.data;
 }
 
+export async function updateEmail(id, payload) {
+  const response = await wardenApi.updateEmail(id, payload);
+  return response.data;
+}
+
+export async function updateWardenHostel(id, payload) {
+  const response = await wardenApi.updateWardenHostel(id, payload);
+  return response.data;
+}
+
 /**
  * Toggle Warden active/inactive status
  * @param {string} id 
  */
 export async function toggleStatus(id) {
   const response = await wardenApi.toggleStatus(id);
+  return response.data;
+}
+
+/**
+ * Bulk toggle status of Wardens
+ * @param {Object} payload - { ids: [id1, id2], isActive: boolean }
+ */
+export async function bulkToggleStatus(payload) {
+  const response = await wardenApi.bulkToggleStatus(payload);
   return response.data;
 }
 
@@ -59,7 +78,10 @@ const wardenService = {
   getWardens,
   getWardenById,
   updateWarden,
+  updateEmail,
+  updateWardenHostel,
   toggleStatus,
+  bulkToggleStatus,
   getWardenDashboardStats,
 };
 

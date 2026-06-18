@@ -7,12 +7,11 @@ import WardenPagination from '../components/Warden/WardenPagination';
 import WardenDetailView from '../components/Warden/WardenDetailView';
 import WardenFormModal from '../components/Warden/WardenFormModal';
 import { Pencil, X, ArrowLeft, Check } from 'lucide-react';
+import otpService from '../../../services/otp.service';
+import hostelService from '../../../services/hostel.service';
 import wardenService from '../../../services/warden.service';
-
-const AVAILABLE_HOSTELS = [
-    'Kmct Hostel 1', 'Kmct Hostel 2', 'Kmct Hostel 3', 'Kmct Hostel 4', 'Kmct Hostel 5',
-    'Kmct Hostel 6', 'Kmct Hostel 7', 'Kmct Hostel 8', 'Kmct Hostel 9', 'Kmct Hostel 10'
-];
+import Swal from 'sweetalert2';
+import * as XLSX from 'xlsx';
 
 export default function WardenManagement() {
     // State management
@@ -24,6 +23,7 @@ export default function WardenManagement() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [availableHostels, setAvailableHostels] = useState([]);
     const [activeModal, setActiveModal] = useState(null); // 'warden' | 'organization' | null
     const [editingWarden, setEditingWarden] = useState(null); // Holds object being edited
     const [view, setView] = useState('list');
@@ -35,9 +35,10 @@ export default function WardenManagement() {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
-    const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
-    const [emailChangeForm, setEmailChangeForm] = useState('');
     const [emailChangeWardenId, setEmailChangeWardenId] = useState(null);
+    const [emailChangeForm, setEmailChangeForm] = useState('');
+    const [newEmailForm, setNewEmailForm] = useState('');
+    const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -91,6 +92,18 @@ export default function WardenManagement() {
         fetchWardens();
     }, [currentPage, searchQuery, statusFilter]);
 
+    useEffect(() => {
+        const fetchHostels = async () => {
+            try {
+                const res = await hostelService.getHostels({ limit: 100 });
+                if (res && res.data) setAvailableHostels(res.data);
+            } catch (err) {
+                console.error('Failed to fetch hostels:', err);
+            }
+        };
+        fetchHostels();
+    }, []);
+
     // Since we are using backend pagination, the "paginatedWardens" is just the "wardens" array
     const paginatedWardens = wardens;
 
@@ -122,16 +135,39 @@ export default function WardenManagement() {
         setIsStatusConfirmOpen(true);
     };
 
-    const confirmStatusChange = () => {
+    const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
-        const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
-        setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+        try {
+            const res = await wardenService.toggleStatus(statusToUpdate.id);
+            if (res && res.data) {
+                const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
+                setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+            }
+        } catch (error) {
+            console.error("Failed to change status:", error);
+            alert("Failed to change status");
+        }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
     };
 
-    const handleHostelChange = (id, newHostel) => {
-        setWardens(wardens.map(w => w.id === id ? { ...w, hostel: newHostel } : w));
+    const handleHostelChange = async (id, newHostel) => {
+        try {
+            await wardenService.updateWardenHostel(id, { hostelId: newHostel });
+            fetchWardens();
+            Swal.fire({
+                title: 'Success',
+                text: 'Hostel assigned successfully',
+                icon: 'success',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        } catch (error) {
+            console.error("Failed to update hostel", error);
+            Swal.fire('Error', 'Failed to update hostel assignment', 'error');
+        }
     };
 
     const handleBulkStatusClick = (isActive) => {
@@ -139,44 +175,76 @@ export default function WardenManagement() {
         setIsBulkStatusConfirmOpen(true);
     };
 
-    const confirmBulkStatusChange = () => {
+    const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
 
-        const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
-
-        setWardens(wardens.map(w => {
-            if (selectedIds.includes(w.id)) {
-                return { ...w, status: newStatus };
+        try {
+            const res = await wardenService.bulkToggleStatus({
+                ids: selectedIds,
+                isActive: bulkStatusToUpdate
+            });
+            if (res && res.data) {
+                const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
+                setWardens(wardens.map(w => {
+                    if (selectedIds.includes(w.id)) {
+                        return { ...w, status: newStatus };
+                    }
+                    return w;
+                }));
+                Swal.fire({
+                    title: 'Success',
+                    text: 'Bulk status updated successfully',
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
             }
-            return w;
-        }));
-
-        setSelectedIds([]); // Clear selection after bulk update
-        setIsBulkStatusConfirmOpen(false);
-        setBulkStatusToUpdate(null);
+        } catch (error) {
+            console.error("Failed to update bulk status:", error);
+            Swal.fire('Error', 'Failed to update bulk status', 'error');
+        } finally {
+            setSelectedIds([]); // Clear selection after bulk update
+            setIsBulkStatusConfirmOpen(false);
+            setBulkStatusToUpdate(null);
+            fetchWardens();
+        }
     };
 
     const openChangeEmailModal = (warden) => {
         setEmailChangeWardenId(warden.id);
         setEmailChangeForm(warden.email || '');
+        setNewEmailForm('');
         setIsEmailVerified(false);
         setIsEmailChangeModalOpen(true);
     };
 
-    const confirmEmailChange = (e) => {
+    const confirmEmailChange = async (e) => {
         e.preventDefault();
-        setWardens(wardens.map(w => w.id === emailChangeWardenId ? { ...w, email: emailChangeForm } : w));
+        
+        try {
+            await wardenService.updateEmail(emailChangeWardenId, {
+                oldEmail: emailChangeForm,
+                newEmail: newEmailForm
+            });
 
-        if (selectedWardenDetail && selectedWardenDetail.id === emailChangeWardenId) {
-            setSelectedWardenDetail({ ...selectedWardenDetail, email: emailChangeForm });
+            setWardens(wardens.map(w => w.id === emailChangeWardenId ? { ...w, email: newEmailForm } : w));
+
+            if (selectedWardenDetail && selectedWardenDetail.id === emailChangeWardenId) {
+                setSelectedWardenDetail({ ...selectedWardenDetail, email: newEmailForm });
+            }
+
+            setIsEmailChangeModalOpen(false);
+            setIsEmailChangeSuccessModalOpen(true);
+            setTimeout(() => {
+                setIsEmailChangeSuccessModalOpen(false);
+                setEmailChangeWardenId(null);
+                setNewEmailForm('');
+            }, 2500);
+        } catch (error) {
+            Swal.fire('Error', error?.response?.data?.message || 'Failed to update email', 'error');
         }
-
-        setIsEmailChangeModalOpen(false);
-        setIsEmailChangeSuccessModalOpen(true);
-        setTimeout(() => {
-            setIsEmailChangeSuccessModalOpen(false);
-            setEmailChangeWardenId(null);
-        }, 2500);
     };
 
     // ==========================================
@@ -184,20 +252,44 @@ export default function WardenManagement() {
     // ==========================================
     const openAddWardenModal = () => {
         setEditingWarden(null);
-        setWardenForm({ name: '', email: '', phone: '', hostel: AVAILABLE_HOSTELS[0], status: 'Active' });
+        setWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?._id || '', status: 'Active' });
+        setIsEmailVerified(false);
         setActiveModal('warden');
     };
 
     const openEditWardenModal = (warden) => {
         setEditingWarden(warden);
-        setWardenForm({ ...warden });
+        setWardenForm({ ...warden, hostel: warden.hostel?._id || warden.hostel });
+        setIsEmailVerified(true); // Assuming editing an existing warden means email is verified
         setActiveModal('warden');
     };
 
-    const handleSaveWarden = (e) => {
+    const handleVerifyClick = async (email, source = 'addWarden') => {
+        if (!email) {
+            Swal.fire('Error', 'Please enter an email first', 'error');
+            return;
+        }
+        try {
+            await otpService.sendOtp(email);
+            setOtpSource(source);
+            setOtpCode(['', '', '', '', '', '']);
+            setIsOtpModalOpen(true);
+            if (source === 'emailChange') {
+                setIsEmailChangeModalOpen(false);
+            }
+        } catch (error) {
+            Swal.fire('Error', error?.response?.data?.message || 'Failed to send OTP', 'error');
+        }
+    };
+
+    const handleSaveWarden = async (e) => {
         e.preventDefault();
         if (!wardenForm.name || !wardenForm.email || !wardenForm.phone) {
             alert("Please fill in all required fields.");
+            return;
+        }
+        if (!isEmailVerified && !editingWarden) {
+            Swal.fire('Error', 'Please verify your email before saving', 'error');
             return;
         }
 
@@ -208,20 +300,37 @@ export default function WardenManagement() {
         }
     };
 
-    const saveWarden = () => {
-        if (editingWarden) {
-            // Update Existing Record
-            setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...wardenForm } : w));
-        } else {
-            // Create New Record
-            const newWarden = {
-                id: Date.now(),
-                ...wardenForm
+    const saveWarden = async () => {
+        try {
+            const payload = {
+                name: wardenForm.name,
+                email: wardenForm.email,
+                phone: wardenForm.phone,
+                hostelId: wardenForm.hostel,
+                isActive: wardenForm.status === 'Active'
             };
-            setWardens([newWarden, ...wardens]);
+
+            if (editingWarden) {
+                // Update Existing Record
+                const res = await wardenService.updateWarden(editingWarden.id, payload);
+                if (res && res.data) {
+                    setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...wardenForm } : w));
+                    fetchWardens(); // Re-fetch to ensure sync
+                }
+            } else {
+                // Create New Record
+                const res = await wardenService.createWarden(payload);
+                if (res && res.data) {
+                    fetchWardens();
+                }
+            }
+        } catch (error) {
+            console.error("Failed to save warden:", error);
+            alert(error?.response?.data?.message || "Failed to save warden.");
+        } finally {
+            setActiveModal(null);
+            setIsEditConfirmOpen(false);
         }
-        setActiveModal(null);
-        setIsEditConfirmOpen(false);
     };
 
     const handleCancel = () => {
@@ -241,10 +350,54 @@ export default function WardenManagement() {
         setIsExportConfirmOpen(true);
     };
 
-    const handleExport = () => {
-        // Implement export logic (currently missing)
-        alert('Exporting data...');
-        setIsExportConfirmOpen(false);
+    const handleExport = async () => {
+        try {
+            const res = await wardenService.getWardens({ limit: 100000 });
+            if (res && res.data && res.data.length > 0) {
+                const exportData = res.data.map(warden => ({
+                    Name: warden.name,
+                    Email: warden.email,
+                    Phone: warden.phone || 'N/A',
+                    Hostel: warden.hostel?.name || warden.hostel || 'Not Assigned',
+                    Status: warden.isActive ? 'Active' : 'Inactive',
+                    'Joined Date': new Date(warden.createdAt).toLocaleDateString()
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Wardens");
+                
+                // Adjust column widths
+                const maxWidths = exportData.reduce((acc, row) => {
+                    Object.keys(row).forEach(key => {
+                        const val = row[key] ? row[key].toString() : '';
+                        acc[key] = Math.max(acc[key] || key.length, val.length);
+                    });
+                    return acc;
+                }, {});
+                
+                worksheet['!cols'] = Object.keys(exportData[0]).map(key => ({ wch: maxWidths[key] + 2 }));
+
+                XLSX.writeFile(workbook, "Wardens_List.xlsx");
+                
+                Swal.fire({
+                    title: 'Export Successful!',
+                    text: 'The warden list has been downloaded.',
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            } else {
+                Swal.fire('Info', 'No data available to export.', 'info');
+            }
+        } catch (error) {
+            console.error("Export failed", error);
+            Swal.fire('Error', 'Failed to export data.', 'error');
+        } finally {
+            setIsExportConfirmOpen(false);
+        }
     };
 
     return (
@@ -280,6 +433,7 @@ export default function WardenManagement() {
                     setView={setView}
                     loading={loading}
                     error={error}
+                    availableHostels={availableHostels}
                 />
 
                 <WardenMobileList
@@ -295,6 +449,7 @@ export default function WardenManagement() {
                     setView={setView}
                     loading={loading}
                     error={error}
+                    availableHostels={availableHostels}
                 />
 
                 <WardenPagination
@@ -312,10 +467,13 @@ export default function WardenManagement() {
                 editingWarden={editingWarden}
                 handleSaveWarden={handleSaveWarden}
                 handleCancel={handleCancel}
-                AVAILABLE_HOSTELS={AVAILABLE_HOSTELS}
+                AVAILABLE_HOSTELS={availableHostels}
                 isEmailVerified={isEmailVerified}
                 setIsOtpModalOpen={setIsOtpModalOpen}
                 setOtpSource={setOtpSource}
+                wardenForm={wardenForm}
+                setWardenForm={setWardenForm}
+                handleVerifyClick={handleVerifyClick}
             />
 
             {isEditConfirmOpen && (
@@ -487,7 +645,8 @@ export default function WardenManagement() {
                                 <input
                                     type="email"
                                     required
-
+                                    value={newEmailForm}
+                                    onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
                                     className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
                                 />
@@ -496,7 +655,7 @@ export default function WardenManagement() {
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => { setIsEmailChangeModalOpen(false); setOtpSource('emailChange'); setIsOtpModalOpen(true); }} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
+                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
                                         Verify
                                     </button>
                                 )}
@@ -516,12 +675,24 @@ export default function WardenManagement() {
 
             {isOtpModalOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
-                    <form onSubmit={(e) => {
+                    <form onSubmit={async (e) => {
                         e.preventDefault();
-                        setIsOtpModalOpen(false);
-                        setIsEmailVerified(true);
-                        if (otpSource === 'emailChange') {
-                            setIsEmailChangeModalOpen(true);
+                        const code = otpCode.join('');
+                        if (code.length < 6) return;
+                        
+                        try {
+                            const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
+                            await otpService.verifyOtp(emailToVerify, code);
+                            
+                            setIsOtpModalOpen(false);
+                            setIsEmailVerified(true);
+                            if (otpSource === 'emailChange') {
+                                setIsEmailChangeModalOpen(true);
+                            } else {
+                                Swal.fire('Success', 'Email verified successfully!', 'success');
+                            }
+                        } catch(err) {
+                            Swal.fire('Error', err?.response?.data?.message || 'Invalid OTP', 'error');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         {/* Top action buttons */}

@@ -12,7 +12,8 @@ export default function WardenTable({
     handleStatusChangeClick,
     openEditWardenModal,
     loading,
-    error
+    error,
+    availableHostels = []
 }) {
     return (
         <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -96,13 +97,13 @@ export default function WardenTable({
                                     <td className="p-4 text-center">
                                         <div className="relative inline-block w-44 mx-auto">
                                             <select
-                                                value={warden.hostel}
+                                                value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
                                                 onChange={(e) => handleHostelChange(warden.id, e.target.value)}
                                                 className="w-full appearance-none border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-medium bg-white pr-8 focus:outline-none text-gray-700 cursor-pointer hover:border-gray-300 transition-colors"
                                             >
                                                 <option value="Not Assigned">Not Assigned</option>
-                                                {['Kmct Hostel 1', 'Kmct Hostel 2', 'Kmct Hostel 3', 'Kmct Hostel 4', 'Kmct Hostel 5', 'Kmct Hostel 6', 'Kmct Hostel 7', 'Kmct Hostel 8', 'Kmct Hostel 9', 'Kmct Hostel 10'].map(h => (
-                                                    <option key={h} value={h}>{h}</option>
+                                                {availableHostels.map(h => (
+                                                    <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
