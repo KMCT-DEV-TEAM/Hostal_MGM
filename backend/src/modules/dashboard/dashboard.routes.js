@@ -10,7 +10,7 @@ const router = express.Router();
 router.get(
   "/stats",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware("super_admin","admin"),
   getDashboardStats
 );
 
