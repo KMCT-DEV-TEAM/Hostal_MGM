@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { checkExistingUser, createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
+import { checkExistingUser, createStudentWithParentDb, updateStudentDb, bulkUpdateStudentStatusDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import User from "../users/user.model.js";
 import Student from "./student.model.js";
@@ -156,6 +156,47 @@ const toggleStudentStatus = asyncHandler(async (req, res) => {
       name: student.name,
       email: student.email,
       isActive: student.isActive,
+    }
+  );
+});
+
+const bulkUpdateStudentStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return sendError(res, 400, "Please provide an array of student IDs");
+  }
+
+  if (typeof isActive !== "boolean") {
+    return sendError(res, 400, "Please provide a boolean value for isActive");
+  }
+
+  const organizationId = req.user.role === "admin" ? req.user.organization : null;
+  if (req.user.role === "admin" && !organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  if (organizationId) {
+    const objectIds = ids.map((id) => new mongoose.Types.ObjectId(id));
+    const validCount = await Student.countDocuments({
+      _id: { $in: objectIds },
+      organizationId,
+    });
+
+    if (validCount !== ids.length) {
+      return sendError(res, 403, "One or more students are not under your organization");
+    }
+  }
+
+  const result = await bulkUpdateStudentStatusDb(ids, isActive, organizationId);
+
+  return sendSuccess(
+    res,
+    200,
+    `Successfully updated ${result.modifiedCount} student(s) to ${isActive ? "Active" : "Inactive"} status`,
+    {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
     }
   );
 });
@@ -370,4 +411,5 @@ export {
   getStudentsByAdmin,
   getStudentsBySuperAdmin,
   getStudentFilterOptions,
+  bulkUpdateStudentStatus,
 };

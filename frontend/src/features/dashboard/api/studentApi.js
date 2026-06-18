@@ -17,6 +17,9 @@ const studentApi = {
   toggleStatusByAdmin: (id) =>
     api.patch(`/admin/students/${id}/toggle-status`),
 
+  bulkStatusByAdmin: ({ ids, isActive }) =>
+    api.patch(`/admin/students/bulk-status`, { ids, isActive }),
+
   //----super admin 
   getStudentsBySuperAdmin: (params) =>
     api.get("/super-admin/students/super-admin", { params }),
@@ -26,6 +29,9 @@ const studentApi = {
 
   toggleStatusBySuperAdmin: (id) =>
     api.patch(`/super-admin/students/${id}/toggle-status`),
+
+  bulkStatusBySuperAdmin: ({ ids, isActive }) =>
+    api.patch(`/super-admin/students/bulk-status`, { ids, isActive }),
 
   getStudentFilterOptionsByWarden: (params) =>
     api.get("/warden/students/filters", { params }),

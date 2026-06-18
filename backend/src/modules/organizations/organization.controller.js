@@ -6,7 +6,8 @@ import {
   getPaginatedOrganizationsDb,
   getOrganizationByIdDb,
   updateOrganizationDb,
-  toggleOrganizationStatusDb
+  toggleOrganizationStatusDb,
+  bulkUpdateOrganizationStatusDb
 } from "./organization.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -35,14 +36,16 @@ const createOrganization = asyncHandler(async (req, res) => {
 const getOrganizations = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 10;
+    const search = req.query.search || "";
+    const status = req.query.status || "All";
 
-    const { organizations, totalCount } = await getPaginatedOrganizationsDb(page, limit);
+    const { organizations, totalCount } = await getPaginatedOrganizationsDb(page, limit, search, status);
 
     return sendSuccess(res, 200, "Organizations fetched successfully", { 
       count: organizations.length, 
       totalCount,
       currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: limit > 0 ? Math.ceil(totalCount / limit) : 1,
       data: organizations 
     });
 });
@@ -98,10 +101,27 @@ const toggleOrganizationStatus = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, message, { data: organization });
 });
 
+const bulkUpdateOrganizationStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return sendError(res, 400, "Please provide an array of organization IDs");
+  }
+
+  if (typeof isActive !== "boolean") {
+    return sendError(res, 400, "Please provide a valid boolean for isActive");
+  }
+
+  const result = await bulkUpdateOrganizationStatusDb(ids, isActive);
+  
+  return sendSuccess(res, 200, `Successfully updated ${ids.length} organizations to ${isActive ? 'Active' : 'Inactive'} status`, { result });
+});
+
 export {
   createOrganization,
   getOrganizations,
   getOrganizationById,
   updateOrganization,
-  toggleOrganizationStatus
+  toggleOrganizationStatus,
+  bulkUpdateOrganizationStatus
 };

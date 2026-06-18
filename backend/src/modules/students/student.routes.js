@@ -3,8 +3,8 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent, validateUpdateStudentOrganization } from "./student.validation.js";
-import { createStudent, updateStudent, toggleStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentFilterOptions } from "./student.controller.js";
+import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent, validateUpdateStudentOrganization, validateBulkStudentStatus } from "./student.validation.js";
+import { createStudent, updateStudent, toggleStudentStatus, bulkUpdateStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentFilterOptions } from "./student.controller.js";
 
 const router = express.Router(); 
 
@@ -52,6 +52,14 @@ router.patch(
   roleMiddleware("admin", "super_admin"),
   validateStudentIdParam,
   toggleStudentStatus
+);
+
+router.patch(
+  "/bulk-status",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateBulkStudentStatus,
+  bulkUpdateStudentStatus
 );
 
 router.patch(

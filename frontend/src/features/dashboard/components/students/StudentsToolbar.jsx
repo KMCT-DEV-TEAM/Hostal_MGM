@@ -26,14 +26,15 @@ export default function StudentsToolbar({ canCreate, searchValue = '', onSearch,
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <button
+               
+            </div>
+            <div className="flex gap-3">
+                 <button
                     onClick={onFilterClick}
                     className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
                     <SlidersHorizontal className="w-4 h-4 text-gray-500" />
                 </button>
-            </div>
-            <div className="flex gap-3">
                 <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm">
                     <Download className="w-4 h-4" /> Export
                 </button>

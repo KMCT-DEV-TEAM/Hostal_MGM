@@ -14,14 +14,11 @@ import {
 
 const createHostel = asyncHandler(async (req, res) => {
   const { code, email, organization } = req.body;
-  
   let finalOrganizations = [];
   if (organization) {
     finalOrganizations = [organization];
-  } else if (req.user.organization) {
+  } else if (req.user && req.user.organization) {
     finalOrganizations = [req.user.organization];
-  } else {
-    return sendError(res, 400, "Organization ID is required");
   }
 
   const existingEmail = await checkExistingHostelEmailDb(email);
@@ -50,7 +47,7 @@ const getHostels = asyncHandler(async (req, res) => {
   const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 10;
   const search = req.query.search || "";
   const status = req.query.status || "";
-  
+
   const { hostels, totalCount } = await getPaginatedHostelsDb(organizationId, page, limit, search, status);
 
   return sendSuccess(res, 200, "Hostels fetched successfully", {
@@ -122,7 +119,7 @@ const toggleHostelStatus = asyncHandler(async (req, res) => {
   const organizationId = req.user.role === "admin" ? req.user.organization : null;
 
   const hostel = await toggleHostelStatusDb(id, organizationId);
-  
+
   if (!hostel) {
     return sendError(res, 404, "Hostel not found");
   }
@@ -135,7 +132,7 @@ const toggleHostelStatus = asyncHandler(async (req, res) => {
 const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
   const { ids, isActive } = req.body;
   console.log("Active Status", req.body);
-  
+
   const organizationId = req.user.role === "admin" ? req.user.organization : null;
   console.log("Organization ID", organizationId);
   if (!ids || !Array.isArray(ids) || ids.length === 0) {

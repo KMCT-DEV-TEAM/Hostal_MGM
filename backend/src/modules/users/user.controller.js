@@ -13,7 +13,8 @@ import {
   getUserByIdDb,
   updateUserByRoleDb,
   updateUserDb,
-  toggleUserActiveStatusByRoleDb
+  toggleUserActiveStatusByRoleDb,
+  bulkToggleUserStatusByRoleDb
 } from "./user.service.js";
 import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
 
@@ -62,8 +63,10 @@ const createAdmin = asyncHandler(async (req, res) => {
 const getAdmins = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
     
-    const { users, totalCount } = await getPaginatedUsersByRoleDb("admin", page, limit);
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("admin", page, limit, status, search);
 
     return sendSuccess(res, 200, "Admins fetched successfully", { 
       count: users.length, 
@@ -224,6 +227,22 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
     });
 });
 
+const bulkToggleAdminStatus = asyncHandler(async (req, res) => {
+    const { ids, isActive } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendError(res, 400, "Please provide an array of Admin IDs");
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return sendError(res, 400, "Please provide isActive boolean status");
+    }
+
+    await bulkToggleUserStatusByRoleDb(ids, "admin", isActive);
+
+    return sendSuccess(res, 200, "Bulk admin status updated successfully");
+});
+
 // --- WARDEN CONTROLLERS ---
 
 const createWarden = asyncHandler(async (req, res) => {
@@ -271,8 +290,10 @@ const createWarden = asyncHandler(async (req, res) => {
 const getWardens = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
     
-    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit);
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit, status, search);
 
     return sendSuccess(res, 200, "Wardens fetched successfully", { 
       count: users.length, 
@@ -361,6 +382,7 @@ export {
   updateUserEmail,
   updateAdminOrganization,
   toggleAdminStatus,
+  bulkToggleAdminStatus,
   createWarden,
   getWardens,
   getWardenById,

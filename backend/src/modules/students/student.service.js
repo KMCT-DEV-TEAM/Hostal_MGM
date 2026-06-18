@@ -142,7 +142,29 @@ const updateStudentDb = async (studentId, data) => {
   return student;
 };
 
+const bulkUpdateStudentStatusDb = async (
+  ids,
+  isActive,
+  organizationId = null
+) => {
+  const query = {
+    _id: {
+      $in: ids.map((id) => new mongoose.Types.ObjectId(id)),
+    },
+  };
 
+  if (organizationId) {
+    query.organizationId = new mongoose.Types.ObjectId(
+      organizationId
+    );
+  }
+
+  return await Student.updateMany(query, {
+    $set: {
+      isActive,
+    },
+  });
+};
 
 
 const getStudentsService = async ({
@@ -541,6 +563,7 @@ export {
   checkExistingUser,
   createStudentWithParentDb,
   updateStudentDb,
+  bulkUpdateStudentStatusDb,
   getStudentsService,
   getStudentFilterOptionsService,
 };

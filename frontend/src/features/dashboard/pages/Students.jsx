@@ -2,12 +2,13 @@ import React, { useCallback, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getStudentPermissions } from '@/features/dashboard/config/studentPermissions';
 import { useStudents } from '@/features/dashboard/hooks/useStudents';
-import { createStudent, toggleStudentStatus, updateStudent } from '@/services/student.service';
+import { createStudent, toggleStudentStatus, bulkUpdateStudentStatus, updateStudent } from '@/services/student.service';
 import StudentsTable from '../components/students/StudentsTable';
 import StudentsHeader from '../components/students/StudentsHeader';
 import StudentsToolbar from '../components/students/StudentsToolbar';
 import StudentFormModal from '../components/students/StudentFormModal';
 import StudentFilterModal from '../components/students/StudentFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function Students() {
     const role = useAuthStore((s) => s.user?.role);
@@ -18,6 +19,7 @@ export default function Students() {
     const [editingStudent, setEditingStudent] = useState(null);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
+    const [pendingConfirm, setPendingConfirm] = useState(null);
     const [filters, setFilters] = useState({ search: '', course: '', department: '', hostelId: '', organizationId: '', isActive: '' });
 
     const { students, setStudents, loading, error, refetch } = useStudents(filters);
@@ -53,31 +55,56 @@ export default function Students() {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
-    const handleDeleteSelected = async () => {
-        if (!canDelete) return;
-        if (!window.confirm(`Are you sure you want to deactivate ${selectedIds.length} student(s)?`)) return;
-        setStatusLoadingIds((prev) => [...new Set([...prev, ...selectedIds])]);
+    const handleBulkStatusChange = async (targetActive, idsToToggle) => {
+        if (!idsToToggle.length) return;
+
+        setStatusLoadingIds((prev) => [...new Set([...prev, ...idsToToggle])]);
 
         try {
-            const results = await Promise.all(selectedIds.map((id) => toggleStudentStatus(role, id)));
-            setStudents((prev) => prev.map((student) => {
-                const studentId = getStudentId(student);
-                const resultIndex = selectedIds.indexOf(studentId);
-                const nextIsActive = results[resultIndex]?.isActive;
-
-                return typeof nextIsActive === 'boolean'
-                    ? { ...student, isActive: nextIsActive }
-                    : student;
-            }));
+            await bulkUpdateStudentStatus(role, { ids: idsToToggle, isActive: targetActive });
+            setStudents((prev) => prev.map((student) => (
+                idsToToggle.includes(getStudentId(student))
+                    ? { ...student, isActive: targetActive }
+                    : student
+            )));
             setSelectedIds([]);
         } finally {
-            setStatusLoadingIds((prev) => prev.filter((id) => !selectedIds.includes(id)));
+            setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
         }
     };
 
-    const handleDeleteRow = async (id) => {
+    const prepareBulkStatusChange = (targetActive) => {
+        if (!selectedIds.length) return;
+
+        const idsToToggle = selectedIds.filter((id) => {
+            const student = students.find((student) => getStudentId(student) === id);
+            return student ? student.isActive !== targetActive : false;
+        });
+
+        if (!idsToToggle.length) {
+            setSelectedIds([]);
+            return;
+        }
+
+        setPendingConfirm({
+            title: targetActive ? 'Confirm Activation' : 'Confirm Deactivation',
+            message: `Are you sure you want to ${targetActive ? 'activate' : 'deactivate'} ${idsToToggle.length} selected student(s)?`,
+            confirmText: targetActive ? 'Activate' : 'Deactivate',
+            confirmAction: () => handleBulkStatusChange(targetActive, idsToToggle),
+        });
+    };
+
+    const handleActivateSelected = () => {
+        if (!canEdit) return;
+        prepareBulkStatusChange(true);
+    };
+
+    const handleDeactivateSelected = () => {
         if (!canDelete) return;
-        if (!window.confirm('Deactivate this student?')) return;
+        prepareBulkStatusChange(false);
+    };
+
+    const confirmDeleteRow = async (id) => {
         setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
 
         try {
@@ -86,6 +113,17 @@ export default function Students() {
         } finally {
             setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
         }
+    };
+
+    const handleDeleteRow = async (id) => {
+        if (!canDelete) return;
+
+        setPendingConfirm({
+            title: 'Confirm Deactivation',
+            message: 'Are you sure you want to deactivate this student?',
+            confirmText: 'Deactivate',
+            confirmAction: () => confirmDeleteRow(id),
+        });
     };
 
     const handleStatusChange = async (id) => {
@@ -151,7 +189,8 @@ export default function Students() {
                 canEdit={canEdit}
                 canDelete={canDelete}
                 onEdit={handleEditClick}
-                onDeleteSelected={handleDeleteSelected}
+                onActivateSelected={handleActivateSelected}
+                onDeactivateSelected={handleDeactivateSelected}
             />
 
             <StudentsToolbar
@@ -193,6 +232,16 @@ export default function Students() {
                     onApply={handleApplyFilter}
                 />
             )}
+
+            <ConfirmationModal
+                isOpen={!!pendingConfirm}
+                onClose={() => setPendingConfirm(null)}
+                onConfirm={() => pendingConfirm?.confirmAction?.()}
+                title={pendingConfirm?.title}
+                message={pendingConfirm?.message}
+                confirmText={pendingConfirm?.confirmText}
+                cancelText="Cancel"
+            />
         </div>
     );
 }

@@ -66,6 +66,11 @@ export async function toggleStatusByAdmin(id) {
   return response.data;
 }
 
+export async function bulkStatusByAdmin({ ids, isActive }) {
+  const response = await studentApi.bulkStatusByAdmin({ ids, isActive });
+  return response.data;
+}
+
 /**
  * Toggle Student active/inactive status for Super Admin
  * @param {string} id
@@ -75,6 +80,10 @@ export async function toggleStatusBySuperAdmin(id) {
   return response.data;
 }
 
+export async function bulkStatusBySuperAdmin({ ids, isActive }) {
+  const response = await studentApi.bulkStatusBySuperAdmin({ ids, isActive });
+  return response.data;
+}
 
 const STUDENT_FETCHERS = {
   [ROLES.ADMIN]: getStudentsByAdmin,
@@ -93,6 +102,10 @@ const STUDENT_STATUS_TOGGLE_FETCHERS = {
   [ROLES.SUPER_ADMIN]: toggleStatusBySuperAdmin,
 };
 
+const STUDENT_BULK_STATUS_FETCHERS = {
+  [ROLES.ADMIN]: bulkStatusByAdmin,
+  [ROLES.SUPER_ADMIN]: bulkStatusBySuperAdmin,
+};
 
 export const getStudents = createRoleResolver(STUDENT_FETCHERS, 'student');
 
@@ -106,6 +119,11 @@ export const toggleStudentStatus = createRoleResolver(
   'student status toggle'
 );
 
+export const bulkUpdateStudentStatus = createRoleResolver(
+  STUDENT_BULK_STATUS_FETCHERS,
+  'student bulk status'
+);
+
 const studentService = {
   createStudent,
   updateStudent,
@@ -117,8 +135,11 @@ const studentService = {
   getStudentFilterOptionsBySuperAdmin,
   getStudentFilterOptionsByWarden,
   toggleStudentStatus,
+  bulkUpdateStudentStatus,
   toggleStatusByAdmin,
+  bulkStatusByAdmin,
   toggleStatusBySuperAdmin,
+  bulkStatusBySuperAdmin,
 };
 
 export default studentService;
