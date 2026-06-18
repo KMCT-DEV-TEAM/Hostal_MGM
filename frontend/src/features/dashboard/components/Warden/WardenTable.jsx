@@ -38,7 +38,7 @@ export default function WardenTable({
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm text-center">
+                <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-start text-gray-500">
@@ -82,20 +82,20 @@ export default function WardenTable({
                                             <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors cursor-pointer">{warden.name}</span>
                                         </div>
                                     </td>
-                                    <td className="p-4 text-center text-gray-500">
-                                        <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                    <td className="p-4 text-start text-gray-500">
+                                        <div className="flex items-center justify-start gap-1.5 text-gray-500">
                                             <Mail size={14} className="text-gray-400" />
                                             <span>{warden.email}</span>
                                         </div>
                                     </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                    <td className="p-4 text-start">
+                                        <div className="flex items-center justify-start gap-1.5 text-gray-500">
                                             <Phone size={14} className="text-gray-400" />
                                             <span>{warden.phone}</span>
                                         </div>
                                     </td>
-                                    <td className="p-4 text-center">
-                                        <div className="relative inline-block w-44 mx-auto">
+                                    <td className="p-4 text-start">
+                                        <div className="relative inline-block w-44">
                                             <select
                                                 value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
                                                 onChange={(e) => handleHostelChange(warden.id, e.target.value)}
@@ -109,8 +109,8 @@ export default function WardenTable({
                                             <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
                                         </div>
                                     </td>
-                                    <td className="p-4 text-center">
-                                        <div className="relative inline-block mx-auto">
+                                    <td className="p-4 text-start">
+                                        <div className="relative inline-block">
                                             <select
                                                 value={warden.status}
                                                 onChange={(e) => handleStatusChangeClick(warden.id, warden.status)}
@@ -125,8 +125,8 @@ export default function WardenTable({
                                             <ChevronDown className={`w-3 h-3 absolute right-2 top-2.5 pointer-events-none ${warden.status === 'Active' ? 'text-green-600' : 'text-red-500'}`} />
                                         </div>
                                     </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-center gap-3 text-gray-400">
+                                    <td className="p-4 text-start">
+                                        <div className="flex items-center justify-start gap-3 text-gray-400">
                                             <button onClick={() => openEditWardenModal(warden)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
