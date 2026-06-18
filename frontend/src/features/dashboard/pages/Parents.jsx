@@ -43,6 +43,11 @@ export default function Parents() {
         }
     };
 
+    const handleAdd = () => {
+        setEditingParent(null);
+        setActiveModal('edit');
+    };
+
     const handleEdit = (parent) => {
         setEditingParent(parent);
         setActiveModal('edit');
@@ -85,6 +90,7 @@ export default function Parents() {
             <ParentsToolbar
                 onSearch={handleSearch}
                 onExport={handleExport}
+                onAddClick={handleAdd}
             />
 
             <ParentsTable

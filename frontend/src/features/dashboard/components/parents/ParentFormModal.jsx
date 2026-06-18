@@ -1,12 +1,16 @@
 import React from 'react';
 import Modal from '@/components/ui/Modal';
 
-export default function ParentFormModal({ editingParent, onClose, onSave }) {
+export default function ParentFormModal({
+    editingParent,
+    onClose,
+    onSave,
+}) {
     const isEdit = !!editingParent;
 
     return (
         <Modal
-            isOpen={true}
+            isOpen
             onClose={onClose}
             title={isEdit ? 'Edit Parent' : 'Add New Parent'}
             titleSize="text-lg"
@@ -18,95 +22,99 @@ export default function ParentFormModal({ editingParent, onClose, onSave }) {
                 onSave?.();
             }}
             footer={
-                <>
-                    <button
-                        type="submit"
-                        className="px-6 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
-                    >
-                        Save
-                    </button>
-
+                <div className="flex justify-end gap-3">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                        className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50"
                     >
                         Cancel
                     </button>
-                </>
+
+                    <button
+                        type="submit"
+                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary"
+                    >
+                        {isEdit ? 'Save Changes' : 'Save'}
+                    </button>
+                </div>
             }
         >
-            <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-5">
 
-                {/* Basic Info */}
-                <section>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Full Name */}
+                <div className={isEdit ? 'col-span-2' : ''}>
+                    <label className="block mb-1.5 text-xs font-medium">
+                        Full Name *
+                    </label>
 
-                        <div className="md:col-span-2">
-                            <label className="block text-xs mb-1.5 font-medium">
-                                Full Name *
-                            </label>
+                    <input
+                        required
+                        defaultValue={editingParent?.name || ''}
+                        placeholder="Enter full name"
+                        className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                    />
+                </div>
 
-                            <input
-                                required
-                                defaultValue={editingParent?.name || ''}
-                                placeholder="Enter full name"
-                                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                {/* Email - Add only */}
+                {!isEdit && (
+                    <div>
+                        <label className="block mb-1.5 text-xs font-medium">
+                            Email Address *
+                        </label>
+
+                        <input
+                            type="email"
+                            required
+                            defaultValue={editingParent?.email || ''}
+                            placeholder="Enter email address"
+                            className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                        />
+                    </div>
+                )}
+
+                {/* Phone */}
+                <div>
+                    <label className="block mb-1.5 text-xs font-medium">
+                        Phone Number *
+                    </label>
+
+                    <div className="flex h-10 border border-gray-200 rounded-md overflow-hidden focus-within:border-secondary">
+                        <div className="px-3 border-r border-gray-200 flex items-center gap-2 text-xs shrink-0">
+                            <img
+                                src="https://flagcdn.com/w20/in.png"
+                                alt="India"
+                                className="w-4 h-3"
                             />
+                            +91
                         </div>
 
+                        <input
+                            type="text"
+                            required
+                            defaultValue={editingParent?.phone || ''}
+                            placeholder="00000 00000"
+                            className="flex-1 px-3 text-xs outline-none"
+                        />
                     </div>
-                </section>
+                </div>
 
-                {/* Contact */}
-                <section>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Relation */}
+                <div>
+                    <label className="block mb-1.5 text-xs font-medium">
+                        Relation *
+                    </label>
 
-                        {/* Phone */}
-                        <div>
-                            <label className="block text-xs mb-1.5 font-medium">
-                                Phone Number *
-                            </label>
-
-                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
-                                <div className="px-3 py-2 border-r border-gray-200 flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <img
-                                        src="https://flagcdn.com/w20/in.png"
-                                        alt="India"
-                                        className="w-4 h-3"
-                                    />
-                                    +91
-                                </div>
-
-                                <input
-                                    type="text"
-                                    required
-                                    defaultValue={editingParent?.phone || ''}
-                                    placeholder="00000 00000"
-                                    className="w-full px-3 py-2 outline-none text-xs"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Relation */}
-                        <div>
-                            <label className="block text-xs mb-1.5 font-medium">
-                                Relation *
-                            </label>
-
-                            <select
-                                defaultValue={editingParent?.relation || ''}
-                                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                            >
-                                <option value="">Select Relation</option>
-                                <option value="Father">Father</option>
-                                <option value="Mother">Mother</option>
-                                <option value="Guardian">Guardian</option>
-                            </select>
-                        </div>
-
-                    </div>
-                </section>
+                    <select
+                        defaultValue={editingParent?.relation || ''}
+                        className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                    >
+                        <option value="">Select Relation</option>
+                        <option value="Father">Father</option>
+                        <option value="Mother">Mother</option>
+                        <option value="Guardian">Guardian</option>
+                    </select>
+                </div>
 
             </div>
         </Modal>

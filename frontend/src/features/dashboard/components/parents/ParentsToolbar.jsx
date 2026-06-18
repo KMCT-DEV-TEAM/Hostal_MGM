@@ -1,7 +1,7 @@
 import React from 'react';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, Plus } from 'lucide-react';
 
-export default function ParentsToolbar({ onSearch, onExport }) {
+export default function ParentsToolbar({ onSearch, onExport, onAddClick }) {
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
             <div className="flex gap-3">
@@ -26,6 +26,12 @@ export default function ParentsToolbar({ onSearch, onExport }) {
                     className="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 transition-colors rounded-lg text-sm font-medium text-gray-700"
                 >
                     <Download className="w-4 h-4" /> Export
+                </button>
+                <button 
+                    onClick={onAddClick}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors"
+                >
+                    <Plus className="w-4 h-4" /> Add New
                 </button>
             </div>
         </div>
