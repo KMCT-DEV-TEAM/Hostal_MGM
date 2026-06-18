@@ -8,7 +8,8 @@ export default function ParentsTable({
     onSelect,
     onStatusChangeRequest,
     onEdit,
-    onDelete
+    onDelete,
+    onView
 }) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -41,7 +42,10 @@ export default function ParentsTable({
                                         }
                                     </button>
                                 </td>
-                                <td className="p-4 flex items-center gap-3 font-medium text-gray-700">
+                                <td 
+                                    className="p-4 flex items-center gap-3 font-medium text-gray-700 cursor-pointer hover:text-[#0A437A] transition-colors"
+                                    onClick={() => onView && onView(p)}
+                                >
                                     <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                                         {p.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                     </div>

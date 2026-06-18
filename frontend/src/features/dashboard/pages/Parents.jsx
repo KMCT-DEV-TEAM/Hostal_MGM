@@ -3,6 +3,7 @@ import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
 import ParentFormModal from '../components/parents/ParentFormModal';
+import ParentDetailsModal from '../components/parents/ParentDetailsModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const INITIAL_PARENTS = [
@@ -53,6 +54,11 @@ export default function Parents() {
         setActiveModal('edit');
     };
 
+    const handleView = (parent) => {
+        setEditingParent(parent); // We can reuse editingParent to store the selected parent, or create a new state `viewingParent`. Reusing is fine since modals are mutually exclusive.
+        setActiveModal('view');
+    };
+
     const handleSaveParent = () => {
         // Implement save logic here
         console.log("Saving parent data...");
@@ -101,9 +107,17 @@ export default function Parents() {
                 onStatusChangeRequest={handleStatusChangeRequest}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onView={handleView}
             />
 
             {/* Modals */}
+            {activeModal === 'view' && (
+                <ParentDetailsModal 
+                    parent={editingParent}
+                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                />
+            )}
+
             {activeModal === 'edit' && (
                 <ParentFormModal 
                     editingParent={editingParent}
