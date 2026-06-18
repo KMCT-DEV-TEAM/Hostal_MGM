@@ -648,7 +648,8 @@ export default function WardenManagement() {
                                     value={newEmailForm}
                                     onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
-                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
+                                    disabled={isEmailVerified}
                                 />
                                 {isEmailVerified ? (
                                     <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">

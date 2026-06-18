@@ -9,7 +9,7 @@ const DashboardLayout = () => {
     return (
         <div className="h-screen bg-[#F8FAFC]">
             <div className="h-[82px]">
-                <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
+                <Navbar onMenuClick={() => setIsSidebarOpen(prev => !prev)} />
             </div>
             <div className="h-[calc(100vh-82px)] flex relative">
                 <div className="hidden lg:block w-[250px] shrink-0"></div>
