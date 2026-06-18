@@ -89,6 +89,11 @@ const studentSchema = new mongoose.Schema(
       default: true,
     },
 
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     joiningDate: {
       type: Date,
       default: Date.now,

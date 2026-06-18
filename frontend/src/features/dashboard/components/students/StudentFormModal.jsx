@@ -1,15 +1,160 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import OtpInput from '@/components/ui/OtpInput';
+import { sendOtp } from '@/services/auth.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { getHostels } from '@/services/hostel.service';
+import { getOrganizations } from '@/services/organization.service';
+import { ROLES } from '@/constants/roles';
 
 export default function StudentFormModal({ editingStudent, onClose, onSave }) {
-    const handleSubmit = (event) => {
+    const [studentEmail, setStudentEmail] = useState(editingStudent?.email || '');
+    const [parentEmail, setParentEmail] = useState('');
+    const [studentOtp, setStudentOtp] = useState('');
+    const [parentOtp, setParentOtp] = useState('');
+    const [studentOtpSent, setStudentOtpSent] = useState(false);
+    const [parentOtpSent, setParentOtpSent] = useState(false);
+    const [otpErrors, setOtpErrors] = useState({ student: '', parent: '' });
+    const [sendingOtpFor, setSendingOtpFor] = useState('');
+    const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+    const [verifyTarget, setVerifyTarget] = useState(null);
+    const [verifyOtpValue, setVerifyOtpValue] = useState('');
+    const [emailVerified, setEmailVerified] = useState({ student: false, parent: false });
+    const role = useAuthStore((state) => state.user?.role);
+    const userOrganization = useAuthStore((state) => {
+        const organization = state.user?.organization;
+        if (!organization) return null;
+        return typeof organization === 'string' ? organization : organization._id || null;
+    });
+    const [hostels, setHostels] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
+    const [loadingHostels, setLoadingHostels] = useState(false);
+    const [loadingOrganizations, setLoadingOrganizations] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [organizationId, setOrganizationId] = useState(editingStudent?.organizationId || '');
+    const [hostelId, setHostelId] = useState(editingStudent?.hostelId || '');
+
+    useEffect(() => {
+        if (role !== ROLES.SUPER_ADMIN && userOrganization) {
+            setOrganizationId(userOrganization);
+        }
+    }, [role, userOrganization]);
+
+    const loadHostels = async () => {
+        setLoadingHostels(true);
+        try {
+            const res = await getHostels({ page: 1, limit: 0, status: 'Active' });
+            setHostels(res.data || []);
+        } catch (error) {
+            console.error('Failed to load hostels', error);
+        } finally {
+            setLoadingHostels(false);
+        }
+    };
+
+    const loadOrganizations = async () => {
+        setLoadingOrganizations(true);
+        try {
+            const res = await getOrganizations({ limit: 100, status: 'Active' });
+            setOrganizations(res.data || []);
+        } catch (error) {
+            console.error('Failed to load organizations', error);
+        } finally {
+            setLoadingOrganizations(false);
+        }
+    };
+
+    useEffect(() => {
+        loadHostels();
+        if (role === ROLES.SUPER_ADMIN) {
+            loadOrganizations();
+        }
+    }, [role]);
+
+    const handleSubmit = async (event) => {
         event.preventDefault();
+
+        if (!editingStudent && (!studentOtp || !parentOtp)) {
+            setOtpErrors({
+                student: !studentOtp ? 'Please enter the student OTP' : '',
+                parent: !parentOtp ? 'Please enter the parent OTP' : '',
+            });
+            return;
+        }
+
         const formData = new FormData(event.currentTarget);
         const payload = Object.fromEntries(
             [...formData.entries()].filter(([, value]) => value !== '')
         );
 
-        onSave(payload);
+        try {
+            setSaving(true);
+            await onSave(payload);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const sendEmailOtp = async (email, type, openModal = false) => {
+        if (!email) {
+            setOtpErrors((prev) => ({
+                ...prev,
+                [type]: 'Please enter an email before sending OTP',
+            }));
+            return;
+        }
+
+        setSendingOtpFor(type);
+        setOtpErrors((prev) => ({ ...prev, [type]: '' }));
+
+        try {
+            await sendOtp({ email });
+
+            if (type === 'student') {
+                setStudentOtpSent(true);
+            } else {
+                setParentOtpSent(true);
+            }
+
+            if (openModal) {
+                setVerifyTarget(type);
+                setVerifyOtpValue(type === 'student' ? studentOtp : parentOtp);
+                setVerifyModalOpen(true);
+            }
+        } catch (error) {
+            const message = error?.response?.data?.message || 'Failed to send OTP';
+            setOtpErrors((prev) => ({ ...prev, [type]: message }));
+        } finally {
+            setSendingOtpFor('');
+        }
+    };
+
+    const handleVerifyOtpSubmit = () => {
+        if (!verifyOtpValue || verifyOtpValue.length !== 6) {
+            setOtpErrors((prev) => ({
+                ...prev,
+                [verifyTarget]: 'Please enter the 6-digit OTP',
+            }));
+            return;
+        }
+
+        if (verifyTarget === 'student') {
+            setStudentOtp(verifyOtpValue);
+            setEmailVerified((prev) => ({ ...prev, student: true }));
+        } else {
+            setParentOtp(verifyOtpValue);
+            setEmailVerified((prev) => ({ ...prev, parent: true }));
+        }
+
+        setVerifyModalOpen(false);
+        setOtpErrors((prev) => ({ ...prev, [verifyTarget]: '' }));
+    };
+
+    const openVerifyModal = async (type) => {
+        const email = type === 'student' ? studentEmail : parentEmail;
+        setVerifyTarget(type);
+        setVerifyOtpValue('');
+        await sendEmailOtp(email, type, true);
     };
 
     // If it's the simplified edit modal (from the original code snippet)
@@ -62,7 +207,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                     </div>
                     <div className="col-span-2">
                         <label className="block text-xs mb-1.5 font-medium">Address</label>
-                        <textarea name="address" defaultValue={editingStudent?.address || ''} className="w-full p-2.5 border border-gray-200 rounded-lg text-xs h-[90px] outline-none focus:border-secondary" />
+                        <textarea
+                            name="address"
+                            defaultValue={editingStudent?.address || ''}
+                            className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                            style={{ minHeight: 90 }}
+                        />
                     </div>
                 </div>
             </Modal>
@@ -81,12 +231,52 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             onSubmit={handleSubmit}
             footer={
                 <>
-                    <button type="submit" className="px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#0A437A]/90 transition-colors">Save</button>
+                    <button type="submit" disabled={saving} className="px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#0A437A]/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                        {saving ? 'Saving...' : 'Save'}
+                    </button>
                     <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">Cancel</button>
                 </>
             }
         >
             <div className="space-y-8">
+                {verifyModalOpen && (
+                    <Modal
+                        isOpen={true}
+                        onClose={() => setVerifyModalOpen(false)}
+                        title={`Verify ${verifyTarget === 'student' ? 'Student' : 'Parent'} Email`}
+                        maxWidth="max-w-xl"
+                        asForm={false}
+                    >
+                        <div className="space-y-4">
+                            <p className="text-xs text-text-secondary">
+                                Enter the 6-digit OTP sent to {verifyTarget === 'student' ? studentEmail : parentEmail}.
+                            </p>
+                            <OtpInput
+                                value={verifyOtpValue}
+                                onChange={setVerifyOtpValue}
+                                error={!!otpErrors[verifyTarget]}
+                            />
+                            {otpErrors[verifyTarget] && <p className="text-red-500 text-xs">{otpErrors[verifyTarget]}</p>}
+                            <div className="flex items-center justify-between gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => sendEmailOtp(verifyTarget === 'student' ? studentEmail : parentEmail, verifyTarget, true)}
+                                    disabled={sendingOtpFor === verifyTarget}
+                                    className="px-3 py-2 bg-gray-100 text-xs rounded-lg text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                >
+                                    {sendingOtpFor === verifyTarget ? 'Sending...' : 'Resend OTP'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleVerifyOtpSubmit}
+                                    className="px-3 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-secondary transition-colors"
+                                >
+                                    Confirm OTP
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+                )}
                 {/* Basic Info */}
                 <section>
                     <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
@@ -104,11 +294,48 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                     <h3 className="text-[14px] font-medium text-primary ">Academic Information</h3>
                     <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">Academic information of the student</h5>
                     <div className="grid grid-cols-2 gap-6">
-                        <div><label className="block text-xs mb-1.5 font-medium">Organization</label><input name="organizationId" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Organization ID" /></div>
+                        {role === ROLES.SUPER_ADMIN ? (
+                            <div>
+                                <label className="block text-xs mb-1.5 font-medium">Organization *</label>
+                                <select
+                                    name="organizationId"
+                                    required
+                                    value={organizationId}
+                                    onChange={(e) => setOrganizationId(e.target.value)}
+                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
+                                >
+                                    <option value="">Select organization</option>
+                                    {organizations.map((org) => (
+                                        <option key={org._id} value={org._id}>
+                                            {org.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
+                            </div>
+                        ) : (
+                            <input type="hidden" name="organizationId" value={organizationId} />
+                        )}
                         <div><label className="block text-xs mb-1.5 font-medium">Course *</label><input name="course" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Course" /></div>
                         <div><label className="block text-xs mb-1.5 font-medium">Department *</label><input name="department" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Department" /></div>
                         <div><label className="block text-xs mb-1.5 font-medium">Academic Year *</label><input name="academicYear" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="2024-2025" /></div>
-                        <div className="col-span-2"><label className="block text-xs mb-1.5 font-medium">Assign Hostel</label><input name="hostelId" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Hostel ID" /></div>
+                        <div className="col-span-2">
+                            <label className="block text-xs mb-1.5 font-medium">Assign Hostel</label>
+                            <select
+                                name="hostelId"
+                                value={hostelId}
+                                onChange={(e) => setHostelId(e.target.value)}
+                                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
+                            >
+                                <option value="">Select hostel</option>
+                                {hostels.map((hostel) => (
+                                    <option key={hostel._id} value={hostel._id}>
+                                        {hostel.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {loadingHostels && <p className="text-xs text-text-secondary mt-2">Loading hostels...</p>}
+                        </div>
                     </div>
                 </section>
 
@@ -136,23 +363,45 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                             </div>
                             <div className="col-span-2 w-[50%]">
                                 <label className="block text-xs font-medium text-black mb-1">Email Address *</label>
-                                <input
-                                    name="email"
-                                    type="email"
-                                    required
-                                    placeholder="Enter the email"
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        name="email"
+                                        type="email"
+                                        required
+                                        value={studentEmail}
+                                        onChange={(e) => {
+                                            setStudentEmail(e.target.value);
+                                            setEmailVerified((prev) => ({ ...prev, student: false }));
+                                        }}
+                                        placeholder="Enter the email"
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => openVerifyModal('student')}
+                                        disabled={sendingOtpFor === 'student' || !studentEmail}
+                                        className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {sendingOtpFor === 'student' ? 'Sending...' : 'Verify'}
+                                    </button>
+                                </div>
+                                {emailVerified.student && <p className="text-xs text-green-600 mt-1">Student email verified</p>}
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" name="studentOtp" value={studentOtp} />
                 </section>
 
                 <section>
                     <h3 className="text-[14px] font-medium text-primary">Address Information</h3>
                     <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200 ">Address information of the student</h5>
                     <label className="block text-xs mb-1.5 font-medium">Full Address *</label>
-                    <textarea name="address" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs h-[106px] outline-none focus:border-secondary" placeholder="text your address" />
+                    <textarea
+                        name="address"
+                        className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                        style={{ minHeight: 106 }}
+                        placeholder="text your address"
+                    />
                 </section>
 
                 {/* Parent Information */}
@@ -181,17 +430,35 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                         </div>
                         <div className="col-span-2 w-[50%]">
                             <label className="block text-xs font-medium text-black mb-1">Email Address *</label>
-                            <input
-                                name="parentEmail"
-                                type="email"
-                                required
-                                placeholder="Enter the email"
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    name="parentEmail"
+                                    type="email"
+                                    required
+                                    value={parentEmail}
+                                    onChange={(e) => {
+                                        setParentEmail(e.target.value);
+                                        setEmailVerified((prev) => ({ ...prev, parent: false }));
+                                    }}
+                                    placeholder="Enter the email"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => openVerifyModal('parent')}
+                                    disabled={sendingOtpFor === 'parent' || !parentEmail}
+                                    className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {sendingOtpFor === 'parent' ? 'Sending...' : 'Verify'}
+                                </button>
+                            </div>
+                            {emailVerified.parent && <p className="text-xs text-green-600 mt-1">Parent email verified</p>}
                         </div>
                     </div>
+                    <input type="hidden" name="parentOtp" value={parentOtp} />
                 </section>
-            </div>
-        </Modal>
-    );
-}
+
+                </div>
+            </Modal>
+        );
+    }

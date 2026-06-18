@@ -36,6 +36,10 @@ const parentSchema = new mongoose.Schema(
       type :Boolean,
       default : false
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     isActive: {
       type: Boolean,
       default: true,
