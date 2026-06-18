@@ -12,14 +12,14 @@ export default function ParentsTable({
     statusLoadingIds = []
 }) {
     return (
-        <div className="hidden md:block h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
-            <table className="w-full text-start relative">
+        <div className="hidden md:block h-full w-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
+            <table className="w-full text-start relative whitespace-nowrap">
                 <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
                     <tr className="text-text-primary text-sm font-semibold border-b border-gray-50">
                         <th className="text-gray-300 p-4 w-12">
                             <button onClick={onSelectAll} className="focus:outline-none flex items-center justify-center">
                                 {selectedIds.length > 0 && selectedIds.length === parents.length ?
-                                    <CheckSquare className="h-5 w-5 text-[#0A437A]" /> :
+                                    <CheckSquare className="h-5 w-5 text-primary" /> :
                                     <Square className="h-5 w-5 text-gray-300 hover:text-gray-400" />
                                 }
                             </button>

@@ -7,6 +7,7 @@ import { createParent, toggleParentStatus, updateParent } from '@/services/paren
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
+import ParentsMobileList from '../components/parents/ParentsMobileList';
 import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -163,18 +164,30 @@ export default function Parents() {
                 ) : error ? (
                     <div className="flex justify-center p-8 text-red-500">Error loading parents: {error.message}</div>
                 ) : (
-                    <ParentsTable
-                        parents={parents}
-                        selectedIds={selectedIds}
-                        onSelectAll={handleSelectAll}
-                        onSelect={handleSelect}
-                        onStatusChangeRequest={handleStatusChangeRequest}
-                        onEdit={handleEdit}
-                        onView={handleView}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        statusLoadingIds={statusLoadingIds}
-                    />
+                    <>
+                        <ParentsTable
+                            parents={parents}
+                            selectedIds={selectedIds}
+                            onSelectAll={handleSelectAll}
+                            onSelect={handleSelect}
+                            onStatusChangeRequest={handleStatusChangeRequest}
+                            onEdit={handleEdit}
+                            onView={handleView}
+                            canEdit={canEdit}
+                            canDelete={canDelete}
+                            statusLoadingIds={statusLoadingIds}
+                        />
+                        <ParentsMobileList
+                            parents={parents}
+                            error={error}
+                            selectedIds={selectedIds}
+                            onSelectAll={handleSelectAll}
+                            onSelect={handleSelect}
+                            onEdit={handleEdit}
+                            onView={handleView}
+                            statusLoadingIds={statusLoadingIds}
+                        />
+                    </>
                 )}
 
                 {parents.length > 0 && !loading && !error && (
