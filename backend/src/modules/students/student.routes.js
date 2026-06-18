@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent, validateUpdateStudentOrganization } from "./student.validation.js";
-import { createStudent, updateStudent, toggleStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin } from "./student.controller.js";
+import { createStudent, updateStudent, toggleStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentFilterOptions } from "./student.controller.js";
 
 const router = express.Router(); 
 
@@ -20,6 +20,13 @@ router.get(
   authMiddleware,
   roleMiddleware("admin"),
   getAdminOrganizationData
+);
+
+router.get(
+  "/filters",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin", "warden"),
+  getStudentFilterOptions
 );
 
 router.post(
