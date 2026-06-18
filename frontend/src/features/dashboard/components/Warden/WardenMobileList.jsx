@@ -11,7 +11,9 @@ export default function WardenMobileList({
     handleStatusChangeClick,
     openEditWardenModal,
     loading,
-    error
+    error,
+    availableHostels = [],
+    handleHostelChange
 }) {
     const isAllSelected = paginatedWardens.length > 0 && paginatedWardens.every(w => selectedIds.includes(w.id));
 
@@ -95,7 +97,16 @@ export default function WardenMobileList({
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-                                        <span className="truncate text-primary font-medium">{warden.hostel || 'N/A'}</span>
+                                        <select
+                                            value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
+                                            onChange={(e) => handleHostelChange(warden.id, e.target.value)}
+                                            className="appearance-none bg-transparent border-none text-[10px] sm:text-xs font-medium text-[#0A437A] cursor-pointer focus:outline-none"
+                                        >
+                                            <option value="Not Assigned">Not Assigned</option>
+                                            {availableHostels.map(h => (
+                                                <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
