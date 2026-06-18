@@ -40,6 +40,8 @@ export default function HostelManagement() {
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
+    const [statusToUpdate, setStatusToUpdate] = useState(null);
 
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedHostelDetail, setSelectedHostelDetail] = useState(null);
@@ -182,9 +184,17 @@ export default function HostelManagement() {
         setIsExportConfirmOpen(true);
     };
 
-    const handleStatusChange = async (id) => {
+    const handleStatusChangeClick = (id, currentStatus) => {
+        setStatusToUpdate({ id, currentStatus });
+        setIsStatusConfirmOpen(true);
+    };
+
+    const confirmStatusChange = async () => {
+        if (!statusToUpdate) return;
         try {
-            await hostelService.toggleStatus(id);
+            await hostelService.toggleStatus(statusToUpdate.id);
+            setIsStatusConfirmOpen(false);
+            setStatusToUpdate(null);
             fetchHostels(); // refresh after update
         } catch (error) {
             console.error("Failed to update status:", error);
@@ -549,7 +559,7 @@ export default function HostelManagement() {
                                                 <div className="relative inline-block mx-auto">
                                                     <select
                                                         value={hostel.isActive ? 'Active' : 'Inactive'}
-                                                        onChange={() => handleStatusChange(hostel._id)}
+                                                        onChange={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
                                                         className={`appearance-none rounded-full px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${hostel.isActive
                                                             ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
                                                             : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
@@ -890,6 +900,34 @@ export default function HostelManagement() {
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
                             >
                                 Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isStatusConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the status of this hostel?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsStatusConfirmOpen(false);
+                                    setStatusToUpdate(null);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmStatusChange}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
                             </button>
                         </div>
                     </div>
