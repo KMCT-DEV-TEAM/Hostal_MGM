@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function ParentFormModal({
     editingParent,
@@ -7,6 +8,41 @@ export default function ParentFormModal({
     onSave,
 }) {
     const isEdit = !!editingParent;
+    const role = useAuthStore((s) => s.user?.role);
+    const [students, setStudents] = useState([]);
+    const [loadingStudents, setLoadingStudents] = useState(false);
+
+    useEffect(() => {
+        if (!isEdit && role) {
+            setLoadingStudents(true);
+            // Dynamically import to avoid circular dependencies if any
+            import('@/services/student.service').then(({ getStudents }) => {
+                getStudents(role, { limit: 1000 }).then(data => {
+                    setStudents(data.students || []);
+                }).catch(err => {
+                    console.error("Failed to load students", err);
+                }).finally(() => setLoadingStudents(false));
+            });
+        }
+    }, [isEdit, role]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        const payload = {
+            parentName: formData.get('name'),
+            phone: formData.get('phone'),
+            relationship: formData.get('relation'),
+        };
+
+        if (!isEdit) {
+            payload.email = formData.get('email');
+            payload.studentId = formData.get('studentId');
+        }
+
+        onSave?.(payload);
+    };
 
     return (
         <Modal
@@ -17,10 +53,7 @@ export default function ParentFormModal({
             subtitle="Edit the details of parent"
             maxWidth="max-w-xl"
             asForm
-            onSubmit={(e) => {
-                e.preventDefault();
-                onSave?.();
-            }}
+            onSubmit={handleSubmit}
             footer={
                 <div className="flex justify-end gap-3">
                     <button
@@ -49,8 +82,9 @@ export default function ParentFormModal({
                     </label>
 
                     <input
+                        name="name"
                         required
-                        defaultValue={editingParent?.name || ''}
+                        defaultValue={editingParent?.name || editingParent?.parentName || ''}
                         placeholder="Enter full name"
                         className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
                     />
@@ -64,6 +98,7 @@ export default function ParentFormModal({
                         </label>
 
                         <input
+                            name="email"
                             type="email"
                             required
                             defaultValue={editingParent?.email || ''}
@@ -90,6 +125,7 @@ export default function ParentFormModal({
                         </div>
 
                         <input
+                            name="phone"
                             type="text"
                             required
                             defaultValue={editingParent?.phone || ''}
@@ -106,7 +142,9 @@ export default function ParentFormModal({
                     </label>
 
                     <select
-                        defaultValue={editingParent?.relation || ''}
+                        name="relation"
+                        required
+                        defaultValue={editingParent?.relation || editingParent?.relationship || ''}
                         className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
                     >
                         <option value="">Select Relation</option>
@@ -115,6 +153,31 @@ export default function ParentFormModal({
                         <option value="Guardian">Guardian</option>
                     </select>
                 </div>
+
+                {/* Student Selection - Add only */}
+                {!isEdit && (
+                    <div className="col-span-2">
+                        <label className="block mb-1.5 text-xs font-medium">
+                            Linked Student *
+                        </label>
+
+                        <select
+                            name="studentId"
+                            required
+                            className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                            disabled={loadingStudents}
+                        >
+                            <option value="">
+                                {loadingStudents ? "Loading students..." : "Select Student"}
+                            </option>
+                            {students.map(student => (
+                                <option key={student._id || student.id} value={student._id || student.id}>
+                                    {student.name} ({student.admissionNo})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
             </div>
         </Modal>

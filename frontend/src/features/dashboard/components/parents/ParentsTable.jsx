@@ -42,32 +42,37 @@ export default function ParentsTable({
                                         }
                                     </button>
                                 </td>
-                                <td 
+                                <td
                                     className="p-4 flex items-center gap-3 font-medium text-gray-700 cursor-pointer hover:text-[#0A437A] transition-colors"
                                     onClick={() => onView && onView(p)}
                                 >
                                     <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                        {p.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                        {p.parentName?.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                     </div>
-                                    {p.name}
+                                    {p.parentName}
                                 </td>
                                 <td className="p-4 text-gray-500"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
                                 <td className="p-4 text-gray-500"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
-                                <td className="p-4 text-gray-700 font-medium">{p.student}</td>
+                                <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? "No Student"}</td>
                                 <td className="p-4">
                                     <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 outline-none focus:border-secondary bg-white">
-                                        <option>{p.relation}</option>
+                                        <option>{p.relationship}</option>
                                     </select>
                                 </td>
                                 <td className="p-4">
                                     <div className="relative w-fit">
                                         <select
-                                            value={p.status}
-                                            onChange={(e) => onStatusChangeRequest && onStatusChangeRequest(p, e.target.value)}
+                                            value={p.isActive ? 'Active' : 'Inactive'}
+                                            onChange={(e) =>
+                                                onStatusChangeRequest?.(
+                                                    p,
+                                                    e.target.value === 'Active'
+                                                )
+                                            }
                                             className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
-                                                ${p.status === "Active"
-                                                    ? "bg-green-50 text-success border-green-200/60"
-                                                    : "bg-red-50 text-danger border-red-200/60"
+        ${p.isActive
+                                                    ? 'bg-green-50 text-success border-green-200/60'
+                                                    : 'bg-red-50 text-danger border-red-200/60'
                                                 }`}
                                         >
                                             <option value="Active">Active</option>
@@ -77,7 +82,7 @@ export default function ParentsTable({
                                         <ChevronDown
                                             size={14}
                                             className={`absolute right-2.5 top-1.5 pointer-events-none
-                                                ${p.status === "Active" ? "text-success" : "text-danger"}`}
+                                                ${p.isActive === "true" ? "text-success" : "text-danger"}`}
                                         />
                                     </div>
                                 </td>
