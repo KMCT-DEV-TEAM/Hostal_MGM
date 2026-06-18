@@ -18,10 +18,8 @@ const createHostel = asyncHandler(async (req, res) => {
   let finalOrganizations = [];
   if (organization) {
     finalOrganizations = [organization];
-  } else if (req.user.organization) {
+  } else if (req.user && req.user.organization) {
     finalOrganizations = [req.user.organization];
-  } else {
-    return sendError(res, 400, "Organization ID is required");
   }
 
   const existingEmail = await checkExistingHostelEmailDb(email);

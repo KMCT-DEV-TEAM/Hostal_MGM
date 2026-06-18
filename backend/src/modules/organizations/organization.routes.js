@@ -8,7 +8,8 @@ import {
   getOrganizations,
   getOrganizationById,
   updateOrganization,
-  toggleOrganizationStatus
+  toggleOrganizationStatus,
+  bulkUpdateOrganizationStatus
 } from "./organization.controller.js";
 
 import {
@@ -40,6 +41,13 @@ router.get(
   roleMiddleware("super_admin"),
   validateOrganizationIdParam,
   getOrganizationById
+);
+
+router.patch(
+  "/bulk-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  bulkUpdateOrganizationStatus
 );
 
 router.patch(

@@ -21,6 +21,8 @@ const OrganizationManagement = () => {
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -45,19 +47,35 @@ const OrganizationManagement = () => {
 
     const fetchOrganizations = async () => {
         try {
-            const res = await organizationService.getOrganizations({ page, limit });
+            setLoading(true);
+            const res = await organizationService.getOrganizations({ 
+                page, 
+                limit,
+                search: debouncedSearch,
+                status: statusFilter
+            });
             if (res && res.data) {
                 setOrgs(res.data);
             }
         } catch (err) {
             console.error("Failed to fetch organizations:", err);
             setError("Failed to fetch organizations. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setPage(1); // Reset to page 1 on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    useEffect(() => {
         fetchOrganizations();
-    }, [page]);
+    }, [page, debouncedSearch, statusFilter]);
 
     const handleStatusChangeClick = (id, currentStatus) => {
         setStatusToUpdate({ id, currentStatus });
@@ -174,6 +192,20 @@ const OrganizationManagement = () => {
         }
     };
 
+    const handleBulkStatus = async (isActive) => {
+        if (selectedIds.length === 0) return;
+        try {
+            setLoading(true);
+            await organizationService.bulkToggleStatus({ ids: selectedIds, isActive });
+            setSelectedIds([]); // clear selection
+            fetchOrganizations(); // refresh table
+        } catch (error) {
+            console.error("Failed to bulk update status:", error);
+            alert("Failed to bulk update status. Please try again.");
+            setLoading(false);
+        }
+    };
+
     // Step 1: Trigger the dialog
     const initiateExport = () => {
         setIsExportConfirmOpen(true);
@@ -182,19 +214,9 @@ const OrganizationManagement = () => {
     // Step 2: The actual export logic (your existing function)
     const confirmExport = async () => {
         setIsExportConfirmOpen(false);
-        // ... rest of your existing handleExport logic
-    };
-
-
-    const paginatedorgs = useMemo(() => {
-        const startIndex = (page - 1) * limit;
-        return orgs.slice(startIndex, startIndex + limit);
-    }, [orgs, page]);
-
-    const handleExport = async () => {
         try {
             // Fetch all organizations by setting limit to 0
-            const res = await organizationService.getOrganizations({ page: 1, limit: 0 });
+            const res = await organizationService.getOrganizations({ page: 1, limit: 0, search: debouncedSearch, status: statusFilter });
             if (res && res.data) {
                 const allOrgs = res.data;
                 const exportData = allOrgs.map((org, index) => ({
@@ -223,12 +245,8 @@ const OrganizationManagement = () => {
         }
     };
 
-    const filteredOrgs = orgs.filter(org => {
-        if (statusFilter === 'All') return true;
-        if (statusFilter === 'Active') return org.isActive === true;
-        if (statusFilter === 'Inactive') return org.isActive === false;
-        return true;
-    });
+
+
 
     const renderDetailView = () => {
         if (!selectedOrganizationDetail) return null;
@@ -316,22 +334,24 @@ const OrganizationManagement = () => {
                     <p className="text-xs text-[#777777] mt-1">Manage all organizations</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    {selectedIds.length > 0 && (
-                        <button
-                            onClick={() => { /* Implement bulk update logic */ }}
-                            className="hidden md:flex items-center gap-2 px-4 py-2 border border-success text-success bg-green-50/40 rounded-lg hover:bg-green-50 transition-colors text-sm font-medium"
-                        >
-                            Active ({selectedIds.length})
-                        </button>
-                    )}
 
-                    {selectedIds.length > 0 && (
-                        <button
-                            className="hidden md:flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
-                        >
-                            Inactive({selectedIds.length})
-                        </button>
-                    )}
+                        {selectedIds.length > 0 && (
+                            <div className="flex items-center gap-2 mr-2">
+                                <button
+                                    onClick={() => handleBulkStatus(true)}
+                                    className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Active
+                                </button>
+                                <button
+                                    onClick={() => handleBulkStatus(false)}
+                                    className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Inactive
+                                </button>
+                            </div>
+                        )}
+
                 </div>
             </div>
 
@@ -354,8 +374,14 @@ const OrganizationManagement = () => {
                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
-                            <input className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none" placeholder="Search Organization..." />
+                            <input 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none" 
+                                placeholder="Search Organization..." 
+                            />
                         </div>
+
                         <button
                             onClick={initiateExport}
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none"
@@ -378,7 +404,7 @@ const OrganizationManagement = () => {
                             <tr className="text-[#222222] text-center text-sm  font-semibold border-b border-gray-50 bg-gray-50/50">
                                 <th className="p-4 w-12 text-center">
                                     <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500">
-                                        {paginatedorgs.length > 0 && paginatedorgs.every(h => selectedIds.includes(h._id)) ? (
+                                        {orgs.length > 0 && orgs.every(h => selectedIds.includes(h._id)) ? (
                                             <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                                         ) : (
                                             <Square className="w-5 h-5" />
@@ -400,14 +426,14 @@ const OrganizationManagement = () => {
                                         {error}
                                     </td>
                                 </tr>
-                            ) : filteredOrgs.length === 0 ? (
+                            ) : orgs.length === 0 ? (
                                 <tr>
                                     <td colSpan="7" className="p-8 text-center text-gray-500">
                                         No organizations match the selected filter.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredOrgs.map((o) => (
+                                orgs.map((o) => (
                                     <tr key={o._id} className="hover:bg-gray-50/40 transition-colors">
                                         <td className="p-4 text-center">
                                             <button onClick={() => handleSelectRow(o._id)} className="focus:outline-none text-gray-300">
@@ -492,10 +518,10 @@ const OrganizationManagement = () => {
                 <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0">
                     {error ? (
                         <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error}</div>
-                    ) : filteredOrgs.length === 0 ? (
+                    ) : orgs.length === 0 ? (
                         <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No organizations match the selected filter.</div>
                     ) : (
-                        filteredOrgs.map((o) => (
+                        orgs.map((o) => (
                             <div key={o._id} className="bg-white p-4 rounded-xl shadow-sm flex flex-col relative">
                                 <button
                                     onClick={() => openModal('edit', o)}

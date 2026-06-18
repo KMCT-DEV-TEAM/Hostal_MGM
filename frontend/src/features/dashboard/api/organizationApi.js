@@ -15,6 +15,9 @@ const organizationApi = {
 
   toggleStatus: (id) =>
     api.patch(`/organizations/${id}/toggle-status`),
+
+  bulkToggleStatus: ({ids, isActive}) =>
+    api.patch("/organizations/bulk-status", {ids, isActive}),
 };
 
 export default organizationApi;

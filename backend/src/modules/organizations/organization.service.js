@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Organization from "./organization.model.js";
 
 const findExistingOrganization = async (code, organisationNumber) => {
@@ -27,16 +28,35 @@ const getAllOrganizationsDb = async () => {
   return await Organization.find().populate("adminId", "name email isActive");
 };
 
-const getPaginatedOrganizationsDb = async (page = 1, limit = 10) => {
-  const skip = (page - 1) * limit;
+const getPaginatedOrganizationsDb = async (page = 1, limit = 10, search = "", status = "All") => {
+  const query = {};
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { code: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { phone: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } }
+    ];
+  }
+
+  if (status && status !== "All") {
+    query.isActive = status === "Active";
+  }
+
+  let organizationsPromise = Organization.find(query)
+    .populate("adminId", "name email isActive")
+    .sort({ createdAt: -1 });
+
+  if (limit > 0) {
+    const skip = (page - 1) * limit;
+    organizationsPromise = organizationsPromise.skip(skip).limit(limit);
+  }
 
   const [organizations, totalCount] = await Promise.all([
-    Organization.find()
-      .populate("adminId", "name email isActive")
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 }),
-    Organization.countDocuments(),
+    organizationsPromise,
+    Organization.countDocuments(query),
   ]);
 
   return { organizations, totalCount };
@@ -56,6 +76,20 @@ const toggleOrganizationStatusDb = async (id) => {
 
   org.isActive = !org.isActive;
   return await org.save();
+};
+
+const bulkUpdateOrganizationStatusDb = async (ids, isActive) => {
+  try {
+    const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+    const result = await Organization.updateMany(
+      { _id: { $in: objectIds } },
+      { $set: { isActive } }
+    );
+    return result;
+  } catch (error) {
+    console.error("bulkUpdateOrganizationStatusDb error:", error);
+    throw error;
+  }
 };
 
 const getAggregateOrganizationDataDb = async (organizationId = null) => {
@@ -202,5 +236,6 @@ export {
   getOrganizationByIdDb,
   updateOrganizationDb,
   toggleOrganizationStatusDb,
-  getAggregateOrganizationDataDb
+  bulkUpdateOrganizationStatusDb,
+  getAggregateOrganizationDataDb,
 }
