@@ -12,7 +12,8 @@ import {
     ChevronRight,
     X,
     Phone,
-    Download
+    Download,
+    User
 } from 'lucide-react';
 
 const INITIAL_ADMINS = [
@@ -36,6 +37,14 @@ export default function Administrator() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [editingAdmin, setEditingAdmin] = useState(null);
+    const [view, setView] = useState('list');
+    const [selectedAdminDetail, setSelectedAdminDetail] = useState(null);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
+    const [statusToUpdate, setStatusToUpdate] = useState(null);
+
     const [admins, setAdmins] = useState([
         { id: 1, name: "Anil Kumar", email: "anilkumar@gmail.com", phone: "9987898789", organization: "KMCT Engineering", status: "Active" },
         { id: 2, name: "Jacob Tarakan", email: "jacob@gmail.com", phone: "9987898789", organization: "MES College", status: "Inactive" },
@@ -121,8 +130,17 @@ export default function Administrator() {
         }
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        setAdmins(admins.map(w => w.id === id ? { ...w, status: newStatus } : w));
+    const handleStatusChangeClick = (id, currentStatus) => {
+        setStatusToUpdate({ id, currentStatus });
+        setIsStatusConfirmOpen(true);
+    };
+
+    const confirmStatusChange = () => {
+        if (!statusToUpdate) return;
+        const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
+        setAdmins(admins.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+        setIsStatusConfirmOpen(false);
+        setStatusToUpdate(null);
     };
 
     const handleOrganizationChange = (id, organization) => {
@@ -158,6 +176,14 @@ export default function Administrator() {
         }
 
         if (editingAdmin) {
+            setIsEditConfirmOpen(true);
+        } else {
+            saveAdmin();
+        }
+    };
+
+    const saveAdmin = () => {
+        if (editingAdmin) {
             // Update Existing Record
             setAdmins(admins.map(w => w.id === editingAdmin.id ? { ...w, ...adminForm } : w));
         } else {
@@ -169,6 +195,30 @@ export default function Administrator() {
             setAdmins([newAdmin, ...admins]);
         }
         setActiveModal(null);
+        setIsEditConfirmOpen(false);
+    };
+
+    const handleCancel = () => {
+        if (editingAdmin) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            setActiveModal(null);
+        }
+    };
+
+    const confirmDiscard = () => {
+        setIsDiscardConfirmOpen(false);
+        setActiveModal(null);
+    };
+
+    const initiateExport = () => {
+        setIsExportConfirmOpen(true);
+    };
+
+    const handleExport = () => {
+        // Implement export logic (currently missing)
+        alert('Exporting data...');
+        setIsExportConfirmOpen(false);
     };
 
     return (
@@ -239,7 +289,7 @@ export default function Administrator() {
                             />
                         </div>
                         <button
-
+                            onClick={initiateExport}
                             className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 transition-colors"
                         >
                             <Download className="w-4 h-4" />
@@ -315,18 +365,17 @@ export default function Administrator() {
                                                 </button>
                                             </td>
                                             <td className="p-4 font-medium text-[#777777]">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] flex items-center justify-center text-white text-[9px] font-semibold">
-                                                        {admin.name
-                                                            .split(" ")
-                                                            .map(n => n[0])
-                                                            .join("")
-                                                            .slice(0, 2)}
+                                                <div 
+                                                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
+                                                    onClick={() => {
+                                                        setSelectedAdminDetail(admin);
+                                                        setView('detail');
+                                                    }}
+                                                >
+                                                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                                        {admin.name ? admin.name.substring(0, 2) : 'NA'}
                                                     </div>
-
-                                                    <span className="text-sm text-[#777777] font-medium">
-                                                        {admin.name}
-                                                    </span>
+                                                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{admin.name}</span>
                                                 </div>
                                             </td>
                                             <td className="p-4 text-start text-gray-500">
@@ -364,7 +413,7 @@ export default function Administrator() {
                                                     <select
                                                         value={admin.status}
                                                         onChange={(e) =>
-                                                            handleStatusChange(admin.id, e.target.value)
+                                                            handleStatusChangeClick(admin.id, admin.status)
                                                         }
                                                         className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border
         ${admin.status === "Active"
@@ -562,7 +611,7 @@ export default function Administrator() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setActiveModal(null)}
+                                onClick={handleCancel}
                                 className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50"
                             >
                                 Cancel
@@ -570,6 +619,173 @@ export default function Administrator() {
 
                         </div>
                     </form>
+                </div>
+            )}
+
+            {isEditConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Save Changes</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to save these changes?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsEditConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveAdmin}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDiscardConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to discard your changes? Any unsaved edits will be lost.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsDiscardConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Continue Editing
+                            </button>
+                            <button
+                                onClick={confirmDiscard}
+                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Discard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isExportConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to download the admin list?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsExportConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isStatusConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the status of this admin?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsStatusConfirmOpen(false);
+                                    setStatusToUpdate(null);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmStatusChange}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {view === 'detail' && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl max-w-4xl w-full p-8 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setView('list')}
+                            className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                            <X size={14} />
+                        </button>
+
+                        {/* Header */}
+                        <div className="mb-8">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="w-8 h-8 bg-[#0A437A] rounded-lg flex items-center justify-center text-white">
+                                    <User size={18} />
+                                </div>
+                                <h1 className="text-2xl font-bold text-gray-900">{selectedAdminDetail?.name}</h1>
+                            </div>
+                            <p className="text-gray-400 text-sm ml-11">Administrator Details</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            {/* Main Content Area */}
+                            <div className="md:col-span-2 space-y-4">
+                                {/* Basic Info Section */}
+                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                                    <h3 className="text-lg font-semibold text-primary mb-4">Basic Info</h3>
+                                    <p className="text-xs text-gray-400 mb-6">Basic contact information of the Administrator</p>
+                                    <div className="grid grid-cols-2 gap-y-4">
+                                        <div className="text-sm"><span className="text-gray-500">Name</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.name}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Email</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.email || 'N/A'}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Phone Number</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Organization</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedAdminDetail?.organization || 'N/A'}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Status</span></div>
+                                        <div className="flex items-center text-sm font-medium text-gray-900">
+                                            : <span className="ml-2 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedAdminDetail?.status}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Summary Sidebar */}
+                            <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 h-fit">
+                                <h3 className="text-lg font-semibold text-primary mb-6">Admin Summary</h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Name</span> <span className="font-medium text-gray-900">{selectedAdminDetail?.name}</span></div>
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Organization</span> <span className="font-medium text-gray-900">{selectedAdminDetail?.organization}</span></div>
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Status</span> <span className="font-medium text-gray-900 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedAdminDetail?.status}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

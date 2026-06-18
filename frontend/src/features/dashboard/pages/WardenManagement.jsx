@@ -12,7 +12,8 @@ import {
     ChevronRight,
     X,
     Phone,
-    Download
+    Download,
+    User
 } from 'lucide-react';
 
 const INITIAL_WARDENS = [
@@ -41,6 +42,13 @@ export default function WardenManagement() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [activeModal, setActiveModal] = useState(null); // 'warden' | 'organization' | null
     const [editingWarden, setEditingWarden] = useState(null); // Holds object being edited
+    const [view, setView] = useState('list');
+    const [selectedWardenDetail, setSelectedWardenDetail] = useState(null);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
+    const [statusToUpdate, setStatusToUpdate] = useState(null);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -115,8 +123,17 @@ export default function WardenManagement() {
         }
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        setWardens(wardens.map(w => w.id === id ? { ...w, status: newStatus } : w));
+    const handleStatusChangeClick = (id, currentStatus) => {
+        setStatusToUpdate({ id, currentStatus });
+        setIsStatusConfirmOpen(true);
+    };
+
+    const confirmStatusChange = () => {
+        if (!statusToUpdate) return;
+        const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
+        setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+        setIsStatusConfirmOpen(false);
+        setStatusToUpdate(null);
     };
 
     const handleHostelChange = (id, newHostel) => {
@@ -146,6 +163,14 @@ export default function WardenManagement() {
         }
 
         if (editingWarden) {
+            setIsEditConfirmOpen(true);
+        } else {
+            saveWarden();
+        }
+    };
+
+    const saveWarden = () => {
+        if (editingWarden) {
             // Update Existing Record
             setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...wardenForm } : w));
         } else {
@@ -157,6 +182,30 @@ export default function WardenManagement() {
             setWardens([newWarden, ...wardens]);
         }
         setActiveModal(null);
+        setIsEditConfirmOpen(false);
+    };
+
+    const handleCancel = () => {
+        if (editingWarden) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            setActiveModal(null);
+        }
+    };
+
+    const confirmDiscard = () => {
+        setIsDiscardConfirmOpen(false);
+        setActiveModal(null);
+    };
+
+    const initiateExport = () => {
+        setIsExportConfirmOpen(true);
+    };
+
+    const handleExport = () => {
+        // Implement export logic (currently missing)
+        alert('Exporting data...');
+        setIsExportConfirmOpen(false);
     };
 
     return (
@@ -227,7 +276,7 @@ export default function WardenManagement() {
                             />
                         </div>
                         <button
-                            onClick={() => setActiveModal('organization')}
+                            onClick={initiateExport}
                             className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 transition-colors"
                         >
                             <Download className="w-4 h-4" />
@@ -303,11 +352,17 @@ export default function WardenManagement() {
                                                 </button>
                                             </td>
                                             <td className="p-4 font-medium text-[#777777]">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                                                        {warden.name ? warden.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'W'}
+                                                <div 
+                                                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
+                                                    onClick={() => {
+                                                        setSelectedWardenDetail(warden);
+                                                        setView('detail');
+                                                    }}
+                                                >
+                                                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                                        {warden.name ? warden.name.substring(0, 2) : 'NA'}
                                                     </div>
-                                                    {warden.name}
+                                                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{warden.name}</span>
                                                 </div>
                                             </td>
                                             <td className="p-4 text-center text-gray-500">
@@ -337,7 +392,7 @@ export default function WardenManagement() {
                                                 <div className="relative inline-block mx-auto">
                                                     <select
                                                         value={warden.status}
-                                                        onChange={(e) => handleStatusChange(warden.id, e.target.value)}
+                                                        onChange={(e) => handleStatusChangeClick(warden.id, warden.status)}
                                                         className={`appearance-none rounded-full px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${warden.status === 'Active'
                                                             ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
                                                             : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
@@ -527,7 +582,7 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setActiveModal(null)}
+                                onClick={handleCancel}
                                 className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-primary hover:bg-gray-50"
                             >
                                 Cancel
@@ -538,7 +593,172 @@ export default function WardenManagement() {
                 </div>
             )}
 
+            {isEditConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Save Changes</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to save these changes?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsEditConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveWarden}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
+            {isDiscardConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to discard your changes? Any unsaved edits will be lost.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsDiscardConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Continue Editing
+                            </button>
+                            <button
+                                onClick={confirmDiscard}
+                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Discard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isExportConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to download the warden list?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsExportConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isStatusConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the status of this warden?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsStatusConfirmOpen(false);
+                                    setStatusToUpdate(null);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmStatusChange}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {view === 'detail' && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl max-w-4xl w-full p-8 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setView('list')}
+                            className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                            <X size={14} />
+                        </button>
+
+                        {/* Header */}
+                        <div className="mb-8">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="w-8 h-8 bg-[#0A437A] rounded-lg flex items-center justify-center text-white">
+                                    <User size={18} />
+                                </div>
+                                <h1 className="text-2xl font-bold text-gray-900">{selectedWardenDetail?.name}</h1>
+                            </div>
+                            <p className="text-gray-400 text-sm ml-11">Warden Details</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            {/* Main Content Area */}
+                            <div className="md:col-span-2 space-y-4">
+                                {/* Basic Info Section */}
+                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                                    <h3 className="text-lg font-semibold text-primary mb-4">Basic Info</h3>
+                                    <p className="text-xs text-gray-400 mb-6">Basic contact information of the Warden</p>
+                                    <div className="grid grid-cols-2 gap-y-4">
+                                        <div className="text-sm"><span className="text-gray-500">Name</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedWardenDetail?.name}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Email</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedWardenDetail?.email || 'N/A'}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Phone Number</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedWardenDetail?.phone ? `+91 ${selectedWardenDetail.phone}` : 'N/A'}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Hostel</span></div>
+                                        <div className="text-sm font-medium text-gray-900">: {selectedWardenDetail?.hostel || 'N/A'}</div>
+
+                                        <div className="text-sm"><span className="text-gray-500">Status</span></div>
+                                        <div className="flex items-center text-sm font-medium text-gray-900">
+                                            : <span className="ml-2 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedWardenDetail?.status}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Summary Sidebar */}
+                            <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 h-fit">
+                                <h3 className="text-lg font-semibold text-primary mb-6">Warden Summary</h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Name</span> <span className="font-medium text-gray-900">{selectedWardenDetail?.name}</span></div>
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Hostel</span> <span className="font-medium text-gray-900">{selectedWardenDetail?.hostel}</span></div>
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">Status</span> <span className="font-medium text-gray-900 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedWardenDetail?.status}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
