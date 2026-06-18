@@ -6,7 +6,7 @@ export default function ParentsTable({
     selectedIds,
     onSelectAll,
     onSelect,
-    onStatusChange,
+    onStatusChangeRequest,
     onEdit,
     onDelete
 }) {
@@ -59,7 +59,7 @@ export default function ParentsTable({
                                     <div className="relative w-fit">
                                         <select
                                             value={p.status}
-                                            onChange={(e) => onStatusChange && onStatusChange(p.id, e.target.value)}
+                                            onChange={(e) => onStatusChangeRequest && onStatusChangeRequest(p, e.target.value)}
                                             className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
                                                 ${p.status === "Active"
                                                     ? "bg-green-50 text-success border-green-200/60"
