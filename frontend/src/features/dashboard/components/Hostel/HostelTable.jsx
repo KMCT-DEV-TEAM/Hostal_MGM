@@ -115,7 +115,7 @@ export default function HostelTable({
                                             <select
                                                 value={hostel.isActive ? 'Active' : 'Inactive'}
                                                 onChange={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
-                                                className={`appearance-none rounded-full px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${hostel.isActive
+                                                className={`appearance-none rounded-lg px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${hostel.isActive
                                                     ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
                                                     : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
                                                     }`}
@@ -144,6 +144,18 @@ export default function HostelTable({
 
             {/* Cards for Mobile */}
             <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0">
+                {!error && !loading && hostels.length > 0 && (
+                    <div className="flex items-center gap-2 px-1 mb-1">
+                        <button onClick={handleSelectAll} className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2">
+                            {hostels.length > 0 && hostels.every(h => selectedIds.includes(h._id)) ? (
+                                <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                            ) : (
+                                <Square className="w-5 h-5" />
+                            )}
+                            <span className="text-sm font-medium text-gray-600">Select All</span>
+                        </button>
+                    </div>
+                )}
                 {loading ? (
                     <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
@@ -219,7 +231,7 @@ export default function HostelTable({
                                     <button
                                         type="button"
                                         onClick={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
-                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium cursor-pointer transition-colors
+                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
                                             ${hostel.isActive ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-red-50 text-danger hover:bg-red-100'}`}
                                     >
                                         <span className={`w-1.5 h-1.5 rounded-full ${hostel.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>

@@ -38,7 +38,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.name}</span></div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.phone ? `${selectedWardenDetail.phone}` : 'N/A'}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span>
                                     <span className="sm:col-span-2 font-medium flex items-center justify-between"><span className="hidden sm:inline">: </span>
                                         <span className="flex-1">{selectedWardenDetail?.email || 'N/A'}</span>
@@ -61,7 +61,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                             <h3 className="text-lg font-semibold text-primary mb-1">Hostel Details</h3>
                             <p className="text-xs text-gray-400 mb-6">Details of assigned hostel</p>
                             <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-3 items-center">
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-3 items-start sm:items-center">
                                     <span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.hostel || 'N/A'}</span>
                                     <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>

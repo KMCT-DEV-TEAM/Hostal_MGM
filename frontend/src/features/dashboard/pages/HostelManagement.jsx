@@ -355,7 +355,7 @@ export default function HostelManagement() {
                                     <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium text-capitalize"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype || 'N/A'}</span></div>
                                     <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
                                     <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                         <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
                                         <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
                                             <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
@@ -374,7 +374,7 @@ export default function HostelManagement() {
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
                                         <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
