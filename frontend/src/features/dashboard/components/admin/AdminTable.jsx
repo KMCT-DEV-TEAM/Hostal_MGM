@@ -100,19 +100,19 @@ const AdminTable = ({
                                         {admin.email}
                                     </td>
                                     <td className="p-4">
-                                        <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                        <div className="flex items-start justify-start gap-1.5 text-gray-500">
                                             <Phone size={14} className="text-gray-400" />
                                             <span>{admin.phone}</span>
                                         </div>
                                     </td>
-                                    <td className="p-4">
-                                        <div className="relative w-[145px] mx-auto">
+                                    <td className="p-4 text-start justify-start">
+                                        <div className="relative w-[145px]">
                                             <select
                                                 value={admin.organization?._id || admin.organization || ""}
                                                 onChange={(e) =>
                                                     handleOrganizationChange(admin._id, e.target.value)
                                                 }
-                                                className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none cursor-pointer hover:border-gray-300 transition-colors"
+                                                className="w-full appearance-none text-start rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none cursor-pointer hover:border-gray-300 transition-colors"
                                             >
                                                 <option value="" disabled>Select Organization</option>
                                                 {organizations.map((org) => (
@@ -128,7 +128,7 @@ const AdminTable = ({
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <div className="relative w-fit mx-auto">
+                                        <div className="relative w-fit">
                                             <select
                                                 value={admin.isActive ? "Active" : "Inactive"}
                                                 onChange={(e) =>
@@ -155,7 +155,7 @@ ${admin.isActive
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <div className="flex items-center justify-center gap-3 text-gray-400">
+                                        <div className="flex items-center justify-start gap-3 text-gray-400">
                                             <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
