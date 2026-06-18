@@ -31,6 +31,8 @@ const OrganizationManagement = () => {
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
+    const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -57,15 +59,23 @@ const OrganizationManagement = () => {
         fetchOrganizations();
     }, [page]);
 
-    const handleStatusChange = async (id, currentStatus) => {
+    const handleStatusChangeClick = (id, currentStatus) => {
+        setStatusToUpdate({ id, currentStatus });
+        setIsStatusConfirmOpen(true);
+    };
+
+    const confirmStatusChange = async () => {
+        if (!statusToUpdate) return;
         try {
-            await organizationService.toggleStatus(id);
+            await organizationService.toggleStatus(statusToUpdate.id);
             // Re-fetch or locally update the status
             setOrgs((prevOrgs) =>
                 prevOrgs.map((org) =>
-                    org._id === id ? { ...org, isActive: !org.isActive } : org
+                    org._id === statusToUpdate.id ? { ...org, isActive: !org.isActive } : org
                 )
             );
+            setIsStatusConfirmOpen(false);
+            setStatusToUpdate(null);
         } catch (err) {
             console.error("Failed to toggle status:", err);
             alert("Failed to update status. Please try again.");
@@ -444,7 +454,7 @@ const OrganizationManagement = () => {
                                             <div className="relative w-fit mx-auto">
                                                 <select
                                                     value={o.isActive ? "Active" : "Inactive"}
-                                                    onChange={() => handleStatusChange(o._id, o.isActive)}
+                                                    onChange={() => handleStatusChangeClick(o._id, o.isActive)}
                                                     className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-regular border transition-colors cursor-pointer outline-none
                                                     ${o.isActive
                                                             ? "bg-green-50 text-success border-green-200 hover:bg-green-100"
@@ -764,6 +774,34 @@ const OrganizationManagement = () => {
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
                             >
                                 Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isStatusConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the status of this organization?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsStatusConfirmOpen(false);
+                                    setStatusToUpdate(null);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmStatusChange}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
                             </button>
                         </div>
                     </div>
