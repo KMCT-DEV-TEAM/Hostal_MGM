@@ -8,7 +8,8 @@ const AdminFormModal = ({
     adminForm,
     setAdminForm,
     handleSaveAdmin,
-    handleCancel
+    handleCancel,
+    organizations = []
 }) => {
     if (activeModal !== 'admin') return null;
 
@@ -111,12 +112,14 @@ const AdminFormModal = ({
                             <div className="relative">
                                 <select 
                                     className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]"
+                                    value={adminForm.organization || ''}
+                                    onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
+                                    required
                                 >
-                                    <option>Select an Organization</option>
-                                    <option>Kmct Engineering</option>
-                                    <option>Kmct Medical</option>
-                                    <option>Kmct Nursing</option>
-                                    <option>Kmct Dental</option>
+                                    <option value="" disabled>Select an Organization</option>
+                                    {organizations.map(org => (
+                                        <option key={org._id} value={org._id}>{org.name}</option>
+                                    ))}
                                 </select>
                                 <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
                             </div>

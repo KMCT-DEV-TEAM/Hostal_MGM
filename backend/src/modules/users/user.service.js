@@ -25,17 +25,32 @@ const getAllUsersByRoleDb = async (role) => {
   ).populate("organization", "name code organisationNumber email phone");
 };
 
-const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10) => {
+const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10, status, search) => {
   const skip = (page - 1) * limit;
+
+  let query = { role };
+
+  if (status && status !== 'All') {
+    query.isActive = status === 'Active';
+  }
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { phone: { $regex: search, $options: 'i' } }
+    ];
+  }
 
   const [users, totalCount] = await Promise.all([
     User.find(
-      { role },
+      query,
       {
         name: 1,
         email: 1,
         role: 1,
         isActive: 1,
+        phone: 1,
         createdAt: 1,
         organization: 1,
       }
@@ -44,7 +59,7 @@ const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10) => {
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 }),
-    User.countDocuments({ role }),
+    User.countDocuments(query),
   ]);
 
   return { users, totalCount };
@@ -104,6 +119,13 @@ const toggleUserActiveStatusByRoleDb = async (id, role) => {
   return user;
 };
 
+const bulkToggleUserStatusByRoleDb = async (ids, role, isActive) => {
+  return await User.updateMany(
+    { _id: { $in: ids }, role },
+    { $set: { isActive } }
+  );
+};
+
 export {
   findExistingUserByEmail,
   createUserDb,
@@ -113,5 +135,6 @@ export {
   getUserByIdDb,
   updateUserByRoleDb,
   updateUserDb,
-  toggleUserActiveStatusByRoleDb
+  toggleUserActiveStatusByRoleDb,
+  bulkToggleUserStatusByRoleDb
 }

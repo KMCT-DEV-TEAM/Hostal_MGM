@@ -10,6 +10,7 @@ import {
   updateAdmin, 
   updateUserEmail,
   toggleAdminStatus,
+  bulkToggleAdminStatus,
   createWarden,
   getWardens,
   getWardenById,
@@ -91,6 +92,12 @@ router.patch(
   toggleAdminStatus
 );
 
+router.post(
+  "/admins/bulk-toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  bulkToggleAdminStatus
+);
 
 // --- WARDEN ROUTES ---
 
