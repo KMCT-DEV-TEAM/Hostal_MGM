@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Check } from 'lucide-react';
 
 export default function WardenFormModal({
     activeModal,
@@ -7,7 +7,10 @@ export default function WardenFormModal({
     editingWarden,
     handleSaveWarden,
     handleCancel,
-    AVAILABLE_HOSTELS
+    AVAILABLE_HOSTELS,
+    isEmailVerified,
+    setIsOtpModalOpen,
+    setOtpSource
 }) {
     if (activeModal !== 'warden') return null;
 
@@ -81,12 +84,33 @@ export default function WardenFormModal({
                             {!editingWarden && (
                                 <div className="col-span-2">
                                     <label className="block text-[10px] font-medium text-black mb-1">Email Address *</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        placeholder="warden@example.com"
-                                        className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="email"
+                                            required
+                                            placeholder="warden@example.com"
+                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                        />
+                                        {isEmailVerified ? (
+                                            <button 
+                                                type="button"
+                                                className="px-4 py-2 bg-green-50 text-green-600 text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap"
+                                            >
+                                                <Check size={12} /> Verified
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    setOtpSource('addWarden');
+                                                    setIsOtpModalOpen(true);
+                                                }}
+                                                className="px-4 py-2 bg-[#0A437A] text-white text-[10px] font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer"
+                                            >
+                                                Verify
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import WardenHeader from '../components/Warden/WardenHeader';
 import WardenToolbar from '../components/Warden/WardenToolbar';
 import WardenTable from '../components/Warden/WardenTable';
@@ -6,20 +6,8 @@ import WardenMobileList from '../components/Warden/WardenMobileList';
 import WardenPagination from '../components/Warden/WardenPagination';
 import WardenDetailView from '../components/Warden/WardenDetailView';
 import WardenFormModal from '../components/Warden/WardenFormModal';
-import { Pencil } from 'lucide-react';
-
-const INITIAL_WARDENS = [
-    { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 1', status: 'Active' },
-    { id: 2, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 2', status: 'Inactive' },
-    { id: 3, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 3', status: 'Active' },
-    { id: 4, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 4', status: 'Inactive' },
-    { id: 5, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 5', status: 'Active' },
-    { id: 6, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 6', status: 'Active' },
-    { id: 7, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 7', status: 'Inactive' },
-    { id: 8, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 8', status: 'Active' },
-    { id: 9, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 9', status: 'Active' },
-    { id: 10, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 10', status: 'Active' },
-];
+import { Pencil, X, ArrowLeft, Check } from 'lucide-react';
+import wardenService from '../../../services/warden.service';
 
 const AVAILABLE_HOSTELS = [
     'Kmct Hostel 1', 'Kmct Hostel 2', 'Kmct Hostel 3', 'Kmct Hostel 4', 'Kmct Hostel 5',
@@ -28,7 +16,11 @@ const AVAILABLE_HOSTELS = [
 
 export default function WardenManagement() {
     // State management
-    const [wardens, setWardens] = useState(INITIAL_WARDENS);
+    const [wardens, setWardens] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [totalWardens, setTotalWardens] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -46,6 +38,11 @@ export default function WardenManagement() {
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [emailChangeWardenId, setEmailChangeWardenId] = useState(null);
+    const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+    const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
+    const [otpSource, setOtpSource] = useState(null); // 'emailChange' | 'addWarden'
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -63,25 +60,39 @@ export default function WardenManagement() {
     // ==========================================
     // FILTERING & PAGINATION LOGIC
     // ==========================================
-    const filteredWardens = useMemo(() => {
-        return wardens.filter(warden => {
-            const matchesSearch =
-                warden.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                warden.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                warden.phone.includes(searchQuery);
+    const fetchWardens = async () => {
+        try {
+            setLoading(true);
+            const res = await wardenService.getWardens({
+                page: currentPage,
+                limit: itemsPerPage,
+                search: searchQuery,
+                status: statusFilter
+            });
+            if (res && res.data) {
+                const formatted = res.data.map(w => ({
+                    ...w,
+                    id: w._id,
+                    status: w.isActive ? 'Active' : 'Inactive',
+                    hostel: w.hostel || 'Not Assigned'
+                }));
+                setWardens(formatted);
+                setTotalPages(res.totalPages || 1);
+                setTotalWardens(res.totalCount || 0);
+            }
+        } catch (err) {
+            setError(err.message || 'Failed to fetch wardens');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-            const matchesStatus = statusFilter === 'All' || warden.status === statusFilter;
+    useEffect(() => {
+        fetchWardens();
+    }, [currentPage, searchQuery, statusFilter]);
 
-            return matchesSearch && matchesStatus;
-        });
-    }, [wardens, searchQuery, statusFilter]);
-
-    const totalPages = Math.ceil(filteredWardens.length / itemsPerPage) || 1;
-
-    const paginatedWardens = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return filteredWardens.slice(startIndex, startIndex + itemsPerPage);
-    }, [filteredWardens, currentPage]);
+    // Since we are using backend pagination, the "paginatedWardens" is just the "wardens" array
+    const paginatedWardens = wardens;
 
     // ==========================================
     // SELECTION & ACTION HANDLERS
@@ -148,6 +159,7 @@ export default function WardenManagement() {
     const openChangeEmailModal = (warden) => {
         setEmailChangeWardenId(warden.id);
         setEmailChangeForm(warden.email || '');
+        setIsEmailVerified(false);
         setIsEmailChangeModalOpen(true);
     };
 
@@ -160,7 +172,11 @@ export default function WardenManagement() {
         }
 
         setIsEmailChangeModalOpen(false);
-        setEmailChangeWardenId(null);
+        setIsEmailChangeSuccessModalOpen(true);
+        setTimeout(() => {
+            setIsEmailChangeSuccessModalOpen(false);
+            setEmailChangeWardenId(null);
+        }, 2500);
     };
 
     // ==========================================
@@ -252,34 +268,41 @@ export default function WardenManagement() {
                 />
 
                 <WardenTable
+                    wardens={wardens}
                     paginatedWardens={paginatedWardens}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
+                    handleStatusChangeClick={handleStatusChangeClick}
+                    handleHostelChange={handleHostelChange}
+                    openEditWardenModal={openEditWardenModal}
                     setSelectedWardenDetail={setSelectedWardenDetail}
                     setView={setView}
-                    handleHostelChange={handleHostelChange}
-                    AVAILABLE_HOSTELS={AVAILABLE_HOSTELS}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    openEditWardenModal={openEditWardenModal}
+                    loading={loading}
+                    error={error}
                 />
 
                 <WardenMobileList
+                    wardens={wardens}
                     paginatedWardens={paginatedWardens}
                     selectedIds={selectedIds}
+                    handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
+                    handleStatusChangeClick={handleStatusChangeClick}
+                    handleHostelChange={handleHostelChange}
+                    openEditWardenModal={openEditWardenModal}
                     setSelectedWardenDetail={setSelectedWardenDetail}
                     setView={setView}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    openEditWardenModal={openEditWardenModal}
+                    loading={loading}
+                    error={error}
                 />
 
                 <WardenPagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    totalWardens={filteredWardens.length}
+                    totalWardens={totalWardens}
                     itemsPerPage={itemsPerPage}
-                    setCurrentPage={setCurrentPage}
+                    handlePageChange={setCurrentPage}
                 />
             </div>
 
@@ -290,6 +313,9 @@ export default function WardenManagement() {
                 handleSaveWarden={handleSaveWarden}
                 handleCancel={handleCancel}
                 AVAILABLE_HOSTELS={AVAILABLE_HOSTELS}
+                isEmailVerified={isEmailVerified}
+                setIsOtpModalOpen={setIsOtpModalOpen}
+                setOtpSource={setOtpSource}
             />
 
             {isEditConfirmOpen && (
@@ -424,36 +450,160 @@ export default function WardenManagement() {
             )}
 
             {isEmailChangeModalOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <form onSubmit={confirmEmailChange} className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900"><Pencil /></h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-4">
-                            Please enter the new email address for this warden.
+                <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+                    <form onSubmit={confirmEmailChange} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200">
+                        {/* Close Button */}
+                        <button
+                            type="button"
+                            onClick={() => setIsEmailChangeModalOpen(false)}
+                            className="absolute top-6 right-6 p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                            <X size={16} />
+                        </button>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-[#0A437A]">Change Email</h3>
+                        <p className="text-sm text-gray-400 mt-1 mb-6">
+                            Change the email of {wardens.find(w => w.id === emailChangeWardenId)?.name || 'the warden'}
                         </p>
-                        <input
-                            type="email"
-                            required
-                            value={emailChangeForm}
-                            onChange={(e) => setEmailChangeForm(e.target.value)}
-                            placeholder="Enter new email"
-                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] mb-6"
-                        />
-                        <div className="flex gap-2 justify-end">
+
+                        <hr className="border-gray-200 mb-6" />
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-[#222222] mb-2">Current Email <span className="text-red-500">*</span></label>
+                            <input
+                                type="email"
+                                value={emailChangeForm}
+                                onChange={(e) => setEmailChangeForm(e.target.value)}
+                                required
+                                placeholder="Enter your current email"
+                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                            />
+                        </div>
+
+                        <div className="mb-8">
+                            <label className="block text-sm font-medium text-[#222222] mb-2">New Email <span className="text-red-500">*</span></label>
+                            <div className="flex gap-3">
+                                <input
+                                    type="email"
+                                    required
+
+                                    placeholder="Enter your new email"
+                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                                />
+                                {isEmailVerified ? (
+                                    <button type="button" className="px-6 py-2.5 bg-primary text-white text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
+                                        <Check size={16} /> Verified
+                                    </button>
+                                ) : (
+                                    <button type="button" onClick={() => { setIsEmailChangeModalOpen(false); setOtpSource('emailChange'); setIsOtpModalOpen(true); }} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
+                                        Verify
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={!isEmailVerified}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-[#083663]' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                        >
+                            Change Email
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {isOtpModalOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        setIsOtpModalOpen(false);
+                        setIsEmailVerified(true);
+                        if (otpSource === 'emailChange') {
+                            setIsEmailChangeModalOpen(true);
+                        }
+                    }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
+                        {/* Top action buttons */}
+                        <div className="flex justify-between items-center mb-6">
                             <button
                                 type="button"
-                                onClick={() => setIsEmailChangeModalOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                onClick={() => { 
+                                    setIsOtpModalOpen(false); 
+                                    if (otpSource === 'emailChange') {
+                                        setIsEmailChangeModalOpen(true); 
+                                    }
+                                }}
+                                className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                             >
-                                Cancel
+                                <ArrowLeft size={24} strokeWidth={1.5} />
                             </button>
                             <button
-                                type="submit"
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                type="button"
+                                onClick={() => setIsOtpModalOpen(false)}
+                                className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                             >
-                                Save Changes
+                                <X size={16} />
                             </button>
                         </div>
+
+                        {/* Title & Subtitle */}
+                        <h3 className="text-[32px] font-bold text-[#0A437A] mb-4">Enter the code</h3>
+                        <p className="text-gray-500 mb-3 text-[15px]">
+                            A 6-digit code was send to <span className="text-[#0A437A]">{emailChangeForm || '@usergmail.com'}</span>
+                        </p>
+                        <p className="text-red-500 text-[15px] mb-10">Expires in 10 minutes</p>
+
+                        {/* OTP Inputs */}
+                        <div className="flex justify-center gap-2 sm:gap-3 mb-8">
+                            {otpCode.map((digit, idx) => (
+                                <input
+                                    key={idx}
+                                    type="text"
+                                    maxLength={1}
+                                    value={digit}
+                                    onChange={(e) => {
+                                        const newOtp = [...otpCode];
+                                        newOtp[idx] = e.target.value;
+                                        setOtpCode(newOtp);
+                                        if (e.target.value && e.target.nextSibling) {
+                                            e.target.nextSibling.focus();
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Backspace' && !digit && e.target.previousSibling) {
+                                            e.target.previousSibling.focus();
+                                        }
+                                    }}
+                                    className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border focus:outline-none transition-colors 
+                                        ${digit ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-300 text-[#0A437A] focus:border-[#0A437A]'}`}
+                                />
+                            ))}
+                        </div>
+
+                        <p className="text-[14px] text-gray-400 mb-8 font-medium">
+                            Didn't receive it ? <button type="button" className="text-[#0A437A] cursor-pointer hover:underline font-semibold">Resend the code</button>
+                        </p>
+
+                        {/* Verify Button */}
+                        <button
+                            type="submit"
+                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer text-lg"
+                        >
+                            Verify
+                        </button>
                     </form>
+                </div>
+            )}
+
+            {isEmailChangeSuccessModalOpen && (
+                <div className="fixed top-0 right-0 z-[60] animate-in slide-in-from-right-8 fade-in duration-300">
+                    <div className="bg-white rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] px-6 py-4 flex items-center gap-4 border border-gray-100">
+                        <div className="w-10 h-10 rounded-full border border-[#85A947] flex items-center justify-center shrink-0">
+                            <Check className="w-5 h-5 text-[#85A947]" strokeWidth={2} />
+                        </div>
+                        <h3 className="text-[16px] font-medium text-gray-900">Email Was Changed Successfully !</h3>
+                    </div>
                 </div>
             )}
 

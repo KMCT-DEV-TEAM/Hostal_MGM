@@ -38,7 +38,7 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Organization Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.code}</span></div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span> 
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
                                         <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
@@ -72,7 +72,7 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                         <div className="space-y-4">
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Organization Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.code}</span></div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.name}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                 <span className="text-[#777777] flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span> 
                                 <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
                                     <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
