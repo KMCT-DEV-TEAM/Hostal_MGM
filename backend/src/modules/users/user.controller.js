@@ -22,7 +22,7 @@ import Hostel from "../hostels/hostel.model.js";
 // --- ADMIN CONTROLLERS ---
 
 const createAdmin = asyncHandler(async (req, res) => {
-    const { name, email, organizationId } = req.body;
+    const { name, email, phone, organizationId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -41,6 +41,7 @@ const createAdmin = asyncHandler(async (req, res) => {
     const admin = await createUserDb({
         name,
         email,
+        phone,
         password: hashedPassword,
         organization: organizationId,
         temppass: true,
@@ -58,7 +59,7 @@ const createAdmin = asyncHandler(async (req, res) => {
         console.error("Failed to send temporary password email:", error);
     }
 
-    return sendSuccess(res, 201, "Admin created successfully and email sent");
+    return sendSuccess(res, 201, "Admin created successfully and email sent", admin);
 });
 
 const getAdmins = asyncHandler(async (req, res) => {

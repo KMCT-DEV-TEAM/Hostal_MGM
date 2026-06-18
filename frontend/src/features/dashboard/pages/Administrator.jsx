@@ -40,6 +40,7 @@ const INITIAL_ADMINS = [
 
 import adminService from '../../../services/admin.service';
 import organizationService from '../../../services/organization.service';
+import otpService from '../../../services/otp.service';
 import * as XLSX from 'xlsx';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
@@ -62,6 +63,7 @@ export default function Administrator() {
     // Email Change Flow State
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
     const [emailChangeForm, setEmailChangeForm] = useState('');
+    const [newEmailForm, setNewEmailForm] = useState('');
     const [emailChangeAdminId, setEmailChangeAdminId] = useState(null);
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
@@ -100,9 +102,12 @@ export default function Administrator() {
                 status: statusFilter
             });
             if (res && res.data) {
-                setAdmins(res.data);
-                setTotalAdmins(res.totalCount || 0);
-                setTotalPages(res.totalPages || 1);
+                // Backend might wrap data in { data: [...], totalCount: ... } inside res.data
+                const dataPayload = res.data;
+                const adminList = dataPayload.data || dataPayload;
+                setAdmins(Array.isArray(adminList) ? adminList : []);
+                setTotalAdmins(dataPayload.totalCount || res.totalCount || 0);
+                setTotalPages(dataPayload.totalPages || res.totalPages || 1);
             }
         } catch (err) {
             console.error("Failed to fetch admins:", err);
@@ -200,25 +205,36 @@ export default function Administrator() {
     const openChangeEmailModal = (admin) => {
         setEmailChangeAdminId(admin._id);
         setEmailChangeForm(admin.email || '');
+        setNewEmailForm('');
         setIsEmailVerified(false);
         setIsEmailChangeModalOpen(true);
     };
 
-    const confirmEmailChange = (e) => {
+    const confirmEmailChange = async (e) => {
         e.preventDefault();
-        setAdmins(admins.map(a => a._id === emailChangeAdminId ? { ...a, email: emailChangeForm } : a));
+        try {
+            await adminService.updateEmail(emailChangeAdminId, {
+                oldEmail: emailChangeForm,
+                newEmail: newEmailForm
+            });
 
-        if (selectedAdminDetail && selectedAdminDetail._id === emailChangeAdminId) {
-            setSelectedAdminDetail({ ...selectedAdminDetail, email: emailChangeForm });
+            setAdmins(admins.map(a => a._id === emailChangeAdminId ? { ...a, email: newEmailForm } : a));
+
+            if (selectedAdminDetail && selectedAdminDetail._id === emailChangeAdminId) {
+                setSelectedAdminDetail({ ...selectedAdminDetail, email: newEmailForm });
+            }
+
+            setIsEmailChangeModalOpen(false);
+            setIsEmailChangeSuccessModalOpen(true);
+            showSuccessToast('Email Updated', 'Administrator email updated successfully');
+            setTimeout(() => {
+                setIsEmailChangeSuccessModalOpen(false);
+                setEmailChangeAdminId(null);
+                setNewEmailForm('');
+            }, 2500);
+        } catch (error) {
+            showErrorToast('Error', error?.response?.data?.message || 'Failed to update email');
         }
-
-        setIsEmailChangeModalOpen(false);
-        setIsEmailChangeSuccessModalOpen(true);
-        showSuccessToast('Email Updated', 'Administrator email updated successfully');
-        setTimeout(() => {
-            setIsEmailChangeSuccessModalOpen(false);
-            setEmailChangeAdminId(null);
-        }, 2500);
     };
 
     const handleBulkStatusClick = (isActive) => {
@@ -271,20 +287,27 @@ export default function Administrator() {
     // ==========================================
     const openAddAdminModal = () => {
         setEditingAdmin(null);
-        setAdminForm({ name: '', email: '', phone: '', hostel: ' ', status: 'Active' });
+        setAdminForm({ name: '', email: '', phone: '', organization: organizations[0]?._id || '', status: 'Active' });
+        setIsEmailVerified(false);
         setActiveModal('admin');
     };
 
     const openEditAdminModal = (admin) => {
         setEditingAdmin(admin);
-        setAdminForm({ ...admin });
+        setAdminForm({ ...admin, organization: admin.organization?._id || admin.organization });
+        setIsEmailVerified(true);
         setActiveModal('admin');
     };
 
     const handleSaveAdmin = (e) => {
         e.preventDefault();
-        if (!adminForm.name || !adminForm.email || !adminForm.phone) {
+        if (!adminForm.name || !adminForm.email || !adminForm.phone || (!editingAdmin && !adminForm.organization)) {
             showErrorToast('Validation Error', 'Please fill in all required fields');
+            return;
+        }
+
+        if (!isEmailVerified && !editingAdmin) {
+            showErrorToast('Validation Error', 'Please verify your email before saving');
             return;
         }
 
@@ -292,6 +315,24 @@ export default function Administrator() {
             setIsEditConfirmOpen(true);
         } else {
             saveAdmin();
+        }
+    };
+
+    const handleVerifyClick = async (email, source = 'addAdmin') => {
+        if (!email) {
+            showErrorToast('Validation Error', 'Please enter an email first');
+            return;
+        }
+        try {
+            await otpService.sendOtp(email);
+            setOtpSource(source);
+            setOtpCode(['', '', '', '', '', '']);
+            setIsOtpModalOpen(true);
+            if (source === 'emailChange') {
+                setIsEmailChangeModalOpen(false);
+            }
+        } catch (error) {
+            showErrorToast('Error', error?.response?.data?.message || 'Failed to send OTP');
         }
     };
 
@@ -321,9 +362,16 @@ export default function Administrator() {
                     phone: adminForm.phone,
                     organizationId: adminForm.organization
                 });
-                if (res && res.data) {
-                    setAdmins([res.data, ...admins]);
-                    fetchAdmins(); // re-fetch to ensure pagination is consistent
+                if (res && res.success) {
+                    const newAdmin = res.data;
+                    if (newAdmin) {
+                        // Optimistically populate organization details for the table
+                        const org = organizations.find(o => o._id === adminForm.organization);
+                        const populatedAdmin = { ...newAdmin, organization: org || { _id: adminForm.organization } };
+                        setAdmins(prev => [populatedAdmin, ...prev]);
+                    }
+                    setCurrentPage(1);
+                    fetchAdmins(); // re-fetch to ensure pagination is consistent and fields are populated
                     showSuccessToast('Administrator Added', 'New administrator registered successfully');
                 }
             } catch (error) {
@@ -549,6 +597,8 @@ export default function Administrator() {
                     handleSaveAdmin={handleSaveAdmin}
                     handleCancel={handleCancel}
                     organizations={organizations}
+                    isEmailVerified={isEmailVerified}
+                    handleVerifyClick={handleVerifyClick}
                 />
             )}
 
@@ -731,16 +781,20 @@ export default function Administrator() {
                                 <input
                                     type="email"
                                     required
-                                    disabled={isEmailVerified}
+
+                                    value={newEmailForm}
+                                    onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
-                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200"
+                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
+                                    disabled={isEmailVerified}
+
                                 />
                                 {isEmailVerified ? (
                                     <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => { setIsEmailChangeModalOpen(false); setOtpSource('emailChange'); setIsOtpModalOpen(true); }} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
+                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
                                         Verify
                                     </button>
                                 )}
@@ -760,12 +814,24 @@ export default function Administrator() {
 
             {isOtpModalOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
-                    <form onSubmit={(e) => {
+                    <form onSubmit={async (e) => {
                         e.preventDefault();
-                        setIsOtpModalOpen(false);
-                        setIsEmailVerified(true);
-                        if (otpSource === 'emailChange') {
-                            setIsEmailChangeModalOpen(true);
+                        const code = otpCode.join('');
+                        if (code.length < 6) return;
+                        
+                        try {
+                            const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
+                            await otpService.verifyOtp(emailToVerify, code);
+                            
+                            setIsOtpModalOpen(false);
+                            setIsEmailVerified(true);
+                            if (otpSource === 'emailChange') {
+                                setIsEmailChangeModalOpen(true);
+                            } else {
+                                showSuccessToast('Success', 'Email verified successfully!');
+                            }
+                        } catch(err) {
+                            showErrorToast('Error', err?.response?.data?.message || 'Invalid OTP');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         <div className="flex justify-between items-center mb-6">
@@ -792,7 +858,7 @@ export default function Administrator() {
 
                         <h3 className="text-[32px] font-bold text-[#0A437A] mb-4">Enter the code</h3>
                         <p className="text-gray-500 mb-3 text-[15px]">
-                            A 6-digit code was send to <span className="text-[#0A437A]">{emailChangeForm || '@usergmail.com'}</span>
+                            A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : adminForm.email || '@usergmail.com'}</span>
                         </p>
                         <p className="text-red-500 text-[15px] mb-10">Expires in 10 minutes</p>
 
