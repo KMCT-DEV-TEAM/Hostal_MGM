@@ -42,6 +42,8 @@ export default function HostelManagement() {
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
+    const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
+    const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
 
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedHostelDetail, setSelectedHostelDetail] = useState(null);
@@ -202,12 +204,19 @@ export default function HostelManagement() {
         }
     };
 
-    const handleBulkStatus = async (isActive) => {
-        if (selectedIds.length === 0) return;
+    const handleBulkStatusClick = (isActive) => {
+        setBulkStatusToUpdate(isActive);
+        setIsBulkStatusConfirmOpen(true);
+    };
+
+    const confirmBulkStatusChange = async () => {
+        if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
             setLoading(true);
-            await hostelService.bulkToggleStatus({ ids: selectedIds, isActive });
+            await hostelService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             setSelectedIds([]); // clear selection
+            setIsBulkStatusConfirmOpen(false);
+            setBulkStatusToUpdate(null);
             fetchHostels(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
@@ -381,7 +390,7 @@ export default function HostelManagement() {
                 <div className="flex items-center gap-3">
                     {selectedIds.length > 0 && (
                         <button
-                            onClick={() => handleBulkStatus(true)}
+                            onClick={() => handleBulkStatusClick(true)}
                             className="flex items-center gap-2 px-4 py-2 border border-[#0A437A] text-[#0A437A] bg-blue-50/40 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                         >
                             Active ({selectedIds.length})
@@ -390,7 +399,7 @@ export default function HostelManagement() {
 
                     {selectedIds.length > 0 && (
                         <button
-                            onClick={() => handleBulkStatus(false)}
+                            onClick={() => handleBulkStatusClick(false)}
                             className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
                         >
                             Inactive({selectedIds.length})
@@ -452,7 +461,7 @@ export default function HostelManagement() {
                 {/* ==========================================
                 DATA TABLE LAYOUT
                 ========================================== */}
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
@@ -531,10 +540,10 @@ export default function HostelManagement() {
                                                         setView('detail');
                                                     }}
                                                 >
-                                                    <div className="w-6 h-6 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                                                        {hostel.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                                        {hostel.name ? hostel.name.substring(0, 2) : 'NA'}
                                                     </div>
-                                                    {hostel.name}
+                                                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{hostel.name}</span>
                                                 </div>
                                             </td>
                                             <td className="p-4 text-start text-gray-500">
@@ -814,7 +823,7 @@ export default function HostelManagement() {
                                 disabled={isSubmitting}
                                 className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save changes'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingHostel ? 'Save changes' : 'Save')}
                             </button>
                             <button
                                 type="button"
@@ -925,6 +934,34 @@ export default function HostelManagement() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isBulkStatusConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Bulk Change Status</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the status for the {selectedIds.length} selected hostel(s)?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsBulkStatusConfirmOpen(false);
+                                    setBulkStatusToUpdate(null);
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmBulkStatusChange}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
                             >
                                 Confirm
