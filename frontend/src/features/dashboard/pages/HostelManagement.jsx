@@ -316,7 +316,7 @@ export default function HostelManagement() {
 
         return (
             <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-2xl max-w-4xl w-full p-8 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-white rounded-2xl max-w-5xl w-full p-5 sm:p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {/* Close Button */}
                     <button
                         onClick={() => setView('list')}
@@ -340,34 +340,23 @@ export default function HostelManagement() {
                         {/* Main Content Area */}
                         <div className="md:col-span-2 space-y-4">
                             {/* Basic Info Section */}
-                            <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                            <div className="bg-gray-50/50 p-5 sm:p-6 rounded-xl border border-gray-100">
                                 <h3 className="text-lg font-semibold text-primary mb-4">Basic Info</h3>
                                 <p className="text-xs text-gray-400 mb-6">Basic contact information of the Hostel</p>
-                                <div className="grid grid-cols-2 gap-y-4">
-                                    <div className="text-sm"><span className="text-gray-500">Hostel Name</span></div>
-                                    <div className="text-sm font-medium text-gray-900">: {selectedHostelDetail.name}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Hostel Code</span></div>
-                                    <div className="text-sm font-medium text-gray-900">: {selectedHostelDetail.code || 'N/A'}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Hostel Type</span></div>
-                                    <div className="text-sm font-medium text-gray-900 text-capitalize">: {selectedHostelDetail.hosteltype || 'N/A'}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Email</span></div>
-                                    <div className="text-sm font-medium text-gray-900">: {selectedHostelDetail.email || 'N/A'}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Phone Number</span></div>
-                                    <div className="text-sm font-medium text-gray-900">: {selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Location</span></div>
-                                    <div className="text-sm font-medium text-gray-900">: {selectedHostelDetail.location || 'N/A'}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Capacity</span></div>
-                                    <div className="text-sm font-medium text-gray-900">: {selectedHostelDetail.capacity || 'N/A'}</div>
-
-                                    <div className="text-sm"><span className="text-gray-500">Status</span></div>
-                                    <div className="flex items-center text-sm font-medium text-gray-900">
-                                        : <span className="ml-2 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedHostelDetail.isActive ? 'Active' : 'Inactive'}</span>
+                                <div className="space-y-4">
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Code</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.code || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Type</span> <span className="sm:col-span-2 font-medium text-capitalize"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.email || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Location</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.location || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                                        <span className="text-gray-500">Status</span> 
+                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline">: </span>
+                                            <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} sm:ml-2 mr-2`}></span>
+                                            {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -376,13 +365,19 @@ export default function HostelManagement() {
                         </div>
 
                         {/* Right Summary Sidebar */}
-                        <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 h-fit">
+                        <div className="bg-gray-50/50 p-5 sm:p-6 rounded-xl border border-gray-100 h-fit">
                             <h3 className="text-lg font-semibold text-primary mb-6">Hostel Summary</h3>
                             <div className="space-y-4">
-                                <div className="flex justify-between text-sm"><span className="text-gray-500">Hostel Name</span> <span className="font-medium text-gray-900">{selectedHostelDetail.name}</span></div>
-                                <div className="flex justify-between text-sm"><span className="text-gray-500">Hostel Type</span> <span className="font-medium text-gray-900">{selectedHostelDetail.hosteltype}</span></div>
-                                <div className="flex justify-between text-sm"><span className="text-gray-500">Status</span> <span className="font-medium text-gray-900 flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>{selectedHostelDetail.isActive ? 'Active' : 'Inactive'}</span></div>
-                                <div className="flex justify-between text-sm"><span className="text-gray-500">Capacity</span> <span className="font-medium text-gray-900">{selectedHostelDetail.capacity}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                                    <span className="text-gray-500">Status</span> 
+                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline">: </span>
+                                        <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} sm:ml-2 mr-2`}></span>
+                                        {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity}</span></div>
                             </div>
                         </div>
                     </div>
@@ -392,7 +387,7 @@ export default function HostelManagement() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] flex flex-col bg-[#F8FAFC] p-6 text-gray-700 font-sans relative overflow-hidden">
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
             <HostelHeader
                 selectedIds={selectedIds}
@@ -402,8 +397,7 @@ export default function HostelManagement() {
             {/* ==========================================
              FILTER & UTILITY TOOLBAR
              ========================================== */}
-
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 <HostelToolbar
                     statusFilter={statusFilter}
                     setStatusFilter={setStatusFilter}

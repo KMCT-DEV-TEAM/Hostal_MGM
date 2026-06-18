@@ -6,7 +6,7 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl max-w-5xl w-full p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="bg-white rounded-2xl max-w-5xl w-full p-5 sm:p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {/* Close Button */}
                 <button
                     onClick={() => setView('list')}
@@ -36,12 +36,12 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                             <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
                             <p className="text-xs text-gray-400 mb-6">Basic contact information of the Organization</p>
                             <div className="space-y-4">
-                                <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Organization Id</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.code}</span></div>
-                                <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Organization Name</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.name}</span></div>
-                                <div className="grid grid-cols-3 text-sm">
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Organization Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.code}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Organization Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.name}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
                                     <span className="text-gray-500">Status</span> 
-                                    <span className="col-span-2 font-medium flex items-center">: 
-                                        <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
+                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline">: </span>
+                                        <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-red-500'} sm:mx-2 mr-2`}></span>
                                         {selectedOrganizationDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
                                 </div>
@@ -52,7 +52,7 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
                             <p className="text-xs text-gray-400 mb-6">Address information of the Organization</p>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Full Address</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.address}</span></div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Full Address</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.address}</span></div>
                         </div>
 
                         {/* Contact Information */}
@@ -60,27 +60,27 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                             <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
                             <p className="text-xs text-gray-400 mb-6">Contact information of the Organization</p>
                             <div className="space-y-4">
-                                <div className="grid grid-cols-3 text-sm"><span className="text-[#777777]">Phone No</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.phone}</span></div>
-                                <div className="grid grid-cols-3 text-sm"><span className="text-[#777777]">Email</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.email}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777]">Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.phone}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777]">Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.email}</span></div>
                             </div>
                         </div>
                     </div>
 
                     {/* Right Summary Sidebar */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                    <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
                         <h3 className="text-lg font-semibold text-primary mb-4">Organization Summary</h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-3 text-sm"><span className="text-[#777777]">Organization Id</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.code}</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-[#777777]">Organization Name</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.name}</span></div>
-                            <div className="grid grid-cols-3 text-sm">
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777]">Organization Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.code}</span></div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777]">Organization Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.name}</span></div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
                                 <span className="text-[#777777]">Status</span> 
-                                <span className="col-span-2 font-medium flex items-center">: 
-                                    <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline">: </span>
+                                    <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-red-500'} sm:ml-2 mr-2`}></span>
                                     {selectedOrganizationDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-[#777777]">Phone No</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.phone}</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-[#777777]">Email</span> <span className="col-span-2 font-medium">: {selectedOrganizationDetail.email}</span></div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777]">Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.phone}</span></div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777]">Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.email}</span></div>
                         </div>
                     </div>
                 </div>

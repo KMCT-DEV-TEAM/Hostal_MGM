@@ -9,18 +9,18 @@ export default function HostelPagination({
     handlePageChange
 }) {
     return (
-        <div className="p-4 bg-white border-t border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-medium text-gray-500 flex-shrink-0">
-            <div className="text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
+            <div>
                 Showing {totalHostels === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{" "}
                 {Math.min(currentPage * itemsPerPage, totalHostels)} of {totalHostels} entries
             </div>
 
-            <div className="flex items-center justify-center sm:justify-end gap-1">
+            <div className="flex items-center gap-1">
                 <button
                     type="button"
                     disabled={currentPage === 1}
                     onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
-                    className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
+                    className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -33,8 +33,8 @@ export default function HostelPagination({
                             type="button"
                             onClick={() => handlePageChange(pageNum)}
                             className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
-                                ? "bg-[#0A437A] text-white border border-[#0A437A] shadow-sm"
-                                : "text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                                ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                : 'border border-transparent text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
                             {pageNum}
@@ -46,7 +46,7 @@ export default function HostelPagination({
                     type="button"
                     disabled={currentPage === totalPages || totalPages === 0}
                     onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
-                    className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
+                    className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
                     <ChevronRight className="w-4 h-4" />
                 </button>
