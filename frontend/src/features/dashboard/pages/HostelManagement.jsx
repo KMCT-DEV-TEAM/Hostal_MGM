@@ -461,7 +461,7 @@ export default function HostelManagement() {
                 {/* ==========================================
                 DATA TABLE LAYOUT
                 ========================================== */}
-                <div className="overflow-x-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="overflow-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">

@@ -295,7 +295,7 @@ export default function WardenManagement() {
                 {/* ==========================================
                 DATA TABLE LAYOUT
                 ========================================== */}
-                <div className="overflow-x-auto">
+                <div className="overflow-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">

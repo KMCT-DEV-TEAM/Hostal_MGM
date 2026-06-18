@@ -24,6 +24,9 @@ const adminApi = {
 
   getSuperAdminDashboardStats: () =>
     api.get("/super-admin/dashboard/stats"),
+
+  getStudentCountByOrganization: () =>
+    api.get("/super-admin/dashboard/student-count-by-organization"),
 };
 
 export default adminApi;
