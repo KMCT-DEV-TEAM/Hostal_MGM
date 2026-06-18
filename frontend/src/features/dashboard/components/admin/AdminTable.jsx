@@ -1,5 +1,5 @@
 import React from 'react';
-import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone } from 'lucide-react';
+import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Loader2 } from 'lucide-react';
 
 const AdminTable = ({
     paginatedAdmins,
@@ -12,7 +12,9 @@ const AdminTable = ({
     handleOrganizationChange,
     handleStatusChangeClick,
     handleDeleteAdmin,
-    openEditAdminModal
+    openEditAdminModal,
+    loading,
+    error
 }) => {
     return (
         <div className="hidden md:block overflow-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -28,30 +30,43 @@ const AdminTable = ({
                                 )}
                             </button>
                         </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Name
                         </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Email
                         </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Phone
                         </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Organization
                         </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Status
                         </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Action
                         </th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
-                    {paginatedAdmins.length === 0 ? (
+                    {loading ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your matching layout search criteria.</td>
+                            <td colSpan="7" className="p-8 text-center text-gray-400">
+                                <div className="flex flex-col items-center justify-center space-y-2">
+                                    <Loader2 className="w-8 h-8 animate-spin text-[#0A437A]" />
+                                    <span className="text-sm">Loading administrators...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    ) : error ? (
+                        <tr>
+                            <td colSpan="7" className="p-8 text-center text-red-500">{error}</td>
+                        </tr>
+                    ) : paginatedAdmins.length === 0 ? (
+                        <tr>
+                            <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your search criteria.</td>
                         </tr>
                     ) : (
                         paginatedAdmins.map((admin) => {
@@ -97,7 +112,7 @@ const AdminTable = ({
                                                 onChange={(e) =>
                                                     handleOrganizationChange(admin._id, e.target.value)
                                                 }
-                                                className="w-full appearance-none rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs text-gray-700 focus:outline-none cursor-pointer"
+                                                className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none cursor-pointer hover:border-gray-300 transition-colors"
                                             >
                                                 <option value="" disabled>Select Organization</option>
                                                 {organizations.map((org) => (
@@ -119,7 +134,7 @@ const AdminTable = ({
                                                 onChange={(e) =>
                                                     handleStatusChangeClick(admin._id, admin.isActive ? "Active" : "Inactive")
                                                 }
-                                                className={`appearance-none rounded-full pl-4 pr-8 py-1 text-xs font-medium border cursor-pointer
+                                                className={`appearance-none rounded-lg pl-4 pr-8 py-1 text-xs font-medium border cursor-pointer
 ${admin.isActive
                                                         ? "bg-green-50 text-success border-green-100"
                                                         : "bg-red-50 text-danger border-red-100"

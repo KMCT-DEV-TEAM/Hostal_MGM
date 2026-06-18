@@ -651,7 +651,7 @@ export default function WardenManagement() {
                                     className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
                                 />
                                 {isEmailVerified ? (
-                                    <button type="button" className="px-6 py-2.5 bg-primary text-white text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
+                                    <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (

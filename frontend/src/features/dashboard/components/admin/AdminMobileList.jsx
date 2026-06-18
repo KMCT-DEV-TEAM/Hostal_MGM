@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Mail, Phone, Square, CheckSquare } from 'lucide-react';
+import { Pencil, Mail, Phone, Square, CheckSquare, Loader2 } from 'lucide-react';
 
 const AdminMobileList = ({
     paginatedAdmins,
@@ -10,7 +10,9 @@ const AdminMobileList = ({
     selectedIds,
     handleSelectAll,
     handleSelectRow,
-    handleOrganizationChange
+    handleOrganizationChange,
+    loading,
+    error
 }) => {
     const isAllSelected = paginatedAdmins.length > 0 && paginatedAdmins.every(o => selectedIds.includes(o._id));
 
@@ -28,9 +30,15 @@ const AdminMobileList = ({
                     </button>
                 </div>
             )}
-            
-            {paginatedAdmins.length === 0 ? (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No administrators match the selected filter.</div>
+            {loading ? (
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-sm text-gray-400">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#0A437A] mb-2" />
+                    <span className="text-sm">Loading administrators...</span>
+                </div>
+            ) : error ? (
+                <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm">{error}</div>
+            ) : paginatedAdmins.length === 0 ? (
+                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm">No administrators match the selected filter.</div>
             ) : (
                 paginatedAdmins.map((o) => {
                     const isSelected = selectedIds.includes(o._id);
@@ -87,7 +95,7 @@ const AdminMobileList = ({
                                     <select
                                         value={o.organization?._id || o.organization || ""}
                                         onChange={(e) => handleOrganizationChange(o._id, e.target.value)}
-                                        className="appearance-none bg-transparent border-b border-gray-200 text-gray-600 focus:outline-none focus:border-[#0A437A] py-0.5 cursor-pointer max-w-full"
+                                        className="appearance-none bg-white border border-gray-200 rounded-lg text-gray-600 focus:outline-none focus:border-[#0A437A] px-2 py-1 cursor-pointer max-w-full"
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <option value="" disabled>Select Organization</option>
@@ -102,7 +110,7 @@ const AdminMobileList = ({
                         </div>
 
                         <div className="flex justify-end mt-auto">
-                            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium
+                            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium
                                 ${o.isActive ? 'bg-green-50 text-success' : 'bg-red-50 text-danger'}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${o.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
                                 {o.isActive ? "Active" : "Inactive"}

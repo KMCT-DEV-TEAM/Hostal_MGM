@@ -110,7 +110,7 @@ const AdminFormModal = ({
                             <div className="border-b border-gray-100 mb-4" />
                             <label className="block text-[10px] font-medium text-gray-500 mb-1">Assign Organization *</label>
                             <div className="relative">
-                                <select 
+                                <select
                                     className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]"
                                     value={adminForm.organization || ''}
                                     onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
@@ -133,7 +133,7 @@ const AdminFormModal = ({
                         type="submit"
                         className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
                     >
-                        Save
+                        {editingAdmin ? 'Save Changes' : 'Save'}
                     </button>
                     <button
                         type="button"
