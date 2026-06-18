@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { checkExistingUser, createStudentWithParentDb, updateStudentDb, getStudentsService } from "./student.service.js";
+import { checkExistingUser, createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import User from "../users/user.model.js";
 import Student from "./student.model.js";
@@ -341,6 +341,21 @@ const getStudentsBySuperAdmin = asyncHandler(
   }
 );
 
+const getStudentFilterOptions = asyncHandler(async (req, res) => {
+  const filters = await getStudentFilterOptionsService({
+    role: req.user.role,
+    userId: req.user.id,
+    organizationId: req.query.organizationId,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Student filter options fetched successfully",
+    { filters }
+  );
+});
+
 
 
 export {
@@ -354,4 +369,5 @@ export {
   getAdminStats,
   getStudentsByAdmin,
   getStudentsBySuperAdmin,
+  getStudentFilterOptions,
 };

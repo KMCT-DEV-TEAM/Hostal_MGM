@@ -1,7 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, Download, SlidersHorizontal, Plus } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 
-export default function StudentsToolbar({ onSearch, onFilterClick, onExport, onAddClick }) {
+export default function StudentsToolbar({ canCreate, searchValue = '', onSearch, onFilterClick, onExport, onAddClick }) {
+    const [searchTerm, setSearchTerm] = useState(searchValue);
+    const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
+    useEffect(() => {
+        setSearchTerm(searchValue);
+    }, [searchValue]);
+
+    useEffect(() => {
+        onSearch?.(debouncedSearchTerm);
+    }, [debouncedSearchTerm, onSearch]);
+
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
             <div className="flex gap-3">
@@ -10,7 +22,8 @@ export default function StudentsToolbar({ onSearch, onFilterClick, onExport, onA
                     <input 
                         className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm" 
                         placeholder="Search" 
-                        onChange={(e) => onSearch && onSearch(e.target.value)}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <button
@@ -24,9 +37,11 @@ export default function StudentsToolbar({ onSearch, onFilterClick, onExport, onA
                 <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm">
                     <Download className="w-4 h-4" /> Export
                 </button>
-                <button onClick={onAddClick} className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm">
-                    <Plus className="w-4 h-4" /> Add New
-                </button>
+                {canCreate && (
+                    <button onClick={onAddClick} className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm">
+                        <Plus className="w-4 h-4" /> Add New
+                    </button>
+                )}
             </div>
         </div>
     );

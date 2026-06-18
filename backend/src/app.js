@@ -56,6 +56,7 @@ app.use("/api/admin/parents", parentRoutes);
 
 
 app.use("/api/warden", wardenRoutes);
+app.use("/api/warden/students", studentRoutes);
 
 app.use(errorMiddleware);
 

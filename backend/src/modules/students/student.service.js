@@ -251,6 +251,22 @@ const getStudentsService = async ({
 
     {
       $lookup: {
+        from: "organizations",
+        localField: "organizationId",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+
+    {
+      $unwind: {
+        path: "$organization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    {
+      $lookup: {
         from: "parents",
         localField: "_id",
         foreignField: "studentId",
@@ -270,6 +286,7 @@ const getStudentsService = async ({
       $project: {
         _id: 1,
         studentId: 1,
+        organizationId: 1,
         name: 1,
         email: 1,
         phone: 1,
@@ -282,6 +299,11 @@ const getStudentsService = async ({
         hostelStatus: 1,
         isActive: 1,
         createdAt: 1,
+        organization: {
+          _id: "$organization._id",
+          name: "$organization.name",
+          code: "$organization.code",
+        },
 
         hostel: {
           _id: "$hostel._id",
@@ -336,6 +358,182 @@ const getStudentsService = async ({
   };
 };
 
+const getStudentFilterOptionsService = async ({
+  role,
+  userId,
+  organizationId,
+}) => {
+  const matchStage = {};
+
+  if (role === "admin") {
+    const admin = await User.findById(userId)
+      .select("organization")
+      .lean();
+
+    if (!admin?.organization) {
+      const error = new Error("Admin is not assigned to any organization");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    matchStage.organizationId = new mongoose.Types.ObjectId(admin.organization);
+  }
+
+  if (role === "super_admin" && organizationId) {
+    if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+      const error = new Error("Invalid organizationId");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    matchStage.organizationId = new mongoose.Types.ObjectId(organizationId);
+  }
+
+  const [result = {}] = await Student.aggregate([
+    {
+      $match: matchStage,
+    },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "hostelId",
+        foreignField: "_id",
+        as: "hostel",
+      },
+    },
+    {
+      $unwind: {
+        path: "$hostel",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $facet: {
+        courses: [
+          {
+            $match: {
+              course: { $nin: [null, ""] },
+            },
+          },
+          {
+            $group: {
+              _id: "$course",
+            },
+          },
+          {
+            $sort: {
+              _id: 1,
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              value: "$_id",
+              label: "$_id",
+            },
+          },
+        ],
+        departments: [
+          {
+            $match: {
+              department: { $nin: [null, ""] },
+            },
+          },
+          {
+            $group: {
+              _id: "$department",
+            },
+          },
+          {
+            $sort: {
+              _id: 1,
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              value: "$_id",
+              label: "$_id",
+            },
+          },
+        ],
+        hostels: [
+          {
+            $match: {
+              "hostel._id": { $ne: null },
+            },
+          },
+          {
+            $group: {
+              _id: "$hostel._id",
+              name: { $first: "$hostel.name" },
+              code: { $first: "$hostel.code" },
+            },
+          },
+          {
+            $sort: {
+              name: 1,
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              code: 1,
+            },
+          },
+        ],
+        organizations: [
+          {
+            $lookup: {
+              from: "organizations",
+              localField: "organizationId",
+              foreignField: "_id",
+              as: "organization",
+            },
+          },
+          {
+            $unwind: {
+              path: "$organization",
+              preserveNullAndEmptyArrays: false,
+            },
+          },
+          {
+            $group: {
+              _id: "$organization._id",
+              name: { $first: "$organization.name" },
+              code: { $first: "$organization.code" },
+            },
+          },
+          {
+            $sort: {
+              name: 1,
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              code: 1,
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return {
+    courses: result.courses || [],
+    departments: result.departments || [],
+    hostels: result.hostels || [],
+    organizations: role === "super_admin" ? result.organizations || [] : [],
+    statuses: [
+      { label: "Active", value: "true" },
+      { label: "Inactive", value: "false" },
+    ],
+  };
+};
+
 
 
 
@@ -344,4 +542,5 @@ export {
   createStudentWithParentDb,
   updateStudentDb,
   getStudentsService,
+  getStudentFilterOptionsService,
 };
