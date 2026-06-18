@@ -16,6 +16,9 @@ const adminApi = {
   toggleStatus: (id) =>
     api.patch(`/super-admin/admins/${id}/toggle-status`),
 
+  bulkToggleStatus: (payload) =>
+    api.post(`/super-admin/admins/bulk-toggle-status`, payload),
+
   updateOrganization: (id, payload) =>
     api.patch(`/super-admin/admins/${id}/organization`, payload),
 

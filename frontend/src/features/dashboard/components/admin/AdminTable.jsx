@@ -141,9 +141,6 @@ ${admin.isActive
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center justify-center gap-3 text-gray-400">
-                                            <button onClick={() => handleDeleteAdmin(admin._id)} className="text-secondary cursor-pointer transition-colors" title="Delete row item">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
                                             <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                 <Pencil className="w-4 h-4" />
                                             </button>

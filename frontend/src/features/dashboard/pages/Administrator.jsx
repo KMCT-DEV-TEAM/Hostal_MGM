@@ -38,6 +38,7 @@ const INITIAL_ADMINS = [
 
 import adminService from '../../../services/admin.service';
 import organizationService from '../../../services/organization.service';
+import * as XLSX from 'xlsx';
 
 export default function Administrator() {
     const [activeModal, setActiveModal] = useState(null);
@@ -162,10 +163,18 @@ export default function Administrator() {
         setIsStatusConfirmOpen(true);
     };
 
-    const confirmStatusChange = () => {
+    const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
-        const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
-        setAdmins(admins.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+        try {
+            const res = await adminService.toggleStatus(statusToUpdate.id);
+            if (res && res.data) {
+                const newIsActive = statusToUpdate.currentStatus !== 'Active';
+                setAdmins(admins.map(w => w._id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
+            }
+        } catch (error) {
+            console.error("Failed to change status:", error);
+            alert("Failed to change status");
+        }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
     };
@@ -175,12 +184,23 @@ export default function Administrator() {
         setIsBulkStatusConfirmOpen(true);
     };
 
-    const confirmBulkStatusChange = () => {
+    const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
-        const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
-        setAdmins(admins.map(admin => 
-            selectedIds.includes(admin.id) ? { ...admin, status: newStatus } : admin
-        ));
+        try {
+            const res = await adminService.bulkToggleStatus({
+                ids: selectedIds,
+                isActive: bulkStatusToUpdate
+            });
+            if (res && res.success) {
+                // Optimistically update local state
+                setAdmins(admins.map(admin => 
+                    selectedIds.includes(admin._id) ? { ...admin, isActive: bulkStatusToUpdate } : admin
+                ));
+            }
+        } catch (error) {
+            console.error("Failed to bulk update status:", error);
+            alert("Failed to update bulk status.");
+        }
         setSelectedIds([]);
         setIsBulkStatusConfirmOpen(false);
         setBulkStatusToUpdate(null);
@@ -230,17 +250,40 @@ export default function Administrator() {
         }
     };
 
-    const saveAdmin = () => {
+    const saveAdmin = async () => {
         if (editingAdmin) {
-            // Update Existing Record
-            setAdmins(admins.map(w => w.id === editingAdmin.id ? { ...w, ...adminForm } : w));
+            try {
+                // Update Existing Record via API
+                const res = await adminService.updateAdmin(editingAdmin._id, {
+                    name: adminForm.name,
+                    phone: adminForm.phone
+                });
+                if (res && res.data) {
+                    setAdmins(admins.map(w => w._id === editingAdmin._id ? { ...w, ...res.data } : w));
+                }
+            } catch (error) {
+                console.error("Failed to update admin:", error);
+                alert("Failed to update admin.");
+                return;
+            }
         } else {
-            // Create New Record
-            const newAdmin = {
-                id: Date.now(),
-                ...adminForm
-            };
-            setAdmins([newAdmin, ...admins]);
+            // Create New Record via API
+            try {
+                const res = await adminService.createAdmin({
+                    name: adminForm.name,
+                    email: adminForm.email,
+                    phone: adminForm.phone,
+                    organizationId: adminForm.organization
+                });
+                if (res && res.data) {
+                    setAdmins([res.data, ...admins]);
+                    fetchAdmins(); // re-fetch to ensure pagination is consistent
+                }
+            } catch (error) {
+                console.error("Failed to create admin:", error);
+                alert("Failed to create admin.");
+                return;
+            }
         }
         setActiveModal(null);
         setIsEditConfirmOpen(false);
@@ -263,10 +306,30 @@ export default function Administrator() {
         setIsExportConfirmOpen(true);
     };
 
-    const handleExport = () => {
-        // Implement export logic (currently missing)
-        alert('Exporting data...');
-        setIsExportConfirmOpen(false);
+    const handleExport = async () => {
+        try {
+            // Fetch all admins for export by setting a large limit
+            const res = await adminService.getAdmins({ limit: 100000 });
+            if (res && res.data) {
+                const allAdmins = res.data;
+                const exportData = allAdmins.map(admin => ({
+                    Name: admin.name,
+                    Email: admin.email,
+                    Phone: admin.phone || 'N/A',
+                    Organization: admin.organization?.name || admin.organization || 'N/A',
+                    Status: admin.isActive ? 'Active' : 'Inactive'
+                }));
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Admins");
+                XLSX.writeFile(wb, "Admins_List.xlsx");
+            }
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Failed to export admins.");
+        } finally {
+            setIsExportConfirmOpen(false);
+        }
     };
 
     return (
@@ -424,15 +487,18 @@ export default function Administrator() {
     MODAL 1: ADMINS (ADD & EDIT WORKFLOWS)
     ========================================== */}
 
-            <AdminFormModal
-                activeModal={activeModal}
-                setActiveModal={setActiveModal}
-                editingAdmin={editingAdmin}
-                adminForm={adminForm}
-                setAdminForm={setAdminForm}
-                handleSaveAdmin={handleSaveAdmin}
-                handleCancel={handleCancel}
-            />
+            {activeModal === 'admin' && (
+                <AdminFormModal
+                    activeModal={activeModal}
+                    setActiveModal={setActiveModal}
+                    editingAdmin={editingAdmin}
+                    adminForm={adminForm}
+                    setAdminForm={setAdminForm}
+                    handleSaveAdmin={handleSaveAdmin}
+                    handleCancel={handleCancel}
+                    organizations={organizations}
+                />
+            )}
 
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
