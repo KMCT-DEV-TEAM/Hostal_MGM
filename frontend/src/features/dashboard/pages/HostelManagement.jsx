@@ -15,7 +15,12 @@ import {
     Download,
     Building2,
     Loader2,
-    Mail
+    Mail,
+    Hash,
+    Users,
+    MapPin,
+    Activity,
+    FileDown
 } from 'lucide-react';
 import hostelService from '../../../services/hostel.service';
 import * as XLSX from 'xlsx';
@@ -327,34 +332,33 @@ export default function HostelManagement() {
 
                     {/* Header */}
                     <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="w-8 h-8 bg-[#0A437A] rounded-lg flex items-center justify-center text-white">
-                                <Building2 size={18} />
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
+                                <Building2 size={24} />
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900">{selectedHostelDetail.name}</h1>
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900">{selectedHostelDetail.name}</h1>
+                                <p className="text-gray-400 text-sm">Hostel - {selectedHostelDetail.capacity} Students</p>
+                            </div>
                         </div>
-                        <p className="text-gray-400 text-sm ml-11">Hostel - {selectedHostelDetail.capacity} Students</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {/* Main Content Area */}
-                        <div className="md:col-span-2 space-y-4">
+                        <div className="md:col-span-2 space-y-2">
                             {/* Basic Info Section */}
-                            <div className="bg-gray-50/50 p-5 sm:p-6 rounded-xl border border-gray-100">
-                                <h3 className="text-lg font-semibold text-primary mb-4">Basic Info</h3>
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
                                 <p className="text-xs text-gray-400 mb-6">Basic contact information of the Hostel</p>
                                 <div className="space-y-4">
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Code</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.code || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Type</span> <span className="sm:col-span-2 font-medium text-capitalize"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.email || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Location</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.location || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                        <span className="text-gray-500">Status</span> 
-                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline">: </span>
-                                            <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} sm:ml-2 mr-2`}></span>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium text-capitalize"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                                        <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                                            <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
                                             {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
@@ -365,19 +369,19 @@ export default function HostelManagement() {
                         </div>
 
                         {/* Right Summary Sidebar */}
-                        <div className="bg-gray-50/50 p-5 sm:p-6 rounded-xl border border-gray-100 h-fit">
-                            <h3 className="text-lg font-semibold text-primary mb-6">Hostel Summary</h3>
+                        <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                            <h3 className="text-lg font-semibold text-primary mb-4">Hostel Summary</h3>
                             <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                    <span className="text-gray-500">Status</span> 
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} sm:ml-2 mr-2`}></span>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-center">
+                                    <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                                        <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
                                         {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
                                 </div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500">Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity}</span></div>
                             </div>
                         </div>
                     </div>
@@ -737,7 +741,7 @@ export default function HostelManagement() {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Bulk Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
                             Are you sure you want to change the status for the {selectedIds.length} selected hostel(s)?
                         </p>

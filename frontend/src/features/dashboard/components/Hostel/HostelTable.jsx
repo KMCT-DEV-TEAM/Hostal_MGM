@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    Square, CheckSquare, Pencil, Loader2, Mail, Phone, ChevronDown
+    Square, CheckSquare, Pencil, Loader2, Mail, Phone, ChevronDown, Users
 } from 'lucide-react';
 
 export default function HostelTable({
@@ -23,7 +23,7 @@ export default function HostelTable({
         >
             <table className="hidden md:table w-full text-left border-collapse">
                 <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
+                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-[#222222] text-sm  tracking-wider ">
                         <th className="p-4 w-12 text-center">
                             <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500 cursor-pointer">
                                 {hostels.length > 0 && hostels.every(h => selectedIds.includes(h._id)) ? (
@@ -37,7 +37,7 @@ export default function HostelTable({
                         <th className="p-4 font-semibold text-start">Email</th>
                         <th className="p-4 font-semibold text-start">Phone</th>
                         <th className="p-4 font-semibold text-center">Capacity</th>
-                        <th className="p-4 font-semibold text-center">Warden</th>
+                        <th className="p-4 font-semibold text-center">Students</th>
                         <th className="p-4 font-semibold text-center">Status</th>
                         <th className="p-4 font-semibold text-center rounded-tr-xl">Action</th>
                     </tr>
@@ -87,7 +87,10 @@ export default function HostelTable({
                                         </div>
                                     </td>
                                     <td className="p-4 text-start text-gray-500">
-                                        {hostel.email}
+                                        <div className="flex items-center justify-start gap-1.5 text-gray-500">
+                                            <Mail size={14} className="text-gray-400" />
+                                            <span>{hostel.email}</span>
+                                        </div>
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-start justify-start gap-1.5 text-gray-500">
@@ -96,10 +99,16 @@ export default function HostelTable({
                                         </div>
                                     </td>
                                     <td className="p-4 text-center text-gray-500">
-                                        {hostel.capacity}
+                                        <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                            <Users size={14} className="text-gray-400" />
+                                            <span>{hostel.capacity}</span>
+                                        </div>
                                     </td>
                                     <td className="p-4 text-center text-gray-500">
-                                        0
+                                        <div className="flex items-center justify-center gap-1.5 text-gray-500">
+                                            <Users size={14} className="text-gray-400" />
+                                            <span>0</span>
+                                        </div>
                                     </td>
                                     <td className="p-4 text-center">
                                         <div className="relative inline-block mx-auto">
@@ -167,7 +176,7 @@ export default function HostelTable({
                                         </button>
                                     </div>
 
-                                    <div 
+                                    <div
                                         className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase shrink-0 mt-1 cursor-pointer transition-colors hover:bg-[#083561]"
                                         onClick={() => {
                                             setSelectedHostelDetail(hostel);
@@ -177,46 +186,46 @@ export default function HostelTable({
                                         {hostel.name ? hostel.name.substring(0, 2) : 'NA'}
                                     </div>
 
-                                <div className="flex-1 min-w-0 pr-6">
-                                    <div
-                                        className="font-bold text-gray-900 text-base mb-1 cursor-pointer truncate hover:text-[#0A437A] transition-colors"
-                                        onClick={() => {
-                                            setSelectedHostelDetail(hostel);
-                                            setView('detail');
-                                        }}
-                                    >
-                                        {hostel.name}
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[10px] sm:text-xs text-gray-500 mb-2">
-                                        <div className="flex items-center gap-1">
-                                            <Mail className="w-3 h-3 text-gray-400" />
-                                            <span className="truncate max-w-[120px]">{hostel.email}</span>
+                                    <div className="flex-1 min-w-0 pr-6">
+                                        <div
+                                            className="font-bold text-gray-900 text-base mb-1 cursor-pointer truncate hover:text-[#0A437A] transition-colors"
+                                            onClick={() => {
+                                                setSelectedHostelDetail(hostel);
+                                                setView('detail');
+                                            }}
+                                        >
+                                            {hostel.name}
                                         </div>
-                                        <span className="hidden sm:inline">-</span>
-                                        <div className="flex items-center gap-1">
-                                            <Phone className="w-3 h-3 text-gray-400" />
-                                            <span>{hostel.phone || 'N/A'}</span>
-                                        </div>
-                                    </div>
 
-                                    <div className="text-[10px] sm:text-xs text-gray-400 mb-3 truncate">
-                                        {hostel.location || 'N/A'} • {hostel.capacity} Capacity
+                                        <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[10px] sm:text-xs text-gray-500 mb-2">
+                                            <div className="flex items-center gap-1">
+                                                <Mail className="w-3 h-3 text-gray-400" />
+                                                <span className="truncate max-w-[120px]">{hostel.email}</span>
+                                            </div>
+                                            <span className="hidden sm:inline">-</span>
+                                            <div className="flex items-center gap-1">
+                                                <Phone className="w-3 h-3 text-gray-400" />
+                                                <span>{hostel.phone || 'N/A'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-[10px] sm:text-xs text-gray-400 mb-3 truncate">
+                                            {hostel.location || 'N/A'} • {hostel.capacity} Capacity
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="flex justify-end mt-auto">
-                                <button 
-                                    type="button"
-                                    onClick={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
-                                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium cursor-pointer transition-colors
+                                <div className="flex justify-end mt-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
+                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium cursor-pointer transition-colors
                                             ${hostel.isActive ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-red-50 text-danger hover:bg-red-100'}`}
-                                >
-                                    <span className={`w-1.5 h-1.5 rounded-full ${hostel.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
-                                    {hostel.isActive ? "Active" : "Inactive"}
-                                </button>
-                            </div>
+                                    >
+                                        <span className={`w-1.5 h-1.5 rounded-full ${hostel.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
+                                        {hostel.isActive ? "Active" : "Inactive"}
+                                    </button>
+                                </div>
                             </div>
                         );
                     })
