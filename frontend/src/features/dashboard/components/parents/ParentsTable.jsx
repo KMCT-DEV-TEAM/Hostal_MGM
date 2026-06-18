@@ -8,7 +8,6 @@ export default function ParentsTable({
     onSelect,
     onStatusChangeRequest,
     onEdit,
-    onDelete,
     onView
 }) {
     return (
@@ -87,10 +86,7 @@ export default function ParentsTable({
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <div className="flex gap-3 text-gray-400 items-center">
-                                        <button onClick={() => onDelete && onDelete(p)} className="hover:text-danger focus:outline-none transition-colors p-1 cursor-pointer">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                    <div className="flex text-primary items-center">
                                         <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
                                             <Pencil className="w-4 h-4" />
                                         </button>

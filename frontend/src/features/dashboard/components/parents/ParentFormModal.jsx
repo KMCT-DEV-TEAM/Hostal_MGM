@@ -29,7 +29,7 @@ export default function ParentFormModal({
     const handleSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        
+
         const payload = {
             parentName: formData.get('name'),
             phone: formData.get('phone'),
@@ -148,9 +148,9 @@ export default function ParentFormModal({
                         className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
                     >
                         <option value="">Select Relation</option>
-                        <option value="Father">Father</option>
-                        <option value="Mother">Mother</option>
-                        <option value="Guardian">Guardian</option>
+                        <option value="father">Father</option>
+                        <option value="mother">Mother</option>
+                        <option value="guardian">Guardian</option>
                     </select>
                 </div>
 

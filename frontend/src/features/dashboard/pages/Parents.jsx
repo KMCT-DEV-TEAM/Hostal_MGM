@@ -74,11 +74,6 @@ export default function Parents() {
         }
     };
 
-    const handleAdd = () => {
-        setEditingParent(null);
-        setActiveModal('edit');
-    };
-
     const handleEdit = (parent) => {
         setEditingParent(parent);
         setActiveModal('edit');
@@ -102,23 +97,6 @@ export default function Parents() {
         } catch (err) {
             console.error("Failed to save parent", err);
             alert("Error saving parent: " + (err.response?.data?.message || err.message));
-        }
-    };
-
-    const handleDelete = async (parent) => {
-        if (!canDelete) return;
-        if (!window.confirm(`Are you sure you want to delete/deactivate ${parent.name}?`)) return;
-
-        const id = getParentId(parent);
-        setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
-
-        try {
-            await toggleParentStatus(role, id); // Assuming delete is toggle status here, similar to students
-            refetch();
-        } catch (err) {
-            console.error("Failed to delete parent", err);
-        } finally {
-            setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
         }
     };
 
@@ -161,7 +139,6 @@ export default function Parents() {
             <ParentsToolbar
                 onSearch={handleSearch}
                 onExport={handleExport}
-                onAddClick={handleAdd}
                 canCreate={canCreate}
             />
 
@@ -177,7 +154,6 @@ export default function Parents() {
                     onSelect={handleSelect}
                     onStatusChangeRequest={handleStatusChangeRequest}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
                     onView={handleView}
                     canEdit={canEdit}
                     canDelete={canDelete}
