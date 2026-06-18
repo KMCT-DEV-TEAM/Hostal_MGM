@@ -20,7 +20,11 @@ export default function Parents() {
     const [editingParent, setEditingParent] = useState(null);
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
-    const [filters, setFilters] = useState({ search: '', status: '' });
+    const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
+
+    const handleFilterChange = useCallback((key, value) => {
+        setFilters((prev) => ({ ...prev, [key]: value }));
+    }, []);
 
     const { parents, setParents, loading, error, refetch } = useParents(filters);
 
@@ -138,6 +142,7 @@ export default function Parents() {
 
             <ParentsToolbar
                 onSearch={handleSearch}
+                onFilterChange={handleFilterChange}
                 onExport={handleExport}
                 canCreate={canCreate}
             />
@@ -157,6 +162,7 @@ export default function Parents() {
                     onView={handleView}
                     canEdit={canEdit}
                     canDelete={canDelete}
+                    statusLoadingIds={statusLoadingIds}
                 />
             )}
 

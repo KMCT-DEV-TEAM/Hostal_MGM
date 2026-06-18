@@ -1,16 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Download, Plus } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
-export default function ParentsToolbar({ onSearch, onExport, onAddClick }) {
+export default function ParentsToolbar({ onSearch, onFilterChange, onExport, canCreate }) {
+    const [statusFilter, setStatusFilter] = useState('');
+    const [relationFilter, setRelationFilter] = useState('');
+
+    const statusOptions = [
+        { label: 'All Status', value: '' },
+        { label: 'Active', value: 'Active' },
+        { label: 'Inactive', value: 'Inactive' }
+    ];
+
+    const relationOptions = [
+        { label: 'All Relations', value: '' },
+        { label: 'Father', value: 'Father' },
+        { label: 'Mother', value: 'Mother' },
+        { label: 'Guardian', value: 'Guardian' }
+    ];
+
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
             <div className="flex gap-3">
-                <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-secondary">
-                    <option>All</option>
-                </select>
-                <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-secondary">
-                    <option>Relation</option>
-                </select>
+                <Dropdown
+                    options={statusOptions}
+                    value={statusFilter}
+                    onChange={(val) => {
+                        setStatusFilter(val);
+                        onFilterChange?.('isActive', val === 'Active' ? 'true' : val === 'Inactive' ? 'false' : '');
+                    }}
+                    placeholder="All Status"
+                    minWidth="w-[140px]"
+                />
+                <Dropdown
+                    options={relationOptions}
+                    value={relationFilter}
+                    onChange={(val) => {
+                        setRelationFilter(val);
+                        onFilterChange?.('relationship', val === 'Father' ? 'father' : val === 'Mother' ? 'mother' : val === 'Guardian' ? 'guardian' : '');
+                    }}
+                    placeholder="All Relations"
+                    minWidth="w-[140px]"
+                />
             </div>
             <div className="flex gap-3">
                 <div className="relative">

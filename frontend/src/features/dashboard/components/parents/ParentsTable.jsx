@@ -8,7 +8,8 @@ export default function ParentsTable({
     onSelect,
     onStatusChangeRequest,
     onEdit,
-    onView
+    onView,
+    statusLoadingIds = []
 }) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -30,11 +31,13 @@ export default function ParentsTable({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
                     {parents.map((p) => {
-                        const isSelected = selectedIds.includes(p.id);
+                        const rowId = p._id || p.id;
+                        const isSelected = selectedIds.includes(rowId);
+                        const isLoading = statusLoadingIds.includes(rowId);
                         return (
-                            <tr key={p.id} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''}`}>
+                            <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <td className="p-4">
-                                    <button onClick={() => onSelect && onSelect(p.id)} className="focus:outline-none flex items-center justify-center">
+                                    <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
                                         {isSelected ?
                                             <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
                                             <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
@@ -53,11 +56,7 @@ export default function ParentsTable({
                                 <td className="p-4 text-gray-500"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
                                 <td className="p-4 text-gray-500"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
                                 <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? "No Student"}</td>
-                                <td className="p-4">
-                                    <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 outline-none focus:border-secondary bg-white">
-                                        <option>{p.relationship}</option>
-                                    </select>
-                                </td>
+                                <td className="p-4 text-gray-700 font-medium">{p.relationship?.toUpperCase()}</td>
                                 <td className="p-4">
                                     <div className="relative w-fit">
                                         <select
