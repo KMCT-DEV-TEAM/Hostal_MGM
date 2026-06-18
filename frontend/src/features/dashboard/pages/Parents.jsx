@@ -9,6 +9,7 @@ import ParentsTable from '../components/parents/ParentsTable';
 import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import Pagination from '@/components/ui/Pagination';
 
 export default function Parents() {
     const role = useAuthStore((s) => s.user?.role);
@@ -20,13 +21,15 @@ export default function Parents() {
     const [editingParent, setEditingParent] = useState(null);
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
+    const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
 
     const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
+        setPage(1); // Reset page on filter change
     }, []);
 
-    const { parents, setParents, loading, error, refetch } = useParents(filters);
+    const { parents, setParents, pagination, loading, error, refetch } = useParents({ ...filters, page });
 
     const getParentId = (parent) => parent._id ?? parent.id;
 
@@ -130,7 +133,7 @@ export default function Parents() {
     };
 
     return (
-        <div className="w-full bg-[#F8FAFC] p-6 text-gray-700 min-h-screen">
+        <div className="w-full bg-[#F8FAFC] p-6 text-gray-700 min-h-screen flex flex-col">
             <ParentsHeader
                 selectedIds={selectedIds}
                 parents={parents}
@@ -163,6 +166,16 @@ export default function Parents() {
                     canEdit={canEdit}
                     canDelete={canDelete}
                     statusLoadingIds={statusLoadingIds}
+                />
+            )}
+
+            {parents.length > 0 && !loading && !error && (
+                <Pagination
+                    page={page}
+                    setPage={setPage}
+                    limit={pagination.limit || 10}
+                    totalItems={pagination.totalRecords || 0}
+                    totalPages={pagination.totalPages || 0}
                 />
             )}
 
