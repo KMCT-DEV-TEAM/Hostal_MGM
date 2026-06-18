@@ -52,7 +52,7 @@ export default function WardenManagement() {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
 
     // Form State for Adding / Editing Warden
     const [wardenForm, setWardenForm] = useState({
@@ -209,12 +209,12 @@ export default function WardenManagement() {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] p-6 text-gray-700 font-sans relative">
+        <div className="w-full h-[calc(100vh-82px)] flex flex-col bg-[#F8FAFC] p-6 text-gray-700 font-sans relative overflow-hidden">
 
             {/* ==========================================
              HEADER ACTION SECTION
              ========================================== */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Wardens</h1>
                     <p className="text-xs text-gray-400 mt-0.5">Manage all hostel wardens</p>
@@ -227,7 +227,7 @@ export default function WardenManagement() {
                                 const target = wardens.find(w => w.id === selectedIds[0]);
                                 if (target) openEditWardenModal(target);
                             }}
-                            className="flex items-center gap-2 px-4 py-2 border border-[#0A437A] text-[#0A437A] bg-blue-50/40 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                            className="flex items-center gap-2 px-4 py-2 border border-[#0A437A] text-[#0A437A] bg-blue-50/40 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
                         >
                             <Pencil className="w-4 h-4" />
                             Edit
@@ -237,7 +237,7 @@ export default function WardenManagement() {
                     {selectedIds.length > 0 && (
                         <button
                             onClick={handleDeleteSelected}
-                            className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
+                            className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium cursor-pointer"
                         >
                             <Trash2 className="w-4 h-4" />
                             Delete ({selectedIds.length})
@@ -249,13 +249,13 @@ export default function WardenManagement() {
             {/* ==========================================
              FILTER & UTILITY TOOLBAR
              ========================================== */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm mb-6">
-                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50">
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
+                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 flex-shrink-0">
                     <div className="relative inline-block w-28">
                         <select
                             value={statusFilter}
                             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                            className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-gray-600 pr-8 font-medium"
+                            className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-gray-600 pr-8 font-medium cursor-pointer"
                         >
                             <option value="All">All</option>
                             <option value="Active">Active</option>
@@ -272,19 +272,19 @@ export default function WardenManagement() {
                                 placeholder="Search Name, Email or Phone..."
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none placeholder-gray-400"
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none placeholder-gray-400 cursor-pointer"
                             />
                         </div>
                         <button
                             onClick={initiateExport}
-                            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                             <Download className="w-4 h-4" />
                             Export
                         </button>
                         <button
                             onClick={openAddWardenModal}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-[#083561] transition-colors text-sm font-medium shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-[#083561] transition-colors text-sm font-medium shadow-sm cursor-pointer"
                         >
                             <Plus className="w-4 h-4" />
                             Add New
@@ -295,12 +295,12 @@ export default function WardenManagement() {
                 {/* ==========================================
                 DATA TABLE LAYOUT
                 ========================================== */}
-                <div className="overflow-x-auto">
+                <div className="overflow-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <table className="w-full text-left border-collapse">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
                             <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
                                 <th className="p-4 w-12 text-center">
-                                    <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500">
+                                    <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500 cursor-pointer">
                                         {paginatedWardens.length > 0 && paginatedWardens.every(w => selectedIds.includes(w.id)) ? (
                                             <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                                         ) : (
@@ -343,7 +343,7 @@ export default function WardenManagement() {
                                     return (
                                         <tr key={warden.id} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
                                             <td className="p-4 text-center">
-                                                <button onClick={() => handleSelectRow(warden.id)} className="focus:outline-none text-gray-300">
+                                                <button onClick={() => handleSelectRow(warden.id)} className="focus:outline-none text-gray-300 cursor-pointer">
                                                     {isSelected ? (
                                                         <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                                                     ) : (
@@ -426,7 +426,7 @@ export default function WardenManagement() {
                 {/* ==========================================
                 PAGINATION BAR FOOTER
                 ========================================== */}
-                <div className="p-4 bg-white border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-500">
+                <div className="p-4 bg-white border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-500 flex-shrink-0">
                     <div>
                         Showing {filteredWardens.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredWardens.length)} of {filteredWardens.length} entries
                     </div>
@@ -435,7 +435,7 @@ export default function WardenManagement() {
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -449,7 +449,7 @@ export default function WardenManagement() {
                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
                                         ? 'bg-[#0A437A] text-white shadow-sm font-bold'
                                         : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        }`}
+                                        } cursor-pointer`}
                                 >
                                     {pageNum}
                                 </button>
@@ -459,7 +459,7 @@ export default function WardenManagement() {
                         <button
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
@@ -489,7 +489,7 @@ export default function WardenManagement() {
                             <button
                                 type="button"
                                 onClick={() => setActiveModal(false)}
-                                className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                                className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
@@ -576,14 +576,14 @@ export default function WardenManagement() {
                         <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
                             <button
                                 type="submit"
-                                className="px-4 py-2 bg-[rgb(10,67,122)] text-white rounded-lg text-xs font-medium hover:bg-[#083561]"
+                                className="px-4 py-2 bg-[rgb(10,67,122)] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
                             >
                                 Save
                             </button>
                             <button
                                 type="button"
                                 onClick={handleCancel}
-                                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-primary hover:bg-gray-50"
+                                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-primary hover:bg-gray-50 cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -603,13 +603,13 @@ export default function WardenManagement() {
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsEditConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={saveWarden}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -628,13 +628,13 @@ export default function WardenManagement() {
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsDiscardConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Continue Editing
                             </button>
                             <button
                                 onClick={confirmDiscard}
-                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                             >
                                 Discard
                             </button>
@@ -653,13 +653,13 @@ export default function WardenManagement() {
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsExportConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleExport}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
                             >
                                 Export
                             </button>
@@ -681,13 +681,13 @@ export default function WardenManagement() {
                                     setIsStatusConfirmOpen(false);
                                     setStatusToUpdate(null);
                                 }}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -702,7 +702,7 @@ export default function WardenManagement() {
                         {/* Close Button */}
                         <button
                             onClick={() => setView('list')}
-                            className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                            className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                             <X size={14} />
                         </button>
