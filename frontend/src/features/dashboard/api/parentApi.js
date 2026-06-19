@@ -45,11 +45,10 @@ const parentApi = {
     api.get("/admin/parents/export/super-admin", { params }),
 
   toggleStatusBySuperAdmin: (id) =>
-    api.patch(`/admin/parents/${id}/toggle-status`), // Assuming it's mounted under /admin/parents in app.js
+    api.patch(`/super-admin/parents/${id}/toggle-status`), // Assuming it's mounted under /admin/parents in app.js
 
   bulkStatusBySuperAdmin: (payload) =>
-
-    api.patch(`/super-admin/parents/${id}/toggle-status`),
+    api.patch(`/super-admin/parents/bulk-status`, payload),
 
   createParentBySuperAdmin: (payload) =>
     api.post("/super-admin/parents", payload),
