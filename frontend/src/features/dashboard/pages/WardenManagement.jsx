@@ -10,7 +10,7 @@ import { Pencil, X, ArrowLeft, Check } from 'lucide-react';
 import otpService from '../../../services/otp.service';
 import hostelService from '../../../services/hostel.service';
 import wardenService from '../../../services/warden.service';
-import Swal from 'sweetalert2';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import * as XLSX from 'xlsx';
 
 export default function WardenManagement() {
@@ -139,13 +139,14 @@ export default function WardenManagement() {
         if (!statusToUpdate) return;
         try {
             const res = await wardenService.toggleStatus(statusToUpdate.id);
-            if (res && res.data) {
+            if (res && (res.success || res.data)) {
                 const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
                 setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+                showSuccessToast('Status Updated', `Warden status changed to ${newStatus}`);
             }
         } catch (error) {
             console.error("Failed to change status:", error);
-            alert("Failed to change status");
+            showErrorToast('Action Failed', 'Failed to change warden status');
         }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
@@ -155,18 +156,10 @@ export default function WardenManagement() {
         try {
             await wardenService.updateWardenHostel(id, { hostelId: newHostel });
             fetchWardens();
-            Swal.fire({
-                title: 'Success',
-                text: 'Hostel assigned successfully',
-                icon: 'success',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
+            showSuccessToast('Hostel Assigned', 'Hostel assigned successfully');
         } catch (error) {
             console.error("Failed to update hostel", error);
-            Swal.fire('Error', 'Failed to update hostel assignment', 'error');
+            showErrorToast('Action Failed', 'Failed to update hostel assignment');
         }
     };
 
@@ -183,7 +176,7 @@ export default function WardenManagement() {
                 ids: selectedIds,
                 isActive: bulkStatusToUpdate
             });
-            if (res && res.data) {
+            if (res && (res.success || res.data)) {
                 const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
                 setWardens(wardens.map(w => {
                     if (selectedIds.includes(w.id)) {
@@ -191,19 +184,12 @@ export default function WardenManagement() {
                     }
                     return w;
                 }));
-                Swal.fire({
-                    title: 'Success',
-                    text: 'Bulk status updated successfully',
-                    icon: 'success',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
+                const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
+                showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} wardens`);
             }
         } catch (error) {
             console.error("Failed to update bulk status:", error);
-            Swal.fire('Error', 'Failed to update bulk status', 'error');
+            showErrorToast('Action Failed', 'Failed to update bulk status');
         } finally {
             setSelectedIds([]); // Clear selection after bulk update
             setIsBulkStatusConfirmOpen(false);
@@ -222,7 +208,7 @@ export default function WardenManagement() {
 
     const confirmEmailChange = async (e) => {
         e.preventDefault();
-        
+
         try {
             await wardenService.updateEmail(emailChangeWardenId, {
                 oldEmail: emailChangeForm,
@@ -237,13 +223,14 @@ export default function WardenManagement() {
 
             setIsEmailChangeModalOpen(false);
             setIsEmailChangeSuccessModalOpen(true);
+            showSuccessToast('Email Updated', 'Warden email updated successfully');
             setTimeout(() => {
                 setIsEmailChangeSuccessModalOpen(false);
                 setEmailChangeWardenId(null);
                 setNewEmailForm('');
             }, 2500);
         } catch (error) {
-            Swal.fire('Error', error?.response?.data?.message || 'Failed to update email', 'error');
+            showErrorToast('Action Failed', error?.response?.data?.message || 'Failed to update email');
         }
     };
 
@@ -266,7 +253,7 @@ export default function WardenManagement() {
 
     const handleVerifyClick = async (email, source = 'addWarden') => {
         if (!email) {
-            Swal.fire('Error', 'Please enter an email first', 'error');
+            showErrorToast('Validation Error', 'Please enter an email first');
             return;
         }
         try {
@@ -278,18 +265,18 @@ export default function WardenManagement() {
                 setIsEmailChangeModalOpen(false);
             }
         } catch (error) {
-            Swal.fire('Error', error?.response?.data?.message || 'Failed to send OTP', 'error');
+            showErrorToast('Action Failed', error?.response?.data?.message || 'Failed to send OTP');
         }
     };
 
     const handleSaveWarden = async (e) => {
         e.preventDefault();
         if (!wardenForm.name || !wardenForm.email || !wardenForm.phone) {
-            alert("Please fill in all required fields.");
+            showErrorToast('Validation Error', 'Please fill in all required fields');
             return;
         }
         if (!isEmailVerified && !editingWarden) {
-            Swal.fire('Error', 'Please verify your email before saving', 'error');
+            showErrorToast('Validation Error', 'Please verify your email before saving');
             return;
         }
 
@@ -313,20 +300,22 @@ export default function WardenManagement() {
             if (editingWarden) {
                 // Update Existing Record
                 const res = await wardenService.updateWarden(editingWarden.id, payload);
-                if (res && res.data) {
+                if (res && (res.success || res.data)) {
                     setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...wardenForm } : w));
                     fetchWardens(); // Re-fetch to ensure sync
+                    showSuccessToast('Warden Updated', 'Warden details saved successfully');
                 }
             } else {
                 // Create New Record
                 const res = await wardenService.createWarden(payload);
-                if (res && res.data) {
+                if (res && (res.success || res.data)) {
                     fetchWardens();
+                    showSuccessToast('Warden Added', 'New warden registered successfully');
                 }
             }
         } catch (error) {
             console.error("Failed to save warden:", error);
-            alert(error?.response?.data?.message || "Failed to save warden.");
+            showErrorToast('Action Failed', error?.response?.data?.message || 'Failed to save warden');
         } finally {
             setActiveModal(null);
             setIsEditConfirmOpen(false);
@@ -366,7 +355,7 @@ export default function WardenManagement() {
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Wardens");
-                
+
                 // Adjust column widths
                 const maxWidths = exportData.reduce((acc, row) => {
                     Object.keys(row).forEach(key => {
@@ -375,26 +364,17 @@ export default function WardenManagement() {
                     });
                     return acc;
                 }, {});
-                
+
                 worksheet['!cols'] = Object.keys(exportData[0]).map(key => ({ wch: maxWidths[key] + 2 }));
 
                 XLSX.writeFile(workbook, "Wardens_List.xlsx");
-                
-                Swal.fire({
-                    title: 'Export Successful!',
-                    text: 'The warden list has been downloaded.',
-                    icon: 'success',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
+                showSuccessToast('Export Successful', 'The warden list has been downloaded.');
             } else {
-                Swal.fire('Info', 'No data available to export.', 'info');
+                showErrorToast('Export Failed', 'No data available to export.');
             }
         } catch (error) {
             console.error("Export failed", error);
-            Swal.fire('Error', 'Failed to export data.', 'error');
+            showErrorToast('Export Failed', 'Failed to export data.');
         } finally {
             setIsExportConfirmOpen(false);
         }
@@ -409,7 +389,7 @@ export default function WardenManagement() {
                 handleBulkStatusClick={handleBulkStatusClick}
             />
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+            <div className="bg-transparent md:bg-[#F8FAFC] md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 <WardenToolbar
                     statusFilter={statusFilter}
                     setStatusFilter={setStatusFilter}
@@ -645,11 +625,12 @@ export default function WardenManagement() {
                                 <input
                                     type="email"
                                     required
+                                    disabled={isEmailVerified}
                                     value={newEmailForm}
                                     onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
                                     className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
-                                    disabled={isEmailVerified}
+
                                 />
                                 {isEmailVerified ? (
                                     <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
@@ -680,11 +661,11 @@ export default function WardenManagement() {
                         e.preventDefault();
                         const code = otpCode.join('');
                         if (code.length < 6) return;
-                        
+
                         try {
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
-                            
+
                             setIsOtpModalOpen(false);
                             setIsEmailVerified(true);
                             if (otpSource === 'emailChange') {
@@ -692,7 +673,7 @@ export default function WardenManagement() {
                             } else {
                                 Swal.fire('Success', 'Email verified successfully!', 'success');
                             }
-                        } catch(err) {
+                        } catch (err) {
                             Swal.fire('Error', err?.response?.data?.message || 'Invalid OTP', 'error');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
@@ -700,10 +681,10 @@ export default function WardenManagement() {
                         <div className="flex justify-between items-center mb-6">
                             <button
                                 type="button"
-                                onClick={() => { 
-                                    setIsOtpModalOpen(false); 
+                                onClick={() => {
+                                    setIsOtpModalOpen(false);
                                     if (otpSource === 'emailChange') {
-                                        setIsEmailChangeModalOpen(true); 
+                                        setIsEmailChangeModalOpen(true);
                                     }
                                 }}
                                 className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"

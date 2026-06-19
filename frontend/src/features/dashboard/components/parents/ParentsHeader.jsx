@@ -3,12 +3,12 @@ import { Pencil, Trash2 } from 'lucide-react';
 
 export default function ParentsHeader({ selectedIds, parents, onEdit, onDeleteSelected }) {
     return (
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Parents</h1>
-                <p className="text-xs text-gray-400 mt-1">Manage all Parents</p>
+                <h1 className="text-2xl font-bold ">Parents</h1>
+                <p className="text-xs text-text-secondary mt-1">Manage all Parents</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 {selectedIds.length === 1 && (
                     <button
                         onClick={() => {

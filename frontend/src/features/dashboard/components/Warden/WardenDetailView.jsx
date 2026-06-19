@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Pencil, Activity, Calendar, Clock, Phone, Mail, Building2, Loader2 } from 'lucide-react';
+import { X, User, Pencil, Activity, Calendar, Clock, Phone, Mail, Building2, Loader2, Hash, Home, Users, MapPin } from 'lucide-react';
 import hostelService from '@/services/hostel.service';
 
 export default function WardenDetailView({ selectedWardenDetail, setView, openChangeEmailModal }) {
@@ -98,31 +98,31 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                                         </div>
                                     ) : hostelDetails ? (
                                         <>
-                                            <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Code</span>
+                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Hash className="w-4 h-4 text-gray-400" /> Code</span>
                                             <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{hostelDetails.code || 'N/A'}</span>
 
-                                            <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Type</span>
+                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Home className="w-4 h-4 text-gray-400" /> Type</span>
                                             <span className="sm:col-span-2 font-medium capitalize"><span className="hidden sm:inline">: </span>{hostelDetails.hosteltype || 'N/A'}</span>
 
-                                            <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Capacity</span>
+                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Users className="w-4 h-4 text-gray-400" /> Capacity</span>
                                             <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{hostelDetails.capacity || 'N/A'}</span>
 
-                                            <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Location</span>
+                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><MapPin className="w-4 h-4 text-gray-400" /> Location</span>
                                             <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{hostelDetails.location || 'N/A'}</span>
                                         </>
                                     ) : (
                                         typeof selectedWardenDetail?.hostel === 'object' && selectedWardenDetail?.hostel !== null && (
                                             <>
-                                                <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Code</span>
+                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Hash className="w-4 h-4 text-gray-400" /> Code</span>
                                                 <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.code || 'N/A'}</span>
 
-                                                <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Type</span>
+                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Home className="w-4 h-4 text-gray-400" /> Type</span>
                                                 <span className="sm:col-span-2 font-medium capitalize"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.hosteltype || 'N/A'}</span>
 
-                                                <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Capacity</span>
+                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Users className="w-4 h-4 text-gray-400" /> Capacity</span>
                                                 <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.capacity || 'N/A'}</span>
 
-                                                <span className="text-gray-500 flex items-center gap-1.5 ml-4 sm:ml-0"><span className="w-4 h-4" /> Location</span>
+                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><MapPin className="w-4 h-4 text-gray-400" /> Location</span>
                                                 <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.location || 'N/A'}</span>
                                             </>
                                         )
