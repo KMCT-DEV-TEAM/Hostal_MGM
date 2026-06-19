@@ -12,6 +12,9 @@ import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Pagination from '@/components/ui/Pagination';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 export default function Parents() {
     const role = useAuthStore((s) => s.user?.role);
@@ -25,6 +28,11 @@ export default function Parents() {
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
+
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState(null);
 
     const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -84,8 +92,10 @@ export default function Parents() {
         try {
             const response = await toggleParentStatus(role, id);
             applyStatusChange(id, response);
+            showSuccessToast('Status updated successfully');
         } catch (err) {
             console.error("Failed to toggle parent status", err);
+            showErrorToast('Error updating status', err.response?.data?.message || err.message);
         } finally {
             setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
         }
@@ -102,18 +112,40 @@ export default function Parents() {
     };
 
     const handleSaveParent = async (payload) => {
+        if (editingParent) {
+            setPendingPayload(payload);
+            setIsEditConfirmOpen(true);
+        } else {
+            executeSave(payload);
+        }
+    };
+
+    const executeSave = async (payload) => {
         try {
             if (editingParent) {
-                await updateParent(getParentId(editingParent), payload);
+                await updateParent(getParentId(editingParent), payload || pendingPayload);
+                showSuccessToast('Parent updated successfully');
             } else {
-                await createParent(payload);
+                await createParent(payload || pendingPayload);
+                showSuccessToast('Parent created successfully');
             }
             setActiveModal(null);
             setEditingParent(null);
+            setIsEditConfirmOpen(false);
+            setPendingPayload(null);
             refetch();
         } catch (err) {
             console.error("Failed to save parent", err);
-            alert("Error saving parent: " + (err.response?.data?.message || err.message));
+            showErrorToast('Error saving parent', err.response?.data?.message || err.message);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (editingParent) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            setActiveModal(null);
+            setEditingParent(null);
         }
     };
 
@@ -176,7 +208,34 @@ export default function Parents() {
     }, []);
 
     const handleExport = () => {
-        console.log("Exporting data...");
+        setIsExportConfirmOpen(true);
+    };
+
+    const confirmExport = () => {
+        setIsExportConfirmOpen(false);
+        try {
+            const exportData = parents.map((p, index) => ({
+                "S.No": index + 1,
+                "Parent Name": p.parentName,
+                "Email": p.email,
+                "Phone": p.phone || 'N/A',
+                "Student": typeof p.student === 'object' ? p.student?.name : p.student,
+                "Relation": p.relationship,
+                "Status": p.isActive ? "Active" : "Inactive"
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Parents");
+
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+            saveAs(data, `Parents_Export_${new Date().getTime()}.xlsx`);
+            showSuccessToast('Exported successfully');
+        } catch (err) {
+            console.error("Failed to export parents:", err);
+            showErrorToast('Export failed', err.message);
+        }
     };
 
     return (
@@ -252,7 +311,7 @@ export default function Parents() {
             {activeModal === 'edit' && (
                 <ParentFormModal
                     editingParent={editingParent}
-                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                    onClose={handleCloseModal}
                     onSave={handleSaveParent}
                 />
             )}
@@ -260,10 +319,41 @@ export default function Parents() {
             <ConfirmationModal
                 isOpen={activeModal === 'confirm-status'}
                 onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
-                onConfirm={() => pendingStatusChange?.confirmAction?.()}
-                title={pendingStatusChange?.title}
-                message={pendingStatusChange?.message}
-                confirmText={pendingStatusChange?.confirmText}
+                onConfirm={pendingStatusChange?.confirmAction || confirmStatusChange}
+                title={pendingStatusChange?.title || "Confirm Status Change"}
+                message={pendingStatusChange?.message || `Are you sure you want to change the status of ${pendingStatusChange?.parent?.parentName || 'this parent'} to ${pendingStatusChange?.newStatus}?`}
+            />
+
+            <ConfirmationModal
+                isOpen={isEditConfirmOpen}
+                onClose={() => setIsEditConfirmOpen(false)}
+                onConfirm={() => executeSave()}
+                title="Confirm Edit"
+                message="Are you sure you want to save these changes?"
+                confirmText="Save Changes"
+            />
+            
+            <ConfirmationModal
+                isOpen={isDiscardConfirmOpen}
+                onClose={() => setIsDiscardConfirmOpen(false)}
+                onConfirm={() => {
+                    setIsDiscardConfirmOpen(false);
+                    setActiveModal(null);
+                    setEditingParent(null);
+                }}
+                title="Discard Changes"
+                message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+                confirmText="Discard"
+                confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+            />
+
+            <ConfirmationModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onConfirm={confirmExport}
+                title="Confirm Export"
+                message="Are you sure you want to download the parent list?"
+                confirmText="Export"
             />
         </div>
     );

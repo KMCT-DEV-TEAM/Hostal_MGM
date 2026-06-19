@@ -29,7 +29,7 @@ export default function ParentsHeader({ selectedIds, parents, onEdit, onActivate
                                 onClick={onActivateSelected}
                                 className="px-4 py-2 bg-white border border-[#23A26D] text-[#23A26D] rounded-lg hover:bg-[#E9F6F0] transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
                             >
-                                Activate ({selectedIds.length})
+                                Active ({selectedIds.length})
                             </button>
                         )}
                         {canDelete && (
@@ -37,7 +37,7 @@ export default function ParentsHeader({ selectedIds, parents, onEdit, onActivate
                                 onClick={onDeactivateSelected}
                                 className="px-4 py-2 bg-white border border-[#E33B32] text-[#E33B32] rounded-lg hover:bg-[#FCECEB] transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
                             >
-                                Deactivate ({selectedIds.length})
+                                Inactive ({selectedIds.length})
                             </button>
                         )}
                     </div>
