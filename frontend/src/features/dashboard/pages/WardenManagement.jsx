@@ -6,10 +6,12 @@ import WardenMobileList from '../components/Warden/WardenMobileList';
 import WardenPagination from '../components/Warden/WardenPagination';
 import WardenDetailView from '../components/Warden/WardenDetailView';
 import WardenFormModal from '../components/Warden/WardenFormModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { Pencil, X, ArrowLeft, Check } from 'lucide-react';
 import otpService from '../../../services/otp.service';
 import hostelService from '../../../services/hostel.service';
 import wardenService from '../../../services/warden.service';
+import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import * as XLSX from 'xlsx';
 
@@ -29,6 +31,7 @@ export default function WardenManagement() {
     const [view, setView] = useState('list');
     const [selectedWardenDetail, setSelectedWardenDetail] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
@@ -390,48 +393,52 @@ export default function WardenManagement() {
         setActiveModal(null);
     };
 
-    const initiateExport = () => {
-        setIsExportConfirmOpen(true);
-    };
-
-    const handleExport = async () => {
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
         try {
-            const res = await wardenService.getWardens({ limit: 100000 });
-            if (res && res.data && res.data.length > 0) {
-                const exportData = res.data.map(warden => ({
-                    Name: warden.name,
-                    Email: warden.email,
-                    Phone: warden.phone || 'N/A',
-                    Hostel: warden.hostel?.name || warden.hostel || 'Not Assigned',
-                    Status: warden.isActive ? 'Active' : 'Inactive',
+            const params = { limit: 100000 };
+            if (searchQuery) params.search = searchQuery;
+            
+            // Allow export modal filter to override table filter
+            if (exportFilters.isActive !== '') {
+                params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
+            } else if (statusFilter !== 'All') {
+                params.status = statusFilter;
+            }
+
+            const res = await wardenService.getWardens(params);
+            
+            // Handle different possible response structures
+            const responseData = res?.data || res;
+            const allWardens = responseData?.data || responseData || [];
+
+            if (allWardens && allWardens.length > 0) {
+                const exportData = allWardens.map((warden, index) => ({
+                    "SL No": index + 1,
+                    "Name": warden.name,
+                    "Email": warden.email,
+                    "Phone": warden.phone || 'N/A',
+                    "Hostel": warden.hostel?.name || warden.hostel || 'Not Assigned',
+                    "Status": warden.isActive ? 'Active' : 'Inactive',
                     'Joined Date': new Date(warden.createdAt).toLocaleDateString()
                 }));
 
-                const worksheet = XLSX.utils.json_to_sheet(exportData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Wardens");
-
-                // Adjust column widths
-                const maxWidths = exportData.reduce((acc, row) => {
-                    Object.keys(row).forEach(key => {
-                        const val = row[key] ? row[key].toString() : '';
-                        acc[key] = Math.max(acc[key] || key.length, val.length);
-                    });
-                    return acc;
-                }, {});
-
-                worksheet['!cols'] = Object.keys(exportData[0]).map(key => ({ wch: maxWidths[key] + 2 }));
-
-                XLSX.writeFile(workbook, "Wardens_List.xlsx");
-                showSuccessToast('Export Successful', res?.message || 'The warden list has been downloaded.');
+                const isSuccess = exportToExcel(exportData, "Wardens_Export", "Wardens");
+                
+                if (isSuccess) {
+                    showSuccessToast('Export Successful', 'The warden list has been downloaded.');
+                } else {
+                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
+                }
             } else {
-                showErrorToast('Export Failed', 'No data available to export.');
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
             }
         } catch (error) {
             console.error("Export Failed", error);
             showErrorToast('Export Failed', error?.message || 'Failed to export data.');
         } finally {
             setIsExportConfirmOpen(false);
+            setIsExporting(false);
         }
     };
 
@@ -451,7 +458,7 @@ export default function WardenManagement() {
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
-                    initiateExport={initiateExport}
+                    initiateExport={() => setIsExportConfirmOpen(true)}
                     openAddWardenModal={openAddWardenModal}
                 />
 
@@ -513,6 +520,14 @@ export default function WardenManagement() {
                 isVerifying={isVerifying}
             />
 
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Wardens Data"
+            />
+
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
@@ -558,31 +573,6 @@ export default function WardenManagement() {
                                 className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                             >
                                 Discard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isExportConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to download the warden list?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsExportConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleExport}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
-                            >
-                                Export
                             </button>
                         </div>
                     </div>
