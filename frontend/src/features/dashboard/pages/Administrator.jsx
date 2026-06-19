@@ -370,6 +370,7 @@ export default function Administrator() {
             }
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to send OTP');
+
         }
     };
 

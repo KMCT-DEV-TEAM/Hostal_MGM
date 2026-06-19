@@ -187,7 +187,7 @@ export default function HostelManagement() {
             fetchHostels();
         } catch (error) {
             console.error("Failed to save hostel:", error);
-            showErrorToast('Action Failed', error?.response?.data?.message || 'Failed to save hostel. Please try again.');
+            showErrorToast('Action Failed', error?.message || 'Failed to save hostel. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -225,7 +225,7 @@ export default function HostelManagement() {
             fetchHostels(); // refresh after update
         } catch (error) {
             console.error("Failed to update status:", error);
-            showErrorToast('Action Failed', 'Failed to update status.');
+            showErrorToast('Action Failed', error?.message || 'Failed to update status.');
         }
     };
 
@@ -247,7 +247,7 @@ export default function HostelManagement() {
             fetchHostels(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
-            showErrorToast('Action Failed', 'Failed to bulk update status. Please try again.');
+            showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
             setLoading(false);
         }
     };
@@ -287,7 +287,7 @@ export default function HostelManagement() {
             showSuccessToast('Export Successful', 'The hostel list has been downloaded.');
         } catch (error) {
             console.error("Export failed:", error);
-            showErrorToast('Export Failed', 'Failed to export data. Please try again.');
+            showErrorToast('Export Failed', error?.message || 'Failed to export data. Please try again.');
         } finally {
             setLoading(false);
             fetchHostels();
@@ -524,9 +524,17 @@ export default function HostelManagement() {
                                             <input
                                                 name="phone"
                                                 value={hostelForm.phone}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, phone: e.target.value })}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/\D/g, '');
+                                                    if (value.length <= 10) {
+                                                        setHostelForm({ ...hostelForm, phone: value });
+                                                    }
+                                                }}
                                                 type="text"
                                                 required
+                                                maxLength="10"
+                                                pattern="[0-9]{10}"
+                                                title="Please enter exactly 10 digits"
                                                 placeholder="9876543210"
                                                 className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                             />

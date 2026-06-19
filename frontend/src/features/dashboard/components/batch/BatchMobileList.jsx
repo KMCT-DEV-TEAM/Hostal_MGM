@@ -1,23 +1,23 @@
 import React from 'react';
-import { Pencil, Mail, Phone, Square, CheckSquare } from 'lucide-react';
+import { Pencil, FileText, Building2, Square, CheckSquare, Users } from 'lucide-react';
 import Loader from '@/components/ui/Loader';
 
-const OrganizationMobileList = ({
-    orgs,
+const BatchMobileList = ({
+    batches,
     loading,
     error,
     openModal,
-    setSelectedOrganizationDetail,
+    setSelectedBatchDetail,
     setView,
     selectedIds,
     handleSelectAll,
     handleSelectRow
 }) => {
-    const isAllSelected = orgs.length > 0 && orgs.every(o => selectedIds.includes(o._id));
+    const isAllSelected = batches.length > 0 && batches.every(o => selectedIds.includes(o._id));
 
     return (
         <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {!error && orgs.length > 0 && (
+            {!error && batches.length > 0 && (
                 <div className="flex items-center gap-2 px-1 mb-1">
                     <button onClick={handleSelectAll} className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2">
                         {isAllSelected ? (
@@ -35,10 +35,10 @@ const OrganizationMobileList = ({
                 </div>
             ) : error ? (
                 <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error}</div>
-            ) : orgs.length === 0 ? (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No organizations match the selected filter.</div>
+            ) : batches.length === 0 ? (
+                <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No Batches match the selected filter.</div>
             ) : (
-                orgs.map((o) => {
+                batches.map((o) => {
                     const isSelected = selectedIds.includes(o._id);
                     return (
                     <div key={o._id} className={`bg-white p-4 rounded-xl shadow-sm flex flex-col relative border ${isSelected ? 'border-[#0A437A] bg-blue-50/20' : 'border-transparent'}`}>
@@ -70,7 +70,7 @@ const OrganizationMobileList = ({
                                 <div
                                     className="font-bold text-gray-900 text-base mb-1 cursor-pointer truncate"
                                     onClick={() => {
-                                        setSelectedOrganizationDetail(o);
+                                        setSelectedBatchDetail(o);
                                         setView('detail');
                                     }}
                                 >
@@ -79,18 +79,19 @@ const OrganizationMobileList = ({
 
                                 <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[10px] sm:text-xs text-gray-500 mb-2">
                                     <div className="flex items-center gap-1">
-                                        <Mail className="w-3 h-3" />
-                                        <span className="truncate max-w-[120px]">{o.email}</span>
+                                        <FileText className="w-3 h-3" />
+                                        <span className="truncate max-w-[120px]">{o.code || 'N/A'}</span>
                                     </div>
                                     <span className="hidden sm:inline">-</span>
                                     <div className="flex items-center gap-1">
-                                        <Phone className="w-3 h-3" />
-                                        <span>{o.phone || 'N/A'}</span>
+                                        <Building2 className="w-3 h-3" />
+                                        <span>{o.departmentId ? o.departmentId.name : 'N/A'}</span>
                                     </div>
-                                </div>
-
-                                <div className="text-[10px] sm:text-xs text-gray-400 mb-3 truncate">
-                                    {o.address}
+                                    <span className="hidden sm:inline">-</span>
+                                    <div className="flex items-center gap-1">
+                                        <Users className="w-3 h-3" />
+                                        <span>{o.studentsCount || 0} Students</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -109,4 +110,4 @@ const OrganizationMobileList = ({
     );
 };
 
-export default OrganizationMobileList;
+export default BatchMobileList;

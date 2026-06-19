@@ -301,6 +301,7 @@ export default function WardenManagement() {
             }
         } catch (error) {
             showErrorToast('Action Failed', error?.message || 'Failed to send OTP');
+
         }
     };
 
@@ -313,6 +314,7 @@ export default function WardenManagement() {
             showSuccessToast('Success', 'OTP resent successfully!');
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to resend OTP');
+
         }
     };
 
@@ -363,6 +365,9 @@ export default function WardenManagement() {
         } catch (error) {
             console.error("Failed to save warden:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to save warden');
+        } finally {
+            setActiveModal(null);
+
             setIsEditConfirmOpen(false);
             return;
         }
@@ -723,7 +728,7 @@ export default function WardenManagement() {
                                 Swal.fire('Success', 'Email verified successfully!', 'success');
                             }
                         } catch (err) {
-                            Swal.fire('Error', err?.response?.data?.message || 'Invalid OTP', 'error');
+                            Swal.fire('Error', err?.message || 'Invalid OTP', 'error');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         {/* Top action buttons */}
