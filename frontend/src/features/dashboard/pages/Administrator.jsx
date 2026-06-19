@@ -22,6 +22,7 @@ import AdminTable from '../components/admin/AdminTable';
 import AdminMobileList from '../components/admin/AdminMobileList';
 import AdminFormModal from '../components/admin/AdminFormModal';
 import AdminDetailView from '../components/admin/AdminDetailView';
+import Dropdown from '@/components/ui/Dropdown';
 
 const INITIAL_ADMINS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 1', status: 'Active' },
@@ -52,13 +53,17 @@ export default function Administrator() {
     const [editingAdmin, setEditingAdmin] = useState(null);
     const [view, setView] = useState('list');
     const [selectedAdminDetail, setSelectedAdminDetail] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
+    const [isVerifying, setIsVerifying] = useState(false);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isOrgConfirmOpen, setIsOrgConfirmOpen] = useState(false);
+    const [orgChangeToConfirm, setOrgChangeToConfirm] = useState(null);
 
     // Email Change Flow State
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
@@ -70,6 +75,8 @@ export default function Administrator() {
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [otpSource, setOtpSource] = useState(null);
     const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
+    const [resendTimer, setResendTimer] = useState(300);
+    const [isTimerActive, setIsTimerActive] = useState(false);
 
     const [admins, setAdmins] = useState([]);
     const [totalAdmins, setTotalAdmins] = useState(0);
@@ -82,6 +89,7 @@ export default function Administrator() {
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Form State for Adding / Editing Admin
     const [adminForm, setAdminForm] = useState({
@@ -140,6 +148,25 @@ export default function Administrator() {
     }, []);
 
     useEffect(() => {
+        let interval = null;
+        if (isOtpModalOpen && isTimerActive && resendTimer > 0) {
+            interval = setInterval(() => {
+                setResendTimer((prev) => prev - 1);
+            }, 1000);
+        } else if (resendTimer === 0) {
+            setIsTimerActive(false);
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isOtpModalOpen, isTimerActive, resendTimer]);
+
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
+
+    useEffect(() => {
         fetchAdmins();
     }, [currentPage, debouncedSearch, statusFilter]);
 
@@ -192,11 +219,11 @@ export default function Administrator() {
             if (res && res.data) {
                 const newIsActive = statusToUpdate.currentStatus !== 'Active';
                 setAdmins(admins.map(w => w._id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
-                showSuccessToast('Status Updated', `Administrator status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
+                showSuccessToast('Status Updated', res?.message || `Administrator status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
             }
         } catch (error) {
-            console.error("Failed to change status:", error);
-            showErrorToast('Action Failed', 'Failed to change administrator status');
+            console.error("Failed to update status:", error);
+            showErrorToast('Action Failed', error?.message || 'Failed to change administrator status');
         }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
@@ -233,7 +260,7 @@ export default function Administrator() {
                 setNewEmailForm('');
             }, 2500);
         } catch (error) {
-            showErrorToast('Error', error?.response?.data?.message || 'Failed to update email');
+            showErrorToast('Error', error?.message || 'Failed to update email');
         }
     };
 
@@ -255,18 +282,25 @@ export default function Administrator() {
                     selectedIds.includes(admin._id) ? { ...admin, isActive: bulkStatusToUpdate } : admin
                 ));
                 const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
-                showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} administrators`);
+                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} administrators`);
             }
         } catch (error) {
-            console.error("Failed to bulk update status:", error);
-            showErrorToast('Action Failed', 'Failed to update bulk status');
+            console.error("Failed to update bulk status:", error);
+            showErrorToast('Action Failed', error?.message || 'Failed to update bulk status');
         }
         setSelectedIds([]);
         setIsBulkStatusConfirmOpen(false);
         setBulkStatusToUpdate(null);
     };
 
-    const handleOrganizationChange = async (id, organizationId) => {
+    const handleOrganizationChange = (id, organizationId) => {
+        setOrgChangeToConfirm({ id, organizationId });
+        setIsOrgConfirmOpen(true);
+    };
+
+    const confirmOrganizationChange = async () => {
+        if (!orgChangeToConfirm) return;
+        const { id, organizationId } = orgChangeToConfirm;
         try {
             const res = await adminService.updateOrganization(id, { organizationId });
             if (res && res.data) {
@@ -274,11 +308,14 @@ export default function Administrator() {
                 setAdmins(admins.map(admin =>
                     admin._id === id ? { ...admin, organization: newOrg ? newOrg : { _id: organizationId } } : admin
                 ));
-                showSuccessToast('Organization Assigned', 'Administrator organization updated successfully');
+                showSuccessToast('Organization Assigned', res?.message || 'Administrator organization updated successfully');
             }
         } catch (err) {
             console.error("Failed to update organization:", err);
-            showErrorToast('Action Failed', 'Failed to update organization');
+            showErrorToast('Action Failed', err?.message || 'Failed to update organization');
+        } finally {
+            setIsOrgConfirmOpen(false);
+            setOrgChangeToConfirm(null);
         }
     };
 
@@ -323,20 +360,38 @@ export default function Administrator() {
             showErrorToast('Validation Error', 'Please enter an email first');
             return;
         }
+        setIsVerifying(true);
         try {
             await otpService.sendOtp(email);
             setOtpSource(source);
             setOtpCode(['', '', '', '', '', '']);
+            setResendTimer(300);
+            setIsTimerActive(true);
             setIsOtpModalOpen(true);
             if (source === 'emailChange') {
                 setIsEmailChangeModalOpen(false);
             }
         } catch (error) {
-            showErrorToast('Error', error?.response?.data?.message || 'Failed to send OTP');
+            showErrorToast('Error', error?.message || 'Failed to send OTP');
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
+        try {
+            await otpService.sendOtp(emailToVerify);
+            setResendTimer(300);
+            setIsTimerActive(true);
+            showSuccessToast('Success', 'OTP resent successfully!');
+        } catch (error) {
+            showErrorToast('Error', error?.message || 'Failed to resend OTP');
         }
     };
 
     const saveAdmin = async () => {
+        setIsSubmitting(true);
         if (editingAdmin) {
             try {
                 // Update Existing Record via API
@@ -346,11 +401,13 @@ export default function Administrator() {
                 });
                 if (res && res.data) {
                     setAdmins(admins.map(w => w._id === editingAdmin._id ? { ...w, ...res.data } : w));
-                    showSuccessToast('Administrator Updated', 'Administrator details saved successfully');
+                    showSuccessToast('Administrator Updated', res?.message || 'Administrator details saved successfully');
                 }
             } catch (error) {
                 console.error("Failed to update admin:", error);
-                showErrorToast('Action Failed', 'Failed to update administrator details');
+                showErrorToast('Action Failed', error?.message || 'Failed to update administrator details');
+                setIsEditConfirmOpen(false);
+                setIsSubmitting(false);
                 return;
             }
         } else {
@@ -372,16 +429,19 @@ export default function Administrator() {
                     }
                     setCurrentPage(1);
                     fetchAdmins(); // re-fetch to ensure pagination is consistent and fields are populated
-                    showSuccessToast('Administrator Added', 'New administrator registered successfully');
+                    showSuccessToast('Administrator Added', res?.message || 'New administrator registered successfully');
                 }
             } catch (error) {
                 console.error("Failed to create admin:", error);
-                showErrorToast('Action Failed', 'Failed to register new administrator');
+                showErrorToast('Action Failed', error?.message || 'Failed to register new administrator');
+                setIsEditConfirmOpen(false);
+                setIsSubmitting(false);
                 return;
             }
         }
         setActiveModal(null);
         setIsEditConfirmOpen(false);
+        setIsSubmitting(false);
     };
 
     const handleCancel = () => {
@@ -418,11 +478,11 @@ export default function Administrator() {
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Admins");
                 XLSX.writeFile(wb, "Admins_List.xlsx");
-                showSuccessToast('Export Successful', 'Administrator list downloaded');
+                showSuccessToast('Export Successful', res?.message || 'Administrator list downloaded');
             }
         } catch (error) {
-            console.error("Export failed:", error);
-            showErrorToast('Export Failed', 'Failed to export administrators');
+            console.error("Export Failed", error);
+            showErrorToast('Export Failed', error?.message || 'Failed to export administrators');
         } finally {
             setIsExportConfirmOpen(false);
         }
@@ -434,10 +494,10 @@ export default function Administrator() {
             {/* ==========================================
              HEADER ACTION SECTION
              ========================================== */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Admins</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all registered hostel administrators</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admins</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all registered hostel administrators</p>
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -461,44 +521,60 @@ export default function Administrator() {
             </div>
 
             {/* ==========================================
-             FILTER & UTILITY TOOLBAR
+                TOOLBAR SECTION
              ========================================== */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Search Admins..."
-                            value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                        />
+                    <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                        <div className="relative w-full">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                placeholder="Search Admins..."
+                                value={searchQuery}
+                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
+                            />
+                        </div>
+                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
+                            <button 
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
+                            >
+                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="relative inline-block w-32 bg-white border border-gray-100 md:border-gray-200 rounded-lg shadow-sm md:shadow-none">
-                            <select
+                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                        <div className="flex gap-3 w-full sm:w-auto">
+                            <Dropdown
+                                className="flex-1 sm:flex-none"
+                                options={[
+                                    { value: "All", label: "All" },
+                                    { value: "Active", label: "Active" },
+                                    { value: "Inactive", label: "Inactive" }
+                                ]}
                                 value={statusFilter}
-                                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                                className="w-full appearance-none bg-transparent rounded-lg px-3 py-2 pr-8 text-sm text-[#777777] font-medium outline-none focus:border-[#0A437A] cursor-pointer"
-                            >
-                                <option value="All">All</option>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
+                                onChange={(val) => {
+                                    setStatusFilter(val);
+                                    setCurrentPage(1);
+                                }}
+                                placeholder="All"
+                                minWidth="w-32"
+                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
+                            />
 
-                        <button
-                            onClick={initiateExport}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" /> Export
-                        </button>
+                            <button
+                                onClick={initiateExport}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            >
+                                <Download className="w-4 h-4" /> Export
+                            </button>
+                        </div>
                         <button
                             onClick={openAddAdminModal}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Plus className="w-4 h-4" /> Add New
                         </button>
@@ -542,9 +618,14 @@ export default function Administrator() {
                 {/* ==========================================
                 PAGINATION BAR FOOTER
                 ========================================== */}
-                <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
-                        Showing {totalAdmins === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalAdmins)} of {totalAdmins} entries
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalAdmins === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(currentPage * itemsPerPage, totalAdmins)} of {totalAdmins}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -599,6 +680,8 @@ export default function Administrator() {
                     organizations={organizations}
                     isEmailVerified={isEmailVerified}
                     handleVerifyClick={handleVerifyClick}
+                    isSubmitting={isSubmitting}
+                    isVerifying={isVerifying}
                 />
             )}
 
@@ -618,9 +701,10 @@ export default function Administrator() {
                             </button>
                             <button
                                 onClick={saveAdmin}
+                                disabled={isSubmitting}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
                             >
-                                Confirm
+                                {isSubmitting ? 'Saving...' : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -708,9 +792,9 @@ export default function Administrator() {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status for the {selectedIds.length} selected admin(s)?
+                            Are you sure you want to set the status of {selectedIds.length} admin(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -831,7 +915,7 @@ export default function Administrator() {
                                 showSuccessToast('Success', 'Email verified successfully!');
                             }
                         } catch(err) {
-                            showErrorToast('Error', err?.response?.data?.message || 'Invalid OTP');
+                            showErrorToast('Error', err?.message || 'Invalid OTP');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         <div className="flex justify-between items-center mb-6">
@@ -860,7 +944,6 @@ export default function Administrator() {
                         <p className="text-gray-500 mb-3 text-[15px]">
                             A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : adminForm.email || '@usergmail.com'}</span>
                         </p>
-                        <p className="text-red-500 text-[15px] mb-10">Expires in 10 minutes</p>
 
                         <div className="flex justify-center gap-2 sm:gap-3 mb-8">
                             {otpCode.map((digit, idx) => (
@@ -889,7 +972,11 @@ export default function Administrator() {
                         </div>
 
                         <p className="text-[14px] text-gray-400 mb-8 font-medium">
-                            Didn't receive it ? <button type="button" className="text-[#0A437A] cursor-pointer hover:underline font-semibold">Resend the code</button>
+                            Didn't receive it ? {resendTimer > 0 ? (
+                                <span className="text-gray-500 font-semibold ml-1">Resend in {formatTime(resendTimer)}</span>
+                            ) : (
+                                <button type="button" onClick={handleResendOtp} className="text-[#0A437A] cursor-pointer hover:underline font-semibold ml-1">Resend the code</button>
+                            )}
                         </p>
 
                         <button
@@ -918,6 +1005,32 @@ export default function Administrator() {
                         >
                             <X size={14} />
                         </button>
+                    </div>
+                </div>
+            )}
+            {/* Confirm Organization Change Modal */}
+            {isOrgConfirmOpen && (
+                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-[320px] max-w-[90vw] p-6 relative animate-in zoom-in-95 duration-200">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Change Organization?</h3>
+                        <p className="text-gray-500 mb-6">Are you sure you want to change the organization for this administrator?</p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsOrgConfirmOpen(false);
+                                    setOrgChangeToConfirm(null);
+                                }}
+                                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmOrganizationChange}
+                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-[#0A437A]/90 font-medium transition-colors cursor-pointer"
+                            >
+                                Confirm
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

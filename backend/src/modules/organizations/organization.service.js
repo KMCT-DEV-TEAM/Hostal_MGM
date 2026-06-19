@@ -20,6 +20,18 @@ const findExistingOrganizationWithExclude = async (code, organisationNumber, exc
   });
 };
 
+const checkExistingOrgCodeDb = async (code) => {
+  return await Organization.findOne({ code });
+};
+
+const checkExistingOrgNumberDb = async (organisationNumber) => {
+  return await Organization.findOne({ organisationNumber });
+};
+
+const checkExistingOrgEmailDb = async (email) => {
+  return await Organization.findOne({ email });
+};
+
 const createOrganizationDb = async (data) => {
   return await Organization.create(data);
 };
@@ -230,6 +242,9 @@ const getAggregateOrganizationDataDb = async (organizationId = null) => {
 export {
   findExistingOrganization,
   findExistingOrganizationWithExclude,
+  checkExistingOrgCodeDb,
+  checkExistingOrgNumberDb,
+  checkExistingOrgEmailDb,
   createOrganizationDb,
   getAllOrganizationsDb,
   getPaginatedOrganizationsDb,

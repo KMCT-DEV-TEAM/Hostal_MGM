@@ -16,6 +16,7 @@ import OrganizationTable from '../components/organization/OrganizationTable';
 import OrganizationMobileList from '../components/organization/OrganizationMobileList';
 import OrganizationDetailView from '../components/organization/OrganizationDetailView';
 import OrganizationFormModal from '../components/organization/OrganizationFormModal';
+import Dropdown from '@/components/ui/Dropdown';
 
 const INITIAL_ORGS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', address: 'Abc street, Sarojini nagar', status: 'Active' },
@@ -24,6 +25,7 @@ const INITIAL_ORGS = [
 
 const OrganizationManagement = () => {
     const [orgs, setOrgs] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [totalOrgs, setTotalOrgs] = useState(0);
@@ -45,6 +47,7 @@ const OrganizationManagement = () => {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -57,6 +60,7 @@ const OrganizationManagement = () => {
 
     const fetchOrganizations = async () => {
         try {
+            setLoading(true);
             const res = await organizationService.getOrganizations({
                 page,
                 limit,
@@ -71,6 +75,8 @@ const OrganizationManagement = () => {
         } catch (err) {
             console.error("Failed to fetch organizations:", err);
             setError("Failed to fetch organizations. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -106,7 +112,7 @@ const OrganizationManagement = () => {
             showSuccessToast('Status Updated', 'Organization status changed successfully');
         } catch (err) {
             console.error("Failed to toggle status:", err);
-            showErrorToast('Action Failed', 'Failed to update status. Please try again.');
+            showErrorToast('Action Failed', err?.message || 'Failed to update status. Please try again.');
         }
     };
 
@@ -165,7 +171,7 @@ const OrganizationManagement = () => {
             fetchOrganizations(); // Refresh list after saving
         } catch (err) {
             console.error("Failed to save organization:", err);
-            showErrorToast('Action Failed', err?.response?.data?.message || 'Failed to save organization. Please try again.');
+            showErrorToast('Action Failed', err?.message || 'Failed to save organization. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -221,7 +227,7 @@ const OrganizationManagement = () => {
             fetchOrganizations(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
-            showErrorToast('Action Failed', 'Failed to bulk update status. Please try again.');
+            showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
         }
     };
 
@@ -263,7 +269,7 @@ const OrganizationManagement = () => {
             }
         } catch (err) {
             console.error("Failed to export organizations:", err);
-            showErrorToast('Export Failed', 'Failed to export organizations. Please try again.');
+            showErrorToast('Export Failed', err?.message || 'Failed to export organizations. Please try again.');
         }
     };
 
@@ -276,10 +282,10 @@ const OrganizationManagement = () => {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-black">Organization</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all organizations</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-black">Organization</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all organizations</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
 
@@ -306,39 +312,52 @@ const OrganizationManagement = () => {
             {/* Filter and Action Bar */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
-                        <input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none"
-                            placeholder="Search Organization..."
-                        />
+                    <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                        <div className="relative w-full">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
+                            <input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
+                                placeholder="Search Organization..."
+                            />
+                        </div>
+                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
+                            <button 
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
+                            >
+                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="relative inline-block w-32 bg-white border border-gray-100 md:border-gray-200 rounded-lg shadow-sm md:shadow-none">
-                            <select
+                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                        <div className="flex gap-3 w-full sm:w-auto">
+                            <Dropdown
+                                className="flex-1 sm:flex-none"
+                                options={[
+                                    { label: 'All', value: 'All' },
+                                    { label: 'Active', value: 'Active' },
+                                    { label: 'Inactive', value: 'Inactive' }
+                                ]}
                                 value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full appearance-none bg-transparent rounded-lg px-3 py-2 pr-8 text-sm text-[#777777] font-medium outline-none focus:border-[#0A437A] cursor-pointer"
-                            >
-                                <option value="All">All</option>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
+                                onChange={(val) => setStatusFilter(val)}
+                                placeholder="All"
+                                minWidth="w-32"
+                                triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
+                            />
 
-                        <button
-                            onClick={initiateExport}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" /> Export
-                        </button>
+                            <button
+                                onClick={initiateExport}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            >
+                                <Download className="w-4 h-4" /> Export
+                            </button>
+                        </div>
                         <button
                             onClick={() => openModal('add')}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Plus className="w-4 h-4" /> Add New
                         </button>
@@ -347,6 +366,7 @@ const OrganizationManagement = () => {
 
                 <OrganizationTable
                     orgs={orgs}
+                    loading={loading}
                     error={error}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
@@ -359,6 +379,7 @@ const OrganizationManagement = () => {
 
                 <OrganizationMobileList
                     orgs={orgs}
+                    loading={loading}
                     error={error}
                     openModal={openModal}
                     setSelectedOrganizationDetail={setSelectedOrganizationDetail}
@@ -369,10 +390,14 @@ const OrganizationManagement = () => {
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
-                        Showing {totalOrgs === 0 ? 0 : (page - 1) * limit + 1} to{" "}
-                        {Math.min(page * limit, totalOrgs)} of {totalOrgs} entries
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalOrgs === 0 ? 0 : (page - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(page * limit, totalOrgs)} of {totalOrgs}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -528,9 +553,9 @@ const OrganizationManagement = () => {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status for the {selectedIds.length} selected organization(s)?
+                            Are you sure you want to set the status of {selectedIds.length} organization(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button

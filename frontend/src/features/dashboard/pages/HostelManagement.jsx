@@ -30,6 +30,7 @@ import HostelHeader from '../components/Hostel/HostelHeader';
 import HostelToolbar from '../components/Hostel/HostelToolbar';
 import HostelTable from '../components/Hostel/HostelTable';
 import HostelPagination from '../components/Hostel/HostelPagination';
+import Dropdown from '@/components/ui/Dropdown';
 
 
 
@@ -56,6 +57,7 @@ export default function HostelManagement() {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedHostelDetail, setSelectedHostelDetail] = useState(null);
@@ -76,7 +78,6 @@ export default function HostelManagement() {
         hosteltype: "",
         status: "Active"
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const tableContainerRef = useRef(null);
 
@@ -187,7 +188,7 @@ export default function HostelManagement() {
             fetchHostels();
         } catch (error) {
             console.error("Failed to save hostel:", error);
-            showErrorToast('Action Failed', error?.response?.data?.message || 'Failed to save hostel. Please try again.');
+            showErrorToast('Action Failed', error?.message || 'Failed to save hostel. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -225,7 +226,7 @@ export default function HostelManagement() {
             fetchHostels(); // refresh after update
         } catch (error) {
             console.error("Failed to update status:", error);
-            showErrorToast('Action Failed', 'Failed to update status.');
+            showErrorToast('Action Failed', error?.message || 'Failed to update status.');
         }
     };
 
@@ -247,7 +248,7 @@ export default function HostelManagement() {
             fetchHostels(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
-            showErrorToast('Action Failed', 'Failed to bulk update status. Please try again.');
+            showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
             setLoading(false);
         }
     };
@@ -287,7 +288,7 @@ export default function HostelManagement() {
             showSuccessToast('Export Successful', 'The hostel list has been downloaded.');
         } catch (error) {
             console.error("Export failed:", error);
-            showErrorToast('Export Failed', 'Failed to export data. Please try again.');
+            showErrorToast('Export Failed', error?.message || 'Failed to export data. Please try again.');
         } finally {
             setLoading(false);
             fetchHostels();
@@ -470,8 +471,8 @@ export default function HostelManagement() {
                         <div className="space-y-6">
                             <section>
                                 <div className="border-b border-gray-100 mb-4" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="col-span-1 sm:col-span-2">
                                         <label className="block text-[10px] font-medium text-black mb-1">Hostel Name *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
@@ -524,16 +525,24 @@ export default function HostelManagement() {
                                             <input
                                                 name="phone"
                                                 value={hostelForm.phone}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, phone: e.target.value })}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/\D/g, '');
+                                                    if (value.length <= 10) {
+                                                        setHostelForm({ ...hostelForm, phone: value });
+                                                    }
+                                                }}
                                                 type="text"
                                                 required
+                                                maxLength="10"
+                                                pattern="[0-9]{10}"
+                                                title="Please enter exactly 10 digits"
                                                 placeholder="9876543210"
                                                 className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="col-span-2">
+                                    <div className="col-span-1 sm:col-span-2">
                                         <label className="block text-[10px] font-medium text-black mb-1">Location *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
@@ -550,19 +559,17 @@ export default function HostelManagement() {
                                     {/* Hostel Type Field */}
                                     <div className="col-span-1">
                                         <label className="block text-[10px] font-medium text-black mb-1">Hostel type *</label>
-                                        <div className="relative">
-                                            <select
-                                                required
-                                                value={hostelForm.hosteltype}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, hosteltype: e.target.value })}
-                                                className="w-full appearance-none px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer"
-                                            >
-                                                <option value="" disabled>Select Type</option>
-                                                <option value="boys">Boys</option>
-                                                <option value="girls">Girls</option>
-                                            </select>
-                                            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
-                                        </div>
+                                        <Dropdown
+                                            options={[
+                                                { label: 'Boys', value: 'boys' },
+                                                { label: 'Girls', value: 'girls' }
+                                            ]}
+                                            value={hostelForm.hosteltype}
+                                            onChange={(val) => setHostelForm({ ...hostelForm, hosteltype: val })}
+                                            placeholder="Select Type"
+                                            minWidth="w-full"
+                                            triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer"
+                                        />
                                     </div>
 
                                     {/* Capacity Field */}
@@ -748,9 +755,9 @@ export default function HostelManagement() {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status for the {selectedIds.length} selected hostel(s)?
+                            Are you sure you want to set the status of {selectedIds.length} hostel(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
