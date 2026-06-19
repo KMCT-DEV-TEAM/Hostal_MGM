@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 const DepartmentFormModal = ({
     isModalOpen,
@@ -83,20 +84,17 @@ const DepartmentFormModal = ({
                         <div className="grid grid-cols-1 gap-6 mt-6">
                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">Course *</label>
-                                <select
-                                    name="courseId"
+                                <Dropdown
+                                    options={courses ? courses.map(course => ({
+                                        label: `${course.name} (${course.code})`,
+                                        value: course._id
+                                    })) : []}
                                     value={formData.courseId}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] cursor-pointer"
-                                >
-                                    <option value="" disabled>Select Course</option>
-                                    {courses && courses.map(course => (
-                                        <option key={course._id} value={course._id}>
-                                            {course.name} ({course.code})
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(val) => handleInputChange({ target: { name: 'courseId', value: val } })}
+                                    placeholder="Select Course"
+                                    minWidth="w-full"
+                                    triggerClassName="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] cursor-pointer bg-white"
+                                />
                             </div>
                         </div>
                     </section>

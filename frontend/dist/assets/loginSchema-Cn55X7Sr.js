@@ -1,0 +1,1 @@
+import{p as s,e}from"./common-BElW4Nc3.js";import{o as a,s as i}from"./schemas-Dzck5SzL.js";const r=a({email:e,password:s}),d=a({email:e,password:s}),n=a({adminId:i().min(1,{message:"Admin ID is required"}),password:s});export{n as a,r as s,d as u};

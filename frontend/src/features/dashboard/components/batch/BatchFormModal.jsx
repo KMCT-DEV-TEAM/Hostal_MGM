@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 const BatchFormModal = ({
     isModalOpen,
@@ -83,20 +84,17 @@ const BatchFormModal = ({
                         <div className="grid grid-cols-1 gap-6 mt-6">
                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">Department *</label>
-                                <select
-                                    name="departmentId"
+                                <Dropdown
+                                    options={departments ? departments.map(dep => ({
+                                        label: `${dep.name} (${dep.code})`,
+                                        value: dep._id
+                                    })) : []}
                                     value={formData.departmentId}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] cursor-pointer"
-                                >
-                                    <option value="" disabled>Select Department</option>
-                                    {departments && departments.map(dep => (
-                                        <option key={dep._id} value={dep._id}>
-                                            {dep.name} ({dep.code})
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(val) => handleInputChange({ target: { name: 'departmentId', value: val } })}
+                                    placeholder="Select Department"
+                                    minWidth="w-full"
+                                    triggerClassName="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] cursor-pointer bg-white"
+                                />
                             </div>
                         </div>
                     </section>

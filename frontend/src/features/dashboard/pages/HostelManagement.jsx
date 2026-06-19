@@ -30,6 +30,7 @@ import HostelHeader from '../components/Hostel/HostelHeader';
 import HostelToolbar from '../components/Hostel/HostelToolbar';
 import HostelTable from '../components/Hostel/HostelTable';
 import HostelPagination from '../components/Hostel/HostelPagination';
+import Dropdown from '@/components/ui/Dropdown';
 
 
 
@@ -558,19 +559,17 @@ export default function HostelManagement() {
                                     {/* Hostel Type Field */}
                                     <div className="col-span-1">
                                         <label className="block text-[10px] font-medium text-black mb-1">Hostel type *</label>
-                                        <div className="relative">
-                                            <select
-                                                required
-                                                value={hostelForm.hosteltype}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, hosteltype: e.target.value })}
-                                                className="w-full appearance-none px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer"
-                                            >
-                                                <option value="" disabled>Select Type</option>
-                                                <option value="boys">Boys</option>
-                                                <option value="girls">Girls</option>
-                                            </select>
-                                            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
-                                        </div>
+                                        <Dropdown
+                                            options={[
+                                                { label: 'Boys', value: 'boys' },
+                                                { label: 'Girls', value: 'girls' }
+                                            ]}
+                                            value={hostelForm.hosteltype}
+                                            onChange={(val) => setHostelForm({ ...hostelForm, hosteltype: val })}
+                                            placeholder="Select Type"
+                                            minWidth="w-full"
+                                            triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer"
+                                        />
                                     </div>
 
                                     {/* Capacity Field */}

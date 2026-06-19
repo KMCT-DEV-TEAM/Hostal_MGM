@@ -17,6 +17,7 @@ import BatchTable from '../components/batch/BatchTable';
 import BatchMobileList from '../components/batch/BatchMobileList';
 import BatchDetailView from '../components/batch/BatchDetailView';
 import BatchFormModal from '../components/batch/BatchFormModal';
+import Dropdown from '@/components/ui/Dropdown';
 
 const INITIAL_batches = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', address: 'Abc street, Sarojini nagar', status: 'Active' },
@@ -328,18 +329,18 @@ const BatchManagement = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="relative inline-block w-32 bg-white border border-gray-100 md:border-gray-200 rounded-lg shadow-sm md:shadow-none">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full appearance-none bg-transparent rounded-lg px-3 py-2 pr-8 text-sm text-[#777777] font-medium outline-none focus:border-[#0A437A] cursor-pointer"
-                            >
-                                <option value="All">All</option>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
+                        <Dropdown
+                            options={[
+                                { label: 'All', value: 'All' },
+                                { label: 'Active', value: 'Active' },
+                                { label: 'Inactive', value: 'Inactive' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => setStatusFilter(val)}
+                            placeholder="Select Status"
+                            minWidth="w-32"
+                            triggerClassName="w-full appearance-none bg-transparent rounded-lg px-3 py-2 text-sm text-[#777777] font-medium outline-none border border-gray-100 md:border-gray-200 shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
+                        />
 
                         <button
                             onClick={initiateExport}
