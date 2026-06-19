@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
+import Dropdown from '@/components/ui/Dropdown';
+
 export default function HostelTable({
     hostels,
     loading,
@@ -107,19 +109,17 @@ export default function HostelTable({
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
-                                        <div className="relative inline-block mx-auto">
-                                            <select
-                                                value={hostel.isActive ? 'Active' : 'Inactive'}
+                                        <div className="relative inline-block w-[105px]">
+                                            <Dropdown
+                                                minWidth=""
+                                                options={[
+                                                    { value: "Active", label: "Active" },
+                                                    { value: "Inactive", label: "Inactive" }
+                                                ]}
+                                                value={hostel.isActive ? "Active" : "Inactive"}
                                                 onChange={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
-                                                className={`appearance-none rounded-lg px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${hostel.isActive
-                                                    ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
-                                                    : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
-                                                    }`}
-                                            >
-                                                <option value="Active">Active</option>
-                                                <option value="Inactive">Inactive</option>
-                                            </select>
-                                            <ChevronDown className={`w-3 h-3 absolute right-2 top-2.5 pointer-events-none ${hostel.isActive ? 'text-green-600' : 'text-red-500'}`} />
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${hostel.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
+                                            />
                                         </div>
                                     </td>
                                     <td className="p-4">

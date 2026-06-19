@@ -282,10 +282,10 @@ const OrganizationManagement = () => {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-black">Organization</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all organizations</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-black">Organization</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all organizations</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
 
@@ -390,10 +390,14 @@ const OrganizationManagement = () => {
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
-                        Showing {totalOrgs === 0 ? 0 : (page - 1) * limit + 1} to{" "}
-                        {Math.min(page * limit, totalOrgs)} of {totalOrgs} entries
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalOrgs === 0 ? 0 : (page - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(page * limit, totalOrgs)} of {totalOrgs}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -549,9 +553,9 @@ const OrganizationManagement = () => {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status for the {selectedIds.length} selected organization(s)?
+                            Are you sure you want to set the status of {selectedIds.length} organization(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button

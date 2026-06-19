@@ -471,8 +471,8 @@ export default function HostelManagement() {
                         <div className="space-y-6">
                             <section>
                                 <div className="border-b border-gray-100 mb-4" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="col-span-1 sm:col-span-2">
                                         <label className="block text-[10px] font-medium text-black mb-1">Hostel Name *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
@@ -542,7 +542,7 @@ export default function HostelManagement() {
                                         </div>
                                     </div>
 
-                                    <div className="col-span-2">
+                                    <div className="col-span-1 sm:col-span-2">
                                         <label className="block text-[10px] font-medium text-black mb-1">Location *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
@@ -755,9 +755,9 @@ export default function HostelManagement() {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status for the {selectedIds.length} selected hostel(s)?
+                            Are you sure you want to set the status of {selectedIds.length} hostel(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
