@@ -2,13 +2,30 @@ import parentApi from '@/features/dashboard/api/parentApi';
 import { ROLES } from '@/constants/roles';
 import { createRoleResolver } from '@/utils/createRoleResolver';
 
-export async function createParent(payload) {
-  const response = await parentApi.createParent(payload);
-  return response.data;
-}
+
 
 export async function updateParent(id, payload) {
   const response = await parentApi.updateParent(id, payload);
+  return response.data;
+}
+
+export async function updateParentByAdmin(id, payload) {
+  const response = await parentApi.updateParentByAdmin(id, payload);
+  return response.data;
+}
+
+export async function updateParentBySuperAdmin(id, payload) {
+  const response = await parentApi.updateParentBySuperAdmin(id, payload);
+  return response.data;
+}
+
+export async function changeParentEmailByAdmin(id, payload) {
+  const response = await parentApi.changeParentEmailByAdmin(id, payload);
+  return response.data;
+}
+
+export async function changeParentEmailBySuperAdmin(id, payload) {
+  const response = await parentApi.changeParentEmailBySuperAdmin(id, payload);
   return response.data;
 }
 
@@ -51,6 +68,25 @@ export async function bulkStatusBySuperAdmin(payload) {
   const response = await parentApi.bulkStatusBySuperAdmin(payload);
   return response.data;
 }
+export const createParentByAdmin = async (payload) => {
+  const res = await parentApi.createParentByAdmin(payload);
+  return res.data;
+};
+
+export const createParentBySuperAdmin = async (payload) => {
+  const res = await parentApi.createParentBySuperAdmin(payload);
+  return res.data;
+};
+
+export const setDefaultGuardianByAdmin = async (payload) => {
+  const res = await parentApi.setDefaultGuardianByAdmin(payload);
+  return res.data;
+}
+
+export const setDefaultGuardianBySuperAdmin = async (payload) => {
+  const res = await parentApi.setDefaultGuardianBySuperAdmin(payload);
+  return res.data;
+}
 
 const PARENT_FETCHERS = {
   [ROLES.ADMIN]: getParentsByAdmin,
@@ -60,6 +96,15 @@ const PARENT_FETCHERS = {
 const PARENT_EXPORT_FETCHERS = {
   [ROLES.ADMIN]: exportParentsByAdmin,
   [ROLES.SUPER_ADMIN]: exportParentsBySuperAdmin,
+}
+const PARENT_UPDATE_FETCHERS = {
+  [ROLES.ADMIN]: updateParentByAdmin,
+  [ROLES.SUPER_ADMIN]: updateParentBySuperAdmin,
+};
+
+const PARENT_EMAIL_CHANGE_FETCHERS = {
+  [ROLES.ADMIN]: changeParentEmailByAdmin,
+  [ROLES.SUPER_ADMIN]: changeParentEmailBySuperAdmin,
 };
 
 const PARENT_STATUS_TOGGLE_FETCHERS = {
@@ -67,7 +112,16 @@ const PARENT_STATUS_TOGGLE_FETCHERS = {
   [ROLES.SUPER_ADMIN]: toggleStatusBySuperAdmin,
 };
 
-export const getParents = createRoleResolver(PARENT_FETCHERS, 'parent');
+const PARENT_CREATE_FETCHERS = {
+  [ROLES.ADMIN]: createParentByAdmin,
+  [ROLES.SUPER_ADMIN]: createParentBySuperAdmin,
+};
+
+
+const DEFAULT_GUARDIAN_FETCHERS = {
+  [ROLES.ADMIN]: setDefaultGuardianByAdmin,
+  [ROLES.SUPER_ADMIN]: setDefaultGuardianBySuperAdmin,
+};
 
 export const exportParents = createRoleResolver(PARENT_EXPORT_FETCHERS, 'parent export');
 
@@ -86,9 +140,39 @@ export const bulkUpdateParentStatus = createRoleResolver(
   'parent bulk status'
 );
 
+export const getParents = createRoleResolver(PARENT_FETCHERS, 'parent');
+
+export const updateParentByRole = createRoleResolver(
+  PARENT_UPDATE_FETCHERS,
+  'parent update'
+);
+
+export const changeParentEmail = createRoleResolver(
+  PARENT_EMAIL_CHANGE_FETCHERS,
+  'parent email change'
+);
+
+
+export const createParent = createRoleResolver(
+  PARENT_CREATE_FETCHERS,
+  "parent create"
+);
+
+export const setDefaultGuardian =
+  createRoleResolver(
+    DEFAULT_GUARDIAN_FETCHERS,
+    "set default guardian"
+  );
+>>>>>>> 865214feabc322364f8667c008e4fb4e4a752f34
 const parentService = {
   createParent,
   updateParent,
+  updateParentByRole,
+  changeParentEmail,
+  changeParentEmailByAdmin,
+  changeParentEmailBySuperAdmin,
+  updateParentByAdmin,
+  updateParentBySuperAdmin,
   getParents,
   getParentsByAdmin,
   getParentsBySuperAdmin,

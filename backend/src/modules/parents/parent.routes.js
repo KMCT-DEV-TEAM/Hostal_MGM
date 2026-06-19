@@ -33,6 +33,14 @@ router.patch(
 );
 
 router.patch(
+  "/:id/change-email",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateParentIdParam,
+  changeParentEmail
+);
+
+router.patch(
   "/:id/toggle-status",
   authMiddleware,
   roleMiddleware("admin", "super_admin"),

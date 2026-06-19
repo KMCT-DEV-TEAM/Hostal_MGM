@@ -1,22 +1,51 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
+import { deleteOtpDb, verifyOtpDb } from "../otp/otp.service.js";
 import User from "../users/user.model.js";
 import Parent from "./parent.model.js";
 import mongoose from "mongoose";
 import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, exportParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
+  const {
+    email,
+    parentOtp,
+  } = req.body;
+
+  const existingParent = await Parent.findOne({ email });
+
+  if (existingParent) {
+    return sendError(res, 400, "Parent email already exists");
+  }
+
+  const isOtpValid = await verifyOtpDb(email, parentOtp);
+
+  if (!isOtpValid) {
+    return sendError(
+      res,
+      400,
+      "Invalid or expired OTP"
+    );
+  }
+
+  await deleteOtpDb(email);
+
   let result;
 
   try {
-    result = await createParentDb(req.body);
+    result = await createParentDb({
+      ...req.body,
+      isVerified: true,
+    });
   } catch (error) {
     if (error.message === "Parent email already exists") {
       return sendError(res, 400, error.message);
     }
+
     if (error.message === "Invalid studentId") {
       return sendError(res, 400, "Invalid studentId");
     }
+
     throw error;
   }
 
@@ -24,17 +53,21 @@ const createParent = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
-  return sendSuccess(res, 201, "Parent created successfully", {
-    data: {
-      parentId: result.parent._id,
-      studentId: result.parent.studentId,
-      parentName: result.parent.parentName,
-      email: result.parent.email,
-      defaultGuardian: result.parent.defaultGuardian,
+  return sendSuccess(
+    res,
+    201,
+    "Parent created successfully",
+    {
+      data: {
+        parentId: result.parent._id,
+        studentId: result.parent.studentId,
+        parentName: result.parent.parentName,
+        email: result.parent.email,
+        defaultGuardian: result.parent.defaultGuardian,
+      },
     }
-  });
+  );
 });
-
 const updateParent = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -61,6 +94,79 @@ const updateParent = asyncHandler(async (req, res) => {
       relationship: result.parentProfile.relationship,
       defaultGuardian: result.parentProfile.defaultGuardian,
     }
+  });
+});
+
+const changeParentEmail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { oldEmail, newEmail, otp } = req.body;
+
+  if (!oldEmail || !newEmail || !otp) {
+    return sendError(res, 400, "oldEmail, newEmail, and otp are required");
+  }
+
+  const normalizedOldEmail = String(oldEmail).trim().toLowerCase();
+  const normalizedNewEmail = String(newEmail).trim().toLowerCase();
+
+  if (normalizedOldEmail === normalizedNewEmail) {
+    return sendError(res, 400, "New email must be different from current email");
+  }
+
+  const parent = await Parent.findById(id);
+
+  if (!parent) {
+    return sendError(res, 404, "Parent not found");
+  }
+
+  if (req.user.role === "admin") {
+    const [admin, student] = await Promise.all([
+      User.findById(req.user.id).select("organization").lean(),
+      Student.findById(parent.studentId).select("organizationId").lean(),
+    ]);
+
+    if (!admin?.organization) {
+      return sendError(res, 400, "Admin is not assigned to any organization");
+    }
+
+    if (!student || String(student.organizationId) !== String(admin.organization)) {
+      return sendError(res, 403, "You can update only parents in your organization");
+    }
+  }
+
+  if (parent.email !== normalizedOldEmail) {
+    return sendError(res, 400, "Current email does not match");
+  }
+
+  const existingParent = await Parent.findOne({
+    email: normalizedNewEmail,
+    _id: { $ne: id },
+  });
+
+  if (existingParent) {
+    return sendError(res, 400, "Parent email already exists");
+  }
+
+  const isOtpValid = await verifyOtpDb(normalizedNewEmail, otp);
+
+  if (!isOtpValid) {
+    return sendError(res, 400, "Invalid or expired OTP");
+  }
+
+  parent.email = normalizedNewEmail;
+  parent.isVerified = true;
+  await parent.save();
+  await deleteOtpDb(normalizedNewEmail);
+
+  return sendSuccess(res, 200, "Parent email updated successfully", {
+    data: {
+      parentId: parent._id,
+      studentId: parent.studentId,
+      parentName: parent.parentName,
+      email: parent.email,
+      phone: parent.phone,
+      relationship: parent.relationship,
+      defaultGuardian: parent.defaultGuardian,
+    },
   });
 });
 
@@ -231,6 +337,7 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
 export {
   createParent,
   updateParent,
+  changeParentEmail,
   toggleParentStatus,
   setDefaultGuardian,
   getParentsByAdmin,

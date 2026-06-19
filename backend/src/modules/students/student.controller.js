@@ -149,6 +149,73 @@ const updateStudent = asyncHandler(async (req, res) => {
   );
 });
 
+const changeStudentEmail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { oldEmail, newEmail, otp } = req.body;
+
+  if (!oldEmail || !newEmail || !otp) {
+    return sendError(res, 400, "oldEmail, newEmail, and otp are required");
+  }
+
+  const normalizedOldEmail = String(oldEmail).trim().toLowerCase();
+  const normalizedNewEmail = String(newEmail).trim().toLowerCase();
+
+  if (normalizedOldEmail === normalizedNewEmail) {
+    return sendError(res, 400, "New email must be different from current email");
+  }
+
+  const student = await Student.findById(id);
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  if (req.user.role === "admin") {
+    const admin = await User.findById(req.user.id).select("organization").lean();
+
+    if (!admin?.organization) {
+      return sendError(res, 400, "Admin is not assigned to any organization");
+    }
+
+    if (String(student.organizationId) !== String(admin.organization)) {
+      return sendError(res, 403, "You can update only students in your organization");
+    }
+  }
+
+  if (student.email !== normalizedOldEmail) {
+    return sendError(res, 400, "Current email does not match");
+  }
+
+  const existingStudent = await Student.findOne({
+    email: normalizedNewEmail,
+    _id: { $ne: id },
+  });
+
+  if (existingStudent) {
+    return sendError(res, 400, "Student email already exists");
+  }
+
+  const isOtpValid = await verifyOtpDb(normalizedNewEmail, otp);
+
+  if (!isOtpValid) {
+    return sendError(res, 400, "Invalid or expired OTP");
+  }
+
+  student.email = normalizedNewEmail;
+  student.isVerified = true;
+  await student.save();
+  await deleteOtpDb(normalizedNewEmail);
+
+  return sendSuccess(res, 200, "Student email updated successfully", {
+    data: {
+      _id: student._id,
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+    },
+  });
+});
+
 const toggleStudentStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -420,6 +487,7 @@ const getStudentFilterOptions = asyncHandler(async (req, res) => {
 export {
   createStudent,
   updateStudent,
+  changeStudentEmail,
   toggleStudentStatus,
   updateStudentHostelStatus,
   updateStudentHostel,

@@ -2,15 +2,17 @@ import Swal from 'sweetalert2';
 
 const Toast = Swal.mixin({
   toast: true,
+  target: document.body,
   position: 'top-end',
   showConfirmButton: false,
   timer: 3000,
   timerProgressBar: true,
   width: 'auto',
   customClass: {
+    container: "swal-toast-container",
     popup: 'text-sm shadow-md rounded-xl !py-2 !px-4 mt-2 mr-2',
     title: 'text-[13px] font-medium !m-0 !mt-[2px] text-gray-700',
-    icon: '!scale-75 !my-0 !ml-0', 
+    icon: '!scale-75 !my-0 !ml-0',
   },
   didOpen: (toast) => {
     toast.onmouseenter = Swal.stopTimer;
