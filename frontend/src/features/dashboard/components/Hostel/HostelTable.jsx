@@ -3,6 +3,7 @@ import {
     Square, CheckSquare, Pencil, Mail, Phone, ChevronDown, Users, Loader2
 } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 export default function HostelTable({
     hostels,
     loading,
@@ -152,10 +153,7 @@ export default function HostelTable({
                     </div>
                 )}
                 {loading ? (
-                    <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
-                        Loading hostels...
-                    </div>
+                    <MobileSkeletonLoader />
                 ) : error ? (
                     <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
                 ) : hostels.length === 0 ? (
