@@ -13,10 +13,12 @@ import { saveAs } from 'file-saver';
 import BatchService from '../../../services/batch.service';
 import DepartmentService from '../../../services/department.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { exportToExcel } from '@/utils/exportUtils';
 import BatchTable from '../components/batch/BatchTable';
 import BatchMobileList from '../components/batch/BatchMobileList';
 import BatchDetailView from '../components/batch/BatchDetailView';
 import BatchFormModal from '../components/batch/BatchFormModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
 
 const INITIAL_batches = [
@@ -42,6 +44,7 @@ const BatchManagement = () => {
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedBatchDetail, setSelectedBatchDetail] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -243,14 +246,27 @@ const BatchManagement = () => {
         setIsExportConfirmOpen(true);
     };
 
-    // Step 2: The actual export logic (your existing function)
-    const confirmExport = async () => {
-        setIsExportConfirmOpen(false);
+    // Step 2: The actual export logic
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
         try {
-            // Fetch all Batchs by setting limit to 0
-            const res = await BatchService.getBatches({ page: 1, limit: 0, search: debouncedSearch, status: statusFilter });
-            if (res && res.data) {
-                const allbatches = res.data;
+            const params = { page: 1, limit: 100000 };
+            if (debouncedSearch) params.search = debouncedSearch;
+
+            // Allow export modal filter to override table filter
+            if (exportFilters.isActive !== '') {
+                params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
+            } else if (statusFilter !== 'All') {
+                params.status = statusFilter;
+            }
+
+            // Fetch all Batches
+            const res = await BatchService.getBatches(params);
+            
+            const responseData = res?.data || res;
+            const allbatches = responseData?.data || responseData || [];
+
+            if (allbatches && allbatches.length > 0) {
                 const exportData = allbatches.map((batch, index) => ({
                     "S.No": index + 1,
                     "Batch Name": batch.name,
@@ -263,28 +279,24 @@ const BatchManagement = () => {
                     "Created At": new Date(batch.createdAt).toLocaleDateString()
                 }));
 
-                const worksheet = XLSX.utils.json_to_sheet(exportData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Batchs");
-
-                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-                saveAs(data, `Batchs_Export_${new Date().getTime()}.xlsx`);
-                showSuccessToast('Export Successful', 'The Batch list has been downloaded.');
+                const isSuccess = exportToExcel(exportData, "Batches_Export", "Batches");
+                
+                if (isSuccess) {
+                    showSuccessToast('Export Successful', 'The Batch list has been downloaded.');
+                } else {
+                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
+                }
             } else {
-                showErrorToast('Export Failed', 'No data available to export.');
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
             }
         } catch (err) {
             console.error("Failed to export Batchs:", err);
             showErrorToast('Export Failed', err?.message || 'Failed to export Batchs. Please try again.');
+        } finally {
+            setIsExportConfirmOpen(false);
+            setIsExporting(false);
         }
     };
-
-
-
-
-
-
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
@@ -458,6 +470,14 @@ const BatchManagement = () => {
                 departments={departments}
             />
 
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Batches Data"
+            />
+
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
@@ -503,30 +523,6 @@ const BatchManagement = () => {
                                 className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                             >
                                 Discard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {isExportConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to download the Batch list?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsExportConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmExport}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
-                            >
-                                Export
                             </button>
                         </div>
                     </div>

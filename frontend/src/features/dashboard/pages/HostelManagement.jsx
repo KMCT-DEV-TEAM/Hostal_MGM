@@ -23,6 +23,7 @@ import {
     FileDown
 } from 'lucide-react';
 import hostelService from '../../../services/hostel.service';
+import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import * as XLSX from 'xlsx';
 
@@ -31,6 +32,7 @@ import HostelToolbar from '../components/Hostel/HostelToolbar';
 import HostelTable from '../components/Hostel/HostelTable';
 import HostelPagination from '../components/Hostel/HostelPagination';
 import Dropdown from '@/components/ui/Dropdown';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 
 
 
@@ -51,6 +53,7 @@ export default function HostelManagement() {
     const [activeModal, setActiveModal] = useState(null);
     const [editingHostel, setEditingHostel] = useState(null); // Holds object being edited
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
@@ -144,13 +147,6 @@ export default function HostelManagement() {
             setSelectedIds([...selectedIds, id]);
         }
     };
-
-    // const handleDeleteHostel = (id) => {
-    //     if (window.confirm("Are you sure you want to delete this hostel?")) {
-    //         setHostels(hostels.filter(h => h.id !== id));
-    //         setSelectedIds(selectedIds.filter(item => item !== id));
-    //     }
-    // };
 
     const handleDeleteSelected = () => {
         if (window.confirm(`Are you sure you want to delete ${selectedIds.length} hostel(s)?`)) {
@@ -253,18 +249,25 @@ export default function HostelManagement() {
         }
     };
 
-    const handleExport = async () => {
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
         try {
-            setLoading(true);
-            const res = await hostelService.getHostels({
-                limit: 0,
-                status: statusFilter,
-                search: debouncedSearch
-            });
-            const dataToExport = res.data || [];
+            const params = { limit: 100000 };
+            if (debouncedSearch) params.search = debouncedSearch;
+
+            // Allow export modal filter to override table filter
+            if (exportFilters.isActive !== '') {
+                params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
+            } else if (statusFilter !== 'All') {
+                params.status = statusFilter;
+            }
+
+            const res = await hostelService.getHostels(params);
+            const responseData = res?.data || res;
+            const dataToExport = responseData?.data || responseData || [];
 
             if (dataToExport.length === 0) {
-                showErrorToast('Export Failed', 'No data available to export.');
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
                 return;
             }
 
@@ -281,17 +284,19 @@ export default function HostelManagement() {
                 "Created At": new Date(hostel.createdAt).toLocaleDateString()
             }));
 
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Hostels");
-            XLSX.writeFile(workbook, "Hostels_List.xlsx");
-            showSuccessToast('Export Successful', 'The hostel list has been downloaded.');
+            const isSuccess = exportToExcel(exportData, "Hostels_Export", "Hostels");
+            
+            if (isSuccess) {
+                showSuccessToast('Export Successful', 'The hostel list has been downloaded.');
+            } else {
+                showErrorToast('Export Failed', 'Could not generate the Excel file.');
+            }
         } catch (error) {
             console.error("Export failed:", error);
             showErrorToast('Export Failed', error?.message || 'Failed to export data. Please try again.');
         } finally {
-            setLoading(false);
-            fetchHostels();
+            setIsExportConfirmOpen(false);
+            setIsExporting(false);
         }
     };
 
@@ -587,42 +592,8 @@ export default function HostelManagement() {
                                             />
                                         </div>
                                     </div>
-                                    {/* {!editingHostel && (
-                                        <div className="col-span-2">
-                                            <label className="block text-sm font-medium text-black mb-2">
-                                                Account Status <span className="text-red-500">*</span>
-                                            </label>
-                                            <div className="flex items-center gap-6">
-                                                <label className="flex items-center cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="status"
-                                                        value="Active"
-                                                        checked={hostelForm.status === "Active"}
-                                                        onChange={(e) => setHostelForm({ ...hostelForm, status: e.target.value })}
-                                                        className="w-5 h-5 accent-black cursor-pointer"
-                                                    />
-                                                    <span className="ml-2 text-sm text-gray-700">Active</span>
-                                                </label>
-                                                <label className="flex items-center cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="status"
-                                                        value="Inactive"
-                                                        checked={hostelForm.status === "Inactive"}
-                                                        onChange={(e) => setHostelForm({ ...hostelForm, status: e.target.value })}
-                                                        className="w-5 h-5 accent-black cursor-pointer"
-                                                    />
-                                                    <span className="ml-2 text-sm text-gray-700">Inactive</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    )} */}
                                 </div>
                             </section>
-
-
-
                         </div>
 
                         {/* Footer Buttons */}
@@ -646,6 +617,13 @@ export default function HostelManagement() {
                     </form>
                 </div>
             )}
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Hostels Data"
+            />
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
@@ -691,33 +669,6 @@ export default function HostelManagement() {
                                 className="px-3 cursor-pointer py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                             >
                                 Discard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {isExportConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to download the organization list?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsExportConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => {
-                                    handleExport();
-                                    setIsExportConfirmOpen(false);
-                                }}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
-                            >
-                                Export
                             </button>
                         </div>
                     </div>

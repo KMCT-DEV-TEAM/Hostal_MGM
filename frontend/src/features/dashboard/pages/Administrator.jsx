@@ -23,6 +23,7 @@ import AdminMobileList from '../components/admin/AdminMobileList';
 import AdminFormModal from '../components/admin/AdminFormModal';
 import AdminDetailView from '../components/admin/AdminDetailView';
 import Dropdown from '@/components/ui/Dropdown';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 
 const INITIAL_ADMINS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 1', status: 'Active' },
@@ -42,7 +43,7 @@ const INITIAL_ADMINS = [
 import adminService from '../../../services/admin.service';
 import organizationService from '../../../services/organization.service';
 import otpService from '../../../services/otp.service';
-import * as XLSX from 'xlsx';
+import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 export default function Administrator() {
@@ -55,6 +56,7 @@ export default function Administrator() {
     const [selectedAdminDetail, setSelectedAdminDetail] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
@@ -461,30 +463,54 @@ export default function Administrator() {
         setIsExportConfirmOpen(true);
     };
 
-    const handleExport = async () => {
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
         try {
-            // Fetch all admins for export by setting a large limit
-            const res = await adminService.getAdmins({ limit: 100000 });
-            if (res && res.data) {
-                const allAdmins = res.data;
-                const exportData = allAdmins.map(admin => ({
-                    Name: admin.name,
-                    Email: admin.email,
-                    Phone: admin.phone || 'N/A',
-                    Organization: admin.organization?.name || admin.organization || 'N/A',
-                    Status: admin.isActive ? 'Active' : 'Inactive'
-                }));
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Admins");
-                XLSX.writeFile(wb, "Admins_List.xlsx");
-                showSuccessToast('Export Successful', res?.message || 'Administrator list downloaded');
+            // Construct API parameters
+            const params = { limit: 100000 };
+            if (searchQuery) params.search = searchQuery;
+            
+            // Allow export modal filter to override table filter
+            if (exportFilters.isActive !== '') {
+                params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
+            } else if (statusFilter !== 'All') {
+                params.status = statusFilter;
+            }
+
+            const res = await adminService.getAdmins(params);
+            
+            // Handle different possible response structures
+            const responseData = res?.data || res;
+            const allAdmins = responseData?.data || responseData || [];
+
+            if (!allAdmins || allAdmins.length === 0) {
+                showErrorToast('Export failed', 'No administrators match the selected filters');
+                setIsExportConfirmOpen(false);
+                return;
+            }
+
+            const exportData = allAdmins.map((admin, index) => ({
+                "SL No": index + 1,
+                "Name": admin.name || 'N/A',
+                "Email": admin.email || 'N/A',
+                "Phone": admin.phone || 'N/A',
+                "Organization": admin.organization?.name || admin.organization || 'N/A',
+                "Status": admin.isActive ? 'Active' : 'Inactive'
+            }));
+
+            const isSuccess = exportToExcel(exportData, "Admins_Export", "Admins");
+            
+            if (isSuccess) {
+                showSuccessToast('Export Successful', 'Administrator list downloaded');
+            } else {
+                showErrorToast('Export Failed', 'Could not generate the Excel file');
             }
         } catch (error) {
             console.error("Export Failed", error);
             showErrorToast('Export Failed', error?.message || 'Failed to export administrators');
         } finally {
             setIsExportConfirmOpen(false);
+            setIsExporting(false);
         }
     };
 
@@ -736,30 +762,13 @@ export default function Administrator() {
                 </div>
             )}
 
-            {isExportConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to download the admin list?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsExportConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleExport}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
-                            >
-                                Export
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                <ExportFilterModal
+                    isOpen={isExportConfirmOpen}
+                    onClose={() => setIsExportConfirmOpen(false)}
+                    onExport={confirmExport}
+                    isExporting={isExporting}
+                    title="Export Admins Data"
+                />
 
             {isStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">

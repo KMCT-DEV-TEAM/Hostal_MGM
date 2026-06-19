@@ -10,12 +10,14 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { exportToExcel } from '@/utils/exportUtils';
 import organizationService from '../../../services/organization.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import OrganizationTable from '../components/organization/OrganizationTable';
 import OrganizationMobileList from '../components/organization/OrganizationMobileList';
 import OrganizationDetailView from '../components/organization/OrganizationDetailView';
 import OrganizationFormModal from '../components/organization/OrganizationFormModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
 
 const INITIAL_ORGS = [
@@ -41,6 +43,7 @@ const OrganizationManagement = () => {
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedOrganizationDetail, setSelectedOrganizationDetail] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
@@ -236,14 +239,27 @@ const OrganizationManagement = () => {
         setIsExportConfirmOpen(true);
     };
 
-    // Step 2: The actual export logic (your existing function)
-    const confirmExport = async () => {
-        setIsExportConfirmOpen(false);
+    // Step 2: The actual export logic
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
         try {
-            // Fetch all organizations by setting limit to 0
-            const res = await organizationService.getOrganizations({ page: 1, limit: 0, search: debouncedSearch, status: statusFilter });
-            if (res && res.data) {
-                const allOrgs = res.data;
+            const params = { page: 1, limit: 100000 };
+            if (debouncedSearch) params.search = debouncedSearch;
+
+            // Allow export modal filter to override table filter
+            if (exportFilters.isActive !== '') {
+                params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
+            } else if (statusFilter !== 'All') {
+                params.status = statusFilter;
+            }
+
+            // Fetch organizations
+            const res = await organizationService.getOrganizations(params);
+            
+            const responseData = res?.data || res;
+            const allOrgs = responseData?.data || responseData || [];
+
+            if (allOrgs && allOrgs.length > 0) {
                 const exportData = allOrgs.map((org, index) => ({
                     "S.No": index + 1,
                     "Organization Name": org.name,
@@ -256,28 +272,24 @@ const OrganizationManagement = () => {
                     "Created At": new Date(org.createdAt).toLocaleDateString()
                 }));
 
-                const worksheet = XLSX.utils.json_to_sheet(exportData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Organizations");
-
-                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-                saveAs(data, `Organizations_Export_${new Date().getTime()}.xlsx`);
-                showSuccessToast('Export Successful', 'The organization list has been downloaded.');
+                const isSuccess = exportToExcel(exportData, "Organizations_Export", "Organizations");
+                
+                if (isSuccess) {
+                    showSuccessToast('Export Successful', 'The organization list has been downloaded.');
+                } else {
+                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
+                }
             } else {
-                showErrorToast('Export Failed', 'No data available to export.');
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
             }
         } catch (err) {
             console.error("Failed to export organizations:", err);
             showErrorToast('Export Failed', err?.message || 'Failed to export organizations. Please try again.');
+        } finally {
+            setIsExportConfirmOpen(false);
+            setIsExporting(false);
         }
     };
-
-
-
-
-
-
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
@@ -497,30 +509,14 @@ const OrganizationManagement = () => {
                     </div>
                 </div>
             )}
-            {isExportConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to download the organization list?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsExportConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmExport}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
-                            >
-                                Export
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Organizations Data"
+            />
 
             {isStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
