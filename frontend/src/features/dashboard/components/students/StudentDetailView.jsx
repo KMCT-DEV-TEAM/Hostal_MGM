@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import {
   User,
@@ -24,8 +24,8 @@ import ChangeEmailModal from "./ChangeEmailModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
-import { updateStudentByRole } from "@/services/student.service";
-import { updateParentByRole } from "@/services/parent.service";
+import { updateStudentByRole, changeStudentEmail } from "@/services/student.service";
+import { updateParentByRole, changeParentEmail } from "@/services/parent.service";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -72,13 +72,13 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
   const closeEmailChangeModal = () => setEmailChangeTarget(null);
 
-  const handleEmailChange = async ({ oldEmail, newEmail }) => {
+  const handleEmailChange = async ({ oldEmail, newEmail, otp }) => {
     if (emailChangeTarget?.type === "student") {
       if (oldEmail !== student.email) {
         throw new Error("Current email does not match");
       }
 
-      await updateStudentByRole(role, student._id, { email: newEmail });
+      await changeStudentEmail(role, student._id, { oldEmail, newEmail, otp });
 
       onStudentChange?.(student._id, (current) => ({
         ...current,
@@ -99,8 +99,10 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         throw new Error("Current email does not match");
       }
 
-      await updateParentByRole(role, parentId, {
-        email: newEmail,
+      await changeParentEmail(role, parentId, {
+        oldEmail,
+        newEmail,
+        otp
       });
 
       onStudentChange?.(student._id, (current) => ({
@@ -108,10 +110,10 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         parents: (current.parents || []).map((parent) =>
           getParentId(parent) === parentId
             ? {
-                ...parent,
-                email: newEmail,
-                parentEmail: newEmail,
-              }
+              ...parent,
+              email: newEmail,
+              parentEmail: newEmail,
+            }
             : parent,
         ),
       }));
