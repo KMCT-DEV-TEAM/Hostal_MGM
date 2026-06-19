@@ -21,6 +21,26 @@ export async function updateStudent(id, payload) {
   return response.data;
 }
 
+export async function updateStudentByAdmin(id, payload) {
+  const response = await studentApi.updateStudentByAdmin(id, payload);
+  return response.data;
+}
+
+export async function updateStudentBySuperAdmin(id, payload) {
+  const response = await studentApi.updateStudentBySuperAdmin(id, payload);
+  return response.data;
+}
+
+export async function changeStudentEmailByAdmin(id, payload) {
+  const response = await studentApi.changeStudentEmailByAdmin(id, payload);
+  return response.data;
+}
+
+export async function changeStudentEmailBySuperAdmin(id, payload) {
+  const response = await studentApi.changeStudentEmailBySuperAdmin(id, payload);
+  return response.data;
+}
+
 /**
  * Fetch a list of Students for Admin
  * @param {Object} params - e.g. { page: 1, limit: 10 }
@@ -91,6 +111,16 @@ const STUDENT_FETCHERS = {
   // warden: getStudentsByWarden,
 };
 
+const STUDENT_UPDATE_FETCHERS = {
+  [ROLES.ADMIN]: updateStudentByAdmin,
+  [ROLES.SUPER_ADMIN]: updateStudentBySuperAdmin,
+};
+
+const STUDENT_EMAIL_CHANGE_FETCHERS = {
+  [ROLES.ADMIN]: changeStudentEmailByAdmin,
+  [ROLES.SUPER_ADMIN]: changeStudentEmailBySuperAdmin,
+};
+
 const STUDENT_FILTER_OPTION_FETCHERS = {
   [ROLES.ADMIN]: getStudentFilterOptionsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentFilterOptionsBySuperAdmin,
@@ -108,6 +138,16 @@ const STUDENT_BULK_STATUS_FETCHERS = {
 };
 
 export const getStudents = createRoleResolver(STUDENT_FETCHERS, 'student');
+
+export const updateStudentByRole = createRoleResolver(
+  STUDENT_UPDATE_FETCHERS,
+  'student update'
+);
+
+export const changeStudentEmail = createRoleResolver(
+  STUDENT_EMAIL_CHANGE_FETCHERS,
+  'student email change'
+);
 
 export const getStudentFilterOptions = createRoleResolver(
   STUDENT_FILTER_OPTION_FETCHERS,
@@ -127,6 +167,12 @@ export const bulkUpdateStudentStatus = createRoleResolver(
 const studentService = {
   createStudent,
   updateStudent,
+  updateStudentByRole,
+  changeStudentEmail,
+  changeStudentEmailByAdmin,
+  changeStudentEmailBySuperAdmin,
+  updateStudentByAdmin,
+  updateStudentBySuperAdmin,
   getStudents,
   getStudentsByAdmin,
   getStudentsBySuperAdmin,

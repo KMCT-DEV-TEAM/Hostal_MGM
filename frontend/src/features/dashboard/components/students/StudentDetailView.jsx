@@ -9,22 +9,23 @@ import {
   MapPin,
   Building2,
   BookOpen,
-  GraduationCap,
   Home,
   CheckCircle2,
   XCircle,
   Badge,
   FileText,
-  Info,
-  Pen,
-  PenIcon,
   Pencil,
   Plus,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
+import ChangeEmailModal from "./ChangeEmailModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ROLES } from "@/constants/roles";
+import { updateStudentByRole } from "@/services/student.service";
+import { updateParentByRole } from "@/services/parent.service";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -42,10 +43,12 @@ const normalizeParent = (parent, fallback = {}) => ({
 });
 
 const StudentDetailView = ({ student, onClose, onStudentChange }) => {
+  const role = useAuthStore((state) => state.user?.role);
   const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] =
     useState(false);
 
   const [isAddParentModalOpen, setIsAddParentModalOpen] = useState(false);
+  const [emailChangeTarget, setEmailChangeTarget] = useState(null);
   const { handleCreateParent } = useCreateParent((result, payload) => {
     const createdParent = normalizeParent(result?.data, payload);
     const studentId = createdParent.studentId ?? student._id;
@@ -65,6 +68,55 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
   const parent =
     parents.find((parent) => parent.defaultGuardian) ?? parents[0] ?? null;
   const isActive = Boolean(student.isActive);
+  const canChangeEmail = [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(role);
+
+  const closeEmailChangeModal = () => setEmailChangeTarget(null);
+
+  const handleEmailChange = async ({ oldEmail, newEmail }) => {
+    if (emailChangeTarget?.type === "student") {
+      if (oldEmail !== student.email) {
+        throw new Error("Current email does not match");
+      }
+
+      await updateStudentByRole(role, student._id, { email: newEmail });
+
+      onStudentChange?.(student._id, (current) => ({
+        ...current,
+        email: newEmail,
+      }));
+
+      return;
+    }
+
+    if (emailChangeTarget?.type === "parent") {
+      const parentId = getParentId(emailChangeTarget.parent);
+      const currentParentEmail =
+        emailChangeTarget.parent?.email ||
+        emailChangeTarget.parent?.parentEmail ||
+        "";
+
+      if (oldEmail !== currentParentEmail) {
+        throw new Error("Current email does not match");
+      }
+
+      await updateParentByRole(role, parentId, {
+        email: newEmail,
+      });
+
+      onStudentChange?.(student._id, (current) => ({
+        ...current,
+        parents: (current.parents || []).map((parent) =>
+          getParentId(parent) === parentId
+            ? {
+                ...parent,
+                email: newEmail,
+                parentEmail: newEmail,
+              }
+            : parent,
+        ),
+      }));
+    }
+  };
 
   return (
     <Modal
@@ -256,7 +308,22 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                     : {student.email || "N/A"}
                   </span>
 
-                  <Pencil className="w-4 h-4 cursor-pointer flex-shrink-0" />
+                  {canChangeEmail && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEmailChangeTarget({
+                          type: "student",
+                          subjectName: student.name || "the student",
+                          currentEmail: student.email || "",
+                        })
+                      }
+                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer"
+                      aria-label="Change student email"
+                    >
+                      <Pencil className="w-4 h-4 flex-shrink-0" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -352,7 +419,24 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                     : {parent?.email || parent?.parentEmail || "N/A"}
                   </span>
 
-                  <Pencil className="w-4 h-4 cursor-pointer flex-shrink-0" />
+                  {canChangeEmail && parent && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEmailChangeTarget({
+                          type: "parent",
+                          parent,
+                          subjectName: parent.parentName || "the parent",
+                          currentEmail:
+                            parent.email || parent.parentEmail || "",
+                        })
+                      }
+                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer"
+                      aria-label="Change parent email"
+                    >
+                      <Pencil className="w-4 h-4 flex-shrink-0" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -457,6 +541,15 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
           onSave={handleCreateParent}
         />
       )}
+
+      <ChangeEmailModal
+        isOpen={!!emailChangeTarget}
+        title="Change Email"
+        subjectName={emailChangeTarget?.subjectName}
+        currentEmail={emailChangeTarget?.currentEmail}
+        onClose={closeEmailChangeModal}
+        onConfirmChange={handleEmailChange}
+      />
     </Modal>
   );
 };

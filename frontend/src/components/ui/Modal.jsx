@@ -13,6 +13,7 @@ export default function Modal({
   asForm = false,
   onSubmit,
   avatar,
+  zIndex = 9999,
 }) {
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -21,7 +22,7 @@ export default function Modal({
   const modalContent = (
     <div
       className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4"
-      style={{ zIndex: 9999 }}
+      style={{ zIndex }}
     >
       <Wrapper
         className={`bg-white rounded-2xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
@@ -30,8 +31,8 @@ export default function Modal({
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div className="flex items-center gap-3">
-              {avatar && (
-            <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
+            {avatar && (
+              <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
                 <span className="font-bold text-xl uppercase">
                   {(avatar || title || "")
                     .split(" ")
@@ -39,8 +40,8 @@ export default function Modal({
                     .join("")
                     .substring(0, 2) || "?"}
                 </span>
-            </div>
-              )}
+              </div>
+            )}
             <div>
               {title && (
                 <h2 className="text-xl font-bold text-gray-900">{title}</h2>

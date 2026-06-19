@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateParentIdParam, validateUpdateParent, validateCreateParent } from "./parent.validation.js";
-import { createParent, updateParent, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin } from "./parent.controller.js";
+import { createParent, updateParent, changeParentEmail, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin } from "./parent.controller.js";
 
 const router = express.Router();
 
@@ -23,6 +23,14 @@ router.patch(
   validateParentIdParam,
   validateUpdateParent,
   updateParent
+);
+
+router.patch(
+  "/:id/change-email",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateParentIdParam,
+  changeParentEmail
 );
 
 router.patch(

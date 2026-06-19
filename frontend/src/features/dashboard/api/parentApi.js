@@ -9,6 +9,18 @@ const parentApi = {
   updateParent: (id, payload) =>
     api.patch(`/admin/parents/${id}`, payload),
 
+  updateParentByAdmin: (id, payload) =>
+    api.patch(`/admin/parents/${id}`, payload),
+
+  updateParentBySuperAdmin: (id, payload) =>
+    api.patch(`/super-admin/parents/${id}`, payload),
+
+  changeParentEmailByAdmin: (id, payload) =>
+    api.patch(`/admin/parents/${id}/change-email`, payload),
+
+  changeParentEmailBySuperAdmin: (id, payload) =>
+    api.patch(`/super-admin/parents/${id}/change-email`, payload),
+
   getParentsByAdmin: (params) =>
     api.get("/admin/parents/admin", { params }),
 

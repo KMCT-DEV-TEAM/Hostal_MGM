@@ -9,6 +9,26 @@ export async function updateParent(id, payload) {
   return response.data;
 }
 
+export async function updateParentByAdmin(id, payload) {
+  const response = await parentApi.updateParentByAdmin(id, payload);
+  return response.data;
+}
+
+export async function updateParentBySuperAdmin(id, payload) {
+  const response = await parentApi.updateParentBySuperAdmin(id, payload);
+  return response.data;
+}
+
+export async function changeParentEmailByAdmin(id, payload) {
+  const response = await parentApi.changeParentEmailByAdmin(id, payload);
+  return response.data;
+}
+
+export async function changeParentEmailBySuperAdmin(id, payload) {
+  const response = await parentApi.changeParentEmailBySuperAdmin(id, payload);
+  return response.data;
+}
+
 export async function getParentsByAdmin(params) {
   const response = await parentApi.getParentsByAdmin(params);
   return response.data;
@@ -54,6 +74,16 @@ const PARENT_FETCHERS = {
   [ROLES.SUPER_ADMIN]: getParentsBySuperAdmin,
 };
 
+const PARENT_UPDATE_FETCHERS = {
+  [ROLES.ADMIN]: updateParentByAdmin,
+  [ROLES.SUPER_ADMIN]: updateParentBySuperAdmin,
+};
+
+const PARENT_EMAIL_CHANGE_FETCHERS = {
+  [ROLES.ADMIN]: changeParentEmailByAdmin,
+  [ROLES.SUPER_ADMIN]: changeParentEmailBySuperAdmin,
+};
+
 const PARENT_STATUS_TOGGLE_FETCHERS = {
   [ROLES.ADMIN]: toggleStatusByAdmin,
   [ROLES.SUPER_ADMIN]: toggleStatusBySuperAdmin,
@@ -77,6 +107,16 @@ export const toggleParentStatus = createRoleResolver(
 
 export const getParents = createRoleResolver(PARENT_FETCHERS, 'parent');
 
+export const updateParentByRole = createRoleResolver(
+  PARENT_UPDATE_FETCHERS,
+  'parent update'
+);
+
+export const changeParentEmail = createRoleResolver(
+  PARENT_EMAIL_CHANGE_FETCHERS,
+  'parent email change'
+);
+
 
 export const createParent = createRoleResolver(
   PARENT_CREATE_FETCHERS,
@@ -91,6 +131,12 @@ export const setDefaultGuardian =
 const parentService = {
   createParent,
   updateParent,
+  updateParentByRole,
+  changeParentEmail,
+  changeParentEmailByAdmin,
+  changeParentEmailBySuperAdmin,
+  updateParentByAdmin,
+  updateParentBySuperAdmin,
   getParents,
   getParentsByAdmin,
   getParentsBySuperAdmin,
