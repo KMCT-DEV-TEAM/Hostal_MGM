@@ -23,7 +23,7 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">{selectedDepartmentDetail.name}</h1>
-                            <p className="text-gray-400 text-sm">Department - {selectedDepartmentDetail.hostelCount || 0} Hostels</p>
+                            <p className="text-gray-400 text-sm">Department - {selectedDepartmentDetail.batchesCount || 0} Batches</p>
                         </div>
                     </div>
                 </div>
@@ -49,21 +49,25 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                         </div>
 
                         {/* Address Information */}
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
-                            <p className="text-xs text-gray-400 mb-6">Address information of the Department</p>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-gray-400" /> Full Address</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.address}</span></div>
-                        </div>
+                        {selectedDepartmentDetail.address && (
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
+                                <p className="text-xs text-gray-400 mb-6">Address information of the Department</p>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-gray-400" /> Full Address</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.address}</span></div>
+                            </div>
+                        )}
 
                         {/* Contact Information */}
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
-                            <p className="text-xs text-gray-400 mb-6">Contact information of the Department</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.phone}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.email}</span></div>
+                        {(selectedDepartmentDetail.phone || selectedDepartmentDetail.email) && (
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
+                                <p className="text-xs text-gray-400 mb-6">Contact information of the Department</p>
+                                <div className="space-y-4">
+                                    {selectedDepartmentDetail.phone && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.phone}</span></div>}
+                                    {selectedDepartmentDetail.email && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.email}</span></div>}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Right Summary Sidebar */}
@@ -79,8 +83,8 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                                     {selectedDepartmentDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.phone}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.email}</span></div>
+                            {selectedDepartmentDetail.phone && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.phone}</span></div>}
+                            {selectedDepartmentDetail.email && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedDepartmentDetail.email}</span></div>}
                         </div>
                     </div>
                 </div>
