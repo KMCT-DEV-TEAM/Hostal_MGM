@@ -36,7 +36,7 @@ export default function ParentDetailsModal({ parent, onClose }) {
                                 <span className="text-gray-500">Status</span>
                                 <span className="col-span-2 font-medium text-gray-900 flex items-center">:
                                     <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
-                                    {parent.isActive}
+                                    {parent.isActive === true ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
                         </div>
@@ -67,7 +67,7 @@ export default function ParentDetailsModal({ parent, onClose }) {
                             <span className="text-text-secondary">Status</span>
                             <span className="col-span-2 font-medium text-gray-900 flex items-center">:
                                 <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
-                                {parent.isActive}
+                                {parent.isActive === true ? 'Active' : 'Inactive'}
                             </span>
                         </div>
                     </div>

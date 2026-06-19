@@ -43,7 +43,7 @@ export default function Parents() {
 
     const applyStatusChange = (ids, response) => {
         const changedIds = new Set(Array.isArray(ids) ? ids : [ids]);
-        const nextIsActive = response?.isActive;
+        const nextIsActive = response?.data?.isActive ?? response?.isActive;
 
         if (typeof nextIsActive !== 'boolean') return;
 
@@ -79,9 +79,7 @@ export default function Parents() {
 
         try {
             const response = await toggleParentStatus(role, id);
-            // Assume response contains updated parent or { isActive }
             applyStatusChange(id, response);
-            refetch(); // Alternatively refetch to ensure consistency
         } catch (err) {
             console.error("Failed to toggle parent status", err);
         } finally {
@@ -122,9 +120,11 @@ export default function Parents() {
         setStatusLoadingIds((prev) => [...new Set([...prev, ...selectedIds])]);
 
         try {
-            await Promise.all(selectedIds.map((id) => toggleParentStatus(role, id)));
+            const responses = await Promise.all(selectedIds.map((id) => toggleParentStatus(role, id)));
+            responses.forEach((res, index) => {
+                applyStatusChange(selectedIds[index], res);
+            });
             setSelectedIds([]);
-            refetch();
         } catch (err) {
             console.error("Failed to delete selected parents", err);
         } finally {
