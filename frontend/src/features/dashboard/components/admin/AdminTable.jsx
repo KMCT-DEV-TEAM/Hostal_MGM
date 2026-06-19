@@ -1,5 +1,6 @@
 import React from 'react';
-import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Loader2 } from 'lucide-react';
+import { Square, CheckSquare, Pencil, Trash2, Phone, Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 const AdminTable = ({
     paginatedAdmins,
@@ -45,7 +46,7 @@ const AdminTable = ({
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             Status
                         </th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
+                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
                             Action
                         </th>
                     </tr>
@@ -107,55 +108,32 @@ const AdminTable = ({
                                     </td>
                                     <td className="p-4 text-start justify-start">
                                         <div className="relative w-[145px]">
-                                            <select
+                                            <Dropdown
+                                                minWidth=""
+                                                options={organizations.map(org => ({ value: org._id, label: org.name }))}
                                                 value={admin.organization?._id || admin.organization || ""}
-                                                onChange={(e) =>
-                                                    handleOrganizationChange(admin._id, e.target.value)
-                                                }
-                                                className="w-full appearance-none text-start rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none cursor-pointer hover:border-gray-300 transition-colors"
-                                            >
-                                                <option value="" disabled>Select Organization</option>
-                                                {organizations.map((org) => (
-                                                    <option key={org._id} value={org._id}>
-                                                        {org.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown
-                                                size={14}
-                                                className="absolute right-3 top-2 text-gray-400 pointer-events-none"
+                                                onChange={(val) => handleOrganizationChange(admin._id, val)}
+                                                placeholder="Select Organization"
+                                                triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 transition-colors"
                                             />
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <div className="relative w-fit">
-                                            <select
+                                        <div className="relative w-[105px]">
+                                            <Dropdown
+                                                minWidth=""
+                                                options={[
+                                                    { value: "Active", label: "Active" },
+                                                    { value: "Inactive", label: "Inactive" }
+                                                ]}
                                                 value={admin.isActive ? "Active" : "Inactive"}
-                                                onChange={(e) =>
-                                                    handleStatusChangeClick(admin._id, admin.isActive ? "Active" : "Inactive")
-                                                }
-                                                className={`appearance-none rounded-lg pl-4 pr-8 py-1 text-xs font-medium border cursor-pointer
-${admin.isActive
-                                                        ? "bg-green-50 text-success border-green-100"
-                                                        : "bg-red-50 text-danger border-red-100"
-                                                    }`}
-                                            >
-                                                <option>Active</option>
-                                                <option>Inactive</option>
-                                            </select>
-
-                                            <ChevronDown
-                                                size={12}
-                                                className={`absolute right-3 top-2
-${admin.isActive
-                                                        ? "text-success"
-                                                        : "text-danger"
-                                                    }`}
+                                                onChange={() => handleStatusChangeClick(admin._id, admin.isActive ? "Active" : "Inactive")}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${admin.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                                             />
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <div className="flex items-center justify-start gap-3 text-gray-400">
+                                        <div className="flex items-center justify-center gap-3 text-gray-400">
                                             <button onClick={() => openEditAdminModal(admin)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                 <Pencil className="w-4 h-4" />
                                             </button>

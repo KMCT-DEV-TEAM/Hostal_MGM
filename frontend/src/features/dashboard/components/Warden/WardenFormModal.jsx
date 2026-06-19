@@ -79,11 +79,19 @@ export default function WardenFormModal({
                                         +91
                                     </div>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         required
+                                        pattern="[0-9]{10}"
+                                        maxLength="10"
+                                        title="Please enter a valid 10-digit phone number"
                                         value={wardenForm.phone || ''}
-                                        onChange={(e) => setWardenForm({ ...wardenForm, phone: e.target.value })}
-                                        placeholder="00000 00000"
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) {
+                                                setWardenForm({ ...wardenForm, phone: val });
+                                            }
+                                        }}
+                                        placeholder="0000000000"
                                         className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                     />
                                 </div>
