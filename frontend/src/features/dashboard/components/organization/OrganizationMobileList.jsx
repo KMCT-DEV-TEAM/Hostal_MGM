@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pencil, Mail, Phone, Square, CheckSquare } from 'lucide-react';
-import Loader from '@/components/ui/Loader';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 const OrganizationMobileList = ({
     orgs,
@@ -30,9 +30,7 @@ const OrganizationMobileList = ({
                 </div>
             )}
             {loading ? (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-transparent">
-                    <Loader />
-                </div>
+                <MobileSkeletonLoader />
             ) : error ? (
                 <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error}</div>
             ) : orgs.length === 0 ? (

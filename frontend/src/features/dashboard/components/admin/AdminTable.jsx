@@ -1,6 +1,7 @@
 import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, Phone, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 const AdminTable = ({
     paginatedAdmins,
@@ -53,14 +54,7 @@ const AdminTable = ({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
-                        <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-400">
-                                <div className="flex flex-col items-center justify-center space-y-2">
-                                    <Loader2 className="w-8 h-8 animate-spin text-[#0A437A]" />
-                                    <span className="text-sm">Loading administrators...</span>
-                                </div>
-                            </td>
-                        </tr>
+                        <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-center text-red-500">{error}</td>

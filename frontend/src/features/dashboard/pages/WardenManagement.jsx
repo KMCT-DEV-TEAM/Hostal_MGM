@@ -45,9 +45,10 @@ export default function WardenManagement() {
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
-    const [otpSource, setOtpSource] = useState(null); // 'emailChange' | 'addWarden'
+    const [otpSource, setOtpSource] = useState(null);
     const [resendTimer, setResendTimer] = useState(300);
     const [isTimerActive, setIsTimerActive] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -61,6 +62,7 @@ export default function WardenManagement() {
         hostel: 'Kmct Hostel 1',
         status: 'Active'
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // ==========================================
     // FILTERING & PAGINATION LOGIC
@@ -289,6 +291,7 @@ export default function WardenManagement() {
             showErrorToast('Validation Error', 'Please enter an email first');
             return;
         }
+        setIsVerifying(true);
         try {
             await otpService.sendOtp(email);
             setOtpSource(source);
@@ -301,7 +304,8 @@ export default function WardenManagement() {
             }
         } catch (error) {
             showErrorToast('Action Failed', error?.message || 'Failed to send OTP');
-
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -337,6 +341,7 @@ export default function WardenManagement() {
     };
 
     const saveWarden = async () => {
+        setIsSubmitting(true);
         try {
             const payload = {
                 name: wardenForm.name,
@@ -367,13 +372,9 @@ export default function WardenManagement() {
             showErrorToast('Action Failed', error?.message || 'Failed to save warden');
         } finally {
             setActiveModal(null);
-
             setIsEditConfirmOpen(false);
-            return;
+            setIsSubmitting(false);
         }
-
-        setActiveModal(null);
-        setIsEditConfirmOpen(false);
     };
 
     const handleCancel = () => {
@@ -508,6 +509,8 @@ export default function WardenManagement() {
                 wardenForm={wardenForm}
                 setWardenForm={setWardenForm}
                 handleVerifyClick={handleVerifyClick}
+                isSubmitting={isSubmitting}
+                isVerifying={isVerifying}
             />
 
             {isEditConfirmOpen && (
@@ -526,9 +529,10 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={saveWarden}
+                                disabled={isSubmitting}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
                             >
-                                Confirm
+                                {isSubmitting ? 'Saving...' : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -725,10 +729,10 @@ export default function WardenManagement() {
                             if (otpSource === 'emailChange') {
                                 setIsEmailChangeModalOpen(true);
                             } else {
-                                Swal.fire('Success', 'Email verified successfully!', 'success');
+                                showSuccessToast('Success', 'Email verified successfully!');
                             }
                         } catch (err) {
-                            Swal.fire('Error', err?.message || 'Invalid OTP', 'error');
+                            showErrorToast('Error', err?.message || 'Invalid OTP');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         {/* Top action buttons */}
