@@ -43,7 +43,9 @@ body {
     }
 }
 
-
+.swal-toast-container {
+  z-index: 999999 !important;
+}
 /* @layer components {
     .heading-1 {
         @apply text-[24px] font-semibold text-text-primary;

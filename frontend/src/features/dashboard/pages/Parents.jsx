@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
-import { useParents } from '@/features/dashboard/hooks/useParents';
+import { useParents } from '@/features/dashboard/hooks/parent/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
 import { createParent, toggleParentStatus, updateParent } from '@/services/parent.service';
 import ParentsHeader from '../components/parents/ParentsHeader';

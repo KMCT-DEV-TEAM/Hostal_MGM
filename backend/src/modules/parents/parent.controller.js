@@ -1,20 +1,50 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
+import { deleteOtpDb, verifyOtpDb } from "../otp/otp.service.js";
 import User from "../users/user.model.js";
+import Parent from "./parent.model.js";
 import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService } from "./parent.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
+  const {
+    email,
+    parentOtp,
+  } = req.body;
+
+  const existingParent = await Parent.findOne({ email });
+
+  if (existingParent) {
+    return sendError(res, 400, "Parent email already exists");
+  }
+
+  const isOtpValid = await verifyOtpDb(email, parentOtp);
+
+  if (!isOtpValid) {
+    return sendError(
+      res,
+      400,
+      "Invalid or expired OTP"
+    );
+  }
+
+  await deleteOtpDb(email);
+
   let result;
 
   try {
-    result = await createParentDb(req.body);
+    result = await createParentDb({
+      ...req.body,
+      isVerified: true,
+    });
   } catch (error) {
     if (error.message === "Parent email already exists") {
       return sendError(res, 400, error.message);
     }
+
     if (error.message === "Invalid studentId") {
       return sendError(res, 400, "Invalid studentId");
     }
+
     throw error;
   }
 
@@ -22,17 +52,21 @@ const createParent = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
-  return sendSuccess(res, 201, "Parent created successfully", {
-    data: {
-      parentId: result.parent._id,
-      studentId: result.parent.studentId,
-      parentName: result.parent.parentName,
-      email: result.parent.email,
-      defaultGuardian: result.parent.defaultGuardian,
+  return sendSuccess(
+    res,
+    201,
+    "Parent created successfully",
+    {
+      data: {
+        parentId: result.parent._id,
+        studentId: result.parent.studentId,
+        parentName: result.parent.parentName,
+        email: result.parent.email,
+        defaultGuardian: result.parent.defaultGuardian,
+      },
     }
-  });
+  );
 });
-
 const updateParent = asyncHandler(async (req, res) => {
   const { id } = req.params;
 

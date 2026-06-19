@@ -6,8 +6,14 @@ export default function ParentDetailsModal({ parent, onClose }) {
     console.log("parent object:", parent.status);
 
     return (
-        <Modal isOpen={true} onClose={onClose} maxWidth="max-w-5xl">                {/* Header */}
-            <div className="mb-8">
+        <Modal isOpen={true} 
+        avatar={parent.parentName}
+        title={parent.parentName}
+        subtitle={`Parent - ${parent.student?.name}`}
+        onClose={onClose} 
+        maxWidth="max-w-5xl"
+        >                {/* Header */}
+            {/* <div className="mb-8">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
                         <span className="font-bold text-xl uppercase">
@@ -19,7 +25,7 @@ export default function ParentDetailsModal({ parent, onClose }) {
                         <p className="text-gray-400 text-sm">Parent - {parent.student?.name}</p>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Content Area */}

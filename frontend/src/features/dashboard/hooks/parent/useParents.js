@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { getParents } from '@/services/parent.service';
+import { createParent, getParents } from '@/services/parent.service';
 
 export function useParents(filters) {
   const role = useAuthStore((s) => s.user?.role);
@@ -42,3 +42,6 @@ export function useParents(filters) {
 
   return { parents, setParents, pagination, loading, error, refetch: fetchParents };
 }
+
+
+
