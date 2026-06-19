@@ -327,10 +327,25 @@ const toggleParentStatusDb = async (parentProfileId) => {
   return { parentProfile };
 };
 
+const bulkUpdateParentStatusDb = async (ids, isActive) => {
+  const query = {
+    _id: {
+      $in: ids.map((id) => new mongoose.Types.ObjectId(id)),
+    },
+  };
+
+  return await Parent.updateMany(query, {
+    $set: {
+      isActive,
+    },
+  });
+};
+
 export {
   createParentDb,
   updateParentDb,
   setDefaultGuardianDb,
   getParentsService,
   toggleParentStatusDb,
+  bulkUpdateParentStatusDb,
 };

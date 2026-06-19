@@ -1,7 +1,9 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import User from "../users/user.model.js";
-import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService } from "./parent.service.js";
+import Parent from "./parent.model.js";
+import mongoose from "mongoose";
+import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
   let result;
@@ -146,6 +148,49 @@ const setDefaultGuardian = asyncHandler(async (req, res) => {
   });
 });
 
+const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return sendError(res, 400, "Please provide an array of parent IDs");
+  }
+
+  if (typeof isActive !== "boolean") {
+    return sendError(res, 400, "Please provide a boolean value for isActive");
+  }
+
+  const organizationId = req.user.role === "admin" ? req.user.organization : null;
+  if (req.user.role === "admin" && !organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  if (organizationId) {
+    const objectIds = ids.map((id) => new mongoose.Types.ObjectId(id));
+    const validParents = await Parent.aggregate([
+      { $match: { _id: { $in: objectIds } } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": new mongoose.Types.ObjectId(organizationId) } }
+    ]);
+
+    if (validParents.length !== ids.length) {
+      return sendError(res, 403, "One or more parents are not under your organization");
+    }
+  }
+
+  const result = await bulkUpdateParentStatusDb(ids, isActive);
+
+  return sendSuccess(
+    res,
+    200,
+    `Successfully updated ${result.modifiedCount} parent(s) to ${isActive ? "Active" : "Inactive"} status`,
+    {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  );
+});
+
 export {
   createParent,
   updateParent,
@@ -153,4 +198,5 @@ export {
   setDefaultGuardian,
   getParentsByAdmin,
   getParentsBySuperAdmin,
+  bulkUpdateParentStatus,
 };
