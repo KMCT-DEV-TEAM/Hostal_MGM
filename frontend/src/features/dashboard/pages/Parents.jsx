@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus } from '@/services/parent.service';
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
@@ -64,13 +64,17 @@ export default function Parents() {
 
     const handleStatusChangeRequest = (parent, newStatus) => {
         if (!canEdit) return;
-        setPendingStatusChange({ parent, newStatus });
+        setPendingStatusChange({
+            title: 'Confirm Status Change',
+            message: `Are you sure you want to change the status of ${parent?.parentName || 'this parent'} to ${newStatus}?`,
+            confirmText: 'Confirm',
+            confirmAction: () => confirmStatusChange(parent)
+        });
         setActiveModal('confirm-status');
     };
 
-    const confirmStatusChange = async () => {
-        if (!pendingStatusChange || !canEdit) return;
-        const { parent } = pendingStatusChange;
+    const confirmStatusChange = async (parent) => {
+        if (!canEdit) return;
         const id = getParentId(parent);
 
         setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
@@ -113,23 +117,58 @@ export default function Parents() {
         }
     };
 
-    const handleDeleteSelected = async () => {
-        if (!canDelete) return;
-        if (!window.confirm(`Are you sure you want to deactivate ${selectedIds.length} parent(s)?`)) return;
+    const handleBulkStatusChange = async (targetActive, idsToToggle) => {
+        if (!idsToToggle.length) return;
 
-        setStatusLoadingIds((prev) => [...new Set([...prev, ...selectedIds])]);
+        setStatusLoadingIds((prev) => [...new Set([...prev, ...idsToToggle])]);
+        setActiveModal(null);
+        setPendingStatusChange(null);
 
         try {
-            const responses = await Promise.all(selectedIds.map((id) => toggleParentStatus(role, id)));
-            responses.forEach((res, index) => {
-                applyStatusChange(selectedIds[index], res);
-            });
+            await bulkUpdateParentStatus(role, { ids: idsToToggle, isActive: targetActive });
+            setParents((prev) => prev.map((parent) => (
+                idsToToggle.includes(getParentId(parent))
+                    ? { ...parent, isActive: targetActive, status: targetActive ? 'Active' : 'Inactive' }
+                    : parent
+            )));
             setSelectedIds([]);
         } catch (err) {
-            console.error("Failed to delete selected parents", err);
+            console.error("Failed to update bulk status", err);
         } finally {
-            setStatusLoadingIds((prev) => prev.filter((id) => !selectedIds.includes(id)));
+            setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
         }
+    };
+
+    const prepareBulkStatusChange = (targetActive) => {
+        if (!selectedIds.length) return;
+
+        const idsToToggle = selectedIds.filter((id) => {
+            const parent = parents.find((parent) => getParentId(parent) === id);
+            return parent ? parent.isActive !== targetActive : false;
+        });
+
+        if (!idsToToggle.length) {
+            setSelectedIds([]);
+            return;
+        }
+
+        setPendingStatusChange({
+            title: targetActive ? 'Confirm Activation' : 'Confirm Deactivation',
+            message: `Are you sure you want to ${targetActive ? 'activate' : 'deactivate'} ${idsToToggle.length} selected parent(s)?`,
+            confirmText: targetActive ? 'Activate' : 'Deactivate',
+            confirmAction: () => handleBulkStatusChange(targetActive, idsToToggle),
+        });
+        setActiveModal('confirm-status');
+    };
+
+    const handleActivateSelected = () => {
+        if (!canEdit) return;
+        prepareBulkStatusChange(true);
+    };
+
+    const handleDeactivateSelected = () => {
+        if (!canDelete) return;
+        prepareBulkStatusChange(false);
     };
 
     const handleSearch = useCallback((query) => {
@@ -146,7 +185,8 @@ export default function Parents() {
                 selectedIds={selectedIds}
                 parents={parents}
                 onEdit={handleEdit}
-                onDeleteSelected={handleDeleteSelected}
+                onActivateSelected={handleActivateSelected}
+                onDeactivateSelected={handleDeactivateSelected}
                 canEdit={canEdit}
                 canDelete={canDelete}
             />
@@ -220,9 +260,10 @@ export default function Parents() {
             <ConfirmationModal
                 isOpen={activeModal === 'confirm-status'}
                 onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
-                onConfirm={confirmStatusChange}
-                title="Confirm Status Change"
-                message={`Are you sure you want to change the status of ${pendingStatusChange?.parent?.name} to ${pendingStatusChange?.newStatus}?`}
+                onConfirm={() => pendingStatusChange?.confirmAction?.()}
+                title={pendingStatusChange?.title}
+                message={pendingStatusChange?.message}
+                confirmText={pendingStatusChange?.confirmText}
             />
         </div>
     );

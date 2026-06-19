@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 
-export default function ParentsHeader({ selectedIds, parents, onEdit, onDeleteSelected }) {
+export default function ParentsHeader({ selectedIds, parents, onEdit, onActivateSelected, onDeactivateSelected, canEdit, canDelete }) {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
@@ -23,13 +23,24 @@ export default function ParentsHeader({ selectedIds, parents, onEdit, onDeleteSe
                 )}
 
                 {selectedIds.length > 0 && (
-                    <button
-                        onClick={onDeleteSelected}
-                        className="flex items-center gap-2 px-4 py-2 border border-red-200 text-danger rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                        Delete ({selectedIds.length})
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {canEdit && (
+                            <button
+                                onClick={onActivateSelected}
+                                className="px-4 py-2 bg-white border border-[#23A26D] text-[#23A26D] rounded-lg hover:bg-[#E9F6F0] transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
+                            >
+                                Activate ({selectedIds.length})
+                            </button>
+                        )}
+                        {canDelete && (
+                            <button
+                                onClick={onDeactivateSelected}
+                                className="px-4 py-2 bg-white border border-[#E33B32] text-[#E33B32] rounded-lg hover:bg-[#FCECEB] transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
+                            >
+                                Deactivate ({selectedIds.length})
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
         </div>

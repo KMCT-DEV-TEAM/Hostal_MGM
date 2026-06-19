@@ -17,6 +17,13 @@ router.post(
 );
 
 router.patch(
+  "/bulk-status",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  bulkUpdateParentStatus
+);
+
+router.patch(
   "/:id",
   authMiddleware,
   roleMiddleware("admin", "super_admin"),
@@ -31,13 +38,6 @@ router.patch(
   roleMiddleware("admin", "super_admin"),
   validateParentIdParam,
   toggleParentStatus
-);
-
-router.patch(
-  "/bulk-status",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  bulkUpdateParentStatus
 );
 
 router.patch(

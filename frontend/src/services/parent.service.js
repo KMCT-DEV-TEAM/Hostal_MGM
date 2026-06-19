@@ -32,6 +32,16 @@ export async function toggleStatusBySuperAdmin(id) {
   return response.data;
 }
 
+export async function bulkStatusByAdmin(payload) {
+  const response = await parentApi.bulkStatusByAdmin(payload);
+  return response.data;
+}
+
+export async function bulkStatusBySuperAdmin(payload) {
+  const response = await parentApi.bulkStatusBySuperAdmin(payload);
+  return response.data;
+}
+
 const PARENT_FETCHERS = {
   [ROLES.ADMIN]: getParentsByAdmin,
   [ROLES.SUPER_ADMIN]: getParentsBySuperAdmin,
@@ -49,6 +59,16 @@ export const toggleParentStatus = createRoleResolver(
   'parent status toggle'
 );
 
+const PARENT_BULK_STATUS_FETCHERS = {
+  [ROLES.ADMIN]: bulkStatusByAdmin,
+  [ROLES.SUPER_ADMIN]: bulkStatusBySuperAdmin,
+};
+
+export const bulkUpdateParentStatus = createRoleResolver(
+  PARENT_BULK_STATUS_FETCHERS,
+  'parent bulk status'
+);
+
 const parentService = {
   createParent,
   updateParent,
@@ -56,8 +76,11 @@ const parentService = {
   getParentsByAdmin,
   getParentsBySuperAdmin,
   toggleParentStatus,
+  bulkUpdateParentStatus,
   toggleStatusByAdmin,
   toggleStatusBySuperAdmin,
+  bulkStatusByAdmin,
+  bulkStatusBySuperAdmin,
 };
 
 export default parentService;
