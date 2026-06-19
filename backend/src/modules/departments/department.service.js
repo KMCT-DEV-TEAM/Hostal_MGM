@@ -59,12 +59,12 @@ const updateDepartmentDb = async (id, data) => {
 };
 
 const toggleDepartmentStatusDb = async (id) => {
-  const Department = await Department.findById(id);
-  if (!Department) throw new Error("Department not found");
+  const department = await Department.findById(id);
+  if (!department) throw new Error("Department not found");
   
-  Department.isActive = !Department.isActive;
-  await Department.save();
-  return Department;
+  department.isActive = !department.isActive;
+  await department.save();
+  return department;
 };
 
 const bulkUpdateDepartmentStatusDb = async (ids, isActive) => {

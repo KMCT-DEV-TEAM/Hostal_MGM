@@ -1,6 +1,7 @@
 import React from 'react';
 import { Square, CheckSquare, ChevronDown, Pencil, Layers, FileText, Building2 } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import Dropdown from '@/components/ui/Dropdown';
 
 const DepartmentTable = ({
     Departments,
@@ -98,23 +99,16 @@ const DepartmentTable = ({
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <div className="relative w-fit">
-                                        <select
+                                    <div className="relative inline-block w-[105px]">
+                                        <Dropdown
+                                            minWidth=""
+                                            options={[
+                                                { value: "Active", label: "Active" },
+                                                { value: "Inactive", label: "Inactive" }
+                                            ]}
                                             value={o.isActive ? "Active" : "Inactive"}
                                             onChange={() => handleStatusChangeClick(o._id, o.isActive)}
-                                            className={`appearance-none rounded-lg pl-3 pr-8 py-1.5 text-xs font-regular border transition-colors cursor-pointer outline-none
-                                            ${o.isActive
-                                                    ? "bg-green-50 text-success border-green-200 hover:bg-green-100"
-                                                    : "bg-red-50 text-danger border-red-200 hover:bg-red-100"
-                                                }`}
-                                        >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
-                                        </select>
-                                        <ChevronDown
-                                            size={14}
-                                            className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none
-                                            ${o.isActive ? "text-green-700" : "text-red-700"}`}
+                                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${o.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
                                         />
                                     </div>
                                 </td>
