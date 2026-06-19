@@ -50,7 +50,7 @@ export default function WardenFormModal({
                         <h3 className="text-sm font-semibold text-primary mb-1">Basic Info</h3>
                         <h5 className='text-xs text-[#777777] mb-4'>Basic contact information of the Warden</h5>
                         <div className="border-b border-gray-100 mb-4" />
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-1">
                                 <label className="block text-[10px] font-medium text-black mb-1">First Name *</label>
                                 <input
@@ -73,7 +73,7 @@ export default function WardenFormModal({
                                     className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                                 />
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-[10px] font-medium text-gray-500 mb-1">Phone Number *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
@@ -101,7 +101,7 @@ export default function WardenFormModal({
 
                             {/* Conditionally hide Email if editing */}
                             {!editingWarden && (
-                                <div className="col-span-2">
+                                <div className="col-span-1 sm:col-span-2">
                                     <label className="block text-[10px] font-medium text-black mb-1">Email Address *</label>
                                     <div className="flex gap-2">
                                         <input
