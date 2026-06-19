@@ -35,6 +35,8 @@ export default function WardenManagement() {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isHostelConfirmOpen, setIsHostelConfirmOpen] = useState(false);
+    const [hostelChangeToConfirm, setHostelChangeToConfirm] = useState(null);
     const [emailChangeWardenId, setEmailChangeWardenId] = useState(null);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [newEmailForm, setNewEmailForm] = useState('');
@@ -44,6 +46,8 @@ export default function WardenManagement() {
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
     const [otpSource, setOtpSource] = useState(null); // 'emailChange' | 'addWarden'
+    const [resendTimer, setResendTimer] = useState(300);
+    const [isTimerActive, setIsTimerActive] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -61,6 +65,25 @@ export default function WardenManagement() {
     // ==========================================
     // FILTERING & PAGINATION LOGIC
     // ==========================================
+    useEffect(() => {
+        let interval = null;
+        if (isOtpModalOpen && isTimerActive && resendTimer > 0) {
+            interval = setInterval(() => {
+                setResendTimer((prev) => prev - 1);
+            }, 1000);
+        } else if (resendTimer === 0) {
+            setIsTimerActive(false);
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isOtpModalOpen, isTimerActive, resendTimer]);
+
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
+
     const fetchWardens = async () => {
         try {
             setLoading(true);
@@ -142,24 +165,34 @@ export default function WardenManagement() {
             if (res && (res.success || res.data)) {
                 const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
                 setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
-                showSuccessToast('Status Updated', `Warden status changed to ${newStatus}`);
+                showSuccessToast('Status Updated', res?.message || `Warden status changed to ${newStatus}`);
             }
         } catch (error) {
-            console.error("Failed to change status:", error);
-            showErrorToast('Action Failed', 'Failed to change warden status');
+            console.error("Failed to update status:", error);
+            showErrorToast('Action Failed', error?.message || 'Failed to change warden status');
         }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
     };
 
-    const handleHostelChange = async (id, newHostel) => {
+    const handleHostelChange = (id, newHostel) => {
+        setHostelChangeToConfirm({ id, newHostel });
+        setIsHostelConfirmOpen(true);
+    };
+
+    const confirmHostelChange = async () => {
+        if (!hostelChangeToConfirm) return;
+        const { id, newHostel } = hostelChangeToConfirm;
         try {
-            await wardenService.updateWardenHostel(id, { hostelId: newHostel });
+            const res = await wardenService.updateWardenHostel(id, { hostelId: newHostel });
             fetchWardens();
-            showSuccessToast('Hostel Assigned', 'Hostel assigned successfully');
-        } catch (error) {
-            console.error("Failed to update hostel", error);
-            showErrorToast('Action Failed', 'Failed to update hostel assignment');
+            showSuccessToast('Hostel Assigned', res?.message || 'Hostel assigned successfully');
+        } catch (err) {
+            console.error("Failed to update hostel:", err);
+            showErrorToast('Action Failed', err?.message || 'Failed to update hostel assignment');
+        } finally {
+            setIsHostelConfirmOpen(false);
+            setHostelChangeToConfirm(null);
         }
     };
 
@@ -185,11 +218,11 @@ export default function WardenManagement() {
                     return w;
                 }));
                 const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
-                showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} wardens`);
+                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} wardens`);
             }
         } catch (error) {
-            console.error("Failed to update bulk status:", error);
-            showErrorToast('Action Failed', 'Failed to update bulk status');
+            console.error("Failed to bulk update status:", error);
+            showErrorToast('Action Failed', error?.message || 'Failed to update bulk status');
         } finally {
             setSelectedIds([]); // Clear selection after bulk update
             setIsBulkStatusConfirmOpen(false);
@@ -210,7 +243,7 @@ export default function WardenManagement() {
         e.preventDefault();
 
         try {
-            await wardenService.updateEmail(emailChangeWardenId, {
+            const res = await wardenService.updateEmail(emailChangeWardenId, {
                 oldEmail: emailChangeForm,
                 newEmail: newEmailForm
             });
@@ -223,7 +256,7 @@ export default function WardenManagement() {
 
             setIsEmailChangeModalOpen(false);
             setIsEmailChangeSuccessModalOpen(true);
-            showSuccessToast('Email Updated', 'Warden email updated successfully');
+            showSuccessToast('Email Updated', res?.message || 'Warden email updated successfully');
             setTimeout(() => {
                 setIsEmailChangeSuccessModalOpen(false);
                 setEmailChangeWardenId(null);
@@ -260,12 +293,28 @@ export default function WardenManagement() {
             await otpService.sendOtp(email);
             setOtpSource(source);
             setOtpCode(['', '', '', '', '', '']);
+            setResendTimer(300);
+            setIsTimerActive(true);
             setIsOtpModalOpen(true);
             if (source === 'emailChange') {
                 setIsEmailChangeModalOpen(false);
             }
         } catch (error) {
             showErrorToast('Action Failed', error?.message || 'Failed to send OTP');
+
+        }
+    };
+
+    const handleResendOtp = async () => {
+        const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
+        try {
+            await otpService.sendOtp(emailToVerify);
+            setResendTimer(300);
+            setIsTimerActive(true);
+            showSuccessToast('Success', 'OTP resent successfully!');
+        } catch (error) {
+            showErrorToast('Error', error?.message || 'Failed to resend OTP');
+
         }
     };
 
@@ -303,14 +352,14 @@ export default function WardenManagement() {
                 if (res && (res.success || res.data)) {
                     setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...wardenForm } : w));
                     fetchWardens(); // Re-fetch to ensure sync
-                    showSuccessToast('Warden Updated', 'Warden details saved successfully');
+                    showSuccessToast('Warden Updated', res?.message || 'Warden details saved successfully');
                 }
             } else {
                 // Create New Record
                 const res = await wardenService.createWarden(payload);
                 if (res && (res.success || res.data)) {
                     fetchWardens();
-                    showSuccessToast('Warden Added', 'New warden registered successfully');
+                    showSuccessToast('Warden Added', res?.message || 'New warden registered successfully');
                 }
             }
         } catch (error) {
@@ -318,8 +367,13 @@ export default function WardenManagement() {
             showErrorToast('Action Failed', error?.message || 'Failed to save warden');
         } finally {
             setActiveModal(null);
+
             setIsEditConfirmOpen(false);
+            return;
         }
+
+        setActiveModal(null);
+        setIsEditConfirmOpen(false);
     };
 
     const handleCancel = () => {
@@ -368,13 +422,13 @@ export default function WardenManagement() {
                 worksheet['!cols'] = Object.keys(exportData[0]).map(key => ({ wch: maxWidths[key] + 2 }));
 
                 XLSX.writeFile(workbook, "Wardens_List.xlsx");
-                showSuccessToast('Export Successful', 'The warden list has been downloaded.');
+                showSuccessToast('Export Successful', res?.message || 'The warden list has been downloaded.');
             } else {
                 showErrorToast('Export Failed', 'No data available to export.');
             }
         } catch (error) {
-            console.error("Export failed", error);
-            showErrorToast('Export Failed', 'Failed to export data.');
+            console.error("Export Failed", error);
+            showErrorToast('Export Failed', error?.message || 'Failed to export data.');
         } finally {
             setIsExportConfirmOpen(false);
         }
@@ -703,9 +757,9 @@ export default function WardenManagement() {
                         {/* Title & Subtitle */}
                         <h3 className="text-[32px] font-bold text-[#0A437A] mb-4">Enter the code</h3>
                         <p className="text-gray-500 mb-3 text-[15px]">
-                            A 6-digit code was send to <span className="text-[#0A437A]">{emailChangeForm || '@usergmail.com'}</span>
+                            A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : wardenForm.email || '@usergmail.com'}</span>
                         </p>
-                        <p className="text-red-500 text-[15px] mb-10">Expires in 10 minutes</p>
+
 
                         {/* OTP Inputs */}
                         <div className="flex justify-center gap-2 sm:gap-3 mb-8">
@@ -735,7 +789,11 @@ export default function WardenManagement() {
                         </div>
 
                         <p className="text-[14px] text-gray-400 mb-8 font-medium">
-                            Didn't receive it ? <button type="button" className="text-[#0A437A] cursor-pointer hover:underline font-semibold">Resend the code</button>
+                            Didn't receive it ? {resendTimer > 0 ? (
+                                <span className="text-gray-500 font-semibold ml-1">Resend in {formatTime(resendTimer)}</span>
+                            ) : (
+                                <button type="button" onClick={handleResendOtp} className="text-[#0A437A] cursor-pointer hover:underline font-semibold ml-1">Resend the code</button>
+                            )}
                         </p>
 
                         {/* Verify Button */}
@@ -766,6 +824,32 @@ export default function WardenManagement() {
                     setView={setView}
                     openChangeEmailModal={openChangeEmailModal}
                 />
+            )}
+            {/* Confirm Hostel Change Modal */}
+            {isHostelConfirmOpen && (
+                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-[320px] max-w-[90vw] p-6 relative animate-in zoom-in-95 duration-200">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Change Hostel?</h3>
+                        <p className="text-gray-500 mb-6">Are you sure you want to change the hostel assignment for this warden?</p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsHostelConfirmOpen(false);
+                                    setHostelChangeToConfirm(null);
+                                }}
+                                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmHostelChange}
+                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-[#0A437A]/90 font-medium transition-colors cursor-pointer"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

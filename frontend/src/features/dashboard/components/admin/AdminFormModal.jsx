@@ -78,11 +78,19 @@ const AdminFormModal = ({
                                         +91
                                     </div>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         required
-                                        placeholder="00000 00000"
+                                        pattern="[0-9]{10}"
+                                        maxLength="10"
+                                        title="Please enter a valid 10-digit phone number"
+                                        placeholder="0000000000"
                                         value={adminForm.phone}
-                                        onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) {
+                                                setAdminForm({ ...adminForm, phone: val });
+                                            }
+                                        }}
                                         className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                     />
                                 </div>
