@@ -112,7 +112,7 @@ export default function ChangeEmailModal({
   const handleConfirmChange = async () => {
     try {
       setSaving(true);
-      await onConfirmChange?.({ oldEmail, newEmail });
+      await onConfirmChange?.({ oldEmail, newEmail, otp });
       showSuccessToast("Email changed successfully");
       setConfirmOpen(false);
       onClose?.();

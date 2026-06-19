@@ -100,6 +100,7 @@ const updateParent = asyncHandler(async (req, res) => {
 const changeParentEmail = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { oldEmail, newEmail, otp } = req.body;
+  console.log('req:', req.body)
 
   if (!oldEmail || !newEmail || !otp) {
     return sendError(res, 400, "oldEmail, newEmail, and otp are required");
