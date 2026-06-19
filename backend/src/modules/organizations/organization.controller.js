@@ -1,6 +1,7 @@
 import {
-  findExistingOrganization,
-  findExistingOrganizationWithExclude,
+  checkExistingOrgCodeDb,
+  checkExistingOrgNumberDb,
+  checkExistingOrgEmailDb,
   createOrganizationDb,
   getAllOrganizationsDb,
   getPaginatedOrganizationsDb,
@@ -15,10 +16,25 @@ import asyncHandler from "../../utils/asyncHandler.js";
 const createOrganization = asyncHandler(async (req, res) => {
     const { name, code, organisationNumber, email, phone, address } = req.body;
 
-    const existingOrg = await findExistingOrganization(code, organisationNumber);
+    if (email) {
+      const existingEmail = await checkExistingOrgEmailDb(email);
+      if (existingEmail) {
+        return sendError(res, 400, "Organization email already exists");
+      }
+    }
 
-    if (existingOrg) {
-      return sendError(res, 400, "Organization with this code or number already exists");
+    if (code) {
+      const existingCode = await checkExistingOrgCodeDb(code);
+      if (existingCode) {
+        return sendError(res, 400, "Organization code already exists");
+      }
+    }
+
+    if (organisationNumber) {
+      const existingNumber = await checkExistingOrgNumberDb(organisationNumber);
+      if (existingNumber) {
+        return sendError(res, 400, "Organization number already exists");
+      }
     }
 
     const organization = await createOrganizationDb({
@@ -64,9 +80,25 @@ const updateOrganization = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name, code, organisationNumber, email, phone, address } = req.body;
 
-    const existingOrg = await findExistingOrganizationWithExclude(code, organisationNumber, id);
-    if (existingOrg) {
-      return sendError(res, 400, "Another organization with this code or number already exists");
+    if (email) {
+      const existingEmail = await checkExistingOrgEmailDb(email);
+      if (existingEmail && existingEmail._id.toString() !== id) {
+        return sendError(res, 400, "Organization email already exists");
+      }
+    }
+
+    if (code) {
+      const existingCode = await checkExistingOrgCodeDb(code);
+      if (existingCode && existingCode._id.toString() !== id) {
+        return sendError(res, 400, "Organization code already exists");
+      }
+    }
+
+    if (organisationNumber) {
+      const existingNumber = await checkExistingOrgNumberDb(organisationNumber);
+      if (existingNumber && existingNumber._id.toString() !== id) {
+        return sendError(res, 400, "Organization number already exists");
+      }
     }
 
     const organization = await updateOrganizationDb(id, {

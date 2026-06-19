@@ -118,9 +118,17 @@ const OrganizationFormModal = ({
                                     <input
                                         name="phone"
                                         value={formData.phone}
-                                        onChange={handleInputChange}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, '');
+                                            if (value.length <= 10) {
+                                                handleInputChange({ target: { name: 'phone', value } });
+                                            }
+                                        }}
                                         type="text"
                                         required
+                                        maxLength="10"
+                                        pattern="[0-9]{10}"
+                                        title="Please enter exactly 10 digits"
                                         placeholder="9876543210"
                                         className="w-full px-3 py-2 text-xs outline-none"
                                     />

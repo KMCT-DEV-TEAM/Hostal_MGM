@@ -233,7 +233,7 @@ export default function Administrator() {
                 setNewEmailForm('');
             }, 2500);
         } catch (error) {
-            showErrorToast('Error', error?.response?.data?.message || 'Failed to update email');
+            showErrorToast('Error', error?.message || 'Failed to update email');
         }
     };
 
@@ -332,7 +332,7 @@ export default function Administrator() {
                 setIsEmailChangeModalOpen(false);
             }
         } catch (error) {
-            showErrorToast('Error', error?.response?.data?.message || 'Failed to send OTP');
+            showErrorToast('Error', error?.message || 'Failed to send OTP');
         }
     };
 
@@ -831,7 +831,7 @@ export default function Administrator() {
                                 showSuccessToast('Success', 'Email verified successfully!');
                             }
                         } catch(err) {
-                            showErrorToast('Error', err?.response?.data?.message || 'Invalid OTP');
+                            showErrorToast('Error', err?.message || 'Invalid OTP');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         <div className="flex justify-between items-center mb-6">

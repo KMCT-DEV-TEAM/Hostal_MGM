@@ -10,24 +10,24 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import organizationService from '../../../services/organization.service';
+import CourseService from '../../../services/course.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import OrganizationTable from '../components/organization/OrganizationTable';
-import OrganizationMobileList from '../components/organization/OrganizationMobileList';
-import OrganizationDetailView from '../components/organization/OrganizationDetailView';
-import OrganizationFormModal from '../components/organization/OrganizationFormModal';
+import CourseTable from '../components/course/CourseTable';
+import CourseMobileList from '../components/course/CourseMobileList';
+import CourseDetailView from '../components/course/CourseDetailView';
+import CourseFormModal from '../components/course/CourseFormModal';
 
-const INITIAL_ORGS = [
-    { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', address: 'Abc street, Sarojini nagar', status: 'Active' },
+const INITIAL_courses = [
+    { id: 1, name: 'B.Tech Computer Science', code: 'CS101', batchesCount: 4, status: 'Active' },
     // ... add more as needed
 ];
 
-const OrganizationManagement = () => {
-    const [orgs, setOrgs] = useState([]);
+const CourseManagement = () => {
+    const [courses, setcourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [totalOrgs, setTotalOrgs] = useState(0);
+    const [totalcourses, setTotalcourses] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [statusFilter, setStatusFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +38,7 @@ const OrganizationManagement = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [view, setView] = useState('list'); // 'list' or 'detail'
-    const [selectedOrganizationDetail, setSelectedOrganizationDetail] = useState(null);
+    const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
@@ -48,31 +48,27 @@ const OrganizationManagement = () => {
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
-        code: '',
-        organisationNumber: '',
-        email: '',
-        phone: '',
-        address: ''
+        code: ''
     });
     const limit = 10;
 
-    const fetchOrganizations = async () => {
+    const fetchCourses = async () => {
         try {
             setLoading(true);
-            const res = await organizationService.getOrganizations({
+            const res = await CourseService.getCourses({
                 page,
                 limit,
                 search: debouncedSearch,
                 status: statusFilter
             });
             if (res && res.data) {
-                setOrgs(res.data);
-                setTotalOrgs(res.totalCount || 0);
+                setcourses(res.data);
+                setTotalcourses(res.totalCount || 0);
                 setTotalPages(res.totalPages || 1);
             }
         } catch (err) {
-            console.error("Failed to fetch organizations:", err);
-            setError("Failed to fetch organizations. Please try again.");
+            console.error("Failed to fetch Courses:", err);
+            setError("Failed to fetch Courses. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -87,7 +83,7 @@ const OrganizationManagement = () => {
     }, [searchQuery]);
 
     useEffect(() => {
-        fetchOrganizations();
+        fetchCourses();
     }, [page, debouncedSearch, statusFilter]);
 
     const handleStatusChangeClick = (id, currentStatus) => {
@@ -98,43 +94,35 @@ const OrganizationManagement = () => {
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
         try {
-            await organizationService.toggleStatus(statusToUpdate.id);
+            await CourseService.toggleStatus(statusToUpdate.id);
             // Re-fetch or locally update the status
-            setOrgs((prevOrgs) =>
-                prevOrgs.map((org) =>
-                    org._id === statusToUpdate.id ? { ...org, isActive: !org.isActive } : org
+            setcourses((prevcourses) =>
+                prevcourses.map((course) =>
+                    course._id === statusToUpdate.id ? { ...course, isActive: !course.isActive } : course
                 )
             );
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
-            showSuccessToast('Status Updated', 'Organization status changed successfully');
+            showSuccessToast('Status Updated', 'Course status changed successfully');
         } catch (err) {
             console.error("Failed to toggle status:", err);
             showErrorToast('Action Failed', err?.message || 'Failed to update status. Please try again.');
         }
     };
 
-    const openModal = (mode, org = null) => {
+    const openModal = (mode, course = null) => {
         setIsEditMode(mode === 'edit');
-        if (mode === 'edit' && org) {
-            setEditingId(org._id);
+        if (mode === 'edit' && course) {
+            setEditingId(course._id);
             setFormData({
-                name: org.name || '',
-                code: org.code || '',
-                organisationNumber: org.organisationNumber || '',
-                email: org.email || '',
-                phone: org.phone || '',
-                address: org.address || ''
+                name: course.name || '',
+                code: course.code || ''
             });
         } else {
             setEditingId(null);
             setFormData({
                 name: '',
-                code: '',
-                organisationNumber: '',
-                email: '',
-                phone: '',
-                address: ''
+                code: ''
             });
         }
         setIsModalOpen(true);
@@ -150,26 +138,26 @@ const OrganizationManagement = () => {
         if (isEditMode) {
             setIsEditConfirmOpen(true);
         } else {
-            await saveOrganization();
+            await saveCourse();
         }
     };
 
-    const saveOrganization = async () => {
+    const saveCourse = async () => {
         try {
             setIsSubmitting(true);
             if (isEditMode && editingId) {
-                await organizationService.updateOrganization(editingId, formData);
-                showSuccessToast('Organization Updated', 'Organization details saved successfully');
+                await CourseService.updateCourse(editingId, formData);
+                showSuccessToast('Course Updated', 'Course details saved successfully');
             } else {
-                await organizationService.createOrganization(formData);
-                showSuccessToast('Organization Added', 'New organization registered successfully');
+                await CourseService.createCourse(formData);
+                showSuccessToast('Course Added', 'New Course registered successfully');
             }
             setIsModalOpen(false);
             setIsEditConfirmOpen(false);
-            fetchOrganizations(); // Refresh list after saving
+            fetchCourses(); // Refresh list after saving
         } catch (err) {
-            console.error("Failed to save organization:", err);
-            showErrorToast('Action Failed', err?.message || 'Failed to save organization. Please try again.');
+            console.error("Failed to save Course:", err);
+            showErrorToast('Action Failed', err?.message || 'Failed to save Course. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -190,7 +178,7 @@ const OrganizationManagement = () => {
 
     const handleSelectAll = () => {
         // Use _id instead of id
-        const currentVisibleIds = orgs.map(h => h._id);
+        const currentVisibleIds = courses.map(h => h._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -216,13 +204,13 @@ const OrganizationManagement = () => {
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
-            await organizationService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
+            await CourseService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
-            showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} organizations`);
+            showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} Courses`);
             setSelectedIds([]); // clear selection
             setIsBulkStatusConfirmOpen(false);
             setBulkStatusToUpdate(null);
-            fetchOrganizations(); // refresh table
+            fetchCourses(); // refresh table
         } catch (error) {
             console.error("Failed to bulk update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
@@ -238,36 +226,33 @@ const OrganizationManagement = () => {
     const confirmExport = async () => {
         setIsExportConfirmOpen(false);
         try {
-            // Fetch all organizations by setting limit to 0
-            const res = await organizationService.getOrganizations({ page: 1, limit: 0, search: debouncedSearch, status: statusFilter });
+            // Fetch all Courses by setting limit to 0
+            const res = await CourseService.getCourses({ page: 1, limit: 0, search: debouncedSearch, status: statusFilter });
             if (res && res.data) {
-                const allOrgs = res.data;
-                const exportData = allOrgs.map((org, index) => ({
+                const allcourses = res.data;
+                const exportData = allcourses.map((course, index) => ({
                     "S.No": index + 1,
-                    "Organization Name": org.name,
-                    "Code": org.code,
-                    "Registration Number": org.organisationNumber,
-                    "Email": org.email,
-                    "Phone": org.phone || 'N/A',
-                    "Address": org.address || 'N/A',
-                    "Status": org.isActive ? "Active" : "Inactive",
-                    "Created At": new Date(org.createdAt).toLocaleDateString()
+                    "Course Name": course.name,
+                    "Course Code": course.code,
+                    "Number of Batches": course.batchesCount || 0,
+                    "Status": course.isActive ? "Active" : "Inactive",
+                    "Created At": new Date(course.createdAt).toLocaleDateString()
                 }));
 
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Organizations");
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Courses");
 
                 const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
                 const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-                saveAs(data, `Organizations_Export_${new Date().getTime()}.xlsx`);
-                showSuccessToast('Export Successful', 'The organization list has been downloaded.');
+                saveAs(data, `Courses_Export_${new Date().getTime()}.xlsx`);
+                showSuccessToast('Export Successful', 'The Course list has been downloaded.');
             } else {
                 showErrorToast('Export Failed', 'No data available to export.');
             }
         } catch (err) {
-            console.error("Failed to export organizations:", err);
-            showErrorToast('Export Failed', err?.message || 'Failed to export organizations. Please try again.');
+            console.error("Failed to export Courses:", err);
+            showErrorToast('Export Failed', err?.message || 'Failed to export Courses. Please try again.');
         }
     };
 
@@ -282,8 +267,8 @@ const OrganizationManagement = () => {
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-black">Organization</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all organizations</p>
+                    <h1 className="text-2xl font-bold text-black">Course</h1>
+                    <p className="text-xs text-[#777777] mt-1">Manage all Courses</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
 
@@ -316,7 +301,7 @@ const OrganizationManagement = () => {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none"
-                            placeholder="Search Organization..."
+                            placeholder="Search Course..."
                         />
                     </div>
 
@@ -349,25 +334,25 @@ const OrganizationManagement = () => {
                     </div>
                 </div>
 
-                <OrganizationTable
-                    orgs={orgs}
+                <CourseTable
+                    courses={courses}
                     loading={loading}
                     error={error}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
-                    setSelectedOrganizationDetail={setSelectedOrganizationDetail}
+                    setSelectedCourseDetail={setSelectedCourseDetail}
                     setView={setView}
                     handleStatusChangeClick={handleStatusChangeClick}
                     openModal={openModal}
                 />
 
-                <OrganizationMobileList
-                    orgs={orgs}
+                <CourseMobileList
+                    courses={courses}
                     loading={loading}
                     error={error}
                     openModal={openModal}
-                    setSelectedOrganizationDetail={setSelectedOrganizationDetail}
+                    setSelectedCourseDetail={setSelectedCourseDetail}
                     setView={setView}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
@@ -377,8 +362,8 @@ const OrganizationManagement = () => {
                 {/* PAGINATION BAR FOOTER */}
                 <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
                     <div>
-                        Showing {totalOrgs === 0 ? 0 : (page - 1) * limit + 1} to{" "}
-                        {Math.min(page * limit, totalOrgs)} of {totalOrgs} entries
+                        Showing {totalcourses === 0 ? 0 : (page - 1) * limit + 1} to{" "}
+                        {Math.min(page * limit, totalcourses)} of {totalcourses} entries
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -417,7 +402,7 @@ const OrganizationManagement = () => {
                 </div>
             </div>
 
-            <OrganizationFormModal
+            <CourseFormModal
                 isModalOpen={isModalOpen}
                 setIsModalOpen={setIsModalOpen}
                 isEditMode={isEditMode}
@@ -443,7 +428,7 @@ const OrganizationManagement = () => {
                                 Cancel
                             </button>
                             <button
-                                onClick={saveOrganization}
+                                onClick={saveCourse}
                                 disabled={isSubmitting}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer disabled:cursor-not-allowed"
                             >
@@ -483,7 +468,7 @@ const OrganizationManagement = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Confirm Export</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to download the organization list?
+                            Are you sure you want to download the Course list?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -508,7 +493,7 @@ const OrganizationManagement = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this organization?
+                            Are you sure you want to change the status of this Course?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -536,7 +521,7 @@ const OrganizationManagement = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status for the {selectedIds.length} selected organization(s)?
+                            Are you sure you want to change the status for the {selectedIds.length} selected Course(s)?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -559,8 +544,8 @@ const OrganizationManagement = () => {
                 </div>
             )}
             {view === 'detail' && (
-                <OrganizationDetailView
-                    selectedOrganizationDetail={selectedOrganizationDetail}
+                <CourseDetailView
+                    selectedCourseDetail={selectedCourseDetail}
                     setView={setView}
                 />
             )}
@@ -568,4 +553,4 @@ const OrganizationManagement = () => {
     );
 };
 
-export default OrganizationManagement;
+export default CourseManagement;
