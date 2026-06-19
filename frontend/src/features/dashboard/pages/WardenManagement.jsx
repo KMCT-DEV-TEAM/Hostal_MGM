@@ -208,7 +208,7 @@ export default function WardenManagement() {
 
     const confirmEmailChange = async (e) => {
         e.preventDefault();
-        
+
         try {
             await wardenService.updateEmail(emailChangeWardenId, {
                 oldEmail: emailChangeForm,
@@ -355,7 +355,7 @@ export default function WardenManagement() {
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Wardens");
-                
+
                 // Adjust column widths
                 const maxWidths = exportData.reduce((acc, row) => {
                     Object.keys(row).forEach(key => {
@@ -364,7 +364,7 @@ export default function WardenManagement() {
                     });
                     return acc;
                 }, {});
-                
+
                 worksheet['!cols'] = Object.keys(exportData[0]).map(key => ({ wch: maxWidths[key] + 2 }));
 
                 XLSX.writeFile(workbook, "Wardens_List.xlsx");
@@ -389,7 +389,7 @@ export default function WardenManagement() {
                 handleBulkStatusClick={handleBulkStatusClick}
             />
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+            <div className="bg-transparent md:bg-[#F8FAFC] md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 <WardenToolbar
                     statusFilter={statusFilter}
                     setStatusFilter={setStatusFilter}
@@ -629,9 +629,7 @@ export default function WardenManagement() {
                                     value={newEmailForm}
                                     onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
-
                                     className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
-                                    disabled={isEmailVerified}
 
                                 />
                                 {isEmailVerified ? (
@@ -663,11 +661,11 @@ export default function WardenManagement() {
                         e.preventDefault();
                         const code = otpCode.join('');
                         if (code.length < 6) return;
-                        
+
                         try {
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
-                            
+
                             setIsOtpModalOpen(false);
                             setIsEmailVerified(true);
                             if (otpSource === 'emailChange') {
@@ -675,7 +673,7 @@ export default function WardenManagement() {
                             } else {
                                 Swal.fire('Success', 'Email verified successfully!', 'success');
                             }
-                        } catch(err) {
+                        } catch (err) {
                             Swal.fire('Error', err?.response?.data?.message || 'Invalid OTP', 'error');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
@@ -683,10 +681,10 @@ export default function WardenManagement() {
                         <div className="flex justify-between items-center mb-6">
                             <button
                                 type="button"
-                                onClick={() => { 
-                                    setIsOtpModalOpen(false); 
+                                onClick={() => {
+                                    setIsOtpModalOpen(false);
                                     if (otpSource === 'emailChange') {
-                                        setIsEmailChangeModalOpen(true); 
+                                        setIsEmailChangeModalOpen(true);
                                     }
                                 }}
                                 className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
