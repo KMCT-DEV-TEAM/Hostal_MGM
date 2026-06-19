@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { addParentSchema, editParentSchema } from '@/features/dashboard/validation/parentSchema';
 
 export default function ParentFormModal({
     editingParent,
@@ -12,10 +15,25 @@ export default function ParentFormModal({
     const [students, setStudents] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
 
+    // Setup react-hook-form with Zod validation
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting }
+    } = useForm({
+        resolver: zodResolver(isEdit ? editParentSchema : addParentSchema),
+        defaultValues: {
+            name: editingParent?.name || editingParent?.parentName || '',
+            email: editingParent?.email || '',
+            phone: editingParent?.phone || '',
+            relation: editingParent?.relation || editingParent?.relationship || '',
+            studentId: '',
+        }
+    });
+
     useEffect(() => {
         if (!isEdit && role) {
             setLoadingStudents(true);
-            // Dynamically import to avoid circular dependencies if any
             import('@/services/student.service').then(({ getStudents }) => {
                 getStudents(role, { limit: 1000 }).then(data => {
                     setStudents(data.students || []);
@@ -26,22 +44,25 @@ export default function ParentFormModal({
         }
     }, [isEdit, role]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-
+    const onSubmit = (data) => {
         const payload = {
-            parentName: formData.get('name'),
-            phone: formData.get('phone'),
-            relationship: formData.get('relation'),
+            parentName: data.name,
+            phone: data.phone,
+            relationship: data.relation,
         };
 
         if (!isEdit) {
-            payload.email = formData.get('email');
-            payload.studentId = formData.get('studentId');
+            payload.email = data.email;
+            payload.studentId = data.studentId;
         }
 
         onSave?.(payload);
+    };
+
+    // Helper component for error messages
+    const ErrorMessage = ({ error }) => {
+        if (!error) return null;
+        return <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error.message}</p>;
     };
 
     return (
@@ -53,21 +74,24 @@ export default function ParentFormModal({
             subtitle="Edit the details of parent"
             maxWidth="max-w-xl"
             asForm
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmit(onSubmit)}
             footer={
                 <div className="flex justify-end gap-3">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50"
+                        className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
+                        disabled={isSubmitting}
                     >
                         Cancel
                     </button>
 
                     <button
                         type="submit"
-                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary"
+                        disabled={isSubmitting}
+                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
+                        {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                         {isEdit ? 'Save Changes' : 'Save'}
                     </button>
                 </div>
@@ -78,44 +102,48 @@ export default function ParentFormModal({
                 {/* Full Name */}
                 <div className={isEdit ? 'col-span-2' : ''}>
                     <label className="block mb-1.5 text-xs font-medium">
-                        Full Name *
+                        Full Name <span className="text-red-500">*</span>
                     </label>
 
                     <input
-                        name="name"
-                        required
-                        defaultValue={editingParent?.name || editingParent?.parentName || ''}
+                        {...register("name")}
                         placeholder="Enter full name"
-                        className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                        className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors ${
+                            errors.name ? 'border-red-300 focus:border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-secondary'
+                        }`}
                     />
+                    <ErrorMessage error={errors.name} />
                 </div>
 
                 {/* Email - Add only */}
                 {!isEdit && (
                     <div>
                         <label className="block mb-1.5 text-xs font-medium">
-                            Email Address *
+                            Email Address <span className="text-red-500">*</span>
                         </label>
 
                         <input
-                            name="email"
+                            {...register("email")}
                             type="email"
-                            required
-                            defaultValue={editingParent?.email || ''}
                             placeholder="Enter email address"
-                            className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                            className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors ${
+                                errors.email ? 'border-red-300 focus:border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-secondary'
+                            }`}
                         />
+                        <ErrorMessage error={errors.email} />
                     </div>
                 )}
 
                 {/* Phone */}
                 <div>
                     <label className="block mb-1.5 text-xs font-medium">
-                        Phone Number *
+                        Phone Number <span className="text-red-500">*</span>
                     </label>
 
-                    <div className="flex h-10 border border-gray-200 rounded-md overflow-hidden focus-within:border-secondary">
-                        <div className="px-3 border-r border-gray-200 flex items-center gap-2 text-xs shrink-0">
+                    <div className={`flex h-10 border rounded-md overflow-hidden transition-colors ${
+                        errors.phone ? 'border-red-300 focus-within:border-red-500 bg-red-50/30' : 'border-gray-200 focus-within:border-secondary'
+                    }`}>
+                        <div className={`px-3 border-r flex items-center gap-2 text-xs shrink-0 ${errors.phone ? 'border-red-200' : 'border-gray-200'}`}>
                             <img
                                 src="https://flagcdn.com/w20/in.png"
                                 alt="India"
@@ -125,46 +153,48 @@ export default function ParentFormModal({
                         </div>
 
                         <input
-                            name="phone"
+                            {...register("phone")}
                             type="text"
-                            required
-                            defaultValue={editingParent?.phone || ''}
-                            placeholder="00000 00000"
-                            className="flex-1 px-3 text-xs outline-none"
+                            maxLength={10}
+                            placeholder="0000000000"
+                            className="flex-1 px-3 text-xs outline-none bg-transparent"
                         />
                     </div>
+                    <ErrorMessage error={errors.phone} />
                 </div>
 
                 {/* Relation */}
                 <div>
                     <label className="block mb-1.5 text-xs font-medium">
-                        Relation *
+                        Relation <span className="text-red-500">*</span>
                     </label>
 
                     <select
-                        name="relation"
-                        required
-                        defaultValue={editingParent?.relation || editingParent?.relationship || ''}
-                        className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                        {...register("relation")}
+                        className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${
+                            errors.relation ? 'border-red-300 focus:border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-secondary'
+                        }`}
                     >
                         <option value="">Select Relation</option>
                         <option value="father">Father</option>
                         <option value="mother">Mother</option>
                         <option value="guardian">Guardian</option>
                     </select>
+                    <ErrorMessage error={errors.relation} />
                 </div>
 
                 {/* Student Selection - Add only */}
                 {!isEdit && (
                     <div className="col-span-2">
                         <label className="block mb-1.5 text-xs font-medium">
-                            Linked Student *
+                            Linked Student <span className="text-red-500">*</span>
                         </label>
 
                         <select
-                            name="studentId"
-                            required
-                            className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
+                            {...register("studentId")}
+                            className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${
+                                errors.studentId ? 'border-red-300 focus:border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-secondary'
+                            }`}
                             disabled={loadingStudents}
                         >
                             <option value="">
@@ -176,6 +206,7 @@ export default function ParentFormModal({
                                 </option>
                             ))}
                         </select>
+                        <ErrorMessage error={errors.studentId} />
                     </div>
                 )}
 
