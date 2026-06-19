@@ -1,17 +1,20 @@
 import React, { useCallback, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
-import { useParents } from '@/features/dashboard/hooks/useParents';
+import { useParents } from '@/features/dashboard/hooks/parent/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus, getParents, exportParents } from '@/services/parent.service';
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
 import ParentsMobileList from '../components/parents/ParentsMobileList';
 import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
+import ExportFilterModal from '../components/parents/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Pagination from '@/components/ui/Pagination';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { exportToExcel } from '@/utils/exportUtils';
 
 export default function Parents() {
     const role = useAuthStore((s) => s.user?.role);
@@ -25,6 +28,12 @@ export default function Parents() {
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
+
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState(null);
 
     const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -43,7 +52,7 @@ export default function Parents() {
 
     const applyStatusChange = (ids, response) => {
         const changedIds = new Set(Array.isArray(ids) ? ids : [ids]);
-        const nextIsActive = response?.isActive;
+        const nextIsActive = response?.data?.isActive ?? response?.isActive;
 
         if (typeof nextIsActive !== 'boolean') return;
 
@@ -64,13 +73,17 @@ export default function Parents() {
 
     const handleStatusChangeRequest = (parent, newStatus) => {
         if (!canEdit) return;
-        setPendingStatusChange({ parent, newStatus });
+        setPendingStatusChange({
+            title: 'Confirm Status Change',
+            message: `Are you sure you want to change the status of ${parent?.parentName || 'this parent'} to ${newStatus}?`,
+            confirmText: 'Confirm',
+            confirmAction: () => confirmStatusChange(parent)
+        });
         setActiveModal('confirm-status');
     };
 
-    const confirmStatusChange = async () => {
-        if (!pendingStatusChange || !canEdit) return;
-        const { parent } = pendingStatusChange;
+    const confirmStatusChange = async (parent) => {
+        if (!canEdit) return;
         const id = getParentId(parent);
 
         setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
@@ -79,11 +92,11 @@ export default function Parents() {
 
         try {
             const response = await toggleParentStatus(role, id);
-            // Assume response contains updated parent or { isActive }
             applyStatusChange(id, response);
-            refetch(); // Alternatively refetch to ensure consistency
+            showSuccessToast('Status updated successfully');
         } catch (err) {
             console.error("Failed to toggle parent status", err);
+            showErrorToast('Error updating status', err.response?.data?.message || err.message);
         } finally {
             setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
         }
@@ -100,36 +113,95 @@ export default function Parents() {
     };
 
     const handleSaveParent = async (payload) => {
-        try {
-            if (editingParent) {
-                await updateParent(getParentId(editingParent), payload);
-            } else {
-                await createParent(payload);
-            }
-            setActiveModal(null);
-            setEditingParent(null);
-            refetch();
-        } catch (err) {
-            console.error("Failed to save parent", err);
-            alert("Error saving parent: " + (err.response?.data?.message || err.message));
+        if (editingParent) {
+            setPendingPayload(payload);
+            setIsEditConfirmOpen(true);
+        } else {
+            executeSave(payload);
         }
     };
 
-    const handleDeleteSelected = async () => {
-        if (!canDelete) return;
-        if (!window.confirm(`Are you sure you want to deactivate ${selectedIds.length} parent(s)?`)) return;
-
-        setStatusLoadingIds((prev) => [...new Set([...prev, ...selectedIds])]);
-
+    const executeSave = async (payload) => {
         try {
-            await Promise.all(selectedIds.map((id) => toggleParentStatus(role, id)));
-            setSelectedIds([]);
+            if (editingParent) {
+                await updateParent(getParentId(editingParent), payload || pendingPayload);
+                showSuccessToast('Parent updated successfully');
+            } else {
+                await createParent(payload || pendingPayload);
+                showSuccessToast('Parent created successfully');
+            }
+            setActiveModal(null);
+            setEditingParent(null);
+            setIsEditConfirmOpen(false);
+            setPendingPayload(null);
             refetch();
         } catch (err) {
-            console.error("Failed to delete selected parents", err);
-        } finally {
-            setStatusLoadingIds((prev) => prev.filter((id) => !selectedIds.includes(id)));
+            console.error("Failed to save parent", err);
+            showErrorToast('Error saving parent', err.response?.data?.message || err.message);
         }
+    };
+
+    const handleCloseModal = () => {
+        if (editingParent) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            setActiveModal(null);
+            setEditingParent(null);
+        }
+    };
+
+    const handleBulkStatusChange = async (targetActive, idsToToggle) => {
+        if (!idsToToggle.length) return;
+
+        setStatusLoadingIds((prev) => [...new Set([...prev, ...idsToToggle])]);
+        setActiveModal(null);
+        setPendingStatusChange(null);
+
+        try {
+            await bulkUpdateParentStatus(role, { ids: idsToToggle, isActive: targetActive });
+            setParents((prev) => prev.map((parent) => (
+                idsToToggle.includes(getParentId(parent))
+                    ? { ...parent, isActive: targetActive, status: targetActive ? 'Active' : 'Inactive' }
+                    : parent
+            )));
+            setSelectedIds([]);
+        } catch (err) {
+            console.error("Failed to update bulk status", err);
+        } finally {
+            setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
+        }
+    };
+
+    const prepareBulkStatusChange = (targetActive) => {
+        if (!selectedIds.length) return;
+
+        const idsToToggle = selectedIds.filter((id) => {
+            const parent = parents.find((parent) => getParentId(parent) === id);
+            return parent ? parent.isActive !== targetActive : false;
+        });
+
+        if (!idsToToggle.length) {
+            setSelectedIds([]);
+            return;
+        }
+
+        setPendingStatusChange({
+            title: targetActive ? 'Confirm Activation' : 'Confirm Deactivation',
+            message: `Are you sure you want to ${targetActive ? 'activate' : 'deactivate'} ${idsToToggle.length} selected parent(s)?`,
+            confirmText: targetActive ? 'Activate' : 'Deactivate',
+            confirmAction: () => handleBulkStatusChange(targetActive, idsToToggle),
+        });
+        setActiveModal('confirm-status');
+    };
+
+    const handleActivateSelected = () => {
+        if (!canEdit) return;
+        prepareBulkStatusChange(true);
+    };
+
+    const handleDeactivateSelected = () => {
+        if (!canDelete) return;
+        prepareBulkStatusChange(false);
     };
 
     const handleSearch = useCallback((query) => {
@@ -137,7 +209,56 @@ export default function Parents() {
     }, []);
 
     const handleExport = () => {
-        console.log("Exporting data...");
+        setIsExportConfirmOpen(true);
+    };
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            // Merge current table filters (like search) with the export modal filters
+            const mergedFilters = { ...filters, ...exportFilters };
+            
+            // Clean up empty string values so they don't corrupt the backend query
+            const params = Object.fromEntries(
+                Object.entries(mergedFilters).filter(([, value]) => value !== '')
+            );
+
+            // Fetch all matching parents for export using the dedicated export endpoint
+            const response = await exportParents(role, params);
+            
+            const dataToExport = response?.parents || response?.data?.parents || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No parents match the selected filters');
+                setIsExportConfirmOpen(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((p, index) => ({
+                "S.No": index + 1,
+                "Parent Name": p.parentName,
+                "Email": p.email,
+                "Phone": p.phone || 'N/A',
+                "Student": typeof p.student === 'object' ? p.student?.name : p.student,
+                "Relation": p.relationship,
+                "Status": p.isActive ? "Active" : "Inactive"
+            }));
+
+            const isSuccess = exportToExcel(exportData, "Parents_Export", "Parents");
+            
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+            
+            setIsExportConfirmOpen(false);
+        } catch (err) {
+            console.error("Failed to export parents:", err);
+            showErrorToast('Export failed', err.message);
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     return (
@@ -146,7 +267,8 @@ export default function Parents() {
                 selectedIds={selectedIds}
                 parents={parents}
                 onEdit={handleEdit}
-                onDeleteSelected={handleDeleteSelected}
+                onActivateSelected={handleActivateSelected}
+                onDeactivateSelected={handleDeactivateSelected}
                 canEdit={canEdit}
                 canDelete={canDelete}
             />
@@ -212,7 +334,7 @@ export default function Parents() {
             {activeModal === 'edit' && (
                 <ParentFormModal
                     editingParent={editingParent}
-                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                    onClose={handleCloseModal}
                     onSave={handleSaveParent}
                 />
             )}
@@ -220,9 +342,39 @@ export default function Parents() {
             <ConfirmationModal
                 isOpen={activeModal === 'confirm-status'}
                 onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
-                onConfirm={confirmStatusChange}
-                title="Confirm Status Change"
-                message={`Are you sure you want to change the status of ${pendingStatusChange?.parent?.name} to ${pendingStatusChange?.newStatus}?`}
+                onConfirm={pendingStatusChange?.confirmAction || confirmStatusChange}
+                title={pendingStatusChange?.title || "Confirm Status Change"}
+                message={pendingStatusChange?.message || `Are you sure you want to change the status of ${pendingStatusChange?.parent?.parentName || 'this parent'} to ${pendingStatusChange?.newStatus}?`}
+            />
+
+            <ConfirmationModal
+                isOpen={isEditConfirmOpen}
+                onClose={() => setIsEditConfirmOpen(false)}
+                onConfirm={() => executeSave()}
+                title="Confirm Edit"
+                message="Are you sure you want to save these changes?"
+                confirmText="Save Changes"
+            />
+            
+            <ConfirmationModal
+                isOpen={isDiscardConfirmOpen}
+                onClose={() => setIsDiscardConfirmOpen(false)}
+                onConfirm={() => {
+                    setIsDiscardConfirmOpen(false);
+                    setActiveModal(null);
+                    setEditingParent(null);
+                }}
+                title="Discard Changes"
+                message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+                confirmText="Discard"
+                confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+            />
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
             />
         </div>
     );

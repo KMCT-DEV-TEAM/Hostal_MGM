@@ -1,25 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import { Pencil } from 'lucide-react';
+import ChangeEmailModal from '../students/ChangeEmailModal';
+import { useAuthStore } from '@/store/useAuthStore';
+import { changeParentEmail } from '@/services/parent.service';
 
-export default function ParentDetailsModal({ parent, onClose }) {
+export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
+    const role = useAuthStore((s) => s.user?.role);
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+    const handleEmailChange = async ({ oldEmail, newEmail, otp }) => {
+        if (!role) throw new Error("Role not found");
+        if (oldEmail !== parent.email) {
+            throw new Error("Current email does not match");
+        }
+
+        const parentId = parent._id || parent.id || parent.parentId;
+        await changeParentEmail(role, parentId, {
+            oldEmail,
+            newEmail,
+            otp
+        });
+
+        // Optimistically update the parent data
+        onUpdate?.({ ...parent, email: newEmail });
+    };
+
     if (!parent) return null;
     console.log("parent object:", parent.status);
 
     return (
-        <Modal isOpen={true} onClose={onClose} maxWidth="max-w-5xl">                {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
-                        <span className="font-bold text-xl uppercase">
-                            {parent.parentName?.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                        </span>
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{parent.parentName}</h1>
-                        <p className="text-gray-400 text-sm">Parent - {parent.student?.name}</p>
-                    </div>
-                </div>
-            </div>
+        <Modal isOpen={true}
+            avatar={parent.parentName}
+            title={parent.parentName}
+            subtitle={`Parent - ${parent.student?.name}`}
+            onClose={onClose}
+            maxWidth="max-w-5xl"
+        >
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Content Area */}
@@ -31,12 +48,26 @@ export default function ParentDetailsModal({ parent, onClose }) {
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Full Name</span> <span className="col-span-2 font-medium text-gray-900">: {parent.parentName}</span></div>
                             <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Phone No</span> <span className="col-span-2 font-medium text-gray-900">: {parent.phone}</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Email</span> <span className="col-span-2 font-medium text-gray-900">: {parent.email}</span></div>
+                            <div className="grid grid-cols-3 text-sm">
+                                <span className="text-gray-500">Email</span>
+
+                                <span className="col-span-2 font-medium text-gray-900 flex items-center justify-between">
+                                    <span>: {parent.email}</span>
+
+                                    <button
+                                        type="button"
+                                        className="ml-2 p-1 rounded hover:bg-gray-100 transition"
+                                        onClick={() => setIsEmailModalOpen(true)}
+                                    >
+                                        <Pencil size={16} className="text-gray-500" />
+                                    </button>
+                                </span>
+                            </div>
                             <div className="grid grid-cols-3 text-sm">
                                 <span className="text-gray-500">Status</span>
                                 <span className="col-span-2 font-medium text-gray-900 flex items-center">:
                                     <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
-                                    {parent.isActive}
+                                    {parent.isActive === true ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
                         </div>
@@ -67,12 +98,21 @@ export default function ParentDetailsModal({ parent, onClose }) {
                             <span className="text-text-secondary">Status</span>
                             <span className="col-span-2 font-medium text-gray-900 flex items-center">:
                                 <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
-                                {parent.isActive}
+                                {parent.isActive === true ? 'Active' : 'Inactive'}
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <ChangeEmailModal
+                isOpen={isEmailModalOpen}
+                title="Change Email"
+                subjectName={parent.parentName}
+                currentEmail={parent.email}
+                onClose={() => setIsEmailModalOpen(false)}
+                onConfirmChange={handleEmailChange}
+            />
         </Modal>
     );
 }

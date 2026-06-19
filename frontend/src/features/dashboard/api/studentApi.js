@@ -7,6 +7,18 @@ const studentApi = {
   updateStudent: (id, payload) =>
     api.put(`/admin/students/${id}`, payload),
 
+  updateStudentByAdmin: (id, payload) =>
+    api.put(`/admin/students/${id}`, payload),
+
+  updateStudentBySuperAdmin: (id, payload) =>
+    api.put(`/super-admin/students/${id}`, payload),
+
+  changeStudentEmailByAdmin: (id, payload) =>
+    api.patch(`/admin/students/${id}/change-email`, payload),
+
+  changeStudentEmailBySuperAdmin: (id, payload) =>
+    api.patch(`/super-admin/students/${id}/change-email`, payload),
+
   getStudentsByAdmin: (params) =>
     api.get("/admin/students/admin", { params })
   ,

@@ -15,6 +15,7 @@ const createParentDb = async (data) => {
     phone,
     email,
     address,
+    isVerified = true,
     defaultGuardian = false,
   } = data;
 
@@ -24,7 +25,7 @@ const createParentDb = async (data) => {
 
   const student = await Student.findById(studentId);
   if (!student) {
-    return null;
+    throw new Error("Student not found");
   }
 
   const existingParent = await Parent.findOne({ email });
@@ -32,14 +33,22 @@ const createParentDb = async (data) => {
     throw new Error("Parent email already exists");
   }
 
-  const parentTemporaryPassword = generateRandomPassword();
-  const hashedParentPassword = await hashPassword(parentTemporaryPassword);
+  const temporaryPassword = generateRandomPassword();
 
-  const parentCount = await Parent.countDocuments({ studentId });
-  const shouldDefaultGuardian = defaultGuardian || parentCount === 0;
+  const hashedPassword = await hashPassword(temporaryPassword);
+
+  const parentCount = await Parent.countDocuments({
+    studentId,
+  });
+
+  const shouldDefaultGuardian =
+    defaultGuardian || parentCount === 0;
 
   if (shouldDefaultGuardian) {
-    await Parent.updateMany({ studentId }, { defaultGuardian: false });
+    await Parent.updateMany(
+      { studentId },
+      { $set: { defaultGuardian: false } }
+    );
   }
 
   const parent = await Parent.create({
@@ -49,14 +58,15 @@ const createParentDb = async (data) => {
     phone,
     email,
     address,
+    isVerified,
     defaultGuardian: shouldDefaultGuardian,
-    password: hashedParentPassword,
+    password: hashedPassword,
     tempPassword: true,
   });
 
   return {
     parent,
-    temporaryPassword: parentTemporaryPassword,
+    temporaryPassword,
   };
 };
 
@@ -114,42 +124,93 @@ const updateParentDb = async (parentProfileId, data) => {
   return { parentProfile };
 };
 
-const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => {
+
+ const setDefaultGuardianDb = async (
+  parentProfileId,
+  defaultGuardian
+) => {
   const parentProfile = await Parent.findById(parentProfileId);
-  if (!parentProfile) return null;
+
+  if (!parentProfile) {
+    return null;
+  }
 
   const studentId = parentProfile.studentId;
-  const parentCount = await Parent.countDocuments({ studentId });
 
+  // Set as default guardian
   if (defaultGuardian === true) {
-    await Parent.updateMany({ studentId }, { defaultGuardian: false });
-    parentProfile.defaultGuardian = true;
-  } else {
-    if (parentCount <= 1) {
-      parentProfile.defaultGuardian = true;
-    } else {
-      parentProfile.defaultGuardian = false;
-      const otherDefault = await Parent.findOne({
-        studentId,
-        _id: { $ne: parentProfileId },
-        defaultGuardian: true,
-      });
-
-      if (!otherDefault) {
-        const nextParent = await Parent.findOne({
-          studentId,
-          _id: { $ne: parentProfileId },
-        });
-        if (nextParent) {
-          nextParent.defaultGuardian = true;
-          await nextParent.save();
-        }
+    // Remove default guardian from all parents of this student
+    await Parent.updateMany(
+      { studentId },
+      {
+        $set: {
+          defaultGuardian: false,
+        },
       }
+    );
+
+    // Set selected parent as default guardian
+    const updatedParent = await Parent.findByIdAndUpdate(
+      parentProfileId,
+      {
+        $set: {
+          defaultGuardian: true,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    return {
+      parentProfile: updatedParent,
+    };
+  }
+
+  // Remove as default guardian
+  const parentCount = await Parent.countDocuments({
+    studentId,
+  });
+
+  if (parentCount <= 1) {
+    throw new Error(
+      "Student must have at least one default guardian"
+    );
+  }
+
+  const updatedParent = await Parent.findByIdAndUpdate(
+    parentProfileId,
+    {
+      $set: {
+        defaultGuardian: false,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  // Ensure another guardian exists
+  const existingGuardian = await Parent.findOne({
+    studentId,
+    defaultGuardian: true,
+  });
+
+  if (!existingGuardian) {
+    const nextParent = await Parent.findOne({
+      studentId,
+      _id: { $ne: parentProfileId },
+    });
+
+    if (nextParent) {
+      nextParent.defaultGuardian = true;
+      await nextParent.save();
     }
   }
 
-  await parentProfile.save();
-  return { parentProfile };
+  return {
+    parentProfile: updatedParent,
+  };
 };
 
 const getParentsService = async ({ organizationId, query }) => {
@@ -190,7 +251,7 @@ const getParentsService = async ({ organizationId, query }) => {
   }
 
   const pipeline = [
-    
+
     {
       $lookup: {
         from: "students",
@@ -317,6 +378,104 @@ const getParentsService = async ({ organizationId, query }) => {
   };
 };
 
+const exportParentsService = async ({ organizationId, query }) => {
+  const {
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const parentMatch = {};
+
+  if (relationship) {
+    parentMatch.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    parentMatch.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    parentMatch.isActive = isActive === "true";
+  }
+
+  if (studentId && mongoose.Types.ObjectId.isValid(studentId)) {
+    parentMatch.studentId = new mongoose.Types.ObjectId(studentId);
+  }
+
+  if (organizationId && mongoose.Types.ObjectId.isValid(organizationId)) {
+    parentMatch["student.organizationId"] = new mongoose.Types.ObjectId(organizationId);
+  }
+
+  const pipeline = [
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student",
+      },
+    },
+    {
+      $match: parentMatch,
+    },
+    {
+      $unwind: {
+        path: "$student",
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+  ];
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { parentName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { relationship: { $regex: search, $options: "i" } },
+          { "student.name": { $regex: search, $options: "i" } },
+          { "student.email": { $regex: search, $options: "i" } },
+          { "student.studentId": { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  const parents = await Parent.aggregate([
+    ...pipeline,
+    {
+      $project: {
+        _id: 1,
+        parentName: 1,
+        relationship: 1,
+        phone: 1,
+        email: 1,
+        defaultGuardian: 1,
+        isActive: 1,
+        createdAt: 1,
+        student: {
+          _id: "$student._id",
+          studentId: "$student.studentId",
+          name: "$student.name",
+          email: "$student.email",
+          organizationId: "$student.organizationId",
+        },
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+  ]);
+
+  return { parents };
+};
+
 const toggleParentStatusDb = async (parentProfileId) => {
   const parentProfile = await Parent.findById(parentProfileId);
   if (!parentProfile) return null;
@@ -327,10 +486,26 @@ const toggleParentStatusDb = async (parentProfileId) => {
   return { parentProfile };
 };
 
+const bulkUpdateParentStatusDb = async (ids, isActive) => {
+  const query = {
+    _id: {
+      $in: ids.map((id) => new mongoose.Types.ObjectId(id)),
+    },
+  };
+
+  return await Parent.updateMany(query, {
+    $set: {
+      isActive,
+    },
+  });
+};
+
 export {
   createParentDb,
   updateParentDb,
   setDefaultGuardianDb,
   getParentsService,
+  exportParentsService,
   toggleParentStatusDb,
+  bulkUpdateParentStatusDb,
 };

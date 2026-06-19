@@ -24,9 +24,10 @@ export default function ParentsTable({
                                 }
                             </button>
                         </th>
-                        {['Name', 'Email', 'Phone', 'Student', 'Relation', 'Status', 'Action'].map(h => (
-                            <th key={h} className="p-4">{h}</th>
+                        {['Name', 'Email', 'Phone', 'Student', 'Relation', 'Status'].map(h => (
+                            <th key={h} className="p-4 text-start">{h}</th>
                         ))}
+                        <th className="p-4 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
@@ -45,16 +46,16 @@ export default function ParentsTable({
                                     </button>
                                 </td>
                                 <td
-                                    className="p-4 flex items-center gap-3 font-medium text-gray-700 cursor-pointer hover:text-[#0A437A] transition-colors"
+                                    className="p-4 flex items-center gap-3 font-medium text-text-secondary cursor-pointer hover:text-primary transition-colors"
                                     onClick={() => onView && onView(p)}
                                 >
-                                    <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                                    <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm cursor-pointer">
                                         {p.parentName?.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                     </div>
                                     {p.parentName}
                                 </td>
-                                <td className="p-4 text-gray-500"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
-                                <td className="p-4 text-gray-500"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
+                                <td className="p-4 text-text-secondary"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
+                                <td className="p-4 text-text-secondary"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
                                 <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? "No Student"}</td>
                                 <td className="p-4 text-gray-700 font-medium">{p.relationship?.toUpperCase()}</td>
                                 <td className="p-4">
@@ -84,8 +85,8 @@ export default function ParentsTable({
                                         />
                                     </div>
                                 </td>
-                                <td className="p-4">
-                                    <div className="flex text-primary items-center">
+                                <td className="p-4 text-center">
+                                    <div className="flex text-primary items-center justify-center">
                                         <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
                                             <Pencil className="w-4 h-4" />
                                         </button>

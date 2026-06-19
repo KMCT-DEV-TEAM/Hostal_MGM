@@ -39,7 +39,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
   }
 
   // OTP is valid, remove it from DB
-  await deleteOtpDb(email);
+  // await deleteOtpDb(email);
 
   return sendSuccess(res, 200, "OTP verified successfully");
 });

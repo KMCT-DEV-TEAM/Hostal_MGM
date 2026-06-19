@@ -50,6 +50,7 @@ app.use("/api/otp", otpRoutes);
 app.use("/api/super-admin", userRoutes);
 app.use("/api/super-admin/dashboard", dashboardRoutes);
 app.use("/api/super-admin/hostels", hostelRoutes);
+app.use("/api/super-admin/parents", parentRoutes);
 app.use("/api/super-admin/students", studentRoutes);
 
 app.use("/api/organizations", organizationRoutes);

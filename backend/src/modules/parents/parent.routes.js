@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateParentIdParam, validateUpdateParent, validateCreateParent } from "./parent.validation.js";
-import { createParent, updateParent, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin } from "./parent.controller.js";
+import { createParent, updateParent, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin, exportParentsByAdmin, exportParentsBySuperAdmin, bulkUpdateParentStatus, changeParentEmail } from "./parent.controller.js";
 
 const router = express.Router();
 
@@ -17,12 +17,27 @@ router.post(
 );
 
 router.patch(
+  "/bulk-status",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  bulkUpdateParentStatus
+);
+
+router.patch(
   "/:id",
   authMiddleware,
   roleMiddleware("admin", "super_admin"),
   validateParentIdParam,
   validateUpdateParent,
   updateParent
+);
+
+router.patch(
+  "/:id/change-email",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateParentIdParam,
+  changeParentEmail
 );
 
 router.patch(
@@ -54,6 +69,20 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin"),
   getParentsBySuperAdmin
+);
+
+router.get(
+  "/export/admin",
+  authMiddleware,
+  roleMiddleware("admin"),
+  exportParentsByAdmin
+);
+
+router.get(
+  "/export/super-admin",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  exportParentsBySuperAdmin
 );
 
 export default router;

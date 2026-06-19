@@ -1,5 +1,5 @@
 import React from "react";
-import { Square, CheckSquare, Pencil, ChevronDown } from "lucide-react";
+import { Square, CheckSquare, Pencil, Eye, ChevronDown } from "lucide-react";
 
 const COLUMNS = [
   "Admission No",
@@ -19,11 +19,12 @@ export default function StudentsTable({
   selectedIds,
   onSelectAll,
   onSelectRow,
+  onViewClick,
   onEditClick,
   onStatusChange,
   statusLoadingIds = [],
 }) {
-  const showActionsColumn = canEdit;
+  const showActionsColumn = canEdit || !!onViewClick;
   const getStudentId = (student) => student._id ?? student.id;
   const getHostelName = (hostel) => {
     if (!hostel || typeof hostel !== "object") return hostel || "-";
@@ -56,10 +57,10 @@ export default function StudentsTable({
     );
 
   return (
-    <div className="bg-white  border border-gray-100 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="bg-white  border border-gray-100 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
       <table className="w-full text-left relative">
         <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
-          <tr className="text-[#222222] text-sm font-semibold border-b border-gray-50">
+          <tr className="text-text-primary text-sm font-semibold border-b border-gray-50">
             <th className="p-4 text-gray-300">
               <button onClick={onSelectAll} className="focus:outline-none">
                 {selectedIds.length === students.length ? (
@@ -85,7 +86,7 @@ export default function StudentsTable({
             const isStatusLoading = statusLoadingIds.includes(studentId);
 
             return (
-              <tr key={studentId} className="hover:bg-gray-50 text-[#777777]">
+              <tr key={studentId} className="hover:bg-gray-50 text-text-secondary">
                 <td className="p-4">
                   <button onClick={() => onSelectRow(studentId)}>
                     {selectedIds.includes(studentId) ? (
@@ -96,7 +97,7 @@ export default function StudentsTable({
                   </button>
                 </td>
                 <td className="p-4">{s.studentId || "-"}</td>
-                <td className="p-4 ">{s.name || "-"}</td>
+                <td className="p-4 cursor-pointer" onClick={() => onViewClick?.(s)}>{s.name || "-"}</td>
                 {showOrganizationColumn && (
                   <td className="p-4">
                     {getOrganizationName(s.organization, s.organizationId)}
