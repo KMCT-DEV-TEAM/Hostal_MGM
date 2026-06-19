@@ -190,7 +190,7 @@ const getParentsService = async ({ organizationId, query }) => {
   }
 
   const pipeline = [
-    
+
     {
       $lookup: {
         from: "students",
@@ -317,6 +317,104 @@ const getParentsService = async ({ organizationId, query }) => {
   };
 };
 
+const exportParentsService = async ({ organizationId, query }) => {
+  const {
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const parentMatch = {};
+
+  if (relationship) {
+    parentMatch.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    parentMatch.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    parentMatch.isActive = isActive === "true";
+  }
+
+  if (studentId && mongoose.Types.ObjectId.isValid(studentId)) {
+    parentMatch.studentId = new mongoose.Types.ObjectId(studentId);
+  }
+
+  if (organizationId && mongoose.Types.ObjectId.isValid(organizationId)) {
+    parentMatch["student.organizationId"] = new mongoose.Types.ObjectId(organizationId);
+  }
+
+  const pipeline = [
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student",
+      },
+    },
+    {
+      $match: parentMatch,
+    },
+    {
+      $unwind: {
+        path: "$student",
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+  ];
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { parentName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { relationship: { $regex: search, $options: "i" } },
+          { "student.name": { $regex: search, $options: "i" } },
+          { "student.email": { $regex: search, $options: "i" } },
+          { "student.studentId": { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  const parents = await Parent.aggregate([
+    ...pipeline,
+    {
+      $project: {
+        _id: 1,
+        parentName: 1,
+        relationship: 1,
+        phone: 1,
+        email: 1,
+        defaultGuardian: 1,
+        isActive: 1,
+        createdAt: 1,
+        student: {
+          _id: "$student._id",
+          studentId: "$student.studentId",
+          name: "$student.name",
+          email: "$student.email",
+          organizationId: "$student.organizationId",
+        },
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+  ]);
+
+  return { parents };
+};
+
 const toggleParentStatusDb = async (parentProfileId) => {
   const parentProfile = await Parent.findById(parentProfileId);
   if (!parentProfile) return null;
@@ -346,6 +444,7 @@ export {
   updateParentDb,
   setDefaultGuardianDb,
   getParentsService,
+  exportParentsService,
   toggleParentStatusDb,
   bulkUpdateParentStatusDb,
 };

@@ -10,6 +10,9 @@ const parentApi = {
   getParentsByAdmin: (params) =>
     api.get("/admin/parents/admin", { params }),
 
+  exportParentsByAdmin: (params) =>
+    api.get("/admin/parents/export/admin", { params }),
+
   toggleStatusByAdmin: (id) =>
     api.patch(`/admin/parents/${id}/toggle-status`),
 
@@ -19,6 +22,9 @@ const parentApi = {
   //----super admin 
   getParentsBySuperAdmin: (params) =>
     api.get("/admin/parents/super-admin", { params }),
+
+  exportParentsBySuperAdmin: (params) =>
+    api.get("/admin/parents/export/super-admin", { params }),
 
   toggleStatusBySuperAdmin: (id) =>
     api.patch(`/admin/parents/${id}/toggle-status`), // Assuming it's mounted under /admin/parents in app.js

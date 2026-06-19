@@ -22,6 +22,16 @@ export async function getParentsBySuperAdmin(params) {
   return response.data;
 }
 
+export async function exportParentsByAdmin(params) {
+  const response = await parentApi.exportParentsByAdmin(params);
+  return response.data;
+}
+
+export async function exportParentsBySuperAdmin(params) {
+  const response = await parentApi.exportParentsBySuperAdmin(params);
+  return response.data;
+}
+
 export async function toggleStatusByAdmin(id) {
   const response = await parentApi.toggleStatusByAdmin(id);
   return response.data;
@@ -47,12 +57,19 @@ const PARENT_FETCHERS = {
   [ROLES.SUPER_ADMIN]: getParentsBySuperAdmin,
 };
 
+const PARENT_EXPORT_FETCHERS = {
+  [ROLES.ADMIN]: exportParentsByAdmin,
+  [ROLES.SUPER_ADMIN]: exportParentsBySuperAdmin,
+};
+
 const PARENT_STATUS_TOGGLE_FETCHERS = {
   [ROLES.ADMIN]: toggleStatusByAdmin,
   [ROLES.SUPER_ADMIN]: toggleStatusBySuperAdmin,
 };
 
 export const getParents = createRoleResolver(PARENT_FETCHERS, 'parent');
+
+export const exportParents = createRoleResolver(PARENT_EXPORT_FETCHERS, 'parent export');
 
 export const toggleParentStatus = createRoleResolver(
   PARENT_STATUS_TOGGLE_FETCHERS,

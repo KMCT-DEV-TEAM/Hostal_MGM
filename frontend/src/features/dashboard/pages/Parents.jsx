@@ -3,18 +3,18 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus, getParents, exportParents } from '@/services/parent.service';
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
 import ParentsMobileList from '../components/parents/ParentsMobileList';
 import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
+import ExportFilterModal from '../components/parents/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Pagination from '@/components/ui/Pagination';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+import { exportToExcel } from '@/utils/exportUtils';
 
 export default function Parents() {
     const role = useAuthStore((s) => s.user?.role);
@@ -32,6 +32,7 @@ export default function Parents() {
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
 
     const debouncedSearch = useDebounce(filters.search, 500);
@@ -211,10 +212,29 @@ export default function Parents() {
         setIsExportConfirmOpen(true);
     };
 
-    const confirmExport = () => {
-        setIsExportConfirmOpen(false);
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
         try {
-            const exportData = parents.map((p, index) => ({
+            // Merge current table filters (like search) with the export modal filters
+            const mergedFilters = { ...filters, ...exportFilters };
+            
+            // Clean up empty string values so they don't corrupt the backend query
+            const params = Object.fromEntries(
+                Object.entries(mergedFilters).filter(([, value]) => value !== '')
+            );
+
+            // Fetch all matching parents for export using the dedicated export endpoint
+            const response = await exportParents(role, params);
+            
+            const dataToExport = response?.parents || response?.data?.parents || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No parents match the selected filters');
+                setIsExportConfirmOpen(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((p, index) => ({
                 "S.No": index + 1,
                 "Parent Name": p.parentName,
                 "Email": p.email,
@@ -224,17 +244,20 @@ export default function Parents() {
                 "Status": p.isActive ? "Active" : "Inactive"
             }));
 
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Parents");
-
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-            saveAs(data, `Parents_Export_${new Date().getTime()}.xlsx`);
-            showSuccessToast('Exported successfully');
+            const isSuccess = exportToExcel(exportData, "Parents_Export", "Parents");
+            
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+            
+            setIsExportConfirmOpen(false);
         } catch (err) {
             console.error("Failed to export parents:", err);
             showErrorToast('Export failed', err.message);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -347,13 +370,11 @@ export default function Parents() {
                 confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
             />
 
-            <ConfirmationModal
+            <ExportFilterModal
                 isOpen={isExportConfirmOpen}
                 onClose={() => setIsExportConfirmOpen(false)}
-                onConfirm={confirmExport}
-                title="Confirm Export"
-                message="Are you sure you want to download the parent list?"
-                confirmText="Export"
+                onExport={confirmExport}
+                isExporting={isExporting}
             />
         </div>
     );
