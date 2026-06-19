@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Loader2 } from 'lucide-react';
 
 const AdminFormModal = ({
     activeModal,
@@ -11,7 +11,9 @@ const AdminFormModal = ({
     handleCancel,
     organizations = [],
     isEmailVerified,
-    handleVerifyClick
+    handleVerifyClick,
+    isSubmitting,
+    isVerifying
 }) => {
     if (activeModal !== 'admin') return null;
 
@@ -111,17 +113,18 @@ const AdminFormModal = ({
                                             disabled={isEmailVerified}
                                         />
                                         {isEmailVerified ? (
-                                            <button type="button" className="px-4 py-2 bg-green-500 text-white text-xs font-medium rounded-lg flex items-center gap-1 cursor-default">
+                                            <button type="button" className="px-4 py-2 bg-green-50 text-success text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                 Verified
                                             </button>
                                         ) : (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')} 
-                                                className="px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer"
+                                            <button
+                                                type="button"
+                                                onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')}
+                                                disabled={isVerifying}
+                                                className="flex items-center justify-center min-w-[70px] px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
-                                                Verify
+                                                {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
                                             </button>
                                         )}
                                     </div>
@@ -158,9 +161,10 @@ const AdminFormModal = ({
                 <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
                     <button
                         type="submit"
-                        className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
+                        disabled={isSubmitting}
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {editingAdmin ? 'Save Changes' : 'Save'}
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingAdmin ? 'Save Changes' : 'Save')}
                     </button>
                     <button
                         type="button"

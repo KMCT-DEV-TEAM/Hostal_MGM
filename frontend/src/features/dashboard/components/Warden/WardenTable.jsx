@@ -1,6 +1,7 @@
 import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, Phone, Mail, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 export default function WardenTable({
     paginatedWardens,
@@ -41,12 +42,7 @@ export default function WardenTable({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
-                        <tr>
-                            <td colSpan="7" className="p-8 text-start text-gray-500">
-                                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
-                                Loading wardens...
-                            </td>
-                        </tr>
+                        <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-start text-red-500">{error}</td>

@@ -2,8 +2,7 @@ import React from 'react';
 import {
     Square, CheckSquare, Pencil, Mail, Phone, ChevronDown, Users, Loader2
 } from 'lucide-react';
-import Loader from '@/components/ui/Loader';
-
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 export default function HostelTable({
     hostels,
     loading,
@@ -45,11 +44,7 @@ export default function HostelTable({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-center">
                     {loading ? (
-                        <tr>
-                            <td colSpan="8" className="p-8">
-                                <Loader />
-                            </td>
-                        </tr>
+                        <TableSkeletonLoader columns={8} />
                     ) : error ? (
                         <tr>
                             <td colSpan="8" className="p-8 text-start text-red-500">{error}</td>

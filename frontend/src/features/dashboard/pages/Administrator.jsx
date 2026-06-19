@@ -53,11 +53,13 @@ export default function Administrator() {
     const [editingAdmin, setEditingAdmin] = useState(null);
     const [view, setView] = useState('list');
     const [selectedAdminDetail, setSelectedAdminDetail] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
+    const [isVerifying, setIsVerifying] = useState(false);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isOrgConfirmOpen, setIsOrgConfirmOpen] = useState(false);
@@ -358,6 +360,7 @@ export default function Administrator() {
             showErrorToast('Validation Error', 'Please enter an email first');
             return;
         }
+        setIsVerifying(true);
         try {
             await otpService.sendOtp(email);
             setOtpSource(source);
@@ -370,7 +373,8 @@ export default function Administrator() {
             }
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to send OTP');
-
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -387,6 +391,7 @@ export default function Administrator() {
     };
 
     const saveAdmin = async () => {
+        setIsSubmitting(true);
         if (editingAdmin) {
             try {
                 // Update Existing Record via API
@@ -402,6 +407,7 @@ export default function Administrator() {
                 console.error("Failed to update admin:", error);
                 showErrorToast('Action Failed', error?.message || 'Failed to update administrator details');
                 setIsEditConfirmOpen(false);
+                setIsSubmitting(false);
                 return;
             }
         } else {
@@ -429,11 +435,13 @@ export default function Administrator() {
                 console.error("Failed to create admin:", error);
                 showErrorToast('Action Failed', error?.message || 'Failed to register new administrator');
                 setIsEditConfirmOpen(false);
+                setIsSubmitting(false);
                 return;
             }
         }
         setActiveModal(null);
         setIsEditConfirmOpen(false);
+        setIsSubmitting(false);
     };
 
     const handleCancel = () => {
@@ -667,6 +675,8 @@ export default function Administrator() {
                     organizations={organizations}
                     isEmailVerified={isEmailVerified}
                     handleVerifyClick={handleVerifyClick}
+                    isSubmitting={isSubmitting}
+                    isVerifying={isVerifying}
                 />
             )}
 
@@ -686,9 +696,10 @@ export default function Administrator() {
                             </button>
                             <button
                                 onClick={saveAdmin}
+                                disabled={isSubmitting}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
                             >
-                                Confirm
+                                {isSubmitting ? 'Saving...' : 'Confirm'}
                             </button>
                         </div>
                     </div>

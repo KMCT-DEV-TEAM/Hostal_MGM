@@ -57,6 +57,7 @@ export default function HostelManagement() {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedHostelDetail, setSelectedHostelDetail] = useState(null);
@@ -77,7 +78,6 @@ export default function HostelManagement() {
         hosteltype: "",
         status: "Active"
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const tableContainerRef = useRef(null);
 

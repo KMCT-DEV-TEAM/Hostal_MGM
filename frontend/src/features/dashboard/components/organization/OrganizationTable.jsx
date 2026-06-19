@@ -1,7 +1,6 @@
 import React from 'react';
 import { Square, CheckSquare, ChevronDown, Pencil, Mail, Phone, MapPin } from 'lucide-react';
-import Loader from '@/components/ui/Loader';
-
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 const OrganizationTable = ({
     orgs,
     loading,
@@ -38,11 +37,7 @@ const OrganizationTable = ({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
-                        <tr>
-                            <td colSpan="7" className="p-8">
-                                <Loader />
-                            </td>
-                        </tr>
+                        <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-center text-red-500">

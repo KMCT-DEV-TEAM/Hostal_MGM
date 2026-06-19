@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pencil, Mail, Phone, Square, CheckSquare, Loader2 } from 'lucide-react';
-
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 const AdminMobileList = ({
     paginatedAdmins,
     organizations = [],
@@ -31,10 +31,7 @@ const AdminMobileList = ({
                 </div>
             )}
             {loading ? (
-                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-sm text-gray-400">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#0A437A] mb-2" />
-                    <span className="text-sm">Loading administrators...</span>
-                </div>
+                <MobileSkeletonLoader />
             ) : error ? (
                 <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm">{error}</div>
             ) : paginatedAdmins.length === 0 ? (
