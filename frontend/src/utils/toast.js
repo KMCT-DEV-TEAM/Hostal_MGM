@@ -5,12 +5,11 @@ const Toast = Swal.mixin({
   position: 'top-end',
   showConfirmButton: false,
   timer: 3000,
-  timerProgressBar: true,
+  timerProgressBar: false,
   width: 'auto',
   customClass: {
-    popup: 'text-sm shadow-md rounded-xl !py-2 !px-4 mt-2 mr-2',
-    title: 'text-[13px] font-medium !m-0 !mt-[2px] text-gray-700',
-    icon: '!scale-75 !my-0 !ml-0', 
+    popup: '!rounded-lg !px-4 !py-3 shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-gray-100 mt-4 mr-4 bg-white',
+    htmlContainer: '!m-0 !p-0',
   },
   didOpen: (toast) => {
     toast.onmouseenter = Swal.stopTimer;
@@ -20,15 +19,28 @@ const Toast = Swal.mixin({
 
 export const showSuccessToast = (title, text = '') => {
   return Toast.fire({
-    icon: 'success',
-    title: text || title // Prefer the descriptive text, otherwise fallback to title
+    html: `
+      <div class="flex items-center gap-3">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="11" stroke="#65A30D" stroke-width="1.2" />
+            <path d="M7 12.5L10.5 16L17.5 8" stroke="#65A30D" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="text-[14px] font-medium text-black m-0 p-0">${text || title}</span>
+      </div>
+    `
   });
 };
 
 export const showErrorToast = (title, text = '') => {
   return Toast.fire({
-    icon: 'error',
-    title: text || title,
-    showCloseButton: true
+    html: `
+      <div class="flex items-center gap-3">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="11" stroke="#EF4444" stroke-width="1.2" />
+            <path d="M8.5 8.5L15.5 15.5M15.5 8.5L8.5 15.5" stroke="#EF4444" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="text-[14px] font-medium text-black m-0 p-0">${text || title}</span>
+      </div>
+    `
   });
 };

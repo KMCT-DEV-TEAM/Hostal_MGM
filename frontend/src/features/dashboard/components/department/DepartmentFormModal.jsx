@@ -57,7 +57,7 @@ const DepartmentFormModal = ({
                     <section>
                         <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
                         <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>Basic details of the Department</h5>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1">
                                 <label className="block text-xs mb-1.5 font-medium">Department Name *</label>
                                 <input
