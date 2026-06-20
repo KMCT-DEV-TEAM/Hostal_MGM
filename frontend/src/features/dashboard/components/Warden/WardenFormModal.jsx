@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ChevronDown, Check } from 'lucide-react';
+import { X, ChevronDown, Check, Loader2 } from 'lucide-react';
 
 export default function WardenFormModal({
     activeModal,
@@ -13,7 +13,9 @@ export default function WardenFormModal({
     setOtpSource,
     wardenForm,
     setWardenForm,
-    handleVerifyClick
+    handleVerifyClick,
+    isSubmitting,
+    isVerifying
 }) {
     if (activeModal !== 'warden') return null;
 
@@ -79,11 +81,19 @@ export default function WardenFormModal({
                                         +91
                                     </div>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         required
+                                        pattern="[0-9]{10}"
+                                        maxLength="10"
+                                        title="Please enter a valid 10-digit phone number"
                                         value={wardenForm.phone || ''}
-                                        onChange={(e) => setWardenForm({ ...wardenForm, phone: e.target.value })}
-                                        placeholder="00000 00000"
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) {
+                                                setWardenForm({ ...wardenForm, phone: val });
+                                            }
+                                        }}
+                                        placeholder="0000000000"
                                         className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                     />
                                 </div>
@@ -104,19 +114,20 @@ export default function WardenFormModal({
                                             className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] disabled:bg-gray-100 disabled:text-gray-500"
                                         />
                                         {isEmailVerified ? (
-                                            <button 
+                                            <button
                                                 type="button"
-                                                className="px-4 py-2 bg-green-50 text-green-600 text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap"
+                                                className="px-4 py-2 bg-green-50 text-success text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap"
                                             >
                                                 <Check size={12} /> Verified
                                             </button>
                                         ) : (
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => handleVerifyClick(wardenForm.email)}
-                                                className="px-4 py-2 bg-[#0A437A] text-white text-[10px] font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer"
+                                                disabled={isVerifying}
+                                                className="flex items-center justify-center min-w-[65px] px-4 py-2 bg-[#0A437A] text-white text-[10px] font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
-                                                Verify
+                                                {isVerifying ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Verify'}
                                             </button>
                                         )}
                                     </div>
@@ -133,7 +144,7 @@ export default function WardenFormModal({
                             <div className="border-b border-gray-100 mb-4" />
                             <label className="block text-[10px] font-medium text-black mb-1">Assign Hostel*</label>
                             <div className="relative">
-                                <select 
+                                <select
                                     value={wardenForm.hostel}
                                     onChange={(e) => setWardenForm({ ...wardenForm, hostel: e.target.value })}
                                     className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-[#777777] focus:outline-none focus:border-[#0A437A] cursor-pointer"
@@ -153,9 +164,10 @@ export default function WardenFormModal({
                 <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
                     <button
                         type="submit"
-                        className="px-4 py-2 bg-[rgb(10,67,122)] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
+                        disabled={isSubmitting}
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[rgb(10,67,122)] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {editingWarden ? 'Save Changes' : 'Save'}
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingWarden ? 'Save Changes' : 'Save')}
                     </button>
                     <button
                         type="button"

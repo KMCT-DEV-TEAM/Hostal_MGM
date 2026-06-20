@@ -67,7 +67,7 @@ const UserPortalLogin = () => {
                             />
                             <div className="flex justify-end mt-2">
                                 <Link
-                                    to="/admin/login"
+                                    to="/forgot-password"
                                     className="text-sm text-primary hover:underline"
                                 >
                                     Forgot Password?

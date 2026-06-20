@@ -8,6 +8,9 @@ import Students from '@/features/dashboard/pages/Students';
 import OrganizationManagement from '@/features/dashboard/pages/OrganizationManagement';
 import Maintenance from '@/features/dashboard/pages/Maintenance';
 import HostelManagement from '@/features/dashboard/pages/HostelManagement';
+import BatchManagement from '@/features/dashboard/pages/BatchManagement';
+import CourseManagement from '@/features/dashboard/pages/CourseManagement';
+import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagement';
 
 export const dashboardRoutes = [
 
@@ -71,6 +74,33 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: HostelManagement
+    },
+
+    {
+        path: 'batches',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: BatchManagement
+    },
+
+    {
+        path: 'courses',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: CourseManagement
+    },
+
+    {
+        path: 'departments',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: DepartmentManagement
     },
 
     {

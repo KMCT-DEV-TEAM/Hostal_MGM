@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 const AdminFormModal = ({
     activeModal,
@@ -11,7 +12,9 @@ const AdminFormModal = ({
     handleCancel,
     organizations = [],
     isEmailVerified,
-    handleVerifyClick
+    handleVerifyClick,
+    isSubmitting,
+    isVerifying
 }) => {
     if (activeModal !== 'admin') return null;
 
@@ -47,7 +50,7 @@ const AdminFormModal = ({
                         <h3 className="text-xs font-semibold text-primary mb-1">Basic Info</h3>
                         <h5 className='text-xs text-[#777777] mb-4'>Basic contact information of the Admin</h5>
                         <div className="border-b border-gray-100 mb-4" />
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-1">
                                 <label className="block text-[10px] font-medium text-black mb-1">First Name *</label>
                                 <input
@@ -70,7 +73,7 @@ const AdminFormModal = ({
                                     className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                                 />
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-[10px] font-medium text-gray-500 mb-1">Phone Number *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
@@ -78,11 +81,19 @@ const AdminFormModal = ({
                                         +91
                                     </div>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         required
-                                        placeholder="00000 00000"
+                                        pattern="[0-9]{10}"
+                                        maxLength="10"
+                                        title="Please enter a valid 10-digit phone number"
+                                        placeholder="0000000000"
                                         value={adminForm.phone}
-                                        onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) {
+                                                setAdminForm({ ...adminForm, phone: val });
+                                            }
+                                        }}
                                         className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                     />
                                 </div>
@@ -90,7 +101,7 @@ const AdminFormModal = ({
 
                             {/* Conditionally hide Email if editing */}
                             {!editingAdmin && (
-                                <div className="col-span-2">
+                                <div className="col-span-1 sm:col-span-2">
                                     <label className="block text-[10px] font-medium text-black mb-1">Email Address *</label>
                                     <div className="flex gap-2">
                                         <input
@@ -103,17 +114,18 @@ const AdminFormModal = ({
                                             disabled={isEmailVerified}
                                         />
                                         {isEmailVerified ? (
-                                            <button type="button" className="px-4 py-2 bg-green-500 text-white text-xs font-medium rounded-lg flex items-center gap-1 cursor-default">
+                                            <button type="button" className="px-4 py-2 bg-green-50 text-success text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                 Verified
                                             </button>
                                         ) : (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')} 
-                                                className="px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer"
+                                            <button
+                                                type="button"
+                                                onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')}
+                                                disabled={isVerifying}
+                                                className="flex items-center justify-center min-w-[70px] px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
-                                                Verify
+                                                {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
                                             </button>
                                         )}
                                     </div>
@@ -129,18 +141,14 @@ const AdminFormModal = ({
                             <div className="border-b border-gray-100 mb-4" />
                             <label className="block text-[10px] font-medium text-gray-500 mb-1">Assign Organization *</label>
                             <div className="relative">
-                                <select
-                                    className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]"
-                                    value={adminForm.organization || ''}
-                                    onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
-                                    required
-                                >
-                                    <option value="" disabled>Select an Organization</option>
-                                    {organizations.map(org => (
-                                        <option key={org._id} value={org._id}>{org.name}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
+                                <Dropdown
+                                    options={organizations.map(org => ({ value: org._id, label: org.name }))}
+                                    value={adminForm.organization}
+                                    onChange={(val) => setAdminForm({ ...adminForm, organization: val })}
+                                    placeholder="Select an Organization"
+                                    minWidth="w-full"
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                />
                             </div>
                         </section>
                     )}
@@ -150,9 +158,10 @@ const AdminFormModal = ({
                 <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
                     <button
                         type="submit"
-                        className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] cursor-pointer"
+                        disabled={isSubmitting}
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {editingAdmin ? 'Save Changes' : 'Save'}
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingAdmin ? 'Save Changes' : 'Save')}
                     </button>
                     <button
                         type="button"

@@ -6,10 +6,10 @@ const authApi = {
     api.post("/auth/login", payload),
 
   sendOtp: (payload) =>
-    api.post("/otp/send", payload),
+    api.post("/auth/forgot-password", payload),
 
   verifyOtp: (payload) =>
-    api.post("/otp/verify", payload),
+    api.post("/auth/verify-reset-otp", payload),
 
   resetPassword: (payload) =>
     api.post("/auth/reset-password", payload),
