@@ -25,10 +25,10 @@ const getAllUsersByRoleDb = async (role) => {
   ).populate("organization", "name code organisationNumber email phone");
 };
 
-const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10, status, search, additionalQuery = {}) => {
+const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10, status, search) => {
   const skip = (page - 1) * limit;
 
-  let query = { role, ...additionalQuery };
+  let query = { role };
 
   if (status && status !== 'All') {
     query.isActive = status === 'Active';
@@ -65,11 +65,10 @@ const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10, status, sea
   return { users, totalCount };
 };
 
-const getUserByIdAndRoleDb = async (id, role, additionalQuery = {}) => {
+const getUserByIdAndRoleDb = async (id, role) => {
   return await User.findOne({
     _id: id,
     role,
-    ...additionalQuery
   }).select("-password");
 };
 

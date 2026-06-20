@@ -5,7 +5,7 @@ import Dropdown from '@/components/ui/Dropdown';
 export default function ExportFilterModal({ 
     isOpen, 
     onClose, 
-    onExport, 
+    onExpoclraredrt, 
     isExporting,
     title = "Export Data",
     subtitle = "Select filters to apply before downloading",

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
@@ -12,8 +11,6 @@ import { createStudentSchema, updateStudentSchema } from "../../validation/stude
 import batchService from "@/services/batch.service";
 import courseService from "@/services/course.service";
 
-// Turns a zod safeParse error into { fieldName: "message" }.
-// Only keeps the first message per field, which is enough for inline display.
 function toFieldErrors(zodError) {
   const fieldErrors = {};
   for (const issue of zodError.issues) {
@@ -25,13 +22,31 @@ function toFieldErrors(zodError) {
   return fieldErrors;
 }
 
-// editingStudent's courseId/departmentId/batchId may arrive either as a
-// populated object ({_id, name, code}) or a raw id string, depending on
-// the endpoint. This normalizes either shape down to just the id.
 function toIdString(value) {
   if (!value) return "";
   return typeof value === "string" ? value : value._id || "";
 }
+
+// Reusable section header
+const SectionHeader = ({ title, subtitle }) => (
+  <>
+    <h3 className="text-[13px] sm:text-[14px] font-medium text-primary">{title}</h3>
+    <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">
+      {subtitle}
+    </h5>
+  </>
+);
+
+// Reusable field wrapper
+const Field = ({ label, error, children, className = "" }) => (
+  <div className={className}>
+    {label && (
+      <label className="block text-xs mb-1.5 font-medium">{label}</label>
+    )}
+    {children}
+    {error && <p className="text-red-500 text-[11px] mt-1">{error}</p>}
+  </div>
+);
 
 export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [studentEmail, setStudentEmail] = useState(editingStudent?.email || "");
@@ -45,49 +60,31 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [verifyTarget, setVerifyTarget] = useState(null);
   const [verifyOtpValue, setVerifyOtpValue] = useState("");
-  const [emailVerified, setEmailVerified] = useState({
-    student: false,
-    parent: false,
-  });
+  const [emailVerified, setEmailVerified] = useState({ student: false, parent: false });
   const [fieldErrors, setFieldErrors] = useState({});
   const role = useAuthStore((state) => state.user?.role);
   const userOrganization = useAuthStore((state) => {
     const organization = state.user?.organization;
     if (!organization) return null;
-    return typeof organization === "string"
-      ? organization
-      : organization._id || null;
+    return typeof organization === "string" ? organization : organization._id || null;
   });
   const [hostels, setHostels] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [loadingHostels, setLoadingHostels] = useState(false);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [organizationId, setOrganizationId] = useState(
-    editingStudent?.organizationId || "",
-  );
+  const [organizationId, setOrganizationId] = useState(editingStudent?.organizationId || "");
   const [hostelId, setHostelId] = useState(editingStudent?.hostelId || "");
-
-
-  // Course -> Department -> Batch cascade
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [batches, setBatches] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingBatches, setLoadingBatches] = useState(false);
-
-  console.log(editingStudent, "student")
-  const [courseId, setCourseId] = useState(
-    toIdString(editingStudent?.course?._id) || "",
-  );
-  
-  const [departmentId, setDepartmentId] = useState(
-    toIdString(editingStudent?.department?._id) || "",
-  );
-  const [batchId, setBatchId] = useState(
-    toIdString(editingStudent?.batch?._id) || "",
-  );
+  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?._id) || "");
+  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id) || "");
+  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id) || "");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   useEffect(() => {
     if (role !== ROLES.SUPER_ADMIN && userOrganization) {
@@ -134,68 +131,42 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   useEffect(() => {
     loadHostels();
     loadCourses();
-    if (role === ROLES.SUPER_ADMIN) {
-      loadOrganizations();
-    }
+    if (role === ROLES.SUPER_ADMIN) loadOrganizations();
   }, [role]);
 
-  // Departments depend on the chosen course. Re-fetch whenever courseId
-  // changes; clear departments/batches if there's no course selected.
   useEffect(() => {
-    if (!courseId) {
-      setDepartments([]);
-      return;
-    }
-
+    if (!courseId) { setDepartments([]); return; }
     let isCurrent = true;
     setLoadingDepartments(true);
-
     departmentService.getDepartments({ courseId, status: "Active" })
-      .then((res) => {
-        if (isCurrent) setDepartments(res.data || []);
-      })
-      .catch((error) => {
-        console.error("Failed to load departments", error);
-      })
-      .finally(() => {
-        if (isCurrent) setLoadingDepartments(false);
-      });
-
-    return () => {
-      isCurrent = false;
-    };
+      .then((res) => { if (isCurrent) setDepartments(res.data || []); })
+      .catch((error) => { console.error("Failed to load departments", error); })
+      .finally(() => { if (isCurrent) setLoadingDepartments(false); });
+    return () => { isCurrent = false; };
   }, [courseId]);
 
-  // Batches depend on the chosen department. Same pattern as above.
   useEffect(() => {
-    if (!departmentId) {
-      setBatches([]);
-      return;
-    }
-
+    if (!departmentId) { setBatches([]); return; }
     let isCurrent = true;
     setLoadingBatches(true);
-
     batchService.getBatches({ departmentId, status: "Active" })
-      .then((res) => {
-        if (isCurrent) setBatches(res.data || []);
-      })
-      .catch((error) => {
-        console.error("Failed to load batches", error);
-      })
-      .finally(() => {
-        if (isCurrent) setLoadingBatches(false);
-      });
-
-    return () => {
-      isCurrent = false;
-    };
+      .then((res) => { if (isCurrent) setBatches(res.data || []); })
+      .catch((error) => { console.error("Failed to load batches", error); })
+      .finally(() => { if (isCurrent) setLoadingBatches(false); });
+    return () => { isCurrent = false; };
   }, [departmentId]);
+
+  const clearFieldError = (name) => {
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
 
   const handleCourseChange = (value) => {
     setCourseId(value);
-    // Course changed: whatever department/batch was selected is no longer
-    // guaranteed valid, so reset both and let the cascade re-fetch.
     setDepartmentId("");
     setBatchId("");
     clearFieldError("courseId");
@@ -212,27 +183,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     clearFieldError("batchId");
   };
 
-  // Clears a single field's zod error as soon as the user edits that field.
-  const clearFieldError = (name) => {
-    setFieldErrors((prev) => {
-      if (!prev[name]) return prev;
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     const formData = new FormData(event.currentTarget);
     const rawPayload = Object.fromEntries(
       [...formData.entries()].filter(([, value]) => value !== ""),
     );
 
     if (editingStudent) {
-
-      // These fields are never editable from this form; strip before validating/saving.
       delete rawPayload.email;
       delete rawPayload.studentOtp;
       delete rawPayload.parentOtp;
@@ -242,22 +200,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       delete rawPayload.relationship;
 
       const result = updateStudentSchema.safeParse(rawPayload);
-      if (!result.success) {
-        setFieldErrors(toFieldErrors(result.error));
-        return;
-      }
+      if (!result.success) { setFieldErrors(toFieldErrors(result.error)); return; }
       setFieldErrors({});
-
-      try {
-        setSaving(true);
-        await onSave(result.data);
-      } finally {
-        setSaving(false);
-      }
+      try { setSaving(true); await onSave(result.data); } finally { setSaving(false); }
       return;
     }
 
-    // Add-student flow: OTP/verification gate runs first, same as before.
     if (!studentOtp || !parentOtp) {
       setOtpErrors({
         student: !studentOtp ? "Please enter the student OTP" : "",
@@ -274,41 +222,22 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
 
     const result = createStudentSchema.safeParse(rawPayload);
-    if (!result.success) {
-      setFieldErrors(toFieldErrors(result.error));
-      return;
-    }
+    if (!result.success) { setFieldErrors(toFieldErrors(result.error)); return; }
     setFieldErrors({});
-
-    try {
-      setSaving(true);
-      await onSave(result.data);
-    } finally {
-      setSaving(false);
-    }
+    try { setSaving(true); await onSave(result.data); } finally { setSaving(false); }
   };
 
   const sendEmailOtp = async (email, type, openModal = false) => {
     if (!email) {
-      setOtpErrors((prev) => ({
-        ...prev,
-        [type]: "Please enter an email before sending OTP",
-      }));
+      setOtpErrors((prev) => ({ ...prev, [type]: "Please enter an email before sending OTP" }));
       return;
     }
-
     setSendingOtpFor(type);
     setOtpErrors((prev) => ({ ...prev, [type]: "" }));
-
     try {
-      await otpService.sendOtp( email );
-
-      if (type === "student") {
-        setStudentOtpSent(true);
-      } else {
-        setParentOtpSent(true);
-      }
-
+      await otpService.sendOtp(email);
+      if (type === "student") setStudentOtpSent(true);
+      else setParentOtpSent(true);
       if (openModal) {
         setVerifyTarget(type);
         setVerifyOtpValue(type === "student" ? studentOtp : parentOtp);
@@ -322,49 +251,27 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   };
 
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-
   const handleVerifyOtpSubmit = async () => {
     if (!verifyOtpValue || verifyOtpValue.length !== 6) {
-      setOtpErrors((prev) => ({
-        ...prev,
-        [verifyTarget]: "Please enter the 6-digit OTP",
-      }));
+      setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "Please enter the 6-digit OTP" }));
       return;
     }
-
     try {
       setVerifyingOtp(true);
-
       const email = verifyTarget === "student" ? studentEmail : parentEmail;
       await otpService.verifyOtp(email, verifyOtpValue);
-
       if (verifyTarget === "student") {
         setStudentOtp(verifyOtpValue);
-        setEmailVerified((prev) => ({
-          ...prev,
-          student: true,
-        }));
+        setEmailVerified((prev) => ({ ...prev, student: true }));
       } else {
         setParentOtp(verifyOtpValue);
-        setEmailVerified((prev) => ({
-          ...prev,
-          parent: true,
-        }));
+        setEmailVerified((prev) => ({ ...prev, parent: true }));
       }
-
-      setOtpErrors((prev) => ({
-        ...prev,
-        [verifyTarget]: "",
-      }));
-
+      setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "" }));
       setVerifyModalOpen(false);
     } catch (error) {
       const message = error?.response?.data?.message || "Invalid OTP";
-      setOtpErrors((prev) => ({
-        ...prev,
-        [verifyTarget]: message,
-      }));
+      setOtpErrors((prev) => ({ ...prev, [verifyTarget]: message }));
     } finally {
       setVerifyingOtp(false);
     }
@@ -377,7 +284,80 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     await sendEmailOtp(email, type, true);
   };
 
-  // If it's the simplified edit modal (from the original code snippet)
+  // Shared academic fields (used in both edit + add forms)
+  const AcademicFields = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      <Field label="Course" error={fieldErrors.courseId}>
+        <select
+          name="courseId"
+          value={courseId}
+          onChange={(e) => handleCourseChange(e.target.value)}
+          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
+        >
+          <option value="">Select course</option>
+          {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+        </select>
+        {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
+      </Field>
+
+      <Field label="Department" error={fieldErrors.departmentId}>
+        <select
+          name="departmentId"
+          value={departmentId}
+          onChange={(e) => handleDepartmentChange(e.target.value)}
+          disabled={!courseId}
+          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
+        >
+          <option value="">{courseId ? "Select department" : "Select a course first"}</option>
+          {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
+        </select>
+        {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
+      </Field>
+
+      <Field label="Batch" error={fieldErrors.batchId}>
+        <select
+          name="batchId"
+          value={batchId}
+          onChange={(e) => handleBatchChange(e.target.value)}
+          disabled={!departmentId}
+          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
+        >
+          <option value="">{departmentId ? "Select batch" : "Select a department first"}</option>
+          {batches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
+        </select>
+        {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
+      </Field>
+
+      <Field label="Academic Year" error={fieldErrors.academicYear}>
+        <input
+          name="academicYear"
+          onChange={() => clearFieldError("academicYear")}
+          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+          placeholder="2024-2025"
+        />
+      </Field>
+    </div>
+  );
+
+  // Phone input with flag prefix
+  const PhoneInput = ({ name, onChangeClear }) => (
+    <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
+      <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black shrink-0">
+        <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
+        +91
+      </div>
+      <input
+        name={name}
+        type="text"
+        required
+        placeholder="00000 00000"
+        onChange={onChangeClear}
+        className="w-full px-3 py-2 outline-none bg-transparent text-xs"
+      />
+    </div>
+  );
+
+  // Edit modal
   if (editingStudent) {
     return (
       <Modal
@@ -397,7 +377,6 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             >
               {saving ? "Updating..." : "Save Changes"}
             </button>
-
             <button
               type="button"
               onClick={onClose}
@@ -409,17 +388,11 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         }
       >
         <div className="space-y-8">
+          {/* Basic Information */}
           <section>
-            <h3 className="text-sm font-medium text-primary">
-              Basic Information
-            </h3>
-
-            <div className="grid grid-cols-2 gap-6 mt-4">
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Full Name *
-                </label>
-
+            <h3 className="text-sm font-medium text-primary mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <Field label="Full Name *" error={fieldErrors.name}>
                 <input
                   name="name"
                   defaultValue={editingStudent.name}
@@ -427,34 +400,18 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   onChange={() => clearFieldError("name")}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
-                {fieldErrors.name && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.name}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Email
-                </label>
-
+              <Field label="Email">
                 <input
                   value={editingStudent.email}
                   disabled
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs bg-gray-100 cursor-not-allowed"
                 />
+                <p className="text-[11px] text-gray-400 mt-1">Email can only be changed from Change Email.</p>
+              </Field>
 
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Email can only be changed from Change Email.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Phone *
-                </label>
-
+              <Field label="Phone *" error={fieldErrors.phone}>
                 <input
                   name="phone"
                   defaultValue={editingStudent.phone}
@@ -462,18 +419,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   onChange={() => clearFieldError("phone")}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
-                {fieldErrors.phone && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.phone}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Gender *
-                </label>
-
+              <Field label="Gender *" error={fieldErrors.gender}>
                 <select
                   name="gender"
                   defaultValue={editingStudent.gender}
@@ -484,18 +432,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
-                {fieldErrors.gender && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.gender}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Date of Birth
-                </label>
-
+              <Field label="Date of Birth" error={fieldErrors.dob}>
                 <input
                   type="date"
                   name="dob"
@@ -503,18 +442,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   onChange={() => clearFieldError("dob")}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
-                {fieldErrors.dob && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.dob}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Status
-                </label>
-
+              <Field label="Status" error={fieldErrors.status}>
                 <select
                   name="status"
                   defaultValue={editingStudent.isActive ? "active" : "inactive"}
@@ -524,26 +454,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
-                {fieldErrors.status && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.status}
-                  </p>
-                )}
-              </div>
+              </Field>
             </div>
           </section>
 
+          {/* Academic Information */}
           <section>
-            <h3 className="text-sm font-medium text-primary">
-              Academic Information
-            </h3>
-
-            <div className="grid grid-cols-2 gap-6 mt-4">
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Course
-                </label>
-
+            <h3 className="text-sm font-medium text-primary mb-4">Academic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <Field label="Course" error={fieldErrors.courseId}>
                 <select
                   name="courseId"
                   value={courseId}
@@ -551,29 +470,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 >
                   <option value="">Select course</option>
-                  {courses.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </select>
-                {loadingCourses && (
-                  <p className="text-xs text-text-secondary mt-2">
-                    Loading courses...
-                  </p>
-                )}
-                {fieldErrors.courseId && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.courseId}
-                  </p>
-                )}
-              </div>
+                {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Department
-                </label>
-
+              <Field label="Department" error={fieldErrors.departmentId}>
                 <select
                   name="departmentId"
                   value={departmentId}
@@ -581,32 +483,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   disabled={!courseId}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <option value="">
-                    {courseId ? "Select department" : "Select a course first"}
-                  </option>
-                  {departments.map((d) => (
-                    <option key={d._id} value={d._id}>
-                      {d.name}
-                    </option>
-                  ))}
+                  <option value="">{courseId ? "Select department" : "Select a course first"}</option>
+                  {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
                 </select>
-                {loadingDepartments && (
-                  <p className="text-xs text-text-secondary mt-2">
-                    Loading departments...
-                  </p>
-                )}
-                {fieldErrors.departmentId && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.departmentId}
-                  </p>
-                )}
-              </div>
+                {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Batch
-                </label>
-
+              <Field label="Batch" error={fieldErrors.batchId}>
                 <select
                   name="batchId"
                   value={batchId}
@@ -614,81 +497,39 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   disabled={!departmentId}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <option value="">
-                    {departmentId ? "Select batch" : "Select a department first"}
-                  </option>
-                  {batches.map((b) => (
-                    <option key={b._id} value={b._id}>
-                      {b.name}
-                    </option>
-                  ))}
+                  <option value="">{departmentId ? "Select batch" : "Select a department first"}</option>
+                  {batches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
                 </select>
-                {loadingBatches && (
-                  <p className="text-xs text-text-secondary mt-2">
-                    Loading batches...
-                  </p>
-                )}
-                {fieldErrors.batchId && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.batchId}
-                  </p>
-                )}
-              </div>
+                {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Academic Year
-                </label>
-
+              <Field label="Academic Year" error={fieldErrors.academicYear}>
                 <input
                   name="academicYear"
                   defaultValue={editingStudent.academicYear}
                   onChange={() => clearFieldError("academicYear")}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
-                {fieldErrors.academicYear && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.academicYear}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Hostel
-                </label>
-
+              <Field label="Hostel" error={fieldErrors.hostelId}>
                 <select
                   name="hostelId"
-                  defaultValue={
-                    editingStudent.hostelId?._id || editingStudent.hostelId
-                  }
+                  defaultValue={editingStudent.hostelId?._id || editingStudent.hostelId}
                   onChange={() => clearFieldError("hostelId")}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 >
                   <option value="">Select Hostel</option>
-
-                  {hostels.map((hostel) => (
-                    <option key={hostel._id} value={hostel._id}>
-                      {hostel.name}
-                    </option>
-                  ))}
+                  {hostels.map((hostel) => <option key={hostel._id} value={hostel._id}>{hostel.name}</option>)}
                 </select>
-                {fieldErrors.hostelId && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.hostelId}
-                  </p>
-                )}
-              </div>
+              </Field>
             </div>
           </section>
 
+          {/* Address */}
           <section>
-            <h3 className="text-sm font-medium text-primary">
-              Address Information
-            </h3>
-
-            <div className="mt-4">
+            <h3 className="text-sm font-medium text-primary mb-4">Address Information</h3>
+            <Field error={fieldErrors.address}>
               <textarea
                 name="address"
                 defaultValue={editingStudent.address}
@@ -696,19 +537,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 className="w-full p-3 border border-gray-200 rounded-lg text-xs"
                 rows={5}
               />
-              {fieldErrors.address && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.address}
-                </p>
-              )}
-            </div>
+            </Field>
           </section>
         </div>
       </Modal>
     );
   }
 
-  // Add New Student Modal (from the original code snippet)
+  // Add New Student modal
   return (
     <Modal
       isOpen={true}
@@ -751,26 +587,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 Enter the 6-digit OTP sent to{" "}
                 {verifyTarget === "student" ? studentEmail : parentEmail}.
               </p>
-              <OtpInput
-                value={verifyOtpValue}
-                onChange={setVerifyOtpValue}
-                error={!!otpErrors[verifyTarget]}
-              />
+              <OtpInput value={verifyOtpValue} onChange={setVerifyOtpValue} error={!!otpErrors[verifyTarget]} />
               {otpErrors[verifyTarget] && (
-                <p className="text-red-500 text-xs">
-                  {otpErrors[verifyTarget]}
-                </p>
+                <p className="text-red-500 text-xs">{otpErrors[verifyTarget]}</p>
               )}
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() =>
-                    sendEmailOtp(
-                      verifyTarget === "student" ? studentEmail : parentEmail,
-                      verifyTarget,
-                      true,
-                    )
-                  }
+                  onClick={() => sendEmailOtp(verifyTarget === "student" ? studentEmail : parentEmail, verifyTarget, true)}
                   disabled={sendingOtpFor === verifyTarget}
                   className="px-3 py-2 bg-gray-100 text-xs rounded-lg text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
@@ -788,17 +612,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </div>
           </Modal>
         )}
+
         {/* Basic Info */}
         <section>
-          <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
-          <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">
-            Basic contact information of the student
-          </h5>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Admission No *
-              </label>
+          <SectionHeader title="Basic Info" subtitle="Basic contact information of the student" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <Field label="Admission No *" error={fieldErrors.studentId}>
               <input
                 name="studentId"
                 required
@@ -806,16 +625,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
                 placeholder="Enter the student id"
               />
-              {fieldErrors.studentId && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.studentId}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Full Name *
-              </label>
+            </Field>
+
+            <Field label="Full Name *" error={fieldErrors.name}>
               <input
                 name="name"
                 required
@@ -823,16 +635,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
                 placeholder="Enter your full name"
               />
-              {fieldErrors.name && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.name}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Gender *
-              </label>
+            </Field>
+
+            <Field label="Gender *" error={fieldErrors.gender}>
               <select
                 name="gender"
                 required
@@ -844,84 +649,42 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 <option value="female">Female</option>
                 <option value="other">Other</option>
               </select>
-              {fieldErrors.gender && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.gender}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Date Of Birth *
-              </label>
+            </Field>
+
+            <Field label="Date Of Birth *" error={fieldErrors.dob}>
               <input
                 name="dob"
                 type="date"
                 onChange={() => clearFieldError("dob")}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
               />
-              {fieldErrors.dob && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.dob}
-                </p>
-              )}
-            </div>
+            </Field>
           </div>
         </section>
 
         {/* Academic Information */}
         <section>
-          <h3 className="text-[14px] font-medium text-primary ">
-            Academic Information
-          </h3>
-          <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">
-            Academic information of the student
-          </h5>
-          <div className="grid grid-cols-2 gap-6">
+          <SectionHeader title="Academic Information" subtitle="Academic information of the student" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {role === ROLES.SUPER_ADMIN ? (
-              <div>
-                <label className="block text-xs mb-1.5 font-medium">
-                  Organization *
-                </label>
+              <Field label="Organization *" error={fieldErrors.organizationId}>
                 <select
                   name="organizationId"
                   required
                   value={organizationId}
-                  onChange={(e) => {
-                    setOrganizationId(e.target.value);
-                    clearFieldError("organizationId");
-                  }}
+                  onChange={(e) => { setOrganizationId(e.target.value); clearFieldError("organizationId"); }}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
                 >
                   <option value="">Select organization</option>
-                  {organizations.map((org) => (
-                    <option key={org._id} value={org._id}>
-                      {org.name}
-                    </option>
-                  ))}
+                  {organizations.map((org) => <option key={org._id} value={org._id}>{org.name}</option>)}
                 </select>
-                {loadingOrganizations && (
-                  <p className="text-xs text-text-secondary mt-2">
-                    Loading organizations...
-                  </p>
-                )}
-                {fieldErrors.organizationId && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.organizationId}
-                  </p>
-                )}
-              </div>
+                {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
+              </Field>
             ) : (
-              <input
-                type="hidden"
-                name="organizationId"
-                value={organizationId}
-              />
+              <input type="hidden" name="organizationId" value={organizationId} />
             )}
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Course *
-              </label>
+
+            <Field label="Course *" error={fieldErrors.courseId}>
               <select
                 name="courseId"
                 value={courseId}
@@ -929,27 +692,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
               >
                 <option value="">Select course</option>
-                {courses.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name}
-                  </option>
-                ))}
+                {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
-              {loadingCourses && (
-                <p className="text-xs text-text-secondary mt-2">
-                  Loading courses...
-                </p>
-              )}
-              {fieldErrors.courseId && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.courseId}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Department *
-              </label>
+              {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
+            </Field>
+
+            <Field label="Department *" error={fieldErrors.departmentId}>
               <select
                 name="departmentId"
                 value={departmentId}
@@ -957,30 +705,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 disabled={!courseId}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">
-                  {courseId ? "Select department" : "Select a course first"}
-                </option>
-                {departments.map((d) => (
-                  <option key={d._id} value={d._id}>
-                    {d.name}
-                  </option>
-                ))}
+                <option value="">{courseId ? "Select department" : "Select a course first"}</option>
+                {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
               </select>
-              {loadingDepartments && (
-                <p className="text-xs text-text-secondary mt-2">
-                  Loading departments...
-                </p>
-              )}
-              {fieldErrors.departmentId && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.departmentId}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Batch
-              </label>
+              {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
+            </Field>
+
+            <Field label="Batch" error={fieldErrors.batchId}>
               <select
                 name="batchId"
                 value={batchId}
@@ -988,195 +719,98 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 disabled={!departmentId}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">
-                  {departmentId ? "Select batch" : "Select a department first"}
-                </option>
-                {batches.map((b) => (
-                  <option key={b._id} value={b._id}>
-                    {b.name}
-                  </option>
-                ))}
+                <option value="">{departmentId ? "Select batch" : "Select a department first"}</option>
+                {batches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
               </select>
-              {loadingBatches && (
-                <p className="text-xs text-text-secondary mt-2">
-                  Loading batches...
-                </p>
-              )}
-              {fieldErrors.batchId && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.batchId}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium">
-                Academic Year *
-              </label>
+              {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
+            </Field>
+
+            <Field label="Academic Year *" error={fieldErrors.academicYear}>
               <input
                 name="academicYear"
                 onChange={() => clearFieldError("academicYear")}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
                 placeholder="2024-2025"
               />
-              {fieldErrors.academicYear && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.academicYear}
-                </p>
-              )}
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs mb-1.5 font-medium">
-                Assign Hostel
-              </label>
+            </Field>
+
+            <Field label="Assign Hostel" error={fieldErrors.hostelId} className="sm:col-span-2">
               <select
                 name="hostelId"
                 value={hostelId}
-                onChange={(e) => {
-                  setHostelId(e.target.value);
-                  clearFieldError("hostelId");
-                }}
+                onChange={(e) => { setHostelId(e.target.value); clearFieldError("hostelId"); }}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
               >
                 <option value="">Select hostel</option>
-                {hostels.map((hostel) => (
-                  <option key={hostel._id} value={hostel._id}>
-                    {hostel.name}
-                  </option>
-                ))}
+                {hostels.map((hostel) => <option key={hostel._id} value={hostel._id}>{hostel.name}</option>)}
               </select>
-              {loadingHostels && (
-                <p className="text-xs text-text-secondary mt-2">
-                  Loading hostels...
-                </p>
-              )}
-              {fieldErrors.hostelId && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.hostelId}
-                </p>
-              )}
-            </div>
+              {loadingHostels && <p className="text-xs text-text-secondary mt-2">Loading hostels...</p>}
+            </Field>
           </div>
         </section>
 
-        {/* Contact & Address */}
-        <section className="w-full">
-          <div className="w-full">
-            <h3 className="text-[14px] font-medium text-primary">
-              Contact Information
-            </h3>
-            <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">
-              Contact information of the student
-            </h5>
-            <div className="flex w-full justify-between gap-6">
-              <div className="col-span-2 w-[50%]">
-                <label className="block text-xs font-medium text-black mb-1">
-                  Phone Number *
-                </label>
-                <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
-                  <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
-                    <img
-                      src="https://flagcdn.com/w20/in.png"
-                      alt="India"
-                      className="w-4 h-3"
-                    />
-                    +91
-                  </div>
-                  <input
-                    name="phone"
-                    type="text"
-                    required
-                    placeholder="00000 00000"
-                    onChange={() => clearFieldError("phone")}
-                    className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                  />
-                </div>
-                {fieldErrors.phone && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.phone}
-                  </p>
-                )}
+        {/* Contact Information */}
+        <section>
+          <SectionHeader title="Contact Information" subtitle="Contact information of the student" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <Field label="Phone Number *" error={fieldErrors.phone}>
+              <PhoneInput name="phone" onChangeClear={() => clearFieldError("phone")} />
+            </Field>
+
+            <Field label="Email Address *" error={fieldErrors.email}>
+              <div className="flex gap-2">
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  value={studentEmail}
+                  onChange={(e) => {
+                    setStudentEmail(e.target.value);
+                    setStudentOtp("");
+                    setEmailVerified((prev) => ({ ...prev, student: false }));
+                    clearFieldError("email");
+                  }}
+                  placeholder="Enter the email"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                />
+                <button
+                  type="button"
+                  onClick={() => openVerifyModal("student")}
+                  disabled={sendingOtpFor === "student" || !studentEmail}
+                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
+                >
+                  {sendingOtpFor === "student" ? "Sending..." : "Verify"}
+                </button>
               </div>
-              <div className="col-span-2 w-[50%]">
-                <label className="block text-xs font-medium text-black mb-1">
-                  Email Address *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    value={studentEmail}
-                    onChange={(e) => {
-                      setStudentEmail(e.target.value);
-                      setStudentOtp("");
-                      setEmailVerified((prev) => ({
-                        ...prev,
-                        student: false,
-                      }));
-                      clearFieldError("email");
-                    }}
-                    placeholder="Enter the email"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => openVerifyModal("student")}
-                    disabled={sendingOtpFor === "student" || !studentEmail}
-                    className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {sendingOtpFor === "student" ? "Sending..." : "Verify"}
-                  </button>
-                </div>
-                {emailVerified.student && (
-                  <p className="text-xs text-green-600 mt-1">
-                    Student email verified
-                  </p>
-                )}
-                {fieldErrors.email && (
-                  <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.email}
-                  </p>
-                )}
-              </div>
-            </div>
+              {emailVerified.student && (
+                <p className="text-xs text-green-600 mt-1">Student email verified</p>
+              )}
+            </Field>
           </div>
           <input type="hidden" name="studentOtp" value={studentOtp} />
         </section>
 
+        {/* Address Information */}
         <section>
-          <h3 className="text-[14px] font-medium text-primary">
-            Address Information
-          </h3>
-          <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200 ">
-            Address information of the student
-          </h5>
-          <label className="block text-xs mb-1.5 font-medium">
-            Full Address *
-          </label>
-          <textarea
-            name="address"
-            onChange={() => clearFieldError("address")}
-            className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-            style={{ minHeight: 106 }}
-            placeholder="text your address"
-          />
-          {fieldErrors.address && (
-            <p className="text-red-500 text-[11px] mt-1">
-              {fieldErrors.address}
-            </p>
-          )}
+          <SectionHeader title="Address Information" subtitle="Address information of the student" />
+          <Field label="Full Address *" error={fieldErrors.address}>
+            <textarea
+              name="address"
+              onChange={() => clearFieldError("address")}
+              className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+              style={{ minHeight: 106 }}
+              placeholder="Enter your address"
+            />
+          </Field>
         </section>
 
         {/* Parent Information */}
         <section>
-          <h3 className="text-sm w-full font-medium text-primary mb-4 pb-2 border-b border-gray-200 ">
+          <h3 className="text-sm font-medium text-primary mb-4 pb-2 border-b border-gray-200">
             Parent Information
           </h3>
-          <div className="grid grid-cols-2 w-full gap-6">
-            <div>
-              <label className="block text-xs mb-1.5 font-medium text-black">
-                Full Name *
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <Field label="Full Name *" error={fieldErrors.parentName}>
               <input
                 name="parentName"
                 required
@@ -1184,16 +818,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 placeholder="Enter the name"
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
               />
-              {fieldErrors.parentName && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.parentName}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs mb-1.5 font-medium text-black">
-                Relation *
-              </label>
+            </Field>
+
+            <Field label="Relation *" error={fieldErrors.relationship}>
               <select
                 name="relationship"
                 required
@@ -1205,46 +832,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 <option value="mother">Mother</option>
                 <option value="guardian">Guardian</option>
               </select>
-              {fieldErrors.relationship && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.relationship}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex w-full justify-between gap-6 mt-6">
-            <div className="col-span-2 w-[50%]">
-              <label className="block text-xs font-medium text-black mb-1">
-                Phone Number *
-              </label>
-              <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
-                <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
-                  <img
-                    src="https://flagcdn.com/w20/in.png"
-                    alt="India"
-                    className="w-4 h-3"
-                  />
-                  +91
-                </div>
-                <input
-                  name="parentPhone"
-                  type="text"
-                  required
-                  placeholder="00000 00000"
-                  onChange={() => clearFieldError("parentPhone")}
-                  className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                />
-              </div>
-              {fieldErrors.parentPhone && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.parentPhone}
-                </p>
-              )}
-            </div>
-            <div className="col-span-2 w-[50%]">
-              <label className="block text-xs font-medium text-black mb-1">
-                Email Address *
-              </label>
+            </Field>
+
+            <Field label="Phone Number *" error={fieldErrors.parentPhone}>
+              <PhoneInput name="parentPhone" onChangeClear={() => clearFieldError("parentPhone")} />
+            </Field>
+
+            <Field label="Email Address *" error={fieldErrors.parentEmail}>
               <div className="flex gap-2">
                 <input
                   name="parentEmail"
@@ -1254,10 +848,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   onChange={(e) => {
                     setParentEmail(e.target.value);
                     setParentOtp("");
-                    setEmailVerified((prev) => ({
-                      ...prev,
-                      parent: false,
-                    }));
+                    setEmailVerified((prev) => ({ ...prev, parent: false }));
                     clearFieldError("parentEmail");
                   }}
                   placeholder="Enter the email"
@@ -1267,22 +858,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   type="button"
                   onClick={() => openVerifyModal("parent")}
                   disabled={sendingOtpFor === "parent" || !parentEmail}
-                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
                 >
                   {sendingOtpFor === "parent" ? "Sending..." : "Verify"}
                 </button>
               </div>
               {emailVerified.parent && (
-                <p className="text-xs text-green-600 mt-1">
-                  Parent email verified
-                </p>
+                <p className="text-xs text-green-600 mt-1">Parent email verified</p>
               )}
-              {fieldErrors.parentEmail && (
-                <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.parentEmail}
-                </p>
-              )}
-            </div>
+            </Field>
           </div>
           <input type="hidden" name="parentOtp" value={parentOtp} />
         </section>

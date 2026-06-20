@@ -16,20 +16,20 @@ const AdminPortalLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuthStore();
 
-    const { register, handleSubmit, setValue, watch, setError, formState: { errors, isSubmitting } } = useForm({
-        resolver: zodResolver(adminLoginSchema),
-        defaultValues: {
-            role: 'admin'
-        }
+    const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
+        resolver: zodResolver(adminLoginSchema)
     });
-
-    const currentRole = watch('role');
 
     const onSubmit = async (data) => {
         try {
-            await login(data);
+            const payload = {
+                email: data.adminId,
+                password: data.password,
+                role: 'admin'
+            };
+            await login(payload);
             const user = useAuthStore.getState().user;
-            showSuccessToast('Login Successful', `Welcome to the ${user.role === 'admin' ? 'Admin' : 'Warden'} Dashboard`);
+            showSuccessToast('Login Successful', 'Welcome to the Admin Dashboard');
             navigate(getDashboardRoute(user.role));
         } catch (error) {
             console.log("error from the login page", error);
@@ -51,43 +51,14 @@ const AdminPortalLogin = () => {
                 <AuthCard
                     variant="login"
                     title="Sign In"
-                    subtitle="Access your dashboard"
+                    subtitle="Access your admin dashboard"
                 >
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="block text-[13px] font-medium text-text-primary">
-                                Login As
-                            </label>
-                            
-                            <div className="flex bg-gray-100 p-1 rounded-xl">
-                                {['admin', 'warden'].map((role) => (
-                                    <button
-                                        key={role}
-                                        type="button"
-                                        onClick={() => setValue('role', role, { shouldValidate: true })}
-                                        className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 capitalize ${
-                                            currentRole === role
-                                                ? 'bg-white text-text-primary shadow-sm'
-                                                : 'text-text-secondary hover:text-text-primary hover:bg-gray-200/50'
-                                        }`}
-                                    >
-                                        {role}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <input type="hidden" {...register('role')} />
-
-                            {errors.role && (
-                                <p className="text-red-500 text-xs font-medium mt-1">{errors.role.message}</p>
-                            )}
-                        </div>
-
                         <Input
                             label="Email"
                             type="email"
-                            {...register('email')}
-                            error={errors.email?.message}
+                            {...register('adminId')}
+                            error={errors.adminId?.message}
                             placeholder="Enter your email"
                         />
 
@@ -111,7 +82,7 @@ const AdminPortalLogin = () => {
                     </form>
 
                     <p className="text-center text-xs text-text-secondary mt-6">
-                        Forgot Password ?
+                        Having Trouble ?
                         <Link to="/contact-administrator" className='ml-1 text-accent font-medium'>
                             Contact Administrator
                         </Link>

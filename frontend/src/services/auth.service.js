@@ -66,19 +66,11 @@ export async function logout() {
 }
 
 /**
- * Fetches the currently authenticated user's profile info.
+ * Fetch the authenticated user's profile.
+ * @returns {Promise<Object>} user data
  */
 export async function getProfile() {
   const response = await authApi.getProfile();
-  return response.data;
-}
-
-/**
- * Updates the currently authenticated user's profile info.
- * @param {Object} payload - name, phone
- */
-export async function updateProfile(payload) {
-  const response = await authApi.updateProfile(payload);
   return response.data;
 }
 
@@ -90,7 +82,6 @@ const authService = {
   changePassword,
   logout,
   getProfile,
-  updateProfile,
 };
 
 export default authService;

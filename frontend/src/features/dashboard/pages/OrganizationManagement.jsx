@@ -19,7 +19,6 @@ import OrganizationDetailView from '../components/organization/OrganizationDetai
 import OrganizationFormModal from '../components/organization/OrganizationFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const INITIAL_ORGS = [
     { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', address: 'Abc street, Sarojini nagar', status: 'Active' },
@@ -27,7 +26,6 @@ const INITIAL_ORGS = [
 ];
 
 const OrganizationManagement = () => {
-    const { t } = useTranslation();
     const [orgs, setOrgs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -298,7 +296,7 @@ const OrganizationManagement = () => {
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-black">{t('org_management')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-black">Organization</h1>
                     <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all organizations</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">

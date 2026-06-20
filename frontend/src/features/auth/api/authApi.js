@@ -19,9 +19,6 @@ const authApi = {
 
   getProfile: () =>
     api.get("/auth/me"),
-    
-  updateProfile: (payload) =>
-    api.put("/auth/profile", payload),
 
   logout: () => api.post("/auth/logout"),
 };

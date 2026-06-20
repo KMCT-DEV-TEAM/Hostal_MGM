@@ -2,7 +2,6 @@ import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, Phone, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminTable = ({
     paginatedAdmins,
@@ -19,7 +18,6 @@ const AdminTable = ({
     loading,
     error
 }) => {
-    const { t } = useTranslation();
     return (
         <div className="hidden md:block overflow-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-left border-collapse">
@@ -35,22 +33,22 @@ const AdminTable = ({
                             </button>
                         </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('name')}
+                            Name
                         </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('email')}
+                            Email
                         </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('phone')}
+                            Phone
                         </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('organization')}
+                            Organization
                         </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('status')}
+                            Status
                         </th>
                         <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                            {t('action')}
+                            Action
                         </th>
                     </tr>
                 </thead>
@@ -63,7 +61,7 @@ const AdminTable = ({
                         </tr>
                     ) : paginatedAdmins.length === 0 ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
+                            <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your search criteria.</td>
                         </tr>
                     ) : (
                         paginatedAdmins.map((admin) => {
@@ -109,7 +107,7 @@ const AdminTable = ({
                                                 options={organizations.map(org => ({ value: org._id, label: org.name }))}
                                                 value={admin.organization?._id || admin.organization || ""}
                                                 onChange={(val) => handleOrganizationChange(admin._id, val)}
-                                                placeholder={t('select_organization')}
+                                                placeholder="Select Organization"
                                                 triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 transition-colors"
                                             />
                                         </div>
@@ -119,8 +117,8 @@ const AdminTable = ({
                                             <Dropdown
                                                 minWidth=""
                                                 options={[
-                                                    { value: "Active", label: t('active') },
-                                                    { value: "Inactive", label: t('inactive') }
+                                                    { value: "Active", label: "Active" },
+                                                    { value: "Inactive", label: "Inactive" }
                                                 ]}
                                                 value={admin.isActive ? "Active" : "Inactive"}
                                                 onChange={() => handleStatusChangeClick(admin._id, admin.isActive ? "Active" : "Inactive")}

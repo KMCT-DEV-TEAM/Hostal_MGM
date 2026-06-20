@@ -33,7 +33,7 @@ const AuthCard = ({
 
     // Default "step" variant
     return (
-        <div className={`w-full bg-background lg:bg-white lg:rounded-xl lg:shadow-sm lg:px-10 lg:py-8 flex flex-col items-center ${className}`}>
+        <div className={`w-full bg-background lg:bg-white lg:rounded-xl lg:shadow-sm lg:px-12 lg:py-14 flex flex-col items-center ${className}`}>
             {title && (
                 <h1 className={`text-2xl lg:text-[32px] font-bold text-primary mb-3 text-center ${titleClassName}`}>
                     {title}

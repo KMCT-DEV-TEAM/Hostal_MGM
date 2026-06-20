@@ -35,16 +35,6 @@ export default function StudentsTable({
   onStatusChange,
   statusLoadingIds = [],
 }) {
-  const { t } = useTranslation();
-  
-  const COLUMNS = [
-    t('admission_no'),
-    t('student_name'),
-    t('organization'),
-    t('hostel'),
-    t('status'),
-  ];
-
   const showActionsColumn = canEdit || !!onViewClick;
   const getStudentId = (s) => s._id ?? s.id;
 

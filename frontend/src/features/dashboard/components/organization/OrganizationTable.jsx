@@ -2,7 +2,6 @@ import React from 'react';
 import { Square, CheckSquare, ChevronDown, Pencil, Mail, Phone, MapPin } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const OrganizationTable = ({
     orgs,
@@ -16,7 +15,6 @@ const OrganizationTable = ({
     handleStatusChangeClick,
     openModal
 }) => {
-    const { t } = useTranslation();
     return (
         <div className="hidden md:block h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-start relative">
@@ -31,12 +29,12 @@ const OrganizationTable = ({
                                 )}
                             </button>
                         </th>
-                        <th className="p-4 text-start">{t('name')}</th>
-                        <th className="p-4 text-start">{t('email')}</th>
-                        <th className="p-4 text-start">{t('phone')}</th>
-                        <th className="p-4 text-start">{t('address')}</th>
-                        <th className="p-4 text-start">{t('status')}</th>
-                        <th className="p-4 text-start rounded-tr-lg">{t('action')}</th>
+                        <th className="p-4 text-start">Name</th>
+                        <th className="p-4 text-start">Email</th>
+                        <th className="p-4 text-start">Phone</th>
+                        <th className="p-4 text-start">Address</th>
+                        <th className="p-4 text-start">Status</th>
+                        <th className="p-4 text-start rounded-tr-lg">Action</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
@@ -51,7 +49,7 @@ const OrganizationTable = ({
                     ) : orgs.length === 0 ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-center text-gray-500">
-                                {t('no_org_found')}
+                                No organizations match the selected filter.
                             </td>
                         </tr>
                     ) : (
@@ -103,8 +101,8 @@ const OrganizationTable = ({
                                         <Dropdown
                                             minWidth=""
                                             options={[
-                                                { value: "Active", label: t('active') },
-                                                { value: "Inactive", label: t('inactive') }
+                                                { value: "Active", label: "Active" },
+                                                { value: "Inactive", label: "Inactive" }
                                             ]}
                                             value={o.isActive ? "Active" : "Inactive"}
                                             onChange={() => handleStatusChangeClick(o._id, o.isActive)}

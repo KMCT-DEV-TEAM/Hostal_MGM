@@ -7,17 +7,11 @@ export const superAdminSchema = z.object({
 });
 
 export const userLoginSchema = z.object({
-    role: z.enum(['student', 'parent'], {
-        errorMap: () => ({ message: 'Please select a valid role' })
-    }),
     email: emailField,
     password: passwordField,
 });
 
 export const adminLoginSchema = z.object({
-    role: z.enum(['admin', 'warden'], {
-        errorMap: () => ({ message: 'Please select a valid role' })
-    }),
-    email: emailField,
+    adminId: z.string().min(1, { message: 'Admin ID is required' }),
     password: passwordField,
 });

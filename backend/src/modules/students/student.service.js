@@ -172,7 +172,6 @@ const bulkUpdateStudentStatusDb = async (
 
 const getStudentsService = async ({
   organizationId,
-  hostelIds,
   query,
 }) => {
   const {
@@ -229,8 +228,6 @@ const getStudentsService = async ({
   ) {
     matchStage.hostelId =
       new mongoose.Types.ObjectId(hostelId);
-  } else if (hostelIds && Array.isArray(hostelIds) && hostelIds.length > 0) {
-    matchStage.hostelId = { $in: hostelIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
 
   const searchMatch = search

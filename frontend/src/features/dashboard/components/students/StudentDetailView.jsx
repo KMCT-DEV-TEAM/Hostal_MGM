@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import {
   User,
@@ -24,8 +24,8 @@ import ChangeEmailModal from "./ChangeEmailModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
-import { updateStudentByRole, changeStudentEmail } from "@/services/student.service";
-import { updateParentByRole, changeParentEmail } from "@/services/parent.service";
+import { updateStudentByRole } from "@/services/student.service";
+import { updateParentByRole } from "@/services/parent.service";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -58,7 +58,8 @@ const InfoRow = ({ icon, label, children }) => (
 
 const StudentDetailView = ({ student, onClose, onStudentChange }) => {
   const role = useAuthStore((state) => state.user?.role);
-  const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] = useState(false);
+  const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] =
+    useState(false);
   const [isAddParentModalOpen, setIsAddParentModalOpen] = useState(false);
   const [emailChangeTarget, setEmailChangeTarget] = useState(null);
 
@@ -74,7 +75,8 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
   if (!student) return null;
 
-  const organizationName = student.organization?.name || student.organizationId || "N/A";
+  const organizationName =
+    student.organization?.name || student.organizationId || "N/A";
   const hostelName = student.hostel?.name || "N/A";
   const parents = Array.isArray(student.parents) ? student.parents : [];
   const parent = parents.find((p) => p.defaultGuardian) ?? parents[0] ?? null;
@@ -83,19 +85,15 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
   const closeEmailChangeModal = () => setEmailChangeTarget(null);
 
-  const handleEmailChange = async ({ oldEmail, newEmail, otp }) => {
+  const handleEmailChange = async ({ oldEmail, newEmail }) => {
     if (emailChangeTarget?.type === "student") {
-      if (oldEmail !== student.email) {
+      if (oldEmail !== student.email)
         throw new Error("Current email does not match");
-      }
-
-      await changeStudentEmail(role, student._id, { oldEmail, newEmail, otp });
-
+      await updateStudentByRole(role, student._id, { email: newEmail });
       onStudentChange?.(student._id, (current) => ({
         ...current,
         email: newEmail,
       }));
-
       return;
     }
     if (emailChangeTarget?.type === "parent") {
@@ -104,27 +102,15 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         emailChangeTarget.parent?.email ||
         emailChangeTarget.parent?.parentEmail ||
         "";
-
-      if (oldEmail !== currentParentEmail) {
+      if (oldEmail !== currentParentEmail)
         throw new Error("Current email does not match");
-      }
-
-      await changeParentEmail(role, parentId, {
-        oldEmail,
-        newEmail,
-        otp
-      });
-
+      await updateParentByRole(role, parentId, { email: newEmail });
       onStudentChange?.(student._id, (current) => ({
         ...current,
-        parents: (current.parents || []).map((parent) =>
-          getParentId(parent) === parentId
-            ? {
-              ...parent,
-              email: newEmail,
-              parentEmail: newEmail,
-            }
-            : parent,
+        parents: (current.parents || []).map((p) =>
+          getParentId(p) === parentId
+            ? { ...p, email: newEmail, parentEmail: newEmail }
+            : p,
         ),
       }));
     }
@@ -139,38 +125,60 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       title={student.name}
       subtitle={`Student - ${hostelName}`}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 [&>*:first-child]:order-2 [&>*:last-child]:order-1 lg:[&>*:first-child]:order-none lg:[&>*:last-child]:order-none">
+        {" "}
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-
           {/* Basic Info */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-            <p className="text-xs text-gray-400 mb-6">Basic contact information of the Student</p>
+            <h3 className="text-lg font-semibold text-primary mb-1">
+              Basic Info
+            </h3>
+            <p className="text-xs text-gray-400 mb-6">
+              Basic contact information of the Student
+            </p>
             <div className="space-y-4">
-              <InfoRow icon={<Badge className="w-4 h-4 text-gray-400" />} label="Admission No">
+              <InfoRow
+                icon={<Badge className="w-4 h-4 text-gray-400" />}
+                label="Admission No"
+              >
                 {student.studentId || "N/A"}
               </InfoRow>
-              <InfoRow icon={<User className="w-4 h-4 text-gray-400" />} label="Full Name">
+              <InfoRow
+                icon={<User className="w-4 h-4 text-gray-400" />}
+                label="Full Name"
+              >
                 {student.name || "N/A"}
               </InfoRow>
-              <InfoRow icon={<User className="w-4 h-4 text-gray-400" />} label="Gender">
+              <InfoRow
+                icon={<User className="w-4 h-4 text-gray-400" />}
+                label="Gender"
+              >
                 {student.gender || "N/A"}
               </InfoRow>
-              <InfoRow icon={<Calendar className="w-4 h-4 text-gray-400" />} label="Date Of Birth">
-                {student.dob ? new Date(student.dob).toLocaleDateString("en-IN") : "N/A"}
+              <InfoRow
+                icon={<Calendar className="w-4 h-4 text-gray-400" />}
+                label="Date Of Birth"
+              >
+                {student.dob
+                  ? new Date(student.dob).toLocaleDateString("en-IN")
+                  : "N/A"}
               </InfoRow>
               {/* Status row needs custom layout for the dot */}
               <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
                 <span className="text-gray-500 flex items-center gap-1.5">
-                  {isActive
-                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    : <XCircle className="w-4 h-4 text-red-500" />}
+                  {isActive ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  )}
                   Status
                 </span>
                 <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
                   <span className="hidden sm:inline">: </span>
-                  <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
+                  <span
+                    className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`}
+                  />
                   {isActive ? "Active" : "Inactive"}
                 </span>
               </div>
@@ -179,25 +187,47 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
           {/* Academic Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">Academic Information</h3>
-            <p className="text-xs text-gray-400 mb-6">Academic details and institutional information</p>
+            <h3 className="text-lg font-semibold text-primary mb-1">
+              Academic Information
+            </h3>
+            <p className="text-xs text-gray-400 mb-6">
+              Academic details and institutional information
+            </p>
             <div className="space-y-4">
-              <InfoRow icon={<Building2 className="w-4 h-4 text-gray-400" />} label="Organization">
+              <InfoRow
+                icon={<Building2 className="w-4 h-4 text-gray-400" />}
+                label="Organization"
+              >
                 {organizationName}
               </InfoRow>
-              <InfoRow icon={<BookOpen className="w-4 h-4 text-gray-400" />} label="Course">
+              <InfoRow
+                icon={<BookOpen className="w-4 h-4 text-gray-400" />}
+                label="Course"
+              >
                 {student.course?.name || "N/A"}
               </InfoRow>
-              <InfoRow icon={<FileText className="w-4 h-4 text-gray-400" />} label="Department">
+              <InfoRow
+                icon={<FileText className="w-4 h-4 text-gray-400" />}
+                label="Department"
+              >
                 {student.department?.name || "N/A"}
               </InfoRow>
-              <InfoRow icon={<Users className="w-4 h-4 text-gray-400" />} label="Batch">
+              <InfoRow
+                icon={<Users className="w-4 h-4 text-gray-400" />}
+                label="Batch"
+              >
                 {student.batch?.name || "N/A"}
               </InfoRow>
-              <InfoRow icon={<Calendar className="w-4 h-4 text-gray-400" />} label="Academic Year">
+              <InfoRow
+                icon={<Calendar className="w-4 h-4 text-gray-400" />}
+                label="Academic Year"
+              >
                 {student.academicYear || "N/A"}
               </InfoRow>
-              <InfoRow icon={<Home className="w-4 h-4 text-gray-400" />} label="Assigned Hostel">
+              <InfoRow
+                icon={<Home className="w-4 h-4 text-gray-400" />}
+                label="Assigned Hostel"
+              >
                 {hostelName}
               </InfoRow>
             </div>
@@ -205,10 +235,17 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
           {/* Contact Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
-            <p className="text-xs text-gray-400 mb-6">Contact Information of The Student</p>
+            <h3 className="text-lg font-semibold text-primary mb-1">
+              Contact Information
+            </h3>
+            <p className="text-xs text-gray-400 mb-6">
+              Contact Information of The Student
+            </p>
             <div className="space-y-4">
-              <InfoRow icon={<Phone className="w-4 h-4 text-gray-400" />} label="Phone No">
+              <InfoRow
+                icon={<Phone className="w-4 h-4 text-gray-400" />}
+                label="Phone No"
+              >
                 {student.phone || "N/A"}
               </InfoRow>
               {/* Email row needs pencil button — custom layout */}
@@ -245,8 +282,12 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
           {/* Address Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
-            <p className="text-xs text-gray-400 mb-6">Current residential address</p>
+            <h3 className="text-lg font-semibold text-primary mb-1">
+              Address Information
+            </h3>
+            <p className="text-xs text-gray-400 mb-6">
+              Current residential address
+            </p>
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-start">
               <span className="text-gray-500 flex items-start gap-1.5 pt-0.5">
                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
@@ -263,8 +304,12 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-primary">Parent Information</h3>
-                <p className="text-xs text-gray-400 mt-1">Primary parent/guardian contact details</p>
+                <h3 className="text-lg font-semibold text-primary">
+                  Parent Information
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Primary parent/guardian contact details
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -284,13 +329,22 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
               </div>
             </div>
             <div className="space-y-4">
-              <InfoRow icon={<User className="w-4 h-4 text-gray-400" />} label="Parent Name">
+              <InfoRow
+                icon={<User className="w-4 h-4 text-gray-400" />}
+                label="Parent Name"
+              >
                 {parent?.parentName || "N/A"}
               </InfoRow>
-              <InfoRow icon={<FileText className="w-4 h-4 text-gray-400" />} label="Relation">
+              <InfoRow
+                icon={<FileText className="w-4 h-4 text-gray-400" />}
+                label="Relation"
+              >
                 {parent?.relationship || "N/A"}
               </InfoRow>
-              <InfoRow icon={<Phone className="w-4 h-4 text-gray-400" />} label="Phone No">
+              <InfoRow
+                icon={<Phone className="w-4 h-4 text-gray-400" />}
+                label="Phone No"
+              >
                 {parent?.phone || parent?.parentPhone || "N/A"}
               </InfoRow>
               {/* Parent email with pencil — custom layout */}
@@ -312,7 +366,8 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                           type: "parent",
                           parent,
                           subjectName: parent.parentName || "the parent",
-                          currentEmail: parent.email || parent.parentEmail || "",
+                          currentEmail:
+                            parent.email || parent.parentEmail || "",
                         })
                       }
                       className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
@@ -326,44 +381,74 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
             </div>
           </div>
         </div>
-
         {/* Right Summary Sidebar */}
         <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold text-primary">Student Summary</h3>
+            <h3 className="text-lg font-semibold text-primary">
+              Student Summary
+            </h3>
           </div>
           <div className="space-y-4">
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5"><Badge className="w-4 h-4 text-gray-400" /> Admission No</span>
-              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{student.studentId || "N/A"}</span>
+              <span className="text-gray-500 flex items-center gap-1.5">
+                <Badge className="w-4 h-4 text-gray-400" /> Admission No
+              </span>
+              <span className="sm:col-span-2 font-medium text-gray-900">
+                <span className="hidden sm:inline">: </span>
+                {student.studentId || "N/A"}
+              </span>
             </div>
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Full Name</span>
-              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{student.name || "N/A"}</span>
+              <span className="text-gray-500 flex items-center gap-1.5">
+                <User className="w-4 h-4 text-gray-400" /> Full Name
+              </span>
+              <span className="sm:col-span-2 font-medium text-gray-900">
+                <span className="hidden sm:inline">: </span>
+                {student.name || "N/A"}
+              </span>
             </div>
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Gender</span>
-              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{student.gender || "N/A"}</span>
+              <span className="text-gray-500 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-gray-400" /> Gender
+              </span>
+              <span className="sm:col-span-2 font-medium text-gray-900">
+                <span className="hidden sm:inline">: </span>
+                {student.gender || "N/A"}
+              </span>
             </div>
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span>
-              <span className="sm:col-span-2 font-medium text-gray-900 break-words"><span className="hidden sm:inline">: </span>{organizationName}</span>
+              <span className="text-gray-500 flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-gray-400" /> Organization
+              </span>
+              <span className="sm:col-span-2 font-medium text-gray-900 break-words">
+                <span className="hidden sm:inline">: </span>
+                {organizationName}
+              </span>
             </div>
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5"><Home className="w-4 h-4 text-gray-400" /> Hostel</span>
-              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{hostelName}</span>
+              <span className="text-gray-500 flex items-center gap-1.5">
+                <Home className="w-4 h-4 text-gray-400" /> Hostel
+              </span>
+              <span className="sm:col-span-2 font-medium text-gray-900">
+                <span className="hidden sm:inline">: </span>
+                {hostelName}
+              </span>
             </div>
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
               <span className="text-gray-500 flex items-center gap-1.5">
-                {isActive
-                  ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  : <XCircle className="w-4 h-4 text-red-500" />}
+                {isActive ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-500" />
+                )}
                 Status
               </span>
               <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
                 <span className="hidden sm:inline">: </span>
-                <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`}
+                />
                 {isActive ? "Active" : "Inactive"}
               </span>
             </div>

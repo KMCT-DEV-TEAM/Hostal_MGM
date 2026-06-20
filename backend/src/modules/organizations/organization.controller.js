@@ -55,12 +55,7 @@ const getOrganizations = asyncHandler(async (req, res) => {
     const search = req.query.search || "";
     const status = req.query.status || "All";
 
-    const adminOrganizationId = req.user.role === 'admin' ? req.user.organization : null;
-    if (req.user.role === 'admin' && !adminOrganizationId) {
-        return sendError(res, 400, "Admin is not assigned to any organization");
-    }
-
-    const { organizations, totalCount } = await getPaginatedOrganizationsDb(page, limit, search, status, adminOrganizationId);
+    const { organizations, totalCount } = await getPaginatedOrganizationsDb(page, limit, search, status);
 
     return sendSuccess(res, 200, "Organizations fetched successfully", { 
       count: organizations.length, 
@@ -72,10 +67,6 @@ const getOrganizations = asyncHandler(async (req, res) => {
 });
 
 const getOrganizationById = asyncHandler(async (req, res) => {
-    if (req.user.role === 'admin' && req.params.id !== req.user.organization?.toString()) {
-      return sendError(res, 403, "Access denied: You can only view your own organization");
-    }
-
     const organization = await getOrganizationByIdDb(req.params.id);
 
     if (!organization) {
