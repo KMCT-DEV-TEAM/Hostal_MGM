@@ -13,7 +13,7 @@ export default function Modal({
   asForm = false,
   onSubmit,
   avatar,
-  zIndex = 9999,
+  zIndex = 50,
 }) {
   if (!isOpen || typeof document === "undefined") return null;
 
