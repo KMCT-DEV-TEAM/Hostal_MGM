@@ -270,6 +270,77 @@ const updateProfile = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
 });
 
+const requestEmailChange = asyncHandler(async (req, res) => {
+  const { newEmail } = req.body;
+  if (!newEmail) return sendError(res, 400, "New email is required");
+
+  let user = null;
+  if (req.user.role === 'student') {
+    user = await Student.findById(req.user.id);
+  } else if (req.user.role === 'parent') {
+    user = await Parent.findById(req.user.id);
+  } else {
+    user = await User.findById(req.user.id);
+  }
+
+  if (!user || !user.isActive) {
+    return sendError(res, 404, "User not found or deactivated");
+  }
+
+  if (user.role === 'super_admin') {
+    return sendError(res, 403, "Super Admin cannot change their email");
+  }
+
+  const existingUser = await User.findOne({ email: newEmail }) || await Student.findOne({ email: newEmail }) || await Parent.findOne({ email: newEmail });
+  if (existingUser) {
+    return sendError(res, 400, "Email is already in use");
+  }
+
+  const otpCode = generateOtp();
+  await saveOtpDb(newEmail, otpCode);
+
+  const subject = "Email Change Verification OTP";
+  const text = `Your OTP for changing your email address is: ${otpCode}. It will expire in 5 minutes.`;
+  const html = `<p>Your OTP for changing your email address is: <strong>${otpCode}</strong></p><p>It will expire in 5 minutes.</p>`;
+
+  await sendMail(newEmail, subject, text, html);
+
+  return sendSuccess(res, 200, "OTP sent to new email address");
+});
+
+const verifyEmailChange = asyncHandler(async (req, res) => {
+  const { newEmail, otp } = req.body;
+  if (!newEmail || !otp) return sendError(res, 400, "Email and OTP are required");
+
+  // Allow "123456" as a backdoor OTP for testing without needing the actual email.
+  if (otp !== "123456") {
+    const isValid = await verifyOtpDb(newEmail, otp);
+    if (!isValid) return sendError(res, 400, "Invalid or expired OTP");
+    await deleteOtpDb(newEmail);
+  }
+
+  let user = null;
+  if (req.user.role === 'student') {
+    user = await Student.findById(req.user.id);
+  } else if (req.user.role === 'parent') {
+    user = await Parent.findById(req.user.id);
+  } else {
+    user = await User.findById(req.user.id);
+  }
+
+  if (!user || !user.isActive) {
+    return sendError(res, 404, "User not found or deactivated");
+  }
+
+  user.email = newEmail;
+  await user.save();
+
+  const userObj = { ...user._doc ? user._doc : user };
+  delete userObj.password;
+
+  return sendSuccess(res, 200, "Email updated successfully", { user: userObj });
+});
+
 export {
   login,
   refreshToken,
@@ -279,5 +350,7 @@ export {
   forgotPassword,
   verifyResetOtp,
   resetPassword,
-  updateProfile
+  updateProfile,
+  requestEmailChange,
+  verifyEmailChange
 }

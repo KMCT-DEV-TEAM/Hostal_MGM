@@ -26,6 +26,12 @@ const authApi = {
   updateProfile: (payload) =>
     api.patch("/auth/profile", payload),
 
+  requestEmailChange: (payload) =>
+    api.post("/auth/request-email-change", payload),
+
+  verifyEmailChange: (payload) =>
+    api.post("/auth/verify-email-change", payload),
+
   logout: () => api.post("/auth/logout"),
 };
 

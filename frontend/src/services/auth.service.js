@@ -83,6 +83,16 @@ export async function updateProfile(payload) {
   return response.data;
 }
 
+export async function requestEmailChange(payload) {
+  const response = await authApi.requestEmailChange(payload);
+  return response.data;
+}
+
+export async function verifyEmailChange(payload) {
+  const response = await authApi.verifyEmailChange(payload);
+  return response.data;
+}
+
 const authService = {
   login,
   sendOtp,
@@ -92,6 +102,8 @@ const authService = {
   logout,
   getProfile,
   updateProfile,
+  requestEmailChange,
+  verifyEmailChange,
 };
 
 export default authService;

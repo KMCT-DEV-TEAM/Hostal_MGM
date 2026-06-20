@@ -11,7 +11,7 @@ import {
     ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Swal from 'sweetalert2';
+import LogoutModal from '@/components/ui/LogoutModal';
 
 function Navbar({ onMenuClick }) {
     const { user, logout } = useAuthStore();
@@ -30,21 +30,17 @@ function Navbar({ onMenuClick }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = React.useState(false);
+
+    const handleLogoutClick = () => {
         setIsProfileOpen(false);
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will be logged out of your account.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#0A467F',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, log out!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                logout();
-            }
-        });
+        setIsLogoutModalOpen(true);
+    };
+
+    const confirmLogout = async () => {
+        await logout();
+        setIsLogoutModalOpen(false);
+        navigate('/');
     };
 
     return (
@@ -123,7 +119,7 @@ function Navbar({ onMenuClick }) {
                             <div className="h-px bg-gray-50 my-1.5"></div>
 
                             <button
-                                onClick={handleLogout}
+                                onClick={handleLogoutClick}
                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
                             >
                                 <LogOut size={16} />
@@ -134,6 +130,12 @@ function Navbar({ onMenuClick }) {
                 </div>
 
             </div>
+
+            <LogoutModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={confirmLogout}
+            />
         </header>
     );
 }
