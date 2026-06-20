@@ -8,6 +8,8 @@ export const useAuthStore = create((set) => ({
   loading: true,
   authenticated: false,
 
+  updateUser: (user) => set({ user }),
+
   init: async () => {
     try {
       if (tokenStorage.getAccessToken()) {

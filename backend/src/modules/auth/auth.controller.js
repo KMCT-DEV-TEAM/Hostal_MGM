@@ -171,6 +171,30 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 });
 
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, email, phone } = req.body;
+  const user = await User.findById(req.user.id);
+
+  if (!user || !user.isActive) {
+    return sendError(res, 404, "User not found or deactivated");
+  }
+
+  if (email && email !== user.email) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return sendError(res, 400, "Email is already in use");
+    }
+    user.email = email;
+  }
+
+  if (name) user.name = name;
+  if (phone) user.phone = phone;
+
+  await user.save();
+
+  return sendSuccess(res, 200, "Profile updated successfully", { user: user._doc });
+});
+
 export {
   login,
   refreshToken,
@@ -179,5 +203,6 @@ export {
   changePassword,
   forgotPassword,
   verifyResetOtp,
-  resetPassword
+  resetPassword,
+  updateProfile
 }
