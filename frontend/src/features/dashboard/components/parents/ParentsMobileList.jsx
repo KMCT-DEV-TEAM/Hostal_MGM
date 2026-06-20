@@ -1,8 +1,11 @@
 import React from 'react';
 import { Pencil, Mail, Phone, Square, CheckSquare, User } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 const ParentsMobileList = ({
     parents = [],
+    loading,
     error,
     selectedIds = [],
     onSelectAll,
@@ -18,7 +21,7 @@ const ParentsMobileList = ({
 
     return (
         <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none px-2 sm:px-0">
-            {!error && parents.length > 0 && (
+            {!loading && !error && parents.length > 0 && (
                 <div className="flex items-center gap-2 px-1 mb-1">
                     <button onClick={onSelectAll} className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2">
                         {isAllSelected ? (
@@ -30,7 +33,9 @@ const ParentsMobileList = ({
                     </button>
                 </div>
             )}
-            {error ? (
+            {loading ? (
+                <MobileSkeletonLoader count={3} />
+            ) : error ? (
                 <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error.message || error}</div>
             ) : parents.length === 0 ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl border border-gray-100">No parents match the selected filter.</div>

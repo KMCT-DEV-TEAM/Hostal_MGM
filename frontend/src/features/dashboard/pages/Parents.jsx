@@ -281,36 +281,31 @@ export default function Parents() {
                     canCreate={canCreate}
                 />
 
-                {loading ? (
-                    <div className="flex justify-center p-8">Loading parents...</div>
-                ) : error ? (
-                    <div className="flex justify-center p-8 text-red-500">Error loading parents: {error.message}</div>
-                ) : (
-                    <>
-                        <ParentsTable
-                            parents={parents}
-                            selectedIds={selectedIds}
-                            onSelectAll={handleSelectAll}
-                            onSelect={handleSelect}
-                            onStatusChangeRequest={handleStatusChangeRequest}
-                            onEdit={handleEdit}
-                            onView={handleView}
-                            canEdit={canEdit}
-                            canDelete={canDelete}
-                            statusLoadingIds={statusLoadingIds}
-                        />
-                        <ParentsMobileList
-                            parents={parents}
-                            error={error}
-                            selectedIds={selectedIds}
-                            onSelectAll={handleSelectAll}
-                            onSelect={handleSelect}
-                            onEdit={handleEdit}
-                            onView={handleView}
-                            statusLoadingIds={statusLoadingIds}
-                        />
-                    </>
-                )}
+                <ParentsTable
+                    parents={parents}
+                    loading={loading}
+                    error={error ? error.message || error : null}
+                    selectedIds={selectedIds}
+                    onSelectAll={handleSelectAll}
+                    onSelect={handleSelect}
+                    onStatusChangeRequest={handleStatusChangeRequest}
+                    onEdit={handleEdit}
+                    onView={handleView}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    statusLoadingIds={statusLoadingIds}
+                />
+                <ParentsMobileList
+                    parents={parents}
+                    loading={loading}
+                    error={error ? error.message || error : null}
+                    selectedIds={selectedIds}
+                    onSelectAll={handleSelectAll}
+                    onSelect={handleSelect}
+                    onEdit={handleEdit}
+                    onView={handleView}
+                    statusLoadingIds={statusLoadingIds}
+                />
 
                 {parents.length > 0 && !loading && !error && (
                     <Pagination

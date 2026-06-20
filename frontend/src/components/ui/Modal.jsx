@@ -21,7 +21,7 @@ export default function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center md:p-4  p-1" 
+      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center md:p-4  p-1"
       style={{ zIndex }}
     >
       <Wrapper

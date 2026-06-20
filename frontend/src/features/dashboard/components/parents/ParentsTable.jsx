@@ -1,9 +1,12 @@
 import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Mail } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 export default function ParentsTable({
     parents,
+    loading,
+    error,
     selectedIds,
     onSelectAll,
     onSelect,
@@ -33,8 +36,15 @@ export default function ParentsTable({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
-
-                    {parents.length === 0 ? (
+                    {loading ? (
+                        <TableSkeletonLoader columns={8} />
+                    ) : error ? (
+                        <tr>
+                            <td colSpan="8" className="p-8 text-center text-red-500">
+                                {error}
+                            </td>
+                        </tr>
+                    ) : parents.length === 0 ? (
                         <tr>
                             <td colSpan="8" className="p-8 text-center text-gray-500">
                                 No parents match the selected filter.
