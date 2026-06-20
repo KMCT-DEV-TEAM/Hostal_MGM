@@ -2,6 +2,7 @@ import React from 'react';
 import { Square, CheckSquare, ChevronDown, Pencil, FileText, Building2, Users } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const BatchTable = ({
     batches,
@@ -15,6 +16,7 @@ const BatchTable = ({
     handleStatusChangeClick,
     openModal
 }) => {
+    const { t } = useTranslation();
     return (
         <div className="hidden md:block h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-start relative">
@@ -29,12 +31,12 @@ const BatchTable = ({
                                 )}
                             </button>
                         </th>
-                        <th className="p-4 text-start">Name</th>
-                        <th className="p-4 text-start">Batch Code</th>
-                        <th className="p-4 text-start">Department</th>
-                        <th className="p-4 text-center">Number of Students</th>
-                        <th className="p-4 text-start">Status</th>
-                        <th className="p-4 text-center rounded-tr-lg">Action</th>
+                        <th className="p-4 text-start">{t('name')}</th>
+                        <th className="p-4 text-start">{t('batch_code')}</th>
+                        <th className="p-4 text-start">{t('department')}</th>
+                        <th className="p-4 text-center">{t('num_students')}</th>
+                        <th className="p-4 text-start">{t('status')}</th>
+                        <th className="p-4 text-center rounded-tr-lg">{t('action')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
@@ -49,7 +51,7 @@ const BatchTable = ({
                     ) : batches.length === 0 ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-center text-gray-500">
-                                No Batches match the selected filter.
+                                {t('no_records_found')}
                             </td>
                         </tr>
                     ) : (
@@ -103,8 +105,8 @@ const BatchTable = ({
                                         <Dropdown
                                             minWidth=""
                                             options={[
-                                                { value: "Active", label: "Active" },
-                                                { value: "Inactive", label: "Inactive" }
+                                                { value: "Active", label: t('active') },
+                                                { value: "Inactive", label: t('inactive') }
                                             ]}
                                             value={o.isActive ? "Active" : "Inactive"}
                                             onChange={() => handleStatusChangeClick(o._id, o.isActive)}

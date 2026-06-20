@@ -9,10 +9,14 @@ export default function Pagination({
     totalPages,
 }) {
     return (
-        <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
+        <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
             <div>
-                Showing {totalItems === 0 ? 0 : (page - 1) * limit + 1} to{" "}
-                {Math.min(page * limit, totalItems)} of {totalItems} entries
+                <span className="hidden sm:inline">Showing </span>
+                {totalItems === 0 ? 0 : (page - 1) * limit + 1}
+                <span className="hidden sm:inline"> to </span>
+                <span className="sm:hidden">-</span>
+                {Math.min(page * limit, totalItems)} of {totalItems}
+                <span className="hidden sm:inline"> entries</span>
             </div>
 
             <div className="flex items-center gap-1">

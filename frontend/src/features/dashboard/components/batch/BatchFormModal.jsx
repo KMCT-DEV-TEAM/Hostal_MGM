@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const BatchFormModal = ({
     isModalOpen,
@@ -13,6 +14,7 @@ const BatchFormModal = ({
     isSubmitting,
     departments
 }) => {
+    const { t } = useTranslation();
     if (!isModalOpen) return null;
 
     return (
@@ -38,10 +40,10 @@ const BatchFormModal = ({
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {isEditMode ? 'Edit Batch' : 'Add New Batch'}
+                            {isEditMode ? t('edit_batch') : t('add_batch')}
                         </h2>
                         <p className="text-xs text-gray-400 mt-1">
-                            {isEditMode ? 'Update the details for this Batch' : 'Fill in the details to manually create a new Batch'}
+                            {isEditMode ? t('edit_batch_desc') : t('add_batch_desc')}
                         </p>
                     </div>
                     <button
@@ -55,11 +57,11 @@ const BatchFormModal = ({
 
                 <div className="space-y-8">
                     <section>
-                        <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
-                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>Basic details of the Batch</h5>
+                        <h3 className="text-[14px] font-medium text-primary">{t('basic_info')}</h3>
+                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_batch_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs mb-1.5 font-medium">Batch Name *</label>
+                            <div className="col-span-1">
+                                <label className="block text-xs mb-1.5 font-medium">{t('name')} *</label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -69,8 +71,8 @@ const BatchFormModal = ({
                                     placeholder="Enter Batch name"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs mb-1.5 font-medium">Code *</label>
+                            <div className="col-span-1">
+                                <label className="block text-xs mb-1.5 font-medium">{t('batch_code')} *</label>
                                 <input
                                     name="code"
                                     value={formData.code}
@@ -83,7 +85,7 @@ const BatchFormModal = ({
                         </div>
                         <div className="grid grid-cols-1 gap-6 mt-6">
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">Department *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('department')} *</label>
                                 <Dropdown
                                     options={departments ? departments.map(dep => ({
                                         label: `${dep.name} (${dep.code})`,
@@ -106,14 +108,14 @@ const BatchFormModal = ({
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083660] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                            {isEditMode ? 'Save changes' : 'Save'}
+                            {isEditMode ? t('save_changes') : t('save')}
                         </button>
                         <button
                             type="button"
                             onClick={handleCancel}
                             className="px-6 py-2.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                         >
-                            Cancel
+                            {t('cancel')}
                         </button>
 
                     </div>

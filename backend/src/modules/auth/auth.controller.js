@@ -131,6 +131,7 @@ const me = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Token is valid", { user: userData });
 });
 
+
 const changePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const userId = req.user.id;
@@ -233,6 +234,9 @@ const updateProfile = asyncHandler(async (req, res) => {
   }
 
   if (email && email !== user.email) {
+    if (user.role === 'super_admin') {
+      return sendError(res, 403, "Super Admin cannot change their email");
+    }
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return sendError(res, 400, "Email is already in use");
@@ -260,7 +264,10 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  return sendSuccess(res, 200, "Profile updated successfully", { user: user._doc });
+  const userObj = { ...user._doc };
+  delete userObj.password;
+
+  return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
 });
 
 export {
