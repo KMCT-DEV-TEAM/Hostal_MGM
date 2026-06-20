@@ -56,10 +56,10 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
 
                                     <button
                                         type="button"
-                                        className="ml-2 p-1 rounded hover:bg-gray-100 transition"
+                                        className="ml-2 p-1 rounded text-text-secondary hover:text-primary transition cursor-pointer"
                                         onClick={() => setIsEmailModalOpen(true)}
                                     >
-                                        <Pencil size={16} className="text-gray-500" />
+                                        <Pencil size={16} className="" />
                                     </button>
                                 </span>
                             </div>
