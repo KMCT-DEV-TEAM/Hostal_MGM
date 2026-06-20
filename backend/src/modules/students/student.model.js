@@ -58,14 +58,22 @@ const studentSchema = new mongoose.Schema(
       type: Date,
     },
 
-    department: {
-      type: String,
-      trim: true,
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      default: null,
     },
 
-    course: {
-      type: String,
-      trim: true,
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      default: null,
+    },
+
+    batchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Batch",
+      default: null,
     },
 
     academicYear: {
@@ -106,5 +114,8 @@ const studentSchema = new mongoose.Schema(
 
 studentSchema.index({ organizationId: 1 });
 studentSchema.index({ hostelId: 1 });
+studentSchema.index({ courseId: 1 });
+studentSchema.index({ departmentId: 1 });
+studentSchema.index({ batchId: 1 });
 
 export default mongoose.model("Student", studentSchema);

@@ -19,6 +19,8 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
         setFilters(DEFAULT_FILTERS);
         onApply(DEFAULT_FILTERS);
     };
+
+    console.log(options,"option")
     const hasOptions = (items) => Array.isArray(items) && items.length > 0;
     const selectedStatus = options.statuses.find((status) => status.value === filters.isActive);
     const isActiveStatus = filters.isActive === '' || filters.isActive === 'true';
@@ -118,7 +120,7 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
                                     <option value="">Select</option>
                                     {options.hostels.map((hostel) => (
                                         <option key={hostel._id} value={hostel._id}>
-                                            {hostel.name}
+                                            {hostel.label}
                                         </option>
                                     ))}
                                 </select>

@@ -24,8 +24,9 @@ const createStudentWithParentDb = async (
     name,
     gender,
     dob,
-    course,
-    department,
+    courseId,
+    departmentId,
+    batchId,
     academicYear,
     phone,
     email,
@@ -51,8 +52,9 @@ const createStudentWithParentDb = async (
         name,
         gender,
         dob,
-        course,
-        department,
+        courseId,
+        departmentId,
+        batchId,
         academicYear,
         phone,
         email,
@@ -82,8 +84,6 @@ const createStudentWithParentDb = async (
     ],
     { session }
   );
-
-
 
   return {
     student: student[0],
@@ -124,8 +124,9 @@ const updateStudentDb = async (studentId, data) => {
     "phone",
     "gender",
     "dob",
-    "course",
-    "department",
+    "courseId",
+    "departmentId",
+    "batchId",
     "academicYear",
     "address",
     "hostelId",
@@ -179,8 +180,9 @@ const getStudentsService = async ({
     limit = 10,
     search = "",
     hostelId,
-    department,
-    course,
+    departmentId,
+    courseId,
+    batchId,
     hostelStatus,
     isActive,
   } = query;
@@ -198,12 +200,19 @@ const getStudentsService = async ({
       );
   }
 
-  if (department) {
-    matchStage.department = department;
+  if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+    matchStage.departmentId =
+      new mongoose.Types.ObjectId(departmentId);
   }
 
-  if (course) {
-    matchStage.course = course;
+  if (courseId && mongoose.Types.ObjectId.isValid(courseId)) {
+    matchStage.courseId =
+      new mongoose.Types.ObjectId(courseId);
+  }
+
+  if (batchId && mongoose.Types.ObjectId.isValid(batchId)) {
+    matchStage.batchId =
+      new mongoose.Types.ObjectId(batchId);
   }
 
   if (hostelStatus) {
@@ -294,6 +303,54 @@ const getStudentsService = async ({
 
     {
       $lookup: {
+        from: "courses",
+        localField: "courseId",
+        foreignField: "_id",
+        as: "course",
+      },
+    },
+
+    {
+      $unwind: {
+        path: "$course",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    {
+      $lookup: {
+        from: "departments",
+        localField: "departmentId",
+        foreignField: "_id",
+        as: "department",
+      },
+    },
+
+    {
+      $unwind: {
+        path: "$department",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    {
+      $lookup: {
+        from: "batches",
+        localField: "batchId",
+        foreignField: "_id",
+        as: "batch",
+      },
+    },
+
+    {
+      $unwind: {
+        path: "$batch",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    {
+      $lookup: {
         from: "parents",
         localField: "_id",
         foreignField: "studentId",
@@ -319,8 +376,6 @@ const getStudentsService = async ({
         phone: 1,
         gender: 1,
         dob: 1,
-        course: 1,
-        department: 1,
         academicYear: 1,
         address: 1,
         hostelStatus: 1,
@@ -337,6 +392,24 @@ const getStudentsService = async ({
           name: "$hostel.name",
           code: "$hostel.code",
           hosteltype: "$hostel.hosteltype",
+        },
+
+        course: {
+          _id: "$course._id",
+          name: "$course.name",
+          code: "$course.code",
+        },
+
+        department: {
+          _id: "$department._id",
+          name: "$department.name",
+          code: "$department.code",
+        },
+
+        batch: {
+          _id: "$batch._id",
+          name: "$batch.name",
+          code: "$batch.code",
         },
 
         parents: 1,
@@ -393,9 +466,7 @@ const getStudentFilterOptionsService = async ({
   const matchStage = {};
 
   if (role === "admin") {
-    const admin = await User.findById(userId)
-      .select("organization")
-      .lean();
+    const admin = await User.findById(userId).select("organization").lean();
 
     if (!admin?.organization) {
       const error = new Error("Admin is not assigned to any organization");
@@ -417,9 +488,9 @@ const getStudentFilterOptionsService = async ({
   }
 
   const [result = {}] = await Student.aggregate([
-    {
-      $match: matchStage,
-    },
+    { $match: matchStage },
+
+    // Lookup hostel
     {
       $lookup: {
         from: "hostels",
@@ -428,68 +499,99 @@ const getStudentFilterOptionsService = async ({
         as: "hostel",
       },
     },
-    {
-      $unwind: {
-        path: "$hostel",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+    { $unwind: { path: "$hostel", preserveNullAndEmptyArrays: true } },
+
     {
       $facet: {
         courses: [
+          { $match: { courseId: { $ne: null } } },
           {
-            $match: {
-              course: { $nin: [null, ""] },
+            $lookup: {
+              from: "courses",
+              localField: "courseId",
+              foreignField: "_id",
+              as: "course",
             },
           },
+          { $unwind: "$course" },
           {
             $group: {
-              _id: "$course",
+              _id: "$course._id",
+              name: { $first: "$course.name" },
+              code: { $first: "$course.code" },
             },
           },
-          {
-            $sort: {
-              _id: 1,
-            },
-          },
+          { $sort: { name: 1 } },
           {
             $project: {
               _id: 0,
-              value: "$_id",
-              label: "$_id",
+              value: { $toString: "$_id" },
+              label: "$name",
+              code: "$code",
             },
           },
         ],
+
         departments: [
+          { $match: { departmentId: { $ne: null } } },
           {
-            $match: {
-              department: { $nin: [null, ""] },
+            $lookup: {
+              from: "departments",
+              localField: "departmentId",
+              foreignField: "_id",
+              as: "department",
             },
           },
+          { $unwind: "$department" },
           {
             $group: {
-              _id: "$department",
+              _id: "$department._id",
+              name: { $first: "$department.name" },
+              code: { $first: "$department.code" },
             },
           },
-          {
-            $sort: {
-              _id: 1,
-            },
-          },
+          { $sort: { name: 1 } },
           {
             $project: {
               _id: 0,
-              value: "$_id",
-              label: "$_id",
+              value: { $toString: "$_id" },
+              label: "$name",
+              code: "$code",
             },
           },
         ],
-        hostels: [
+
+        batches: [
+          { $match: { batchId: { $ne: null } } },
           {
-            $match: {
-              "hostel._id": { $ne: null },
+            $lookup: {
+              from: "batches",
+              localField: "batchId",
+              foreignField: "_id",
+              as: "batch",
             },
           },
+          { $unwind: "$batch" },
+          {
+            $group: {
+              _id: "$batch._id",
+              name: { $first: "$batch.name" },
+              code: { $first: "$batch.code" },
+            },
+          },
+          { $sort: { name: 1 } },
+          {
+            $project: {
+              _id: 0,
+              value: { $toString: "$_id" },
+              label: "$name",
+              code: "$code",
+            },
+          },
+        ],
+
+        hostels: [
+          { $match: { "hostel._id": { $ne: null } } },
           {
             $group: {
               _id: "$hostel._id",
@@ -497,19 +599,17 @@ const getStudentFilterOptionsService = async ({
               code: { $first: "$hostel.code" },
             },
           },
-          {
-            $sort: {
-              name: 1,
-            },
-          },
+          { $sort: { name: 1 } },
           {
             $project: {
-              _id: 1,
-              name: 1,
-              code: 1,
+              _id: 0,
+              value: { $toString: "$_id" },
+              label: "$name",
+              code: "$code",
             },
           },
         ],
+
         organizations: [
           {
             $lookup: {
@@ -519,12 +619,7 @@ const getStudentFilterOptionsService = async ({
               as: "organization",
             },
           },
-          {
-            $unwind: {
-              path: "$organization",
-              preserveNullAndEmptyArrays: false,
-            },
-          },
+          { $unwind: { path: "$organization", preserveNullAndEmptyArrays: false } },
           {
             $group: {
               _id: "$organization._id",
@@ -532,16 +627,13 @@ const getStudentFilterOptionsService = async ({
               code: { $first: "$organization.code" },
             },
           },
-          {
-            $sort: {
-              name: 1,
-            },
-          },
+          { $sort: { name: 1 } },
           {
             $project: {
-              _id: 1,
-              name: 1,
-              code: 1,
+              _id: 0,
+              value: { $toString: "$_id" },
+              label: "$name",
+              code: "$code",
             },
           },
         ],
@@ -552,6 +644,7 @@ const getStudentFilterOptionsService = async ({
   return {
     courses: result.courses || [],
     departments: result.departments || [],
+    batches: result.batches || [],
     hostels: result.hostels || [],
     organizations: role === "super_admin" ? result.organizations || [] : [],
     statuses: [

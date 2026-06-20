@@ -11,15 +11,6 @@ export async function createStudent(payload) {
   return response.data;
 }
 
-/**
- * Update Student details
- * @param {string} id
- * @param {Object} payload
- */
-export async function updateStudent(id, payload) {
-  const response = await studentApi.updateStudent(id, payload);
-  return response.data;
-}
 
 export async function updateStudentByAdmin(id, payload) {
   const response = await studentApi.updateStudentByAdmin(id, payload);
@@ -142,6 +133,7 @@ const STUDENT_BULK_STATUS_FETCHERS = {
   [ROLES.SUPER_ADMIN]: bulkStatusBySuperAdmin,
 };
 
+
 export const getStudents = createRoleResolver(STUDENT_FETCHERS, 'student');
 
 export const updateStudentByRole = createRoleResolver(
@@ -171,7 +163,6 @@ export const bulkUpdateStudentStatus = createRoleResolver(
 
 const studentService = {
   createStudent,
-  updateStudent,
   updateStudentByRole,
   changeStudentEmail,
   changeStudentEmailByAdmin,
