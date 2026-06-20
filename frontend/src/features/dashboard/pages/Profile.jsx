@@ -255,7 +255,7 @@ export default function Profile() {
                         </div>
                     </div>
 
-                    {/* Account Settings Section */}
+                    {/* Account Settings Section */} 
                     <div className="border-b border-gray-100 last:border-0">
 
 
