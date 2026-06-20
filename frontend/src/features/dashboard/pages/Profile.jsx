@@ -12,6 +12,7 @@ export default function Profile() {
     const [editingField, setEditingField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, field: null });
 
     const formatRole = (role) => {
