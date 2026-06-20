@@ -21,7 +21,7 @@ export default function LogoutModal({ isOpen, onClose, onConfirm }) {
                     </h3>
 
                     <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                        {t('logout_confirm_desc', 'Are you sure you want to log out of your account?')}
+                        {t('Are you sure you want to logout', 'Are you sure you want to log out of your account?')}
                     </p>
 
                     <div className="flex flex-col gap-3">
