@@ -1,6 +1,6 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import Swal from 'sweetalert2';
+import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import LogoutModal from '@/components/ui/LogoutModal';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { DASHBOARD_NAV } from '@/features/dashboard/config/dashboardNavigation';
@@ -104,20 +104,17 @@ function Sidebar({ isOpen, setIsOpen }) {
 
     const sections = DASHBOARD_NAV[user?.role] || [];
 
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const navigate = useNavigate();
+
     const handleLogout = () => {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will be logged out of your account.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#0A467F',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, log out!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                logout();
-            }
-        });
+        setIsLogoutModalOpen(true);
+    };
+
+    const confirmLogout = async () => {
+        await logout();
+        setIsLogoutModalOpen(false);
+        navigate('/');
     };
     return (
         <>
@@ -167,6 +164,12 @@ function Sidebar({ isOpen, setIsOpen }) {
                 />
             </div>
             </aside>
+
+            <LogoutModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={confirmLogout}
+            />
         </>
     );
 }
