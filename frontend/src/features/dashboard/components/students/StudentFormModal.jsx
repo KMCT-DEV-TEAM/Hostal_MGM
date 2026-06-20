@@ -81,6 +81,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [courseId, setCourseId] = useState(
     toIdString(editingStudent?.course?._id) || "",
   );
+  
   const [departmentId, setDepartmentId] = useState(
     toIdString(editingStudent?.department?._id) || "",
   );

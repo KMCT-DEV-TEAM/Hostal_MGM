@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const COLUMNS = [
   { key: "admissionNo", label: "Admission No" },
@@ -291,7 +292,7 @@ export default function StudentsTable({
                       {isSelected ? (
                         <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                       ) : (
-                        <Square className="w-5 h-5" />n
+                        <Square className="w-5 h-5" />
                       )}
                     </button>
                   </div>

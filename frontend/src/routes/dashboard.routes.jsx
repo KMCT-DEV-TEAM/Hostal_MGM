@@ -130,7 +130,7 @@ export const dashboardRoutes = [
             ROLES.WARDEN
         ],
         element: Settings
-
+    },
     {
         path: 'password-request',
         roles: [
