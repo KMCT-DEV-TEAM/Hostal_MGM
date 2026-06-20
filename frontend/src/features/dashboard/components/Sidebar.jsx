@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import LogoutModal from '@/components/ui/LogoutModal';
 
 import { useAuthStore } from '@/store/useAuthStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { DASHBOARD_NAV } from '@/features/dashboard/config/dashboardNavigation';
 
 import {
@@ -24,19 +25,23 @@ import {
 } from 'lucide-react';
 
 // Reusable component for section headings
-const NavSection = ({ title, children }) => (
+const NavSection = ({ title, children }) => {
+    const { t } = useTranslation();
+    return (
     <div className="mb-4"> {/* Increased mb-1 to mb-4 to accurately match the design spacing */}
         <h3 className="text-xs font-semibold text-gray-400 mb-2 px-3 uppercase tracking-wider">
-            {title}
+            {t(title.toLowerCase())}
         </h3>
         <div className="space-y-0.5">
             {children}
         </div>
     </div>
 );
+}
 
 // Reusable component for individual navigation links
 const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose }) => {
+    const { t } = useTranslation();
     const baseStyles =
         "flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm w-full ";
 
@@ -55,7 +60,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose }) =
                 <div className="flex items-center gap-3">
                     <Icon className="w-5 h-5 text-red-500" strokeWidth={1.5} />
 
-                    <span>{label}</span>
+                    <span>{t(label.toLowerCase())}</span>
                 </div>
             </button>
         );
@@ -83,7 +88,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose }) =
                                 }`}
                             strokeWidth={1.5}
                         />
-                        <span>{label}</span>
+                        <span>{t(label.toLowerCase())}</span>
                     </div>
 
                     {/* Render Badge notification pill if present */}
@@ -101,6 +106,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose }) =
 function Sidebar({ isOpen, setIsOpen }) {
 
     const { user, logout } = useAuthStore();
+    const { t } = useTranslation();
 
     const sections = DASHBOARD_NAV[user?.role] || [];
 
@@ -136,7 +142,7 @@ function Sidebar({ isOpen, setIsOpen }) {
                             <NavItem
                                 key={item.path}
                                 icon={item.icon}
-                                label={item.label}
+                                label={t(item.label.toLowerCase())}
                                 to={item.path}
                                 onClose={() => setIsOpen(false)}
                             />
@@ -150,17 +156,16 @@ function Sidebar({ isOpen, setIsOpen }) {
             <div className="py-4 px-4 border-t border-gray-100 space-y-1 bg-white">
                 <NavItem
                     icon={Settings}
-                    label="Settings"
+                    label={t('settings')}
                     to="/dashboard/settings"
                     onClose={() => setIsOpen(false)}
                 />
 
                 <NavItem
                     icon={LogOut}
-                    label="Logout"
+                    label={t('logout')}
                     isDanger
                     onClick={handleLogout}
-                    onClose={() => setIsOpen(false)}
                 />
             </div>
             </aside>

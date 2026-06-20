@@ -55,7 +55,8 @@ const userSchema = new mongoose.Schema(
         smsAlerts: { type: Boolean, default: false }
       },
       preferences: {
-        language: { type: String, default: 'en' }
+        theme: { type: String, default: "light" },
+        language: { type: String, default: "en" }
       }
     },
   },

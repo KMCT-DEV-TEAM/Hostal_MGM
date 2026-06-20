@@ -66,8 +66,7 @@ export async function logout() {
 }
 
 /**
- * Fetch the authenticated user's profile.
- * @returns {Promise<Object>} user data
+ * Fetches the currently authenticated user's profile info.
  */
 export async function getProfile() {
   const response = await authApi.getProfile();

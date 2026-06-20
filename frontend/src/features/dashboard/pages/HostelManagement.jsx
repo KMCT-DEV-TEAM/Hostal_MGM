@@ -33,8 +33,7 @@ import HostelTable from '../components/Hostel/HostelTable';
 import HostelPagination from '../components/Hostel/HostelPagination';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
-
-
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AVAILABLE_HOSTELS = [
     'Kmct Hostel 1', 'Kmct Hostel 2', 'Kmct Hostel 3', 'Kmct Hostel 4', 'Kmct Hostel 5',
@@ -42,6 +41,7 @@ const AVAILABLE_HOSTELS = [
 ];
 
 export default function HostelManagement() {
+    const { t } = useTranslation();
     // State management
     const [hostels, setHostels] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -460,8 +460,8 @@ export default function HostelManagement() {
                         {/* Header */}
                         <div className="flex justify-between items-start mb-8">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">{editingHostel ? 'Edit Hostel' : 'Add New Hostel'}</h2>
-                                <p className="text-xs text-gray-400 mt-1">Fill in the details to manually {editingHostel ? 'update' : 'create a new'} hostel</p>
+                                <h2 className="text-xl font-bold text-gray-900">{editingHostel ? t('edit_hostel') : t('add_hostel')}</h2>
+                                <p className="text-xs text-gray-400 mt-1">{editingHostel ? t('edit_hostel_desc') : t('add_hostel_desc')}</p>
                             </div>
                             <button
                                 type="button"
@@ -478,7 +478,7 @@ export default function HostelManagement() {
                                 <div className="border-b border-gray-100 mb-4" />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="col-span-1 sm:col-span-2">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Hostel Name *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_name')} *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="text"
@@ -492,7 +492,7 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Hostel Code *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_code')} *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="text"
@@ -506,7 +506,7 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Email *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('email')} *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 name="email"
@@ -521,7 +521,7 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Phone Number *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
                                                 <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -548,7 +548,7 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1 sm:col-span-2">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Location *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('location')} *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="text"
@@ -563,15 +563,15 @@ export default function HostelManagement() {
 
                                     {/* Hostel Type Field */}
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Hostel type *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_type')} *</label>
                                         <Dropdown
                                             options={[
-                                                { label: 'Boys', value: 'boys' },
-                                                { label: 'Girls', value: 'girls' }
+                                                { label: t('boys'), value: 'boys' },
+                                                { label: t('girls'), value: 'girls' }
                                             ]}
                                             value={hostelForm.hosteltype}
                                             onChange={(val) => setHostelForm({ ...hostelForm, hosteltype: val })}
-                                            placeholder="Select Type"
+                                            placeholder={t('select_type')}
                                             minWidth="w-full"
                                             triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer"
                                         />
@@ -579,7 +579,7 @@ export default function HostelManagement() {
 
                                     {/* Capacity Field */}
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">Capacity *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('capacity')} *</label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="number"
@@ -601,18 +601,18 @@ export default function HostelManagement() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083561] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
                             >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin cursor-pointer" /> : (editingHostel ? 'Save changes' : 'Save')}
+                                {isSubmitting && <Loader2 size={14} className="animate-spin" />}
+                                {editingHostel ? t('save_changes') : t('save')}
                             </button>
                             <button
                                 type="button"
                                 onClick={handleCancel}
-                                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-primary hover:bg-gray-50 cursor-pointer"
+                                className="px-6 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                             >
-                                Cancel
+                                {t('cancel')}
                             </button>
-
                         </div>
                     </form>
                 </div>
