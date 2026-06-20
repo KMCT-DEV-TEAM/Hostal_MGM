@@ -12,7 +12,7 @@ export default function Profile() {
     const [editingField, setEditingField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, field: null });
 
     const formatRole = (role) => {
@@ -51,7 +51,7 @@ export default function Profile() {
                 return;
             }
         }
-        
+
         setConfirmConfig({ isOpen: true, field });
     };
 
@@ -135,8 +135,8 @@ export default function Profile() {
                                                 autoFocus
                                                 disabled={isSaving}
                                             />
-                                            <button 
-                                                onClick={() => handleOpenConfirm('name')} 
+                                            <button
+                                                onClick={() => handleOpenConfirm('name')}
                                                 disabled={isSaving}
                                                 className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
                                             >
@@ -256,10 +256,7 @@ export default function Profile() {
 
                     {/* Account Settings Section */}
                     <div className="border-b border-gray-100 last:border-0">
-                        <div className="px-6 sm:px-8 py-5 bg-white flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-gray-400" />
-                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('account_settings')}</h3>
-                        </div>
+
 
                         <div className="px-6 sm:px-8 pb-6 text-sm">
                             <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">

@@ -172,7 +172,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
-  const { name, email, phone } = req.body;
+  const { name, email, phone, settings } = req.body;
   const user = await User.findById(req.user.id);
 
   if (!user || !user.isActive) {
@@ -189,6 +189,21 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   if (name) user.name = name;
   if (phone) user.phone = phone;
+
+  if (settings) {
+    if (settings.notifications) {
+      user.settings.notifications = {
+        ...user.settings.notifications,
+        ...settings.notifications
+      };
+    }
+    if (settings.preferences) {
+      user.settings.preferences = {
+        ...user.settings.preferences,
+        ...settings.preferences
+      };
+    }
+  }
 
   await user.save();
 
