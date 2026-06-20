@@ -74,6 +74,16 @@ export async function getProfile() {
   return response.data;
 }
 
+/**
+ * Update the authenticated user's profile.
+ * @param {Object} payload - profile data to update
+ * @returns {Promise<Object>} updated user data
+ */
+export async function updateProfile(payload) {
+  const response = await authApi.updateProfile(payload);
+  return response.data;
+}
+
 const authService = {
   login,
   sendOtp,
@@ -82,6 +92,7 @@ const authService = {
   changePassword,
   logout,
   getProfile,
+  updateProfile,
 };
 
 export default authService;

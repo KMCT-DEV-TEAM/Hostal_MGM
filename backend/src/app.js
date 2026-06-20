@@ -13,6 +13,7 @@ import otpRoutes from "./modules/otp/otp.routes.js";
 import departmentRoutes from "./modules/departments/department.routes.js";
 import courseRoutes from "./modules/courses/course.routes.js";
 import batchRoutes from "./modules/batches/batch.routes.js";
+import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -52,6 +53,7 @@ app.use("/api/super-admin/dashboard", dashboardRoutes);
 app.use("/api/super-admin/hostels", hostelRoutes);
 app.use("/api/super-admin/parents", parentRoutes);
 app.use("/api/super-admin/students", studentRoutes);
+app.use("/api/super-admin/password-requests", passwordRequestRoutes);
 
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/departments", departmentRoutes);

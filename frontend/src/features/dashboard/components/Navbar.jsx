@@ -5,11 +5,47 @@ import bellIcon from "../../../assets/images/dashboard/bell.png"; // adjust path
 import {
     Menu,
     Search,
+    User as UserIcon,
+    Settings,
+    LogOut,
+    ChevronDown
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
 
 function Navbar({ onMenuClick }) {
-    const { user } = useAuthStore();
+    const { user, logout } = useAuthStore();
+    const navigate = useNavigate();
+    const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+    const dropdownRef = React.useRef(null);
     const role = user?.role.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsProfileOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleLogout = () => {
+        setIsProfileOpen(false);
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out of your account.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0A467F',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, log out!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                logout();
+            }
+        });
+    };
 
     return (
         <header className="fixed top-0 left-0 right-0 h-[82px] bg-white border-b border-[#D9D9D985] z-50 flex items-center px-4 md:px-6">
@@ -42,27 +78,69 @@ function Navbar({ onMenuClick }) {
                 </button>
 
                 {/* Profile */}
-                <div className="flex items-center gap-3 cursor-pointer">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">
-                            {user?.name
-                                ? user.name
-                                    .split(' ')
-                                    .map(word => word.charAt(0).toUpperCase())
-                                    .slice(0, 2)
-                                    .join('')
-                                : 'A'}
-                        </span>
+                <div className="relative" ref={dropdownRef}>
+                    <div 
+                        className="flex items-center gap-3 cursor-pointer p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    >
+                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                            <span className="text-white text-sm font-semibold">
+                                {user?.name
+                                    ? user.name
+                                        .split(' ')
+                                        .map(word => word.charAt(0).toUpperCase())
+                                        .slice(0, 2)
+                                        .join('')
+                                    : 'A'}
+                            </span>
+                        </div>
+
+                        <div className="hidden md:block">
+                            <p className="text-sm font-medium text-[#111827]">
+                                {user?.name}
+                            </p>
+                            <p className="text-xs text-[#6B7280]">
+                                {role}
+                            </p>
+                        </div>
+                        <ChevronDown size={16} className={`text-gray-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
                     </div>
 
-                    <div className="hidden md:block">
-                        <p className="text-sm font-medium text-[#111827]">
-                            {user?.name}
-                        </p>
-                        <p className="text-xs text-[#6B7280]">
-                            {role}
-                        </p>
-                    </div>
+                    {/* Dropdown Menu */}
+                    {isProfileOpen && (
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="px-4 py-3 border-b border-gray-50 mb-1">
+                                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                                <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email}</p>
+                            </div>
+                            
+                            <button
+                                onClick={() => { setIsProfileOpen(false); navigate('profile'); }}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors text-left"
+                            >
+                                <UserIcon size={16} />
+                                <span>My Profile</span>
+                            </button>
+                            
+                            <button
+                                onClick={() => { setIsProfileOpen(false); navigate('settings'); }}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors text-left"
+                            >
+                                <Settings size={16} />
+                                <span>Settings</span>
+                            </button>
+                            
+                            <div className="h-px bg-gray-50 my-1.5"></div>
+                            
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
+                            >
+                                <LogOut size={16} />
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
             </div>
