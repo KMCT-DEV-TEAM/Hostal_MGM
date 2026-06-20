@@ -285,7 +285,7 @@ export default function HostelManagement() {
             }));
 
             const isSuccess = exportToExcel(exportData, "Hostels_Export", "Hostels");
-            
+
             if (isSuccess) {
                 showSuccessToast('Export Successful', 'The hostel list has been downloaded.');
             } else {
