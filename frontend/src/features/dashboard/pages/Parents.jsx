@@ -219,7 +219,7 @@ export default function Parents() {
         try {
             // Merge current table filters (like search) with the export modal filters
             const mergedFilters = { ...filters, ...exportFilters };
-            
+
             // Clean up empty string values so they don't corrupt the backend query
             const params = Object.fromEntries(
                 Object.entries(mergedFilters).filter(([, value]) => value !== '')
@@ -227,7 +227,7 @@ export default function Parents() {
 
             // Fetch all matching parents for export using the dedicated export endpoint
             const response = await exportParents(role, params);
-            
+
             const dataToExport = response?.parents || response?.data?.parents || [];
 
             if (dataToExport.length === 0) {
@@ -247,13 +247,13 @@ export default function Parents() {
             }));
 
             const isSuccess = exportToExcel(exportData, "Parents_Export", "Parents");
-            
+
             if (isSuccess) {
                 showSuccessToast('Exported successfully');
             } else {
                 showErrorToast('Export failed', 'Could not generate the Excel file');
             }
-            
+
             setIsExportConfirmOpen(false);
         } catch (err) {
             console.error("Failed to export parents:", err);
@@ -267,8 +267,6 @@ export default function Parents() {
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
             <ParentsHeader
                 selectedIds={selectedIds}
-                parents={parents}
-                onEdit={handleEdit}
                 onActivateSelected={handleActivateSelected}
                 onDeactivateSelected={handleDeactivateSelected}
                 canEdit={canEdit}
@@ -357,7 +355,7 @@ export default function Parents() {
                 message="Are you sure you want to save these changes?"
                 confirmText="Save Changes"
             />
-            
+
             <ConfirmationModal
                 isOpen={isDiscardConfirmOpen}
                 onClose={() => setIsDiscardConfirmOpen(false)}

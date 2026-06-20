@@ -1,7 +1,6 @@
 import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
 
-export default function ParentsHeader({ selectedIds, parents, onEdit, onActivateSelected, onDeactivateSelected, canEdit, canDelete }) {
+export default function ParentsHeader({ selectedIds, onActivateSelected, onDeactivateSelected, canEdit, canDelete }) {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
@@ -9,7 +8,7 @@ export default function ParentsHeader({ selectedIds, parents, onEdit, onActivate
                 <p className="text-xs text-text-secondary mt-1">Manage all Parents</p>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                {selectedIds.length === 1 && (
+                {/* {selectedIds.length === 1 && (
                     <button
                         onClick={() => {
                             const target = parents.find(p => p.id === selectedIds[0]);
@@ -20,7 +19,7 @@ export default function ParentsHeader({ selectedIds, parents, onEdit, onActivate
                         <Pencil className="w-4 h-4" />
                         Edit
                     </button>
-                )}
+                )} */}
 
                 {selectedIds.length > 0 && (
                     <div className="flex items-center gap-2">

@@ -57,7 +57,13 @@ export default function ParentsTable({
                                 <td className="p-4 text-text-secondary"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
                                 <td className="p-4 text-text-secondary"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
                                 <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? "No Student"}</td>
-                                <td className="p-4 text-gray-700 font-medium">{p.relationship?.toUpperCase()}</td>
+                                <td className="p-4 text-text-secondary">
+                                    <div className='border border-gray-300 w-24 px-4 py-1 rounded-md font-medium text-center'>
+                                        {p.relationship
+                                            ? p.relationship.charAt(0).toUpperCase() + p.relationship.slice(1).toLowerCase()
+                                            : ""}
+                                    </div>
+                                </td>
                                 <td className="p-4">
                                     <div className="relative w-fit">
                                         <select
