@@ -165,8 +165,10 @@ export default function Parents() {
                     : parent
             )));
             setSelectedIds([]);
+            showSuccessToast(`Successfully ${targetActive ? 'activated' : 'deactivated'} ${idsToToggle.length} parent(s)`);
         } catch (err) {
             console.error("Failed to update bulk status", err);
+            showErrorToast('Bulk Status Error', err.response?.data?.message || err.message);
         } finally {
             setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
         }
