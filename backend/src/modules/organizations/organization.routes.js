@@ -31,14 +31,14 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   getOrganizations
 );
 
 router.get(
   "/:id",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateOrganizationIdParam,
   getOrganizationById
 );

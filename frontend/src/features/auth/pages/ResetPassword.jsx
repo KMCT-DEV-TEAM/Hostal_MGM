@@ -26,7 +26,7 @@ const ResetPassword = () => {
 
     // Redirect if no reset token
     React.useEffect(() => {
-        if (!resetToken) navigate('/forgot-password');
+        if (!resetToken) navigate('/forgot-password', { replace: true });
     }, [resetToken, navigate]);
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
@@ -38,7 +38,7 @@ const ResetPassword = () => {
         try {
             await authService.resetPassword({ resetToken, newPassword: data.password });
             showSuccessToast('Password Updated', 'Your password has been successfully reset. Please log in.');
-            navigate('/admin/login'); // Or user/login depending on their role, but typically they can select from the login portal
+            navigate('/user/login', { replace: true });
         } catch (error) {
             showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Failed to reset password.');
         }
@@ -47,9 +47,9 @@ const ResetPassword = () => {
     return (
         <AuthLayout
             leftPanel={<AuthSidebarSteps currentStep={3} />}
-            rightSideClassName="w-full lg:w-1/2 flex flex-col relative min-h-screen lg:min-h-0 bg-background lg:bg-transparent"
+            rightSideClassName="w-full lg:w-1/2 flex flex-col relative bg-background lg:bg-transparent overflow-hidden"
         >
-            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8 min-h-full">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8">
                 <div className="w-full max-w-[480px] flex flex-col items-center">
                     {/* Logo */}
                     <AuthLogo />
@@ -103,8 +103,8 @@ const ResetPassword = () => {
                             </Button>
                         </form>
 
-                        {/* Back to sign in - Desktop Only */}
-                        <BackToSignIn to="/admin/login" />
+                        {/* Back to sign in */}
+                        <BackToSignIn to="/user/login" />
                     </AuthCard>
                 </div>
 

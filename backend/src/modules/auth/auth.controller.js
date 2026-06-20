@@ -5,6 +5,8 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { hashPassword } from "../../utils/hash.js";
 import User from "../users/user.model.js";
+import Student from "../students/student.model.js";
+import Parent from "../parents/parent.model.js";
 import { generateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
 
@@ -17,14 +19,27 @@ const refreshTokenCookieOptions = {
 const login = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
 
-  if (!['super_admin', 'admin'].includes(role)) {
+  if (!['super_admin', 'admin', 'warden', 'student', 'parent'].includes(role)) {
     return sendError(res, 400, "Invalid login portal");
   }
 
-  const user = await findUserForLoginDb(email);
+  let user = null;
+  if (role === 'student') {
+    user = await Student.findOne({ email });
+  } else if (role === 'parent') {
+    user = await Parent.findOne({ email });
+  } else {
+    user = await findUserForLoginDb(email);
+  }
 
   if (!user) {
     return sendError(res, 401, "Invalid credentials");
+  }
+
+  // Inject role for student/parent models that lack it inherently, 
+  // so `generateRefreshToken` correctly embeds it in the JWT
+  if (!user.role) {
+    user.role = role;
   }
 
   // Super admin portal → only super_admin
@@ -63,10 +78,22 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   const decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN);
 
-  const user = await findUserByIdForRefreshDb(decoded.id);
+  let user = null;
+  if (decoded.role === 'student') {
+    user = await Student.findById(decoded.id);
+  } else if (decoded.role === 'parent') {
+    user = await Parent.findById(decoded.id);
+  } else {
+    user = await findUserByIdForRefreshDb(decoded.id);
+  }
 
   if (!user || !user.isActive) {
     return sendError(res, 401, "Invalid token or user deactivated");
+  }
+
+  // Inject role
+  if (!user.role) {
+    user.role = decoded.role;
   }
 
   const accessToken = generateAccessToken(user);
@@ -82,14 +109,26 @@ const logout = asyncHandler(async (req, res) => {
 
 const me = asyncHandler(async (req, res) => {
 
-  const user = await User.findOne({ _id: req.user.id }).select("-password");
+  let user = null;
+  if (req.user.role === 'student') {
+    user = await Student.findById(req.user.id).select("-password");
+  } else if (req.user.role === 'parent') {
+    user = await Parent.findById(req.user.id).select("-password");
+  } else {
+    user = await User.findById(req.user.id).select("-password");
+  }
 
   if (!user || !user.isActive) {
     return sendError(res, 401, "User not found or deactivated");
   }
 
+  // Inject role into response for frontend consistency
+  const userData = user._doc ? { ...user._doc } : { ...user };
+  if (!userData.role) {
+    userData.role = req.user.role;
+  }
 
-  return sendSuccess(res, 200, "Token is valid", { user: user._doc });
+  return sendSuccess(res, 200, "Token is valid", { user: userData });
 });
 
 const changePassword = asyncHandler(async (req, res) => {
@@ -100,7 +139,15 @@ const changePassword = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Old and new password are required");
   }
 
-  const user = await User.findById(userId);
+  let user = null;
+  if (req.user.role === 'student') {
+    user = await Student.findById(userId);
+  } else if (req.user.role === 'parent') {
+    user = await Parent.findById(userId);
+  } else {
+    user = await User.findById(userId);
+  }
+
   if (!user) {
     return sendError(res, 404, "User not found");
   }
@@ -122,7 +169,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) return sendError(res, 400, "Email is required");
 
-  const user = await User.findOne({ email });
+  let user = await User.findOne({ email });
+  if (!user) user = await Student.findOne({ email });
+  if (!user) user = await Parent.findOne({ email });
+
   if (!user) return sendError(res, 404, "No account found with this email");
 
   const otpCode = generateOtp();
@@ -158,7 +208,10 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   try {
     const decoded = jwt.verify(resetToken, process.env.JWT_ACCESS_TOKEN || 'fallback_secret');
-    const user = await User.findOne({ email: decoded.email });
+    let user = await User.findOne({ email: decoded.email });
+    if (!user) user = await Student.findOne({ email: decoded.email });
+    if (!user) user = await Parent.findOne({ email: decoded.email });
+
     if (!user) return sendError(res, 404, "User not found");
 
     const hashedPassword = await hashPassword(newPassword);
