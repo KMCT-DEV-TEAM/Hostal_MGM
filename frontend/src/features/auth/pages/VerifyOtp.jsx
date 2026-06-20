@@ -22,7 +22,7 @@ const VerifyOtp = () => {
 
     // Redirect back if no email
     React.useEffect(() => {
-        if (!email) navigate('/forgot-password');
+        if (!email) navigate('/forgot-password', { replace: true });
     }, [email, navigate]);
 
     const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm({
@@ -46,11 +46,11 @@ const VerifyOtp = () => {
     };
 
     const onSubmit = async (data) => {
-        if (!email) return navigate('/forgot-password');
+        if (!email) return navigate('/forgot-password', { replace: true });
         try {
             const res = await authService.verifyOtp({ email, otp: data.otp });
             showSuccessToast('OTP Verified', 'Please set a new password.');
-            navigate('/reset-password', { state: { resetToken: res.data?.resetToken } });
+            navigate('/reset-password', { state: { resetToken: res.data?.resetToken }, replace: true });
         } catch (error) {
             showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Invalid OTP.');
         }
@@ -59,9 +59,9 @@ const VerifyOtp = () => {
     return (
         <AuthLayout
             leftPanel={<AuthSidebarSteps currentStep={2} />}
-            rightSideClassName="w-full lg:w-1/2 flex flex-col relative min-h-screen lg:min-h-0 bg-background lg:bg-transparent"
+            rightSideClassName="w-full lg:w-1/2 flex flex-col relative bg-background lg:bg-transparent overflow-hidden"
         >
-            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8 min-h-full">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8">
                 <div className="w-full max-w-[480px] flex flex-col items-center">
                     {/* Logo */}
                     <AuthLogo />
@@ -117,8 +117,8 @@ const VerifyOtp = () => {
                             </Button>
                         </form>
 
-                        {/* Back to sign in - Desktop Only */}
-                        <BackToSignIn to="/admin/login" />
+                        {/* Back to sign in */}
+                        <BackToSignIn to="/user/login" />
                     </AuthCard>
                 </div>
 
