@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import authService from '@/services/auth.service';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
 import AuthStepper from '@/features/auth/components/AuthStepper';
@@ -17,13 +20,28 @@ const ResetPassword = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const navigate = useNavigate();
+    const location = useLocation();
+    const resetToken = location.state?.resetToken;
+
+    // Redirect if no reset token
+    React.useEffect(() => {
+        if (!resetToken) navigate('/forgot-password');
+    }, [resetToken, navigate]);
+
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(resetPasswordSchema)
     });
 
-    const onSubmit = (data) => {
-        console.log("Reset Password Data:", data);
-        alert("Password updated successfully!");
+    const onSubmit = async (data) => {
+        if (!resetToken) return;
+        try {
+            await authService.resetPassword({ resetToken, newPassword: data.password });
+            showSuccessToast('Password Updated', 'Your password has been successfully reset. Please log in.');
+            navigate('/admin/login'); // Or user/login depending on their role, but typically they can select from the login portal
+        } catch (error) {
+            showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Failed to reset password.');
+        }
     };
 
     return (
@@ -79,8 +97,9 @@ const ResetPassword = () => {
 
                             <Button
                                 type='submit'
+                                disabled={isSubmitting}
                             >
-                                Update Password
+                                {isSubmitting ? 'Updating...' : 'Update Password'}
                             </Button>
                         </form>
 
