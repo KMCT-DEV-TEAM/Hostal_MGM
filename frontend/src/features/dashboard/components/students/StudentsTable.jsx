@@ -1,13 +1,6 @@
 import React from "react";
 import { Square, CheckSquare, Pencil, Eye, ChevronDown } from "lucide-react";
-
-const COLUMNS = [
-  "Admission No",
-  "Student Name",
-  "Organization",
-  "Hostel",
-  "Status",
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function StudentsTable({
   students,
@@ -24,6 +17,16 @@ export default function StudentsTable({
   onStatusChange,
   statusLoadingIds = [],
 }) {
+  const { t } = useTranslation();
+  
+  const COLUMNS = [
+    t('admission_no'),
+    t('student_name'),
+    t('organization'),
+    t('hostel'),
+    t('status'),
+  ];
+
   const showActionsColumn = canEdit || !!onViewClick;
   const getStudentId = (student) => student._id ?? student.id;
   const getHostelName = (hostel) => {
@@ -40,7 +43,7 @@ export default function StudentsTable({
   if (loading)
     return (
       <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-sm text-gray-400">
-        Loading students...
+        Loading...
       </div>
     );
   if (error)
@@ -52,7 +55,7 @@ export default function StudentsTable({
   if (students.length === 0)
     return (
       <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-sm text-gray-400">
-        No students found.
+        {t('no_records_found')}
       </div>
     );
 
@@ -70,12 +73,12 @@ export default function StudentsTable({
                 )}
               </button>
             </th>
-            {COLUMNS.filter((h) => h !== 'Organization' || showOrganizationColumn).map((h) => (
+            {COLUMNS.filter((h) => h !== t('organization') || showOrganizationColumn).map((h) => (
               <th key={h} className="p-4">
                 {h}
               </th>
             ))}
-            {showActionsColumn && <th className="p-4">Action</th>}
+            {showActionsColumn && <th className="p-4">{t('action')}</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50 text-sm">
@@ -125,8 +128,8 @@ export default function StudentsTable({
                         <option value={status}>Updating...</option>
                       ) : (
                         <>
-                          <option value="Active">Active</option>
-                          <option value="Inactive">Inactive</option>
+                          <option value="Active">{t('active')}</option>
+                          <option value="Inactive">{t('inactive')}</option>
                         </>
                       )}
                     </select>

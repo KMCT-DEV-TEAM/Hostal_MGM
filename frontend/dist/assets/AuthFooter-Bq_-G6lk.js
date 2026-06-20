@@ -1,1 +1,0 @@
-import{j as t}from"./index-DYaeN-EZ.js";const o=({className:r="mt-auto pt-5 pb-2"})=>t.jsx("div",{className:r,children:t.jsx("p",{className:"text-[11px] text-gray-400",children:"Powered by kmct.org"})});export{o as A};

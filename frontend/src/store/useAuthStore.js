@@ -7,6 +7,7 @@ export const useAuthStore = create((set) => ({
   user: null,
   loading: true,
   authenticated: false,
+  updateUser: (user) => set({ user }),
 
   init: async () => {
     try {

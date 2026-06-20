@@ -1,5 +1,6 @@
 import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Mail } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ParentsTable({
     parents,
@@ -11,6 +12,7 @@ export default function ParentsTable({
     onView,
     statusLoadingIds = []
 }) {
+    const { t } = useTranslation();
     return (
         <div className="hidden md:block h-full w-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
             <table className="w-full text-start relative whitespace-nowrap">
@@ -24,10 +26,10 @@ export default function ParentsTable({
                                 }
                             </button>
                         </th>
-                        {['Name', 'Email', 'Phone', 'Student', 'Relation', 'Status'].map(h => (
-                            <th key={h} className="p-4 text-start">{h}</th>
+                        {[t('name'), t('email'), t('phone'), t('student'), t('relation'), t('status')].map((h, i) => (
+                            <th key={i} className="p-4 text-start">{h}</th>
                         ))}
-                        <th className="p-4 text-center">Action</th>
+                        <th className="p-4 text-center">{t('action')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
@@ -56,8 +58,13 @@ export default function ParentsTable({
                                 </td>
                                 <td className="p-4 text-text-secondary"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
                                 <td className="p-4 text-text-secondary"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
-                                <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? "No Student"}</td>
-                                <td className="p-4 text-gray-700 font-medium">{p.relationship?.toUpperCase()}</td>
+                                <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? t('no_student')}</td>
+                                <td className="p-4 text-gray-700 font-medium">
+                                    {p.relationship?.toLowerCase() === 'father' ? t('father') :
+                                    p.relationship?.toLowerCase() === 'mother' ? t('mother') :
+                                    p.relationship?.toLowerCase() === 'guardian' ? t('guardian') : 
+                                    p.relationship?.toUpperCase()}
+                                </td>
                                 <td className="p-4">
                                     <div className="relative w-fit">
                                         <select
@@ -74,8 +81,8 @@ export default function ParentsTable({
                                                     : 'bg-red-50 text-danger border-red-200/60'
                                                 }`}
                                         >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
+                                            <option value="Active">{t('active')}</option>
+                                            <option value="Inactive">{t('inactive')}</option>
                                         </select>
 
                                         <ChevronDown

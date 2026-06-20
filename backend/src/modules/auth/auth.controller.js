@@ -92,6 +92,39 @@ const me = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Token is valid", { user: user._doc });
 });
 
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, phone, email, settings } = req.body;
+  const user = await User.findById(req.user.id);
+  
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
+
+  if (email && email !== user.email) {
+    if (user.role === 'super_admin') {
+      return sendError(res, 403, "Super Admin cannot change their email");
+    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return sendError(res, 400, "Email is already in use");
+    }
+    user.email = email;
+  }
+
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone;
+  if (settings !== undefined) {
+    user.settings = { ...user.settings, ...settings };
+  }
+
+  await user.save();
+
+  const userObj = { ...user._doc };
+  delete userObj.password;
+
+  return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
+});
+
 const changePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const userId = req.user.id;
@@ -179,5 +212,6 @@ export {
   changePassword,
   forgotPassword,
   verifyResetOtp,
-  resetPassword
+  resetPassword,
+  updateProfile,
 }
