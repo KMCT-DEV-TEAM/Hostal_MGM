@@ -13,6 +13,8 @@ export default function ParentsTable({
     onStatusChangeRequest,
     onEdit,
     onView,
+    canEdit,
+    canDelete,
     statusLoadingIds = []
 }) {
     const { t } = useTranslation();
@@ -21,32 +23,34 @@ export default function ParentsTable({
             <table className="w-full text-start relative whitespace-nowrap">
                 <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
                     <tr className="text-text-primary text-sm font-semibold border-b border-gray-50">
-                        <th className="text-gray-300 p-4 w-12">
-                            <button onClick={onSelectAll} className="focus:outline-none flex items-center justify-center">
-                                {selectedIds.length > 0 && selectedIds.length === parents.length ?
-                                    <CheckSquare className="h-5 w-5 text-primary" /> :
-                                    <Square className="h-5 w-5 text-gray-300 hover:text-gray-400" />
-                                }
-                            </button>
-                        </th>
-                        {[t('name'), t('email'), t('phone'), t('student'), t('relation'), t('status')].map((h, i) => (
+                        {(canEdit || canDelete) && (
+                            <th className="text-gray-300 p-4 w-12">
+                                <button onClick={onSelectAll} className="focus:outline-none flex items-center justify-center">
+                                    {selectedIds.length > 0 && selectedIds.length === parents.length ?
+                                        <CheckSquare className="h-5 w-5 text-primary" /> :
+                                        <Square className="h-5 w-5 text-gray-300 hover:text-gray-400" />
+                                    }
+                                </button>
+                            </th>
+                        )}
+                        {[t('name'), t('email'), t('phone'), t('student'), t('relation'), ...(canEdit ? [t('status')] : [])].map((h, i) => (
                             <th key={i} className="p-4 text-start">{h}</th>
                         ))}
-                        <th className="p-4 text-center">{t('action')}</th>
+                        {canEdit && <th className="p-4 text-center">{t('action')}</th>}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
                     {loading ? (
-                        <TableSkeletonLoader columns={8} />
+                        <TableSkeletonLoader columns={canEdit ? 8 : (canDelete ? 6 : 5)} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="8" className="p-8 text-center text-red-500">
+                            <td colSpan={canEdit ? 8 : (canDelete ? 6 : 5)} className="p-8 text-center text-red-500">
                                 {error}
                             </td>
                         </tr>
                     ) : parents.length === 0 ? (
                         <tr>
-                            <td colSpan="8" className="p-8 text-center text-gray-500">
+                            <td colSpan={canEdit ? 8 : (canDelete ? 6 : 5)} className="p-8 text-center text-gray-500">
                                 No parents match the selected filter.
                             </td>
                         </tr>
@@ -57,15 +61,16 @@ export default function ParentsTable({
                             const isLoading = statusLoadingIds.includes(rowId);
                             return (
                                 <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    <td className="p-4">
-                                        <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
-                                            {isSelected ?
-                                                <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
-                                                <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-
-                                            }
-                                        </button>
-                                    </td>
+                                    {(canEdit || canDelete) && (
+                                        <td className="p-4">
+                                            <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
+                                                {isSelected ?
+                                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
+                                                    <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                                }
+                                            </button>
+                                        </td>
+                                    )}
                                     <td
                                         className="p-4 flex items-center gap-3 font-medium text-text-secondary cursor-pointer hover:text-primary transition-colors"
                                         onClick={() => onView && onView(p)}
@@ -85,40 +90,43 @@ export default function ParentsTable({
                                                 : ""}
                                         </div>
                                     </td>
-                                    <td className="p-4">
-                                        <div className="relative w-fit">
-                                            <select
-                                                value={p.isActive ? 'Active' : 'Inactive'}
-                                                onChange={(e) =>
-                                                    onStatusChangeRequest?.(
-                                                        p,
-                                                        e.target.value === 'Active'
-                                                    )
-                                                }
-                                                className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
+                                    {canEdit && (
+                                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                                            <div className="relative w-fit">
+                                                <select
+                                                    value={p.isActive ? 'Active' : 'Inactive'}
+                                                    onChange={(e) =>
+                                                        onStatusChangeRequest?.(
+                                                            p,
+                                                            e.target.value === 'Active'
+                                                        )
+                                                    }
+                                                    className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
         ${p.isActive
-                                                        ? 'bg-green-50 text-success border-green-200/60'
-                                                        : 'bg-red-50 text-danger border-red-200/60'
-                                                    }`}
-                                            >
-                                                <option value="Active">Active</option>
-                                                <option value="Inactive">Inactive</option>
-                                            </select>
-
-                                            <ChevronDown
-                                                size={14}
-                                                className={`absolute right-2.5 top-1.5 pointer-events-none
-                                                ${p.isActive === "true" ? "text-success" : "text-danger"}`}
-                                            />
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex text-primary items-center justify-center">
-                                            <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
+                                                            ? 'bg-green-50 text-success border-green-200/60'
+                                                            : 'bg-red-50 text-danger border-red-200/60'
+                                                        }`}
+                                                >
+                                                    <option value="Active">Active</option>
+                                                    <option value="Inactive">Inactive</option>
+                                                </select>
+                                                <ChevronDown
+                                                    size={14}
+                                                    className={`absolute right-2.5 top-1.5 pointer-events-none
+                                                        ${p.isActive === "true" || p.isActive === true ? "text-success" : "text-danger"}`}
+                                                />
+                                            </div>
+                                        </td>
+                                    )}
+                                    {canEdit && (
+                                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex text-primary items-center justify-center">
+                                                <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         }))}

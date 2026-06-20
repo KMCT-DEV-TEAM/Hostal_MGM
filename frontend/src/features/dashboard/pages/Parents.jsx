@@ -279,6 +279,7 @@ export default function Parents() {
                     onFilterChange={handleFilterChange}
                     onExport={handleExport}
                     canCreate={canCreate}
+                    canEdit={canEdit}
                 />
 
                 <ParentsTable
@@ -304,6 +305,8 @@ export default function Parents() {
                     onSelect={handleSelect}
                     onEdit={handleEdit}
                     onView={handleView}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                     statusLoadingIds={statusLoadingIds}
                 />
 
