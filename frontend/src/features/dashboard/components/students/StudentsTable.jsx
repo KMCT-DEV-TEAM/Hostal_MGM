@@ -34,6 +34,16 @@ export default function StudentsTable({
   onStatusChange,
   statusLoadingIds = [],
 }) {
+  const { t } = useTranslation();
+  
+  const COLUMNS = [
+    t('admission_no'),
+    t('student_name'),
+    t('organization'),
+    t('hostel'),
+    t('status'),
+  ];
+
   const showActionsColumn = canEdit || !!onViewClick;
   const getStudentId = (s) => s._id ?? s.id;
 
@@ -281,7 +291,7 @@ export default function StudentsTable({
                       {isSelected ? (
                         <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                       ) : (
-                        <Square className="w-5 h-5" />
+                        <Square className="w-5 h-5" />n
                       )}
                     </button>
                   </div>

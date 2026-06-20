@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
@@ -66,6 +67,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     editingStudent?.organizationId || "",
   );
   const [hostelId, setHostelId] = useState(editingStudent?.hostelId || "");
+
 
   // Course -> Department -> Batch cascade
   const [courses, setCourses] = useState([]);
@@ -228,6 +230,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     );
 
     if (editingStudent) {
+
       // These fields are never editable from this form; strip before validating/saving.
       delete rawPayload.email;
       delete rawPayload.studentOtp;

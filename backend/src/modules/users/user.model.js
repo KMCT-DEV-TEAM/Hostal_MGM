@@ -48,6 +48,17 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    settings: {
+      notifications: {
+        emailAlerts: { type: Boolean, default: true },
+        smsAlerts: { type: Boolean, default: false }
+      },
+      preferences: {
+        theme: { type: String, default: "light" },
+        language: { type: String, default: "en" }
+      }
+    },
   },
   {
     timestamps: true,

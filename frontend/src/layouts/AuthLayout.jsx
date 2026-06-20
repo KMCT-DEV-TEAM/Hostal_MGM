@@ -4,7 +4,7 @@ const AuthLayout = ({
     rightSideClassName = "w-full lg:w-1/2 bg-background-secondary flex items-center justify-center p-6" 
 }) => {
     return (
-        <div className="min-h-screen flex font-sans bg-background">
+        <div className="h-screen w-full flex font-sans bg-background overflow-hidden">
             {/* Left Side */}
             <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
                 {/* Decorative circles */}
