@@ -16,4 +16,8 @@ router.post("/forgot-password", forgotPassword);
 router.post("/verify-reset-otp", verifyResetOtp);
 router.post("/reset-password", resetPassword);
 
+import { verifyEmailForReset, submitPasswordRequest } from "../passwordRequests/passwordRequest.controller.js";
+router.post("/verify-email", verifyEmailForReset);
+router.post("/password-request", submitPasswordRequest);
+
 export default router;

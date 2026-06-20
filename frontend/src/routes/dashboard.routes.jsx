@@ -14,8 +14,6 @@ import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagemen
 import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
-
-
 export const dashboardRoutes = [
 
     {

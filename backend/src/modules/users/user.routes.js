@@ -115,14 +115,14 @@ router.post(
 router.get(
   "/wardens",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   getWardens
 );
 
 router.get(
   "/wardens/:id",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateWardenIdParam,
   getWardenById
 );
