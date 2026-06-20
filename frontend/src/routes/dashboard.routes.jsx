@@ -11,6 +11,8 @@ import HostelManagement from '@/features/dashboard/pages/HostelManagement';
 import BatchManagement from '@/features/dashboard/pages/BatchManagement';
 import CourseManagement from '@/features/dashboard/pages/CourseManagement';
 import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagement';
+import Profile from '@/features/dashboard/pages/Profile';
+import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
 
 export const dashboardRoutes = [
@@ -111,6 +113,23 @@ export const dashboardRoutes = [
         ],
         element: Maintenance
     },
+    {
+        path: 'profile',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Profile
+    },
+    {
+        path: 'settings',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Settings
 
     {
         path: 'password-request',

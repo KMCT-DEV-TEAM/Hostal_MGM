@@ -13,6 +13,7 @@ import otpRoutes from "./modules/otp/otp.routes.js";
 import departmentRoutes from "./modules/departments/department.routes.js";
 import courseRoutes from "./modules/courses/course.routes.js";
 import batchRoutes from "./modules/batches/batch.routes.js";
+import notificationRoutes from "./modules/notifications/notification.routes.js";
 import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
@@ -68,6 +69,8 @@ app.use("/api/admin/parents", parentRoutes);
 app.use("/api/warden", wardenRoutes);
 app.use("/api/warden/students", studentRoutes);
 app.use("/api/warden/parents", parentRoutes);
+
+app.use("/api/notifications", notificationRoutes);
 
 app.use(errorMiddleware);
 

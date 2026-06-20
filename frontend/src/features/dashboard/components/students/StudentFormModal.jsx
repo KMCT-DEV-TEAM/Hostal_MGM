@@ -6,8 +6,10 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getHostels } from '@/services/hostel.service';
 import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function StudentFormModal({ editingStudent, onClose, onSave }) {
+    const { t } = useTranslation();
     const [studentEmail, setStudentEmail] = useState(editingStudent?.email || '');
     const [parentEmail, setParentEmail] = useState('');
     const [studentOtp, setStudentOtp] = useState('');
@@ -163,24 +165,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <Modal
                 isOpen={true}
                 onClose={onClose}
-                title="Edit Student"
+                title={t('edit_student')}
                 maxWidth="max-w-4xl"
                 asForm={true}
                 onSubmit={handleSubmit}
                 footer={
                     <>
                         <button type="submit" className="px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs hover:bg-[#0A437A]/90 transition-colors">
-                            Save Changes
+                            {t('save_changes')}
                         </button>
                         <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-200 rounded-lg text-xs hover:bg-gray-50 transition-colors">
-                            Cancel
+                            {t('cancel')}
                         </button>
                     </>
                 }
             >
                 {/* Example of a controlled input field */}
                 <div>
-                    <label className="block text-xs mb-1.5 font-medium">Full Name *</label>
+                    <label className="block text-xs mb-1.5 font-medium">{t('full_name')} *</label>
                     <input
                         name="name"
                         defaultValue={editingStudent?.name || ''}
@@ -190,23 +192,23 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 </div>
                 <div className="grid grid-cols-2 gap-6 mt-6">
                     <div>
-                        <label className="block text-xs mb-1.5 font-medium">Email</label>
+                        <label className="block text-xs mb-1.5 font-medium">{t('email_address')}</label>
                         <input name="email" type="email" defaultValue={editingStudent?.email || ''} className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" />
                     </div>
                     <div>
-                        <label className="block text-xs mb-1.5 font-medium">Phone</label>
+                        <label className="block text-xs mb-1.5 font-medium">{t('phone_number')}</label>
                         <input name="phone" defaultValue={editingStudent?.phone || ''} className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" />
                     </div>
                     <div>
-                        <label className="block text-xs mb-1.5 font-medium">Course</label>
+                        <label className="block text-xs mb-1.5 font-medium">{t('course')}</label>
                         <input name="course" defaultValue={editingStudent?.course || ''} className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" />
                     </div>
                     <div>
-                        <label className="block text-xs mb-1.5 font-medium">Department</label>
+                        <label className="block text-xs mb-1.5 font-medium">{t('department')}</label>
                         <input name="department" defaultValue={editingStudent?.department || ''} className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" />
                     </div>
                     <div className="col-span-2">
-                        <label className="block text-xs mb-1.5 font-medium">Address</label>
+                        <label className="block text-xs mb-1.5 font-medium">{t('full_address')}</label>
                         <textarea
                             name="address"
                             defaultValue={editingStudent?.address || ''}
@@ -224,17 +226,17 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         <Modal
             isOpen={true}
             onClose={onClose}
-            title="Add New Student"
-            subtitle="Fill in the details to manually create a new Student"
+            title={t('add_student')}
+            subtitle={t('add_student_desc')}
             maxWidth="max-w-4xl"
             asForm={true}
             onSubmit={handleSubmit}
             footer={
                 <>
                     <button type="submit" disabled={saving} className="px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#0A437A]/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
                     </button>
-                    <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">{t('cancel')}</button>
                 </>
             }
         >
@@ -279,24 +281,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 )}
                 {/* Basic Info */}
                 <section>
-                    <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
-                    <h5 className='text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200'>Basic contact information of the student</h5>
+                    <h3 className="text-[14px] font-medium text-primary">{t('basic_info')}</h3>
+                    <h5 className='text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200'>{t('admin_basic_info_desc')}</h5>
                     <div className="grid grid-cols-2 gap-6">
-                        <div><label className="block text-xs mb-1.5 font-medium">Admission No *</label><input name="studentId" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Enter the student id" /></div>
-                        <div><label className="block text-xs mb-1.5 font-medium">Full Name *</label><input name="name" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Enter your full name" /></div>
-                        <div><label className="block text-xs mb-1.5 font-medium">Gender *</label><select name="gender" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
-                        <div><label className="block text-xs mb-1.5 font-medium">Date Of Birth *</label><input name="dob" type="date" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('admission_no')} *</label><input name="studentId" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Enter the student id" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('full_name')} *</label><input name="name" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Enter your full name" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('gender')} *</label><select name="gender" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"><option value="">{t('select_gender')}</option><option value="male">{t('male')}</option><option value="female">{t('female')}</option><option value="other">{t('other')}</option></select></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('date_of_birth')} *</label><input name="dob" type="date" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary" /></div>
                     </div>
                 </section>
 
                 {/* Academic Information */}
                 <section>
-                    <h3 className="text-[14px] font-medium text-primary ">Academic Information</h3>
-                    <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">Academic information of the student</h5>
+                    <h3 className="text-[14px] font-medium text-primary ">{t('academic_info')}</h3>
+                    <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">{t('academic_info_desc')}</h5>
                     <div className="grid grid-cols-2 gap-6">
                         {role === ROLES.SUPER_ADMIN ? (
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">Organization *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('organization')} *</label>
                                 <select
                                     name="organizationId"
                                     required
@@ -316,11 +318,11 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                         ) : (
                             <input type="hidden" name="organizationId" value={organizationId} />
                         )}
-                        <div><label className="block text-xs mb-1.5 font-medium">Course *</label><input name="course" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Course" /></div>
-                        <div><label className="block text-xs mb-1.5 font-medium">Department *</label><input name="department" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Department" /></div>
-                        <div><label className="block text-xs mb-1.5 font-medium">Academic Year *</label><input name="academicYear" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="2024-2025" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('course')} *</label><input name="course" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Course" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('department')} *</label><input name="department" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="Department" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium">{t('academic_year')} *</label><input name="academicYear" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" placeholder="2024-2025" /></div>
                         <div className="col-span-2">
-                            <label className="block text-xs mb-1.5 font-medium">Assign Hostel</label>
+                            <label className="block text-xs mb-1.5 font-medium">{t('assign_hostel')}</label>
                             <select
                                 name="hostelId"
                                 value={hostelId}
@@ -342,11 +344,11 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 {/* Contact & Address */}
                 <section className="w-full">
                     <div className='w-full'>
-                        <h3 className="text-[14px] font-medium text-primary">Contact Information</h3>
-                        <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">Contact information of the student</h5>
+                        <h3 className="text-[14px] font-medium text-primary">{t('contact_info')}</h3>
+                        <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200">{t('contact_info_desc')}</h5>
                         <div className='flex w-full justify-between gap-6'>
                             <div className="col-span-2 w-[50%]">
-                                <label className="block text-xs font-medium text-black mb-1">Phone Number *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -362,7 +364,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                                 </div>
                             </div>
                             <div className="col-span-2 w-[50%]">
-                                <label className="block text-xs font-medium text-black mb-1">Email Address *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('email_address')} *</label>
                                 <div className="flex gap-2">
                                     <input
                                         name="email"
@@ -382,10 +384,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                                         disabled={sendingOtpFor === 'student' || !studentEmail}
                                         className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                     >
-                                        {sendingOtpFor === 'student' ? 'Sending...' : 'Verify'}
+                                        {sendingOtpFor === 'student' ? 'Sending...' : t('verify')}
                                     </button>
                                 </div>
-                                {emailVerified.student && <p className="text-xs text-green-600 mt-1">Student email verified</p>}
+                                {emailVerified.student && <p className="text-xs text-green-600 mt-1">{t('verified')}</p>}
                             </div>
                         </div>
                     </div>
@@ -393,9 +395,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 </section>
 
                 <section>
-                    <h3 className="text-[14px] font-medium text-primary">Address Information</h3>
-                    <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200 ">Address information of the student</h5>
-                    <label className="block text-xs mb-1.5 font-medium">Full Address *</label>
+                    <h3 className="text-[14px] font-medium text-primary">{t('address_info')}</h3>
+                    <h5 className="text-xs font-medium text-text-secondary mb-4 pb-2 border-b border-gray-200 ">{t('address_info_desc')}</h5>
+                    <label className="block text-xs mb-1.5 font-medium">{t('full_address')} *</label>
                     <textarea
                         name="address"
                         className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
@@ -406,14 +408,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
                 {/* Parent Information */}
                 <section>
-                    <h3 className="text-sm w-full font-medium text-primary mb-4 pb-2 border-b border-gray-200 ">Parent Information</h3>
+                    <h3 className="text-sm w-full font-medium text-primary mb-4 pb-2 border-b border-gray-200 ">{t('parent_info')}</h3>
                     <div className="grid grid-cols-2 w-full gap-6">
-                        <div><label className="block text-xs mb-1.5 font-medium text-black">Full Name *</label><input name="parentName" required placeholder="Enter the name" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" /></div>
-                        <div><label className="block text-xs mb-1.5 font-medium text-black">Relation *</label><select name="relationship" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"><option value="">Select</option><option value="father">Father</option><option value="mother">Mother</option><option value="guardian">Guardian</option></select></div>
+                        <div><label className="block text-xs mb-1.5 font-medium text-black">{t('full_name')} *</label><input name="parentName" required placeholder="Enter the name" className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary" /></div>
+                        <div><label className="block text-xs mb-1.5 font-medium text-black">{t('relation')} *</label><select name="relationship" required className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"><option value="">Select</option><option value="father">{t('father')}</option><option value="mother">{t('mother')}</option><option value="guardian">{t('guardian')}</option></select></div>
                     </div>
                     <div className='flex w-full justify-between gap-6 mt-6'>
                         <div className="col-span-2 w-[50%]">
-                            <label className="block text-xs font-medium text-black mb-1">Phone Number *</label>
+                            <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} *</label>
                             <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
                                 <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black">
                                     <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -429,7 +431,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                             </div>
                         </div>
                         <div className="col-span-2 w-[50%]">
-                            <label className="block text-xs font-medium text-black mb-1">Email Address *</label>
+                            <label className="block text-xs font-medium text-black mb-1">{t('email_address')} *</label>
                             <div className="flex gap-2">
                                 <input
                                     name="parentEmail"
@@ -449,10 +451,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                                     disabled={sendingOtpFor === 'parent' || !parentEmail}
                                     className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {sendingOtpFor === 'parent' ? 'Sending...' : 'Verify'}
+                                    {sendingOtpFor === 'parent' ? 'Sending...' : t('verify')}
                                 </button>
                             </div>
-                            {emailVerified.parent && <p className="text-xs text-green-600 mt-1">Parent email verified</p>}
+                            {emailVerified.parent && <p className="text-xs text-green-600 mt-1">{t('verified')}</p>}
                         </div>
                     </div>
                     <input type="hidden" name="parentOtp" value={parentOtp} />

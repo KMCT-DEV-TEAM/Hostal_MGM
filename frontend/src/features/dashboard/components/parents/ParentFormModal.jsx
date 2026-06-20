@@ -6,6 +6,7 @@ import OtpInput from "@/components/ui/OtpInput";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addParentSchema, editParentSchema } from "@/features/dashboard/validation/parentSchema";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ParentFormModal({
   studentId,
@@ -13,6 +14,7 @@ export default function ParentFormModal({
   onClose,
   onSave,
 }) {
+  const { t } = useTranslation();
   const isEdit = !!editingParent;
   const role = useAuthStore((s) => s.user?.role);
   const [students, setStudents] = useState([]);
@@ -125,9 +127,9 @@ export default function ParentFormModal({
       <Modal
         isOpen
         onClose={onClose}
-        title={isEdit ? "Edit Parent" : "Add New Parent"}
+        title={isEdit ? t('edit_parent') : t('add_parent')}
         titleSize="text-lg"
-        subtitle="Edit the details of parent"
+        subtitle={t('add_parent_desc')}
         maxWidth="max-w-xl"
         asForm
         onSubmit={handleSubmit(onSubmit)}
@@ -139,7 +141,7 @@ export default function ParentFormModal({
               disabled={isSubmitting}
               className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t('cancel')}
             </button>
   
             <button
@@ -148,7 +150,7 @@ export default function ParentFormModal({
               className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {isEdit ? "Save Changes" : "Save"}
+              {isEdit ? t('save_changes') : t('save')}
             </button>
           </div>
         }
@@ -157,7 +159,7 @@ export default function ParentFormModal({
           {/* Full Name */}
           <div className={isEdit ? "col-span-2" : ""}>
             <label className="block mb-1.5 text-xs font-medium">
-              Full Name <span className="text-red-500">*</span>
+              {t('full_name')} <span className="text-red-500">*</span>
             </label>
   
             <input
@@ -173,7 +175,7 @@ export default function ParentFormModal({
           {/* Phone */}
           <div>
             <label className="block mb-1.5 text-xs font-medium">
-              Phone Number <span className="text-red-500">*</span>
+              {t('phone_number')} <span className="text-red-500">*</span>
             </label>
   
             <div className={`flex h-10 border rounded-md overflow-hidden transition-colors ${
@@ -202,7 +204,7 @@ export default function ParentFormModal({
           {/* Relation */}
           <div>
             <label className="block mb-1.5 text-xs font-medium">
-                Relation <span className="text-red-500">*</span>
+                {t('relation')} <span className="text-red-500">*</span>
             </label>
   
             <select
@@ -212,9 +214,9 @@ export default function ParentFormModal({
               }`}
             >
               <option value="">Select Relation</option>
-              <option value="father">Father</option>
-              <option value="mother">Mother</option>
-              <option value="guardian">Guardian</option>
+              <option value="father">{t('father')}</option>
+              <option value="mother">{t('mother')}</option>
+              <option value="guardian">{t('guardian')}</option>
             </select>
             <ErrorMessage error={errors.relation} />
           </div>
@@ -223,7 +225,7 @@ export default function ParentFormModal({
           {!isEdit && !studentId && (
               <div className="col-span-2">
                   <label className="block mb-1.5 text-xs font-medium">
-                      Linked Student <span className="text-red-500">*</span>
+                      {t('linked_student')} <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -234,7 +236,7 @@ export default function ParentFormModal({
                       disabled={loadingStudents}
                   >
                       <option value="">
-                          {loadingStudents ? "Loading students..." : "Select Student"}
+                          {loadingStudents ? "Loading students..." : t('select_student')}
                       </option>
                       {students.map(student => (
                           <option key={student._id || student.id} value={student._id || student.id}>
@@ -250,7 +252,7 @@ export default function ParentFormModal({
           {!isEdit && (
               <div className="col-span-2">
                 <label className="block mb-1.5 text-xs font-medium">
-                  Email Address <span className="text-red-500">*</span>
+                  {t('email_address')} <span className="text-red-500">*</span>
                 </label>
       
                 <div className="flex gap-2">
@@ -274,7 +276,7 @@ export default function ParentFormModal({
                       disabled={!watchEmail || sendingOtp || emailVerified}
                       className="px-4 bg-primary text-white rounded-md text-xs font-medium disabled:opacity-50 min-w-[80px]"
                   >
-                      {sendingOtp ? "Sending..." : emailVerified ? "Verified" : "Verify"}
+                      {sendingOtp ? "Sending..." : emailVerified ? t('verified') : t('verify')}
                   </button>
                 </div>
                 
@@ -295,7 +297,7 @@ export default function ParentFormModal({
           <Modal
             isOpen
             onClose={() => setVerifyModalOpen(false)}
-            title="Verify Parent Email"
+            title={t('verify_parent_email')}
             maxWidth="max-w-md"
           >
             <div className="space-y-4">

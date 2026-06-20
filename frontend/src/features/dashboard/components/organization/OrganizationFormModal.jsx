@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const OrganizationFormModal = ({
     isModalOpen,
@@ -11,6 +12,7 @@ const OrganizationFormModal = ({
     handleCancel,
     isSubmitting
 }) => {
+    const { t } = useTranslation();
     if (!isModalOpen) return null;
 
     return (
@@ -36,10 +38,10 @@ const OrganizationFormModal = ({
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {isEditMode ? 'Edit Organization' : 'Add New Organization'}
+                            {isEditMode ? t('edit_org') : t('add_org')}
                         </h2>
                         <p className="text-xs text-gray-400 mt-1">
-                            {isEditMode ? 'Update the details for this organization' : 'Fill in the details to manually create a new organization'}
+                            {isEditMode ? t('edit_org_desc') : t('add_org_desc')}
                         </p>
                     </div>
                     <button
@@ -53,22 +55,22 @@ const OrganizationFormModal = ({
 
                 <div className="space-y-8">
                     <section>
-                        <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
-                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>Basic details of the organization</h5>
+                        <h3 className="text-[14px] font-medium text-primary">{t('basic_info')}</h3>
+                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_info_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-xs mb-1.5 font-medium">Organization Name *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('org_name')} *</label>
                                 <input
                                     name="name"
                                     value={formData.name}
                                     onChange={handleInputChange}
                                     required
                                     className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="Enter organization name"
+                                    placeholder={t('org_name_placeholder')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">Code *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('code')} *</label>
                                 <input
                                     name="code"
                                     value={formData.code}
@@ -79,7 +81,7 @@ const OrganizationFormModal = ({
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">Organization Number *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('org_number')} *</label>
                                 <input
                                     name="organisationNumber"
                                     value={formData.organisationNumber}
@@ -93,11 +95,11 @@ const OrganizationFormModal = ({
                     </section>
 
                     <section>
-                        <h3 className="text-[14px] font-medium text-primary">Contact & Address</h3>
-                        <h5 className="text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200">Contact information of the organization</h5>
+                        <h3 className="text-[14px] font-medium text-primary">{t('contact_address')}</h3>
+                        <h5 className="text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200">{t('contact_address_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-black mb-1">Email Address *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('email_address')} *</label>
                                 <input
                                     name="email"
                                     value={formData.email}
@@ -109,7 +111,7 @@ const OrganizationFormModal = ({
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-black mb-1">Phone Number *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -135,14 +137,14 @@ const OrganizationFormModal = ({
                                 </div>
                             </div>
                             <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-xs font-medium text-black mb-1">Full Address *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('full_address')} *</label>
                                 <textarea
                                     name="address"
                                     value={formData.address}
                                     onChange={handleInputChange}
                                     required
                                     rows="3"
-                                    placeholder="Enter complete address"
+                                    placeholder={t('full_address_placeholder')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                                 />
                             </div>
@@ -156,14 +158,14 @@ const OrganizationFormModal = ({
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083660] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                            {isEditMode ? 'Save changes' : 'Save'}
+                            {isEditMode ? t('save_changes') : t('save')}
                         </button>
                         <button
                             type="button"
                             onClick={handleCancel}
                             className="px-6 py-2.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                         >
-                            Cancel
+                            {t('cancel')}
                         </button>
 
                     </div>
