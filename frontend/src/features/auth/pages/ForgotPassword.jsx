@@ -17,7 +17,7 @@ import { forgotPasswordSchema } from '@/features/auth/validation/forgotPasswordS
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
-    const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(forgotPasswordSchema)
     });
 
@@ -25,23 +25,18 @@ const ForgotPassword = () => {
         try {
             await authService.sendOtp({ email: data.email });
             showSuccessToast('OTP Sent', 'Check your email for the verification code.');
-            navigate('/verify-otp', { state: { email: data.email }, replace: true });
+            navigate('/verify-otp', { state: { email: data.email } });
         } catch (error) {
-            const errorMsg = error?.message || 'Please try again.';
-            showErrorToast('Failed', errorMsg);
-            setError('email', {
-                type: 'manual',
-                message: errorMsg
-            });
+            showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Please try again.');
         }
     };
 
     return (
         <AuthLayout
             leftPanel={<AuthSidebarSteps currentStep={1} />}
-            rightSideClassName="w-full lg:w-1/2 flex flex-col relative bg-background lg:bg-transparent overflow-hidden"
+            rightSideClassName="w-full lg:w-1/2 flex flex-col relative min-h-screen lg:min-h-0 bg-background lg:bg-transparent"
         >
-            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8 min-h-full">
                 <div className="w-full max-w-[480px] flex flex-col items-center">
                     {/* Logo */}
                     <AuthLogo />
@@ -74,8 +69,8 @@ const ForgotPassword = () => {
                             </Button>
                         </form>
 
-                        {/* Back to sign in */}
-                        <BackToSignIn onClick={() => navigate(-1)} />
+                        {/* Back to sign in - Desktop Only */}
+                        <BackToSignIn />
                     </AuthCard>
                 </div>
 

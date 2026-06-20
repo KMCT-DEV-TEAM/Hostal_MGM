@@ -40,12 +40,8 @@ const getAllOrganizationsDb = async () => {
   return await Organization.find().populate("adminId", "name email isActive");
 };
 
-const getPaginatedOrganizationsDb = async (page = 1, limit = 10, search = "", status = "All", adminOrganizationId = null) => {
+const getPaginatedOrganizationsDb = async (page = 1, limit = 10, search = "", status = "All") => {
   const query = {};
-
-  if (adminOrganizationId) {
-    query._id = adminOrganizationId;
-  }
 
   if (search) {
     query.$or = [

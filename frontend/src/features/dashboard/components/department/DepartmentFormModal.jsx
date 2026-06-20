@@ -1,7 +1,6 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const DepartmentFormModal = ({
     isModalOpen,
@@ -14,7 +13,6 @@ const DepartmentFormModal = ({
     isSubmitting,
     courses
 }) => {
-    const { t } = useTranslation();
     if (!isModalOpen) return null;
 
     return (
@@ -40,10 +38,10 @@ const DepartmentFormModal = ({
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {isEditMode ? t('edit_department') : t('add_department')}
+                            {isEditMode ? 'Edit Department' : 'Add New Department'}
                         </h2>
                         <p className="text-xs text-gray-400 mt-1">
-                            {isEditMode ? t('edit_department_desc') : t('add_department_desc')}
+                            {isEditMode ? 'Update the details for this Department' : 'Fill in the details to manually create a new Department'}
                         </p>
                     </div>
                     <button
@@ -57,11 +55,11 @@ const DepartmentFormModal = ({
 
                 <div className="space-y-8">
                     <section>
-                        <h3 className="text-[14px] font-medium text-primary">{t('basic_info')}</h3>
-                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_department_desc')}</h5>
+                        <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
+                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>Basic details of the Department</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">{t('department_name')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">Department Name *</label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -72,7 +70,7 @@ const DepartmentFormModal = ({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">{t('department_code')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">Department Code *</label>
                                 <input
                                     name="code"
                                     value={formData.code}
@@ -85,7 +83,7 @@ const DepartmentFormModal = ({
                         </div>
                         <div className="grid grid-cols-1 gap-6 mt-6">
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">{t('course')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">Course *</label>
                                 <Dropdown
                                     options={courses ? courses.map(course => ({
                                         label: `${course.name} (${course.code})`,
@@ -108,14 +106,14 @@ const DepartmentFormModal = ({
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083660] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                            {isEditMode ? t('save_changes') : t('save')}
+                            {isEditMode ? 'Save changes' : 'Save'}
                         </button>
                         <button
                             type="button"
                             onClick={handleCancel}
                             className="px-6 py-2.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                         >
-                            {t('cancel')}
+                            Cancel
                         </button>
 
                     </div>

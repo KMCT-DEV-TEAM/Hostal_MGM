@@ -88,15 +88,9 @@ export const setDefaultGuardianBySuperAdmin = async (payload) => {
   return res.data;
 }
 
-export async function getParentsByWarden(params) {
-  const response = await parentApi.getParentsByWarden(params);
-  return response.data;
-}
-
 const PARENT_FETCHERS = {
   [ROLES.ADMIN]: getParentsByAdmin,
   [ROLES.SUPER_ADMIN]: getParentsBySuperAdmin,
-  [ROLES.WARDEN]: getParentsByWarden,
 };
 
 const PARENT_EXPORT_FETCHERS = {

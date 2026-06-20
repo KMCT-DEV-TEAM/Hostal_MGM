@@ -41,7 +41,6 @@ import {
     ChevronDown,
     KeyRound,
 } from "lucide-react";
-import { useTranslation } from "@/hooks/useTranslation";
 
 
 const attendanceData = [
@@ -158,7 +157,6 @@ const quickSummary = [
 ];
 
 function DashboardOverview() {
-    const { t } = useTranslation();
     const { user } = useAuthStore();
     const [period, setPeriod] = useState("This Year");
     const [dashboardStats, setDashboardStats] = useState({
@@ -355,7 +353,7 @@ function DashboardOverview() {
                 {/* Left Section */}
                 <div>
                     <h1 className="text-2xl font-bold text-black mb-1">
-                        {t('dashboard')}
+                        Dashboard
                     </h1>
 
                     <p className="text-sm text-gray-500">

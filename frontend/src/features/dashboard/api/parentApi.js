@@ -58,9 +58,6 @@ const parentApi = {
       defaultGuardian: true,
     }),
 
-  getParentsByWarden: (params) =>
-    api.get("/warden/parents/warden", { params }),
-
 };
 
 export default parentApi;
