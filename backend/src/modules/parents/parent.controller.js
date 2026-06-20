@@ -234,7 +234,7 @@ const getParentsBySuperAdmin = asyncHandler(async (req, res) => {
 const getParentsByWarden = asyncHandler(async (req, res) => {
   const wardenId = req.user.id;
   const wardenHostels = await Hostel.find({ wardens: wardenId }).select('_id').lean();
-  
+
   if (!wardenHostels.length) {
     return sendSuccess(res, 200, "Parents fetched successfully", {
       parents: [],
@@ -246,7 +246,7 @@ const getParentsByWarden = asyncHandler(async (req, res) => {
 
   const result = await getParentsService({
     hostelIds,
-    query: req.query,
+    query: { ...req.query, isActive: 'true' },
   });
 
   return sendSuccess(res, 200, "Parents fetched successfully", result);

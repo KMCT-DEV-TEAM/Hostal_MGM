@@ -13,7 +13,7 @@ export default function Modal({
   asForm = false,
   onSubmit,
   avatar,
-  zIndex = 9999,
+  zIndex = 50,
 }) {
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -21,7 +21,7 @@ export default function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center md:p-4  p-1" 
+      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center md:p-4  p-1"
       style={{ zIndex }}
     >
       <Wrapper
