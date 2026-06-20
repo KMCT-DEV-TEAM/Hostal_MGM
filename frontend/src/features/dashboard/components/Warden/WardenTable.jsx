@@ -2,6 +2,7 @@ import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, Phone, Mail, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function WardenTable({
     paginatedWardens,
@@ -17,6 +18,7 @@ export default function WardenTable({
     error,
     availableHostels = []
 }) {
+    const { t } = useTranslation();
     return (
         <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-left border-collapse">
@@ -32,12 +34,12 @@ export default function WardenTable({
                             </button>
                         </th>
 
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Name</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Email</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Phone</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Hostel</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Status</th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">Actions</th>
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('name')}</th>
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('email')}</th>
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('phone')}</th>
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('hostel_name')}</th>
+                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('status')}</th>
+                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">{t('actions')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
@@ -49,7 +51,7 @@ export default function WardenTable({
                         </tr>
                     ) : paginatedWardens.length === 0 ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-400">No records found matching your search criteria.</td>
+                            <td colSpan="7" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
                         </tr>
                     ) : (
                         paginatedWardens.map((warden) => {
@@ -117,8 +119,8 @@ export default function WardenTable({
                                             <Dropdown
                                                 minWidth=""
                                                 options={[
-                                                    { value: "Active", label: "Active" },
-                                                    { value: "Inactive", label: "Inactive" }
+                                                    { value: "Active", label: t('active') },
+                                                    { value: "Inactive", label: t('inactive') }
                                                 ]}
                                                 value={warden.status}
                                                 onChange={() => handleStatusChangeClick(warden.id, warden.status)}

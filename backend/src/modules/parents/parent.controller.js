@@ -4,6 +4,8 @@ import { deleteOtpDb, verifyOtpDb } from "../otp/otp.service.js";
 import User from "../users/user.model.js";
 import Parent from "./parent.model.js";
 import mongoose from "mongoose";
+import Student from "../students/student.model.js";
+import Hostel from "../hostels/hostel.model.js";
 import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, exportParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
@@ -229,6 +231,27 @@ const getParentsBySuperAdmin = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Parents fetched successfully", result);
 });
 
+const getParentsByWarden = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const wardenHostels = await Hostel.find({ wardens: wardenId }).select('_id').lean();
+  
+  if (!wardenHostels.length) {
+    return sendSuccess(res, 200, "Parents fetched successfully", {
+      parents: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: req.query.limit || 10 }
+    });
+  }
+
+  const hostelIds = wardenHostels.map(h => h._id);
+
+  const result = await getParentsService({
+    hostelIds,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
 const exportParentsByAdmin = asyncHandler(async (req, res) => {
   const admin = await User.findById(req.user.id)
     .select("organization")
@@ -303,9 +326,18 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Please provide a boolean value for isActive");
   }
 
-  const organizationId = req.user.role === "admin" ? req.user.organization : null;
-  if (req.user.role === "admin" && !organizationId) {
-    return sendError(res, 400, "Admin is not assigned to any organization");
+  let organizationId = null;
+
+  if (req.user.role === "admin") {
+    const admin = await User.findById(req.user.id)
+      .select("organization")
+      .lean();
+
+    if (!admin?.organization) {
+      return sendError(res, 400, "Admin is not assigned to any organization");
+    }
+
+    organizationId = admin.organization.toString();
   }
 
   if (organizationId) {
@@ -334,7 +366,6 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
     }
   );
 });
-
 export {
   createParent,
   updateParent,
@@ -343,6 +374,7 @@ export {
   setDefaultGuardian,
   getParentsByAdmin,
   getParentsBySuperAdmin,
+  getParentsByWarden,
   exportParentsByAdmin,
   exportParentsBySuperAdmin,
   bulkUpdateParentStatus,

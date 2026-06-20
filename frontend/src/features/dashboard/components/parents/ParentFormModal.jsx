@@ -6,6 +6,7 @@ import OtpInput from "@/components/ui/OtpInput";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addParentSchema, editParentSchema } from "@/features/dashboard/validation/parentSchema";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ParentFormModal({
   studentId,
@@ -13,6 +14,7 @@ export default function ParentFormModal({
   onClose,
   onSave,
 }) {
+  const { t } = useTranslation();
   const isEdit = !!editingParent;
   const role = useAuthStore((s) => s.user?.role);
   const [students, setStudents] = useState([]);
@@ -270,6 +272,7 @@ export default function ParentFormModal({
               >
                 {sendingOtp ? "Sending..." : emailVerified ? "Verified" : "Verify"}
               </button>
+
             </div>
 
             <ErrorMessage error={errors.email} />

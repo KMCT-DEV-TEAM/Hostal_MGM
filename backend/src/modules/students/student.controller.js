@@ -95,12 +95,20 @@ const createStudent = asyncHandler(async (req, res) => {
     const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
     const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp);
 
-    if (!isStudentOtpValid || !isParentOtpValid) {
+    if (!isStudentOtpValid ) {
       await session.abortTransaction();
       return sendError(
         res,
         400,
-        "Invalid or expired OTP for student or parent email"
+        "Invalid or expired OTP for student"
+      );
+    }
+     if ( !isParentOtpValid) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Invalid or expired OTP for  parent email"
       );
     }
 
@@ -256,9 +264,18 @@ const bulkUpdateStudentStatus = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Please provide a boolean value for isActive");
   }
 
-  const organizationId = req.user.role === "admin" ? req.user.organization : null;
-  if (req.user.role === "admin" && !organizationId) {
-    return sendError(res, 400, "Admin is not assigned to any organization");
+  let organizationId = null;
+
+  if (req.user.role === "admin") {
+    const admin = await User.findById(req.user.id)
+      .select("organization")
+      .lean();
+
+    if (!admin?.organization) {
+      return sendError(res, 400, "Admin is not assigned to any organization");
+    }
+
+    organizationId = admin.organization.toString();
   }
 
   if (organizationId) {
@@ -285,7 +302,6 @@ const bulkUpdateStudentStatus = asyncHandler(async (req, res) => {
     }
   );
 });
-
 const updateStudentHostelStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { hostelStatus } = req.body;
@@ -449,6 +465,32 @@ const getStudentsByAdmin = asyncHandler(async (req, res) => {
   );
 });
 
+const getStudentsByWarden = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const wardenHostels = await Hostel.find({ wardens: wardenId }).select('_id').lean();
+  
+  if (!wardenHostels.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: req.query.limit || 10 }
+    });
+  }
+
+  const hostelIds = wardenHostels.map(h => h._id);
+
+  const result = await getStudentsService({
+    hostelIds,
+    query: req.query,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Students fetched successfully",
+    result
+  );
+});
+
 const getStudentsBySuperAdmin = asyncHandler(
   async (req, res) => {
     const { organizationId } = req.query;
@@ -496,6 +538,7 @@ export {
   getAdminStats,
   getStudentsByAdmin,
   getStudentsBySuperAdmin,
+  getStudentsByWarden,
   getStudentFilterOptions,
   bulkUpdateStudentStatus,
 };

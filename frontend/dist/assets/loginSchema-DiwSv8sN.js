@@ -1,0 +1,1 @@
+import{p as e,e as a}from"./common-CR0PGCBB.js";import{o as s,_ as r}from"./index-Dhhul54j.js";const l=s({email:a,password:e}),i=s({role:r(["student","parent"],{errorMap:()=>({message:"Please select a valid role"})}),email:a,password:e}),d=s({role:r(["admin","warden"],{errorMap:()=>({message:"Please select a valid role"})}),email:a,password:e});export{d as a,l as s,i as u};

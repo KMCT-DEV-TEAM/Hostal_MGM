@@ -46,32 +46,4 @@ body {
 .swal-toast-container {
   z-index: 999999 !important;
 }
-/* @layer components {
-    .heading-1 {
-        @apply text-[24px] font-semibold text-text-primary;
-    }
-
-    .heading-2 {
-        @apply text-[18px] font-medium text-text-primary;
-    }
-
-    .heading-3 {
-        @apply text-[16px] font-medium text-text-primary;
-    }
-
-    .body-text {
-        @apply text-[14px] font-normal text-text-secondary;
-    }
-
-    .label-text {
-        @apply text-[12px] font-normal text-text-secondary;
-    }
-
-    .micro-text {
-        @apply text-[10px] font-medium text-text-secondary;
-    }
-
-    .font-primary {
-        font-family: var(--font-sans);
-    }
-} */
+

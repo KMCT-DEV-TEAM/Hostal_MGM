@@ -1,5 +1,6 @@
 import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Mail } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ParentsTable({
     parents,
@@ -11,6 +12,7 @@ export default function ParentsTable({
     onView,
     statusLoadingIds = []
 }) {
+    const { t } = useTranslation();
     return (
         <div className="hidden md:block h-full w-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
             <table className="w-full text-start relative whitespace-nowrap">
@@ -24,13 +26,14 @@ export default function ParentsTable({
                                 }
                             </button>
                         </th>
-                        {['Name', 'Email', 'Phone', 'Student', 'Relation', 'Status'].map(h => (
-                            <th key={h} className="p-4 text-start">{h}</th>
+                        {[t('name'), t('email'), t('phone'), t('student'), t('relation'), t('status')].map((h, i) => (
+                            <th key={i} className="p-4 text-start">{h}</th>
                         ))}
-                        <th className="p-4 text-center">Action</th>
+                        <th className="p-4 text-center">{t('action')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
+
                     {parents.length === 0 ? (
                         <tr>
                             <td colSpan="8" className="p-8 text-center text-gray-500">
@@ -49,6 +52,7 @@ export default function ParentsTable({
                                             {isSelected ?
                                                 <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
                                                 <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+
                                             }
                                         </button>
                                     </td>

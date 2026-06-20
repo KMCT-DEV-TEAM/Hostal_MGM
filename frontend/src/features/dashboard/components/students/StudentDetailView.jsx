@@ -42,31 +42,42 @@ const normalizeParent = (parent, fallback = {}) => ({
     parent?.defaultGuardian ?? fallback?.defaultGuardian ?? false,
 });
 
+// Reusable row: stacks on mobile, grid on sm+
+const InfoRow = ({ icon, label, children }) => (
+  <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+    <span className="text-gray-500 flex items-center gap-1.5">
+      {icon}
+      {label}
+    </span>
+    <span className="sm:col-span-2 font-medium text-gray-900">
+      <span className="hidden sm:inline">: </span>
+      {children}
+    </span>
+  </div>
+);
+
 const StudentDetailView = ({ student, onClose, onStudentChange }) => {
   const role = useAuthStore((state) => state.user?.role);
-  const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] =
-    useState(false);
-
+  const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] = useState(false);
   const [isAddParentModalOpen, setIsAddParentModalOpen] = useState(false);
   const [emailChangeTarget, setEmailChangeTarget] = useState(null);
+
   const { handleCreateParent } = useCreateParent((result, payload) => {
     const createdParent = normalizeParent(result?.data, payload);
     const studentId = createdParent.studentId ?? student._id;
-
     onStudentChange?.(studentId, (current) => ({
       ...current,
       parents: [...(current.parents || []), createdParent],
     }));
-
     setIsAddParentModalOpen(false);
   });
+
   if (!student) return null;
-  const organizationName =
-    student.organization?.name || student.organizationId || "N/A";
+
+  const organizationName = student.organization?.name || student.organizationId || "N/A";
   const hostelName = student.hostel?.name || "N/A";
   const parents = Array.isArray(student.parents) ? student.parents : [];
-  const parent =
-    parents.find((parent) => parent.defaultGuardian) ?? parents[0] ?? null;
+  const parent = parents.find((p) => p.defaultGuardian) ?? parents[0] ?? null;
   const isActive = Boolean(student.isActive);
   const canChangeEmail = [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(role);
 
@@ -87,7 +98,6 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
       return;
     }
-
     if (emailChangeTarget?.type === "parent") {
       const parentId = getParentId(emailChangeTarget.parent);
       const currentParentEmail =
@@ -130,186 +140,88 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       subtitle={`Student - ${hostelName}`}
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content Area */}
+        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information Section */}
+
+          {/* Basic Info */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-primary">Basic Info</h3>
-            </div>
-            <p className="text-xs text-gray-400 mb-6">
-              Basic contact information of the Student
-            </p>
+            <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
+            <p className="text-xs text-gray-400 mb-6">Basic contact information of the Student</p>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Badge className="w-4 h-4" />
-                  <span>Admission No</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.studentId || "N/A"}
+              <InfoRow icon={<Badge className="w-4 h-4 text-gray-400" />} label="Admission No">
+                {student.studentId || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<User className="w-4 h-4 text-gray-400" />} label="Full Name">
+                {student.name || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<User className="w-4 h-4 text-gray-400" />} label="Gender">
+                {student.gender || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<Calendar className="w-4 h-4 text-gray-400" />} label="Date Of Birth">
+                {student.dob ? new Date(student.dob).toLocaleDateString("en-IN") : "N/A"}
+              </InfoRow>
+              {/* Status row needs custom layout for the dot */}
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  {isActive
+                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    : <XCircle className="w-4 h-4 text-red-500" />}
+                  Status
                 </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <User className="w-4 h-4" />
-                  <span>Full Name</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.name || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <User className="w-4 h-4" />
-                  <span>Gender</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.gender || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Calendar className="w-4 h-4" />
-                  <span>Date Of Birth</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  :{" "}
-                  {student.dob
-                    ? new Date(student.dob).toLocaleDateString("en-IN")
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  {isActive ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-500" />
-                  )}
-                  <span>Status</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900 flex items-center">
-                  :
-                  <span
-                    className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"} mx-2`}
-                  ></span>
+                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                  <span className="hidden sm:inline">: </span>
+                  <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
                   {isActive ? "Active" : "Inactive"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Academic Information Section */}
+          {/* Academic Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-primary">
-                Academic Information
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 mb-6">
-              Academic details and institutional information
-            </p>
+            <h3 className="text-lg font-semibold text-primary mb-1">Academic Information</h3>
+            <p className="text-xs text-gray-400 mb-6">Academic details and institutional information</p>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Users className="w-4 h-4" />
-                  <span>Gender</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.gender || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Calendar className="w-4 h-4" />
-                  <span>Date of Birth</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  :{" "}
-                  {student.dob
-                    ? new Date(student.dob).toLocaleDateString()
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Building2 className="w-4 h-4" />
-                  <span>Organization</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {organizationName}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <BookOpen className="w-4 h-4" />
-                  <span>Course</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.course || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <FileText className="w-4 h-4" />
-                  <span>Department</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.department || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Calendar className="w-4 h-4" />
-                  <span>Academic Year</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.academicYear || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Home className="w-4 h-4" />
-                  <span>Assigned Hostel</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {hostelName}
-                </span>
-              </div>
+              <InfoRow icon={<Building2 className="w-4 h-4 text-gray-400" />} label="Organization">
+                {organizationName}
+              </InfoRow>
+              <InfoRow icon={<BookOpen className="w-4 h-4 text-gray-400" />} label="Course">
+                {student.course?.name || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<FileText className="w-4 h-4 text-gray-400" />} label="Department">
+                {student.department?.name || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<Users className="w-4 h-4 text-gray-400" />} label="Batch">
+                {student.batch?.name || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<Calendar className="w-4 h-4 text-gray-400" />} label="Academic Year">
+                {student.academicYear || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<Home className="w-4 h-4 text-gray-400" />} label="Assigned Hostel">
+                {hostelName}
+              </InfoRow>
             </div>
           </div>
 
+          {/* Contact Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-primary">
-                Contact Information
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 mb-6">
-              Contact Information of The Student
-            </p>
+            <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
+            <p className="text-xs text-gray-400 mb-6">Contact Information of The Student</p>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Phone className="w-4 h-4" />
-                  <span>Phone No</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.phone || "N/A"}
+              <InfoRow icon={<Phone className="w-4 h-4 text-gray-400" />} label="Phone No">
+                {student.phone || "N/A"}
+              </InfoRow>
+              {/* Email row needs pencil button — custom layout */}
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  Email
                 </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
-                </div>
-
-                <div className="col-span-2 flex items-center justify-between">
+                <div className="sm:col-span-2 flex items-center justify-between gap-2">
                   <span className="font-medium text-gray-900 truncate">
-                    : {student.email || "N/A"}
+                    <span className="hidden sm:inline">: </span>
+                    {student.email || "N/A"}
                   </span>
-
                   {canChangeEmail && (
                     <button
                       type="button"
@@ -320,51 +232,40 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                           currentEmail: student.email || "",
                         })
                       }
-                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer"
+                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
                       aria-label="Change student email"
                     >
-                      <Pencil className="w-4 h-4 flex-shrink-0" />
+                      <Pencil className="w-4 h-4" />
                     </button>
                   )}
                 </div>
               </div>
             </div>
           </div>
-          {/* Address Information Section */}
+
+          {/* Address Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-primary">
-                Address Information
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 mb-6">
-              Current residential address
-            </p>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm items-start">
-                <div className="flex items-start gap-2 text-gray-500 pt-1">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>Full Address</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900 leading-relaxed">
-                  : {student.address || "N/A"}
-                </span>
-              </div>
+            <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
+            <p className="text-xs text-gray-400 mb-6">Current residential address</p>
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-start">
+              <span className="text-gray-500 flex items-start gap-1.5 pt-0.5">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                Full Address
+              </span>
+              <span className="sm:col-span-2 font-medium text-gray-900 leading-relaxed">
+                <span className="hidden sm:inline">: </span>
+                {student.address || "N/A"}
+              </span>
             </div>
           </div>
 
-          {/* Parent Information Section */}
+          {/* Parent Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-primary">
-                  Parent Information
-                </h3>
-                <p className="text-xs text-gray-400 mt-1">
-                  Primary parent/guardian contact details
-                </p>
+                <h3 className="text-lg font-semibold text-primary">Parent Information</h3>
+                <p className="text-xs text-gray-400 mt-1">Primary parent/guardian contact details</p>
               </div>
-
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setIsAddParentModalOpen(true)}
@@ -373,7 +274,6 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                   <Plus className="w-4 h-4" />
                   Add Parent
                 </Button>
-
                 <Button
                   variant="outline"
                   onClick={() => setIsDefaultParentModalOpen(true)}
@@ -384,43 +284,26 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
               </div>
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <User className="w-4 h-4" />
-                  <span>Parent Name</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {parent?.parentName || "N/A"}
+              <InfoRow icon={<User className="w-4 h-4 text-gray-400" />} label="Parent Name">
+                {parent?.parentName || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<FileText className="w-4 h-4 text-gray-400" />} label="Relation">
+                {parent?.relationship || "N/A"}
+              </InfoRow>
+              <InfoRow icon={<Phone className="w-4 h-4 text-gray-400" />} label="Phone No">
+                {parent?.phone || parent?.parentPhone || "N/A"}
+              </InfoRow>
+              {/* Parent email with pencil — custom layout */}
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  Email
                 </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <FileText className="w-4 h-4" />
-                  <span>Relation</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {parent?.relationship || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Phone className="w-4 h-4" />
-                  <span>Phone No</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {parent?.phone || parent?.parentPhone || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
-                </div>
-                <div className="col-span-2 flex items-center justify-between">
-                  <span className="col-span-2 font-medium text-gray-900">
-                    : {parent?.email || parent?.parentEmail || "N/A"}
+                <div className="sm:col-span-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-gray-900 truncate">
+                    <span className="hidden sm:inline">: </span>
+                    {parent?.email || parent?.parentEmail || "N/A"}
                   </span>
-
                   {canChangeEmail && parent && (
                     <button
                       type="button"
@@ -429,14 +312,13 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                           type: "parent",
                           parent,
                           subjectName: parent.parentName || "the parent",
-                          currentEmail:
-                            parent.email || parent.parentEmail || "",
+                          currentEmail: parent.email || parent.parentEmail || "",
                         })
                       }
-                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer"
+                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
                       aria-label="Change parent email"
                     >
-                      <Pencil className="w-4 h-4 flex-shrink-0" />
+                      <Pencil className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -446,80 +328,49 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         </div>
 
         {/* Right Summary Sidebar */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+        <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold text-primary">
-              Student Summary
-            </h3>
+            <h3 className="text-lg font-semibold text-primary">Student Summary</h3>
           </div>
           <div className="space-y-4">
-            <div className="flex text-sm gap-3">
-              <div className="w-28 shrink-0 text-gray-500 flex items-center gap-2">
-                <Badge className="w-4 h-4" />
-                <span>Admission No</span>
-              </div>
-              <span className="col-span-2 font-medium text-gray-900">
-                : {student.studentId || "N/A"}
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+              <span className="text-gray-500 flex items-center gap-1.5"><Badge className="w-4 h-4 text-gray-400" /> Admission No</span>
+              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{student.studentId || "N/A"}</span>
+            </div>
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+              <span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Full Name</span>
+              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{student.name || "N/A"}</span>
+            </div>
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+              <span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Gender</span>
+              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{student.gender || "N/A"}</span>
+            </div>
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+              <span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span>
+              <span className="sm:col-span-2 font-medium text-gray-900 break-words"><span className="hidden sm:inline">: </span>{organizationName}</span>
+            </div>
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+              <span className="text-gray-500 flex items-center gap-1.5"><Home className="w-4 h-4 text-gray-400" /> Hostel</span>
+              <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{hostelName}</span>
+            </div>
+            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+              <span className="text-gray-500 flex items-center gap-1.5">
+                {isActive
+                  ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  : <XCircle className="w-4 h-4 text-red-500" />}
+                Status
               </span>
-            </div>
-            <div className="flex text-sm gap-3">
-              <div className="w-28 shrink-0 text-gray-500 flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span>Full Name</span>
-              </div>
-              <span className="col-span-2 font-medium text-gray-900">
-                : {student.name || "N/A"}
-              </span>
-            </div>
-            <div className="flex text-sm gap-3">
-              <div className="w-28 shrink-0 text-gray-500 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                <span>Gender</span>
-              </div>
-              <span className="col-span-2 font-medium text-gray-900">
-                : {student.gender || "N/A"}
-              </span>
-            </div>
-            <div className="flex text-sm gap-3">
-              <div className="w-28 shrink-0 text-gray-500 flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                <span>Organization</span>
-              </div>
-
-              <div className="flex-1 break-words font-medium text-gray-900">
-                : {organizationName}
-              </div>
-            </div>
-            <div className="flex text-sm gap-3">
-              <div className="w-28 shrink-0 text-gray-500 flex items-center gap-2">
-                <Home className="w-4 h-4" />
-                <span>Hostel</span>
-              </div>
-              <span className="col-span-2 font-medium text-gray-900">
-                : {hostelName}
-              </span>
-            </div>
-            <div className="flex text-sm gap-3">
-              <div className="w-28 shrink-0 text-gray-500 flex items-center gap-2">
-                {isActive ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                ) : (
-                  <XCircle className="w-4 h-4 text-red-500" />
-                )}
-                <span>Status</span>
-              </div>
-              <span className="col-span-2 font-medium text-gray-900 flex items-center">
-                :
-                <span
-                  className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"} mx-2`}
-                ></span>
+              <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                <span className="hidden sm:inline">: </span>
+                <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
                 {isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
         </div>
       </div>
+
       {isDefaultParentModalOpen && (
         <SetDefaultParentModal
           parents={parents}
@@ -527,9 +378,9 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
           onDefaultChange={(parentId) => {
             onStudentChange?.(student._id, (current) => ({
               ...current,
-              parents: (current.parents || []).map((parent) => ({
-                ...parent,
-                defaultGuardian: getParentId(parent) === String(parentId),
+              parents: (current.parents || []).map((p) => ({
+                ...p,
+                defaultGuardian: getParentId(p) === String(parentId),
               })),
             }));
           }}

@@ -1,12 +1,18 @@
+
+import mongoose from "mongoose";
+
 const validateCreateStudent = (req, res, next) => {
-  const { 
+  const {
     organizationId,
-    name, 
-    email, 
-    phone, 
-    parentName, 
-    parentEmail, 
-    parentPhone, 
+    courseId,
+    departmentId,
+    batchId,
+    name,
+    email,
+    phone,
+    parentName,
+    parentEmail,
+    parentPhone,
     relationship,
     studentOtp,
     parentOtp,
@@ -20,6 +26,27 @@ const validateCreateStudent = (req, res, next) => {
     return res.status(400).json({
       success: false,
       message: "Invalid organizationId",
+    });
+  }
+
+  if (courseId && !mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid courseId",
+    });
+  }
+
+  if (departmentId && !mongoose.Types.ObjectId.isValid(departmentId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid departmentId",
+    });
+  }
+
+  if (batchId && !mongoose.Types.ObjectId.isValid(batchId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid batchId",
     });
   }
 
@@ -38,8 +65,6 @@ const validateCreateStudent = (req, res, next) => {
   next();
 };
 
-import mongoose from "mongoose";
-
 const validateStudentIdParam = (req, res, next) => {
   const { id } = req.params;
 
@@ -54,17 +79,61 @@ const validateStudentIdParam = (req, res, next) => {
 };
 
 const validateUpdateStudent = (req, res, next) => {
-  const { name, email, phone, gender, dob, course, department, address, status } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    gender,
+    dob,
+    courseId,
+    departmentId,
+    batchId,
+    address,
+    status,
+  } = req.body;
 
-  if (!name && !email && !phone && !gender && !dob && !course && !department && !address && !status) {
+  if (
+    !name &&
+    !email &&
+    !phone &&
+    !gender &&
+    !dob &&
+    !courseId &&
+    !departmentId &&
+    !batchId &&
+    !address &&
+    !status
+  ) {
     return res.status(400).json({
       success: false,
       message: "At least one field must be provided for update",
     });
   }
 
+  if (courseId && !mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid courseId",
+    });
+  }
+
+  if (departmentId && !mongoose.Types.ObjectId.isValid(departmentId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid departmentId",
+    });
+  }
+
+  if (batchId && !mongoose.Types.ObjectId.isValid(batchId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid batchId",
+    });
+  }
+
   next();
 };
+
 
 const validateBulkStudentStatus = (req, res, next) => {
   const { ids, isActive } = req.body;

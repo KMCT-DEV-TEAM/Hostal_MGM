@@ -5,6 +5,7 @@ import {
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function HostelTable({
     hostels,
@@ -19,6 +20,7 @@ export default function HostelTable({
     openEditHostelModal,
     tableContainerRef
 }) {
+    const { t } = useTranslation();
     return (
         <div
             ref={tableContainerRef}
@@ -36,13 +38,13 @@ export default function HostelTable({
                                 )}
                             </button>
                         </th>
-                        <th className="p-4 font-semibold">Hostel Name</th>
-                        <th className="p-4 font-semibold text-start">Email</th>
-                        <th className="p-4 font-semibold text-start">Phone</th>
-                        <th className="p-4 font-semibold text-center">Capacity</th>
-                        <th className="p-4 font-semibold text-center">Students</th>
-                        <th className="p-4 font-semibold text-center">Status</th>
-                        <th className="p-4 font-semibold text-center rounded-tr-xl">Action</th>
+                        <th className="p-4 font-semibold">{t('hostel_name')}</th>
+                        <th className="p-4 font-semibold text-start">{t('email')}</th>
+                        <th className="p-4 font-semibold text-start">{t('phone')}</th>
+                        <th className="p-4 font-semibold text-center">{t('capacity')}</th>
+                        <th className="p-4 font-semibold text-center">{t('students')}</th>
+                        <th className="p-4 font-semibold text-center">{t('status')}</th>
+                        <th className="p-4 font-semibold text-center rounded-tr-xl">{t('action')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-center">
@@ -54,7 +56,7 @@ export default function HostelTable({
                         </tr>
                     ) : hostels.length === 0 ? (
                         <tr>
-                            <td colSpan="8" className="p-8 text-start text-gray-400">No records found matching your search criteria.</td>
+                            <td colSpan="8" className="p-8 text-start text-gray-400">{t('no_records_found')}</td>
                         </tr>
                     ) : (
                         hostels.map((hostel) => {
@@ -113,8 +115,8 @@ export default function HostelTable({
                                             <Dropdown
                                                 minWidth=""
                                                 options={[
-                                                    { value: "Active", label: "Active" },
-                                                    { value: "Inactive", label: "Inactive" }
+                                                    { value: "Active", label: t('active') },
+                                                    { value: "Inactive", label: t('inactive') }
                                                 ]}
                                                 value={hostel.isActive ? "Active" : "Inactive"}
                                                 onChange={() => handleStatusChangeClick(hostel._id, hostel.isActive)}

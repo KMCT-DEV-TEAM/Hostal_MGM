@@ -15,31 +15,38 @@ export default function StudentsToolbar({ canCreate, searchValue = '', onSearch,
     }, [debouncedSearchTerm, onSearch]);
 
     return (
-        <div className="bg-white p-4 rounded-t-xl border border-gray-100 shadow-sm  flex items-center justify-between">
-            <div className="flex gap-3">
-                <div className="relative w-64">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                    <input 
-                        className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm" 
-                        placeholder="Search" 
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-               
+        <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
+            <div className="relative w-full sm:w-auto flex-1 sm:max-w-xs">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+                <input
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none"
+                    placeholder="Search Students..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
-            <div className="flex gap-3">
-                 <button
+
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
+                <button
                     onClick={onFilterClick}
-                    className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-text-secondary hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
                 >
-                    <SlidersHorizontal className="w-4 h-4 text-gray-500" />
+                    <SlidersHorizontal className="w-4 h-4" />
+                    <span className="sm:hidden">Filter</span>
                 </button>
-                <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm">
+
+                <button
+                    onClick={onExport}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                >
                     <Download className="w-4 h-4" /> Export
                 </button>
+
                 {canCreate && (
-                    <button onClick={onAddClick} className="flex items-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm">
+                    <button
+                        onClick={onAddClick}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083561] transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap"
+                    >
                         <Plus className="w-4 h-4" /> Add New
                     </button>
                 )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CourseFormModal = ({
     isModalOpen,
@@ -11,6 +12,7 @@ const CourseFormModal = ({
     handleCancel,
     isSubmitting
 }) => {
+    const { t } = useTranslation();
     if (!isModalOpen) return null;
 
     return (
@@ -36,10 +38,10 @@ const CourseFormModal = ({
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {isEditMode ? 'Edit Course' : 'Add New Course'}
+                            {isEditMode ? t('edit_course') : t('add_course')}
                         </h2>
                         <p className="text-xs text-gray-400 mt-1">
-                            {isEditMode ? 'Update the details for this Course' : 'Fill in the details to manually create a new Course'}
+                            {isEditMode ? t('edit_course_desc') : t('add_course_desc')}
                         </p>
                     </div>
                     <button
@@ -53,11 +55,11 @@ const CourseFormModal = ({
 
                 <div className="space-y-8">
                     <section>
-                        <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
-                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>Basic details of the Course</h5>
+                        <h3 className="text-[14px] font-medium text-primary">{t('basic_info')}</h3>
+                        <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_course_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">Course Name *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('course_name')} *</label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -68,7 +70,7 @@ const CourseFormModal = ({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">Course Code *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('course_code')} *</label>
                                 <input
                                     name="code"
                                     value={formData.code}
@@ -88,14 +90,14 @@ const CourseFormModal = ({
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083660] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                            {isEditMode ? 'Save changes' : 'Save'}
+                            {isEditMode ? t('save_changes') : t('save')}
                         </button>
                         <button
                             type="button"
                             onClick={handleCancel}
                             className="px-6 py-2.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                         >
-                            Cancel
+                            {t('cancel')}
                         </button>
 
                     </div>
