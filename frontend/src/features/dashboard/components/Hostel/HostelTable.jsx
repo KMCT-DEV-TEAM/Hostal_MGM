@@ -1,7 +1,10 @@
 import React from 'react';
 import {
-    Square, CheckSquare, Pencil, Loader2, Mail, Phone, ChevronDown, Users
+    Square, CheckSquare, Pencil, Mail, Phone, ChevronDown, Users, Loader2
 } from 'lucide-react';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function HostelTable({
     hostels,
@@ -44,12 +47,7 @@ export default function HostelTable({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm text-center">
                     {loading ? (
-                        <tr>
-                            <td colSpan="8" className="p-8 text-start text-gray-500">
-                                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
-                                Loading hostels...
-                            </td>
-                        </tr>
+                        <TableSkeletonLoader columns={8} />
                     ) : error ? (
                         <tr>
                             <td colSpan="8" className="p-8 text-start text-red-500">{error}</td>
@@ -111,19 +109,17 @@ export default function HostelTable({
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
-                                        <div className="relative inline-block mx-auto">
-                                            <select
-                                                value={hostel.isActive ? 'Active' : 'Inactive'}
+                                        <div className="relative inline-block w-[105px]">
+                                            <Dropdown
+                                                minWidth=""
+                                                options={[
+                                                    { value: "Active", label: "Active" },
+                                                    { value: "Inactive", label: "Inactive" }
+                                                ]}
+                                                value={hostel.isActive ? "Active" : "Inactive"}
                                                 onChange={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
-                                                className={`appearance-none rounded-lg px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${hostel.isActive
-                                                    ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
-                                                    : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
-                                                    }`}
-                                            >
-                                                <option value="Active">Active</option>
-                                                <option value="Inactive">Inactive</option>
-                                            </select>
-                                            <ChevronDown className={`w-3 h-3 absolute right-2 top-2.5 pointer-events-none ${hostel.isActive ? 'text-green-600' : 'text-red-500'}`} />
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${hostel.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
+                                            />
                                         </div>
                                     </td>
                                     <td className="p-4">
@@ -157,10 +153,7 @@ export default function HostelTable({
                     </div>
                 )}
                 {loading ? (
-                    <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
-                        Loading hostels...
-                    </div>
+                    <MobileSkeletonLoader />
                 ) : error ? (
                     <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
                 ) : hostels.length === 0 ? (

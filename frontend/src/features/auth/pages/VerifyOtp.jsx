@@ -1,6 +1,9 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import authService from '@/services/auth.service';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
 import AuthStepper from '@/features/auth/components/AuthStepper';
@@ -13,14 +16,44 @@ import OtpInput from '@/components/ui/OtpInput';
 import { verifyOtpSchema } from '@/features/auth/validation/verifyOtpSchema';
 
 const VerifyOtp = () => {
-    const { control, handleSubmit, formState: { errors } } = useForm({
+    const navigate = useNavigate();
+    const location = useLocation();
+    const email = location.state?.email;
+
+    // Redirect back if no email
+    React.useEffect(() => {
+        if (!email) navigate('/forgot-password');
+    }, [email, navigate]);
+
+    const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(verifyOtpSchema),
         defaultValues: { otp: '' }
     });
 
-    const onSubmit = (data) => {
-        console.log("Verify OTP Data:", data);
-        alert("OTP Verified successfully!");
+    const [isResending, setIsResending] = React.useState(false);
+
+    const handleResend = async () => {
+        if (!email) return;
+        setIsResending(true);
+        try {
+            await authService.sendOtp({ email });
+            showSuccessToast('OTP Resent', 'Check your email for the new verification code.');
+        } catch (error) {
+            showErrorToast('Failed', error?.response?.data?.message || 'Failed to resend OTP.');
+        } finally {
+            setIsResending(false);
+        }
+    };
+
+    const onSubmit = async (data) => {
+        if (!email) return navigate('/forgot-password');
+        try {
+            const res = await authService.verifyOtp({ email, otp: data.otp });
+            showSuccessToast('OTP Verified', 'Please set a new password.');
+            navigate('/reset-password', { state: { resetToken: res.data?.resetToken } });
+        } catch (error) {
+            showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Invalid OTP.');
+        }
     };
 
     return (
@@ -42,7 +75,7 @@ const VerifyOtp = () => {
                         subtitle={
                             <>
                                 <p className="text-gray-500 text-[13px] lg:text-sm text-center mb-1 max-w-[280px] leading-relaxed">
-                                    A 6-digit code was send to <span className="text-primary font-medium">@usergmail.com</span>
+                                    A 6-digit code was sent to <span className="text-primary font-medium">{email || 'your email'}</span>
                                 </p>
                                 <p className="text-red-500 text-[13px] text-center">
                                     Expires in 10 minutes
@@ -71,15 +104,16 @@ const VerifyOtp = () => {
 
                             <p className="text-center text-[13px] text-text-secondary">
                                 Didn't receive it ?{' '}
-                                <button type="button" className="text-primary font-medium hover:underline">
-                                    Resend the code
+                                <button type="button" onClick={handleResend} disabled={isResending} className="text-primary font-medium hover:underline disabled:opacity-50">
+                                    {isResending ? 'Sending...' : 'Resend the code'}
                                 </button>
                             </p>
 
                             <Button
                                 type='submit'
+                                disabled={isSubmitting}
                             >
-                                Verify
+                                {isSubmitting ? 'Verifying...' : 'Verify'}
                             </Button>
                         </form>
 

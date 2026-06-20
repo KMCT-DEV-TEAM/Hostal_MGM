@@ -1,8 +1,10 @@
 import React from 'react';
 import { Pencil, Mail, Phone, Square, CheckSquare } from 'lucide-react';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 const OrganizationMobileList = ({
     orgs,
+    loading,
     error,
     openModal,
     setSelectedOrganizationDetail,
@@ -27,7 +29,9 @@ const OrganizationMobileList = ({
                     </button>
                 </div>
             )}
-            {error ? (
+            {loading ? (
+                <MobileSkeletonLoader />
+            ) : error ? (
                 <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error}</div>
             ) : orgs.length === 0 ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No organizations match the selected filter.</div>

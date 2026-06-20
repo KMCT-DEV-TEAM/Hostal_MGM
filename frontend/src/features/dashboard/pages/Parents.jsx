@@ -10,7 +10,7 @@ import ParentsTable from '../components/parents/ParentsTable';
 import ParentsMobileList from '../components/parents/ParentsMobileList';
 import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
-import ExportFilterModal from '../components/parents/ExportFilterModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Pagination from '@/components/ui/Pagination';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -375,6 +375,28 @@ export default function Parents() {
                 onClose={() => setIsExportConfirmOpen(false)}
                 onExport={confirmExport}
                 isExporting={isExporting}
+                title="Export Parents Data"
+                fields={[
+                    {
+                        name: "isActive",
+                        label: "Account Status",
+                        options: [
+                            { label: 'All Statuses', value: '' },
+                            { label: 'Active Only', value: 'true' },
+                            { label: 'Inactive Only', value: 'false' },
+                        ]
+                    },
+                    {
+                        name: "relationship",
+                        label: "Relationship",
+                        options: [
+                            { label: 'All Relations', value: '' },
+                            { label: 'Father', value: 'father' },
+                            { label: 'Mother', value: 'mother' },
+                            { label: 'Guardian', value: 'guardian' },
+                        ]
+                    }
+                ]}
             />
         </div>
     );

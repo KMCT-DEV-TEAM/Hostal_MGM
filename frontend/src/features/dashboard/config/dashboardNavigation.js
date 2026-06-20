@@ -11,7 +11,9 @@ import {
     CalendarX,
     UtensilsCrossed,
     BarChart2,
-    KeyRound
+    KeyRound,
+    BookOpen,
+    Layers
 } from 'lucide-react';
 
 import { ROLES } from '@/constants/roles';
@@ -75,6 +77,28 @@ export const DASHBOARD_NAV = {
                     icon: Building,
                     label: 'Hostels',
                     path: '/dashboard/hostels'
+                }
+            ]
+        },
+
+        {
+            section: 'ACADEMICS',
+
+            items: [
+                {
+                    icon: Building2,
+                    label: 'Departments',
+                    path: '/dashboard/departments'
+                },
+                {
+                    icon: Layers,
+                    label: 'Batches',
+                    path: '/dashboard/batches'
+                },
+                {
+                    icon: BookOpen,
+                    label: 'Courses',
+                    path: '/dashboard/courses'
                 }
             ]
         },
@@ -176,6 +200,28 @@ export const DASHBOARD_NAV = {
                     icon: Building,
                     label: 'Hostels',
                     path: '/dashboard/hostels'
+                }
+            ]
+        },
+
+        {
+            section: 'ACADEMICS',
+
+            items: [
+                {
+                    icon: Building2,
+                    label: 'Departments',
+                    path: '/dashboard/departments'
+                },
+                {
+                    icon: Layers,
+                    label: 'Batches',
+                    path: '/dashboard/batches'
+                },
+                {
+                    icon: BookOpen,
+                    label: 'Courses',
+                    path: '/dashboard/courses'
                 }
             ]
         },

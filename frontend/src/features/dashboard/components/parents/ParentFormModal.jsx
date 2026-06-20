@@ -3,6 +3,9 @@ import Modal from "@/components/ui/Modal";
 import { useAuthStore } from "@/store/useAuthStore";
 import { sendOtp } from "@/services/auth.service";
 import OtpInput from "@/components/ui/OtpInput";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { addParentSchema, editParentSchema } from "@/features/dashboard/validation/parentSchema";
 
 export default function ParentFormModal({
   studentId,
@@ -14,10 +17,8 @@ export default function ParentFormModal({
   const role = useAuthStore((s) => s.user?.role);
   const [students, setStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [parentEmail, setParentEmail] = useState(
-    editingParent?.email || editingParent?.parentEmail || "",
-  );
 
+  // OTP State
   const [parentOtp, setParentOtp] = useState("");
   const [otpError, setOtpError] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -25,8 +26,44 @@ export default function ParentFormModal({
   const [verifyOtpValue, setVerifyOtpValue] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
 
-  const sendEmailOtp = async (email) => {
-    if (!email) {
+  const initialEmail = editingParent?.email || editingParent?.parentEmail || "";
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(isEdit ? editParentSchema : addParentSchema),
+    defaultValues: {
+      name: editingParent?.name || editingParent?.parentName || "",
+      email: initialEmail,
+      phone: editingParent?.phone || "",
+      relation: editingParent?.relation || editingParent?.relationship || "",
+      studentId: studentId || "",
+    },
+  });
+
+  const watchEmail = useWatch({ control, name: "email" });
+
+  useEffect(() => {
+    if (!isEdit && role && !studentId) {
+      setLoadingStudents(true);
+      import("@/services/student.service").then(({ getStudents }) => {
+        getStudents(role, { limit: 1000 })
+          .then((data) => {
+            setStudents(data.students || []);
+          })
+          .catch((err) => {
+            console.error("Failed to load students", err);
+          })
+          .finally(() => setLoadingStudents(false));
+      });
+    }
+  }, [isEdit, role, studentId]);
+
+  const sendEmailOtp = async () => {
+    if (!watchEmail) {
       setOtpError("Please enter an email before sending OTP");
       return;
     }
@@ -34,9 +71,7 @@ export default function ParentFormModal({
     try {
       setSendingOtp(true);
       setOtpError("");
-
-      await sendOtp({ email });
-
+      await sendOtp({ email: watchEmail });
       setVerifyModalOpen(true);
       setVerifyOtpValue("");
     } catch (error) {
@@ -56,225 +91,236 @@ export default function ParentFormModal({
     setEmailVerified(true);
     setVerifyModalOpen(false);
   };
-  useEffect(() => {
-    if (!isEdit && role) {
-      setLoadingStudents(true);
-      // Dynamically import to avoid circular dependencies if any
-      import("@/services/student.service").then(({ getStudents }) => {
-        getStudents(role, { limit: 1000 })
-          .then((data) => {
-            setStudents(data.students || []);
-          })
-          .catch((err) => {
-            console.error("Failed to load students", err);
-          })
-          .finally(() => setLoadingStudents(false));
-      });
-    }
-  }, [isEdit, role]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  const onSubmit = (data) => {
     if (!isEdit && !emailVerified) {
       setOtpError("Please verify email first");
       return;
     }
 
-    const formData = new FormData(e.target);
-
     const payload = {
-      parentName: formData.get("name"),
-      phone: formData.get("phone"),
-      relationship: formData.get("relation"),
-      email: parentEmail,
-      parentOtp,
+      parentName: data.name,
+      phone: data.phone,
+      relationship: data.relation,
     };
 
+    if (parentOtp) {
+        payload.parentOtp = parentOtp;
+    }
+
     if (!isEdit) {
-      payload.studentId = studentId || formData.get("studentId");
+      payload.email = data.email;
+      payload.studentId = data.studentId;
     }
 
     onSave?.(payload);
   };
+
+  const ErrorMessage = ({ error }) => {
+    if (!error) return null;
+    return <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error.message}</p>;
+  };
+
   return (
-    <Modal
-      isOpen
-      onClose={onClose}
-      title={isEdit ? "Edit Parent" : "Add New Parent"}
-      titleSize="text-lg"
-      subtitle="Edit the details of parent"
-      maxWidth="max-w-xl"
-      asForm
-      onSubmit={handleSubmit}
-      footer={
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary"
-          >
-            {isEdit ? "Save Changes" : "Save"}
-          </button>
-        </div>
-      }
-    >
-      <div className="grid grid-cols-2 gap-5">
-        {/* Full Name */}
-        <div className={isEdit ? "col-span-2" : ""}>
-          <label className="block mb-1.5 text-xs font-medium">
-            Full Name *
-          </label>
-
-          <input
-            name="name"
-            required
-            defaultValue={
-              editingParent?.name || editingParent?.parentName || ""
-            }
-            placeholder="Enter full name"
-            className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
-          />
-        </div>
-
-        {/* Email - Add only */}
-        {!isEdit && !studentId && (
-          <div>
-            <label className="block mb-1.5 text-xs font-medium">
-              Email Address *
-            </label>
-
-            <input
-              name="email"
-              type="email"
-              required
-              defaultValue={editingParent?.email || ""}
-              placeholder="Enter email address"
-              className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
-            />
-          </div>
-        )}
-
-        {/* Phone */}
-        <div>
-          <label className="block mb-1.5 text-xs font-medium">
-            Phone Number *
-          </label>
-
-          <div className="flex h-10 border border-gray-200 rounded-md overflow-hidden focus-within:border-secondary">
-            <div className="px-3 border-r border-gray-200 flex items-center gap-2 text-xs shrink-0">
-              <img
-                src="https://flagcdn.com/w20/in.png"
-                alt="India"
-                className="w-4 h-3"
-              />
-              +91
-            </div>
-
-            <input
-              name="phone"
-              type="text"
-              required
-              defaultValue={editingParent?.phone || ""}
-              placeholder="00000 00000"
-              className="flex-1 px-3 text-xs outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Relation */}
-        <div>
-          <label className="block mb-1.5 text-xs font-medium">Relation *</label>
-
-          <select
-            name="relation"
-            required
-            defaultValue={
-              editingParent?.relation || editingParent?.relationship || ""
-            }
-            className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
-          >
-            <option value="">Select Relation</option>
-            <option value="father">Father</option>
-            <option value="mother">Mother</option>
-            <option value="guardian">Guardian</option>
-          </select>
-        </div>
-        <div className="col-span-2">
-          <label className="block mb-1.5 text-xs font-medium">
-            Email Address *
-          </label>
-
-          <div className="flex gap-2">
-            <input
-              type="email"
-              required
-              value={parentEmail}
-              onChange={(e) => {
-                setParentEmail(e.target.value);
-                setEmailVerified(false);
-              }}
-              placeholder="Enter email address"
-              className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none focus:border-secondary"
-            />
-
+      <Modal
+        isOpen
+        onClose={onClose}
+        title={isEdit ? "Edit Parent" : "Add New Parent"}
+        titleSize="text-lg"
+        subtitle="Edit the details of parent"
+        maxWidth="max-w-xl"
+        asForm
+        onSubmit={handleSubmit(onSubmit)}
+        footer={
+          <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => sendEmailOtp(parentEmail)}
-              disabled={!parentEmail || sendingOtp}
-              className="px-4 bg-primary text-white rounded-md text-xs"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
             >
-              {sendingOtp ? "Sending..." : "Verify"}
+              Cancel
+            </button>
+  
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {isEdit ? "Save Changes" : "Save"}
             </button>
           </div>
-
-          {emailVerified && (
-            <p className="text-green-600 text-xs mt-1">
-              Email verified successfully
-            </p>
-          )}
-
-          {otpError && <p className="text-red-500 text-xs mt-1">{otpError}</p>}
-        </div>
-      </div>
-
-      {verifyModalOpen && (
-        <Modal
-          isOpen
-          onClose={() => setVerifyModalOpen(false)}
-          title="Verify Parent Email"
-          maxWidth="max-w-md"
-        >
-          <div className="space-y-4">
-            <OtpInput value={verifyOtpValue} onChange={setVerifyOtpValue} />
-
-            <div className="flex justify-between">
-              <button
-                type="button"
-                onClick={() => sendEmailOtp(parentEmail)}
-                className="px-3 py-2 bg-gray-100 rounded-md text-xs"
-              >
-                Resend OTP
-              </button>
-
-              <button
-                type="button"
-                onClick={handleVerifyOtpSubmit}
-                className="px-3 py-2 bg-primary text-white rounded-md text-xs"
-              >
-                Confirm OTP
-              </button>
-            </div>
+        }
+      >
+        <div className="grid grid-cols-2 gap-5">
+          {/* Full Name */}
+          <div className={isEdit ? "col-span-2" : ""}>
+            <label className="block mb-1.5 text-xs font-medium">
+              Full Name <span className="text-red-500">*</span>
+            </label>
+  
+            <input
+              {...register("name")}
+              placeholder="Enter full name"
+              className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors ${
+                errors.name ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+              }`}
+            />
+            <ErrorMessage error={errors.name} />
           </div>
-        </Modal>
-      )}
-    </Modal>
+  
+          {/* Phone */}
+          <div>
+            <label className="block mb-1.5 text-xs font-medium">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+  
+            <div className={`flex h-10 border rounded-md overflow-hidden transition-colors ${
+              errors.phone ? "border-red-300 focus-within:border-red-500 bg-red-50/30" : "border-gray-200 focus-within:border-secondary"
+            }`}>
+              <div className={`px-3 border-r flex items-center gap-2 text-xs shrink-0 ${errors.phone ? "border-red-200" : "border-gray-200"}`}>
+                <img
+                  src="https://flagcdn.com/w20/in.png"
+                  alt="India"
+                  className="w-4 h-3"
+                />
+                +91
+              </div>
+  
+              <input
+                {...register("phone")}
+                type="text"
+                maxLength={10}
+                placeholder="0000000000"
+                className="flex-1 px-3 text-xs outline-none bg-transparent"
+              />
+            </div>
+            <ErrorMessage error={errors.phone} />
+          </div>
+  
+          {/* Relation */}
+          <div>
+            <label className="block mb-1.5 text-xs font-medium">
+                Relation <span className="text-red-500">*</span>
+            </label>
+  
+            <select
+              {...register("relation")}
+              className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${
+                errors.relation ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+              }`}
+            >
+              <option value="">Select Relation</option>
+              <option value="father">Father</option>
+              <option value="mother">Mother</option>
+              <option value="guardian">Guardian</option>
+            </select>
+            <ErrorMessage error={errors.relation} />
+          </div>
+
+          {/* Student Selection - Add only */}
+          {!isEdit && !studentId && (
+              <div className="col-span-2">
+                  <label className="block mb-1.5 text-xs font-medium">
+                      Linked Student <span className="text-red-500">*</span>
+                  </label>
+
+                  <select
+                      {...register("studentId")}
+                      className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${
+                          errors.studentId ? 'border-red-300 focus:border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-secondary'
+                      }`}
+                      disabled={loadingStudents}
+                  >
+                      <option value="">
+                          {loadingStudents ? "Loading students..." : "Select Student"}
+                      </option>
+                      {students.map(student => (
+                          <option key={student._id || student.id} value={student._id || student.id}>
+                              {student.name} ({student.admissionNo})
+                          </option>
+                      ))}
+                  </select>
+                  <ErrorMessage error={errors.studentId} />
+              </div>
+          )}
+  
+          {/* Email Address with OTP Verify */}
+          {!isEdit && (
+              <div className="col-span-2">
+                <label className="block mb-1.5 text-xs font-medium">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+      
+                <div className="flex gap-2">
+                  <input
+                    {...register("email", {
+                        onChange: () => {
+                            setEmailVerified(false);
+                            setOtpError("");
+                        }
+                    })}
+                    type="email"
+                    placeholder="Enter email address"
+                    className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors ${
+                        errors.email ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+                    }`}
+                  />
+      
+                  <button
+                      type="button"
+                      onClick={sendEmailOtp}
+                      disabled={!watchEmail || sendingOtp || emailVerified}
+                      className="px-4 bg-primary text-white rounded-md text-xs font-medium disabled:opacity-50 min-w-[80px]"
+                  >
+                      {sendingOtp ? "Sending..." : emailVerified ? "Verified" : "Verify"}
+                  </button>
+                </div>
+                
+                <ErrorMessage error={errors.email} />
+      
+                {emailVerified && (
+                  <p className="text-green-600 text-[10px] mt-1 font-medium animate-in fade-in">
+                    Email verified successfully
+                  </p>
+                )}
+      
+                {otpError && <p className="text-red-500 text-[10px] mt-1 font-medium animate-in fade-in">{otpError}</p>}
+              </div>
+          )}
+        </div>
+  
+        {verifyModalOpen && (
+          <Modal
+            isOpen
+            onClose={() => setVerifyModalOpen(false)}
+            title="Verify Parent Email"
+            maxWidth="max-w-md"
+          >
+            <div className="space-y-4">
+              <OtpInput value={verifyOtpValue} onChange={setVerifyOtpValue} />
+  
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={sendEmailOtp}
+                  className="px-3 py-2 bg-gray-100 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Resend OTP
+                </button>
+  
+                <button
+                  type="button"
+                  onClick={handleVerifyOtpSubmit}
+                  className="px-3 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
+                >
+                  Confirm OTP
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </Modal>
   );
 }

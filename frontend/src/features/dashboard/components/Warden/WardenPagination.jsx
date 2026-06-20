@@ -9,10 +9,14 @@ export default function WardenPagination({
     setCurrentPage
 }) {
     return (
-        <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 gap-3 sm:gap-0 mt-auto">
+        <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
             <div>
-                Showing {totalWardens === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(currentPage * itemsPerPage, totalWardens)} of {totalWardens} entries
+                <span className="hidden sm:inline">Showing </span>
+                {totalWardens === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
+                <span className="hidden sm:inline"> to </span>
+                <span className="sm:hidden">-</span>
+                {Math.min(currentPage * itemsPerPage, totalWardens)} of {totalWardens}
+                <span className="hidden sm:inline"> entries</span>
             </div>
 
             <div className="flex items-center gap-1">

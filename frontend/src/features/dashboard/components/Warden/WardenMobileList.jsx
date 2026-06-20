@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pencil, Mail, Phone, MapPin, Square, CheckSquare, Loader2 } from 'lucide-react';
-
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 export default function WardenMobileList({
     paginatedWardens,
     selectedIds,
@@ -32,10 +32,7 @@ export default function WardenMobileList({
                 </div>
             )}
             {loading ? (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
-                    Loading wardens...
-                </div>
+                <MobileSkeletonLoader />
             ) : error ? (
                 <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
             ) : paginatedWardens.length === 0 ? (

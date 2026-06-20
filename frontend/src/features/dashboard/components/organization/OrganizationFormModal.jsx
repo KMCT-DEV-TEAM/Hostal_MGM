@@ -55,8 +55,8 @@ const OrganizationFormModal = ({
                     <section>
                         <h3 className="text-[14px] font-medium text-primary">Basic Info</h3>
                         <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>Basic details of the organization</h5>
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-xs mb-1.5 font-medium">Organization Name *</label>
                                 <input
                                     name="name"
@@ -95,7 +95,7 @@ const OrganizationFormModal = ({
                     <section>
                         <h3 className="text-[14px] font-medium text-primary">Contact & Address</h3>
                         <h5 className="text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200">Contact information of the organization</h5>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-xs font-medium text-black mb-1">Email Address *</label>
                                 <input
@@ -118,15 +118,23 @@ const OrganizationFormModal = ({
                                     <input
                                         name="phone"
                                         value={formData.phone}
-                                        onChange={handleInputChange}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, '');
+                                            if (value.length <= 10) {
+                                                handleInputChange({ target: { name: 'phone', value } });
+                                            }
+                                        }}
                                         type="text"
                                         required
+                                        maxLength="10"
+                                        pattern="[0-9]{10}"
+                                        title="Please enter exactly 10 digits"
                                         placeholder="9876543210"
                                         className="w-full px-3 py-2 text-xs outline-none"
                                     />
                                 </div>
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-xs font-medium text-black mb-1">Full Address *</label>
                                 <textarea
                                     name="address"

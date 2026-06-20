@@ -1,5 +1,7 @@
 import React from 'react';
-import { Square, CheckSquare, Pencil, Trash2, Phone, ChevronDown, Mail, Loader2 } from 'lucide-react';
+import { Square, CheckSquare, Pencil, Trash2, Phone, Mail, Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 export default function WardenTable({
     paginatedWardens,
@@ -35,17 +37,12 @@ export default function WardenTable({
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Phone</th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Hostel</th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Status</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Actions</th>
+                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
-                        <tr>
-                            <td colSpan="7" className="p-8 text-start text-gray-500">
-                                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0A437A]" />
-                                Loading wardens...
-                            </td>
-                        </tr>
+                        <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
                             <td colSpan="7" className="p-8 text-start text-red-500">{error}</td>
@@ -100,41 +97,38 @@ export default function WardenTable({
 
                                     <td className="p-4 text-start">
 
-                                        <div className="relative inline-block w-44">
-                                            <select
+                                        <div className="relative w-[145px]">
+                                            <Dropdown
+                                                minWidth=""
+                                                options={[
+                                                    { value: "Not Assigned", label: "Not Assigned" },
+                                                    ...availableHostels.map(h => ({ value: h._id || h, label: h.name || h }))
+                                                ]}
                                                 value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
-                                                onChange={(e) => handleHostelChange(warden.id, e.target.value)}
-                                                className="w-full appearance-none border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-medium bg-white pr-8 focus:outline-none text-gray-700 cursor-pointer hover:border-gray-300 transition-colors"
-                                            >
-                                                <option value="Not Assigned">Not Assigned</option>
-                                                {availableHostels.map(h => (
-                                                    <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                                                onChange={(val) => handleHostelChange(warden.id, val)}
+                                                triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-gray-300 transition-colors"
+                                            />
                                         </div>
                                     </td>
 
                                     <td className="p-4 text-start">
 
-                                        <div className="relative inline-block">
-                                            <select
+                                        <div className="relative inline-block w-[105px]">
+                                            <Dropdown
+                                                minWidth=""
+                                                options={[
+                                                    { value: "Active", label: "Active" },
+                                                    { value: "Inactive", label: "Inactive" }
+                                                ]}
                                                 value={warden.status}
-                                                onChange={(e) => handleStatusChangeClick(warden.id, warden.status)}
-                                                className={`appearance-none rounded-lg px-3 py-1 text-xs pr-7 focus:outline-none border cursor-pointer transition-colors ${warden.status === 'Active'
-                                                    ? 'bg-green-50 text-success border-green-100 hover:bg-green-100/70'
-                                                    : 'bg-red-50 text-danger border-red-100 hover:bg-red-100/70'
-                                                    }`}
-                                            >
-                                                <option value="Active">Active</option>
-                                                <option value="Inactive">Inactive</option>
-                                            </select>
-                                            <ChevronDown className={`w-3 h-3 absolute right-2 top-2.5 pointer-events-none ${warden.status === 'Active' ? 'text-green-600' : 'text-red-500'}`} />
+                                                onChange={() => handleStatusChangeClick(warden.id, warden.status)}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${warden.status === 'Active' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
+                                            />
                                         </div>
                                     </td>
 
                                     <td className="p-4 text-start">
-                                        <div className="flex items-center justify-start gap-3 text-gray-400">
+                                        <div className="flex items-center justify-center gap-3 text-gray-400">
 
                                             <button onClick={() => openEditWardenModal(warden)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
                                                 <Pencil className="w-4 h-4" />
