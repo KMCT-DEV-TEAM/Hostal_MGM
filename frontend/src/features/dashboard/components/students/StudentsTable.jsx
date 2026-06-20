@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const COLUMNS = [
   { key: "admissionNo", label: "Admission No" },

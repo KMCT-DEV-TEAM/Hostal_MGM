@@ -109,6 +109,31 @@ export const dashboardRoutes = [
             ROLES.WARDEN
         ],
         element: Maintenance
+    },
+    {
+        path: 'profile',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Profile
+    },
+    {
+        path: 'settings',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Settings
+    },
+    {
+        path: 'password-request',
+        roles: [
+            ROLES.SUPER_ADMIN
+        ],
+        element: PasswordRequests
     }
 
 ];
