@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, ChevronDown, Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 const AdminFormModal = ({
     activeModal,
@@ -140,18 +141,14 @@ const AdminFormModal = ({
                             <div className="border-b border-gray-100 mb-4" />
                             <label className="block text-[10px] font-medium text-gray-500 mb-1">Assign Organization *</label>
                             <div className="relative">
-                                <select
-                                    className="w-full appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0A437A]"
-                                    value={adminForm.organization || ''}
-                                    onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
-                                    required
-                                >
-                                    <option value="" disabled>Select an Organization</option>
-                                    {organizations.map(org => (
-                                        <option key={org._id} value={org._id}>{org.name}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
+                                <Dropdown
+                                    options={organizations.map(org => ({ value: org._id, label: org.name }))}
+                                    value={adminForm.organization}
+                                    onChange={(val) => setAdminForm({ ...adminForm, organization: val })}
+                                    placeholder="Select an Organization"
+                                    minWidth="w-full"
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                />
                             </div>
                         </section>
                     )}

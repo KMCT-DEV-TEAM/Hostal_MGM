@@ -1,6 +1,9 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import authService from '@/services/auth.service';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSidebarSteps from '@/features/auth/components/AuthSidebarSteps';
 import AuthStepper from '@/features/auth/components/AuthStepper';
@@ -13,13 +16,19 @@ import Button from '@/components/ui/Button';
 import { forgotPasswordSchema } from '@/features/auth/validation/forgotPasswordSchema';
 
 const ForgotPassword = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const navigate = useNavigate();
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(forgotPasswordSchema)
     });
 
-    const onSubmit = (data) => {
-        console.log("Forgot Password Data:", data);
-        alert("Verification code sent successfully!");
+    const onSubmit = async (data) => {
+        try {
+            await authService.sendOtp({ email: data.email });
+            showSuccessToast('OTP Sent', 'Check your email for the verification code.');
+            navigate('/verify-otp', { state: { email: data.email } });
+        } catch (error) {
+            showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Please try again.');
+        }
     };
 
     return (
@@ -54,8 +63,9 @@ const ForgotPassword = () => {
 
                             <Button
                                 type='submit'
+                                disabled={isSubmitting}
                             >
-                                Send verification code
+                                {isSubmitting ? 'Sending...' : 'Send verification code'}
                             </Button>
                         </form>
 
