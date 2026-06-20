@@ -7,7 +7,7 @@ import {
   createStudent,
   toggleStudentStatus,
   bulkUpdateStudentStatus,
-  updateStudent,
+  updateStudentByRole,
 } from "@/services/student.service";
 import StudentsTable from "../components/students/StudentsTable";
 import StudentsHeader from "../components/students/StudentsHeader";
@@ -213,14 +213,17 @@ export default function Students() {
   };
 
   const handleSaveStudent = async (payload) => {
+
+    console.log(payload)
     if (editingStudent) {
-      await updateStudent(getStudentId(editingStudent), payload);
+      await updateStudentByRole(role, getStudentId(editingStudent), payload);
     } else {
       await createStudent(payload);
     }
 
     setActiveModal(null);
     setEditingStudent(null);
+
     refetch();
   };
 
@@ -371,7 +374,13 @@ export default function Students() {
       <ConfirmationModal
         isOpen={!!pendingConfirm}
         onClose={() => setPendingConfirm(null)}
-        onConfirm={() => pendingConfirm?.confirmAction?.()}
+        onConfirm={async () => {
+          try {
+            await pendingConfirm?.confirmAction?.();
+          } finally {
+            setPendingConfirm(null);
+          }
+        }}
         title={pendingConfirm?.title}
         message={pendingConfirm?.message}
         confirmText={pendingConfirm?.confirmText}

@@ -95,12 +95,20 @@ const createStudent = asyncHandler(async (req, res) => {
     const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
     const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp);
 
-    if (!isStudentOtpValid || !isParentOtpValid) {
+    if (!isStudentOtpValid ) {
       await session.abortTransaction();
       return sendError(
         res,
         400,
-        "Invalid or expired OTP for student or parent email"
+        "Invalid or expired OTP for student"
+      );
+    }
+     if ( !isParentOtpValid) {
+      await session.abortTransaction();
+      return sendError(
+        res,
+        400,
+        "Invalid or expired OTP for  parent email"
       );
     }
 
