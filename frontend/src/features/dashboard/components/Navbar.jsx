@@ -65,7 +65,7 @@ function Navbar({ onMenuClick }) {
 
             {/* Right Section */}
             <div className="flex items-center ml-auto gap-5">
-                
+
 
                 {/* Notification */}
                 <button className="relative">
@@ -79,7 +79,7 @@ function Navbar({ onMenuClick }) {
 
                 {/* Profile */}
                 <div className="relative" ref={dropdownRef}>
-                    <div 
+                    <div
                         className="flex items-center gap-3 cursor-pointer p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                     >
@@ -109,11 +109,8 @@ function Navbar({ onMenuClick }) {
                     {/* Dropdown Menu */}
                     {isProfileOpen && (
                         <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200">
-                            <div className="px-4 py-3 border-b border-gray-50 mb-1">
-                                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                                <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email}</p>
-                            </div>
-                            
+
+
                             <button
                                 onClick={() => { setIsProfileOpen(false); navigate('profile'); }}
                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors text-left"
@@ -121,17 +118,10 @@ function Navbar({ onMenuClick }) {
                                 <UserIcon size={16} />
                                 <span>My Profile</span>
                             </button>
-                            
-                            <button
-                                onClick={() => { setIsProfileOpen(false); navigate('settings'); }}
-                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors text-left"
-                            >
-                                <Settings size={16} />
-                                <span>Settings</span>
-                            </button>
-                            
+
+
                             <div className="h-px bg-gray-50 my-1.5"></div>
-                            
+
                             <button
                                 onClick={handleLogout}
                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
