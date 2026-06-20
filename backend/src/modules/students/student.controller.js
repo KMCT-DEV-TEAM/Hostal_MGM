@@ -449,6 +449,32 @@ const getStudentsByAdmin = asyncHandler(async (req, res) => {
   );
 });
 
+const getStudentsByWarden = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const wardenHostels = await Hostel.find({ wardens: wardenId }).select('_id').lean();
+  
+  if (!wardenHostels.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: req.query.limit || 10 }
+    });
+  }
+
+  const hostelIds = wardenHostels.map(h => h._id);
+
+  const result = await getStudentsService({
+    hostelIds,
+    query: req.query,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Students fetched successfully",
+    result
+  );
+});
+
 const getStudentsBySuperAdmin = asyncHandler(
   async (req, res) => {
     const { organizationId } = req.query;
@@ -496,6 +522,7 @@ export {
   getAdminStats,
   getStudentsByAdmin,
   getStudentsBySuperAdmin,
+  getStudentsByWarden,
   getStudentFilterOptions,
   bulkUpdateStudentStatus,
 };

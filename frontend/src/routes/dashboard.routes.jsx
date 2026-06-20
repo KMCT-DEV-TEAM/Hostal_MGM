@@ -13,6 +13,7 @@ import CourseManagement from '@/features/dashboard/pages/CourseManagement';
 import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagement';
 import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
+import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
 
 export const dashboardRoutes = [
 
@@ -129,6 +130,13 @@ export const dashboardRoutes = [
             ROLES.WARDEN
         ],
         element: Settings
+
+    {
+        path: 'password-request',
+        roles: [
+            ROLES.SUPER_ADMIN
+        ],
+        element: PasswordRequests
     }
 
 ];

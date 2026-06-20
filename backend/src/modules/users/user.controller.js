@@ -295,7 +295,21 @@ const getWardens = asyncHandler(async (req, res) => {
     const status = req.query.status;
     const search = req.query.search;
     
-    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit, status, search);
+    let additionalQuery = {};
+
+    if (req.user.role === 'admin') {
+      if (!req.user.organization) {
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+      // Find all hostels under the admin's organization
+      const adminHostels = await Hostel.find({ organizationId: req.user.organization }).select("wardens");
+      const wardenIds = adminHostels.reduce((acc, hostel) => acc.concat(hostel.wardens), []);
+      
+      // Additional filter to only fetch these wardens
+      additionalQuery = { _id: { $in: wardenIds } };
+    }
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit, status, search, additionalQuery);
 
     const wardenIds = users.map(u => u._id);
     const hostels = await Hostel.find({ wardens: { $in: wardenIds } });
@@ -325,7 +339,18 @@ const getWardenById = asyncHandler(async (req, res) => {
       return sendError(res, 400, "Invalid Warden ID");
     }
 
-    const warden = await getUserByIdAndRoleDb(id, "warden");
+    let additionalQuery = {};
+
+    if (req.user.role === 'admin') {
+      if (!req.user.organization) {
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+      const adminHostels = await Hostel.find({ organizationId: req.user.organization }).select("wardens");
+      const wardenIds = adminHostels.reduce((acc, hostel) => acc.concat(hostel.wardens), []);
+      additionalQuery = { _id: { $in: wardenIds } };
+    }
+
+    const warden = await getUserByIdAndRoleDb(id, "warden", additionalQuery);
 
     if (!warden) {
       return sendError(res, 404, "Warden not found");

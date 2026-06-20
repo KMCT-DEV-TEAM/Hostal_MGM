@@ -105,10 +105,15 @@ export async function bulkStatusBySuperAdmin({ ids, isActive }) {
   return response.data;
 }
 
+export async function getStudentsByWarden(params) {
+  const response = await studentApi.getStudentsByWarden(params);
+  return response.data;
+}
+
 const STUDENT_FETCHERS = {
   [ROLES.ADMIN]: getStudentsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentsBySuperAdmin,
-  // warden: getStudentsByWarden,
+  [ROLES.WARDEN]: getStudentsByWarden,
 };
 
 const STUDENT_UPDATE_FETCHERS = {

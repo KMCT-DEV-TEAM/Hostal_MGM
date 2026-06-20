@@ -45,6 +45,9 @@ const studentApi = {
   bulkStatusBySuperAdmin: ({ ids, isActive }) =>
     api.patch(`/super-admin/students/bulk-status`, { ids, isActive }),
 
+  getStudentsByWarden: (params) =>
+    api.get("/warden/students/warden", { params }),
+
   getStudentFilterOptionsByWarden: (params) =>
     api.get("/warden/students/filters", { params }),
 
