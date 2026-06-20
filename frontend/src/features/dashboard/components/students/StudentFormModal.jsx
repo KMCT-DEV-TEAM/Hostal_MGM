@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
-import { sendOtp } from "@/services/auth.service";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getHostels } from "@/services/hostel.service";
 import { getOrganizations } from "@/services/organization.service";
+import departmentService from "@/services/department.service";
 import { ROLES } from "@/constants/roles";
 import otpService from "@/services/otp.service";
 import { createStudentSchema, updateStudentSchema } from "../../validation/student";
+import batchService from "@/services/batch.service";
+import courseService from "@/services/course.service";
 
 // Turns a zod safeParse error into { fieldName: "message" }.
 // Only keeps the first message per field, which is enough for inline display.
@@ -20,6 +22,14 @@ function toFieldErrors(zodError) {
     }
   }
   return fieldErrors;
+}
+
+// editingStudent's courseId/departmentId/batchId may arrive either as a
+// populated object ({_id, name, code}) or a raw id string, depending on
+// the endpoint. This normalizes either shape down to just the id.
+function toIdString(value) {
+  if (!value) return "";
+  return typeof value === "string" ? value : value._id || "";
 }
 
 export default function StudentFormModal({ editingStudent, onClose, onSave }) {
@@ -57,6 +67,25 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   );
   const [hostelId, setHostelId] = useState(editingStudent?.hostelId || "");
 
+  // Course -> Department -> Batch cascade
+  const [courses, setCourses] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+
+  console.log(editingStudent, "student")
+  const [courseId, setCourseId] = useState(
+    toIdString(editingStudent?.course?._id) || "",
+  );
+  const [departmentId, setDepartmentId] = useState(
+    toIdString(editingStudent?.department?._id) || "",
+  );
+  const [batchId, setBatchId] = useState(
+    toIdString(editingStudent?.batch?._id) || "",
+  );
+
   useEffect(() => {
     if (role !== ROLES.SUPER_ADMIN && userOrganization) {
       setOrganizationId(userOrganization);
@@ -87,12 +116,98 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   };
 
+  const loadCourses = async () => {
+    setLoadingCourses(true);
+    try {
+      const res = await courseService.getCourses({ status: "Active" });
+      setCourses(res.data || []);
+    } catch (error) {
+      console.error("Failed to load courses", error);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
   useEffect(() => {
     loadHostels();
+    loadCourses();
     if (role === ROLES.SUPER_ADMIN) {
       loadOrganizations();
     }
   }, [role]);
+
+  // Departments depend on the chosen course. Re-fetch whenever courseId
+  // changes; clear departments/batches if there's no course selected.
+  useEffect(() => {
+    if (!courseId) {
+      setDepartments([]);
+      return;
+    }
+
+    let isCurrent = true;
+    setLoadingDepartments(true);
+
+    departmentService.getDepartments({ courseId, status: "Active" })
+      .then((res) => {
+        if (isCurrent) setDepartments(res.data || []);
+      })
+      .catch((error) => {
+        console.error("Failed to load departments", error);
+      })
+      .finally(() => {
+        if (isCurrent) setLoadingDepartments(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [courseId]);
+
+  // Batches depend on the chosen department. Same pattern as above.
+  useEffect(() => {
+    if (!departmentId) {
+      setBatches([]);
+      return;
+    }
+
+    let isCurrent = true;
+    setLoadingBatches(true);
+
+    batchService.getBatches({ departmentId, status: "Active" })
+      .then((res) => {
+        if (isCurrent) setBatches(res.data || []);
+      })
+      .catch((error) => {
+        console.error("Failed to load batches", error);
+      })
+      .finally(() => {
+        if (isCurrent) setLoadingBatches(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [departmentId]);
+
+  const handleCourseChange = (value) => {
+    setCourseId(value);
+    // Course changed: whatever department/batch was selected is no longer
+    // guaranteed valid, so reset both and let the cascade re-fetch.
+    setDepartmentId("");
+    setBatchId("");
+    clearFieldError("courseId");
+  };
+
+  const handleDepartmentChange = (value) => {
+    setDepartmentId(value);
+    setBatchId("");
+    clearFieldError("departmentId");
+  };
+
+  const handleBatchChange = (value) => {
+    setBatchId(value);
+    clearFieldError("batchId");
+  };
 
   // Clears a single field's zod error as soon as the user edits that field.
   const clearFieldError = (name) => {
@@ -182,7 +297,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setOtpErrors((prev) => ({ ...prev, [type]: "" }));
 
     try {
-      await sendOtp({ email });
+      await otpService.sendOtp( email );
 
       if (type === "student") {
         setStudentOtpSent(true);
@@ -425,15 +540,27 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   Course
                 </label>
 
-                <input
-                  name="course"
-                  defaultValue={editingStudent.course}
-                  onChange={() => clearFieldError("course")}
+                <select
+                  name="courseId"
+                  value={courseId}
+                  onChange={(e) => handleCourseChange(e.target.value)}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                />
-                {fieldErrors.course && (
+                >
+                  <option value="">Select course</option>
+                  {courses.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingCourses && (
+                  <p className="text-xs text-text-secondary mt-2">
+                    Loading courses...
+                  </p>
+                )}
+                {fieldErrors.courseId && (
                   <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.course}
+                    {fieldErrors.courseId}
                   </p>
                 )}
               </div>
@@ -443,15 +570,63 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   Department
                 </label>
 
-                <input
-                  name="department"
-                  defaultValue={editingStudent.department}
-                  onChange={() => clearFieldError("department")}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                />
-                {fieldErrors.department && (
+                <select
+                  name="departmentId"
+                  value={departmentId}
+                  onChange={(e) => handleDepartmentChange(e.target.value)}
+                  disabled={!courseId}
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {courseId ? "Select department" : "Select a course first"}
+                  </option>
+                  {departments.map((d) => (
+                    <option key={d._id} value={d._id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingDepartments && (
+                  <p className="text-xs text-text-secondary mt-2">
+                    Loading departments...
+                  </p>
+                )}
+                {fieldErrors.departmentId && (
                   <p className="text-red-500 text-[11px] mt-1">
-                    {fieldErrors.department}
+                    {fieldErrors.departmentId}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs mb-1.5 font-medium">
+                  Batch
+                </label>
+
+                <select
+                  name="batchId"
+                  value={batchId}
+                  onChange={(e) => handleBatchChange(e.target.value)}
+                  disabled={!departmentId}
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {departmentId ? "Select batch" : "Select a department first"}
+                  </option>
+                  {batches.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingBatches && (
+                  <p className="text-xs text-text-secondary mt-2">
+                    Loading batches...
+                  </p>
+                )}
+                {fieldErrors.batchId && (
+                  <p className="text-red-500 text-[11px] mt-1">
+                    {fieldErrors.batchId}
                   </p>
                 )}
               </div>
@@ -743,15 +918,27 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               <label className="block text-xs mb-1.5 font-medium">
                 Course *
               </label>
-              <input
-                name="course"
-                onChange={() => clearFieldError("course")}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                placeholder="Course"
-              />
-              {fieldErrors.course && (
+              <select
+                name="courseId"
+                value={courseId}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
+              >
+                <option value="">Select course</option>
+                {courses.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {loadingCourses && (
+                <p className="text-xs text-text-secondary mt-2">
+                  Loading courses...
+                </p>
+              )}
+              {fieldErrors.courseId && (
                 <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.course}
+                  {fieldErrors.courseId}
                 </p>
               )}
             </div>
@@ -759,15 +946,61 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               <label className="block text-xs mb-1.5 font-medium">
                 Department *
               </label>
-              <input
-                name="department"
-                onChange={() => clearFieldError("department")}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                placeholder="Department"
-              />
-              {fieldErrors.department && (
+              <select
+                name="departmentId"
+                value={departmentId}
+                onChange={(e) => handleDepartmentChange(e.target.value)}
+                disabled={!courseId}
+                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {courseId ? "Select department" : "Select a course first"}
+                </option>
+                {departments.map((d) => (
+                  <option key={d._id} value={d._id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              {loadingDepartments && (
+                <p className="text-xs text-text-secondary mt-2">
+                  Loading departments...
+                </p>
+              )}
+              {fieldErrors.departmentId && (
                 <p className="text-red-500 text-[11px] mt-1">
-                  {fieldErrors.department}
+                  {fieldErrors.departmentId}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5 font-medium">
+                Batch
+              </label>
+              <select
+                name="batchId"
+                value={batchId}
+                onChange={(e) => handleBatchChange(e.target.value)}
+                disabled={!departmentId}
+                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {departmentId ? "Select batch" : "Select a department first"}
+                </option>
+                {batches.map((b) => (
+                  <option key={b._id} value={b._id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+              {loadingBatches && (
+                <p className="text-xs text-text-secondary mt-2">
+                  Loading batches...
+                </p>
+              )}
+              {fieldErrors.batchId && (
+                <p className="text-red-500 text-[11px] mt-1">
+                  {fieldErrors.batchId}
                 </p>
               )}
             </div>

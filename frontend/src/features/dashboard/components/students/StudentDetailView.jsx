@@ -211,27 +211,6 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
             <div className="space-y-4">
               <div className="grid grid-cols-3 text-sm items-center">
                 <div className="flex items-center gap-2 text-gray-500">
-                  <Users className="w-4 h-4" />
-                  <span>Gender</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  : {student.gender || "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Calendar className="w-4 h-4" />
-                  <span>Date of Birth</span>
-                </div>
-                <span className="col-span-2 font-medium text-gray-900">
-                  :{" "}
-                  {student.dob
-                    ? new Date(student.dob).toLocaleDateString()
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 text-sm items-center">
-                <div className="flex items-center gap-2 text-gray-500">
                   <Building2 className="w-4 h-4" />
                   <span>Organization</span>
                 </div>
@@ -245,7 +224,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                   <span>Course</span>
                 </div>
                 <span className="col-span-2 font-medium text-gray-900">
-                  : {student.course || "N/A"}
+                  : {student.course?.name || "N/A"}
                 </span>
               </div>
               <div className="grid grid-cols-3 text-sm items-center">
@@ -254,7 +233,16 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                   <span>Department</span>
                 </div>
                 <span className="col-span-2 font-medium text-gray-900">
-                  : {student.department || "N/A"}
+                  : {student.department?.name || "N/A"}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 text-sm items-center">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Users className="w-4 h-4" />
+                  <span>Batch</span>
+                </div>
+                <span className="col-span-2 font-medium text-gray-900">
+                  : {student.batch?.name || "N/A"}
                 </span>
               </div>
               <div className="grid grid-cols-3 text-sm items-center">

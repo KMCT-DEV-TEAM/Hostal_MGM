@@ -28,9 +28,11 @@ export const createStudentSchema = z.object({
 
   dob: z.string().min(1, "Date of birth is required"),
 
-  course: z.string().min(1, "Course is required"),
+  courseId: z.string().min(1, "Course is required"),
 
-  department: z.string().min(1, "Department is required"),
+  departmentId: z.string().min(1, "Department is required"),
+
+  batchId: z.string().optional(),
 
   academicYear: z.string().optional(),
 
@@ -59,9 +61,11 @@ export const updateStudentSchema = z
 
     dob: z.string().optional(),
 
-    course: z.string().optional(),
+    courseId: z.string().optional(),
 
-    department: z.string().optional(),
+    departmentId: z.string().optional(),
+
+    batchId: z.string().optional(),
 
     academicYear: z.string().optional(),
 
