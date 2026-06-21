@@ -4,22 +4,39 @@ import { User, Mail, Phone, Shield, Pencil, Check, X, Loader2 } from 'lucide-rea
 import authService from '@/services/auth.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import EmailVerificationModal from '@/components/ui/EmailVerificationModal';
+import ProfileSkeleton from '@/components/ui/ProfileSkeleton';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Profile() {
     const { t } = useTranslation();
     const { user, updateUser } = useAuthStore();
+    const [isLoading, setIsLoading] = useState(true);
     const [editingField, setEditingField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, field: null });
+    const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
 
     const formatRole = (role) => {
         if (!role) return '';
         return role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
-    
+
+    React.useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await authService.getProfile();
+                updateUser(response.user);
+            } catch (error) {
+                console.error("Failed to fetch profile", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    }, [updateUser]);
 
     const handleEditClick = (field, currentValue) => {
         setEditingField(field);
@@ -31,7 +48,7 @@ export default function Profile() {
         setEditValue('');
     };
 
-    const handleOpenConfirm = (field) => {
+    const handleOpenConfirm = async (field) => {
         if (field === 'name' && (!editValue || editValue.trim() === '')) {
             showErrorToast('Error', 'Name cannot be empty');
             return;
@@ -51,6 +68,22 @@ export default function Profile() {
                 showErrorToast('Invalid Email', 'Please enter a valid email address');
                 return;
             }
+            if (editValue === user?.email) {
+                showErrorToast('Error', 'New email must be different from current email');
+                return;
+            }
+
+            setIsSaving(true);
+            try {
+                await authService.requestEmailChange({ newEmail: editValue });
+                showSuccessToast('OTP Sent', 'Check your new email for the verification code');
+                setIsEmailVerifyModalOpen(true);
+            } catch (error) {
+                showErrorToast('Failed', error?.response?.data?.message || 'Failed to send OTP');
+            } finally {
+                setIsSaving(false);
+            }
+            return;
         }
 
         setConfirmConfig({ isOpen: true, field });
@@ -75,6 +108,25 @@ export default function Profile() {
         }
     };
 
+    const handleVerifyEmail = async (otp) => {
+        setIsSaving(true);
+        try {
+            const response = await authService.verifyEmailChange({ newEmail: editValue, otp });
+            updateUser(response.user);
+            showSuccessToast('Success', 'Email updated successfully');
+            setEditingField(null);
+            setIsEmailVerifyModalOpen(false);
+        } catch (error) {
+            showErrorToast('Failed', error?.response?.data?.message || 'Failed to update email');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (isLoading || !user) {
+        return <ProfileSkeleton />;
+    }
+
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-in fade-in duration-300">
             {/* Header Section */}
@@ -88,7 +140,7 @@ export default function Profile() {
                 {/* Profile Overview (Top Section) */}
                 <div className="p-6 sm:p-8 border-b border-gray-100 bg-gray-50/50 flex items-center text-start gap-4">
                     <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#0A437A] text-3xl font-bold">
+                        <div className="w-24 h-24 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#0A437A] text-3xl font-semibold">
                             {user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
                         </div>
                         {user?.isActive !== false && (
@@ -97,7 +149,7 @@ export default function Profile() {
                     </div>
 
                     <div className="text-start">
-                        <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
+                        <h2 className="text-2xl font-semibold text-gray-900">{user?.name}</h2>
                         <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wider">{formatRole(user?.role)}</p>
                     </div>
                 </div>
@@ -109,14 +161,14 @@ export default function Profile() {
                     <div className="border-b border-gray-100 last:border-0">
                         <div className="px-6 sm:px-8 py-5 bg-gray-50/50 flex items-center gap-2">
                             <User className="w-4 h-4 text-gray-400" />
-                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('profile_info')}</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">{t('profile_info')}</h3>
                         </div>
 
                         <div className="px-6 sm:px-8 pb-6 text-sm">
                             <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-b border-gray-50 items-center gap-4">
                                 <div className="text-gray-500 font-medium">{t('role')}</div>
                                 <div className="sm:col-span-2">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold tracking-wide">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-primary border border-blue-100 text-xs font-bold tracking-wide">
                                         <Shield className="w-3 h-3" />
                                         {formatRole(user?.role)}
                                     </span>
@@ -255,7 +307,7 @@ export default function Profile() {
                         </div>
                     </div>
 
-                    {/* Account Settings Section */} 
+                    {/* Account Settings Section */}
                     <div className="border-b border-gray-100 last:border-0">
 
 
@@ -263,8 +315,8 @@ export default function Profile() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
                                 <div className="text-gray-500 font-medium">{t('status')}</div>
                                 <div className="sm:col-span-2">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-danger'}`}></span>
                                         {user?.isActive !== false ? t('active') : t('inactive')}
                                     </span>
                                 </div>
@@ -284,6 +336,15 @@ export default function Profile() {
                 message={`Are you sure you want to update your ${confirmConfig.field}?`}
                 confirmText="Save Changes"
                 confirmButtonClass="bg-primary text-white hover:bg-primary/90"
+                isSubmitting={isSaving}
+            />
+
+            {/* Email Verification Modal */}
+            <EmailVerificationModal
+                isOpen={isEmailVerifyModalOpen}
+                onClose={() => setIsEmailVerifyModalOpen(false)}
+                onVerify={handleVerifyEmail}
+                email={editValue}
                 isSubmitting={isSaving}
             />
         </div>

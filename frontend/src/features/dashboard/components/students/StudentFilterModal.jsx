@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import Dropdown from '@/components/ui/Dropdown';
 import { ROLES } from '@/constants/roles';
 import { getStudentFilterOptions } from '@/services/student.service';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -20,9 +20,7 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
         onApply(DEFAULT_FILTERS);
     };
 
-    console.log(options,"option")
     const hasOptions = (items) => Array.isArray(items) && items.length > 0;
-    const selectedStatus = options.statuses.find((status) => status.value === filters.isActive);
     const isActiveStatus = filters.isActive === '' || filters.isActive === 'true';
 
     useEffect(() => {
@@ -35,6 +33,48 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
             .catch((err) => setError(err))
             .finally(() => setLoading(false));
     }, [role]);
+
+    // Normalize each option list into { value, label } pairs that Dropdown expects,
+    // with a leading "clear" option so filters can be reset to "All"/"Select".
+    const organizationOptions = [
+        { value: '', label: 'Select' },
+        ...options.organizations.map((organization) => ({
+            value: organization._id,
+            label: organization.label,
+        })),
+    ];
+
+    const courseOptions = [
+        { value: '', label: 'Select' },
+        ...options.courses.map((course) => ({
+            value: course.value,
+            label: course.label,
+        })),
+    ];
+
+    const departmentOptions = [
+        { value: '', label: 'Select' },
+        ...options.departments.map((department) => ({
+            value: department.value,
+            label: department.label,
+        })),
+    ];
+
+    const hostelOptions = [
+        { value: '', label: 'Select' },
+        ...options.hostels.map((hostel) => ({
+            value: hostel._id,
+            label: hostel.label,
+        })),
+    ];
+
+    const statusOptions = [
+        { value: '', label: 'All' },
+        ...options.statuses.map((status) => ({
+            value: status.value,
+            label: status.label,
+        })),
+    ];
 
     return (
         <Modal
@@ -56,54 +96,45 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
                 {role === ROLES.SUPER_ADMIN && hasOptions(options.organizations) && (
                     <div>
                         <label className="block text-xs mb-1.5 font-medium">Organization</label>
-                        <select
+                        <Dropdown
+                            options={organizationOptions}
                             value={filters.organizationId}
-                            onChange={(e) => updateFilter('organizationId', e.target.value)}
-                            className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                        >
-                            <option value="">Select</option>
-                            {options.organizations.map((organization) => (
-                                <option key={organization._id} value={organization._id}>
-                                    {organization.name}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => updateFilter('organizationId', value)}
+                            placeholder="Select"
+                            className="w-full"
+                            minWidth=""
+                            triggerClassName="w-full px-2.5 py-2.5 text-xs bg-white border-gray-200 focus:border-secondary"
+                        />
                     </div>
                 )}
 
                 {hasOptions(options.courses) && (
                     <div>
                         <label className="block text-xs mb-1.5 font-medium">Course</label>
-                        <select
+                        <Dropdown
+                            options={courseOptions}
                             value={filters.course}
-                            onChange={(e) => updateFilter('course', e.target.value)}
-                            className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                        >
-                            <option value="">Select</option>
-                            {options.courses.map((course) => (
-                                <option key={course.value} value={course.value}>
-                                    {course.label}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => updateFilter('course', value)}
+                            placeholder="Select"
+                            className="w-full"
+                            minWidth=""
+                            triggerClassName="w-full px-2.5 py-2.5 text-xs bg-white border-gray-200 focus:border-secondary"
+                        />
                     </div>
                 )}
 
                 {hasOptions(options.departments) && (
                     <div>
                         <label className="block text-xs mb-1.5 font-medium">Department</label>
-                        <select
+                        <Dropdown
+                            options={departmentOptions}
                             value={filters.department}
-                            onChange={(e) => updateFilter('department', e.target.value)}
-                            className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                        >
-                            <option value="">Select</option>
-                            {options.departments.map((department) => (
-                                <option key={department.value} value={department.value}>
-                                    {department.label}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => updateFilter('department', value)}
+                            placeholder="Select"
+                            className="w-full"
+                            minWidth=""
+                            triggerClassName="w-full px-2.5 py-2.5 text-xs bg-white border-gray-200 focus:border-secondary"
+                        />
                     </div>
                 )}
 
@@ -112,50 +143,34 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
                         {hasOptions(options.hostels) && (
                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">Hostel</label>
-                                <select
+                                <Dropdown
+                                    options={hostelOptions}
                                     value={filters.hostelId}
-                                    onChange={(e) => updateFilter('hostelId', e.target.value)}
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                                >
-                                    <option value="">Select</option>
-                                    {options.hostels.map((hostel) => (
-                                        <option key={hostel._id} value={hostel._id}>
-                                            {hostel.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(value) => updateFilter('hostelId', value)}
+                                    placeholder="Select"
+                                    className="w-full"
+                                    minWidth=""
+                                    triggerClassName="w-full px-2.5 py-2.5 text-xs bg-white border-gray-200 focus:border-secondary"
+                                />
                             </div>
                         )}
 
                         {hasOptions(options.statuses) && (
                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">Status</label>
-                                <div className="relative w-fit min-w-32">
-                                    <select
-                                        value={filters.isActive}
-                                        onChange={(e) => updateFilter('isActive', e.target.value)}
-                                        className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer w-full ${
-                                            isActiveStatus
-                                                ? 'bg-green-50 text-success border-green-200/60'
-                                                : 'bg-red-50 text-danger border-red-200/60'
-                                        }`}
-                                    >
-                                        <option value="">All</option>
-                                        {options.statuses.map((status) => (
-                                            <option key={status.value} value={status.value}>
-                                                {status.label}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                    <ChevronDown
-                                        size={14}
-                                        className={`absolute right-2.5 top-1.5 pointer-events-none ${
-                                            isActiveStatus ? 'text-success' : 'text-danger'
-                                        }`}
-                                    />
-                                </div>
-                                {selectedStatus && <span className="sr-only">{selectedStatus.label}</span>}
+                                <Dropdown
+                                    options={statusOptions}
+                                    value={filters.isActive}
+                                    onChange={(value) => updateFilter('isActive', value)}
+                                    placeholder="All"
+                                    className="w-fit min-w-32"
+                                    minWidth=""
+                                    triggerClassName={`rounded-full pl-3 pr-2.5 py-1.5 text-xs font-semibold border cursor-pointer w-full ${
+                                        isActiveStatus
+                                            ? 'bg-green-50 text-success border-green-200/60'
+                                            : 'bg-red-50 text-danger border-red-200/60'
+                                    }`}
+                                />
                             </div>
                         )}
                     </div>

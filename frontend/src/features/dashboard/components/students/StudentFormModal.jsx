@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
+import Dropdown from "@/components/ui/Dropdown";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getHostels } from "@/services/hostel.service";
 import { getOrganizations } from "@/services/organization.service";
@@ -10,6 +11,7 @@ import otpService from "@/services/otp.service";
 import { createStudentSchema, updateStudentSchema } from "../../validation/student";
 import batchService from "@/services/batch.service";
 import courseService from "@/services/course.service";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
 
 function toFieldErrors(zodError) {
   const fieldErrors = {};
@@ -26,6 +28,29 @@ function toIdString(value) {
   if (!value) return "";
   return typeof value === "string" ? value : value._id || "";
 }
+
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+];
+
+const GENDER_OPTIONS_WITH_PLACEHOLDER = [
+  { value: "", label: "Select gender" },
+  ...GENDER_OPTIONS,
+];
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
+
+const RELATIONSHIP_OPTIONS = [
+  { value: "", label: "Select" },
+  { value: "father", label: "Father" },
+  { value: "mother", label: "Mother" },
+  { value: "guardian", label: "Guardian" },
+];
 
 // Reusable section header
 const SectionHeader = ({ title, subtitle }) => (
@@ -74,7 +99,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [saving, setSaving] = useState(false);
   const [organizationId, setOrganizationId] = useState(editingStudent?.organizationId || "");
-  const [hostelId, setHostelId] = useState(editingStudent?.hostelId || "");
+  const [hostelId, setHostelId] = useState(
+    toIdString(editingStudent?.hostelId) || "",
+  );
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -85,6 +112,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id) || "");
   const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id) || "");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  // Fields that were previously plain uncontrolled <select> elements now need
+  // their own state since Dropdown is a controlled custom component.
+  const [gender, setGender] = useState(editingStudent?.gender || "");
+  const [status, setStatus] = useState(editingStudent?.isActive ? "active" : "inactive");
+  const [relationship, setRelationship] = useState("");
 
   useEffect(() => {
     if (role !== ROLES.SUPER_ADMIN && userOrganization) {
@@ -99,6 +132,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       setHostels(res.data || []);
     } catch (error) {
       console.error("Failed to load hostels", error);
+      showErrorToast("Failed to load hostels");
     } finally {
       setLoadingHostels(false);
     }
@@ -111,6 +145,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       setOrganizations(res.data || []);
     } catch (error) {
       console.error("Failed to load organizations", error);
+      showErrorToast("Failed to load organizations");
     } finally {
       setLoadingOrganizations(false);
     }
@@ -123,6 +158,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       setCourses(res.data || []);
     } catch (error) {
       console.error("Failed to load courses", error);
+      showErrorToast("Failed to load courses");
     } finally {
       setLoadingCourses(false);
     }
@@ -140,7 +176,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setLoadingDepartments(true);
     departmentService.getDepartments({ courseId, status: "Active" })
       .then((res) => { if (isCurrent) setDepartments(res.data || []); })
-      .catch((error) => { console.error("Failed to load departments", error); })
+      .catch((error) => {
+        console.error("Failed to load departments", error);
+        if (isCurrent) showErrorToast("Failed to load departments");
+      })
       .finally(() => { if (isCurrent) setLoadingDepartments(false); });
     return () => { isCurrent = false; };
   }, [courseId]);
@@ -151,7 +190,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setLoadingBatches(true);
     batchService.getBatches({ departmentId, status: "Active" })
       .then((res) => { if (isCurrent) setBatches(res.data || []); })
-      .catch((error) => { console.error("Failed to load batches", error); })
+      .catch((error) => {
+        console.error("Failed to load batches", error);
+        if (isCurrent) showErrorToast("Failed to load batches");
+      })
       .finally(() => { if (isCurrent) setLoadingBatches(false); });
     return () => { isCurrent = false; };
   }, [departmentId]);
@@ -183,6 +225,31 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     clearFieldError("batchId");
   };
 
+  const handleGenderChange = (value) => {
+    setGender(value);
+    clearFieldError("gender");
+  };
+
+  const handleStatusChange = (value) => {
+    setStatus(value);
+    clearFieldError("status");
+  };
+
+  const handleRelationshipChange = (value) => {
+    setRelationship(value);
+    clearFieldError("relationship");
+  };
+
+  const handleHostelChange = (value) => {
+    setHostelId(value);
+    clearFieldError("hostelId");
+  };
+
+  const handleOrganizationChange = (value) => {
+    setOrganizationId(value);
+    clearFieldError("organizationId");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -200,9 +267,22 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       delete rawPayload.relationship;
 
       const result = updateStudentSchema.safeParse(rawPayload);
-      if (!result.success) { setFieldErrors(toFieldErrors(result.error)); return; }
+      if (!result.success) {
+        setFieldErrors(toFieldErrors(result.error));
+        showErrorToast("Please fix the highlighted errors before saving");
+        return;
+      }
       setFieldErrors({});
-      try { setSaving(true); await onSave(result.data); } finally { setSaving(false); }
+      try {
+        setSaving(true);
+        await onSave(result.data);
+      } catch (error) {
+        // onSave (handleSaveStudent in parent) already shows its own toast,
+        // this catch just prevents an unhandled rejection here.
+        console.error("Failed to update student", error);
+      } finally {
+        setSaving(false);
+      }
       return;
     }
 
@@ -211,6 +291,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         student: !studentOtp ? "Please enter the student OTP" : "",
         parent: !parentOtp ? "Please enter the parent OTP" : "",
       });
+      showErrorToast("Please verify both student and parent emails before saving");
       return;
     }
     if (!emailVerified.student || !emailVerified.parent) {
@@ -218,18 +299,33 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         student: !emailVerified.student ? "Student email not verified" : "",
         parent: !emailVerified.parent ? "Parent email not verified" : "",
       });
+      showErrorToast("Please complete email verification before saving");
       return;
     }
 
     const result = createStudentSchema.safeParse(rawPayload);
-    if (!result.success) { setFieldErrors(toFieldErrors(result.error)); return; }
+    if (!result.success) {
+      setFieldErrors(toFieldErrors(result.error));
+      showErrorToast("Please fix the highlighted errors before saving");
+      return;
+    }
     setFieldErrors({});
-    try { setSaving(true); await onSave(result.data); } finally { setSaving(false); }
+    try {
+      setSaving(true);
+      await onSave(result.data);
+    } catch (error) {
+      // onSave (handleSaveStudent in parent) already shows its own toast,
+      // this catch just prevents an unhandled rejection here.
+      console.error("Failed to create student", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sendEmailOtp = async (email, type, openModal = false) => {
     if (!email) {
       setOtpErrors((prev) => ({ ...prev, [type]: "Please enter an email before sending OTP" }));
+      showErrorToast("Please enter an email before sending OTP");
       return;
     }
     setSendingOtpFor(type);
@@ -238,6 +334,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       await otpService.sendOtp(email);
       if (type === "student") setStudentOtpSent(true);
       else setParentOtpSent(true);
+      showSuccessToast(`OTP sent to ${email}`);
       if (openModal) {
         setVerifyTarget(type);
         setVerifyOtpValue(type === "student" ? studentOtp : parentOtp);
@@ -246,6 +343,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     } catch (error) {
       const message = error?.response?.data?.message || "Failed to send OTP";
       setOtpErrors((prev) => ({ ...prev, [type]: message }));
+      showErrorToast(message);
     } finally {
       setSendingOtpFor("");
     }
@@ -254,6 +352,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const handleVerifyOtpSubmit = async () => {
     if (!verifyOtpValue || verifyOtpValue.length !== 6) {
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "Please enter the 6-digit OTP" }));
+      showErrorToast("Please enter the 6-digit OTP");
       return;
     }
     try {
@@ -268,10 +367,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         setEmailVerified((prev) => ({ ...prev, parent: true }));
       }
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "" }));
+      showSuccessToast(`${verifyTarget === "student" ? "Student" : "Parent"} email verified successfully`);
       setVerifyModalOpen(false);
     } catch (error) {
       const message = error?.response?.data?.message || "Invalid OTP";
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: message }));
+      showErrorToast(message);
     } finally {
       setVerifyingOtp(false);
     }
@@ -283,61 +384,6 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setVerifyOtpValue("");
     await sendEmailOtp(email, type, true);
   };
-
-  // Shared academic fields (used in both edit + add forms)
-  const AcademicFields = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-      <Field label="Course" error={fieldErrors.courseId}>
-        <select
-          name="courseId"
-          value={courseId}
-          onChange={(e) => handleCourseChange(e.target.value)}
-          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
-        >
-          <option value="">Select course</option>
-          {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-        </select>
-        {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
-      </Field>
-
-      <Field label="Department" error={fieldErrors.departmentId}>
-        <select
-          name="departmentId"
-          value={departmentId}
-          onChange={(e) => handleDepartmentChange(e.target.value)}
-          disabled={!courseId}
-          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <option value="">{courseId ? "Select department" : "Select a course first"}</option>
-          {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
-        </select>
-        {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
-      </Field>
-
-      <Field label="Batch" error={fieldErrors.batchId}>
-        <select
-          name="batchId"
-          value={batchId}
-          onChange={(e) => handleBatchChange(e.target.value)}
-          disabled={!departmentId}
-          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <option value="">{departmentId ? "Select batch" : "Select a department first"}</option>
-          {batches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
-        </select>
-        {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
-      </Field>
-
-      <Field label="Academic Year" error={fieldErrors.academicYear}>
-        <input
-          name="academicYear"
-          onChange={() => clearFieldError("academicYear")}
-          className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-          placeholder="2024-2025"
-        />
-      </Field>
-    </div>
-  );
 
   // Phone input with flag prefix
   const PhoneInput = ({ name, onChangeClear }) => (
@@ -356,6 +402,34 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       />
     </div>
   );
+
+  const courseOptions = [
+    { value: "", label: "Select course" },
+    ...courses.map((c) => ({ value: c._id, label: c.name })),
+  ];
+
+  const departmentOptions = [
+    { value: "", label: courseId ? "Select department" : "Select a course first" },
+    ...departments.map((d) => ({ value: d._id, label: d.name })),
+  ];
+
+  const batchOptions = [
+    { value: "", label: departmentId ? "Select batch" : "Select a department first" },
+    ...batches.map((b) => ({ value: b._id, label: b.name })),
+  ];
+
+  const hostelOptions = [
+    { value: "", label: "Select hostel" },
+    ...hostels.map((hostel) => ({ value: hostel._id, label: hostel.name })),
+  ];
+
+  const organizationOptions = [
+    { value: "", label: "Select organization" },
+    ...organizations.map((org) => ({ value: org._id, label: org.name })),
+  ];
+
+  const dropdownTriggerClass =
+    "w-full px-2.5 py-2.5 text-xs bg-white border-gray-200 focus:border-secondary";
 
   // Edit modal
   if (editingStudent) {
@@ -422,16 +496,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               </Field>
 
               <Field label="Gender *" error={fieldErrors.gender}>
-                <select
-                  name="gender"
-                  defaultValue={editingStudent.gender}
-                  onChange={() => clearFieldError("gender")}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                <Dropdown
+                  options={GENDER_OPTIONS}
+                  value={gender}
+                  onChange={handleGenderChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={dropdownTriggerClass}
+                />
+                <input type="hidden" name="gender" value={gender} />
               </Field>
 
               <Field label="Date of Birth" error={fieldErrors.dob}>
@@ -445,15 +518,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               </Field>
 
               <Field label="Status" error={fieldErrors.status}>
-                <select
-                  name="status"
-                  defaultValue={editingStudent.isActive ? "active" : "inactive"}
-                  onChange={() => clearFieldError("status")}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                <Dropdown
+                  options={STATUS_OPTIONS}
+                  value={status}
+                  onChange={handleStatusChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={dropdownTriggerClass}
+                />
+                <input type="hidden" name="status" value={status} />
               </Field>
             </div>
           </section>
@@ -463,43 +536,43 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <h3 className="text-sm font-medium text-primary mb-4">Academic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <Field label="Course" error={fieldErrors.courseId}>
-                <select
-                  name="courseId"
+                <Dropdown
+                  options={courseOptions}
                   value={courseId}
-                  onChange={(e) => handleCourseChange(e.target.value)}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                >
-                  <option value="">Select course</option>
-                  {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-                </select>
+                  onChange={handleCourseChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={dropdownTriggerClass}
+                />
+                <input type="hidden" name="courseId" value={courseId} />
                 {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
               </Field>
 
               <Field label="Department" error={fieldErrors.departmentId}>
-                <select
-                  name="departmentId"
+                <Dropdown
+                  options={departmentOptions}
                   value={departmentId}
-                  onChange={(e) => handleDepartmentChange(e.target.value)}
+                  onChange={handleDepartmentChange}
                   disabled={!courseId}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">{courseId ? "Select department" : "Select a course first"}</option>
-                  {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
-                </select>
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!courseId ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
+                />
+                <input type="hidden" name="departmentId" value={departmentId} />
                 {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
               </Field>
 
               <Field label="Batch" error={fieldErrors.batchId}>
-                <select
-                  name="batchId"
+                <Dropdown
+                  options={batchOptions}
                   value={batchId}
-                  onChange={(e) => handleBatchChange(e.target.value)}
+                  onChange={handleBatchChange}
                   disabled={!departmentId}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">{departmentId ? "Select batch" : "Select a department first"}</option>
-                  {batches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
-                </select>
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!departmentId ? "opacity-60 pointer-events-none" : ""}`}
+                />
+                <input type="hidden" name="batchId" value={batchId} />
                 {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
               </Field>
 
@@ -513,15 +586,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               </Field>
 
               <Field label="Hostel" error={fieldErrors.hostelId}>
-                <select
-                  name="hostelId"
-                  defaultValue={editingStudent.hostelId?._id || editingStudent.hostelId}
-                  onChange={() => clearFieldError("hostelId")}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                >
-                  <option value="">Select Hostel</option>
-                  {hostels.map((hostel) => <option key={hostel._id} value={hostel._id}>{hostel.name}</option>)}
-                </select>
+                <Dropdown
+                  options={hostelOptions}
+                  value={hostelId}
+                  onChange={handleHostelChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={dropdownTriggerClass}
+                />
+                <input type="hidden" name="hostelId" value={hostelId} />
               </Field>
             </div>
           </section>
@@ -638,17 +711,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </Field>
 
             <Field label="Gender *" error={fieldErrors.gender}>
-              <select
-                name="gender"
-                required
-                onChange={() => clearFieldError("gender")}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
+              <Dropdown
+                options={GENDER_OPTIONS_WITH_PLACEHOLDER}
+                value={gender}
+                onChange={handleGenderChange}
+                className="w-full"
+                minWidth=""
+                triggerClassName={`${dropdownTriggerClass} ${!gender ? "text-gray-400" : ""}`}
+              />
+              <input type="hidden" name="gender" value={gender} required />
             </Field>
 
             <Field label="Date Of Birth *" error={fieldErrors.dob}>
@@ -668,16 +739,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {role === ROLES.SUPER_ADMIN ? (
               <Field label="Organization *" error={fieldErrors.organizationId}>
-                <select
-                  name="organizationId"
-                  required
+                <Dropdown
+                  options={organizationOptions}
                   value={organizationId}
-                  onChange={(e) => { setOrganizationId(e.target.value); clearFieldError("organizationId"); }}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
-                >
-                  <option value="">Select organization</option>
-                  {organizations.map((org) => <option key={org._id} value={org._id}>{org.name}</option>)}
-                </select>
+                  onChange={handleOrganizationChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!organizationId ? "text-gray-400" : ""}`}
+                />
+                <input type="hidden" name="organizationId" value={organizationId} required />
                 {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
               </Field>
             ) : (
@@ -685,43 +755,43 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             )}
 
             <Field label="Course *" error={fieldErrors.courseId}>
-              <select
-                name="courseId"
+              <Dropdown
+                options={courseOptions}
                 value={courseId}
-                onChange={(e) => handleCourseChange(e.target.value)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
-              >
-                <option value="">Select course</option>
-                {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-              </select>
+                onChange={handleCourseChange}
+                className="w-full"
+                minWidth=""
+                triggerClassName={`${dropdownTriggerClass} ${!courseId ? "text-gray-400" : ""}`}
+              />
+              <input type="hidden" name="courseId" value={courseId} required />
               {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
             </Field>
 
             <Field label="Department *" error={fieldErrors.departmentId}>
-              <select
-                name="departmentId"
+              <Dropdown
+                options={departmentOptions}
                 value={departmentId}
-                onChange={(e) => handleDepartmentChange(e.target.value)}
+                onChange={handleDepartmentChange}
                 disabled={!courseId}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="">{courseId ? "Select department" : "Select a course first"}</option>
-                {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
-              </select>
+                className="w-full"
+                minWidth=""
+                triggerClassName={`${dropdownTriggerClass} ${!departmentId ? "text-gray-400" : ""} ${!courseId ? "opacity-60 pointer-events-none" : ""}`}
+              />
+              <input type="hidden" name="departmentId" value={departmentId} required />
               {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
             </Field>
 
             <Field label="Batch" error={fieldErrors.batchId}>
-              <select
-                name="batchId"
+              <Dropdown
+                options={batchOptions}
                 value={batchId}
-                onChange={(e) => handleBatchChange(e.target.value)}
+                onChange={handleBatchChange}
                 disabled={!departmentId}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="">{departmentId ? "Select batch" : "Select a department first"}</option>
-                {batches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
-              </select>
+                className="w-full"
+                minWidth=""
+                triggerClassName={`${dropdownTriggerClass} ${!batchId ? "text-gray-400" : ""} ${!departmentId ? "opacity-60 pointer-events-none" : ""}`}
+              />
+              <input type="hidden" name="batchId" value={batchId} />
               {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
             </Field>
 
@@ -735,15 +805,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </Field>
 
             <Field label="Assign Hostel" error={fieldErrors.hostelId} className="sm:col-span-2">
-              <select
-                name="hostelId"
+              <Dropdown
+                options={hostelOptions}
                 value={hostelId}
-                onChange={(e) => { setHostelId(e.target.value); clearFieldError("hostelId"); }}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
-              >
-                <option value="">Select hostel</option>
-                {hostels.map((hostel) => <option key={hostel._id} value={hostel._id}>{hostel.name}</option>)}
-              </select>
+                onChange={handleHostelChange}
+                className="w-full"
+                minWidth=""
+                triggerClassName={`${dropdownTriggerClass} ${!hostelId ? "text-gray-400" : ""}`}
+              />
+              <input type="hidden" name="hostelId" value={hostelId} />
               {loadingHostels && <p className="text-xs text-text-secondary mt-2">Loading hostels...</p>}
             </Field>
           </div>
@@ -821,17 +891,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </Field>
 
             <Field label="Relation *" error={fieldErrors.relationship}>
-              <select
-                name="relationship"
-                required
-                onChange={() => clearFieldError("relationship")}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
-              >
-                <option value="">Select</option>
-                <option value="father">Father</option>
-                <option value="mother">Mother</option>
-                <option value="guardian">Guardian</option>
-              </select>
+              <Dropdown
+                options={RELATIONSHIP_OPTIONS}
+                value={relationship}
+                onChange={handleRelationshipChange}
+                className="w-full"
+                minWidth=""
+                triggerClassName={`${dropdownTriggerClass} ${!relationship ? "text-gray-400" : ""}`}
+              />
+              <input type="hidden" name="relationship" value={relationship} required />
             </Field>
 
             <Field label="Phone Number *" error={fieldErrors.parentPhone}>

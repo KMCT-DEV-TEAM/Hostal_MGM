@@ -4,9 +4,11 @@ import authService from '@/services/auth.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import SettingsSkeleton from '@/components/ui/SettingsSkeleton';
 
 export default function Settings() {
     const { user, updateUser } = useAuthStore();
+    const [isLoading, setIsLoading] = useState(true);
     const { t } = useTranslation();
     const [passwords, setPasswords] = useState({
         oldPassword: '',
@@ -23,6 +25,35 @@ export default function Settings() {
     const [preferences, setPreferences] = useState({
         language: user?.settings?.preferences?.language ?? 'en'
     });
+
+    React.useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await authService.getProfile();
+                updateUser(response.user);
+                
+                const fetchedSettings = response.user?.settings;
+                if (fetchedSettings) {
+                    if (fetchedSettings.notifications) {
+                        setNotifications({
+                            emailAlerts: fetchedSettings.notifications.emailAlerts ?? true,
+                            smsAlerts: fetchedSettings.notifications.smsAlerts ?? false
+                        });
+                    }
+                    if (fetchedSettings.preferences) {
+                        setPreferences({
+                            language: fetchedSettings.preferences.language ?? 'en'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch profile", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    }, [updateUser]);
 
     const handlePasswordChange = (e) => {
         setPasswords(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -92,6 +123,10 @@ export default function Settings() {
             setIsSaving(false);
         }
     };
+
+    if (isLoading || !user) {
+        return <SettingsSkeleton />;
+    }
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-in fade-in duration-300">

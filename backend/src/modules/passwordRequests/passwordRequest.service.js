@@ -104,39 +104,26 @@ export const getPasswordRequestsDb = async (query) => {
 };
 
 export const approvePasswordRequestDb = async (requestId) => {
-  const session = await mongoose.startSession();
-  let updatedRequest;
-  
-  try {
-    session.startTransaction();
-
-    const request = await PasswordRequest.findById(requestId).session(session);
-    if (!request) {
-      throw new Error("Password request not found");
-    }
-    
-    if (request.status !== "pending") {
-      throw new Error(`Request is already ${request.status}`);
-    }
-
-    const user = await User.findById(request.userId).session(session);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    user.password = request.newPassword;
-    await user.save({ session });
-
-    request.status = "approved";
-    updatedRequest = await request.save({ session });
-
-    await session.commitTransaction();
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
+  const request = await PasswordRequest.findById(requestId);
+  if (!request) {
+    throw new Error("Password request not found");
   }
+  
+  if (request.status !== "pending") {
+    throw new Error(`Request is already ${request.status}`);
+  }
+
+  const user = await User.findById(request.userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  user.password = request.newPassword;
+  user.temppass = false;
+  await user.save();
+
+  request.status = "approved";
+  const updatedRequest = await request.save();
 
   return updatedRequest;
 };

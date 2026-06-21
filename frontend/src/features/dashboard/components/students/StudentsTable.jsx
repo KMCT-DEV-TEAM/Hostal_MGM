@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
+import Dropdown from "@/components/ui/Dropdown";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ROLES } from "@/constants/roles";
 
 const COLUMNS = [
   { key: "admissionNo", label: "Admission No" },
@@ -19,6 +22,7 @@ const COLUMNS = [
   { key: "organization", label: "Organization" },
   { key: "hostel", label: "Hostel" },
   { key: "status", label: "Status" },
+  { key: "action", label: "Action", className: "text-center rounded-tr-xl" },
 ];
 
 export default function StudentsTable({
@@ -35,8 +39,17 @@ export default function StudentsTable({
   onStatusChange,
   statusLoadingIds = [],
 }) {
-  const showActionsColumn = canEdit || !!onViewClick;
+  const role = useAuthStore((state) => state.user?.role);
+  // Only Admin and Super Admin can edit a student or toggle status.
+  // Everyone else (Warden, Student, Parent) gets a view-only table:
+  // no Edit pencil, and Status renders as a static badge instead of
+  // an interactive dropdown.
+  const canManage =
+    canEdit && (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN);
+
+  const showActionsColumn = canManage;
   const getStudentId = (s) => s._id ?? s.id;
+    const { t } = useTranslation();
 
   const getHostelName = (hostel) => {
     if (!hostel || typeof hostel !== "object") return hostel || "-";
@@ -52,12 +65,13 @@ export default function StudentsTable({
   const getInitials = (name = "") =>
     name.trim().substring(0, 2).toUpperCase() || "NA";
 
-  const visibleColumns = COLUMNS.filter(
-    (c) => c.key !== "organization" || showOrganizationColumn
-  );
+  const visibleColumns = COLUMNS.filter((c) => {
+    if (c.key === "organization") return showOrganizationColumn;
+    if (c.key === "action") return showActionsColumn;
+    return true;
+  });
 
-  const colSpan =
-    1 + visibleColumns.length + (showActionsColumn ? 1 : 0);
+  const colSpan = 1 + visibleColumns.length;
 
   return (
     <div className="overflow-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -79,15 +93,10 @@ export default function StudentsTable({
               </button>
             </th>
             {visibleColumns.map((col) => (
-              <th key={col.key} className="p-4 font-semibold">
+              <th key={col.key} className={`p-4 font-semibold ${col.className || ""}`}>
                 {col.label}
               </th>
             ))}
-            {showActionsColumn && (
-              <th className="p-4 font-semibold text-center rounded-tr-xl">
-                Action
-              </th>
-            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50 text-sm text-center">
@@ -115,7 +124,7 @@ export default function StudentsTable({
               return (
                 <tr
                   key={studentId}
-                  className={`hover:bg-gray-50/40 transition-colors cursor-pointer ${isSelected ? "bg-blue-50/40" : ""}`}
+                  className={`hover:bg-gray-50/40 transition-colors ${isSelected ? "bg-blue-50/40" : ""}`}
                 >
                   <td className="p-4 text-center">
                     <button
@@ -156,7 +165,10 @@ export default function StudentsTable({
                       <div className="flex items-center gap-1.5 text-gray-500">
                         <Building2 size={14} className="text-gray-400" />
                         <span>
-                          {getOrganizationName(s.organization, s.organizationId)}
+                          {getOrganizationName(
+                            s.organization,
+                            s.organizationId,
+                          )}
                         </span>
                       </div>
                     </td>
@@ -170,38 +182,43 @@ export default function StudentsTable({
                     </div>
                   </td>
 
-                  {/* Status dropdown */}
+                  {/* Status: interactive dropdown for Admin/Super Admin,
+                      read-only badge for everyone else (incl. Warden) */}
                   <td className="p-4 text-center">
-                    <div className="relative inline-block w-[105px]">
-                      <select
-                        value={isActive ? "Active" : "Inactive"}
-                        disabled={isStatusLoading}
-                        onChange={() => onStatusChange?.(studentId)}
-                        className={`w-full appearance-none px-3 py-1.5 text-xs font-regular border rounded-md outline-none cursor-pointer transition-colors
-                          ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}
-                          ${isStatusLoading ? "opacity-60 cursor-wait" : ""}`}
+                    {canManage ? (
+                      <div className="relative inline-block w-[105px]">
+                        <Dropdown
+                          minWidth=""
+                          options={[
+                            { value: "Active", label: t("active") },
+                            { value: "Inactive", label: t("inactive") },
+                          ]}
+                          value={s.isActive ? "Active" : "Inactive"}
+                          onChange={() => onStatusChange?.(studentId)}
+                          triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${s.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
+                        />
+                      </div>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                          isActive
+                            ? "bg-green-50 text-success border-green-200"
+                            : "bg-red-50 text-danger border-red-200"
+                        }`}
                       >
-                        {isStatusLoading ? (
-                          <option>{isActive ? "Active" : "Inactive"}</option>
-                        ) : (
-                          <>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                          </>
-                        )}
-                      </select>
-                      <ChevronDown
-                        size={12}
-                        className={`absolute right-2.5 top-2 pointer-events-none ${isActive ? "text-success" : "text-danger"}`}
-                      />
-                    </div>
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-green-600" : "bg-red-600"}`}
+                        />
+                        {isActive ? t("active") : t("inactive")}
+                      </span>
+                    )}
                   </td>
 
                   {/* Actions */}
                   {showActionsColumn && (
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-3 text-gray-400">
-                        {canEdit && (
+                        {canManage && (
                           <button
                             onClick={() => !isStatusLoading && onEditClick?.(s)}
                             className="text-secondary cursor-pointer transition-colors"
@@ -263,7 +280,7 @@ export default function StudentsTable({
                 className={`bg-white p-4 rounded-xl shadow-sm flex flex-col relative transition-colors ${isSelected ? "bg-blue-50/40" : ""}`}
               >
                 {/* Edit button top-right */}
-                {canEdit && (
+                {canManage && (
                   <button
                     onClick={() => !isStatusLoading && onEditClick?.(s)}
                     className="absolute top-4 right-4 text-blue-400 hover:text-[#0A437A] cursor-pointer transition-colors"
@@ -321,32 +338,50 @@ export default function StudentsTable({
                       <div className="text-[10px] sm:text-xs text-gray-400 mb-3 truncate flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
                         <span>
-                          {getOrganizationName(s.organization, s.organizationId)}
+                          {getOrganizationName(
+                            s.organization,
+                            s.organizationId,
+                          )}
                         </span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Status pill bottom-right */}
+                {/* Status pill bottom-right: interactive button for
+                    Admin/Super Admin, read-only badge otherwise (incl. Warden) */}
                 <div className="flex justify-end mt-3">
-                  <button
-                    type="button"
-                    disabled={isStatusLoading}
-                    onClick={() => !isStatusLoading && onStatusChange?.(studentId)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
-                      ${isActive ? "bg-green-50 text-success hover:bg-green-100" : "bg-red-50 text-danger hover:bg-red-100"}
-                      ${isStatusLoading ? "opacity-60 cursor-wait" : ""}`}
-                  >
+                  {canManage ? (
+                    <button
+                      type="button"
+                      disabled={isStatusLoading}
+                      onClick={() =>
+                        !isStatusLoading && onStatusChange?.(studentId)
+                      }
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
+                        ${isActive ? "bg-green-50 text-success hover:bg-green-100" : "bg-red-50 text-danger hover:bg-red-100"}
+                        ${isStatusLoading ? "opacity-60 cursor-wait" : ""}`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-green-600" : "bg-red-600"}`}
+                      />
+                      {isStatusLoading
+                        ? "Updating..."
+                        : isActive
+                          ? "Active"
+                          : "Inactive"}
+                    </button>
+                  ) : (
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-green-600" : "bg-red-600"}`}
-                    />
-                    {isStatusLoading
-                      ? "Updating..."
-                      : isActive
-                        ? "Active"
-                        : "Inactive"}
-                  </button>
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium
+                        ${isActive ? "bg-green-50 text-success" : "bg-red-50 text-danger"}`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-green-600" : "bg-red-600"}`}
+                      />
+                      {isActive ? "Active" : "Inactive"}
+                    </span>
+                  )}
                 </div>
               </div>
             );
