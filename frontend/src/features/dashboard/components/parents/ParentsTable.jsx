@@ -2,6 +2,7 @@ import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Mail } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function ParentsTable({
     parents,
@@ -82,7 +83,7 @@ export default function ParentsTable({
                                     </td>
                                     <td className="p-4 text-text-secondary"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
                                     <td className="p-4 text-text-secondary"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
-                                    <td className="p-4 text-gray-700 font-medium">{p.student?.name ?? "No Student"}</td>
+                                    <td className="p-4 text-text-secondary font-medium">{p.student?.name ?? "No Student"}</td>
                                     <td className="p-4 text-text-secondary">
                                         <div className='border border-gray-300 w-24 px-4 py-1 rounded-md font-medium text-center'>
                                             {p.relationship
@@ -101,7 +102,7 @@ export default function ParentsTable({
                                                             e.target.value === 'Active'
                                                         )
                                                     }
-                                                    className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
+                                                    className={`appearance-none rounded-md pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
         ${p.isActive
                                                             ? 'bg-green-50 text-success border-green-200/60'
                                                             : 'bg-red-50 text-danger border-red-200/60'
