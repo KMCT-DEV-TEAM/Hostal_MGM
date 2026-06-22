@@ -24,11 +24,11 @@ export default function Dropdown({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const selectedOption = options.find(opt => 
+    const selectedOption = options.find(opt =>
         (typeof opt === 'object' ? opt.value : opt) === value
     );
 
-    const displayValue = selectedOption 
+    const displayValue = selectedOption
         ? (typeof selectedOption === 'object' ? selectedOption.label : selectedOption)
         : placeholder;
 

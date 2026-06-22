@@ -19,7 +19,7 @@ import {
     Hash,
     Users,
     MapPin,
-    Activity,
+    ToggleRight,
     FileDown
 } from 'lucide-react';
 import hostelService from '../../../services/hostel.service';
@@ -356,11 +356,11 @@ export default function HostelManagement() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
                         {/* Main Content Area */}
-                        <div className="md:col-span-2 space-y-2">
+                        <div className="md:col-span-7 flex flex-col">
                             {/* Basic Info Section */}
-                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
                                 <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
                                 <p className="text-xs text-gray-400 mb-6">Basic contact information of the Hostel</p>
                                 <div className="space-y-4">
@@ -369,28 +369,27 @@ export default function HostelManagement() {
                                     <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
                                     <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
                                     <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                        <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                        <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
                                         <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                            <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                            <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                             {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
-
-
                         </div>
 
                         {/* Right Summary Sidebar */}
-                        <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                        <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm md:h-full">
                             <h3 className="text-lg font-semibold text-primary mb-4">Hostel Summary</h3>
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail?.organizations?.[0]?.name || selectedHostelDetail?.organizations || 'N/A'}</span></div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                    <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                        <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
                                 </div>
@@ -601,7 +600,7 @@ export default function HostelManagement() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083561] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
+                                className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
                             >
                                 {isSubmitting && <Loader2 size={14} className="animate-spin" />}
                                 {editingHostel ? t('save_changes') : t('save')}
@@ -641,7 +640,7 @@ export default function HostelManagement() {
                             <button
                                 onClick={saveHostel}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 {isSubmitting ? 'Saving...' : 'Confirm'}
                             </button>
@@ -666,7 +665,7 @@ export default function HostelManagement() {
                             </button>
                             <button
                                 onClick={confirmDiscard}
-                                className="px-3 cursor-pointer py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                className="px-3 cursor-pointer py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors"
                             >
                                 Discard
                             </button>
@@ -694,7 +693,7 @@ export default function HostelManagement() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -722,7 +721,7 @@ export default function HostelManagement() {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>

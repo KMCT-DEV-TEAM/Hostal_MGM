@@ -198,7 +198,7 @@ export default function Profile() {
                                             <button
                                                 onClick={handleCancelEdit}
                                                 disabled={isSaving}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
                                             >
                                                 <X className="w-4 h-4" />
                                             </button>
@@ -237,7 +237,7 @@ export default function Profile() {
                                             <button
                                                 onClick={handleCancelEdit}
                                                 disabled={isSaving}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
                                             >
                                                 <X className="w-4 h-4" />
                                             </button>
@@ -286,7 +286,7 @@ export default function Profile() {
                                             <button
                                                 onClick={handleCancelEdit}
                                                 disabled={isSaving}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
                                             >
                                                 <X className="w-4 h-4" />
                                             </button>
@@ -315,7 +315,7 @@ export default function Profile() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
                                 <div className="text-gray-500 font-medium">{t('status')}</div>
                                 <div className="sm:col-span-2">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-danger/10 text-danger border border-danger/10'}`}>
                                         <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-danger'}`}></span>
                                         {user?.isActive !== false ? t('active') : t('inactive')}
                                     </span>

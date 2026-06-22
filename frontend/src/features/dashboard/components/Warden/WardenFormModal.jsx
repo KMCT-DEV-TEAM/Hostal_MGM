@@ -122,11 +122,11 @@ export default function WardenFormModal({
                                         ) : (
                                             <button
                                                 type="button"
-                                                onClick={() => handleVerifyClick('warden')}
+                                                onClick={() => handleVerifyClick(wardenForm.email, 'addWarden')}
                                                 disabled={!wardenForm.email || isVerifying || editingWarden}
                                                 className={`px-4 py-2.5 text-xs font-medium rounded-lg shrink-0 flex items-center justify-center min-w-[70px] ${!wardenForm.email || editingWarden
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-primary text-white hover:bg-blue-700 cursor-pointer'
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-primary text-white hover:bg-secondary cursor-pointer'
                                                     }`}
                                             >
                                                 {isVerifying ? <Loader2 size={14} className="animate-spin" /> : t('verify')}
@@ -183,7 +183,7 @@ export default function WardenFormModal({
                     <button
                         type="submit"
                         disabled={!isEmailVerified && !editingWarden || isSubmitting}
-                        className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#083660] transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
                         {isSubmitting && <Loader2 size={14} className="animate-spin" />}
                         {editingWarden ? t('save_changes') : t('save')}

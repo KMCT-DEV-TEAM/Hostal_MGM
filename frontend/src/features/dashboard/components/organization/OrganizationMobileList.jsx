@@ -32,7 +32,7 @@ const OrganizationMobileList = ({
             {loading ? (
                 <MobileSkeletonLoader />
             ) : error ? (
-                <div className="text-center text-red-500 p-8 bg-white rounded-xl">{error}</div>
+                <div className="text-center text-danger p-8 bg-white rounded-xl">{error}</div>
             ) : orgs.length === 0 ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No organizations match the selected filter.</div>
             ) : (
@@ -95,8 +95,8 @@ const OrganizationMobileList = ({
 
                         <div className="flex justify-end mt-auto">
                             <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium
-                                ${o.isActive ? 'bg-green-50 text-success' : 'bg-red-50 text-danger'}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${o.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
+                                ${o.isActive ? 'bg-green-50 text-success' : 'bg-danger/10 text-danger'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${o.isActive ? 'bg-green-600' : 'bg-danger'}`}></span>
                                 {o.isActive ? "Active" : "Inactive"}
                             </span>
                         </div>

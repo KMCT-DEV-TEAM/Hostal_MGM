@@ -545,7 +545,7 @@ export default function WardenManagement() {
                             <button
                                 onClick={saveWarden}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 {isSubmitting ? 'Saving...' : 'Confirm'}
                             </button>
@@ -570,7 +570,7 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={confirmDiscard}
-                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
                             >
                                 Discard
                             </button>
@@ -598,7 +598,7 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -626,7 +626,7 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -685,7 +685,7 @@ export default function WardenManagement() {
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer">
+                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer">
                                         Verify
                                     </button>
                                 )}
@@ -695,7 +695,7 @@ export default function WardenManagement() {
                         <button
                             type="submit"
                             disabled={!isEmailVerified}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-[#083663]' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
                             Change Email
                         </button>
@@ -793,7 +793,7 @@ export default function WardenManagement() {
                         {/* Verify Button */}
                         <button
                             type="submit"
-                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-[#083663] transition-colors cursor-pointer text-lg"
+                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer text-lg"
                         >
                             Verify
                         </button>
@@ -837,7 +837,7 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={confirmHostelChange}
-                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-[#0A437A]/90 font-medium transition-colors cursor-pointer"
+                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-secondary font-medium transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
