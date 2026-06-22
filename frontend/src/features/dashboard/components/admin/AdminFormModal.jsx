@@ -125,7 +125,7 @@ const AdminFormModal = ({
                                                 type="button"
                                                 onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')}
                                                 disabled={isVerifying}
-                                                className="flex items-center justify-center min-w-[70px] px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-[#083663] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                                                className="flex items-center justify-center min-w-[70px] px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-secondary transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
                                                 {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('verify')}
                                             </button>
@@ -161,7 +161,7 @@ const AdminFormModal = ({
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#083561] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingAdmin ? t('save_changes') : t('save'))}
                     </button>

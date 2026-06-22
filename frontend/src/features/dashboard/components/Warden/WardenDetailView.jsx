@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Pencil, Activity, Calendar, Clock, Phone, Mail, Building2, Loader2, Hash, Home, Users, MapPin } from 'lucide-react';
+import { X, User, Pencil, ToggleRight, Calendar, Clock, Phone, Mail, Building2, Loader2, Hash, Home, Users, MapPin } from 'lucide-react';
 import hostelService from '@/services/hostel.service';
 
 export default function WardenDetailView({ selectedWardenDetail, setView, openChangeEmailModal }) {
@@ -56,9 +56,9 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Main Content Area */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-7 space-y-6">
                         {/* Basic Info Section */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
@@ -128,9 +128,9 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                                         )
                                     )}
 
-                                    <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                    <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
                                     <span className="sm:col-span-2 font-medium flex items-center mt-2 sm:mt-0"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                        <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedWardenDetail?.status}
                                     </span>
                                     <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Calendar className="w-4 h-4 text-gray-400" /> Created On</span>
@@ -143,15 +143,16 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                     </div>
 
                     {/* Right Summary Sidebar */}
-                    <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                    <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
                         <h3 className="text-lg font-semibold text-primary mb-4">Warden Summary</h3>
                         <div className="space-y-4">
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.name}</span></div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.hostel?.name || selectedWardenDetail?.hostel || 'N/A'}</span></div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.organization?.name || selectedWardenDetail?.organization || 'N/A'}</span></div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
                                 <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                    <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                    <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedWardenDetail?.status}
                                 </span>
                             </div>

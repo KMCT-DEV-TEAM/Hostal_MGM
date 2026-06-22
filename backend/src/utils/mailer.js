@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 export const sendMail = async (to, subject, text, html) => {
   try {
     console.log(process.env.EMAIL_USER);
-console.log(process.env.APP_PASSWORD);
+    console.log(process.env.APP_PASSWORD);
     const mailOptions = {
       from: process.env.EMAIL_USER || "noreply@hostelmanagement.com",
       to,

@@ -34,7 +34,7 @@ export default function WardenMobileList({
             {loading ? (
                 <MobileSkeletonLoader />
             ) : error ? (
-                <div className="text-center text-red-500 p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
+                <div className="text-center text-danger p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
             ) : paginatedWardens.length === 0 ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No records found matching your search criteria.</div>
             ) : (
@@ -114,9 +114,9 @@ export default function WardenMobileList({
                                 type="button"
                                 onClick={() => handleStatusChangeClick(warden.id, warden.status)}
                                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
-                                        ${warden.status === 'Active' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-red-50 text-danger hover:bg-red-100'}`}
+                                        ${warden.status === 'Active' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-danger/10 text-danger hover:bg-danger/20'}`}
                             >
-                                <span className={`w-1.5 h-1.5 rounded-full ${warden.status === 'Active' ? 'bg-green-600' : 'bg-red-600'}`}></span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${warden.status === 'Active' ? 'bg-green-600' : 'bg-danger'}`}></span>
                                 {warden.status === 'Active' ? "Active" : "Inactive"}
                             </button>
                         </div>
