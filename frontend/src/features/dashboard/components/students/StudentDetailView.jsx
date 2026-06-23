@@ -26,6 +26,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import {  changeStudentEmail } from "@/services/student.service";
 import {  changeParentEmail } from "@/services/parent.service";
+import { formatDate } from "@/utils/dateFormatter";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -176,7 +177,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 label="Date Of Birth"
               >
                 {student.dob
-                  ? new Date(student.dob).toLocaleDateString("en-IN")
+                  ? formatDate(student.dob)
                   : "N/A"}
               </InfoRow>
               {/* Status row needs custom layout for the dot */}

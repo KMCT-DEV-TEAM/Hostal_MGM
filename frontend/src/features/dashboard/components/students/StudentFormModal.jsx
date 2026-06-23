@@ -947,7 +947,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   clearFieldError("dob");
                 }}
                 onBlur={(e) => validateField("dob", e.target.value)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
+                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs  outline-none focus:border-secondary"
               />
             </Field>
           </div>
