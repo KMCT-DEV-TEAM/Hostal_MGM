@@ -243,12 +243,14 @@ export default function Students() {
       setActiveModal(null);
       setEditingStudent(null);
       refetch();
-    } catch (err) {
-      showErrorToast(
-        err?.response?.data?.message ||
-        (editingStudent ? "Failed to update student" : "Failed to create student")
-      );
-    }
+   } catch (err) {
+  console.error(err);
+  const message =
+    err?.response?.data?.message ||  
+    err?.data?.message ||            
+    (editingStudent ? "Failed to update student" : "Failed to create student");
+  showErrorToast(message);
+}
   };
 
   // Export flow: open the filter modal (mirrors Parents.js handleExport)

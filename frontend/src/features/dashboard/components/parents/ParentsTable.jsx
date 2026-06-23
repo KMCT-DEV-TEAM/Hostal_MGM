@@ -2,6 +2,7 @@ import React from 'react';
 import { Square, CheckSquare, Pencil, Trash2, ChevronDown, Phone, Mail } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function ParentsTable({
     parents,
@@ -60,17 +61,16 @@ export default function ParentsTable({
                             const isSelected = selectedIds.includes(rowId);
                             const isLoading = statusLoadingIds.includes(rowId);
                             return (
-                                <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    {(canEdit || canDelete) && (
-                                        <td className="p-4">
-                                            <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
-                                                {isSelected ?
-                                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
-                                                    <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                                                }
-                                            </button>
-                                        </td>
-                                    )}
+                                <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''} relative`}>                                    {(canEdit || canDelete) && (
+                                    <td className="p-4">
+                                        <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
+                                            {isSelected ?
+                                                <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
+                                                <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                            }
+                                        </button>
+                                    </td>
+                                )}
                                     <td
                                         className="p-4 flex items-center gap-3 font-medium text-text-secondary cursor-pointer hover:text-primary transition-colors"
                                         onClick={() => onView && onView(p)}
@@ -91,29 +91,17 @@ export default function ParentsTable({
                                         </div>
                                     </td>
                                     {canEdit && (
-                                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                                            <div className="relative w-fit">
-                                                <select
-                                                    value={p.isActive ? 'Active' : 'Inactive'}
-                                                    onChange={(e) =>
-                                                        onStatusChangeRequest?.(
-                                                            p,
-                                                            e.target.value === 'Active'
-                                                        )
-                                                    }
-                                                    className={`appearance-none rounded-full pl-3 pr-8 py-1.5 text-xs font-semibold border outline-none cursor-pointer
-        ${p.isActive
-                                                            ? 'bg-green-50 text-success border-green-200/60'
-                                                            : 'bg-red-50 text-danger border-red-200/60'
-                                                        }`}
-                                                >
-                                                    <option value="Active">Active</option>
-                                                    <option value="Inactive">Inactive</option>
-                                                </select>
-                                                <ChevronDown
-                                                    size={14}
-                                                    className={`absolute right-2.5 top-1.5 pointer-events-none
-                                                        ${p.isActive === "true" || p.isActive === true ? "text-success" : "text-danger"}`}
+                                        <td className="p-4">
+                                            <div className="relative  inline-block w-[105px]">
+                                                <Dropdown
+                                                    minWidth="min-w-[105px]"
+                                                    options={[
+                                                        { value: "Active", label: t("active") },
+                                                        { value: "Inactive", label: t("inactive") },
+                                                    ]}
+                                                    value={p.isActive ? "Active" : "Inactive"}
+                                                    onChange={(val) => onStatusChangeRequest?.(p, val === 'Active')}
+                                                    triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${p.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                                                 />
                                             </div>
                                         </td>
