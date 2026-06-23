@@ -33,10 +33,11 @@ const AdminPortalLogin = () => {
             navigate(getDashboardRoute(user.role));
         } catch (error) {
             console.log("error from the login page", error);
-            showErrorToast('Login Failed', error?.message || 'Failed to sign in. Please check your credentials.');
+            const errorMessage = error?.message || 'Failed to sign in. Please check your credentials.';
+            showErrorToast('Login Failed', errorMessage);
             setError('root', {
                 type: 'manual',
-                message: error?.message || 'Failed to sign in. Please check your credentials.'
+                message: errorMessage
             });
         }
     };
@@ -58,18 +59,17 @@ const AdminPortalLogin = () => {
                             <label className="block text-[13px] font-medium text-text-primary">
                                 Login As
                             </label>
-                            
+
                             <div className="flex bg-gray-100 p-1 rounded-xl">
                                 {['admin', 'warden'].map((role) => (
                                     <button
                                         key={role}
                                         type="button"
                                         onClick={() => setValue('role', role, { shouldValidate: true })}
-                                        className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 capitalize ${
-                                            currentRole === role
+                                        className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 capitalize ${currentRole === role
                                                 ? 'bg-white text-text-primary shadow-sm'
                                                 : 'text-text-secondary hover:text-text-primary hover:bg-gray-200/50'
-                                        }`}
+                                            }`}
                                     >
                                         {role}
                                     </button>

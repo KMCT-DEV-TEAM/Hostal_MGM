@@ -77,7 +77,7 @@ export default function ParentFormModal({
       setVerifyModalOpen(true);
       setVerifyOtpValue("");
     } catch (error) {
-      setOtpError(error?.response?.data?.message || "Failed to send OTP");
+      setOtpError(error?.message || "Failed to send OTP");
     } finally {
       setSendingOtp(false);
     }

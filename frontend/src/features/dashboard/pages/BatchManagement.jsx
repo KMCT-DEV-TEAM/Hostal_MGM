@@ -14,6 +14,7 @@ import BatchService from '../../../services/batch.service';
 import DepartmentService from '../../../services/department.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
+import { useAuthStore } from '@/store/useAuthStore';
 import BatchTable from '../components/batch/BatchTable';
 import BatchMobileList from '../components/batch/BatchMobileList';
 import BatchDetailView from '../components/batch/BatchDetailView';
@@ -136,9 +137,15 @@ const BatchManagement = () => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && batch) {
             setEditingId(batch._id);
+            const user = useAuthStore.getState().user;
+            const orgCode = user?.organization?.code;
+            let displayCode = batch.code || '';
+            if (orgCode && displayCode.startsWith(`${orgCode}-`)) {
+                displayCode = displayCode.substring(orgCode.length + 1);
+            }
             setFormData({
                 name: batch.name || '',
-                code: batch.code || '',
+                code: displayCode,
                 departmentId: batch.departmentId?._id || batch.departmentId || ''
             });
         } else {
@@ -169,11 +176,18 @@ const BatchManagement = () => {
     const saveBatch = async () => {
         try {
             setIsSubmitting(true);
+            const user = useAuthStore.getState().user;
+            const orgCode = user?.organization?.code;
+            const payload = { ...formData };
+            if (orgCode && payload.code) {
+                payload.code = `${orgCode}-${payload.code}`;
+            }
+
             if (isEditMode && editingId) {
-                await BatchService.updateBatch(editingId, formData);
+                await BatchService.updateBatch(editingId, payload);
                 showSuccessToast('Batch Updated', 'Batch details saved successfully');
             } else {
-                await BatchService.createBatch(formData);
+                await BatchService.createBatch(payload);
                 showSuccessToast('Batch Added', 'New Batch registered successfully');
             }
             setIsModalOpen(false);

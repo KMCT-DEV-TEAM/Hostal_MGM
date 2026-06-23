@@ -34,7 +34,7 @@ const PasswordRequests = () => {
             setRequests(res.data.requests || []);
             setPagination(res.data.pagination || { page: 1, limit: 10, totalPages: 1 });
         } catch (error) {
-            showErrorToast('Failed to load password requests', error?.response?.data?.message || error.message);
+            showErrorToast('Failed to load password requests', error?.message);
         } finally {
             setIsLoading(false);
         }
@@ -50,7 +50,7 @@ const PasswordRequests = () => {
             showSuccessToast('Request Approved', 'User password has been successfully updated.');
             fetchRequests(pagination.page);
         } catch (error) {
-            showErrorToast('Approval Failed', error?.response?.data?.message || 'Failed to approve request');
+            showErrorToast('Approval Failed', error?.message || 'Failed to approve request');
         }
     };
 
@@ -60,7 +60,7 @@ const PasswordRequests = () => {
             showSuccessToast('Request Rejected', 'Password request has been rejected.');
             fetchRequests(pagination.page);
         } catch (error) {
-            showErrorToast('Rejection Failed', error?.response?.data?.message || 'Failed to reject request');
+            showErrorToast('Rejection Failed', error?.message || 'Failed to reject request');
         }
     };
 

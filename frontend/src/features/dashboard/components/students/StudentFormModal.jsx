@@ -244,7 +244,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         setVerifyModalOpen(true);
       }
     } catch (error) {
-      const message = error?.response?.data?.message || "Failed to send OTP";
+      const message = error?.message || "Failed to send OTP";
       setOtpErrors((prev) => ({ ...prev, [type]: message }));
     } finally {
       setSendingOtpFor("");
@@ -270,7 +270,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "" }));
       setVerifyModalOpen(false);
     } catch (error) {
-      const message = error?.response?.data?.message || "Invalid OTP";
+      const message = error?.message || "Invalid OTP";
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: message }));
     } finally {
       setVerifyingOtp(false);

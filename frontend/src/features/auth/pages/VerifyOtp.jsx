@@ -39,7 +39,7 @@ const VerifyOtp = () => {
             await authService.sendOtp({ email });
             showSuccessToast('OTP Resent', 'Check your email for the new verification code.');
         } catch (error) {
-            showErrorToast('Failed', error?.response?.data?.message || 'Failed to resend OTP.');
+            showErrorToast('Failed', error?.message || 'Failed to resend OTP.');
         } finally {
             setIsResending(false);
         }
@@ -52,7 +52,7 @@ const VerifyOtp = () => {
             showSuccessToast('OTP Verified', 'Please set a new password.');
             navigate('/reset-password', { state: { resetToken: res.data?.resetToken }, replace: true });
         } catch (error) {
-            showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Invalid OTP.');
+            showErrorToast('Failed', error?.message || 'Invalid OTP.');
         }
     };
 

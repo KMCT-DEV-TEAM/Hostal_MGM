@@ -68,7 +68,7 @@ export default function ChangeEmailModal({
     } catch (error) {
       showErrorToast(
         "OTP Failed",
-        error?.response?.data?.message || "Failed to send OTP",
+        error?.message || "Failed to send OTP",
       );
     } finally {
       setSendingOtp(false);
@@ -90,7 +90,7 @@ export default function ChangeEmailModal({
       showSuccessToast("Email verified successfully");
     } catch (error) {
       const message =
-        error?.response?.data?.message || "Invalid or expired OTP";
+        error?.message || "Invalid or expired OTP";
       setOtpError(message);
       showErrorToast("Verification Failed", message);
     } finally {
@@ -119,8 +119,7 @@ export default function ChangeEmailModal({
     } catch (error) {
       showErrorToast(
         "Action Failed",
-        error?.response?.data?.message ||
-          error?.message ||
+        error?.message ||
           "Failed to update email",
       );
 
