@@ -34,7 +34,7 @@ export default function ParentsTable({
                                 </button>
                             </th>
                         )}
-                        {[t('name'), t('email'), t('phone'), t('student'), t('relation'), ...(canEdit ? [t('status')] : [])].map((h, i) => (
+                        {[t('name'), t('email'), t('phone'), t('student'), t('organization'), ...(canEdit ? [t('status')] : [])].map((h, i) => (
                             <th key={i} className="p-4 text-start">{h}</th>
                         ))}
                         {canEdit && <th className="p-4 text-center">{t('action')}</th>}
@@ -83,13 +83,7 @@ export default function ParentsTable({
                                     <td className="p-4 text-text-secondary"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
                                     <td className="p-4 text-text-secondary"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
                                     <td className="p-4 text-text-secondary font-medium">{p.student?.name ?? "No Student"}</td>
-                                    <td className="p-4 text-text-secondary">
-                                        <div className='border border-gray-300 w-24 px-4 py-1 rounded-md font-medium text-center'>
-                                            {p.relationship
-                                                ? p.relationship.charAt(0).toUpperCase() + p.relationship.slice(1).toLowerCase()
-                                                : ""}
-                                        </div>
-                                    </td>
+                                    <td className="p-4 text-text-secondary font-medium">{p.organization?.name || "N/A"}</td>
                                     {canEdit && (
 
                                         <td className="p-4" onClick={(e) => e.stopPropagation()}>

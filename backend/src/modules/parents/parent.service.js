@@ -273,6 +273,20 @@ const getParentsService = async ({ organizationId, hostelIds, query }) => {
         preserveNullAndEmptyArrays: false,
       },
     },
+    {
+      $lookup: {
+        from: "organizations",
+        localField: "student.organizationId",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+    {
+      $unwind: {
+        path: "$organization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
   ];
 
   if (search) {
@@ -344,6 +358,10 @@ const getParentsService = async ({ organizationId, hostelIds, query }) => {
           name: "$student.name",
           email: "$student.email",
           organizationId: "$student.organizationId",
+        },
+        organization: {
+          _id: "$organization._id",
+          name: "$organization.name",
         },
       },
     },
@@ -431,6 +449,20 @@ const exportParentsService = async ({ organizationId, query }) => {
         preserveNullAndEmptyArrays: false,
       },
     },
+    {
+      $lookup: {
+        from: "organizations",
+        localField: "student.organizationId",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+    {
+      $unwind: {
+        path: "$organization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
   ];
 
   if (search) {
@@ -467,6 +499,10 @@ const exportParentsService = async ({ organizationId, query }) => {
           name: "$student.name",
           email: "$student.email",
           organizationId: "$student.organizationId",
+        },
+        organization: {
+          _id: "$organization._id",
+          name: "$organization.name",
         },
       },
     },

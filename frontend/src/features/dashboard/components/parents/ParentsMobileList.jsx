@@ -105,7 +105,7 @@ const ParentsMobileList = ({
                                             <span className="truncate">Student: {typeof p.student === 'object' ? p.student?.name : p.student}</span>
                                         </div>
                                         <div className="flex items-center gap-1 text-xs">
-                                            <span className="font-medium text-gray-500">Relation:</span> <span className="capitalize">{p.relationship}</span>
+                                            <span className="font-medium text-gray-500">Organization:</span> <span className="capitalize">{p.organization?.name || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>
