@@ -253,7 +253,7 @@ export default function Parents() {
                 "Email": p.email,
                 "Phone": p.phone || 'N/A',
                 "Student": typeof p.student === 'object' ? p.student?.name : p.student,
-                "Relation": p.relationship,
+                "Organization": p.organization?.name || 'N/A',
                 "Status": p.isActive ? "Active" : "Inactive"
             }));
 
