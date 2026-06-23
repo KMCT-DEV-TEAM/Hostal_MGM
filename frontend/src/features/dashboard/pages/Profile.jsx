@@ -79,7 +79,7 @@ export default function Profile() {
                 showSuccessToast('OTP Sent', 'Check your new email for the verification code');
                 setIsEmailVerifyModalOpen(true);
             } catch (error) {
-                showErrorToast('Failed', error?.response?.data?.message || 'Failed to send OTP');
+                showErrorToast('Failed', error?.message || 'Failed to send OTP');
             } finally {
                 setIsSaving(false);
             }
@@ -102,7 +102,7 @@ export default function Profile() {
             setEditingField(null);
             setConfirmConfig({ isOpen: false, field: null });
         } catch (error) {
-            showErrorToast('Failed', error?.response?.data?.message || 'Failed to update profile');
+            showErrorToast('Failed', error?.message || 'Failed to update profile');
         } finally {
             setIsSaving(false);
         }
@@ -117,7 +117,7 @@ export default function Profile() {
             setEditingField(null);
             setIsEmailVerifyModalOpen(false);
         } catch (error) {
-            showErrorToast('Failed', error?.response?.data?.message || 'Failed to update email');
+            showErrorToast('Failed', error?.message || 'Failed to update email');
         } finally {
             setIsSaving(false);
         }

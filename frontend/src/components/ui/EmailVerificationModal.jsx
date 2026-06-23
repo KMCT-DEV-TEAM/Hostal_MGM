@@ -47,7 +47,7 @@ export default function EmailVerificationModal({ isOpen, onClose, onVerify, emai
             showSuccessToast('OTP Resent', 'Check your new email for the verification code');
         } catch (error) {
             const { showErrorToast } = await import('@/utils/toast');
-            showErrorToast('Failed', error?.response?.data?.message || 'Failed to resend OTP');
+            showErrorToast('Failed', error?.message || 'Failed to resend OTP');
         } finally {
             setIsResending(false);
         }

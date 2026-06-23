@@ -79,7 +79,7 @@ const DepartmentFormModal = ({
                                     onChange={handleInputChange}
                                     required
                                     className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="e.g. CS101"
+                                    placeholder="CS101"
                                 />
                             </div>
                         </div>

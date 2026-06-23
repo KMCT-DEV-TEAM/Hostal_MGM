@@ -473,7 +473,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         setVerifyModalOpen(true);
       }
     } catch (error) {
-      const message = error?.response?.data?.message || "Failed to send OTP";
+      const message = error?.message || "Failed to send OTP";
       setOtpErrors((prev) => ({ ...prev, [type]: message }));
       showErrorToast(message);
     } finally {
@@ -502,7 +502,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       showSuccessToast(`${verifyTarget === "student" ? "Student" : "Parent"} email verified successfully`);
       setVerifyModalOpen(false);
     } catch (error) {
-      const message = error?.response?.data?.message || "Invalid OTP";
+      const message = error?.message || "Invalid OTP";
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: message }));
       showErrorToast(message);
     } finally {

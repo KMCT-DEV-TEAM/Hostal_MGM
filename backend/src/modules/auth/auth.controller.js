@@ -33,7 +33,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   if (!user) {
-    return sendError(res, 401, "Invalid credentials");
+    return sendError(res, 401, "User not found");
   }
 
   // Inject role for student/parent models that lack it inherently, 
@@ -55,7 +55,7 @@ const login = asyncHandler(async (req, res) => {
   const isMatch = await verifyPassword(password, user.password);
 
   if (!isMatch) {
-    return sendError(res, 401, "Invalid credentials");
+    return sendError(res, 401, "Incorrect password");
   }
 
   const accessToken = generateAccessToken(user);

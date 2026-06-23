@@ -69,7 +69,7 @@ const OrganizationFormModal = ({
                                     placeholder={t('org_name_placeholder')}
                                 />
                             </div>
-                            <div>
+                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">{t('code')} *</label>
                                 <input
                                     name="code"
@@ -77,7 +77,7 @@ const OrganizationFormModal = ({
                                     onChange={handleInputChange}
                                     required
                                     className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="e.g. KMCTENG"
+                                    placeholder="KMCTENG"
                                 />
                             </div>
                             <div>
@@ -88,7 +88,7 @@ const OrganizationFormModal = ({
                                     onChange={handleInputChange}
                                     required
                                     className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="e.g. ORG001"
+                                    placeholder="ORG001"
                                 />
                             </div>
                         </div>

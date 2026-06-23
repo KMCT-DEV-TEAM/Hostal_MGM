@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const BatchFormModal = ({
     isModalOpen,
@@ -15,6 +16,9 @@ const BatchFormModal = ({
     departments
 }) => {
     const { t } = useTranslation();
+    const user = useAuthStore((state) => state.user);
+    const orgCode = user?.organization?.code;
+    
     if (!isModalOpen) return null;
 
     return (
@@ -73,14 +77,21 @@ const BatchFormModal = ({
                             </div>
                             <div className="col-span-1">
                                 <label className="block text-xs mb-1.5 font-medium">{t('batch_code')} *</label>
-                                <input
-                                    name="code"
-                                    value={formData.code}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="e.g. KMCTENG"
-                                />
+                                <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                                    {orgCode && (
+                                        <div className="px-3 py-2 bg-gray-100 border-r border-gray-200 text-xs font-semibold text-gray-600 uppercase select-none">
+                                            {orgCode}-
+                                        </div>
+                                    )}
+                                    <input
+                                        name="code"
+                                        value={formData.code}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase"
+                                        placeholder="CS101"
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-6 mt-6">
