@@ -2,6 +2,7 @@ import React from 'react';
 import { Pencil, Mail, Phone, Square, CheckSquare, User } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
+import { ROLES } from '@/constants/roles';
 
 const ParentsMobileList = ({
     parents = [],
@@ -14,7 +15,8 @@ const ParentsMobileList = ({
     onView,
     canEdit,
     canDelete,
-    statusLoadingIds = []
+    statusLoadingIds = [],
+    role
 }) => {
     const isAllSelected = parents.length > 0 && parents.every(p => {
         const rowId = p._id || p.id;
@@ -104,9 +106,11 @@ const ParentsMobileList = ({
                                             <User className="w-3 h-3" />
                                             <span className="truncate">Student: {typeof p.student === 'object' ? p.student?.name : p.student}</span>
                                         </div>
-                                        <div className="flex items-center gap-1 text-xs">
-                                            <span className="font-medium text-gray-500">Organization:</span> <span className="capitalize">{p.organization?.name || 'N/A'}</span>
-                                        </div>
+                                        {(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN) && (
+                                            <div className="flex items-center gap-1 text-xs">
+                                                <span className="font-medium text-gray-500">Organization:</span> <span className="capitalize">{p.organization?.name || 'N/A'}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
