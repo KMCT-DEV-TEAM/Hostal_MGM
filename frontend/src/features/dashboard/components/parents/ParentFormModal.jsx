@@ -3,10 +3,11 @@ import Modal from "@/components/ui/Modal";
 import { useAuthStore } from "@/store/useAuthStore";
 import { sendOtp } from "@/services/auth.service";
 import OtpInput from "@/components/ui/OtpInput";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addParentSchema, editParentSchema } from "@/features/dashboard/validation/parentSchema";
 import { useTranslation } from "@/hooks/useTranslation";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function ParentFormModal({
   studentId,
@@ -204,16 +205,24 @@ export default function ParentFormModal({
             Relation <span className="text-red-500">*</span>
           </label>
 
-          <select
-            {...register("relation")}
-            className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.relation ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
-              }`}
-          >
-            <option value="">Select Relation</option>
-            <option value="father">Father</option>
-            <option value="mother">Mother</option>
-            <option value="guardian">Guardian</option>
-          </select>
+          <Controller
+            name="relation"
+            control={control}
+            render={({ field }) => (
+              <Dropdown
+                options={[
+                  { value: "father", label: "Father" },
+                  { value: "mother", label: "Mother" },
+                  { value: "guardian", label: "Guardian" }
+                ]}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Select Relation"
+                triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.relation ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+                  }`}
+              />
+            )}
+          />
           <ErrorMessage error={errors.relation} />
         </div>
 
@@ -224,21 +233,24 @@ export default function ParentFormModal({
               Linked Student <span className="text-red-500">*</span>
             </label>
 
-            <select
-              {...register("studentId")}
-              className={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.studentId ? 'border-red-300 focus:border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-secondary'
-                }`}
-              disabled={loadingStudents}
-            >
-              <option value="">
-                {loadingStudents ? "Loading students..." : "Select Student"}
-              </option>
-              {students.map(student => (
-                <option key={student._id || student.id} value={student._id || student.id}>
-                  {student.name} ({student.admissionNo})
-                </option>
-              ))}
-            </select>
+            <Controller
+              name="studentId"
+              control={control}
+              render={({ field }) => (
+                <Dropdown
+                  options={students.map(student => ({
+                    value: student._id || student.id,
+                    label: `${student.name} (${student.admissionNo})`
+                  }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={loadingStudents ? "Loading students..." : "Select Student"}
+                  triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${
+                    errors.studentId ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+                  } ${loadingStudents ? "opacity-50 pointer-events-none" : ""}`}
+                />
+              )}
+            />
             <ErrorMessage error={errors.studentId} />
           </div>
         )}

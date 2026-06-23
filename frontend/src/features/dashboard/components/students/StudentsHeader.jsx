@@ -28,18 +28,7 @@ export default function StudentsHeader({ selectedIds, students, canEdit, canDele
                     </button>
                 )}
 
-                {canEdit && selectedIds.length === 1 && (
-                    <button
-                        onClick={() => {
-                            const target = students.find((s) => (s._id ?? s.id) === selectedIds[0]);
-                            if (target && onEdit) onEdit(target);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 border border-[#0A437A] text-[#0A437A] bg-blue-50/40 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
-                    >
-                        <Pencil className="w-4 h-4" />
-                        Edit
-                    </button>
-                )}
+               
             </div>
         </div>
     );

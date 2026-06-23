@@ -76,11 +76,36 @@ const ContactAdministrator = () => {
                 <AuthLogo isCentered={true} />
 
                 <AuthCard
+                    variant="login"
                     title="Reset Password"
                     subtitle="Need help accessing your account? Send a request."
                 >
-                    {step === 1 ? (
-                        <form onSubmit={handleEmailSubmit(onVerifyEmail)} className="space-y-5">
+                    {isLoading ? (
+                        <div className="space-y-6 animate-pulse">
+                            {step === 1 ? (
+                                <div>
+                                    <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                                    <div className="h-11 bg-gray-100 rounded-lg w-full"></div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="h-12 bg-gray-100 rounded-lg w-full mb-4"></div>
+                                    <div>
+                                        <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                                        <div className="h-11 bg-gray-100 rounded-lg w-full"></div>
+                                    </div>
+                                    <div>
+                                        <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                                        <div className="h-11 bg-gray-100 rounded-lg w-full"></div>
+                                    </div>
+                                </>
+                            )}
+                            <div className="h-12 bg-[#0A437A]/50 rounded-md w-full flex items-center justify-center mt-2">
+                                <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                            </div>
+                        </div>
+                    ) : step === 1 ? (
+                        <form onSubmit={handleEmailSubmit(onVerifyEmail)} className="space-y-6">
                             <Input
                                 label="Email Address"
                                 type="email"
@@ -89,13 +114,15 @@ const ContactAdministrator = () => {
                                 placeholder="Enter your registered email"
                             />
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? 'Verifying...' : 'Verify Email'}
+                            <Button type="submit" disabled={isLoading}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <span>Verify Email</span>
+                                </div>
                             </Button>
                         </form>
                     ) : (
-                        <form onSubmit={handlePasswordSubmit(onSubmitPassword)} className="space-y-5">
-                            <div className="text-sm text-text-secondary bg-gray-50 p-3 rounded-lg mb-4">
+                        <form onSubmit={handlePasswordSubmit(onSubmitPassword)} className="space-y-6">
+                            <div className="text-sm text-text-secondary bg-gray-50 p-3 rounded-lg">
                                 Verified Email: <span className="font-medium text-text-primary">{verifiedEmail}</span>
                             </div>
 
@@ -115,18 +142,21 @@ const ContactAdministrator = () => {
                                 placeholder="Confirm new password"
                             />
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? 'Submitting...' : 'Send Password Request'}
+                            <Button type="submit" disabled={isLoading}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <span>Send Password Request</span>
+                                </div>
                             </Button>
                         </form>
                     )}
 
-                    <p className="text-center mt-6">
+                    <p className="text-center text-xs text-text-secondary mt-6">
+                        Remember your password ?
                         <button 
                             onClick={() => navigate('/admin/login')} 
-                            className="text-[13px] text-accent hover:text-accent/80 font-medium transition-colors"
+                            className="ml-1 text-accent font-medium hover:text-accent/80 transition-colors cursor-pointer"
                         >
-                            &larr; Back to Sign In
+                            Back to Sign In
                         </button>
                     </p>
                 </AuthCard>

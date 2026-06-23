@@ -1,9 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/parent/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus, getParents, exportParents } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus, exportParents } from '@/services/parent.service';
+import { getOrganizations } from '@/services/organization.service';
+import { ROLES } from '@/constants/roles';
 import ParentsHeader from '../components/parents/ParentsHeader';
 import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
@@ -27,7 +29,8 @@ export default function Parents() {
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [page, setPage] = useState(1);
-    const [filters, setFilters] = useState({ search: '', isActive: '', relationship: '' });
+    const [filters, setFilters] = useState({ search: '', isActive: '', organizationId: '' });
+    const [organizations, setOrganizations] = useState([]);
 
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
@@ -36,6 +39,14 @@ export default function Parents() {
     const [pendingPayload, setPendingPayload] = useState(null);
 
     const debouncedSearch = useDebounce(filters.search, 500);
+
+    useEffect(() => {
+        if (role === ROLES.SUPER_ADMIN) {
+            getOrganizations({ limit: 100, status: 'Active' })
+                .then(res => setOrganizations(res.data || []))
+                .catch(err => console.error("Failed to fetch organizations", err));
+        }
+    }, [role]);
 
     const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
@@ -74,8 +85,8 @@ export default function Parents() {
     const handleStatusChangeRequest = (parent, newStatus) => {
         if (!canEdit) return;
         setPendingStatusChange({
-            title: 'Confirm Status Change',
-            message: `Are you sure you want to change the status of ${parent?.parentName || 'this parent'} to ${newStatus}?`,
+            title: 'Change Status',
+            message: `Are you sure you want to change the status of this parent?`,
             confirmText: 'Confirm',
             confirmAction: () => confirmStatusChange(parent)
         });
@@ -242,7 +253,7 @@ export default function Parents() {
                 "Email": p.email,
                 "Phone": p.phone || 'N/A',
                 "Student": typeof p.student === 'object' ? p.student?.name : p.student,
-                "Relation": p.relationship,
+                "Organization": p.organization?.name || 'N/A',
                 "Status": p.isActive ? "Active" : "Inactive"
             }));
 
@@ -263,6 +274,29 @@ export default function Parents() {
         }
     };
 
+    const exportFields = [
+        {
+            name: "isActive",
+            label: "Account Status",
+            options: [
+                { label: 'All Statuses', value: '' },
+                { label: 'Active Only', value: 'true' },
+                { label: 'Inactive Only', value: 'false' },
+            ]
+        }
+    ];
+
+    if (role === ROLES.SUPER_ADMIN) {
+        exportFields.push({
+            name: "organizationId",
+            label: "Organization",
+            options: [
+                { label: 'All Organizations', value: '' },
+                ...organizations.map(org => ({ label: org.name, value: org._id }))
+            ]
+        });
+    }
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
             <ParentsHeader
@@ -279,38 +313,38 @@ export default function Parents() {
                     onFilterChange={handleFilterChange}
                     onExport={handleExport}
                     canCreate={canCreate}
+                    canEdit={canEdit}
+                    role={role}
+                    organizations={organizations}
                 />
 
-                {loading ? (
-                    <div className="flex justify-center p-8">Loading parents...</div>
-                ) : error ? (
-                    <div className="flex justify-center p-8 text-red-500">Error loading parents: {error.message}</div>
-                ) : (
-                    <>
-                        <ParentsTable
-                            parents={parents}
-                            selectedIds={selectedIds}
-                            onSelectAll={handleSelectAll}
-                            onSelect={handleSelect}
-                            onStatusChangeRequest={handleStatusChangeRequest}
-                            onEdit={handleEdit}
-                            onView={handleView}
-                            canEdit={canEdit}
-                            canDelete={canDelete}
-                            statusLoadingIds={statusLoadingIds}
-                        />
-                        <ParentsMobileList
-                            parents={parents}
-                            error={error}
-                            selectedIds={selectedIds}
-                            onSelectAll={handleSelectAll}
-                            onSelect={handleSelect}
-                            onEdit={handleEdit}
-                            onView={handleView}
-                            statusLoadingIds={statusLoadingIds}
-                        />
-                    </>
-                )}
+                <ParentsTable
+                    parents={parents}
+                    loading={loading}
+                    error={error ? error.message || error : null}
+                    selectedIds={selectedIds}
+                    onSelectAll={handleSelectAll}
+                    onSelect={handleSelect}
+                    onStatusChangeRequest={handleStatusChangeRequest}
+                    onEdit={handleEdit}
+                    onView={handleView}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    statusLoadingIds={statusLoadingIds}
+                />
+                <ParentsMobileList
+                    parents={parents}
+                    loading={loading}
+                    error={error ? error.message || error : null}
+                    selectedIds={selectedIds}
+                    onSelectAll={handleSelectAll}
+                    onSelect={handleSelect}
+                    onEdit={handleEdit}
+                    onView={handleView}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    statusLoadingIds={statusLoadingIds}
+                />
 
                 {parents.length > 0 && !loading && !error && (
                     <Pagination
@@ -367,6 +401,7 @@ export default function Parents() {
                 title="Discard Changes"
                 message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
                 confirmText="Discard"
+                cancelText="Continue Editing"
                 confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
             />
 
@@ -376,27 +411,7 @@ export default function Parents() {
                 onExport={confirmExport}
                 isExporting={isExporting}
                 title="Export Parents Data"
-                fields={[
-                    {
-                        name: "isActive",
-                        label: "Account Status",
-                        options: [
-                            { label: 'All Statuses', value: '' },
-                            { label: 'Active Only', value: 'true' },
-                            { label: 'Inactive Only', value: 'false' },
-                        ]
-                    },
-                    {
-                        name: "relationship",
-                        label: "Relationship",
-                        options: [
-                            { label: 'All Relations', value: '' },
-                            { label: 'Father', value: 'father' },
-                            { label: 'Mother', value: 'mother' },
-                            { label: 'Guardian', value: 'guardian' },
-                        ]
-                    }
-                ]}
+                fields={exportFields}
             />
         </div>
     );

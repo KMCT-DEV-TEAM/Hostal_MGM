@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Search, Download, ChevronDown } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
+import { ROLES } from '@/constants/roles';
 
-export default function ParentsToolbar({ onSearch, onFilterChange, onExport, canCreate }) {
+export default function ParentsToolbar({ onSearch, onFilterChange, onExport, canCreate, canEdit = true, role, organizations = [] }) {
     const [statusFilter, setStatusFilter] = useState('');
-    const [relationFilter, setRelationFilter] = useState('');
+    const [organizationFilter, setOrganizationFilter] = useState('');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const statusOptions = [
@@ -13,11 +14,9 @@ export default function ParentsToolbar({ onSearch, onFilterChange, onExport, can
         { label: 'Inactive', value: 'Inactive' }
     ];
 
-    const relationOptions = [
-        { label: 'All Relations', value: '' },
-        { label: 'Father', value: 'Father' },
-        { label: 'Mother', value: 'Mother' },
-        { label: 'Guardian', value: 'Guardian' }
+    const organizationOptions = [
+        { label: 'All Organizations', value: '' },
+        ...organizations.map(org => ({ label: org.name, value: org._id }))
     ];
 
     return (
@@ -47,47 +46,42 @@ export default function ParentsToolbar({ onSearch, onFilterChange, onExport, can
             >
                 {/* Mobile: two dropdowns same row | Desktop: normal */}
                 <div className="flex w-full sm:w-auto gap-3">
-                    <Dropdown
-                        className="flex-1 sm:flex-none"
-                        options={statusOptions}
-                        value={statusFilter}
-                        onChange={(val) => {
-                            setStatusFilter(val);
-                            onFilterChange?.(
-                                'isActive',
-                                val === 'Active'
-                                    ? 'true'
-                                    : val === 'Inactive'
-                                        ? 'false'
-                                        : ''
-                            );
-                        }}
-                        placeholder="All Status"
-                        minWidth="w-32"
-                        triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium"
-                    />
-
-                    <Dropdown
-                        className="flex-1 sm:flex-none"
-                        options={relationOptions}
-                        value={relationFilter}
-                        onChange={(val) => {
-                            setRelationFilter(val);
-                            onFilterChange?.(
-                                'relationship',
-                                val === 'Father'
-                                    ? 'father'
-                                    : val === 'Mother'
-                                        ? 'mother'
-                                        : val === 'Guardian'
-                                            ? 'guardian'
+                    {canEdit && (
+                        <Dropdown
+                            className="flex-1 sm:flex-none"
+                            options={statusOptions}
+                            value={statusFilter}
+                            onChange={(val) => {
+                                setStatusFilter(val);
+                                onFilterChange?.(
+                                    'isActive',
+                                    val === 'Active'
+                                        ? 'true'
+                                        : val === 'Inactive'
+                                            ? 'false'
                                             : ''
-                            );
-                        }}
-                        placeholder="All Relations"
-                        minWidth="w-32"
-                        triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium"
-                    />
+                                );
+                            }}
+                            placeholder="All Status"
+                            minWidth="w-32"
+                            triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium"
+                        />
+                    )}
+
+                    {role === ROLES.SUPER_ADMIN && (
+                        <Dropdown
+                            className="flex-1 sm:flex-none"
+                            options={organizationOptions}
+                            value={organizationFilter}
+                            onChange={(val) => {
+                                setOrganizationFilter(val);
+                                onFilterChange?.('organizationId', val);
+                            }}
+                            placeholder="All Organizations"
+                            minWidth="w-40"
+                            triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium"
+                        />
+                    )}
                 </div>
 
                 <button

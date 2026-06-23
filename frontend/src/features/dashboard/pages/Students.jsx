@@ -1,3 +1,4 @@
+"use client"
 import React, { useCallback, useMemo, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
@@ -8,6 +9,7 @@ import {
   toggleStudentStatus,
   bulkUpdateStudentStatus,
   updateStudentByRole,
+  getStudents,
 } from "@/services/student.service";
 import StudentsTable from "../components/students/StudentsTable";
 import StudentsHeader from "../components/students/StudentsHeader";
@@ -15,7 +17,10 @@ import StudentsToolbar from "../components/students/StudentsToolbar";
 import StudentFormModal from "../components/students/StudentFormModal";
 import StudentFilterModal from "../components/students/StudentFilterModal";
 import StudentDetailView from "../components/students/StudentDetailView";
+import StudentExportFilterModal from "../components/Studentexportfiltermodal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { showSuccessToast, showErrorToast } from "@/utils/toast";
+import { exportToExcel } from "@/utils/exportUtils";
 
 export default function Students() {
   const role = useAuthStore((s) => s.user?.role);
@@ -30,14 +35,16 @@ export default function Students() {
   const [viewingStudent, setViewingStudent] = useState(null);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [filters, setFilters] = useState({
-    search: "",
-    course: "",
-    department: "",
-    hostelId: "",
-    organizationId: "",
-    isActive: "",
-  });
+ const [filters, setFilters] = useState({
+  search: "",
+  courseId: "",
+  departmentId: "",
+  hostelId: "",
+  organizationId: "",
+  isActive: "",
+});
+  const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const studentQuery = useMemo(
     () => ({ ...filters, page, limit }),
@@ -109,14 +116,9 @@ export default function Students() {
 
   const handleBulkStatusChange = async (targetActive, idsToToggle) => {
     if (!idsToToggle.length) return;
-
     setStatusLoadingIds((prev) => [...new Set([...prev, ...idsToToggle])]);
-
     try {
-      await bulkUpdateStudentStatus(role, {
-        ids: idsToToggle,
-        isActive: targetActive,
-      });
+      await bulkUpdateStudentStatus(role, { ids: idsToToggle, isActive: targetActive });
       setStudents((prev) =>
         prev.map((student) =>
           idsToToggle.includes(getStudentId(student))
@@ -125,26 +127,29 @@ export default function Students() {
         ),
       );
       setSelectedIds([]);
-    } finally {
-      setStatusLoadingIds((prev) =>
-        prev.filter((id) => !idsToToggle.includes(id)),
+      showSuccessToast(
+        `${idsToToggle.length} students ${targetActive ? "activated" : "deactivated"} successfully`
       );
+    } catch (err) {
+      showErrorToast(
+        err?.response?.data?.message ||
+        `Failed to ${targetActive ? "activate" : "deactivate"} students`
+      );
+    } finally {
+      setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
     }
   };
 
   const prepareBulkStatusChange = (targetActive) => {
     if (!selectedIds.length) return;
-
     const idsToToggle = selectedIds.filter((id) => {
-      const student = students.find((student) => getStudentId(student) === id);
+      const student = students.find((s) => getStudentId(s) === id);
       return student ? student.isActive !== targetActive : false;
     });
-
     if (!idsToToggle.length) {
       setSelectedIds([]);
       return;
     }
-
     setPendingConfirm({
       title: targetActive ? "Confirm Activation" : "Confirm Deactivation",
       message: `Are you sure you want to ${targetActive ? "activate" : "deactivate"} ${idsToToggle.length} selected student(s)?`,
@@ -165,20 +170,21 @@ export default function Students() {
 
   const confirmDeleteRow = async (id) => {
     setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
-
     try {
       const response = await toggleStudentStatus(role, id);
       applyStatusChange(id, response);
-    } finally {
-      setStatusLoadingIds((prev) =>
-        prev.filter((loadingId) => loadingId !== id),
+      showSuccessToast("Student status updated successfully");
+    } catch (err) {
+      showErrorToast(
+        err?.response?.data?.message || "Failed to update student status"
       );
+    } finally {
+      setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
     }
   };
 
   const handleDeleteRow = async (id) => {
     if (!canDelete) return;
-
     setPendingConfirm({
       title: "Confirm Deactivation",
       message: "Are you sure you want to deactivate this student?",
@@ -187,18 +193,31 @@ export default function Students() {
     });
   };
 
-  const handleStatusChange = async (id) => {
-    if (!canEdit) return;
+  const confirmStatusChange = async (id) => {
     setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
-
     try {
       const response = await toggleStudentStatus(role, id);
       applyStatusChange(id, response);
-    } finally {
-      setStatusLoadingIds((prev) =>
-        prev.filter((loadingId) => loadingId !== id),
+      showSuccessToast("Student status updated successfully");
+    } catch (err) {
+      showErrorToast(
+        err?.response?.data?.message || "Failed to update student status"
       );
+    } finally {
+      setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
     }
+  };
+
+  const handleStatusChange = (id) => {
+    if (!canEdit) return;
+    const student = students.find((s) => getStudentId(s) === id);
+    const targetActive = !student?.isActive;
+    setPendingConfirm({
+      title: targetActive ? "Confirm Activation" : "Confirm Deactivation",
+      message: `Are you sure you want to ${targetActive ? "activate" : "deactivate"} ${student?.name || "this student"}?`,
+      confirmText: targetActive ? "Activate" : "Deactivate",
+      confirmAction: () => confirmStatusChange(id),
+    });
   };
 
   const handleSearch = useCallback((query) => {
@@ -213,58 +232,84 @@ export default function Students() {
   };
 
   const handleSaveStudent = async (payload) => {
-
-    console.log(payload)
-    if (editingStudent) {
-      await updateStudentByRole(role, getStudentId(editingStudent), payload);
-    } else {
-      await createStudent(payload);
+    try {
+      if (editingStudent) {
+        await updateStudentByRole(role, getStudentId(editingStudent), payload);
+        showSuccessToast("Student updated successfully");
+      } else {
+        await createStudent(payload);
+        showSuccessToast("Student created successfully");
+      }
+      setActiveModal(null);
+      setEditingStudent(null);
+      refetch();
+    } catch (err) {
+      console.error(err);
+      const message =
+        err?.response?.data?.message ||
+        err?.data?.message ||
+        (editingStudent ? "Failed to update student" : "Failed to create student");
+      showErrorToast(message);
     }
-
-    setActiveModal(null);
-    setEditingStudent(null);
-
-    refetch();
   };
 
+  // Export flow: open the filter modal (mirrors Parents.js handleExport)
   const handleExport = () => {
-    const headers = [
-      "Student ID",
-      "Name",
-      "Email",
-      "Phone",
-      "Course",
-      "Department",
-      "Status",
-    ];
-    const rows = students.map((student) => [
-      student.studentId,
-      student.name,
-      student.email,
-      student.phone,
-      student.course,
-      student.department,
-      student.isActive ? "Active" : "Inactive",
-    ]);
-    const csv = [headers, ...rows]
-      .map((row) =>
-        row
-          .map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`)
-          .join(","),
-      )
-      .join("\n");
-    const url = URL.createObjectURL(
-      new Blob([csv], { type: "text/csv;charset=utf-8;" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "students.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    setIsExportConfirmOpen(true);
+  };
+
+  const confirmExport = async (exportFilters) => {
+    setIsExporting(true);
+    try {
+      const mergedFilters = { ...filters, ...exportFilters };
+
+      const params = Object.fromEntries(
+        Object.entries(mergedFilters).filter(([, value]) => value !== ""),
+      );
+
+      const response = await getStudents(role, { ...params, page: 1, limit: 99990 });
+
+      const dataToExport = response?.students || response?.data || [];
+
+      if (dataToExport.length === 0) {
+        showErrorToast("Export failed", "No students match the selected filters");
+        setIsExportConfirmOpen(false);
+        return;
+      }
+
+      const exportData = dataToExport.map((student, index) => ({
+        "S.No": index + 1,
+        "Admission No": student.studentId,
+        "Name": student.name,
+        "Email": student.email,
+        "Phone": student.phone,
+        "Course": student.course?.name ?? student.course ?? "N/A",
+        "Department": student.department?.name ?? student.department ?? "N/A",
+        "Status": student.isActive ? "Active" : "Inactive",
+      }));
+
+      const isSuccess = exportToExcel(exportData, "Students_Export", "Students");
+
+      if (isSuccess) {
+        showSuccessToast("Exported successfully");
+      } else {
+        showErrorToast("Export failed", "Could not generate the Excel file");
+      }
+
+      setIsExportConfirmOpen(false);
+    } catch (err) {
+      console.error("Failed to export students:", err);
+      showErrorToast(
+        "Export failed",
+        err?.response?.data?.message || err.message,
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
-    <div className="w-full sticky   h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+    <div className="w-full sticky h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
       <StudentsHeader
         selectedIds={selectedIds}
         students={students}
@@ -301,13 +346,12 @@ export default function Students() {
         statusLoadingIds={statusLoadingIds}
       />
 
-      <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm  gap-3">
+      <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm gap-3">
         <div>
           Showing {pagination.totalRecords === 0 ? 0 : (page - 1) * limit + 1}{" "}
           to {Math.min(page * limit, pagination.totalRecords)} of{" "}
           {pagination.totalRecords} entries
         </div>
-
         <div className="flex items-center gap-1 flex-wrap">
           <button
             disabled={page === 1}
@@ -322,11 +366,10 @@ export default function Students() {
               <button
                 key={pageNum}
                 onClick={() => setPage(pageNum)}
-                className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer ${
-                  page === pageNum
+                className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
                     ? "bg-[#0A437A] text-white shadow-sm font-bold"
                     : "border border-transparent text-gray-600 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {pageNum}
               </button>
@@ -334,9 +377,7 @@ export default function Students() {
           })}
           <button
             disabled={!pagination.hasNextPage}
-            onClick={() =>
-              setPage((prev) => Math.min(prev + 1, pagination.totalPages))
-            }
+            onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
             className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             Next
@@ -370,6 +411,14 @@ export default function Students() {
           onApply={handleApplyFilter}
         />
       )}
+
+      <StudentExportFilterModal
+        isOpen={isExportConfirmOpen}
+        onClose={() => setIsExportConfirmOpen(false)}
+        onExport={confirmExport}
+        isExporting={isExporting}
+        role={role}
+      />
 
       <ConfirmationModal
         isOpen={!!pendingConfirm}
