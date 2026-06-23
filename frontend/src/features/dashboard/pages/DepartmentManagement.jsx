@@ -136,10 +136,17 @@ const DepartmentManagement = () => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && Department) {
             setEditingId(Department._id);
+            
+            // Extract suffix code
+            const courseIdValue = Department.courseId?._id || Department.courseId;
+            const course = courses.find(c => c._id === courseIdValue);
+            const prefix = course ? `${course.code}-` : '';
+            const suffixCode = Department.code?.startsWith(prefix) ? Department.code.substring(prefix.length) : Department.code;
+
             setFormData({
                 name: Department.name || '',
-                code: Department.code || '',
-                courseId: Department.courseId?._id || Department.courseId || ''
+                code: suffixCode || '',
+                courseId: courseIdValue || ''
             });
         } else {
             setEditingId(null);
@@ -169,11 +176,19 @@ const DepartmentManagement = () => {
     const saveDepartment = async () => {
         try {
             setIsSubmitting(true);
+            
+            const course = courses.find(c => c._id === formData.courseId);
+            const prefix = course ? `${course.code}-` : '';
+            const finalData = {
+                ...formData,
+                code: `${prefix}${formData.code}`
+            };
+
             if (isEditMode && editingId) {
-                await DepartmentService.updateDepartment(editingId, formData);
+                await DepartmentService.updateDepartment(editingId, finalData);
                 showSuccessToast('Department Updated', 'Department details saved successfully');
             } else {
-                await DepartmentService.createDepartment(formData);
+                await DepartmentService.createDepartment(finalData);
                 showSuccessToast('Department Added', 'New Department registered successfully');
             }
             setIsModalOpen(false);

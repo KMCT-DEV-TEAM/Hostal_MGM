@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import Organization from "./organization.model.js";
+import User from "../users/user.model.js";
+import Student from "../students/student.model.js";
+import Parent from "../parents/parent.model.js";
 
 const findExistingOrganization = async (code, organisationNumber) => {
   return await Organization.findOne({
@@ -86,12 +89,31 @@ const updateOrganizationDb = async (id, data) => {
   return await Organization.findByIdAndUpdate(id, data, { new: true, runValidators: true });
 };
 
+const syncOrganizationStatus = async (orgIds, isActive) => {
+  await User.updateMany(
+    { organization: { $in: orgIds }, role: "admin" },
+    { isActive }
+  );
+
+  const students = await Student.find({ organizationId: { $in: orgIds } }).select("_id");
+  const studentIds = students.map(s => s._id);
+
+  if (studentIds.length > 0) {
+    await Student.updateMany({ _id: { $in: studentIds } }, { isActive });
+    await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive });
+  }
+};
+
 const toggleOrganizationStatusDb = async (id) => {
   const org = await Organization.findById(id);
   if (!org) return null;
 
   org.isActive = !org.isActive;
-  return await org.save();
+  await org.save();
+
+  await syncOrganizationStatus([id], org.isActive);
+
+  return org;
 };
 
 const bulkUpdateOrganizationStatusDb = async (ids, isActive) => {
@@ -101,6 +123,9 @@ const bulkUpdateOrganizationStatusDb = async (ids, isActive) => {
       { _id: { $in: objectIds } },
       { $set: { isActive } }
     );
+    
+    await syncOrganizationStatus(objectIds, isActive);
+
     return result;
   } catch (error) {
     console.error("bulkUpdateOrganizationStatusDb error:", error);

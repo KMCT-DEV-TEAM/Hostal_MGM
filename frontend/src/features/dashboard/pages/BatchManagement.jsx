@@ -137,16 +137,17 @@ const BatchManagement = () => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && batch) {
             setEditingId(batch._id);
-            const user = useAuthStore.getState().user;
-            const orgCode = user?.organization?.code;
-            let displayCode = batch.code || '';
-            if (orgCode && displayCode.startsWith(`${orgCode}-`)) {
-                displayCode = displayCode.substring(orgCode.length + 1);
-            }
+            
+            // Extract suffix code
+            const departmentIdValue = batch.departmentId?._id || batch.departmentId;
+            const department = departments.find(d => d._id === departmentIdValue);
+            const prefix = department ? `${department.code}-` : '';
+            const suffixCode = batch.code?.startsWith(prefix) ? batch.code.substring(prefix.length) : batch.code;
+
             setFormData({
                 name: batch.name || '',
-                code: displayCode,
-                departmentId: batch.departmentId?._id || batch.departmentId || ''
+                code: suffixCode || '',
+                departmentId: departmentIdValue || ''
             });
         } else {
             setEditingId(null);
@@ -176,12 +177,13 @@ const BatchManagement = () => {
     const saveBatch = async () => {
         try {
             setIsSubmitting(true);
-            const user = useAuthStore.getState().user;
-            const orgCode = user?.organization?.code;
-            const payload = { ...formData };
-            if (orgCode && payload.code) {
-                payload.code = `${orgCode}-${payload.code}`;
-            }
+            
+            const department = departments.find(d => d._id === formData.departmentId);
+            const prefix = department ? `${department.code}-` : '';
+            const payload = {
+                ...formData,
+                code: `${prefix}${formData.code}`
+            };
 
             if (isEditMode && editingId) {
                 await BatchService.updateBatch(editingId, payload);

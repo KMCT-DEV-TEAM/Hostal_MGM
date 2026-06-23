@@ -1,5 +1,6 @@
 import Department from "./department.model.js";
 import Course from "../courses/course.model.js";
+import { deactivateStudentsByQuery } from "../students/student.service.js";
 
 const checkExistingDepartmentCodeDb = async (code) => {
   return await Department.findOne({ code });
@@ -64,14 +65,25 @@ const toggleDepartmentStatusDb = async (id) => {
   
   department.isActive = !department.isActive;
   await department.save();
+
+  if (!department.isActive) {
+    await deactivateStudentsByQuery({ departmentId: id });
+  }
+
   return department;
 };
 
 const bulkUpdateDepartmentStatusDb = async (ids, isActive) => {
-  return await Department.updateMany(
+  const result = await Department.updateMany(
     { _id: { $in: ids } },
     { $set: { isActive } }
   );
+
+  if (!isActive) {
+    await deactivateStudentsByQuery({ departmentId: { $in: ids } });
+  }
+
+  return result;
 };
 
 export {

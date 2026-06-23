@@ -261,30 +261,30 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   };
 
-  const loadCourses = async () => {
-    setLoadingCourses(true);
-    try {
-      const res = await courseService.getCourses({ status: "Active" });
-      setCourses(res.data || []);
-    } catch (error) {
-      console.error("Failed to load courses", error);
-      showErrorToast("Failed to load courses");
-    } finally {
-      setLoadingCourses(false);
-    }
-  };
-
   useEffect(() => {
     loadHostels();
-    loadCourses();
     if (role === ROLES.SUPER_ADMIN) loadOrganizations();
   }, [role]);
+
+  useEffect(() => {
+    if (!organizationId) { setCourses([]); return; }
+    let isCurrent = true;
+    setLoadingCourses(true);
+    courseService.getCourses({ organizationId, status: "Active", limit: 0 })
+      .then((res) => { if (isCurrent) setCourses(res.data || []); })
+      .catch((error) => {
+        console.error("Failed to load courses", error);
+        if (isCurrent) showErrorToast("Failed to load courses");
+      })
+      .finally(() => { if (isCurrent) setLoadingCourses(false); });
+    return () => { isCurrent = false; };
+  }, [organizationId]);
 
   useEffect(() => {
     if (!courseId) { setDepartments([]); return; }
     let isCurrent = true;
     setLoadingDepartments(true);
-    departmentService.getDepartments({ courseId, status: "Active" })
+    departmentService.getDepartments({ courseId, status: "Active", limit: 0 })
       .then((res) => { if (isCurrent) setDepartments(res.data || []); })
       .catch((error) => {
         console.error("Failed to load departments", error);
@@ -298,7 +298,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     if (!departmentId) { setBatches([]); return; }
     let isCurrent = true;
     setLoadingBatches(true);
-    batchService.getBatches({ departmentId, status: "Active" })
+    batchService.getBatches({ departmentId, status: "Active", limit: 0 })
       .then((res) => { if (isCurrent) setBatches(res.data || []); })
       .catch((error) => {
         console.error("Failed to load batches", error);
@@ -379,7 +379,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   const handleOrganizationChange = (value) => {
     setOrganizationId(value);
+    setCourseId("");
+    setDepartmentId("");
+    setBatchId("");
     validateField("organizationId", value);
+    validateField("courseId", "", { silent: true });
+    validateField("departmentId", "", { silent: true });
+    validateField("batchId", "", { silent: true });
   };
 
   const handleSubmit = async (event) => {
@@ -522,7 +528,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   };
 
   const courseOptions = [
-    { value: "", label: "Select course" },
+    { value: "", label: organizationId ? "Select course" : "Select an organization first" },
     ...courses.map((c) => ({ value: c._id, label: c.name })),
   ];
 
@@ -725,9 +731,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   options={courseOptions}
                   value={courseId}
                   onChange={handleCourseChange}
+                  disabled={!organizationId && role === ROLES.SUPER_ADMIN}
                   className="w-full"
                   minWidth=""
-                  triggerClassName={dropdownTriggerClass}
+                  triggerClassName={`${dropdownTriggerClass} ${(!organizationId && role === ROLES.SUPER_ADMIN) ? "opacity-60 pointer-events-none disabled:bg-gray-100 disabled:cursor-not-allowed" : ""}`}
                 />
                 <input type="hidden" name="courseId" value={courseId} />
                 {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}

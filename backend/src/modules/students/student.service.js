@@ -134,6 +134,8 @@ const updateStudentDb = async (studentId, data) => {
     "isActive",
   ];
 
+  const isStatusChanged = data.isActive !== undefined && data.isActive !== student.isActive;
+
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) {
       student[field] = data[field];
@@ -141,6 +143,10 @@ const updateStudentDb = async (studentId, data) => {
   });
 
   await student.save();
+
+  if (isStatusChanged) {
+    await Parent.updateMany({ studentId: student._id }, { isActive: student.isActive });
+  }
 
   return student;
 };
@@ -162,11 +168,32 @@ const bulkUpdateStudentStatusDb = async (
     );
   }
 
-  return await Student.updateMany(query, {
+  const students = await Student.find(query).select("_id");
+  const studentIds = students.map((s) => s._id);
+
+  const result = await Student.updateMany(query, {
     $set: {
       isActive,
     },
   });
+
+  if (studentIds.length > 0) {
+    await Parent.updateMany(
+      { studentId: { $in: studentIds } },
+      { $set: { isActive } }
+    );
+  }
+
+  return result;
+};
+
+const deactivateStudentsByQuery = async (query) => {
+  const students = await Student.find(query).select("_id");
+  const studentIds = students.map((s) => s._id);
+  if (studentIds.length > 0) {
+    await Student.updateMany({ _id: { $in: studentIds } }, { isActive: false });
+    await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive: false });
+  }
 };
 
 
@@ -664,4 +691,5 @@ export {
   bulkUpdateStudentStatusDb,
   getStudentsService,
   getStudentFilterOptionsService,
+  deactivateStudentsByQuery,
 };

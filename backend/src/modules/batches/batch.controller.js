@@ -27,7 +27,7 @@ const createBatch = asyncHandler(async (req, res) => {
 });
 
 const getBatches = asyncHandler(async (req, res) => {
-  const { page, limit, search, status } = req.query;
+  const { page, limit, search, status, departmentId } = req.query;
 
   const query = {};
   if (search) {
@@ -38,6 +38,9 @@ const getBatches = asyncHandler(async (req, res) => {
   }
   if (status && status !== "All") {
     query.isActive = status === "Active";
+  }
+  if (departmentId) {
+    query.departmentId = departmentId;
   }
 
   const sort = { createdAt: -1 };

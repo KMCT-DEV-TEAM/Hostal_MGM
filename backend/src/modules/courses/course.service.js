@@ -1,4 +1,5 @@
 import Course from "./course.model.js";
+import { deactivateStudentsByQuery } from "../students/student.service.js";
 
 const checkExistingCourseCodeDb = async (code) => {
   return await Course.findOne({ code });
@@ -37,14 +38,25 @@ const toggleCourseStatusDb = async (id) => {
   
   course.isActive = !course.isActive;
   await course.save();
+
+  if (!course.isActive) {
+    await deactivateStudentsByQuery({ courseId: id });
+  }
+
   return course;
 };
 
 const bulkUpdateCourseStatusDb = async (ids, isActive) => {
-  return await Course.updateMany(
+  const result = await Course.updateMany(
     { _id: { $in: ids } },
     { $set: { isActive } }
   );
+
+  if (!isActive) {
+    await deactivateStudentsByQuery({ courseId: { $in: ids } });
+  }
+
+  return result;
 };
 
 export {

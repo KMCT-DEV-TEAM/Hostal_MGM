@@ -10,10 +10,14 @@ const CourseFormModal = ({
     handleInputChange,
     handleSubmit,
     handleCancel,
-    isSubmitting
+    isSubmitting,
+    organizations
 }) => {
     const { t } = useTranslation();
     if (!isModalOpen) return null;
+
+    const selectedOrg = (organizations || []).find(o => o._id === formData.organizationId);
+    const orgCode = selectedOrg ? `${selectedOrg.code}-` : '';
 
     return (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
@@ -58,6 +62,21 @@ const CourseFormModal = ({
                         <h3 className="text-[14px] font-medium text-primary">{t('basic_info')}</h3>
                         <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_course_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="col-span-1 sm:col-span-2">
+                                <label className="block text-xs mb-1.5 font-medium">Organization *</label>
+                                <select
+                                    name="organizationId"
+                                    value={formData.organizationId || ''}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] bg-white"
+                                >
+                                    <option value="" disabled>Select Organization</option>
+                                    {(organizations || []).map(org => (
+                                        <option key={org._id} value={org._id}>{org.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="col-span-1">
                                 <label className="block text-xs mb-1.5 font-medium">{t('course_name')} *</label>
                                 <input
@@ -71,14 +90,21 @@ const CourseFormModal = ({
                             </div>
                             <div className="col-span-1">
                                 <label className="block text-xs mb-1.5 font-medium">{t('course_code')} *</label>
-                                <input
-                                    name="code"
-                                    value={formData.code}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="CS101"
-                                />
+                                <div className="flex">
+                                    {orgCode && (
+                                        <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-xs font-medium">
+                                            {orgCode}
+                                        </span>
+                                    )}
+                                    <input
+                                        name="code"
+                                        value={formData.code}
+                                        onChange={handleInputChange}
+                                        required
+                                        className={`flex-1 w-full p-2.5 border border-gray-200 text-xs outline-none focus:border-[#0A437A] ${orgCode ? 'rounded-r-lg' : 'rounded-lg'}`}
+                                        placeholder="CS101"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </section>

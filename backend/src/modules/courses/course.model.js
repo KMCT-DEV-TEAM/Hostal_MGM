@@ -13,6 +13,11 @@ const courseSchema = new mongoose.Schema(
       unique: true,
       uppercase: true,
     },
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+    },
     departmentsCount: {
       type: Number,
       default: 0,

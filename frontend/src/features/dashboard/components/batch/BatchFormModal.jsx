@@ -16,8 +16,8 @@ const BatchFormModal = ({
     departments
 }) => {
     const { t } = useTranslation();
-    const user = useAuthStore((state) => state.user);
-    const orgCode = user?.organization?.code;
+    const selectedDept = (departments || []).find(d => d._id === formData.departmentId);
+    const deptCode = selectedDept ? `${selectedDept.code}-` : '';
     
     if (!isModalOpen) return null;
 
@@ -78,9 +78,9 @@ const BatchFormModal = ({
                             <div className="col-span-1">
                                 <label className="block text-xs mb-1.5 font-medium">{t('batch_code')} *</label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                    {orgCode && (
+                                    {deptCode && (
                                         <div className="px-3 py-2 bg-gray-100 border-r border-gray-200 text-xs font-semibold text-gray-600 uppercase select-none">
-                                            {orgCode}-
+                                            {deptCode}
                                         </div>
                                     )}
                                     <input
@@ -89,7 +89,7 @@ const BatchFormModal = ({
                                         onChange={handleInputChange}
                                         required
                                         className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase"
-                                        placeholder="CS101"
+                                        placeholder="BATCH1"
                                     />
                                 </div>
                             </div>
