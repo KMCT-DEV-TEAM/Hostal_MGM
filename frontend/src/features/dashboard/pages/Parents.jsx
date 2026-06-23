@@ -74,8 +74,8 @@ export default function Parents() {
     const handleStatusChangeRequest = (parent, newStatus) => {
         if (!canEdit) return;
         setPendingStatusChange({
-            title: 'Confirm Status Change',
-            message: `Are you sure you want to change the status of ${parent?.parentName || 'this parent'} to ${newStatus}?`,
+            title: 'Change Status',
+            message: `Are you sure you want to change the status of this parent?`,
             confirmText: 'Confirm',
             confirmAction: () => confirmStatusChange(parent)
         });
@@ -365,6 +365,7 @@ export default function Parents() {
                 title="Discard Changes"
                 message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
                 confirmText="Discard"
+                cancelText="Continue Editing"
                 confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
             />
 
