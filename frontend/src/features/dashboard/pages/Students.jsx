@@ -267,7 +267,7 @@ export default function Students() {
         Object.entries(mergedFilters).filter(([, value]) => value !== ""),
       );
 
-      const response = await getStudents(role, { ...params, page: 1, limit: 0 });
+      const response = await getStudents(role, { ...params, page: 1, limit: 99990 });
 
       const dataToExport = response?.students || response?.data || [];
 
@@ -417,6 +417,7 @@ export default function Students() {
         onClose={() => setIsExportConfirmOpen(false)}
         onExport={confirmExport}
         isExporting={isExporting}
+        role={role}
       />
 
       <ConfirmationModal

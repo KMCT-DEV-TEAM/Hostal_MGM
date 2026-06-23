@@ -4,11 +4,12 @@ import Dropdown from "@/components/ui/Dropdown";
 import courseService from "@/services/course.service";
 import departmentService from "@/services/department.service";
 
-
+import { ROLES } from "@/constants/roles";
 export default function StudentExportFilterModal({
   isOpen,
   onClose,
   onExport,
+  role,
   isExporting,
   title = "Export Students Data",
   subtitle = "Select filters to apply before downloading",
@@ -169,21 +170,28 @@ export default function StudentExportFilterModal({
           )}
         </div>
 
-        <div className="relative sm:col-span-2" style={{ zIndex: 18 }}>
-          <label className="block mb-1.5 text-xs font-medium text-gray-700">
-            Department
-          </label>
-          <Dropdown
-            options={departmentOptions}
-            value={departmentId}
-            onChange={setDepartmentId}
-            disabled={!courseId}
-            className="w-full"
-          />
-          {loadingDepartments && (
-            <p className="text-xs text-text-secondary mt-1">Loading departments...</p>
-          )}
-        </div>
+       
+       {role === ROLES.SUPER_ADMIN && (
+  <div className="relative sm:col-span-2" style={{ zIndex: 18 }}>
+    <label className="block mb-1.5 text-xs font-medium text-gray-700">
+      Department
+    </label>
+
+    <Dropdown
+      options={departmentOptions}
+      value={departmentId}
+      onChange={setDepartmentId}
+      disabled={!courseId}
+      className="w-full"
+    />
+
+    {loadingDepartments && (
+      <p className="text-xs text-text-secondary mt-1">
+        Loading departments...
+      </p>
+    )}
+  </div>
+)}
       </div>
     </Modal>
   );
