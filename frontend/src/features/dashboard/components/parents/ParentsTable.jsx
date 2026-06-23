@@ -61,17 +61,16 @@ export default function ParentsTable({
                             const isSelected = selectedIds.includes(rowId);
                             const isLoading = statusLoadingIds.includes(rowId);
                             return (
-                                <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    {(canEdit || canDelete) && (
-                                        <td className="p-4">
-                                            <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
-                                                {isSelected ?
-                                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
-                                                    <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                                                }
-                                            </button>
-                                        </td>
-                                    )}
+                                <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''} relative`}>                                    {(canEdit || canDelete) && (
+                                    <td className="p-4">
+                                        <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
+                                            {isSelected ?
+                                                <CheckSquare className="w-5 h-5 text-[#0A437A]" /> :
+                                                <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                            }
+                                        </button>
+                                    </td>
+                                )}
                                     <td
                                         className="p-4 flex items-center gap-3 font-medium text-text-secondary cursor-pointer hover:text-primary transition-colors"
                                         onClick={() => onView && onView(p)}
@@ -92,6 +91,7 @@ export default function ParentsTable({
                                         </div>
                                     </td>
                                     {canEdit && (
+
                                         <td className="p-4" onClick={(e) => e.stopPropagation()}>
                                             <div className="relative inline-block w-[105px]">
                                                 <Dropdown

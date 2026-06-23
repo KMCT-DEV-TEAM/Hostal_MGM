@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
 import Dropdown from "@/components/ui/Dropdown";
@@ -12,13 +13,63 @@ import { createStudentSchema, updateStudentSchema } from "../../validation/stude
 import batchService from "@/services/batch.service";
 import courseService from "@/services/course.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
+
+// Human-readable labels used to build friendly required/invalid messages
+// for fields where Zod's default message isn't useful (enums, picked
+// fields that fall back to "received undefined", etc).
+const FIELD_LABELS = {
+  studentId: "Admission number",
+  name: "Name",
+  email: "Email",
+  parentEmail: "Parent email",
+  phone: "Phone number",
+  parentPhone: "Parent phone number",
+  gender: "Gender",
+  dob: "Date of birth",
+  courseId: "Course",
+  departmentId: "Department",
+  batchId: "Batch",
+  academicYear: "Academic year",
+  organizationId: "Organization",
+  hostelId: "Hostel",
+  address: "Address",
+  parentName: "Parent name",
+  relationship: "Relationship",
+  studentOtp: "Student OTP",
+  parentOtp: "Parent OTP",
+  status: "Status",
+};
+
+// Translates a single Zod issue into a friendly, human message. Falls back
+// to the schema's own custom message (e.g. "Enter a valid 10-digit phone
+// number") when one was actually authored — only the generic Zod-internal
+// phrasing ("Invalid option: expected one of...", "Invalid input: expected
+// string, received undefined") gets rewritten.
+function toFriendlyMessage(issue, fieldName) {
+  const label = FIELD_LABELS[fieldName] || "This field";
+  const raw = issue.message || "";
+  const isGenericTypeError =
+    raw.startsWith("Invalid input") || raw.startsWith("Required");
+  const isGenericEnumError = raw.startsWith("Invalid option");
+
+  if (issue.code === "invalid_type" || isGenericTypeError) {
+    return `${label} is required`;
+  }
+  if (issue.code === "invalid_enum_value" || isGenericEnumError) {
+    return `Please select a ${label.toLowerCase()}`;
+  }
+  // Custom messages authored on the schema (.min, .regex, .email, etc.)
+  // are already human-friendly — keep them as-is.
+  return raw || `${label} is invalid`;
+}
 
 function toFieldErrors(zodError) {
   const fieldErrors = {};
   for (const issue of zodError.issues) {
     const key = issue.path[0];
     if (key && !fieldErrors[key]) {
-      fieldErrors[key] = issue.message;
+      fieldErrors[key] = toFriendlyMessage(issue, key);
     }
   }
   return fieldErrors;
@@ -28,6 +79,14 @@ function toIdString(value) {
   if (!value) return "";
   return typeof value === "string" ? value : value._id || "";
 }
+
+// updateStudentSchema is a ZodEffects (because of .refine()), so the plain
+// object schema (which supports .pick()) lives on `.innerType()` in zod v3.
+// createStudentSchema is already a plain ZodObject.
+const updateStudentObjectSchema =
+  typeof updateStudentSchema.innerType === "function"
+    ? updateStudentSchema.innerType()
+    : updateStudentSchema._def.schema;
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -62,14 +121,50 @@ const SectionHeader = ({ title, subtitle }) => (
   </>
 );
 
-// Reusable field wrapper
-const Field = ({ label, error, children, className = "" }) => (
-  <div className={className}>
-    {label && (
-      <label className="block text-xs mb-1.5 font-medium">{label}</label>
-    )}
-    {children}
-    {error && <p className="text-red-500 text-[11px] mt-1">{error}</p>}
+// Reusable field wrapper. If the label ends with "*" (our convention for
+// marking required fields), the asterisk renders in red while the rest of
+// the label keeps its normal color.
+const Field = ({ label, error, children, className = "" }) => {
+  const isRequired = typeof label === "string" && label.trim().endsWith("*");
+  const labelText = isRequired ? label.trim().slice(0, -1).trimEnd() : label;
+
+  return (
+    <div className={className}>
+      {label && (
+        <label className="block text-xs mb-1.5 font-medium">
+          {labelText}
+          {isRequired && <span className="text-red-500"> *</span>}
+        </label>
+      )}
+      {children}
+      {error && <p className="text-red-500 text-[11px] mt-1">{error}</p>}
+    </div>
+  );
+};
+
+// Phone input with flag prefix — controlled, digits-only, hard-capped at 10
+const PhoneInput = ({ name, value, onChange, onBlur }) => (
+  <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
+    <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black shrink-0">
+      <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
+      +91
+    </div>
+    <input
+      name={name}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      required
+      placeholder="00000 00000"
+      value={value}
+      maxLength={10}
+      onChange={(e) => {
+        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 10);
+        onChange(digitsOnly);
+      }}
+      onBlur={onBlur}
+      className="w-full px-3 py-2 outline-none bg-transparent text-xs"
+    />
   </div>
 );
 
@@ -78,8 +173,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [parentEmail, setParentEmail] = useState("");
   const [studentOtp, setStudentOtp] = useState("");
   const [parentOtp, setParentOtp] = useState("");
-  const [studentOtpSent, setStudentOtpSent] = useState(false);
-  const [parentOtpSent, setParentOtpSent] = useState(false);
+  const [_studentOtpSent, setStudentOtpSent] = useState(false);
+  const [_parentOtpSent, setParentOtpSent] = useState(false);
   const [otpErrors, setOtpErrors] = useState({ student: "", parent: "" });
   const [sendingOtpFor, setSendingOtpFor] = useState("");
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
@@ -87,6 +182,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [verifyOtpValue, setVerifyOtpValue] = useState("");
   const [emailVerified, setEmailVerified] = useState({ student: false, parent: false });
   const [fieldErrors, setFieldErrors] = useState({});
+  // Tracks which fields the user has actually interacted with, so we don't
+  // flash "Course is required" the instant the modal opens — only after
+  // the user has touched (changed/blurred) that specific field.
+  const [touchedFields, setTouchedFields] = useState({});
   const role = useAuthStore((state) => state.user?.role);
   const userOrganization = useAuthStore((state) => {
     const organization = state.user?.organization;
@@ -100,7 +199,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [organizationId, setOrganizationId] = useState(editingStudent?.organizationId || "");
   const [hostelId, setHostelId] = useState(
-    toIdString(editingStudent?.hostelId) || "",
+    toIdString(editingStudent?.hostel._id) || "",
   );
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -113,11 +212,22 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id) || "");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
-  // Fields that were previously plain uncontrolled <select> elements now need
-  // their own state since Dropdown is a controlled custom component.
+  // Fields that were previously plain uncontrolled <input>/<select> elements
+  // now need their own state since we validate live and Dropdown is controlled.
   const [gender, setGender] = useState(editingStudent?.gender || "");
   const [status, setStatus] = useState(editingStudent?.isActive ? "active" : "inactive");
   const [relationship, setRelationship] = useState("");
+
+  const [name, setName] = useState(editingStudent?.name || "");
+  const [studentId, setStudentId] = useState(editingStudent?.studentId || "");
+  const [dob, setDob] = useState(editingStudent?.dob?.split("T")[0] || "");
+  const [academicYear, setAcademicYear] = useState(editingStudent?.academicYear || "");
+  const [address, setAddress] = useState(editingStudent?.address || "");
+  const [phone, setPhone] = useState(editingStudent?.phone || "");
+  const [parentPhone, setParentPhone] = useState("");
+  const [parentName, setParentName] = useState("");
+
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (role !== ROLES.SUPER_ADMIN && userOrganization) {
@@ -207,27 +317,49 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     });
   };
 
+  const validateField = (fieldName, value, { silent = false } = {}) => {
+    if (!silent) {
+      setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
+    }
+    const baseSchema = editingStudent ? updateStudentObjectSchema : createStudentSchema;
+    const fieldSchema = baseSchema.pick({ [fieldName]: true });
+    const result = fieldSchema.safeParse({ [fieldName]: value });
+    if (!result.success) {
+      if (silent && !touchedFields[fieldName]) return; // don't show errors for untouched fields
+      const message = toFriendlyMessage(result.error.issues[0], fieldName);
+      setFieldErrors((prev) => ({ ...prev, [fieldName]: message }));
+    } else {
+      clearFieldError(fieldName);
+    }
+  };
+
   const handleCourseChange = (value) => {
     setCourseId(value);
     setDepartmentId("");
     setBatchId("");
-    clearFieldError("courseId");
+    validateField("courseId", value);
+    // Resetting department/batch to "" is a side effect of changing course,
+    // not the user touching those fields directly — validate silently so
+    // we don't surface "Department is required" right after this reset.
+    validateField("departmentId", "", { silent: true });
+    validateField("batchId", "", { silent: true });
   };
 
   const handleDepartmentChange = (value) => {
     setDepartmentId(value);
     setBatchId("");
-    clearFieldError("departmentId");
+    validateField("departmentId", value);
+    validateField("batchId", "", { silent: true });
   };
 
   const handleBatchChange = (value) => {
     setBatchId(value);
-    clearFieldError("batchId");
+    validateField("batchId", value);
   };
 
   const handleGenderChange = (value) => {
     setGender(value);
-    clearFieldError("gender");
+    validateField("gender", value);
   };
 
   const handleStatusChange = (value) => {
@@ -242,12 +374,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   const handleHostelChange = (value) => {
     setHostelId(value);
-    clearFieldError("hostelId");
+    validateField("hostelId", value);
   };
 
   const handleOrganizationChange = (value) => {
     setOrganizationId(value);
-    clearFieldError("organizationId");
+    validateField("organizationId", value);
   };
 
   const handleSubmit = async (event) => {
@@ -384,24 +516,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setVerifyOtpValue("");
     await sendEmailOtp(email, type, true);
   };
-
-  // Phone input with flag prefix
-  const PhoneInput = ({ name, onChangeClear }) => (
-    <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-secondary">
-      <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black shrink-0">
-        <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
-        +91
-      </div>
-      <input
-        name={name}
-        type="text"
-        required
-        placeholder="00000 00000"
-        onChange={onChangeClear}
-        className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-      />
-    </div>
-  );
+  const confirmDiscard = () => {
+    setIsDiscardConfirmOpen(false);
+    onClose();
+  };
 
   const courseOptions = [
     { value: "", label: "Select course" },
@@ -431,6 +549,63 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const dropdownTriggerClass =
     "w-full px-2.5 py-2.5 text-xs bg-white border-gray-200 focus:border-secondary";
 
+  // Renders the email field + verify button. Once verified, the input
+  // locks and the button itself becomes a green "Verified" pill with a
+  // check icon — no separate helper text underneath.
+  const renderEmailField = ({ type, value, onValueChange, label, name }) => {
+    const verified = emailVerified[type];
+    return (
+      <Field label={label} error={fieldErrors[name]}>
+        <div className="flex gap-2">
+          <input
+            name={name}
+            type="email"
+            required
+            value={value}
+            // IMPORTANT: use readOnly, not disabled. Disabled inputs are
+            // excluded from FormData on submit, which was sending email
+            // as undefined to the Zod schema after verification.
+            readOnly={verified}
+            onChange={(e) => {
+              if (verified) return;
+              onValueChange(e.target.value);
+              if (type === "student") {
+                setStudentOtp("");
+                setEmailVerified((prev) => ({ ...prev, student: false }));
+              } else {
+                setParentOtp("");
+                setEmailVerified((prev) => ({ ...prev, parent: false }));
+              }
+              clearFieldError(name);
+            }}
+            onBlur={(e) => validateField(name, e.target.value)}
+            placeholder="Enter the email"
+            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] ${verified ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+          />
+          <button
+            type="button"
+            onClick={() => openVerifyModal(type)}
+            disabled={sendingOtpFor === type || !value || verified}
+            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 flex items-center gap-1.5 disabled:cursor-not-allowed ${verified
+              ? "bg-green-50 text-success border border-green-200 disabled:opacity-100"
+              : "bg-primary text-white hover:bg-secondary disabled:opacity-50"
+              }`}
+          >
+            {verified ? (
+              <>
+                <Check className="w-3.5 h-3.5" /> Verified
+              </>
+            ) : sendingOtpFor === type ? (
+              "Sending..."
+            ) : (
+              "Verify"
+            )}
+          </button>
+        </div>
+      </Field>
+    );
+  };
+
   // Edit modal
   if (editingStudent) {
     return (
@@ -453,7 +628,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { console.log("clicked "), setIsDiscardConfirmOpen(true) }}
               className="px-6 py-2 border border-gray-200 rounded-lg text-xs"
             >
               Cancel
@@ -469,9 +644,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               <Field label="Full Name *" error={fieldErrors.name}>
                 <input
                   name="name"
-                  defaultValue={editingStudent.name}
+                  value={name}
                   required
-                  onChange={() => clearFieldError("name")}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearFieldError("name");
+                  }}
+                  onBlur={(e) => validateField("name", e.target.value)}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
               </Field>
@@ -486,12 +665,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               </Field>
 
               <Field label="Phone *" error={fieldErrors.phone}>
-                <input
+                <PhoneInput
                   name="phone"
-                  defaultValue={editingStudent.phone}
-                  required
-                  onChange={() => clearFieldError("phone")}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
+                  value={phone}
+                  onChange={(val) => {
+                    setPhone(val);
+                    clearFieldError("phone");
+                  }}
+                  onBlur={(e) => validateField("phone", e.target.value)}
                 />
               </Field>
 
@@ -511,8 +692,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 <input
                   type="date"
                   name="dob"
-                  defaultValue={editingStudent.dob?.split("T")[0]}
-                  onChange={() => clearFieldError("dob")}
+                  value={dob}
+                  onChange={(e) => {
+                    setDob(e.target.value);
+                    clearFieldError("dob");
+                  }}
+                  onBlur={(e) => validateField("dob", e.target.value)}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
               </Field>
@@ -579,8 +764,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               <Field label="Academic Year" error={fieldErrors.academicYear}>
                 <input
                   name="academicYear"
-                  defaultValue={editingStudent.academicYear}
-                  onChange={() => clearFieldError("academicYear")}
+                  value={academicYear}
+                  onChange={(e) => {
+                    setAcademicYear(e.target.value);
+                    clearFieldError("academicYear");
+                  }}
+                  onBlur={(e) => validateField("academicYear", e.target.value)}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
               </Field>
@@ -605,14 +794,29 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <Field error={fieldErrors.address}>
               <textarea
                 name="address"
-                defaultValue={editingStudent.address}
-                onChange={() => clearFieldError("address")}
+                value={address}
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  clearFieldError("address");
+                }}
+                onBlur={(e) => validateField("address", e.target.value)}
                 className="w-full p-3 border border-gray-200 rounded-lg text-xs"
                 rows={5}
               />
             </Field>
           </section>
         </div>
+
+        <ConfirmationModal
+          isOpen={isDiscardConfirmOpen}
+          onClose={() => setIsDiscardConfirmOpen(false)}
+          onConfirm={confirmDiscard}
+          title="Discard Changes"
+          message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+          confirmText="Discard"
+          cancelText="Continue Editing"
+          confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+        />
       </Modal>
     );
   }
@@ -638,7 +842,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => setIsDiscardConfirmOpen(true)}
+
             className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel
@@ -693,8 +898,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <Field label="Admission No *" error={fieldErrors.studentId}>
               <input
                 name="studentId"
+                value={studentId}
                 required
-                onChange={() => clearFieldError("studentId")}
+                onChange={(e) => {
+                  setStudentId(e.target.value);
+                  clearFieldError("studentId");
+                }}
+                onBlur={(e) => validateField("studentId", e.target.value)}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
                 placeholder="Enter the student id"
               />
@@ -703,8 +913,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <Field label="Full Name *" error={fieldErrors.name}>
               <input
                 name="name"
+                value={name}
                 required
-                onChange={() => clearFieldError("name")}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  clearFieldError("name");
+                }}
+                onBlur={(e) => validateField("name", e.target.value)}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
                 placeholder="Enter your full name"
               />
@@ -726,8 +941,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               <input
                 name="dob"
                 type="date"
-                onChange={() => clearFieldError("dob")}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs text-gray-400 outline-none focus:border-secondary"
+                value={dob}
+                onChange={(e) => {
+                  setDob(e.target.value);
+                  clearFieldError("dob");
+                }}
+                onBlur={(e) => validateField("dob", e.target.value)}
+                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs  outline-none focus:border-secondary"
               />
             </Field>
           </div>
@@ -798,7 +1018,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <Field label="Academic Year *" error={fieldErrors.academicYear}>
               <input
                 name="academicYear"
-                onChange={() => clearFieldError("academicYear")}
+                value={academicYear}
+                onChange={(e) => {
+                  setAcademicYear(e.target.value);
+                  clearFieldError("academicYear");
+                }}
+                onBlur={(e) => validateField("academicYear", e.target.value)}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
                 placeholder="2024-2025"
               />
@@ -824,38 +1049,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           <SectionHeader title="Contact Information" subtitle="Contact information of the student" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <Field label="Phone Number *" error={fieldErrors.phone}>
-              <PhoneInput name="phone" onChangeClear={() => clearFieldError("phone")} />
+              <PhoneInput
+                name="phone"
+                value={phone}
+                onChange={(val) => {
+                  setPhone(val);
+                  clearFieldError("phone");
+                }}
+                onBlur={(e) => validateField("phone", e.target.value)}
+              />
             </Field>
 
-            <Field label="Email Address *" error={fieldErrors.email}>
-              <div className="flex gap-2">
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  value={studentEmail}
-                  onChange={(e) => {
-                    setStudentEmail(e.target.value);
-                    setStudentOtp("");
-                    setEmailVerified((prev) => ({ ...prev, student: false }));
-                    clearFieldError("email");
-                  }}
-                  placeholder="Enter the email"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                />
-                <button
-                  type="button"
-                  onClick={() => openVerifyModal("student")}
-                  disabled={sendingOtpFor === "student" || !studentEmail}
-                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
-                >
-                  {sendingOtpFor === "student" ? "Sending..." : "Verify"}
-                </button>
-              </div>
-              {emailVerified.student && (
-                <p className="text-xs text-green-600 mt-1">Student email verified</p>
-              )}
-            </Field>
+            {renderEmailField({
+              type: "student",
+              value: studentEmail,
+              onValueChange: setStudentEmail,
+              label: "Email Address *",
+              name: "email",
+            })}
           </div>
           <input type="hidden" name="studentOtp" value={studentOtp} />
         </section>
@@ -866,7 +1077,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           <Field label="Full Address *" error={fieldErrors.address}>
             <textarea
               name="address"
-              onChange={() => clearFieldError("address")}
+              value={address}
+              onChange={(e) => {
+                setAddress(e.target.value);
+                clearFieldError("address");
+              }}
+              onBlur={(e) => validateField("address", e.target.value)}
               className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
               style={{ minHeight: 106 }}
               placeholder="Enter your address"
@@ -883,8 +1099,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <Field label="Full Name *" error={fieldErrors.parentName}>
               <input
                 name="parentName"
+                value={parentName}
                 required
-                onChange={() => clearFieldError("parentName")}
+                onChange={(e) => {
+                  setParentName(e.target.value);
+                  clearFieldError("parentName");
+                }}
+                onBlur={(e) => validateField("parentName", e.target.value)}
                 placeholder="Enter the name"
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
               />
@@ -903,42 +1124,40 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </Field>
 
             <Field label="Phone Number *" error={fieldErrors.parentPhone}>
-              <PhoneInput name="parentPhone" onChangeClear={() => clearFieldError("parentPhone")} />
+              <PhoneInput
+                name="parentPhone"
+                value={parentPhone}
+                onChange={(val) => {
+                  setParentPhone(val);
+                  clearFieldError("parentPhone");
+                }}
+                onBlur={(e) => validateField("parentPhone", e.target.value)}
+              />
             </Field>
 
-            <Field label="Email Address *" error={fieldErrors.parentEmail}>
-              <div className="flex gap-2">
-                <input
-                  name="parentEmail"
-                  type="email"
-                  required
-                  value={parentEmail}
-                  onChange={(e) => {
-                    setParentEmail(e.target.value);
-                    setParentOtp("");
-                    setEmailVerified((prev) => ({ ...prev, parent: false }));
-                    clearFieldError("parentEmail");
-                  }}
-                  placeholder="Enter the email"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                />
-                <button
-                  type="button"
-                  onClick={() => openVerifyModal("parent")}
-                  disabled={sendingOtpFor === "parent" || !parentEmail}
-                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
-                >
-                  {sendingOtpFor === "parent" ? "Sending..." : "Verify"}
-                </button>
-              </div>
-              {emailVerified.parent && (
-                <p className="text-xs text-green-600 mt-1">Parent email verified</p>
-              )}
-            </Field>
+            {renderEmailField({
+              type: "parent",
+              value: parentEmail,
+              onValueChange: setParentEmail,
+              label: "Email Address *",
+              name: "parentEmail",
+            })}
           </div>
           <input type="hidden" name="parentOtp" value={parentOtp} />
         </section>
       </div>
+      <ConfirmationModal
+        isOpen={isDiscardConfirmOpen}
+        onClose={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={confirmDiscard}
+        title="Discard Changes"
+        message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+        confirmText="Discard"
+        cancelText="Continue Editing"
+        confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+      />
     </Modal>
   );
 }
+
+

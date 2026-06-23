@@ -35,14 +35,14 @@ export default function Students() {
   const [viewingStudent, setViewingStudent] = useState(null);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [filters, setFilters] = useState({
-    search: "",
-    course: "",
-    department: "",
-    hostelId: "",
-    organizationId: "",
-    isActive: "",
-  });
+ const [filters, setFilters] = useState({
+  search: "",
+  courseId: "",
+  departmentId: "",
+  hostelId: "",
+  organizationId: "",
+  isActive: "",
+});
   const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -244,10 +244,12 @@ export default function Students() {
       setEditingStudent(null);
       refetch();
     } catch (err) {
-      showErrorToast(
+      console.error(err);
+      const message =
         err?.response?.data?.message ||
-        (editingStudent ? "Failed to update student" : "Failed to create student")
-      );
+        err?.data?.message ||
+        (editingStudent ? "Failed to update student" : "Failed to create student");
+      showErrorToast(message);
     }
   };
 
@@ -256,7 +258,7 @@ export default function Students() {
     setIsExportConfirmOpen(true);
   };
 
-   const confirmExport = async (exportFilters) => {
+  const confirmExport = async (exportFilters) => {
     setIsExporting(true);
     try {
       const mergedFilters = { ...filters, ...exportFilters };
@@ -265,7 +267,7 @@ export default function Students() {
         Object.entries(mergedFilters).filter(([, value]) => value !== ""),
       );
 
-           const response = await getStudents(role, { ...params, page: 1, limit: 0 });
+      const response = await getStudents(role, { ...params, page: 1, limit: 0 });
 
       const dataToExport = response?.students || response?.data || [];
 
@@ -364,11 +366,10 @@ export default function Students() {
               <button
                 key={pageNum}
                 onClick={() => setPage(pageNum)}
-                className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer ${
-                  page === pageNum
+                className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
                     ? "bg-[#0A437A] text-white shadow-sm font-bold"
                     : "border border-transparent text-gray-600 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {pageNum}
               </button>

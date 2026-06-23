@@ -24,8 +24,9 @@ import ChangeEmailModal from "./ChangeEmailModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
-import { updateStudentByRole, changeStudentEmail } from "@/services/student.service";
-import { updateParentByRole, changeParentEmail } from "@/services/parent.service";
+import {  changeStudentEmail } from "@/services/student.service";
+import {  changeParentEmail } from "@/services/parent.service";
+import { formatDate } from "@/utils/dateFormatter";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -140,10 +141,10 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       title={student.name}
       subtitle={`Student - ${hostelName}`}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 [&>*:first-child]:order-2 [&>*:last-child]:order-1 lg:[&>*:first-child]:order-none lg:[&>*:last-child]:order-none">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 [&>*:first-child]:order-2 [&>*:last-child]:order-1 lg:[&>*:first-child]:order-none lg:[&>*:last-child]:order-none">
         {" "}
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           {/* Basic Info */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h3 className="text-lg font-semibold text-primary mb-1">
@@ -176,16 +177,16 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 label="Date Of Birth"
               >
                 {student.dob
-                  ? new Date(student.dob).toLocaleDateString("en-IN")
+                  ? formatDate(student.dob)
                   : "N/A"}
               </InfoRow>
               {/* Status row needs custom layout for the dot */}
               <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
                 <span className="text-gray-500 flex items-center gap-1.5">
                   {isActive ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <CheckCircle2 className="w-4 h-4 " />
                   ) : (
-                    <XCircle className="w-4 h-4 text-red-500" />
+                    <XCircle className="w-4 h-4 " />
                   )}
                   Status
                 </span>
@@ -397,7 +398,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
           </div>
         </div>
         {/* Right Summary Sidebar */}
-        <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+        <div className="bg-white p-5 col-span-2 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-semibold text-primary">
@@ -453,9 +454,9 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
               <span className="text-gray-500 flex items-center gap-1.5">
                 {isActive ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 " />
                 ) : (
-                  <XCircle className="w-4 h-4 text-red-500" />
+                  <XCircle className="w-4 h-4 " />
                 )}
                 Status
               </span>
