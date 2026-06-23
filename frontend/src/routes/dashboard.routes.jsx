@@ -14,6 +14,7 @@ import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagemen
 import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
+import Complaints from '@/features/dashboard/pages/Complaints';
 export const dashboardRoutes = [
 
     {
@@ -136,6 +137,15 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: PasswordRequests
+    },
+    {
+        path: 'complaints',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Complaints
     }
 
 ];
