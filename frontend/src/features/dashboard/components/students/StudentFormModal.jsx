@@ -13,6 +13,7 @@ import { createStudentSchema, updateStudentSchema } from "../../validation/stude
 import batchService from "@/services/batch.service";
 import courseService from "@/services/course.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // Human-readable labels used to build friendly required/invalid messages
 // for fields where Zod's default message isn't useful (enums, picked
@@ -226,6 +227,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [parentPhone, setParentPhone] = useState("");
   const [parentName, setParentName] = useState("");
 
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+
   useEffect(() => {
     if (role !== ROLES.SUPER_ADMIN && userOrganization) {
       setOrganizationId(userOrganization);
@@ -314,12 +317,6 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     });
   };
 
-  // Validates a single field against the active schema (create vs update),
-  // translates Zod's raw issue into a friendly message, and sets/clears the
-  // error live. Only fields the user has actually touched will ever show an
-  // error — this prevents fields from flashing "required" the moment a
-  // sibling dropdown resets them to "" (e.g. clearing Department when
-  // Course changes).
   const validateField = (fieldName, value, { silent = false } = {}) => {
     if (!silent) {
       setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
@@ -519,6 +516,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setVerifyOtpValue("");
     await sendEmailOtp(email, type, true);
   };
+  const confirmDiscard = () => {
+    setIsDiscardConfirmOpen(false);
+    onClose();
+  };
 
   const courseOptions = [
     { value: "", label: "Select course" },
@@ -585,11 +586,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             type="button"
             onClick={() => openVerifyModal(type)}
             disabled={sendingOtpFor === type || !value || verified}
-            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 flex items-center gap-1.5 disabled:cursor-not-allowed ${
-              verified
-                ? "bg-green-50 text-success border border-green-200 disabled:opacity-100"
-                : "bg-primary text-white hover:bg-secondary disabled:opacity-50"
-            }`}
+            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 flex items-center gap-1.5 disabled:cursor-not-allowed ${verified
+              ? "bg-green-50 text-success border border-green-200 disabled:opacity-100"
+              : "bg-primary text-white hover:bg-secondary disabled:opacity-50"
+              }`}
           >
             {verified ? (
               <>
@@ -628,7 +628,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { console.log("clicked "), setIsDiscardConfirmOpen(true) }}
               className="px-6 py-2 border border-gray-200 rounded-lg text-xs"
             >
               Cancel
@@ -806,6 +806,17 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             </Field>
           </section>
         </div>
+
+        <ConfirmationModal
+          isOpen={isDiscardConfirmOpen}
+          onClose={() => setIsDiscardConfirmOpen(false)}
+          onConfirm={confirmDiscard}
+          title="Discard Changes"
+          message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+          confirmText="Discard"
+          cancelText="Continue Editing"
+          confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+        />
       </Modal>
     );
   }
@@ -831,7 +842,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => setIsDiscardConfirmOpen(true)}
+
             className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel
@@ -1134,6 +1146,18 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           <input type="hidden" name="parentOtp" value={parentOtp} />
         </section>
       </div>
+      <ConfirmationModal
+        isOpen={isDiscardConfirmOpen}
+        onClose={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={confirmDiscard}
+        title="Discard Changes"
+        message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+        confirmText="Discard"
+        cancelText="Continue Editing"
+        confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+      />
     </Modal>
   );
 }
+
+
