@@ -120,7 +120,11 @@ export const DASHBOARD_NAV = {
                 {
                     icon: CalendarX,
                     label: 'Leave Requests',
-                    path: '/dashboard/leaves'
+                    path: '/dashboard/leaves',
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ]
                 },
                 {
                     icon: UtensilsCrossed,
@@ -227,7 +231,11 @@ export const DASHBOARD_NAV = {
                 {
                     icon: CalendarX,
                     label: 'Leave Requests',
-                    path: '/dashboard/leaves'
+                    path: '/dashboard/leaves',
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ]
                 },
                 {
                     icon: UtensilsCrossed,
@@ -299,7 +307,11 @@ export const DASHBOARD_NAV = {
                 {
                     icon: CalendarX,
                     label: 'Leave Requests',
-                    path: '/dashboard/leaves'
+                    path: '/dashboard/leaves',
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ]
                 },
                 {
                     icon: UtensilsCrossed,

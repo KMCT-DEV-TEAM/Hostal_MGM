@@ -77,7 +77,11 @@ export default function ParentsTable({
                             const isSelected = selectedIds.includes(rowId);
                             const isLoading = statusLoadingIds.includes(rowId);
                             return (
-                                <tr key={rowId} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''} relative`}>                                    {(canEdit || canDelete) && (
+                                <tr 
+                                    key={rowId} 
+                                    className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/20' : ''} ${isLoading ? 'opacity-50 pointer-events-none' : ''} relative`}
+                                >
+                                    {(canEdit || canDelete) && (
                                     <td className="p-4">
                                         <button onClick={() => onSelect && onSelect(rowId)} className="focus:outline-none flex items-center justify-center">
                                             {isSelected ?
