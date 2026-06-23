@@ -144,6 +144,7 @@ function Sidebar({ isOpen, setIsOpen }) {
                                 icon={item.icon}
                                 label={t(item.label.toLowerCase())}
                                 to={item.path}
+                                badge={item.badge}
                                 onClose={() => setIsOpen(false)}
                             />
                         ))}
