@@ -47,7 +47,7 @@ export default function WardenTable({
                         <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-start text-red-500">{error}</td>
+                            <td colSpan="7" className="p-8 text-start text-danger">{error}</td>
                         </tr>
                     ) : paginatedWardens.length === 0 ? (
                         <tr>
@@ -124,7 +124,7 @@ export default function WardenTable({
                                                 ]}
                                                 value={warden.status}
                                                 onChange={() => handleStatusChangeClick(warden.id, warden.status)}
-                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${warden.status === 'Active' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${warden.status === 'Active' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20'}`}
                                             />
                                         </div>
                                     </td>

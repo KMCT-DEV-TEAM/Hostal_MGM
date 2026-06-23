@@ -169,7 +169,7 @@ const PasswordRequests = () => {
                             </button>
                             <button
                                 onClick={() => openConfirmModal('bulkReject')}
-                                className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+                                className="px-3 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5"
                             >
                                 <X className="w-4 h-4" /> Reject ({selectedRequests.length})
                             </button>
@@ -311,7 +311,7 @@ const PasswordRequests = () => {
                                         <td className="p-4 text-start">
                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize border ${
                                                 request.status === 'approved' ? 'bg-green-50 text-success border-green-200' :
-                                                request.status === 'rejected' ? 'bg-red-50 text-danger border-red-200' :
+                                                request.status === 'rejected' ? 'bg-danger/10 text-danger border-danger/20' :
                                                 'bg-yellow-50 text-yellow-700 border-yellow-200'
                                             }`}>
                                                 {request.status}
@@ -328,7 +328,7 @@ const PasswordRequests = () => {
                                                         Approve
                                                     </button>
                                                     <button 
-                                                        className="px-2.5 py-1.5 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
+                                                        className="px-2.5 py-1.5 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
                                                         onClick={() => openConfirmModal('reject', request._id)}
                                                     >
                                                         <X className="w-3.5 h-3.5 mr-1" />
@@ -393,7 +393,7 @@ const PasswordRequests = () => {
                                     </div>
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${
                                         request.status === 'approved' ? 'bg-green-50 text-green-700' :
-                                        request.status === 'rejected' ? 'bg-red-50 text-red-700' :
+                                        request.status === 'rejected' ? 'bg-danger/10 text-danger' :
                                         'bg-yellow-50 text-yellow-700'
                                     }`}>
                                         {request.status}
@@ -417,7 +417,7 @@ const PasswordRequests = () => {
                                             </Button>
                                             <Button 
                                                 variant="outline" 
-                                                className="px-2 py-1 h-7 text-[10px] text-red-600 border-red-200 hover:bg-red-50 cursor-pointer"
+                                                className="px-2 py-1 h-7 text-[10px] text-danger border-danger/20 hover:bg-danger/10 cursor-pointer"
                                                 onClick={() => openConfirmModal('reject', request._id)}
                                             >
                                                 <X className="w-3 h-3 mr-1" /> Reject
@@ -521,7 +521,7 @@ const PasswordRequests = () => {
                                 className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors cursor-pointer flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                                     confirmModal.type === 'approve' || confirmModal.type === 'bulkApprove'
                                         ? 'bg-green-600 hover:bg-green-700'
-                                        : 'bg-red-600 hover:bg-red-700'
+                                        : 'bg-danger hover:bg-danger/90'
                                 }`}
                             >
                                 {isActionLoading && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}

@@ -59,7 +59,7 @@ const AdminTable = ({
                         <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-red-500">{error}</td>
+                            <td colSpan="7" className="p-8 text-center text-danger">{error}</td>
                         </tr>
                     ) : paginatedAdmins.length === 0 ? (
                         <tr>
@@ -124,7 +124,7 @@ const AdminTable = ({
                                                 ]}
                                                 value={admin.isActive ? "Active" : "Inactive"}
                                                 onChange={() => handleStatusChangeClick(admin._id, admin.isActive ? "Active" : "Inactive")}
-                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${admin.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${admin.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-danger/10 text-danger border-danger/20 hover:bg-danger/20"}`}
                                             />
                                         </div>
                                     </td>

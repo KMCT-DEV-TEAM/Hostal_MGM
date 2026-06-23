@@ -23,7 +23,7 @@ export default function HostelHeader({ selectedIds, handleBulkStatusClick }) {
                 {selectedIds.length > 0 && (
                     <button
                         onClick={() => handleBulkStatusClick(false)}
-                        className="flex items-center gap-2 px-4 py-2 border border-danger text-danger bg-red-50/40 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 border border-danger text-danger bg-danger/10 rounded-lg hover:bg-danger/20 transition-colors text-sm font-medium cursor-pointer"
                     >
                         Inactive ({selectedIds.length})
                     </button>

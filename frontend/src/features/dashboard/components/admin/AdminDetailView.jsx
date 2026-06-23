@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, Mail, Phone, Building2, Activity, Fingerprint, Pencil } from 'lucide-react';
+import { X, User, Mail, Phone, Building2, ToggleRight, Fingerprint, Pencil } from 'lucide-react';
 
 const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal }) => {
     return (
@@ -24,9 +24,9 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                     <p className="text-gray-400 text-sm ml-11">Administrator Details</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
                     {/* Main Content Area */}
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="md:col-span-7 space-y-6">
                         {/* Basic Info Section */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
@@ -72,15 +72,15 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                     </div>
 
                     {/* Right Summary Sidebar */}
-                    <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                    <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
                         <h3 className="text-lg font-semibold text-primary mb-4">Admin Summary</h3>
                         <div className="space-y-4">
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail?.name}</span></div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</span></div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                <span className="text-gray-500 flex items-center gap-1.5"><Activity className="w-4 h-4 text-gray-400" /> Status</span>
+                                <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
                                 <span className="sm:col-span-2 font-medium text-gray-900 flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                    <span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.isActive ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                    <span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedAdminDetail?.isActive ? "Active" : "Inactive"}
                                 </span>
                             </div>

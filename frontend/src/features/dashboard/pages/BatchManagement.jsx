@@ -318,7 +318,7 @@ const BatchManagement = () => {
                             </button>
                             <button
                                 onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                                className="px-3 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded-lg text-sm font-medium transition-colors cursor-pointer"
                             >
                                 Inactive ({selectedIds.length})
                             </button>
@@ -380,7 +380,7 @@ const BatchManagement = () => {
                         </div>
                         <button
                             onClick={() => openModal('add')}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-[#083663] transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Plus className="w-4 h-4" /> Add New
                         </button>
@@ -495,7 +495,7 @@ const BatchManagement = () => {
                             <button
                                 onClick={saveBatch}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Saving...' : 'Confirm'}
                             </button>
@@ -520,7 +520,7 @@ const BatchManagement = () => {
                             </button>
                             <button
                                 onClick={confirmDiscard}
-                                className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
                             >
                                 Discard
                             </button>
@@ -548,7 +548,7 @@ const BatchManagement = () => {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -576,7 +576,7 @@ const BatchManagement = () => {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-[#083663] transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
