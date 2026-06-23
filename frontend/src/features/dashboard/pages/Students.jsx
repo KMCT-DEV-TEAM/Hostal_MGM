@@ -35,14 +35,14 @@ export default function Students() {
   const [viewingStudent, setViewingStudent] = useState(null);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [filters, setFilters] = useState({
-    search: "",
-    course: "",
-    department: "",
-    hostelId: "",
-    organizationId: "",
-    isActive: "",
-  });
+ const [filters, setFilters] = useState({
+  search: "",
+  courseId: "",
+  departmentId: "",
+  hostelId: "",
+  organizationId: "",
+  isActive: "",
+});
   const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 

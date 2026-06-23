@@ -5,8 +5,13 @@ import { ROLES } from '@/constants/roles';
 import { getStudentFilterOptions } from '@/services/student.service';
 import { useAuthStore } from '@/store/useAuthStore';
 
-const DEFAULT_FILTERS = { course: '', department: '', hostelId: '', organizationId: '', isActive: '' };
-const EMPTY_OPTIONS = { courses: [], departments: [], hostels: [], organizations: [], statuses: [] };
+const DEFAULT_FILTERS = {
+    courseId: '',
+    departmentId: '',
+    hostelId: '',
+    organizationId: '',
+    isActive: ''
+}; const EMPTY_OPTIONS = { courses: [], departments: [], hostels: [], organizations: [], statuses: [] };
 
 export default function StudentFilterModal({ initialFilters, onClose, onApply }) {
     const role = useAuthStore((state) => state.user?.role);
@@ -29,7 +34,10 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
         setLoading(true);
         setError(null);
         getStudentFilterOptions(role)
-            .then((data) => setOptions({ ...EMPTY_OPTIONS, ...(data.filters || {}) }))
+            .then((data) => {
+                console.log("FILTER OPTIONS", data);
+                setOptions({ ...EMPTY_OPTIONS, ...(data.filters || {}) });
+            })
             .catch((err) => setError(err))
             .finally(() => setLoading(false));
     }, [role]);
@@ -39,7 +47,7 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
     const organizationOptions = [
         { value: '', label: 'Select' },
         ...options.organizations.map((organization) => ({
-            value: organization._id,
+            value: organization.value,
             label: organization.label,
         })),
     ];
@@ -63,7 +71,7 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
     const hostelOptions = [
         { value: '', label: 'Select' },
         ...options.hostels.map((hostel) => ({
-            value: hostel._id,
+            value: hostel.value,
             label: hostel.label,
         })),
     ];
@@ -113,8 +121,8 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
                         <label className="block text-xs mb-1.5 font-medium">Course</label>
                         <Dropdown
                             options={courseOptions}
-                            value={filters.course}
-                            onChange={(value) => updateFilter('course', value)}
+                            value={filters.courseId}
+                            onChange={(value) => updateFilter('courseId', value)}
                             placeholder="Select"
                             className="w-full"
                             minWidth=""
@@ -128,8 +136,8 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
                         <label className="block text-xs mb-1.5 font-medium">Department</label>
                         <Dropdown
                             options={departmentOptions}
-                            value={filters.department}
-                            onChange={(value) => updateFilter('department', value)}
+                            value={filters.departmentId}
+                            onChange={(value) => updateFilter('departmentId', value)}
                             placeholder="Select"
                             className="w-full"
                             minWidth=""
@@ -165,11 +173,10 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
                                     placeholder="All"
                                     className="w-fit min-w-32"
                                     minWidth=""
-                                    triggerClassName={`rounded-full pl-3 pr-2.5 py-1.5 text-xs font-semibold border cursor-pointer w-full ${
-                                        isActiveStatus
-                                            ? 'bg-green-50 text-success border-green-200/60'
-                                            : 'bg-red-50 text-danger border-red-200/60'
-                                    }`}
+                                    triggerClassName={`rounded-full pl-3 pr-2.5 py-1.5 text-xs font-semibold border cursor-pointer w-full ${isActiveStatus
+                                        ? 'bg-green-50 text-success border-green-200/60'
+                                        : 'bg-red-50 text-danger border-red-200/60'
+                                        }`}
                                 />
                             </div>
                         )}
