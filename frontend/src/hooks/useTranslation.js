@@ -21,8 +21,10 @@ const dictionary = {
         courses: "Courses",
         departments: "Departments",
         complaints: "Complaints",
+
         attendance: "Attendance",
         'leave requests': "Leave Requests",
+        'maintenance staff': "Maintenance Staff",
         'mess management': "Mess Management",
         reports: "Reports",
         'password request': "Password Request",
@@ -85,7 +87,7 @@ const dictionary = {
         capacity: "Capacity",
         students: "Students",
         no_records_found: "No records found matching your search criteria.",
-        
+
         edit_warden: "Edit Warden",
         add_warden: "Add New Warden",
         edit_warden_desc: "Edit Warden account details",
@@ -231,8 +233,10 @@ const dictionary = {
         courses: "കോഴ്സുകൾ",
         departments: "ഡിപ്പാർട്ട്‌മെൻ്റുകൾ",
         complaints: "പരാതികൾ",
+        'all complaints': "എല്ലാ പരാതികളും",
         attendance: "ഹാജർ",
         'leave requests': "അവധി അപേക്ഷകൾ",
+        'maintenance staff': "മെയിൻ്റനൻസ് സ്റ്റാഫ്",
         'mess management': "മെസ്സ് മാനേജ്മെന്റ്",
         reports: "റിപ്പോർട്ടുകൾ",
         'password request': "പാസ്‌വേഡ് അഭ്യർത്ഥന",
