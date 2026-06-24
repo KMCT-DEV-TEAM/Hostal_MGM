@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function StatsCard({ label, icon: Icon, iconBg = 'bg-blue-50 text-primary', value, sub, borderColor = 'border-gray-100' }) {
     return (
-        <div className={`bg-white rounded-xl p-5 border border-t ${borderColor}`}>
+        <div className={`bg-white rounded-xl p-5 border border-t border-gray-300 ${borderColor}`}>
             <div className="flex justify-between items-start">
                 <span className="text-xs text-gray-500 font-medium leading-tight">
                     {label}

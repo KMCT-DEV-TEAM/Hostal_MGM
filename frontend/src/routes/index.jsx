@@ -11,7 +11,7 @@ import { dashboardRoutes } from './dashboard.routes';
 const load = (importer) => Loadable(lazy(importer));
 
 // Layouts
-const DashboardLayout = load(() => import('@/layouts/DashboardLayout'));
+const LayoutDispatcher = load(() => import('@/layouts/LayoutDispatcher'));
 
 // Pages
 const ForcePasswordChange = load(() => import('@/features/auth/pages/ForcePasswordChange'));
@@ -46,7 +46,7 @@ const router = createBrowserRouter([
         path: '/dashboard',
         element: (
             <AuthGuard>
-                <DashboardLayout />
+                <LayoutDispatcher />
             </AuthGuard>
         ),
         children: [
