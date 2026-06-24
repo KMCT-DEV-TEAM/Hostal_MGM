@@ -4,6 +4,7 @@ import WardenComplaintsToolbar from '../components/complaints/WardenComplaintsTo
 import WardenComplaintsFilterModal from '../components/complaints/WardenComplaintsFilterModal';
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -35,12 +36,15 @@ export default function WardenComplaints({ hostel, onBack }) {
     const [viewingComplaint, setViewingComplaint] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [confirmCategoryChange, setConfirmCategoryChange] = useState({
+        isOpen: false,
+        complaintId: null,
+        newCategory: null
+    });
     const limit = 10;
 
     const handleCategoryChange = (id, newCategory) => {
-        setComplaints(complaints.map(c =>
-            c.id === id ? { ...c, category: newCategory } : c
-        ));
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory });
     };
 
     // Apply filtering
@@ -111,7 +115,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                         <ChevronLeft className="w-4 h-4 mr-1" /> Back to Organizations
                     </button>
                 )}
-                <h1 className="text-2xl font-bold text-primary">
+                <h1 className="text-2xl font-bold text-black">
                     {hostel ? `${hostel} Complaints` : 'Complaints'}
                 </h1>
                 <p className="text-sm text-text-secondary mt-1">
@@ -224,6 +228,21 @@ export default function WardenComplaints({ hostel, onBack }) {
                         ]
                     }
                 ]}
+            />
+
+            <ConfirmationModal
+                isOpen={confirmCategoryChange.isOpen}
+                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null })}
+                onConfirm={() => {
+                    setComplaints(complaints.map(c =>
+                        c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory } : c
+                    ));
+                    showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
+                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null });
+                }}
+                title="Confirm Category Change"
+                message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
+                confirmText="Yes, Change"
             />
         </div>
     );

@@ -3,8 +3,8 @@ import Modal from '@/components/ui/Modal';
 import Dropdown from '@/components/ui/Dropdown';
 import Input from '@/components/ui/Input';
 
-export default function WardenComplaintsFilterModal({ 
-    initialRoomNo,
+export default function AdminComplaintsFilterModal({ 
+    initialHostel,
     initialCategory,
     initialDate,
     initialPriority, 
@@ -12,23 +12,23 @@ export default function WardenComplaintsFilterModal({
     onClose, 
     onApply 
 }) {
-    const [roomNo, setRoomNo] = useState(initialRoomNo || '');
+    const [hostel, setHostel] = useState(initialHostel || '');
     const [category, setCategory] = useState(initialCategory || 'All');
     const [date, setDate] = useState(initialDate || '');
     const [priority, setPriority] = useState(initialPriority || 'All');
     const [status, setStatus] = useState(initialStatus || 'All');
 
     const resetFilters = () => {
-        setRoomNo('');
+        setHostel('');
         setCategory('All');
         setDate('');
         setPriority('All');
         setStatus('All');
-        onApply({ roomNo: '', category: 'All', date: '', priority: 'All', status: 'All' });
+        onApply({ hostel: '', category: 'All', date: '', priority: 'All', status: 'All' });
     };
 
     const handleApply = () => {
-        onApply({ roomNo, category, date, priority, status });
+        onApply({ hostel, category, date, priority, status });
     };
 
     const priorityOptions = [
@@ -41,7 +41,7 @@ export default function WardenComplaintsFilterModal({
     const statusOptions = [
         { label: 'All Status', value: 'All' },
         { label: 'Pending', value: 'Pending' },
-        { label: 'In Progress', value: 'In Progress' },
+        { label: 'In Progress', value: 'In progress' },
         { label: 'Resolved', value: 'Resolved' }
     ];
 
@@ -80,11 +80,11 @@ export default function WardenComplaintsFilterModal({
         >
             <div className="space-y-6">
                 <div>
-                    <label className="block text-sm mb-1.5 font-medium text-gray-700">Room No</label>
+                    <label className="block text-sm mb-1.5 font-medium text-gray-700">Hostel</label>
                     <Input
-                        value={roomNo}
-                        onChange={(e) => setRoomNo(e.target.value)}
-                        placeholder="Enter the room no"
+                        value={hostel}
+                        onChange={(e) => setHostel(e.target.value)}
+                        placeholder="Enter the hostel"
                         className="w-full text-sm"
                     />
                 </div>

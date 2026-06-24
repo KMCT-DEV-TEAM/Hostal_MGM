@@ -5,9 +5,10 @@ import StudentComplaintsToolbar from '../components/complaints/StudentComplaints
 import StudentComplaintFormModal from '../components/complaints/StudentComplaintFormModal';
 import StudentComplaintDetailModal from '../components/complaints/StudentComplaintDetailModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
 
 export default function StudentComplaints() {
     // Initial mocked student complaints
@@ -39,11 +40,14 @@ export default function StudentComplaints() {
     const [pendingFormData, setPendingFormData] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [confirmCategoryChange, setConfirmCategoryChange] = useState({
+        isOpen: false,
+        complaintId: null,
+        newCategory: null
+    });
 
     const handleCategoryChange = (id, newCategory) => {
-        setComplaints(complaints.map(c =>
-            c.id === id ? { ...c, category: newCategory } : c
-        ));
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory });
     };
 
     const handleEdit = (complaint) => {
@@ -176,6 +180,50 @@ export default function StudentComplaints() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             <StudentComplaintsHeader />
+            
+            {/* Stat Cards Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{complaints.length}</h3>
+                    </div>
+                    <div className="p-1.5 bg-red-50 rounded text-danger">
+                        <AlertTriangle className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-warning shadow-sm border border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Pending').length}</h3>
+                    </div>
+                    <div className="p-1.5 bg-orange-50 rounded text-warning">
+                        <Clock className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-primary/80 flex justify-between items-start">
+                    <div>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'In progress').length}</h3>
+                    </div>
+                    <div className="p-1.5 bg-blue-50 rounded text-primary">
+                        <Loader2 className="w-5 h-5" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-success shadow-sm border border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Resolved').length}</h3>
+                    </div>
+                    <div className="p-1.5 bg-green-50 rounded text-green-500">
+                        <CheckCircle className="w-5 h-5" />
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-transparent md:bg-[#F8FAFC] md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
                 {/* Toolbar Section */}
                 <StudentComplaintsToolbar
@@ -362,6 +410,21 @@ export default function StudentComplaints() {
                         ]
                     }
                 ]}
+            />
+
+            <ConfirmationModal
+                isOpen={confirmCategoryChange.isOpen}
+                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null })}
+                onConfirm={() => {
+                    setComplaints(complaints.map(c =>
+                        c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory } : c
+                    ));
+                    showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
+                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null });
+                }}
+                title="Confirm Category Change"
+                message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
+                confirmText="Yes, Change"
             />
         </div>
     );
