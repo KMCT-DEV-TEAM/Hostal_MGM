@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { Search, ChevronDown, Download, Plus } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 
-export default function ComplaintsToolbar({
+export default function StudentComplaintsToolbar({
     statusFilter,
     setStatusFilter,
     setCurrentPage,
     searchQuery,
     setSearchQuery,
-    initiateExport,
     openAddComplaintModal
 }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,7 +21,7 @@ export default function ComplaintsToolbar({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search complaints..."
+                        placeholder="Search..."
                         className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                     />
                 </div>
@@ -41,7 +40,7 @@ export default function ComplaintsToolbar({
                     <Dropdown
                         className="flex-1 sm:flex-none"
                         options={[
-                            { label: 'All', value: 'All' },
+                            { label: 'All status', value: 'All' },
                             { label: 'Pending', value: 'Pending' },
                             { label: 'Resolved', value: 'Resolved' }
                         ]}
@@ -55,12 +54,6 @@ export default function ComplaintsToolbar({
                         triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
                     />
 
-                    <button
-                        onClick={initiateExport}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                    >
-                        <Download className="w-4 h-4" /> Export
-                    </button>
                 </div>
                 <button
                     onClick={openAddComplaintModal}
