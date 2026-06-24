@@ -126,8 +126,7 @@ export const DASHBOARD_NAV = {
                     subItems: [
                         { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
                         { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
-                    ]
-
+                    ],
                     badge: { count: 7, variant: 'warning' }
 
                 },
@@ -264,8 +263,7 @@ export const DASHBOARD_NAV = {
                     subItems: [
                         { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
                         { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
-                    ]
-
+                    ],
                     badge: { count: 7, variant: 'warning' }
 
                 },
@@ -345,8 +343,7 @@ export const DASHBOARD_NAV = {
                     subItems: [
                         { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
                         { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
-                    ]
-
+                    ],
                     badge: { count: 7, variant: 'warning' }
 
                 },
