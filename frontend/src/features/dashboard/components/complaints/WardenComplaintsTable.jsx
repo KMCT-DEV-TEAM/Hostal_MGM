@@ -36,7 +36,7 @@ export default function WardenComplaintsTable({
                                 <td className="p-5 text-center text-text-secondary font-medium">{index + 1}</td>
                                 <td className="p-5 text-start">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-[10px] font-bold">
+                                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shrink-0">
                                             {complaint.student.split(' ').map(n => n[0]).join('')}
                                         </div>
                                         <span className="text-text-secondary font-medium">{complaint.student}</span>
@@ -56,7 +56,7 @@ export default function WardenComplaintsTable({
                                             ]}
                                             value={complaint.category}
                                             onChange={(val) => handleCategoryChange(complaint.id, val)}
-                                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-gray-300 transition-colors cursor-pointer"
+                                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-text-primary hover:border-gray-300 transition-colors cursor-pointer"
                                         />
                                     </div>
                                 </td>
@@ -67,12 +67,12 @@ export default function WardenComplaintsTable({
                                     {complaint.date}
                                 </td>
                                 <td className="p-5 text-start">
-                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.priority === 'High' ? 'bg-red-50 text-red-500' : complaint.priority === 'Medium' ? 'bg-orange-50 text-orange-500' : 'bg-gray-100 text-text-secondary'}`}>
+                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.priority === 'High' ? 'bg-danger/10 text-danger' : complaint.priority === 'Medium' ? 'bg-warning/10 text-warning' : 'bg-gray-100 text-text-secondary'}`}>
                                         {complaint.priority || 'Low'}
                                     </span>
                                 </td>
                                 <td className="p-5 text-start">
-                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-400' : complaint.status === 'Resolved' ? 'bg-green-50 text-green-500' : 'bg-blue-50 text-blue-500'}`}>
+                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-accent/10 text-blue-500'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>

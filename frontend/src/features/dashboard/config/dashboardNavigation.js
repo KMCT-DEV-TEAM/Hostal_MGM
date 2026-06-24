@@ -135,7 +135,13 @@ export const DASHBOARD_NAV = {
                     icon: CalendarX,
                     label: 'Leave Requests',
                     path: '/dashboard/leaves',
+
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ],
                     badge: { count: 7, variant: 'warning' }
+
                 },
                 {
                     icon: UtensilsCrossed,
@@ -188,6 +194,12 @@ export const DASHBOARD_NAV = {
 
             items: [
                 {
+                    icon: UserRoundCheck,
+                    label: 'Wardens',
+                    path: '/dashboard/wardens'
+                },
+
+                {
                     icon: GraduationCap,
                     label: 'Students',
                     path: '/dashboard/students'
@@ -201,7 +213,23 @@ export const DASHBOARD_NAV = {
             ]
         },
 
+        {
+            section: 'ORGANIZATION',
 
+            items: [
+                {
+                    icon: Building2,
+                    label: 'Organizations',
+                    path: '/dashboard/organizations'
+                },
+
+                {
+                    icon: Building,
+                    label: 'Hostels',
+                    path: '/dashboard/hostels'
+                }
+            ]
+        },
 
         {
             section: 'ACADEMICS',
@@ -244,7 +272,13 @@ export const DASHBOARD_NAV = {
                     icon: CalendarX,
                     label: 'Leave Requests',
                     path: '/dashboard/leaves',
+
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ],
                     badge: { count: 7, variant: 'warning' }
+
                 },
                 {
                     icon: UtensilsCrossed,
@@ -318,7 +352,13 @@ export const DASHBOARD_NAV = {
                     icon: CalendarX,
                     label: 'Leave Requests',
                     path: '/dashboard/leaves',
+
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ],
                     badge: { count: 7, variant: 'warning' }
+
                 },
                 {
                     icon: UtensilsCrossed,

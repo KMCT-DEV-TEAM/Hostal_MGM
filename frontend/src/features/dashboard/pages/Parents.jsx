@@ -331,6 +331,7 @@ export default function Parents() {
                     canEdit={canEdit}
                     canDelete={canDelete}
                     statusLoadingIds={statusLoadingIds}
+                    role={role}
                 />
                 <ParentsMobileList
                     parents={parents}
@@ -344,6 +345,7 @@ export default function Parents() {
                     canEdit={canEdit}
                     canDelete={canDelete}
                     statusLoadingIds={statusLoadingIds}
+                    role={role}
                 />
 
                 {parents.length > 0 && !loading && !error && (

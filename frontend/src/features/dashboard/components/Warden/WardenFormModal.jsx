@@ -183,15 +183,15 @@ export default function WardenFormModal({
                     <button
                         type="submit"
                         disabled={!isEmailVerified && !editingWarden || isSubmitting}
-                        className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isSubmitting && <Loader2 size={14} className="animate-spin" />}
+                        {isSubmitting && <Loader2 size={14} className="animate-spin mr-1" />}
                         {editingWarden ? t('save_changes') : t('save')}
                     </button>
                     <button
                         type="button"
                         onClick={handleCancel}
-                        className="px-6 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                        className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
                     >
                         {t('cancel')}
                     </button>

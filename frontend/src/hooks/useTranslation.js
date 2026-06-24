@@ -28,6 +28,8 @@ const dictionary = {
         'password request': "Password Request",
         categories: "Categories",
         'complaint category': "Complaint Category",
+        'home pass': "Home Pass",
+        'out pass': "Out Pass",
         // Page Titles
         org_management: "Organization Management",
         hostel_management: "Hostel Management",
@@ -236,6 +238,8 @@ const dictionary = {
         'password request': "പാസ്‌വേഡ് അഭ്യർത്ഥന",
         categories: "വിഭാഗങ്ങൾ",
         'complaint category': "പരാതി വിഭാഗം",
+        'home pass': "ഹോം പാസ്സ്",
+        'out pass': "ഔട്ട് പാസ്സ്",
         // Page Titles
         org_management: "സ്ഥാപന മാനേജ്മെന്റ്",
         hostel_management: "ഹോസ്റ്റൽ മാനേജ്മെന്റ്",
