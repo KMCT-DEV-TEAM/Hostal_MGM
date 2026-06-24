@@ -142,6 +142,47 @@ const validateUpdateWardenHostel = (req, res, next) => {
   next();
 };
 
+// --- MAINTENANCE STAFF VALIDATIONS ---
+
+const validateCreateMaintenanceStaff = (req, res, next) => {
+  const { name, email, phone } = req.body;
+
+  if (!name || !email || !phone) {
+    return res.status(400).json({
+      success: false,
+      message: "name, email, and phone are required",
+    });
+  }
+
+  next();
+};
+
+const validateMaintenanceStaffIdParam = (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Maintenance Staff ID",
+    });
+  }
+
+  next();
+};
+
+const validateUpdateMaintenanceStaff = (req, res, next) => {
+  const { name, phone, specialization } = req.body;
+
+  if (!name && !phone && !specialization) {
+    return res.status(400).json({
+      success: false,
+      message: "At least one field (name, phone, or specialization) must be provided for update",
+    });
+  }
+
+  next();
+};
+
 export {
   validateCreateAdmin,
   validateAdminIdParam,
@@ -151,5 +192,8 @@ export {
   validateCreateWarden,
   validateWardenIdParam,
   validateUpdateWarden,
-  validateUpdateWardenHostel
+  validateUpdateWardenHostel,
+  validateCreateMaintenanceStaff,
+  validateMaintenanceStaffIdParam,
+  validateUpdateMaintenanceStaff
 }

@@ -21,6 +21,7 @@ const getAllUsersByRoleDb = async (role) => {
       isActive: 1,
       createdAt: 1,
       organization: 1,
+      specialization: 1,
     }
   ).populate("organization", "name code organisationNumber email phone");
 };
@@ -53,6 +54,7 @@ const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10, status, sea
         phone: 1,
         createdAt: 1,
         organization: 1,
+        specialization: 1,
       }
     )
       .populate("organization", "name code organisationNumber email phone")
@@ -88,6 +90,7 @@ const updateUserByRoleDb = async (id, role, data) => {
   if (data.name) user.name = data.name;
   if (data.phone) user.phone = data.phone;
   if (data.email) user.email = data.email;
+  if (data.specialization !== undefined) user.specialization = data.specialization;
 
   await user.save();
   return user;
@@ -101,6 +104,7 @@ const updateUserDb = async (id, data) => {
   if (data.name) user.name = data.name;
   if (data.phone) user.phone = data.phone;
   if (data.email) user.email = data.email;
+  if (data.specialization !== undefined) user.specialization = data.specialization;
 
   await user.save();
   return user;
