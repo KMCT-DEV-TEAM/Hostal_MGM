@@ -16,6 +16,7 @@ import batchRoutes from "./modules/batches/batch.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.routes.js";
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
+import passRoutes from "./modules/passes/pass.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -74,6 +75,7 @@ app.use("/api/warden/students", studentRoutes);
 app.use("/api/warden/parents", parentRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/passes", passRoutes);
 
 app.use(errorMiddleware);
 

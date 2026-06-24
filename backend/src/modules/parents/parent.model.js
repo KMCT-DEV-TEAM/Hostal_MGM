@@ -32,9 +32,9 @@ const parentSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    defaultGuardian : {
-      type :Boolean,
-      default : false
+    defaultGuardian: {
+      type: Boolean,
+      default: false
     },
     isVerified: {
       type: Boolean,
