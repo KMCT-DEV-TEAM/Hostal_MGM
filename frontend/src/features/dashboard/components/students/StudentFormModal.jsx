@@ -197,9 +197,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingHostels, setLoadingHostels] = useState(false);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [organizationId, setOrganizationId] = useState(editingStudent?.organizationId || "");
+  const [organizationId, setOrganizationId] = useState(toIdString(editingStudent?.organization?._id || editingStudent?.organizationId) || "");
   const [hostelId, setHostelId] = useState(
-    toIdString(editingStudent?.hostel._id) || "",
+    toIdString(editingStudent?.hostel?._id || editingStudent?.hostelId) || "",
   );
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -207,9 +207,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingBatches, setLoadingBatches] = useState(false);
-  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?._id) || "");
-  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id) || "");
-  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id) || "");
+  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?._id || editingStudent?.courseId) || "");
+  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id || editingStudent?.departmentId) || "");
+  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id || editingStudent?.batchId) || "");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Fields that were previously plain uncontrolled <input>/<select> elements
@@ -235,10 +235,18 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   }, [role, userOrganization]);
 
-  const loadHostels = async () => {
+  const loadHostels = async (orgId) => {
+    if (role === ROLES.SUPER_ADMIN && !orgId) {
+      setHostels([]);
+      return;
+    }
     setLoadingHostels(true);
     try {
-      const res = await getHostels({ page: 1, limit: 0, status: "Active" });
+      const params = { page: 1, limit: 0, status: "Active" };
+      if (orgId) {
+        params.organizationId = orgId;
+      }
+      const res = await getHostels(params);
       setHostels(res.data || []);
     } catch (error) {
       console.error("Failed to load hostels", error);
@@ -264,7 +272,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const loadCourses = async () => {
     setLoadingCourses(true);
     try {
-      const res = await courseService.getCourses({ status: "Active" });
+      const res = await courseService.getCourses({ limit: 0, status: "Active" });
       setCourses(res.data || []);
     } catch (error) {
       console.error("Failed to load courses", error);
@@ -275,16 +283,25 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   };
 
   useEffect(() => {
-    loadHostels();
     loadCourses();
-    if (role === ROLES.SUPER_ADMIN) loadOrganizations();
-  }, [role]);
+    if (role === ROLES.SUPER_ADMIN) {
+      loadOrganizations();
+    } else if (userOrganization) {
+      loadHostels(userOrganization);
+    }
+  }, [role, userOrganization]);
+
+  useEffect(() => {
+    if (role === ROLES.SUPER_ADMIN) {
+      loadHostels(organizationId);
+    }
+  }, [role, organizationId]);
 
   useEffect(() => {
     if (!courseId) { setDepartments([]); return; }
     let isCurrent = true;
     setLoadingDepartments(true);
-    departmentService.getDepartments({ courseId, status: "Active" })
+    departmentService.getDepartments({ courseId, limit: 0, status: "Active" })
       .then((res) => { if (isCurrent) setDepartments(res.data || []); })
       .catch((error) => {
         console.error("Failed to load departments", error);
@@ -298,7 +315,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     if (!departmentId) { setBatches([]); return; }
     let isCurrent = true;
     setLoadingBatches(true);
-    batchService.getBatches({ departmentId, status: "Active" })
+    batchService.getBatches({ departmentId, limit: 0, status: "Active" })
       .then((res) => { if (isCurrent) setBatches(res.data || []); })
       .catch((error) => {
         console.error("Failed to load batches", error);
@@ -379,7 +396,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   const handleOrganizationChange = (value) => {
     setOrganizationId(value);
+    setHostelId("");
     validateField("organizationId", value);
+    validateField("hostelId", "", { silent: true });
   };
 
   const handleSubmit = async (event) => {
@@ -537,7 +556,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   ];
 
   const hostelOptions = [
-    { value: "", label: "Select hostel" },
+    { value: "", label: (role !== ROLES.SUPER_ADMIN || organizationId) ? "Select hostel" : "Select an organization first" },
     ...hostels.map((hostel) => ({ value: hostel._id, label: hostel.name })),
   ];
 
@@ -779,9 +798,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   options={hostelOptions}
                   value={hostelId}
                   onChange={handleHostelChange}
+                  disabled={role === ROLES.SUPER_ADMIN && !organizationId}
                   className="w-full"
                   minWidth=""
-                  triggerClassName={dropdownTriggerClass}
+                  triggerClassName={`${dropdownTriggerClass} ${(role === ROLES.SUPER_ADMIN && !organizationId) ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
                 />
                 <input type="hidden" name="hostelId" value={hostelId} />
               </Field>
@@ -1034,9 +1054,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 options={hostelOptions}
                 value={hostelId}
                 onChange={handleHostelChange}
+                disabled={role === ROLES.SUPER_ADMIN && !organizationId}
                 className="w-full"
                 minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!hostelId ? "text-gray-400" : ""}`}
+                triggerClassName={`${dropdownTriggerClass} ${!hostelId ? "text-gray-400" : ""} ${(role === ROLES.SUPER_ADMIN && !organizationId) ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
               />
               <input type="hidden" name="hostelId" value={hostelId} />
               {loadingHostels && <p className="text-xs text-text-secondary mt-2">Loading hostels...</p>}

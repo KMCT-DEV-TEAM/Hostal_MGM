@@ -27,9 +27,12 @@ const createDepartment = asyncHandler(async (req, res) => {
 });
 
 const getDepartments = asyncHandler(async (req, res) => {
-  const { page, limit, search, status } = req.query;
+  const { page, limit, search, status, courseId } = req.query;
 
   const query = {};
+  if (courseId) {
+    query.courseId = courseId;
+  }
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: "i" } },

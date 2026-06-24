@@ -27,9 +27,12 @@ const createBatch = asyncHandler(async (req, res) => {
 });
 
 const getBatches = asyncHandler(async (req, res) => {
-  const { page, limit, search, status } = req.query;
+  const { page, limit, search, status, departmentId } = req.query;
 
   const query = {};
+  if (departmentId) {
+    query.departmentId = departmentId;
+  }
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: "i" } },
