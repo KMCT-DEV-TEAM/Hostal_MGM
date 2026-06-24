@@ -116,7 +116,7 @@ export default function WardenFormModal({
                                             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] disabled:bg-gray-50 disabled:text-gray-500 flex-1"
                                         />
                                         {isEmailVerified ? (
-                                            <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-3 py-2.5 rounded-lg shrink-0">
+                                            <span className="flex items-center gap-1.5 text-xs font-medium text-success bg-success-50 px-3 py-2.5 rounded-lg shrink-0">
                                                 <Check size={14} className="stroke-[3]" /> {t('verified')}
                                             </span>
                                         ) : (
@@ -124,10 +124,7 @@ export default function WardenFormModal({
                                                 type="button"
                                                 onClick={() => handleVerifyClick(wardenForm.email, 'addWarden')}
                                                 disabled={!wardenForm.email || isVerifying || editingWarden}
-                                                className={`px-4 py-2.5 text-xs font-medium rounded-lg shrink-0 flex items-center justify-center min-w-[70px] ${!wardenForm.email || editingWarden
-                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                    : 'bg-primary text-white hover:bg-secondary cursor-pointer'
-                                                    }`}
+                                                className={`px-4 py-2.5 text-xs  bg-primary text-white hover:bg-secondary cursor-pointer font-medium rounded-lg shrink-0 flex items-center justify-center min-w-[70px]`}
                                             >
                                                 {isVerifying ? <Loader2 size={14} className="animate-spin" /> : t('verify')}
                                             </button>
@@ -183,7 +180,7 @@ export default function WardenFormModal({
                     <button
                         type="submit"
                         disabled={!isEmailVerified && !editingWarden || isSubmitting}
-                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer"
                     >
                         {isSubmitting && <Loader2 size={14} className="animate-spin mr-1" />}
                         {editingWarden ? t('save_changes') : t('save')}

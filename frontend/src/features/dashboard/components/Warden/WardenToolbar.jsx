@@ -53,7 +53,7 @@ export default function WardenToolbar({
                     <Dropdown
                         className="flex-1 sm:flex-none"
                         options={[
-                            { value: "All", label: "All" },
+                            { value: "All", label: "All Status" },
                             { value: "Active", label: "Active" },
                             { value: "Inactive", label: "Inactive" }
                         ]}
@@ -62,7 +62,7 @@ export default function WardenToolbar({
                             setStatusFilter(val);
                             setCurrentPage(1);
                         }}
-                        placeholder="All"
+                        placeholder="All Status"
                         minWidth="w-32"
                         triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
                     />
