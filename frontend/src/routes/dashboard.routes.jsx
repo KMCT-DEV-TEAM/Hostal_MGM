@@ -68,14 +68,16 @@ export const dashboardRoutes = [
     {
         path: 'organizations',
         roles: [
-            ROLES.SUPER_ADMIN
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
         ],
         element: OrganizationManagement
     },
     {
         path: 'hostels',
         roles: [
-            ROLES.SUPER_ADMIN
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
         ],
         element: HostelManagement
     },
