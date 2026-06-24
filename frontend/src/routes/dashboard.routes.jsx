@@ -148,7 +148,9 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
         ],
         element: Leaves
     },
@@ -157,7 +159,9 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
         ],
         element: Leaves
     },
@@ -166,7 +170,9 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
         ],
         element: Leaves
     },
