@@ -1,13 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-    Calendar as CalendarIcon, 
-    Check, 
-    X, 
-    Pencil,
+import {
+    Calendar as CalendarIcon,
+    Check,
+    X,
     Filter,
     Download,
-    ChevronDown
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import PageHeader from '@/components/ui/PageHeader';
@@ -353,8 +351,8 @@ export default function Leaves() {
             return "Monitor leave requests and approvals across all hostels.";
         }
         if (isWarden) {
-            return isHomePass 
-                ? "view and manage student leave applications" 
+            return isHomePass
+                ? "view and manage student leave applications"
                 : "view and manage student permission applications";
         }
         if (isAdmin) {
@@ -429,7 +427,7 @@ export default function Leaves() {
 
     // Update Request status
     const handleUpdateStatus = (id, newStatus) => {
-        setStudentRequests(prev => 
+        setStudentRequests(prev =>
             prev.map(r => r.id === id ? { ...r, status: newStatus } : r)
         );
         showSuccessToast('Status updated successfully');
@@ -437,7 +435,7 @@ export default function Leaves() {
 
     // Update Return status
     const handleUpdateReturn = (id, newReturn) => {
-        setStudentRequests(prev => 
+        setStudentRequests(prev =>
             prev.map(r => r.id === id ? { ...r, returnStatus: newReturn } : r)
         );
         showSuccessToast('Return status updated successfully');
@@ -503,12 +501,12 @@ export default function Leaves() {
                 ? ["Organization", "Hostel", "Total Request", "Pending", "Approved"]
                 : ["Organization", "Hostel", "Total Request", "Pending", "Approved", "Rejected"];
         }
-        
+
         // Warden and Admin views
         const midCol = isWarden ? "Room No" : "Hostel";
         const dateCol = isHomePass ? "Leave Period" : "Date";
         const typeCol = isHomePass ? "Days" : "Type";
-        
+
         if (isHomePass) {
             return ["Student", midCol, dateCol, typeCol, { label: "Status", align: "start" }, { label: "Return", align: "start" }];
         } else {
@@ -518,7 +516,7 @@ export default function Leaves() {
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
-            
+
             {/* Header section with dynamic back button drilldown indicator */}
             <div className="mb-6 shrink-0 flex items-center gap-3">
                 {selectedHostel && (
@@ -542,39 +540,39 @@ export default function Leaves() {
 
             {/* 4 Stats Cards aligned side-by-side with top border colors */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 shrink-0">
-                <StatsCard 
-                    label="TOTAL REQUESTS" 
-                    value={stats.total} 
-                    icon={<CalendarIcon className="w-4 h-4 text-blue-500" />} 
-                    iconBg="bg-blue-50/50" 
-                    borderColor="border-t-2 border-t-blue-500 border-gray-100 shadow-sm" 
+                <StatsCard
+                    label="TOTAL REQUESTS"
+                    value={stats.total}
+                    icon={<CalendarIcon className="w-4 h-4 text-blue-500" />}
+                    iconBg="bg-blue-50/50"
+                    borderColor="border-t-2 border-t-blue-500 border-gray-100 shadow-sm"
                 />
-                <StatsCard 
-                    label="APPROVED REQUESTS" 
-                    value={stats.approved} 
-                    icon={<CalendarIcon className="w-4 h-4 text-green-500" />} 
-                    iconBg="bg-green-50/50" 
-                    borderColor="border-t-2 border-t-green-500 border-gray-100 shadow-sm" 
+                <StatsCard
+                    label="APPROVED REQUESTS"
+                    value={stats.approved}
+                    icon={<CalendarIcon className="w-4 h-4 text-success" />}
+                    iconBg="bg-green-50/50"
+                    borderColor="border-t-2 border-t-green-500 border-gray-100 shadow-sm"
                 />
-                <StatsCard 
-                    label="PENDING REQUESTS" 
-                    value={stats.pending} 
-                    icon={<CalendarIcon className="w-4 h-4 text-amber-500" />} 
-                    iconBg="bg-amber-50/50" 
-                    borderColor="border-t-2 border-t-amber-500 border-gray-100 shadow-sm" 
+                <StatsCard
+                    label="PENDING REQUESTS"
+                    value={stats.pending}
+                    icon={<CalendarIcon className="w-4 h-4 text-warning" />}
+                    iconBg="bg-amber-50/50"
+                    borderColor="border-t-2 border-t-amber-500 border-gray-100 shadow-sm"
                 />
-                <StatsCard 
-                    label="REJECTED REQUESTS" 
-                    value={stats.rejected} 
-                    icon={<CalendarIcon className="w-4 h-4 text-danger" />} 
-                    iconBg="bg-rose-50/50" 
-                    borderColor="border-t-2 border-t-rose-500 border-gray-100 shadow-sm" 
+                <StatsCard
+                    label="REJECTED REQUESTS"
+                    value={stats.rejected}
+                    icon={<CalendarIcon className="w-4 h-4 text-danger" />}
+                    iconBg="bg-rose-50/50"
+                    borderColor="border-t-2 border-t-rose-500 border-gray-100 shadow-sm"
                 />
             </div>
 
             {/* List Table Panel */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                
+
                 {/* Search & Toolbar section */}
                 <div className="p-4 flex flex-row items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
                     <div className="relative w-full max-w-sm">
@@ -650,8 +648,8 @@ export default function Leaves() {
                                     {/* Room No (if drilldown/warden) or Hostel name (if admin) */}
                                     <td className="p-4 text-text-secondary font-medium">
                                         {selectedHostel || isWarden ? r.roomNo : (
-                                            <span 
-                                                className="text-[#0A437A] font-semibold hover:underline cursor-pointer"
+                                            <span
+                                                className="text-primary font-semibold hover:underline cursor-pointer"
                                                 onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
                                             >
                                                 {r.hostel}
@@ -718,8 +716,8 @@ export default function Leaves() {
                                 <td className="p-4 text-text-secondary capitalize">
                                     {r.organization}
                                 </td>
-                                <td 
-                                    className="p-4 text-[#0A437A] font-semibold hover:underline cursor-pointer"
+                                <td
+                                    className="p-4 text-text-secondary hover:text-primary cursor-pointer"
                                     onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
                                 >
                                     {r.hostel}
@@ -754,7 +752,7 @@ export default function Leaves() {
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
                                         <span className="font-bold text-[#0A437A] capitalize">{r.organization}</span>
-                                        <span 
+                                        <span
                                             className="text-xs text-primary font-semibold hover:underline cursor-pointer"
                                             onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
                                         >
@@ -774,14 +772,14 @@ export default function Leaves() {
                             <div className="space-y-2.5">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-[10px]">
+                                        <div className="w-6 h-6 rounded-full bg-[#0A437A]/10 text-text-secondary flex items-center justify-center">
                                             {r.studentName.substring(0, 2)}
                                         </div>
                                         <span className="font-bold text-gray-700 text-sm">{r.studentName}</span>
                                     </div>
                                     <span className="text-xs text-gray-400 font-medium">
                                         {selectedHostel || isWarden ? `Room ${r.roomNo}` : (
-                                            <span 
+                                            <span
                                                 className="text-[#0A437A] font-semibold hover:underline cursor-pointer"
                                                 onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
                                             >
