@@ -12,6 +12,7 @@ export const generateAccessToken = (user) => {
     {
       id: user._id,
       role: user.role,
+      organization: user.organization ? (user.organization._id || user.organization) : undefined,
     },
     process.env.JWT_ACCESS_TOKEN,
     {
@@ -44,6 +45,7 @@ export const generateRefreshToken = (user) => {
     {
       id: user._id,
       role: user.role,
+      organization: user.organization ? (user.organization._id || user.organization) : undefined,
     },
     process.env.JWT_REFRESH_TOKEN,
     {

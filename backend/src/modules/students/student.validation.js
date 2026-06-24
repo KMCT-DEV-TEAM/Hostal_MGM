@@ -85,6 +85,7 @@ const validateUpdateStudent = (req, res, next) => {
     phone,
     gender,
     dob,
+    organizationId,
     courseId,
     departmentId,
     batchId,
@@ -98,6 +99,7 @@ const validateUpdateStudent = (req, res, next) => {
     !phone &&
     !gender &&
     !dob &&
+    !organizationId &&
     !courseId &&
     !departmentId &&
     !batchId &&
@@ -107,6 +109,13 @@ const validateUpdateStudent = (req, res, next) => {
     return res.status(400).json({
       success: false,
       message: "At least one field must be provided for update",
+    });
+  }
+
+  if (organizationId && !mongoose.Types.ObjectId.isValid(organizationId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid organizationId",
     });
   }
 

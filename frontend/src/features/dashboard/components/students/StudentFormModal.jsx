@@ -197,9 +197,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingHostels, setLoadingHostels] = useState(false);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [organizationId, setOrganizationId] = useState(editingStudent?.organizationId || "");
+  const [organizationId, setOrganizationId] = useState(toIdString(editingStudent?.organization?._id || editingStudent?.organizationId) || "");
   const [hostelId, setHostelId] = useState(
-    toIdString(editingStudent?.hostel._id) || "",
+    toIdString(editingStudent?.hostel?._id || editingStudent?.hostelId) || "",
   );
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -207,9 +207,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingBatches, setLoadingBatches] = useState(false);
-  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?._id) || "");
-  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id) || "");
-  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id) || "");
+  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?._id || editingStudent?.courseId) || "");
+  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id || editingStudent?.departmentId) || "");
+  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id || editingStudent?.batchId) || "");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Fields that were previously plain uncontrolled <input>/<select> elements
@@ -235,10 +235,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   }, [role, userOrganization]);
 
-  const loadHostels = async () => {
+  const loadHostels = async (orgId) => {
+    if (!orgId) {
+      setHostels([]);
+      return;
+    }
     setLoadingHostels(true);
     try {
-      const res = await getHostels({ page: 1, limit: 0, status: "Active" });
+      const res = await getHostels({ page: 1, limit: 0, status: "Active", organizationId: orgId });
       setHostels(res.data || []);
     } catch (error) {
       console.error("Failed to load hostels", error);
@@ -261,30 +265,39 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   };
 
+  const loadCourses = async (orgId) => {
+    if (!orgId) {
+      setCourses([]);
+      return;
+    }
+    setLoadingCourses(true);
+    try {
+      const res = await courseService.getCourses({ organizationId: orgId, limit: 0, status: "Active" });
+      setCourses(res.data || []);
+    } catch (error) {
+      console.error("Failed to load courses", error);
+      showErrorToast("Failed to load courses");
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
   useEffect(() => {
-    loadHostels();
-    if (role === ROLES.SUPER_ADMIN) loadOrganizations();
+    if (role === ROLES.SUPER_ADMIN) {
+      loadOrganizations();
+    }
   }, [role]);
 
   useEffect(() => {
-    if (!organizationId) { setCourses([]); return; }
-    let isCurrent = true;
-    setLoadingCourses(true);
-    courseService.getCourses({ organizationId, status: "Active", limit: 0 })
-      .then((res) => { if (isCurrent) setCourses(res.data || []); })
-      .catch((error) => {
-        console.error("Failed to load courses", error);
-        if (isCurrent) showErrorToast("Failed to load courses");
-      })
-      .finally(() => { if (isCurrent) setLoadingCourses(false); });
-    return () => { isCurrent = false; };
+    loadCourses(organizationId);
+    loadHostels(organizationId);
   }, [organizationId]);
 
   useEffect(() => {
     if (!courseId) { setDepartments([]); return; }
     let isCurrent = true;
     setLoadingDepartments(true);
-    departmentService.getDepartments({ courseId, status: "Active", limit: 0 })
+    departmentService.getDepartments({ courseId, limit: 0, status: "Active" })
       .then((res) => { if (isCurrent) setDepartments(res.data || []); })
       .catch((error) => {
         console.error("Failed to load departments", error);
@@ -298,6 +311,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     if (!departmentId) { setBatches([]); return; }
     let isCurrent = true;
     setLoadingBatches(true);
+
     batchService.getBatches({ departmentId, status: "Active", limit: 0 })
       .then((res) => { if (isCurrent) setBatches(res.data || []); })
       .catch((error) => {
@@ -379,6 +393,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   const handleOrganizationChange = (value) => {
     setOrganizationId(value);
+
     setCourseId("");
     setDepartmentId("");
     setBatchId("");
@@ -411,9 +426,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         return;
       }
       setFieldErrors({});
+
+      // Build the final payload. If the organization changed, explicitly
+      // null-out any dependent fields that were reset to "" so the backend
+      // clears stale cross-org references instead of silently keeping them.
+      const payload = { ...result.data };
+      const originalOrgId = toIdString(
+        editingStudent?.organization?._id || editingStudent?.organizationId
+      );
+      if (payload.organizationId && payload.organizationId !== originalOrgId) {
+        if (!courseId)     payload.courseId     = null;
+        if (!departmentId) payload.departmentId = null;
+        if (!batchId)      payload.batchId      = null;
+        if (!hostelId)     payload.hostelId     = null;
+      }
+
       try {
         setSaving(true);
-        await onSave(result.data);
+        await onSave(payload);
       } catch (error) {
         // onSave (handleSaveStudent in parent) already shows its own toast,
         // this catch just prevents an unhandled rejection here.
@@ -423,6 +453,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       }
       return;
     }
+
 
     if (!studentOtp || !parentOtp) {
       setOtpErrors({
@@ -543,7 +574,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   ];
 
   const hostelOptions = [
-    { value: "", label: "Select hostel" },
+    { value: "", label: (role !== ROLES.SUPER_ADMIN || organizationId) ? "Select hostel" : "Select an organization first" },
     ...hostels.map((hostel) => ({ value: hostel._id, label: hostel.name })),
   ];
 
@@ -726,6 +757,21 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           <section>
             <h3 className="text-sm font-medium text-primary mb-4">Academic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {role === ROLES.SUPER_ADMIN && (
+                <Field label="Organization *" error={fieldErrors.organizationId}>
+                  <Dropdown
+                    options={organizationOptions}
+                    value={organizationId}
+                    onChange={handleOrganizationChange}
+                    className="w-full"
+                    minWidth=""
+                    triggerClassName={dropdownTriggerClass}
+                  />
+                  <input type="hidden" name="organizationId" value={organizationId} />
+                  {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
+                </Field>
+              )}
+
               <Field label="Course" error={fieldErrors.courseId}>
                 <Dropdown
                   options={courseOptions}
@@ -786,9 +832,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   options={hostelOptions}
                   value={hostelId}
                   onChange={handleHostelChange}
+                  disabled={role === ROLES.SUPER_ADMIN && !organizationId}
                   className="w-full"
                   minWidth=""
-                  triggerClassName={dropdownTriggerClass}
+                  triggerClassName={`${dropdownTriggerClass} ${(role === ROLES.SUPER_ADMIN && !organizationId) ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
                 />
                 <input type="hidden" name="hostelId" value={hostelId} />
               </Field>
@@ -1041,9 +1088,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 options={hostelOptions}
                 value={hostelId}
                 onChange={handleHostelChange}
+                disabled={role === ROLES.SUPER_ADMIN && !organizationId}
                 className="w-full"
                 minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!hostelId ? "text-gray-400" : ""}`}
+                triggerClassName={`${dropdownTriggerClass} ${!hostelId ? "text-gray-400" : ""} ${(role === ROLES.SUPER_ADMIN && !organizationId) ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
               />
               <input type="hidden" name="hostelId" value={hostelId} />
               {loadingHostels && <p className="text-xs text-text-secondary mt-2">Loading hostels...</p>}
