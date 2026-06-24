@@ -369,7 +369,7 @@ const DepartmentManagement = () => {
                             <Dropdown
                                 className="flex-1 sm:flex-none"
                                 options={[
-                                    { label: 'All', value: 'All' },
+                                    { label: 'All Status', value: 'All' },
                                     { label: 'Active', value: 'Active' },
                                     { label: 'Inactive', value: 'Inactive' }
                                 ]}

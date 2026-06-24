@@ -14,7 +14,8 @@ import {
     KeyRound,
     BookOpen,
     Layers,
-    Tags
+    Tags,
+    Wrench
 } from 'lucide-react';
 
 import { ROLES } from '@/constants/roles';
@@ -124,6 +125,10 @@ export const DASHBOARD_NAV = {
                     icon: AlertTriangle,
                     label: 'Complaints',
                     path: '/dashboard/complaints',
+                    subItems: [
+                        { label: 'Complaints', path: '/dashboard/complaints' },
+                        { label: 'Maintenance Staff', path: '/dashboard/maintenance-staff' }
+                    ],
                     badge: { count: 12, variant: 'danger' }
                 },
                 {
@@ -261,6 +266,10 @@ export const DASHBOARD_NAV = {
                     icon: AlertTriangle,
                     label: 'Complaints',
                     path: '/dashboard/complaints',
+                    subItems: [
+                        { label: 'Complaints', path: '/dashboard/complaints' },
+                        { label: 'Maintenance Staff', path: '/dashboard/maintenance-staff' }
+                    ],
                     badge: { count: 12, variant: 'danger' }
                 },
                 {
@@ -341,6 +350,10 @@ export const DASHBOARD_NAV = {
                     icon: AlertTriangle,
                     label: 'Complaints',
                     path: '/dashboard/complaints',
+                    subItems: [
+                        { label: 'Complaints', path: '/dashboard/complaints' },
+                        { label: 'Maintenance Staff', path: '/dashboard/maintenance-staff' }
+                    ],
                     badge: { count: 12, variant: 'danger' }
                 },
                 {

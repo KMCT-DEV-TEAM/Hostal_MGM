@@ -63,7 +63,7 @@ export default function Dropdown({
                                     key={idx}
                                     type="button"
                                     onClick={() => handleSelect(opt)}
-                                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50 whitespace-normal break-words ${value === val ? 'bg-blue-50/50 text-[#0A437A] font-medium' : 'text-gray-700'}`}
+                                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50 whitespace-normal break-words cursor-pointer ${value === val ? 'bg-blue-50/50 text-[#0A437A] font-medium' : 'text-gray-700'}`}
                                 >
                                     {label}
                                 </button>

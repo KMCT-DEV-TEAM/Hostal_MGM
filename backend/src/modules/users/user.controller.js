@@ -459,6 +459,172 @@ const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, "Bulk warden status updated successfully");
 });
 
+// --- MAINTENANCE STAFF CONTROLLERS ---
+
+const createMaintenanceStaff = asyncHandler(async (req, res) => {
+    const { name, email, phone, specialization, organizationId } = req.body;
+
+    const existingUser = await findExistingUserByEmail(email);
+
+    if (existingUser) {
+        return sendError(res, 400, "Email already exists");
+    }
+
+    if (organizationId) {
+        const organizationExists = await getOrganizationByIdDb(organizationId);
+        if (!organizationExists) {
+            return sendError(res, 404, "Organization not found");
+        }
+    }
+
+    const temporaryPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await hashPassword(temporaryPassword);
+
+    const maintenanceStaff = await createUserDb({
+        name,
+        email,
+        phone,
+        specialization,
+        password: hashedPassword,
+        organization: organizationId,
+        temppass: true,
+    }, "maintenance_staff");
+
+    const subject = "Your Maintenance Staff Account Details";
+    const text = `Hello ${name}\n\nYour maintenance staff account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+    const html = `<p>Hello ${name},</p><p>Your maintenance staff account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+    try {
+        await sendMail(email, subject, text, html);
+    } catch (error) {
+        console.error("Failed to send temporary password email:", error);
+    }
+
+    return sendSuccess(res, 201, "Maintenance Staff created successfully and email sent", { data: maintenanceStaff });
+});
+
+const getMaintenanceStaff = asyncHandler(async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
+    
+    let additionalQuery = {};
+
+    if (req.user.role === 'admin') {
+      if (!req.user.organization) {
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+      additionalQuery = { organization: req.user.organization };
+    }
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("maintenance_staff", page, limit, status, search, additionalQuery);
+
+    return sendSuccess(res, 200, "Maintenance staff fetched successfully", { 
+      count: users.length, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      data: users 
+    });
+});
+
+const getMaintenanceStaffById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Maintenance Staff ID");
+    }
+
+    let additionalQuery = {};
+
+    if (req.user.role === 'admin') {
+      if (!req.user.organization) {
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+      additionalQuery = { organization: req.user.organization };
+    }
+
+    const staff = await getUserByIdAndRoleDb(id, "maintenance_staff", additionalQuery);
+
+    if (!staff) {
+      return sendError(res, 404, "Maintenance Staff not found");
+    }
+
+    return sendSuccess(res, 200, "Maintenance Staff fetched successfully", { data: staff });
+});
+
+const updateMaintenanceStaff = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name, phone, specialization } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Maintenance Staff ID");
+    }
+
+    const staff = await updateUserByRoleDb(id, "maintenance_staff", { name, phone, specialization });
+
+    if (!staff) {
+      return sendError(res, 404, "Maintenance Staff not found");
+    }
+
+    return sendSuccess(res, 200, "Maintenance Staff updated successfully", {
+      data: {
+        _id: staff._id,
+        name: staff.name,
+        email: staff.email,
+        phone: staff.phone,
+        specialization: staff.specialization,
+        role: staff.role,
+        isActive: staff.isActive,
+      }
+    });
+});
+
+const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Maintenance Staff ID");
+    }
+
+    const staff = await toggleUserActiveStatusByRoleDb(id, "maintenance_staff");
+
+    if (!staff) {
+      return sendError(res, 404, "Maintenance Staff not found");
+    }
+
+    const message = staff.isActive 
+      ? "Maintenance Staff activated successfully" 
+      : "Maintenance Staff deactivated successfully";
+
+    return sendSuccess(res, 200, message, {
+      data: {
+        _id: staff._id,
+        name: staff.name,
+        email: staff.email,
+        role: staff.role,
+        isActive: staff.isActive,
+      }
+    });
+});
+
+const bulkToggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
+    const { ids, isActive } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendError(res, 400, "Please provide an array of Maintenance Staff IDs");
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return sendError(res, 400, "Please provide isActive boolean status");
+    }
+
+    await bulkToggleUserStatusByRoleDb(ids, "maintenance_staff", isActive);
+
+    return sendSuccess(res, 200, "Bulk maintenance staff status updated successfully");
+});
+
 export {
   createAdmin,
   getAdmins,
@@ -474,5 +640,11 @@ export {
   updateWarden,
   updateWardenHostel,
   toggleWardenStatus,
-  bulkToggleWardenStatus
+  bulkToggleWardenStatus,
+  createMaintenanceStaff,
+  getMaintenanceStaff,
+  getMaintenanceStaffById,
+  updateMaintenanceStaff,
+  toggleMaintenanceStaffStatus,
+  bulkToggleMaintenanceStaffStatus
 }

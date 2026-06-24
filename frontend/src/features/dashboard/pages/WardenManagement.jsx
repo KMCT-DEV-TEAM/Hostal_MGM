@@ -451,7 +451,7 @@ export default function WardenManagement() {
                 handleBulkStatusClick={handleBulkStatusClick}
             />
 
-            <div className="bg-transparent md:bg-[#F8FAFC] md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 <WardenToolbar
                     statusFilter={statusFilter}
                     setStatusFilter={setStatusFilter}

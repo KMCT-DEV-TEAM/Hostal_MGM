@@ -4,10 +4,17 @@ import Dropdown from '@/components/ui/Dropdown';
 
 export default function StudentComplaintsTable({
     complaints,
+    categories = [],
     handleCategoryChange,
     openEditModal,
     onViewDetail
 }) {
+    // Transform categories into Dropdown options format
+    const categoryOptions = categories.map(cat => ({
+        value: cat._id,
+        label: cat.name
+    }));
+
     return (
         <div className="hidden md:block flex-1 overflow-auto bg-white rounded-xl border border-gray-100 shadow-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-left border-collapse">
@@ -38,12 +45,8 @@ export default function StudentComplaintsTable({
                                     <div className="relative w-full max-w-[140px]">
                                         <Dropdown
                                             minWidth=""
-                                            options={[
-                                                { value: "Mess", label: "Mess" },
-                                                { value: "Maintenance", label: "Maintenance" },
-                                                { value: "Other", label: "Other" }
-                                            ]}
-                                            value={complaint.category}
+                                            options={categoryOptions.length > 0 ? categoryOptions : [{ value: complaint.categoryId || complaint.category, label: complaint.category }]}
+                                            value={complaint.categoryId || complaint.category}
                                             onChange={(val) => handleCategoryChange(complaint.id, val)}
                                             triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-text-primary hover:border-gray-300 transition-colors cursor-pointer"
                                         />
@@ -56,7 +59,7 @@ export default function StudentComplaintsTable({
                                     {complaint.date}
                                 </td>
                                 <td className="p-5 text-start">
-                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-gray-100 text-text-secondary'}`}>
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-gray-100 text-text-secondary'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>

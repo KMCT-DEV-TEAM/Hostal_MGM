@@ -1,59 +1,29 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-    Square,
-    CheckSquare,
-    Pencil,
-    Trash2,
-    Plus,
-    Search,
-    SlidersHorizontal,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    X,
-    Phone,
-    Download,
-    User,
-    ArrowLeft,
-    Check
-} from 'lucide-react';
-
-import AdminTable from '../components/admin/AdminTable';
-import AdminMobileList from '../components/admin/AdminMobileList';
-import AdminFormModal from '../components/admin/AdminFormModal';
-import AdminDetailView from '../components/admin/AdminDetailView';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
+import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
+import MaintenanceStaffFormModal from '../components/maintenanceStaff/MaintenanceStaffFormModal';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
-
-const INITIAL_ADMINS = [
-    { id: 1, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 1', status: 'Active' },
-    { id: 2, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 2', status: 'Inactive' },
-    { id: 3, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 3', status: 'Active' },
-    { id: 4, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 4', status: 'Inactive' },
-    { id: 5, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 5', status: 'Active' },
-    { id: 6, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 6', status: 'Active' },
-    { id: 7, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 7', status: 'Inactive' },
-    { id: 8, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 8', status: 'Active' },
-    { id: 9, name: 'Anil kumar', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 9', status: 'Active' },
-    { id: 10, name: 'Jacob Tarakan', email: 'anilkumar@gmail.com', phone: '9987898789', hostel: 'Kmct Hostel 10', status: 'Active' },
-];
-
-
-
-import adminService from '../../../services/admin.service';
+import maintenanceStaffService from '../../../services/maintenanceStaff.service';
 import organizationService from '../../../services/organization.service';
 import otpService from '../../../services/otp.service';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
-export default function Administrator() {
+export default function MaintenanceStaffManagement() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    
     const [activeModal, setActiveModal] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
-    const [editingAdmin, setEditingAdmin] = useState(null);
+    const [editingStaff, setEditingStaff] = useState(null);
     const [view, setView] = useState('list');
-    const [selectedAdminDetail, setSelectedAdminDetail] = useState(null);
+    const [selectedStaffDetail, setSelectedStaffDetail] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -64,24 +34,25 @@ export default function Administrator() {
     const [isVerifying, setIsVerifying] = useState(false);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
-    const [isOrgConfirmOpen, setIsOrgConfirmOpen] = useState(false);
-    const [orgChangeToConfirm, setOrgChangeToConfirm] = useState(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Email Change Flow State
-    const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
-    const [emailChangeForm, setEmailChangeForm] = useState('');
-    const [newEmailForm, setNewEmailForm] = useState('');
-    const [emailChangeAdminId, setEmailChangeAdminId] = useState(null);
-    const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-    const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+    // Email verification state
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     const [otpSource, setOtpSource] = useState(null);
-    const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
-    const [resendTimer, setResendTimer] = useState(300);
+    const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+    const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+    const [resendTimer, setResendTimer] = useState(0);
     const [isTimerActive, setIsTimerActive] = useState(false);
 
-    const [admins, setAdmins] = useState([]);
-    const [totalAdmins, setTotalAdmins] = useState(0);
+    // Email change state
+    const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
+    const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
+    const [emailChangeStaffId, setEmailChangeStaffId] = useState(null);
+    const [emailChangeForm, setEmailChangeForm] = useState('');
+    const [newEmailForm, setNewEmailForm] = useState('');
+
+    const [staff, setStaff] = useState([]);
+    const [totalStaff, setTotalStaff] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -91,37 +62,35 @@ export default function Administrator() {
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Form State for Adding / Editing Admin
-    const [adminForm, setAdminForm] = useState({
+    // Form State
+    const [staffForm, setStaffForm] = useState({
         name: '',
         email: '',
         phone: '',
-        hostel: 'Kmct Hostel 1',
+        specialization: '',
         status: 'Active'
     });
 
-    const fetchAdmins = async () => {
+    const fetchStaff = async () => {
         setLoading(true);
         try {
-            const res = await adminService.getAdmins({
+            const res = await maintenanceStaffService.getMaintenanceStaff({
                 page: currentPage,
                 limit: itemsPerPage,
                 search: debouncedSearch,
                 status: statusFilter
             });
             if (res && res.data) {
-                // Backend might wrap data in { data: [...], totalCount: ... } inside res.data
                 const dataPayload = res.data;
-                const adminList = dataPayload.data || dataPayload;
-                setAdmins(Array.isArray(adminList) ? adminList : []);
-                setTotalAdmins(dataPayload.totalCount || res.totalCount || 0);
+                const staffList = dataPayload.data || dataPayload;
+                setStaff(Array.isArray(staffList) ? staffList : []);
+                setTotalStaff(dataPayload.totalCount || res.totalCount || 0);
                 setTotalPages(dataPayload.totalPages || res.totalPages || 1);
             }
         } catch (err) {
-            console.error("Failed to fetch admins:", err);
-            setError("Failed to fetch admins. Please try again.");
+            console.error("Failed to fetch maintenance staff:", err);
+            setError("Failed to fetch maintenance staff. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -136,47 +105,35 @@ export default function Administrator() {
     }, [searchQuery]);
 
     useEffect(() => {
-        const fetchOrganizations = async () => {
-            try {
-                const res = await organizationService.getOrganizations({ limit: 100, status: 'Active' });
-                if (res && res.data) {
-                    setOrganizations(res.data);
-                }
-            } catch (err) {
-                console.error("Failed to fetch organizations:", err);
-            }
-        };
-        fetchOrganizations();
-    }, []);
+        fetchStaff();
+    }, [currentPage, debouncedSearch, statusFilter]);
 
     useEffect(() => {
         let interval = null;
         if (isOtpModalOpen && isTimerActive && resendTimer > 0) {
             interval = setInterval(() => {
-                setResendTimer((prev) => prev - 1);
+                setResendTimer(prev => prev - 1);
             }, 1000);
         } else if (resendTimer === 0) {
             setIsTimerActive(false);
-            clearInterval(interval);
+            if (interval) clearInterval(interval);
         }
-        return () => clearInterval(interval);
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [isOtpModalOpen, isTimerActive, resendTimer]);
 
-    const formatTime = (seconds) => {
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
+    const formatTime = (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
-
-    useEffect(() => {
-        fetchAdmins();
-    }, [currentPage, debouncedSearch, statusFilter]);
 
     // ==========================================
     // SELECTION & ACTION HANDLERS
     // ==========================================
     const handleSelectAll = () => {
-        const currentVisibleIds = admins.map(w => w._id);
+        const currentVisibleIds = staff.map(w => w._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -194,21 +151,6 @@ export default function Administrator() {
         }
     };
 
-    const handleDeleteAdmin = (id) => {
-        if (window.confirm("Are you sure you want to delete this admin?")) {
-            setAdmins(admins.filter(w => w.id !== id));
-            setSelectedIds(selectedIds.filter(item => item !== id));
-        }
-    };
-
-    const handleDeleteSelected = () => {
-        if (window.confirm(`Are you sure you want to delete ${selectedIds.length} admin(s)?`)) {
-            setAdmins(admins.filter(w => !selectedIds.includes(w.id)));
-            setSelectedIds([]);
-            setCurrentPage(1);
-        }
-    };
-
     const handleStatusChangeClick = (id, currentStatus) => {
         setStatusToUpdate({ id, currentStatus });
         setIsStatusConfirmOpen(true);
@@ -217,53 +159,18 @@ export default function Administrator() {
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
         try {
-            const res = await adminService.toggleStatus(statusToUpdate.id);
+            const res = await maintenanceStaffService.toggleStatus(statusToUpdate.id);
             if (res && res.data) {
                 const newIsActive = statusToUpdate.currentStatus !== 'Active';
-                setAdmins(admins.map(w => w._id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
-                showSuccessToast('Status Updated', res?.message || `Administrator status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
+                setStaff(staff.map(w => w._id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
+                showSuccessToast('Status Updated', res?.message || `Maintenance staff status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
             }
         } catch (error) {
             console.error("Failed to update status:", error);
-            showErrorToast('Action Failed', error?.message || 'Failed to change administrator status');
+            showErrorToast('Action Failed', error?.message || 'Failed to change status');
         }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
-    };
-
-    const openChangeEmailModal = (admin) => {
-        setEmailChangeAdminId(admin._id);
-        setEmailChangeForm(admin.email || '');
-        setNewEmailForm('');
-        setIsEmailVerified(false);
-        setIsEmailChangeModalOpen(true);
-    };
-
-    const confirmEmailChange = async (e) => {
-        e.preventDefault();
-        try {
-            await adminService.updateEmail(emailChangeAdminId, {
-                oldEmail: emailChangeForm,
-                newEmail: newEmailForm
-            });
-
-            setAdmins(admins.map(a => a._id === emailChangeAdminId ? { ...a, email: newEmailForm } : a));
-
-            if (selectedAdminDetail && selectedAdminDetail._id === emailChangeAdminId) {
-                setSelectedAdminDetail({ ...selectedAdminDetail, email: newEmailForm });
-            }
-
-            setIsEmailChangeModalOpen(false);
-            setIsEmailChangeSuccessModalOpen(true);
-            showSuccessToast('Email Updated', 'Administrator email updated successfully');
-            setTimeout(() => {
-                setIsEmailChangeSuccessModalOpen(false);
-                setEmailChangeAdminId(null);
-                setNewEmailForm('');
-            }, 2500);
-        } catch (error) {
-            showErrorToast('Error', error?.message || 'Failed to update email');
-        }
     };
 
     const handleBulkStatusClick = (isActive) => {
@@ -274,17 +181,16 @@ export default function Administrator() {
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
-            const res = await adminService.bulkToggleStatus({
+            const res = await maintenanceStaffService.bulkToggleStatus({
                 ids: selectedIds,
                 isActive: bulkStatusToUpdate
             });
             if (res && res.success) {
-                // Optimistically update local state
-                setAdmins(admins.map(admin =>
-                    selectedIds.includes(admin._id) ? { ...admin, isActive: bulkStatusToUpdate } : admin
+                setStaff(staff.map(s =>
+                    selectedIds.includes(s._id) ? { ...s, isActive: bulkStatusToUpdate } : s
                 ));
                 const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
-                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} administrators`);
+                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} maintenance staff`);
             }
         } catch (error) {
             console.error("Failed to update bulk status:", error);
@@ -295,69 +201,43 @@ export default function Administrator() {
         setBulkStatusToUpdate(null);
     };
 
-    const handleOrganizationChange = (id, organizationId) => {
-        setOrgChangeToConfirm({ id, organizationId });
-        setIsOrgConfirmOpen(true);
-    };
-
-    const confirmOrganizationChange = async () => {
-        if (!orgChangeToConfirm) return;
-        const { id, organizationId } = orgChangeToConfirm;
-        try {
-            const res = await adminService.updateOrganization(id, { organizationId });
-            if (res && res.data) {
-                const newOrg = organizations.find(o => o._id === organizationId);
-                setAdmins(admins.map(admin =>
-                    admin._id === id ? { ...admin, organization: newOrg ? newOrg : { _id: organizationId } } : admin
-                ));
-                showSuccessToast('Organization Assigned', res?.message || 'Administrator organization updated successfully');
-            }
-        } catch (err) {
-            console.error("Failed to update organization:", err);
-            showErrorToast('Action Failed', err?.message || 'Failed to update organization');
-        } finally {
-            setIsOrgConfirmOpen(false);
-            setOrgChangeToConfirm(null);
-        }
-    };
-
     // ==========================================
     // MODAL OPEN / SUBMIT HANDLERS
     // ==========================================
-    const openAddAdminModal = () => {
-        setEditingAdmin(null);
-        setAdminForm({ name: '', email: '', phone: '', organization: organizations[0]?._id || '', status: 'Active' });
+    const openAddStaffModal = () => {
+        setEditingStaff(null);
+        setStaffForm({ name: '', email: '', phone: '', specialization: '', status: 'Active' });
         setIsEmailVerified(false);
-        setActiveModal('admin');
+        setActiveModal('staff');
     };
 
-    const openEditAdminModal = (admin) => {
-        setEditingAdmin(admin);
-        setAdminForm({ ...admin, organization: admin.organization?._id || admin.organization });
+    const openEditStaffModal = (staff) => {
+        setEditingStaff(staff);
+        setStaffForm({ ...staff });
         setIsEmailVerified(true);
-        setActiveModal('admin');
+        setActiveModal('staff');
     };
 
-    const handleSaveAdmin = (e) => {
+    const handleSaveStaff = (e) => {
         e.preventDefault();
-        if (!adminForm.name || !adminForm.email || !adminForm.phone || (!editingAdmin && !adminForm.organization)) {
+        if (!staffForm.name || !staffForm.email || !staffForm.phone) {
             showErrorToast('Validation Error', 'Please fill in all required fields');
             return;
         }
 
-        if (!isEmailVerified && !editingAdmin) {
+        if (!isEmailVerified && !editingStaff) {
             showErrorToast('Validation Error', 'Please verify your email before saving');
             return;
         }
 
-        if (editingAdmin) {
+        if (editingStaff) {
             setIsEditConfirmOpen(true);
         } else {
-            saveAdmin();
+            saveStaff();
         }
     };
 
-    const handleVerifyClick = async (email, source = 'addAdmin') => {
+    const handleVerifyClick = async (email, source = 'addStaff') => {
         if (!email) {
             showErrorToast('Validation Error', 'Please enter an email first');
             return;
@@ -373,6 +253,7 @@ export default function Administrator() {
             if (source === 'emailChange') {
                 setIsEmailChangeModalOpen(false);
             }
+            showSuccessToast('Success', 'OTP sent to email!');
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to send OTP');
         } finally {
@@ -381,7 +262,7 @@ export default function Administrator() {
     };
 
     const handleResendOtp = async () => {
-        const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
+        const emailToVerify = otpSource === 'emailChange' ? newEmailForm : staffForm.email;
         try {
             await otpService.sendOtp(emailToVerify);
             setResendTimer(300);
@@ -392,50 +273,81 @@ export default function Administrator() {
         }
     };
 
-    const saveAdmin = async () => {
+    const openChangeEmailModal = (staff) => {
+        setEmailChangeStaffId(staff._id);
+        setEmailChangeForm(staff.email);
+        setNewEmailForm('');
+        setIsEmailVerified(false);
+        setIsEmailChangeModalOpen(true);
+    };
+
+    const confirmEmailChange = async (e) => {
+        e.preventDefault();
+        if (!isEmailVerified) return;
+
+        try {
+            const res = await maintenanceStaffService.updateEmail(emailChangeStaffId, {
+                oldEmail: emailChangeForm,
+                newEmail: newEmailForm
+            });
+            if (res && res.success) {
+                setStaff(staff.map(s => s._id === emailChangeStaffId ? { ...s, email: newEmailForm } : s));
+                setIsEmailChangeModalOpen(false);
+                setIsEmailChangeSuccessModalOpen(true);
+                
+                if (selectedStaffDetail && selectedStaffDetail._id === emailChangeStaffId) {
+                    setSelectedStaffDetail({ ...selectedStaffDetail, email: newEmailForm });
+                }
+                
+                setTimeout(() => {
+                    setIsEmailChangeSuccessModalOpen(false);
+                }, 3000);
+            }
+        } catch (error) {
+            showErrorToast('Update Failed', error?.message || 'Failed to update email');
+        }
+    };
+
+    const saveStaff = async () => {
         setIsSubmitting(true);
-        if (editingAdmin) {
+        if (editingStaff) {
             try {
-                // Update Existing Record via API
-                const res = await adminService.updateAdmin(editingAdmin._id, {
-                    name: adminForm.name,
-                    phone: adminForm.phone
+                const res = await maintenanceStaffService.updateMaintenanceStaff(editingStaff._id, {
+                    name: staffForm.name,
+                    phone: staffForm.phone,
+                    specialization: staffForm.specialization
                 });
                 if (res && res.data) {
-                    setAdmins(admins.map(w => w._id === editingAdmin._id ? { ...w, ...res.data } : w));
-                    showSuccessToast('Administrator Updated', res?.message || 'Administrator details saved successfully');
+                    setStaff(staff.map(w => w._id === editingStaff._id ? { ...w, ...res.data } : w));
+                    showSuccessToast('Maintenance Staff Updated', res?.message || 'Details saved successfully');
                 }
             } catch (error) {
-                console.error("Failed to update admin:", error);
-                showErrorToast('Action Failed', error?.message || 'Failed to update administrator details');
+                console.error("Failed to update staff:", error);
+                showErrorToast('Action Failed', error?.message || 'Failed to update details');
                 setIsEditConfirmOpen(false);
                 setIsSubmitting(false);
                 return;
             }
         } else {
-            // Create New Record via API
             try {
-                const res = await adminService.createAdmin({
-                    name: adminForm.name,
-                    email: adminForm.email,
-                    phone: adminForm.phone,
-                    organizationId: adminForm.organization
+                const res = await maintenanceStaffService.createMaintenanceStaff({
+                    name: staffForm.name,
+                    email: staffForm.email,
+                    phone: staffForm.phone,
+                    specialization: staffForm.specialization
                 });
                 if (res && res.success) {
-                    const newAdmin = res.data;
-                    if (newAdmin) {
-                        // Optimistically populate organization details for the table
-                        const org = organizations.find(o => o._id === adminForm.organization);
-                        const populatedAdmin = { ...newAdmin, organization: org || { _id: adminForm.organization } };
-                        setAdmins(prev => [populatedAdmin, ...prev]);
+                    const newStaff = res.data;
+                    if (newStaff) {
+                        setStaff(prev => [newStaff, ...prev]);
                     }
                     setCurrentPage(1);
-                    fetchAdmins(); // re-fetch to ensure pagination is consistent and fields are populated
-                    showSuccessToast('Administrator Added', res?.message || 'New administrator registered successfully');
+                    fetchStaff();
+                    showSuccessToast('Maintenance Staff Added', res?.message || 'New staff registered successfully');
                 }
             } catch (error) {
-                console.error("Failed to create admin:", error);
-                showErrorToast('Action Failed', error?.message || 'Failed to register new administrator');
+                console.error("Failed to create staff:", error);
+                showErrorToast('Action Failed', error?.message || 'Failed to register new staff');
                 setIsEditConfirmOpen(false);
                 setIsSubmitting(false);
                 return;
@@ -447,7 +359,7 @@ export default function Administrator() {
     };
 
     const handleCancel = () => {
-        if (editingAdmin) {
+        if (editingStaff) {
             setIsDiscardConfirmOpen(true);
         } else {
             setActiveModal(null);
@@ -466,48 +378,45 @@ export default function Administrator() {
     const confirmExport = async (exportFilters) => {
         setIsExporting(true);
         try {
-            // Construct API parameters
             const params = { limit: 100000 };
             if (searchQuery) params.search = searchQuery;
             
-            // Allow export modal filter to override table filter
             if (exportFilters.isActive !== '') {
                 params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
             } else if (statusFilter !== 'All') {
                 params.status = statusFilter;
             }
 
-            const res = await adminService.getAdmins(params);
+            const res = await maintenanceStaffService.getMaintenanceStaff(params);
             
-            // Handle different possible response structures
             const responseData = res?.data || res;
-            const allAdmins = responseData?.data || responseData || [];
+            const allStaff = responseData?.data || responseData || [];
 
-            if (!allAdmins || allAdmins.length === 0) {
-                showErrorToast('Export failed', 'No administrators match the selected filters');
+            if (!allStaff || allStaff.length === 0) {
+                showErrorToast('Export failed', 'No staff match the selected filters');
                 setIsExportConfirmOpen(false);
                 return;
             }
 
-            const exportData = allAdmins.map((admin, index) => ({
+            const exportData = allStaff.map((s, index) => ({
                 "SL No": index + 1,
-                "Name": admin.name || 'N/A',
-                "Email": admin.email || 'N/A',
-                "Phone": admin.phone || 'N/A',
-                "Organization": admin.organization?.name || admin.organization || 'N/A',
-                "Status": admin.isActive ? 'Active' : 'Inactive'
+                "Name": s.name || 'N/A',
+                "Email": s.email || 'N/A',
+                "Phone": s.phone || 'N/A',
+                "Specialization": s.specialization || 'N/A',
+                "Status": s.isActive ? 'Active' : 'Inactive'
             }));
 
-            const isSuccess = exportToExcel(exportData, "Admins_Export", "Admins");
+            const isSuccess = exportToExcel(exportData, "MaintenanceStaff_Export", "MaintenanceStaff");
             
             if (isSuccess) {
-                showSuccessToast('Export Successful', 'Administrator list downloaded');
+                showSuccessToast('Export Successful', 'Staff list downloaded');
             } else {
                 showErrorToast('Export Failed', 'Could not generate the Excel file');
             }
         } catch (error) {
             console.error("Export Failed", error);
-            showErrorToast('Export Failed', error?.message || 'Failed to export administrators');
+            showErrorToast('Export Failed', error?.message || 'Failed to export staff');
         } finally {
             setIsExportConfirmOpen(false);
             setIsExporting(false);
@@ -517,13 +426,11 @@ export default function Administrator() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
-            {/* ==========================================
-             HEADER ACTION SECTION
-             ========================================== */}
+            {/* HEADER ACTION SECTION */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admins</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all registered hostel administrators</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('maintenance_staff', 'Maintenance Staff')}</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">{t('manage_maintenance_staff', 'Manage maintenance staff')}</p>
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -546,9 +453,7 @@ export default function Administrator() {
                 </div>
             </div>
 
-            {/* ==========================================
-                TOOLBAR SECTION
-             ========================================== */}
+            {/* TOOLBAR SECTION */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
                     <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
@@ -556,7 +461,7 @@ export default function Administrator() {
                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                                 type="text"
-                                placeholder="Search Admins..."
+                                placeholder={t('search_staff', 'Search Staff...')}
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                                 className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
@@ -577,7 +482,7 @@ export default function Administrator() {
                             <Dropdown
                                 className="flex-1 sm:flex-none"
                                 options={[
-                                    { value: "All", label: "All Status" },
+                                    { value: "All", label: "All" },
                                     { value: "Active", label: "Active" },
                                     { value: "Inactive", label: "Inactive" }
                                 ]}
@@ -586,7 +491,7 @@ export default function Administrator() {
                                     setStatusFilter(val);
                                     setCurrentPage(1);
                                 }}
-                                placeholder="All Status"
+                                placeholder="All"
                                 minWidth="w-32"
                                 triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
                             />
@@ -595,62 +500,53 @@ export default function Administrator() {
                                 onClick={initiateExport}
                                 className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                             >
-                                <Download className="w-4 h-4" /> Export
+                                <Download className="w-4 h-4" /> {t('export')}
                             </button>
                         </div>
                         <button
-                            onClick={openAddAdminModal}
+                            onClick={openAddStaffModal}
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
-                            <Plus className="w-4 h-4" /> Add New
+                            <Plus className="w-4 h-4" /> {t('add_new')}
                         </button>
                     </div>
                 </div>
 
-                {/* ==========================================
-                DATA TABLE LAYOUT
-                ========================================== */}
+                {/* DATA TABLE LAYOUT */}
 
-                <AdminTable
-                    paginatedAdmins={admins}
-                    organizations={organizations}
+                <MaintenanceStaffTable
+                    paginatedStaff={staff}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
-                    setSelectedAdminDetail={setSelectedAdminDetail}
+                    setSelectedStaffDetail={setSelectedStaffDetail}
                     setView={setView}
-                    handleOrganizationChange={handleOrganizationChange}
                     handleStatusChangeClick={handleStatusChangeClick}
-                    handleDeleteAdmin={handleDeleteAdmin}
-                    openEditAdminModal={openEditAdminModal}
+                    openEditStaffModal={openEditStaffModal}
                     loading={loading}
                     error={error}
                 />
 
-                <AdminMobileList
-                    paginatedAdmins={admins}
-                    organizations={organizations}
-                    openEditAdminModal={openEditAdminModal}
-                    setSelectedAdminDetail={setSelectedAdminDetail}
+                <MaintenanceStaffMobileList
+                    paginatedStaff={staff}
+                    openEditStaffModal={openEditStaffModal}
+                    setSelectedStaffDetail={setSelectedStaffDetail}
                     setView={setView}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
-                    handleOrganizationChange={handleOrganizationChange}
                     loading={loading}
                     error={error}
                 />
 
-                {/* ==========================================
-                PAGINATION BAR FOOTER
-                ========================================== */}
+                {/* PAGINATION BAR FOOTER */}
                 <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
-                        {totalAdmins === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
+                        {totalStaff === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
                         <span className="hidden sm:inline"> to </span>
                         <span className="sm:hidden">-</span>
-                        {Math.min(currentPage * itemsPerPage, totalAdmins)} of {totalAdmins}
+                        {Math.min(currentPage * itemsPerPage, totalStaff)} of {totalStaff}
                         <span className="hidden sm:inline"> entries</span>
                     </div>
 
@@ -690,20 +586,17 @@ export default function Administrator() {
                 </div>
             </div>
 
-            {/* ==========================================
-    MODAL 1: ADMINS (ADD & EDIT WORKFLOWS)
-    ========================================== */}
+            {/* MODALS */}
 
-            {activeModal === 'admin' && (
-                <AdminFormModal
+            {activeModal === 'staff' && (
+                <MaintenanceStaffFormModal
                     activeModal={activeModal}
                     setActiveModal={setActiveModal}
-                    editingAdmin={editingAdmin}
-                    adminForm={adminForm}
-                    setAdminForm={setAdminForm}
-                    handleSaveAdmin={handleSaveAdmin}
+                    editingStaff={editingStaff}
+                    staffForm={staffForm}
+                    setStaffForm={setStaffForm}
+                    handleSaveStaff={handleSaveStaff}
                     handleCancel={handleCancel}
-                    organizations={organizations}
                     isEmailVerified={isEmailVerified}
                     handleVerifyClick={handleVerifyClick}
                     isSubmitting={isSubmitting}
@@ -726,7 +619,7 @@ export default function Administrator() {
                                 Cancel
                             </button>
                             <button
-                                onClick={saveAdmin}
+                                onClick={saveStaff}
                                 disabled={isSubmitting}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
@@ -762,20 +655,20 @@ export default function Administrator() {
                 </div>
             )}
 
-                <ExportFilterModal
-                    isOpen={isExportConfirmOpen}
-                    onClose={() => setIsExportConfirmOpen(false)}
-                    onExport={confirmExport}
-                    isExporting={isExporting}
-                    title="Export Admins Data"
-                />
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Staff Data"
+            />
 
             {isStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this admin?
+                            Are you sure you want to change the status of this staff member?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -801,9 +694,9 @@ export default function Administrator() {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Bulk Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to set the status of {selectedIds.length} admin(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
+                            Are you sure you want to change the status of {selectedIds.length} staff members to {bulkStatusToUpdate ? 'Active' : 'Inactive'}?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -826,82 +719,92 @@ export default function Administrator() {
                 </div>
             )}
 
-            {view === 'detail' && (
-                <AdminDetailView
-                    selectedAdminDetail={selectedAdminDetail}
-                    setView={setView}
-                    openChangeEmailModal={openChangeEmailModal}
-                />
-            )}
-
-            {/* ==========================================
-             EMAIL CHANGE MODALS
-             ========================================== */}
-            {isEmailChangeModalOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
-                    <form onSubmit={confirmEmailChange} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200">
+            {/* DETAIL VIEW MODAL */}
+            {view === 'detail' && selectedStaffDetail && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl max-w-5xl w-full p-5 sm:p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {/* Close Button */}
                         <button
-                            type="button"
-                            onClick={() => setIsEmailChangeModalOpen(false)}
+                            onClick={() => setView('list')}
                             className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                            <X size={16} />
+                            <X size={14} />
                         </button>
 
-                        {/* Title */}
-                        <h3 className="text-xl font-bold text-[#0A437A]">Change Email</h3>
-                        <p className="text-sm text-gray-400 mt-1 mb-6">
-                            Change the email of {admins.find(w => w._id === emailChangeAdminId)?.name || 'the administrator'}
-                        </p>
-
-                        <hr className="border-gray-200 mb-6" />
-
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-[#222222] mb-2">Current Email <span className="text-red-500">*</span></label>
-                            <input
-                                type="email"
-                                value={emailChangeForm}
-                                onChange={(e) => setEmailChangeForm(e.target.value)}
-                                required
-                                placeholder="Enter your current email"
-                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
-                            />
-                        </div>
-
+                        {/* Header */}
                         <div className="mb-8">
-                            <label className="block text-sm font-medium text-[#222222] mb-2">New Email <span className="text-red-500">*</span></label>
-                            <div className="flex gap-3">
-                                <input
-                                    type="email"
-                                    required
-
-                                    value={newEmailForm}
-                                    onChange={(e) => setNewEmailForm(e.target.value)}
-                                    placeholder="Enter your new email"
-                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
-                                    disabled={isEmailVerified}
-
-                                />
-                                {isEmailVerified ? (
-                                    <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
-                                        <Check size={16} /> Verified
-                                    </button>
-                                ) : (
-                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer">
-                                        Verify
-                                    </button>
-                                )}
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
+                                    <User size={24} />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-900">{selectedStaffDetail.name}</h1>
+                                    <p className="text-gray-400 text-sm">Maintenance Staff Details</p>
+                                </div>
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={!isEmailVerified}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
-                        >
-                            Change Email
-                        </button>
-                    </form>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            {/* Main Content Area */}
+                            <div className="lg:col-span-7 space-y-6">
+                                {/* Basic Info Section */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                                    <p className="text-xs text-gray-400 mb-6">Basic information of the Maintenance Staff</p>
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.name}</span></div>
+                                        
+                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
+                                            <span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span>
+                                            <span className="sm:col-span-2 font-medium text-gray-900 flex items-center justify-between"><span className="hidden sm:inline">: </span>
+                                                <span className="flex-1 ml-1">{selectedStaffDetail?.email || 'N/A'}</span>
+                                                <button
+                                                    onClick={() => openChangeEmailModal(selectedStaffDetail)}
+                                                    className="text-[#0A437A] text-xs font-semibold hover:underline cursor-pointer ml-4"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </button>
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.phone || 'N/A'}</span></div>
+                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-gray-400" /> Specialization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.specialization || 'N/A'}</span></div>
+                                    </div>
+                                </div>
+
+                                {/* Status Details */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-semibold text-[#0A437A] mb-1">Status</h3>
+                                    <p className="text-xs text-gray-400 mb-6">Current activity status</p>
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-3 items-start sm:items-center">
+                                            <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
+                                            <span className="sm:col-span-2 font-medium flex items-center mt-2 sm:mt-0"><span className="hidden sm:inline mr-2">: </span>
+                                                <span className={`w-2 h-2 rounded-full ${selectedStaffDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
+                                                {selectedStaffDetail.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Summary Sidebar */}
+                            <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                                <h3 className="text-lg font-semibold text-[#0A437A] mb-4">Staff Summary</h3>
+                                <div className="space-y-4">
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.name}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-gray-400" /> Specialization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.specialization || 'N/A'}</span></div>
+                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                                        <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
+                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                                            <span className={`w-2 h-2 rounded-full ${selectedStaffDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
+                                            {selectedStaffDetail.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -913,7 +816,7 @@ export default function Administrator() {
                         if (code.length < 6) return;
                         
                         try {
-                            const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
+                            const emailToVerify = otpSource === 'emailChange' ? newEmailForm : staffForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
                             
                             setIsOtpModalOpen(false);
@@ -930,10 +833,10 @@ export default function Administrator() {
                         <div className="flex justify-between items-center mb-6">
                             <button
                                 type="button"
-                                onClick={() => { 
-                                    setIsOtpModalOpen(false); 
+                                onClick={() => {
+                                    setIsOtpModalOpen(false);
                                     if (otpSource === 'emailChange') {
-                                        setIsEmailChangeModalOpen(true); 
+                                        setIsEmailChangeModalOpen(true);
                                     }
                                 }}
                                 className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -951,7 +854,7 @@ export default function Administrator() {
 
                         <h3 className="text-[32px] font-bold text-[#0A437A] mb-4">Enter the code</h3>
                         <p className="text-gray-500 mb-3 text-[15px]">
-                            A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : adminForm.email || '@usergmail.com'}</span>
+                            A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : (staffForm.email || '@usergmail.com')}</span>
                         </p>
 
                         <div className="flex justify-center gap-2 sm:gap-3 mb-8">
@@ -998,11 +901,76 @@ export default function Administrator() {
                 </div>
             )}
 
+            {isEmailChangeModalOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+                    <form onSubmit={confirmEmailChange} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200">
+                        <button
+                            type="button"
+                            onClick={() => setIsEmailChangeModalOpen(false)}
+                            className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                            <X size={16} />
+                        </button>
+
+                        <h3 className="text-xl font-bold text-[#0A437A]">Change Email</h3>
+                        <p className="text-sm text-gray-400 mt-1 mb-6">
+                            Change the email of {staff.find(w => w._id === emailChangeStaffId)?.name || 'the staff member'}
+                        </p>
+
+                        <hr className="border-gray-200 mb-6" />
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-[#222222] mb-2">Current Email <span className="text-red-500">*</span></label>
+                            <input
+                                type="email"
+                                value={emailChangeForm}
+                                onChange={(e) => setEmailChangeForm(e.target.value)}
+                                required
+                                placeholder="Enter your current email"
+                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                            />
+                        </div>
+
+                        <div className="mb-8">
+                            <label className="block text-sm font-medium text-[#222222] mb-2">New Email <span className="text-red-500">*</span></label>
+                            <div className="flex gap-3">
+                                <input
+                                    type="email"
+                                    required
+                                    value={newEmailForm}
+                                    onChange={(e) => setNewEmailForm(e.target.value)}
+                                    placeholder="Enter your new email"
+                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
+                                    disabled={isEmailVerified}
+                                />
+                                {isEmailVerified ? (
+                                    <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
+                                        Verified
+                                    </button>
+                                ) : (
+                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer">
+                                        Verify
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={!isEmailVerified}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                        >
+                            Change Email
+                        </button>
+                    </form>
+                </div>
+            )}
+
             {isEmailChangeSuccessModalOpen && (
                 <div className="fixed top-0 right-0 z-[60] animate-in slide-in-from-right-8 fade-in duration-300">
                     <div className="bg-white m-4 p-4 rounded-xl shadow-2xl border border-gray-100 flex items-center gap-3 min-w-[300px]">
                         <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                            <CheckSquare className="w-4 h-4 text-green-600" />
+                            <ToggleRight className="w-4 h-4 text-green-600" />
                         </div>
                         <div>
                             <h4 className="text-sm font-semibold text-gray-900">Email Updated</h4>
@@ -1017,33 +985,6 @@ export default function Administrator() {
                     </div>
                 </div>
             )}
-            {/* Confirm Organization Change Modal */}
-            {isOrgConfirmOpen && (
-                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-[320px] max-w-[90vw] p-6 relative animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Change Organization?</h3>
-                        <p className="text-gray-500 mb-6">Are you sure you want to change the organization for this administrator?</p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={() => {
-                                    setIsOrgConfirmOpen(false);
-                                    setOrgChangeToConfirm(null);
-                                }}
-                                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmOrganizationChange}
-                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-secondary font-medium transition-colors cursor-pointer"
-                            >
-                                Confirm
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
-

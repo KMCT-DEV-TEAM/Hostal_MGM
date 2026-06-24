@@ -17,6 +17,7 @@ import notificationRoutes from "./modules/notifications/notification.routes.js";
 import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.routes.js";
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
 import passRoutes from "./modules/passes/pass.routes.js";
+import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -63,6 +64,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/batches", batchRoutes);
 app.use("/api/complaint-categories", complaintCategoryRoutes);
+app.use("/api/complaints", complaintRoutes);
 
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/students", studentRoutes);

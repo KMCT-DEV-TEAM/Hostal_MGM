@@ -72,7 +72,7 @@ export default function WardenComplaintsTable({
                                     </span>
                                 </td>
                                 <td className="p-5 text-start">
-                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-accent/10 text-blue-500'}`}>
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-accent/10 text-blue-500'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>
