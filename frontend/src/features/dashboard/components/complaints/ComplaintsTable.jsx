@@ -72,7 +72,7 @@ export default function ComplaintsTable({
                                 <td className="p-4 text-start text-[#777777]">{complaint.date}</td>
                                 <td className="p-4 text-start text-[#777777]">{complaint.due}</td>
                                 <td className="p-4 text-start">
-                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-blue-50/80 text-secondary'}`}>
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-blue-50/80 text-secondary'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>

@@ -1,8 +1,16 @@
 import React from "react";
 import Modal from "@/components/ui/Modal";
-import { User, Calendar, Tag, Clock, Home, Info, MoreHorizontal } from "lucide-react";
+import { User, Calendar, Tag, Clock, Home, Info, MoreHorizontal, Bell } from "lucide-react";
+import { showSuccessToast } from "@/utils/toast";
+import SendNotificationModal from "./SendNotificationModal";
+import { useState } from "react";
 
 export default function AdminComplaintDetailModal({ complaint, onClose }) {
+    const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+    const [isEditingStatus, setIsEditingStatus] = useState(false);
+    const [status, setStatus] = useState('In progress');
+    const [note, setNote] = useState('Issue verified and food quality improved.');
+
     if (!complaint) return null;
 
     return (
@@ -89,7 +97,7 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                 <h3 className="text-lg font-semibold text-[#0A437A]">Internal note</h3>
                                 <p className="text-xs text-gray-500">Add a note by warden</p>
                             </div>
-                            <button className="text-secondary text-xs ">View all</button>
+                            <button className="text-secondary text-xs cursor-pointer hover:underline">View all</button>
                         </div>
                         <div className="space-y-3">
                             <div className="border border-gray-100 rounded-lg p-3 text-sm flex justify-between items-center bg-gray-50/50">
@@ -110,23 +118,61 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                 <h3 className="text-lg font-semibold text-[#0A437A]">Resolution note</h3>
                                 <p className="text-xs text-gray-500">updated status and notes</p>
                             </div>
-                            <button className="px-3 py-1.5 text-xs font-medium text-white bg-[#0A437A] rounded-md hover:bg-[#0A437A]/90 transition-colors shadow-sm">
-                                Update Status
-                            </button>
+                            {isEditingStatus ? (
+                                <button
+                                    onClick={() => {
+                                        setIsEditingStatus(false);
+                                        showSuccessToast("Status Updated", "Resolution note saved successfully");
+                                    }}
+                                    className="px-4 py-1.5 text-xs font-medium text-white bg-success rounded-md hover:bg-success/90 transition-colors shadow-sm cursor-pointer"
+                                >
+                                    Save
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setIsEditingStatus(true)}
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-[#0A437A] rounded-md hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer"
+                                >
+                                    Update Status
+                                </button>
+                            )}
                         </div>
-                        <div className="mb-4">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 text-secondary text-xs font-medium border border-blue-100">
-                                <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                                In progress
-                            </span>
-                        </div>
-                        <div className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="text-sm text-gray-700">Issue verified and food quality improved.</span>
-                                <span className="text-xs text-gray-400">Today - 09:00 am</span>
+
+                        {isEditingStatus ? (
+                            <div className="space-y-3 animate-in fade-in duration-200">
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="w-full sm:w-auto px-3 py-2 rounded-md border border-gray-200 text-sm focus:outline-none focus:border-[#0A437A] cursor-pointer"
+                                >
+                                    <option value="Pending">Pending</option>
+                                    <option value="In progress">In progress</option>
+                                    <option value="Resolved">Resolved</option>
+                                </select>
+                                <textarea
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#0A437A] min-h-[80px]"
+                                    placeholder="Add resolution note..."
+                                ></textarea>
                             </div>
-                            <span className="text-[10px] text-gray-400">by Admin</span>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="mb-4">
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium border ${status === 'Pending' ? 'bg-warning/10 text-warning border-warning/20' : status === 'Resolved' ? 'bg-success/10 text-success border-success/20' : 'bg-blue-50 text-secondary border-blue-100'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${status === 'Pending' ? 'bg-warning' : status === 'Resolved' ? 'bg-success' : 'bg-secondary'}`}></span>
+                                        {status}
+                                    </span>
+                                </div>
+                                <div className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-sm text-gray-700">{note || "No resolution note provided."}</span>
+                                        <span className="text-xs text-gray-400">Today - 09:00 am</span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">by Admin</span>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                 </div>
@@ -186,10 +232,25 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
 
             {/* Footer */}
             <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
-                <button className="px-6 py-2 bg-[#0A437A] text-white rounded-md text-sm font-medium hover:bg-[#0A437A]/90 transition-colors">
-                    Assign maintenance staff
+                <button
+                    onClick={() => setIsNotificationModalOpen(true)}
+                    className="flex items-center gap-2 px-6 py-2 bg-[#0A437A] text-white rounded-md text-sm font-medium hover:bg-[#0A437A]/90 transition-colors cursor-pointer"
+                >
+                    <Bell className="w-4 h-4" /> Notify Admin
                 </button>
             </div>
+
+            <SendNotificationModal
+                isOpen={isNotificationModalOpen}
+                onClose={() => setIsNotificationModalOpen(false)}
+                recipient="Admin"
+                onSend={(message) => {
+                    console.log("Sending notification:", message);
+                    setIsNotificationModalOpen(false);
+                    showSuccessToast("Notification Sent", "Admin has been notified about this complaint.");
+                    onClose();
+                }}
+            />
         </Modal>
     );
 }
