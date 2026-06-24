@@ -16,6 +16,7 @@ import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
 import Leaves from '@/features/dashboard/pages/Leaves';
 import Complaints from '@/features/dashboard/pages/Complaints';
+import ComplaintCategories from '@/features/dashboard/pages/ComplaintCategories';
 export const dashboardRoutes = [
 
     {
@@ -179,5 +180,12 @@ export const dashboardRoutes = [
             ROLES.STUDENT
         ],
         element: Complaints
+    },
+    {
+        path: 'complaint-categories',
+        roles: [
+            ROLES.SUPER_ADMIN
+        ],
+        element: ComplaintCategories
     }
 ];

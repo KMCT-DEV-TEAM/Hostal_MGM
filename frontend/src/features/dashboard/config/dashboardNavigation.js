@@ -13,7 +13,8 @@ import {
     BarChart2,
     KeyRound,
     BookOpen,
-    Layers
+    Layers,
+    Tags
 } from 'lucide-react';
 
 import { ROLES } from '@/constants/roles';
@@ -99,6 +100,18 @@ export const DASHBOARD_NAV = {
                     icon: BookOpen,
                     label: 'Courses',
                     path: '/dashboard/courses'
+                }
+            ]
+        },
+
+        {
+            section: 'CATEGORIES',
+
+            items: [
+                {
+                    icon: Tags,
+                    label: 'Complaint Category',
+                    path: '/dashboard/complaint-categories'
                 }
             ]
         },
