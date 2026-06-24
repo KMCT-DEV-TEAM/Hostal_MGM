@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StudentComplaintsTable from '../components/complaints/StudentComplaintsTable';
 import StudentComplaintsHeader from '../components/complaints/StudentComplaintsHeader';
 import StudentComplaintsToolbar from '../components/complaints/StudentComplaintsToolbar';
@@ -9,20 +9,13 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
+import ComplaintService from '@/services/complaint.service';
+import ComplaintCategoryService from '@/services/complaintCategory.service';
 
 export default function StudentComplaints() {
-    // Initial mocked student complaints
-    const initialComplaints = [
-        {
-            id: '1',
-            category: 'Mess',
-            subject: 'Food was cold and not fresh',
-            date: '12 June',
-            status: 'Pending'
-        }
-    ];
-
-    const [complaints, setComplaints] = useState(initialComplaints);
+    const [complaints, setComplaints] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
@@ -46,8 +39,44 @@ export default function StudentComplaints() {
         newCategory: null
     });
 
+    const fetchComplaints = async () => {
+        try {
+            setLoading(true);
+            const response = await ComplaintService.getMyComplaints();
+            // Transform to UI format
+            const formatted = (response.data || []).map(c => ({
+                id: c._id,
+                category: c.category?.name || 'Unknown',
+                categoryId: c.category?._id,
+                subject: c.subject,
+                description: c.description,
+                roomNo: c.roomNo,
+                date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+                status: c.status,
+                timeline: c.timeline || []
+            }));
+            setComplaints(formatted);
+        } catch (error) {
+            showErrorToast('Failed to load complaints', error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchComplaints();
+        // Load categories for the dropdown in the table
+        ComplaintCategoryService.getComplaintCategories().then(res => {
+            setCategories(res.data || []);
+        });
+    }, []);
+
     const handleCategoryChange = (id, newCategory) => {
-        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory });
+        // Find category object to get name
+        const catObj = categories.find(c => c._id === newCategory || c.name === newCategory);
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategory });
+        // NOTE: In a real app we might also need to call an API to update the category, but the existing UI only did a local update.
+        // We'll leave it as local state update for now to match previous behavior, or implement the API call.
     };
 
     const handleEdit = (complaint) => {
@@ -61,47 +90,27 @@ export default function StudentComplaints() {
     };
 
     const handleSaveComplaintClick = (formData) => {
-        if (editingComplaint) {
-            setPendingFormData(formData);
-            setIsSaveConfirmOpen(true);
-        } else {
-            // Direct save for Add New
-            const newComplaint = {
-                id: Math.random().toString(36).substr(2, 9),
-                category: formData.category,
-                subject: formData.subject,
-                description: formData.description,
-                roomNo: formData.roomNo,
-                date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }),
-                status: 'Pending'
-            };
-            setComplaints([newComplaint, ...complaints]);
-            setIsModalOpen(false);
-            setEditingComplaint(null);
-        }
+        setPendingFormData(formData);
+        setIsSaveConfirmOpen(true);
     };
 
-    const confirmSaveComplaint = () => {
+    const confirmSaveComplaint = async () => {
         if (!pendingFormData) return;
         
-        if (editingComplaint) {
-            setComplaints(complaints.map(c => 
-                c.id === editingComplaint.id 
-                    ? { ...c, category: pendingFormData.category, subject: pendingFormData.subject, description: pendingFormData.description, roomNo: pendingFormData.roomNo }
-                    : c
-            ));
-        } else {
-            const newComplaint = {
-                id: Math.random().toString(36).substr(2, 9),
-                category: pendingFormData.category,
-                subject: pendingFormData.subject,
-                description: pendingFormData.description,
-                roomNo: pendingFormData.roomNo,
-                date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }),
-                status: 'Pending'
-            };
-            setComplaints([newComplaint, ...complaints]);
+        try {
+            if (editingComplaint) {
+                // If the backend has an update endpoint we would call it here.
+                // For now, we only implement creation in this sprint.
+                showErrorToast('Not implemented', 'Updating complaints is not supported yet.');
+            } else {
+                await ComplaintService.createComplaint(pendingFormData);
+                showSuccessToast('Complaint created successfully');
+                fetchComplaints();
+            }
+        } catch (error) {
+            showErrorToast('Failed to save complaint', error.message);
         }
+
         setIsSaveConfirmOpen(false);
         setIsModalOpen(false);
         setEditingComplaint(null);
@@ -116,8 +125,8 @@ export default function StudentComplaints() {
 
     const confirmWithdraw = () => {
         if (editingComplaint) {
-            // Remove the complaint
-            setComplaints(complaints.filter(c => c.id !== editingComplaint.id));
+            // Usually involves an API call to delete or cancel
+            showErrorToast('Not implemented', 'Withdrawing complaints is not supported yet.');
         }
         setIsWithdrawConfirmOpen(false);
         setIsModalOpen(false);
@@ -239,6 +248,7 @@ export default function StudentComplaints() {
                 {/* Table Section */}
                 <StudentComplaintsTable
                     complaints={paginatedComplaints}
+                    categories={categories}
                     handleCategoryChange={handleCategoryChange}
                     openEditModal={handleEdit}
                     onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
