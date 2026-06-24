@@ -17,6 +17,9 @@ import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
 import Leaves from '@/features/dashboard/pages/Leaves';
 import Complaints from '@/features/dashboard/pages/Complaints';
 import ComplaintCategories from '@/features/dashboard/pages/ComplaintCategories';
+import MaintenanceStaffManagement from '@/features/dashboard/pages/MaintenanceStaffManagement';
+import MaintenanceStaffTasks from '@/features/dashboard/pages/MaintenanceStaffTasks';
+
 export const dashboardRoutes = [
 
     {
@@ -180,6 +183,24 @@ export const dashboardRoutes = [
             ROLES.STUDENT
         ],
         element: Complaints
+    },
+    {
+        path: 'maintenance-staff',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: MaintenanceStaffManagement
+    },
+    {
+        path: 'maintenance-staff/:staffId/tasks',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: MaintenanceStaffTasks
     },
     {
         path: 'complaint-categories',
