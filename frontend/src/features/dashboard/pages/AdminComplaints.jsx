@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SuperAdminComplaintsTable from '../components/complaints/SuperAdminComplaintsTable';
 import ComplaintsToolbar from '../components/complaints/ComplaintsToolbar';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -6,19 +6,12 @@ import WardenComplaints from './WardenComplaints';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import ComplaintService from '@/services/complaint.service';
 
 export default function AdminComplaints() {
-    // Mocked complaints matching the requested super admin UI
-    const initialComplaints = [
-        { id: '1', organization: 'Engineering', hostel: 'Hostel A', warden: 'Priya', totalComplaints: 15, pending: 10, inProgress: 3, resolved: 5 },
-        { id: '2', organization: 'Engineering', hostel: 'Hostel A', warden: 'Hima', totalComplaints: 15, pending: 5, inProgress: 6, resolved: 7 },
-        { id: '3', organization: 'Engineering', hostel: 'Hostel A', warden: 'Kanaka', totalComplaints: 15, pending: 7, inProgress: 8, resolved: 3 },
-        { id: '4', organization: 'Engineering', hostel: 'Hostel A', warden: 'Siddarth', totalComplaints: 15, pending: 9, inProgress: 8, resolved: 6 },
-        { id: '5', organization: 'Engineering', hostel: 'Hostel A', warden: 'Arun', totalComplaints: 15, pending: 3, inProgress: 3, resolved: 9 },
-        { id: '6', organization: 'Engineering', hostel: 'Hostel A', warden: 'Lalitha', totalComplaints: 15, pending: 2, inProgress: 1, resolved: 10 },
-    ];
-
-    const [complaints] = useState(initialComplaints);
+    const [complaints, setComplaints] = useState([]);
+    const [aggregatedData, setAggregatedData] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterOption, setFilterOption] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
@@ -27,8 +20,55 @@ export default function AdminComplaints() {
     const [isExporting, setIsExporting] = useState(false);
     const limit = 10;
 
-    // Apply filtering
-    let filteredComplaints = complaints.filter(c => {
+    const fetchComplaints = async () => {
+        try {
+            setLoading(true);
+            const response = await ComplaintService.getAllComplaints();
+            const rawComplaints = response.data || [];
+            setComplaints(rawComplaints);
+            
+            // Aggregate data by Hostel
+            const hostelMap = {};
+            rawComplaints.forEach(c => {
+                const hostelName = c.hostelId?.name || 'Unknown Hostel';
+                const orgName = c.organizationId?.name || 'Unknown Org';
+                // Note: Warden name isn't directly on complaint, we could get it if we populated it,
+                // but for now we put a placeholder or "N/A"
+                const wardenName = 'N/A'; 
+                
+                if (!hostelMap[hostelName]) {
+                    hostelMap[hostelName] = {
+                        id: hostelName,
+                        organization: orgName,
+                        hostel: hostelName,
+                        warden: wardenName,
+                        totalComplaints: 0,
+                        pending: 0,
+                        inProgress: 0,
+                        resolved: 0
+                    };
+                }
+                
+                hostelMap[hostelName].totalComplaints++;
+                if (c.status === 'Pending') hostelMap[hostelName].pending++;
+                if (c.status === 'In progress') hostelMap[hostelName].inProgress++;
+                if (c.status === 'Resolved') hostelMap[hostelName].resolved++;
+            });
+            
+            setAggregatedData(Object.values(hostelMap));
+        } catch (error) {
+            showErrorToast('Failed to load complaints', error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchComplaints();
+    }, []);
+
+    // Apply filtering on aggregated data
+    let filteredComplaints = aggregatedData.filter(c => {
         // Dropdown filter
         if (filterOption !== 'All' && c.hostel !== filterOption && c.organization !== filterOption) return false;
 
@@ -78,13 +118,19 @@ export default function AdminComplaints() {
     };
 
     // Apply pagination
-    const totalComplaints = filteredComplaints.length;
-    const totalPages = Math.ceil(totalComplaints / limit) || 1;
+    const totalComplaintsCount = filteredComplaints.length;
+    const totalPages = Math.ceil(totalComplaintsCount / limit) || 1;
     const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
 
     if (selectedHostel) {
         return <WardenComplaints hostel={selectedHostel} onBack={() => setSelectedHostel(null)} />;
     }
+
+    // Top cards aggregate
+    const totalAll = complaints.length;
+    const pendingAll = complaints.filter(c => c.status === 'Pending').length;
+    const inProgressAll = complaints.filter(c => c.status === 'In progress').length;
+    const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-white p-4 md:p-6 md:px-8 text-black flex flex-col">
@@ -100,7 +146,7 @@ export default function AdminComplaints() {
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
-                        <h3 className="text-xl font-bold text-gray-900">30</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{totalAll}</h3>
                     </div>
                     <div className="p-1.5 bg-red-50 rounded text-red-400">
                         <AlertTriangle className="w-4 h-4" />
@@ -110,7 +156,7 @@ export default function AdminComplaints() {
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
-                        <h3 className="text-xl font-bold text-gray-900">15</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
                     </div>
                     <div className="p-1.5 bg-orange-50 rounded text-orange-400">
                         <Clock className="w-4 h-4" />
@@ -120,7 +166,7 @@ export default function AdminComplaints() {
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
-                        <h3 className="text-xl font-bold text-gray-900">2</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
                     </div>
                     <div className="p-1.5 bg-blue-50 rounded text-blue-400">
                         <Loader2 className="w-4 h-4" />
@@ -130,7 +176,7 @@ export default function AdminComplaints() {
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
-                        <h3 className="text-xl font-bold text-gray-900">13</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{resolvedAll}</h3>
                     </div>
                     <div className="p-1.5 bg-green-50 rounded text-green-500">
                         <CheckCircle className="w-4 h-4" />

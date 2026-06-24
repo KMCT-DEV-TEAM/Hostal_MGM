@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
+import ComplaintCategoryService from '@/services/complaintCategory.service';
 
 export default function StudentComplaintFormModal({
     editingComplaint,
@@ -10,28 +11,42 @@ export default function StudentComplaintFormModal({
 }) {
     const [formData, setFormData] = useState({
         roomNo: '',
-        category: 'Mess',
+        category: '',
         subject: '',
         description: ''
     });
+    const [categories, setCategories] = useState([]);
+    const [loadingCategories, setLoadingCategories] = useState(true);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await ComplaintCategoryService.getComplaintCategories();
+                const fetchedCategories = response.data || [];
+                setCategories(fetchedCategories);
+                if (fetchedCategories.length > 0 && !editingComplaint) {
+                    setFormData(prev => ({ ...prev, category: fetchedCategories[0]._id }));
+                }
+            } catch (error) {
+                console.error("Failed to load categories:", error);
+            } finally {
+                setLoadingCategories(false);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     useEffect(() => {
         if (editingComplaint) {
             setFormData({
                 roomNo: editingComplaint.roomNo || '',
-                category: editingComplaint.category || 'Mess',
+                // check if the existing complaint has an object for category, if so use its ID
+                category: editingComplaint.category?._id || editingComplaint.category || (categories.length > 0 ? categories[0]._id : ''),
                 subject: editingComplaint.subject || '',
                 description: editingComplaint.description || ''
             });
-        } else {
-            setFormData({
-                roomNo: '',
-                category: 'Mess',
-                subject: '',
-                description: ''
-            });
         }
-    }, [editingComplaint]);
+    }, [editingComplaint, categories]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -106,10 +121,17 @@ export default function StudentComplaintFormModal({
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                     className="w-full px-3 py-2 outline-none bg-transparent text-xs text-text-primary appearance-none cursor-pointer"
+                                    disabled={loadingCategories}
                                 >
-                                    <option value="Mess">Mess</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Other">Other</option>
+                                    {loadingCategories ? (
+                                        <option value="">Loading categories...</option>
+                                    ) : (
+                                        categories.map((cat) => (
+                                            <option key={cat._id} value={cat._id}>
+                                                {cat.name}
+                                            </option>
+                                        ))
+                                    )}
                                 </select>
                             </div>
                         </div>
