@@ -21,9 +21,9 @@ export default function WardenTable({
     const { t } = useTranslation();
     return (
         <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse bg-white">
                 <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
+                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-500 text-sm font-semibold">
                         <th className="p-4 w-12 text-center">
                             <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500 cursor-pointer">
                                 {paginatedWardens.length > 0 && paginatedWardens.every(w => selectedIds.includes(w.id)) ? (
@@ -34,12 +34,12 @@ export default function WardenTable({
                             </button>
                         </th>
 
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('name')}</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('email')}</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('phone')}</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('hostel_name')}</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">{t('status')}</th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">{t('actions')}</th>
+                        <th className="p-4 text-start font-semibold text-[#222222]">{t('name')}</th>
+                        <th className="p-4 text-start font-semibold text-[#222222]">{t('email')}</th>
+                        <th className="p-4 text-start font-semibold text-[#222222]">{t('phone')}</th>
+                        <th className="p-4 text-start font-semibold text-[#222222]">{t('hostel_name')}</th>
+                        <th className="p-4 text-start font-semibold text-[#222222]">{t('status')}</th>
+                        <th className="p-4 text-center font-semibold text-[#222222]">{t('actions')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">

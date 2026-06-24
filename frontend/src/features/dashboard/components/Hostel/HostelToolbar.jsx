@@ -41,7 +41,7 @@ export default function HostelToolbar({
                     <Dropdown
                         className="flex-1 sm:flex-none"
                         options={[
-                            { label: 'All', value: 'All' },
+                            { label: 'All Status', value: 'All' },
                             { label: 'Active', value: 'Active' },
                             { label: 'Inactive', value: 'Inactive' }
                         ]}
@@ -50,7 +50,7 @@ export default function HostelToolbar({
                             setStatusFilter(val);
                             setCurrentPage(1); // Reset to first page when filter changes
                         }}
-                        placeholder="All"
+                        placeholder="All Status"
                         minWidth="w-32"
                         triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
                     />
