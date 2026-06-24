@@ -14,6 +14,7 @@ import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagemen
 import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
+import Leaves from '@/features/dashboard/pages/Leaves';
 export const dashboardRoutes = [
 
     {
@@ -136,6 +137,32 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: PasswordRequests
+    },
+    {
+        path: 'leaves',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Leaves
+    },
+    {
+        path: 'leaves/:passType',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Leaves
+    },
+    {
+        path: 'leaves/:passType/:hostelName',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Leaves
     }
-
 ];
