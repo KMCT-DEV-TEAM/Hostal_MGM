@@ -169,7 +169,8 @@ export const dashboardRoutes = [
             ROLES.WARDEN
         ],
         element: Leaves
-
+    },
+    {
         path: 'complaints',
         roles: [
             ROLES.SUPER_ADMIN,
@@ -178,6 +179,5 @@ export const dashboardRoutes = [
             ROLES.STUDENT
         ],
         element: Complaints
-
     }
 ];
