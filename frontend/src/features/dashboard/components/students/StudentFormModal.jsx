@@ -236,17 +236,13 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   }, [role, userOrganization]);
 
   const loadHostels = async (orgId) => {
-    if (role === ROLES.SUPER_ADMIN && !orgId) {
+    if (!orgId) {
       setHostels([]);
       return;
     }
     setLoadingHostels(true);
     try {
-      const params = { page: 1, limit: 0, status: "Active" };
-      if (orgId) {
-        params.organizationId = orgId;
-      }
-      const res = await getHostels(params);
+      const res = await getHostels({ page: 1, limit: 0, status: "Active", organizationId: orgId });
       setHostels(res.data || []);
     } catch (error) {
       console.error("Failed to load hostels", error);
@@ -269,10 +265,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   };
 
-  const loadCourses = async () => {
+  const loadCourses = async (orgId) => {
+    if (!orgId) {
+      setCourses([]);
+      return;
+    }
     setLoadingCourses(true);
     try {
-      const res = await courseService.getCourses({ limit: 0, status: "Active" });
+      const res = await courseService.getCourses({ organizationId: orgId, limit: 0, status: "Active" });
       setCourses(res.data || []);
     } catch (error) {
       console.error("Failed to load courses", error);
@@ -283,36 +283,14 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   };
 
   useEffect(() => {
-    loadCourses();
     if (role === ROLES.SUPER_ADMIN) {
       loadOrganizations();
-    } else if (userOrganization) {
-      loadHostels(userOrganization);
     }
-  }, [role, userOrganization]);
-
-  useEffect(() => {
-    if (role === ROLES.SUPER_ADMIN) {
-      loadHostels(organizationId);
-    }
-  }, [role, organizationId]);
-  useEffect(() => {
-    loadHostels();
-    if (role === ROLES.SUPER_ADMIN) loadOrganizations();
   }, [role]);
 
   useEffect(() => {
-    if (!organizationId) { setCourses([]); return; }
-    let isCurrent = true;
-    setLoadingCourses(true);
-    courseService.getCourses({ organizationId, status: "Active", limit: 0 })
-      .then((res) => { if (isCurrent) setCourses(res.data || []); })
-      .catch((error) => {
-        console.error("Failed to load courses", error);
-        if (isCurrent) showErrorToast("Failed to load courses");
-      })
-      .finally(() => { if (isCurrent) setLoadingCourses(false); });
-    return () => { isCurrent = false; };
+    loadCourses(organizationId);
+    loadHostels(organizationId);
   }, [organizationId]);
 
   useEffect(() => {
@@ -448,9 +426,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         return;
       }
       setFieldErrors({});
+
+      // Build the final payload. If the organization changed, explicitly
+      // null-out any dependent fields that were reset to "" so the backend
+      // clears stale cross-org references instead of silently keeping them.
+      const payload = { ...result.data };
+      const originalOrgId = toIdString(
+        editingStudent?.organization?._id || editingStudent?.organizationId
+      );
+      if (payload.organizationId && payload.organizationId !== originalOrgId) {
+        if (!courseId)     payload.courseId     = null;
+        if (!departmentId) payload.departmentId = null;
+        if (!batchId)      payload.batchId      = null;
+        if (!hostelId)     payload.hostelId     = null;
+      }
+
       try {
         setSaving(true);
-        await onSave(result.data);
+        await onSave(payload);
       } catch (error) {
         // onSave (handleSaveStudent in parent) already shows its own toast,
         // this catch just prevents an unhandled rejection here.
@@ -460,6 +453,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       }
       return;
     }
+
 
     if (!studentOtp || !parentOtp) {
       setOtpErrors({
@@ -763,6 +757,21 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           <section>
             <h3 className="text-sm font-medium text-primary mb-4">Academic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {role === ROLES.SUPER_ADMIN && (
+                <Field label="Organization *" error={fieldErrors.organizationId}>
+                  <Dropdown
+                    options={organizationOptions}
+                    value={organizationId}
+                    onChange={handleOrganizationChange}
+                    className="w-full"
+                    minWidth=""
+                    triggerClassName={dropdownTriggerClass}
+                  />
+                  <input type="hidden" name="organizationId" value={organizationId} />
+                  {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
+                </Field>
+              )}
+
               <Field label="Course" error={fieldErrors.courseId}>
                 <Dropdown
                   options={courseOptions}

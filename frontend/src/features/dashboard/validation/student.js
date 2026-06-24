@@ -61,6 +61,8 @@ export const updateStudentSchema = z
 
     dob: z.string().optional(),
 
+    organizationId: z.string().min(1).optional(),
+
     courseId: z.string().optional(),
 
     departmentId: z.string().optional(),

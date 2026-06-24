@@ -124,6 +124,7 @@ const updateStudentDb = async (studentId, data) => {
     "phone",
     "gender",
     "dob",
+    "organizationId",
     "courseId",
     "departmentId",
     "batchId",

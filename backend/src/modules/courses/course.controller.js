@@ -30,6 +30,10 @@ const getCourses = asyncHandler(async (req, res) => {
   const { page, limit, search, status, organizationId } = req.query;
 
   const query = {};
+  const orgId = req.user.role === "super_admin" ? organizationId : req.user.organization;
+  if (orgId) {
+    query.organizationId = orgId;
+  }
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -38,9 +42,6 @@ const getCourses = asyncHandler(async (req, res) => {
   }
   if (status && status !== "All") {
     query.isActive = status === "Active";
-  }
-  if (organizationId) {
-    query.organizationId = organizationId;
   }
 
   const sort = { createdAt: -1 };
