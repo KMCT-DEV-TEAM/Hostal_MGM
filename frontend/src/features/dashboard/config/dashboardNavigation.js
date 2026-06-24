@@ -397,12 +397,53 @@ export const DASHBOARD_NAV = {
                     icon: CalendarX,
                     label: 'Leave Requests',
                     path: '/dashboard/leaves',
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ],
                     badge: { count: 7, variant: 'warning' }
                 },
                 {
                     icon: UtensilsCrossed,
                     label: 'Mess Management',
                     path: '/dashboard/mess-management'
+                }
+            ]
+        }
+    ],
+
+    [ROLES.PARENT]: [
+        {
+            section: 'MAIN',
+            items: [
+                {
+                    icon: LayoutGrid,
+                    label: 'Dashboard',
+                    path: '/dashboard'
+                }
+            ]
+        },
+        {
+            section: 'OPERATIONS',
+            items: [
+                {
+                    icon: AlertTriangle,
+                    label: 'Complaints',
+                    path: '/dashboard/complaints'
+                },
+                {
+                    icon: Calendar,
+                    label: 'Attendance',
+                    path: '/dashboard/attendance'
+                },
+                {
+                    icon: CalendarX,
+                    label: 'Leave Requests',
+                    path: '/dashboard/leaves',
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ]
                 }
             ]
         }
