@@ -42,6 +42,9 @@ const getDepartments = asyncHandler(async (req, res) => {
   if (status && status !== "All") {
     query.isActive = status === "Active";
   }
+  if (courseId) {
+    query.courseId = courseId;
+  }
 
   const sort = { createdAt: -1 };
 

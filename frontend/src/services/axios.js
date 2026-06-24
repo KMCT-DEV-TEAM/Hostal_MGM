@@ -5,7 +5,7 @@ import { authEventBus } from '@/services/eventBus';
 
 const baseURL =
   import.meta.env.VITE_API_URL ||
-  'http://localhost:3001';
+  'http://localhost:3001/api';
 
 /*
 |--------------------------------------------------------------------------
@@ -187,7 +187,7 @@ apiClient.interceptors.response.use(
 
         throw new ApiError({
           message:
-            'Session expired. Please log in again.',
+            'User not found or deactivated',
           status: 401,
           code: 'SESSION_EXPIRED',
           data: response.data,

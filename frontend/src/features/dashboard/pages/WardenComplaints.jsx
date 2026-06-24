@@ -1,0 +1,230 @@
+import React, { useState } from 'react';
+import WardenComplaintsTable from '../components/complaints/WardenComplaintsTable';
+import WardenComplaintsToolbar from '../components/complaints/WardenComplaintsToolbar';
+import WardenComplaintsFilterModal from '../components/complaints/WardenComplaintsFilterModal';
+import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { exportToExcel } from '@/utils/exportUtils';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+export default function WardenComplaints({ hostel, onBack }) {
+    // Initial mocked student complaints for warden view
+    const initialComplaints = [
+        {
+            id: '1',
+            student: 'Nila Mohan',
+            roomNo: 'A112390',
+            category: 'Mess',
+            subject: 'Food was cold and not fresh',
+            date: '12 June',
+            priority: 'High',
+            status: 'Pending'
+        }
+    ];
+
+    const [complaints, setComplaints] = useState(initialComplaints);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [priorityFilter, setPriorityFilter] = useState('All');
+    const [roomNoFilter, setRoomNoFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('All');
+    const [dateFilter, setDateFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [viewingComplaint, setViewingComplaint] = useState(null);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const limit = 10;
+
+    const handleCategoryChange = (id, newCategory) => {
+        setComplaints(complaints.map(c =>
+            c.id === id ? { ...c, category: newCategory } : c
+        ));
+    };
+
+    // Apply filtering
+    const filteredComplaints = complaints.filter(complaint => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = Object.values(complaint).some(val => 
+            String(val).toLowerCase().includes(query)
+        );
+        const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
+        const matchesPriority = priorityFilter === 'All' || complaint.priority === priorityFilter;
+        const matchesCategory = categoryFilter === 'All' || complaint.category === categoryFilter;
+        const matchesRoomNo = roomNoFilter === '' || complaint.roomNo.toLowerCase().includes(roomNoFilter.toLowerCase());
+        const matchesDate = dateFilter === '' || complaint.date === dateFilter;
+        
+        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesRoomNo && matchesDate;
+    });
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            let dataToExport = complaints;
+            
+            if (exportFilters.status) {
+                dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
+            }
+
+            if (dataToExport && dataToExport.length > 0) {
+                const exportData = dataToExport.map((complaint, index) => ({
+                    "SL No": index + 1,
+                    "Student": complaint.student,
+                    "Room No": complaint.roomNo,
+                    "Category": complaint.category,
+                    "Subject": complaint.subject,
+                    "Priority": complaint.priority,
+                    "Date": complaint.date,
+                    "Status": complaint.status,
+                }));
+
+                const isSuccess = exportToExcel(exportData, "Warden_Complaints_Export", "Complaints");
+                
+                if (isSuccess) {
+                    showSuccessToast('Export Successful', 'The complaints list has been downloaded.');
+                } else {
+                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
+                }
+            } else {
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
+            }
+        } catch (error) {
+            console.error("Export Failed", error);
+            showErrorToast('Export Failed', error?.message || 'Failed to export data.');
+        } finally {
+            setIsExportConfirmOpen(false);
+            setIsExporting(false);
+        }
+    };
+
+    // Apply pagination
+    const totalComplaints = filteredComplaints.length;
+    const totalPages = Math.ceil(totalComplaints / limit) || 1;
+    const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
+
+    return (
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+            <div className="mb-6">
+                {onBack && (
+                    <button onClick={onBack} className="flex items-center text-sm text-text-secondary hover:text-primary mb-2 cursor-pointer transition-colors">
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to Organizations
+                    </button>
+                )}
+                <h1 className="text-2xl font-bold text-primary">
+                    {hostel ? `${hostel} Complaints` : 'Complaints'}
+                </h1>
+                <p className="text-sm text-text-secondary mt-1">
+                    {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
+                </p>
+            </div>
+
+            {/* Toolbar Section */}
+            <WardenComplaintsToolbar
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                openFilterModal={() => setIsFilterModalOpen(true)}
+                initiateExport={() => setIsExportConfirmOpen(true)}
+            />
+
+            {/* Table Section */}
+            <WardenComplaintsTable
+                complaints={paginatedComplaints}
+                handleCategoryChange={handleCategoryChange}
+                onViewClick={(complaint) => setViewingComplaint(complaint)}
+            />
+
+            {/* PAGINATION BAR FOOTER */}
+            <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-text-secondary rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden sm:block">
+                    Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
+                    {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
+                </div>
+                <div className="sm:hidden">
+                    {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                </div>
+
+                <div className="flex items-center gap-1">
+                    <button
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, index) => {
+                        const pageNum = index + 1;
+                        return (
+                            <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
+                                    ? 'bg-primary text-white shadow-sm font-bold'
+                                    : 'border border-transparent text-text-secondary hover:bg-gray-50'
+                                    }`}
+                            >
+                                {pageNum}
+                            </button>
+                        );
+                    })}
+
+                    <button
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+
+            {isFilterModalOpen && (
+                <WardenComplaintsFilterModal
+                    initialRoomNo={roomNoFilter}
+                    initialCategory={categoryFilter}
+                    initialDate={dateFilter}
+                    initialPriority={priorityFilter}
+                    initialStatus={statusFilter}
+                    onClose={() => setIsFilterModalOpen(false)}
+                    onApply={(filters) => {
+                        setRoomNoFilter(filters.roomNo);
+                        setCategoryFilter(filters.category);
+                        setDateFilter(filters.date);
+                        setPriorityFilter(filters.priority);
+                        setStatusFilter(filters.status);
+                        setCurrentPage(1); // Reset to first page on filter
+                        setIsFilterModalOpen(false);
+                    }}
+                />
+            )}
+
+            {viewingComplaint && (
+                <WardenComplaintDetailView
+                    complaint={viewingComplaint}
+                    onClose={() => setViewingComplaint(null)}
+                />
+            )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Complaints Data"
+                fields={[
+                    {
+                        name: "status",
+                        label: "Complaint Status",
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Pending', value: 'Pending' },
+                            { label: 'In progress', value: 'In progress' },
+                            { label: 'Resolved', value: 'Resolved' },
+                        ]
+                    }
+                ]}
+            />
+        </div>
+    );
+}

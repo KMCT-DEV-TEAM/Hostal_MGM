@@ -61,7 +61,7 @@ const PasswordRequests = () => {
             setRequests(res.data.requests || []);
             setPagination(res.data.pagination || { page: 1, limit: 10, totalPages: 1 });
         } catch (error) {
-            showErrorToast('Failed to load password requests', error?.response?.data?.message || error.message);
+            showErrorToast('Failed to load password requests', error?.message);
         } finally {
             setIsLoading(false);
         }
@@ -329,6 +329,7 @@ const PasswordRequests = () => {
                                                     </button>
                                                     <button 
                                                         className="px-2.5 py-1.5 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
+
                                                         onClick={() => openConfirmModal('reject', request._id)}
                                                     >
                                                         <X className="w-3.5 h-3.5 mr-1" />
@@ -418,6 +419,7 @@ const PasswordRequests = () => {
                                             <Button 
                                                 variant="outline" 
                                                 className="px-2 py-1 h-7 text-[10px] text-danger border-danger/20 hover:bg-danger/10 cursor-pointer"
+
                                                 onClick={() => openConfirmModal('reject', request._id)}
                                             >
                                                 <X className="w-3 h-3 mr-1" /> Reject

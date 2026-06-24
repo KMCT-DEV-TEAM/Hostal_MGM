@@ -498,7 +498,7 @@ export default function HostelManagement() {
                                                 required
                                                 value={hostelForm.code}
                                                 onChange={(e) => setHostelForm({ ...hostelForm, code: e.target.value })}
-                                                placeholder="e.g. KMCT001"
+                                                placeholder="KMCT001"
                                                 className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase"
                                             />
                                         </div>
@@ -513,7 +513,7 @@ export default function HostelManagement() {
                                                 onChange={(e) => setHostelForm({ ...hostelForm, email: e.target.value })}
                                                 type="email"
                                                 required
-                                                placeholder="e.g. kmctboys@gmail.com"
+                                                placeholder="kmctboys@gmail.com"
                                                 className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                             />
                                         </div>
@@ -554,7 +554,7 @@ export default function HostelManagement() {
                                                 required
                                                 value={hostelForm.location}
                                                 onChange={(e) => setHostelForm({ ...hostelForm, location: e.target.value })}
-                                                placeholder="e.g. Kozhikode, Kerala"
+                                                placeholder="Kozhikode, Kerala"
                                                 className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                             />
                                         </div>
@@ -586,7 +586,7 @@ export default function HostelManagement() {
                                                 min="1"
                                                 value={hostelForm.capacity}
                                                 onChange={(e) => setHostelForm({ ...hostelForm, capacity: e.target.value })}
-                                                placeholder="e.g. 200"
+                                                placeholder="200"
                                                 className="w-full px-3 py-2 outline-none bg-transparent text-xs"
                                             />
                                         </div>

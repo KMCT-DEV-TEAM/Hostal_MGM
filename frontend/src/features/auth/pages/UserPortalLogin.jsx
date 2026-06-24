@@ -33,10 +33,11 @@ const UserPortalLogin = () => {
             navigate(getDashboardRoute(user.role));
         } catch (error) {
             console.log("error from the login page", error);
-            showErrorToast('Login Failed', error?.message || 'Failed to sign in. Please check your credentials.');
+            const errorMessage = error?.message || 'Failed to sign in. Please check your credentials.';
+            showErrorToast('Login Failed', errorMessage);
             setError('root', {
                 type: 'manual',
-                message: error?.message || 'Failed to sign in. Please check your credentials.'
+                message: errorMessage
             });
         }
     };

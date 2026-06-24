@@ -17,6 +17,9 @@ const DepartmentFormModal = ({
     const { t } = useTranslation();
     if (!isModalOpen) return null;
 
+    const selectedCourse = (courses || []).find(c => c._id === formData.courseId);
+    const courseCode = selectedCourse ? `${selectedCourse.code}-` : '';
+
     return (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
             <form
@@ -73,14 +76,21 @@ const DepartmentFormModal = ({
                             </div>
                             <div className="col-span-1">
                                 <label className="block text-xs mb-1.5 font-medium">{t('department_code')} *</label>
-                                <input
-                                    name="code"
-                                    value={formData.code}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
-                                    placeholder="e.g. CS101"
-                                />
+                                <div className="flex">
+                                    {courseCode && (
+                                        <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-xs font-medium">
+                                            {courseCode}
+                                        </span>
+                                    )}
+                                    <input
+                                        name="code"
+                                        value={formData.code}
+                                        onChange={handleInputChange}
+                                        required
+                                        className={`flex-1 w-full p-2.5 border border-gray-200 text-xs outline-none focus:border-[#0A437A] ${courseCode ? 'rounded-r-lg' : 'rounded-lg'}`}
+                                        placeholder="DEPT"
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-6 mt-6">

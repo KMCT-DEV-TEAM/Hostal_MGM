@@ -236,6 +236,11 @@ const toggleStudentStatus = asyncHandler(async (req, res) => {
   student.isActive = !student.isActive;
   await student.save();
 
+  await Parent.updateMany(
+    { studentId: student._id },
+    { isActive: student.isActive }
+  );
+
   const message = student.isActive
     ? "Student activated successfully"
     : "Student deactivated successfully";
