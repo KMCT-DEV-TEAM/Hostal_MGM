@@ -185,20 +185,25 @@ function Sidebar({ isOpen, setIsOpen }) {
                 {/* Scrollable Main Content */}
                 <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-                    {sections.map((section) => (
-                        <NavSection key={section.section} title={section.section}>
-                            {section.items.map((item) => (
-                                <NavItem
-                                    key={item.path}
-                                    icon={item.icon}
-                                    label={t(item.label.toLowerCase())}
-                                    to={item.path}
-                                    onClose={() => setIsOpen(false)}
-                                    subItems={item.subItems}
-                                />
-                            ))}
-                        </NavSection>
-                    ))}
+
+                {sections.map((section) => (
+                    <NavSection key={section.section} title={section.section}>
+                        {section.items.map((item) => (
+                            <NavItem
+                                key={item.path}
+                                icon={item.icon}
+                                label={t(item.label.toLowerCase())}
+                                to={item.path}
+                                badge={item.badge}
+                                onClose={() => setIsOpen(false)}
+                                subItems={item.subItems}
+                            />
+                        ))}
+                    </NavSection>
+                ))}
+
+            </div>
+
 
                 </div>
 

@@ -11,6 +11,7 @@ import {
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import CourseService from '../../../services/course.service';
+import organizationService from '../../../services/organization.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
 import CourseTable from '../components/course/CourseTable';
@@ -27,6 +28,7 @@ const INITIAL_courses = [
 
 const CourseManagement = () => {
     const [courses, setcourses] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
@@ -53,7 +55,8 @@ const CourseManagement = () => {
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
-        code: ''
+        code: '',
+        organizationId: ''
     });
     const limit = 10;
 
@@ -88,6 +91,20 @@ const CourseManagement = () => {
     }, [searchQuery]);
 
     useEffect(() => {
+        const fetchAllOrganizations = async () => {
+            try {
+                const res = await organizationService.getOrganizations({ limit: 1000, status: 'Active' });
+                if (res && res.data) {
+                    setOrganizations(res.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch organizations:", err);
+            }
+        };
+        fetchAllOrganizations();
+    }, []);
+
+    useEffect(() => {
         fetchCourses();
     }, [page, debouncedSearch, statusFilter]);
 
@@ -119,15 +136,23 @@ const CourseManagement = () => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && course) {
             setEditingId(course._id);
+            
+            // Extract suffix code
+            const org = organizations.find(o => o._id === course.organizationId);
+            const prefix = org ? `${org.code}-` : '';
+            const suffixCode = course.code?.startsWith(prefix) ? course.code.substring(prefix.length) : course.code;
+
             setFormData({
                 name: course.name || '',
-                code: course.code || ''
+                code: suffixCode || '',
+                organizationId: course.organizationId || ''
             });
         } else {
             setEditingId(null);
             setFormData({
                 name: '',
-                code: ''
+                code: '',
+                organizationId: ''
             });
         }
         setIsModalOpen(true);
@@ -150,11 +175,19 @@ const CourseManagement = () => {
     const saveCourse = async () => {
         try {
             setIsSubmitting(true);
+            
+            const org = organizations.find(o => o._id === formData.organizationId);
+            const prefix = org ? `${org.code}-` : '';
+            const finalData = {
+                ...formData,
+                code: `${prefix}${formData.code}`
+            };
+
             if (isEditMode && editingId) {
-                await CourseService.updateCourse(editingId, formData);
+                await CourseService.updateCourse(editingId, finalData);
                 showSuccessToast('Course Updated', 'Course details saved successfully');
             } else {
-                await CourseService.createCourse(formData);
+                await CourseService.createCourse(finalData);
                 showSuccessToast('Course Added', 'New Course registered successfully');
             }
             setIsModalOpen(false);
@@ -450,6 +483,7 @@ const CourseManagement = () => {
                 handleSubmit={handleSubmit}
                 handleCancel={handleCancel}
                 isSubmitting={isSubmitting}
+                organizations={organizations}
             />
 
             <ExportFilterModal

@@ -14,6 +14,7 @@ import BatchService from '../../../services/batch.service';
 import DepartmentService from '../../../services/department.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
+import { useAuthStore } from '@/store/useAuthStore';
 import BatchTable from '../components/batch/BatchTable';
 import BatchMobileList from '../components/batch/BatchMobileList';
 import BatchDetailView from '../components/batch/BatchDetailView';
@@ -136,10 +137,17 @@ const BatchManagement = () => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && batch) {
             setEditingId(batch._id);
+            
+            // Extract suffix code
+            const departmentIdValue = batch.departmentId?._id || batch.departmentId;
+            const department = departments.find(d => d._id === departmentIdValue);
+            const prefix = department ? `${department.code}-` : '';
+            const suffixCode = batch.code?.startsWith(prefix) ? batch.code.substring(prefix.length) : batch.code;
+
             setFormData({
                 name: batch.name || '',
-                code: batch.code || '',
-                departmentId: batch.departmentId?._id || batch.departmentId || ''
+                code: suffixCode || '',
+                departmentId: departmentIdValue || ''
             });
         } else {
             setEditingId(null);
@@ -169,11 +177,19 @@ const BatchManagement = () => {
     const saveBatch = async () => {
         try {
             setIsSubmitting(true);
+            
+            const department = departments.find(d => d._id === formData.departmentId);
+            const prefix = department ? `${department.code}-` : '';
+            const payload = {
+                ...formData,
+                code: `${prefix}${formData.code}`
+            };
+
             if (isEditMode && editingId) {
-                await BatchService.updateBatch(editingId, formData);
+                await BatchService.updateBatch(editingId, payload);
                 showSuccessToast('Batch Updated', 'Batch details saved successfully');
             } else {
-                await BatchService.createBatch(formData);
+                await BatchService.createBatch(payload);
                 showSuccessToast('Batch Added', 'New Batch registered successfully');
             }
             setIsModalOpen(false);

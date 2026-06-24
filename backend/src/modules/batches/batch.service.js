@@ -1,6 +1,7 @@
 import Batch from "./batch.model.js";
 import Department from "../departments/department.model.js";
 import Course from "../courses/course.model.js";
+import { deactivateStudentsByQuery } from "../students/student.service.js";
 
 const checkExistingBatchCodeDb = async (code) => {
   return await Batch.findOne({ code });
@@ -64,14 +65,25 @@ const toggleBatchStatusDb = async (id) => {
   
   batch.isActive = !batch.isActive;
   await batch.save();
+
+  if (!batch.isActive) {
+    await deactivateStudentsByQuery({ batchId: id });
+  }
+
   return batch;
 };
 
 const bulkUpdateBatchStatusDb = async (ids, isActive) => {
-  return await Batch.updateMany(
+  const result = await Batch.updateMany(
     { _id: { $in: ids } },
     { $set: { isActive } }
   );
+
+  if (!isActive) {
+    await deactivateStudentsByQuery({ batchId: { $in: ids } });
+  }
+
+  return result;
 };
 
 export {

@@ -30,7 +30,7 @@ export function useDefaultGuardian(onSuccess) {
       return result;
     } catch (error) {
       showErrorToast(
-        error?.response?.data?.message ||
+        error?.message ||
           "Failed to update guardian"
       );
 

@@ -40,7 +40,7 @@ const ResetPassword = () => {
             showSuccessToast('Password Updated', 'Your password has been successfully reset. Please log in.');
             navigate('/user/login', { replace: true });
         } catch (error) {
-            showErrorToast('Failed', error?.response?.data?.message || error?.message || 'Failed to reset password.');
+            showErrorToast('Failed', error?.message || 'Failed to reset password.');
         }
     };
 

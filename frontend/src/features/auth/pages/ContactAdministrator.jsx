@@ -47,7 +47,7 @@ const ContactAdministrator = () => {
             setStep(2);
             showSuccessToast('Email Verified', 'You can now reset your password.');
         } catch (error) {
-            showErrorToast('Verification Failed', error?.response?.data?.message || 'Email not found in our records.');
+            showErrorToast('Verification Failed', error?.message || 'Email not found in our records.');
         } finally {
             setIsLoading(false);
         }
@@ -64,7 +64,7 @@ const ContactAdministrator = () => {
             showSuccessToast('Request Submitted', 'Your password reset request has been sent to the administrator.');
             navigate('/admin/login');
         } catch (error) {
-            showErrorToast('Submission Failed', error?.response?.data?.message || 'Failed to submit password request.');
+            showErrorToast('Submission Failed', error?.message || 'Failed to submit password request.');
         } finally {
             setIsLoading(false);
         }

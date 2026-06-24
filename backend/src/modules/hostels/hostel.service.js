@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Hostel from "./hostel.model.js";
+import User from "../users/user.model.js";
 
 const checkExistingHostelCodeDb = async (code) => {
   return await Hostel.findOne({ code });
@@ -72,6 +73,20 @@ const updateHostelDb = async (id, organizationId, updateData) => {
   return await Hostel.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
 };
 
+const syncHostelStatus = async (hostelIds, isActive) => {
+  const hostels = await Hostel.find({ _id: { $in: hostelIds } }).select("wardens");
+  let wardenIds = [];
+  hostels.forEach((h) => {
+    if (h.wardens && h.wardens.length > 0) {
+      wardenIds.push(...h.wardens);
+    }
+  });
+
+  if (wardenIds.length > 0) {
+    await User.updateMany({ _id: { $in: wardenIds } }, { isActive });
+  }
+};
+
 const toggleHostelStatusDb = async (id, organizationId) => {
   const query = { _id: id };
   if (organizationId) {
@@ -82,7 +97,11 @@ const toggleHostelStatusDb = async (id, organizationId) => {
   if (!hostel) return null;
 
   hostel.isActive = !hostel.isActive;
-  return await hostel.save();
+  await hostel.save();
+
+  await syncHostelStatus([hostel._id], hostel.isActive);
+
+  return hostel;
 };
 
 const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId) => {
@@ -93,6 +112,14 @@ const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId) => {
       query.organizations = organizationId;
     }
     const result = await Hostel.updateMany(query, { $set: { isActive } });
+    
+    // Find the affected hostels to sync wardens
+    const affectedHostels = await Hostel.find(query).select("_id");
+    const affectedIds = affectedHostels.map(h => h._id);
+    if (affectedIds.length > 0) {
+      await syncHostelStatus(affectedIds, isActive);
+    }
+
     console.log("bulkUpdateHostelStatusDb inside service result:", result);
     return result;
   } catch (error) {

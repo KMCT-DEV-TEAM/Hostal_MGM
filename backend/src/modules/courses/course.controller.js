@@ -12,14 +12,14 @@ import {
 } from "./course.service.js";
 
 const createCourse = asyncHandler(async (req, res) => {
-  const { name, code } = req.body;
+  const { name, code, organizationId } = req.body;
 
   const existingCourse = await checkExistingCourseCodeDb(code);
   if (existingCourse) {
     return sendError(res, 400, "Course code already exists");
   }
 
-  const newCourse = await createCourseDb({ name, code });
+  const newCourse = await createCourseDb({ name, code, organizationId });
 
   return sendSuccess(res, 201, "Course created successfully", {
     data: newCourse,
@@ -27,7 +27,7 @@ const createCourse = asyncHandler(async (req, res) => {
 });
 
 const getCourses = asyncHandler(async (req, res) => {
-  const { page, limit, search, status } = req.query;
+  const { page, limit, search, status, organizationId } = req.query;
 
   const query = {};
   if (search) {
@@ -38,6 +38,9 @@ const getCourses = asyncHandler(async (req, res) => {
   }
   if (status && status !== "All") {
     query.isActive = status === "Active";
+  }
+  if (organizationId) {
+    query.organizationId = organizationId;
   }
 
   const sort = { createdAt: -1 };
@@ -78,7 +81,7 @@ const getCourseById = asyncHandler(async (req, res) => {
 
 const updateCourse = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, code } = req.body;
+  const { name, code, organizationId } = req.body;
 
   if (code) {
     const existingCode = await checkExistingCourseCodeDb(code);
@@ -87,7 +90,7 @@ const updateCourse = asyncHandler(async (req, res) => {
     }
   }
 
-  const course = await updateCourseDb(id, { name, code });
+  const course = await updateCourseDb(id, { name, code, organizationId });
 
   if (!course) {
     return sendError(res, 404, "Course not found");
