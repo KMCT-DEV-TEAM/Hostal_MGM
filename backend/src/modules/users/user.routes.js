@@ -18,6 +18,12 @@ import {
   updateWardenHostel,
   toggleWardenStatus,
   bulkToggleWardenStatus,
+  createMaintenanceStaff,
+  getMaintenanceStaff,
+  getMaintenanceStaffById,
+  updateMaintenanceStaff,
+  toggleMaintenanceStaffStatus,
+  bulkToggleMaintenanceStaffStatus,
   updateAdminOrganization
 } from "./user.controller.js";
 
@@ -30,7 +36,10 @@ import {
   validateWardenIdParam,
   validateUpdateWarden,
   validateUpdateWardenHostel,
-  validateUpdateAdminOrganization
+  validateUpdateAdminOrganization,
+  validateCreateMaintenanceStaff,
+  validateMaintenanceStaffIdParam,
+  validateUpdateMaintenanceStaff
 } from "./user.validation.js";
 
 const router = express.Router();
@@ -159,6 +168,55 @@ router.post(
   authMiddleware,
   roleMiddleware("super_admin"),
   bulkToggleWardenStatus
+);
+
+// --- MAINTENANCE STAFF ROUTES ---
+
+router.post(
+  "/maintenance-staff",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateCreateMaintenanceStaff,
+  createMaintenanceStaff
+);
+
+router.get(
+  "/maintenance-staff",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  getMaintenanceStaff
+);
+
+router.get(
+  "/maintenance-staff/:id",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateMaintenanceStaffIdParam,
+  getMaintenanceStaffById
+);
+
+router.patch(
+  "/maintenance-staff/:id", 
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateMaintenanceStaffIdParam,
+  validateUpdateMaintenanceStaff,
+  updateMaintenanceStaff
+);
+
+router.patch(
+  "/maintenance-staff/:id/toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  validateMaintenanceStaffIdParam,
+  toggleMaintenanceStaffStatus 
+);
+
+router.post(
+  "/maintenance-staff/bulk-toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  bulkToggleMaintenanceStaffStatus
 );
 
 export default router;

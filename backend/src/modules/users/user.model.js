@@ -30,8 +30,13 @@ const userSchema = new mongoose.Schema(
         "warden",
         "student",
         "parent",
+        "maintenance_staff"
       ],
       default: "student",
+    },
+
+    specialization: {
+      type: String,
     },
 
     organization: {
