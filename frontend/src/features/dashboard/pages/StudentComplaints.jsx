@@ -4,6 +4,9 @@ import StudentComplaintsHeader from '../components/complaints/StudentComplaintsH
 import StudentComplaintsToolbar from '../components/complaints/StudentComplaintsToolbar';
 import StudentComplaintFormModal from '../components/complaints/StudentComplaintFormModal';
 import StudentComplaintDetailModal from '../components/complaints/StudentComplaintDetailModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { exportToExcel } from '@/utils/exportUtils';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function StudentComplaints() {
@@ -34,6 +37,8 @@ export default function StudentComplaints() {
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = useState(false);
     const [pendingFormData, setPendingFormData] = useState(null);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleCategoryChange = (id, newCategory) => {
         setComplaints(complaints.map(c =>
@@ -116,13 +121,52 @@ export default function StudentComplaints() {
     };
 
     // Apply filtering
-    let filteredComplaints = complaints.filter(c => 
-        c.subject.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        c.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let filteredComplaints = complaints.filter(c => {
+        const query = searchQuery.toLowerCase();
+        return Object.values(c).some(val => 
+            String(val).toLowerCase().includes(query)
+        );
+    });
     if (statusFilter !== 'All') {
         filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
     }
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            let dataToExport = complaints;
+            
+            if (exportFilters.status) {
+                dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
+            }
+
+            if (dataToExport && dataToExport.length > 0) {
+                const exportData = dataToExport.map((complaint, index) => ({
+                    "SL No": index + 1,
+                    "Category": complaint.category,
+                    "Subject": complaint.subject,
+                    "Date": complaint.date,
+                    "Status": complaint.status,
+                }));
+
+                const isSuccess = exportToExcel(exportData, "Student_Complaints_Export", "Complaints");
+                
+                if (isSuccess) {
+                    showSuccessToast('Export Successful', 'Your complaints list has been downloaded.');
+                } else {
+                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
+                }
+            } else {
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
+            }
+        } catch (error) {
+            console.error("Export Failed", error);
+            showErrorToast('Export Failed', error?.message || 'Failed to export data.');
+        } finally {
+            setIsExportConfirmOpen(false);
+            setIsExporting(false);
+        }
+    };
 
     // Apply pagination
     const totalComplaints = filteredComplaints.length;
@@ -140,7 +184,7 @@ export default function StudentComplaints() {
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
-                    initiateExport={() => console.log('Exporting student complaints')}
+                    initiateExport={() => setIsExportConfirmOpen(true)}
                     openAddComplaintModal={handleAdd}
                 />
 
@@ -153,21 +197,20 @@ export default function StudentComplaints() {
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div>
-                        <span className="hidden sm:inline">Showing </span>
-                        {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
-                        <span className="hidden sm:inline"> to </span>
-                        <span className="sm:hidden">-</span>
-                        {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
-                        <span className="hidden sm:inline"> entries</span>
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-text-secondary rounded-b-xl shadow-sm shrink-0 mt-auto">
+                    <div className="hidden sm:block">
+                        Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
+                        {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
+                    </div>
+                    <div className="sm:hidden">
+                        {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
                     </div>
 
                     <div className="flex items-center gap-1">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -179,8 +222,8 @@ export default function StudentComplaints() {
                                     key={pageNum}
                                     onClick={() => setCurrentPage(pageNum)}
                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                        ? 'bg-primary text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-text-secondary hover:bg-gray-50'
                                         }`}
                                 >
                                     {pageNum}
@@ -191,7 +234,7 @@ export default function StudentComplaints() {
                         <button
                             disabled={currentPage === totalPages || totalPages === 0}
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
@@ -222,20 +265,20 @@ export default function StudentComplaints() {
             {isSaveConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Save Changes</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                        <h3 className="text-sm font-bold text-text-primary">Save Changes</h3>
+                        <p className="text-xs text-text-secondary mt-1 mb-6">
                             Are you sure you want to save these changes?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsSaveConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmSaveComplaint}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Confirm
                             </button>
@@ -247,14 +290,14 @@ export default function StudentComplaints() {
             {isDiscardConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                        <h3 className="text-sm font-bold text-text-primary">Discard Changes</h3>
+                        <p className="text-xs text-text-secondary mt-1 mb-6">
                             Are you sure you want to discard your changes? Any unsaved edits will be lost.
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsDiscardConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Continue Editing
                             </button>
@@ -272,14 +315,14 @@ export default function StudentComplaints() {
             {isWithdrawConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Withdraw Complaint</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                        <h3 className="text-sm font-bold text-text-primary">Withdraw Complaint</h3>
+                        <p className="text-xs text-text-secondary mt-1 mb-6">
                             Are you sure you want to withdraw this complaint? This action cannot be undone.
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsWithdrawConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -300,6 +343,26 @@ export default function StudentComplaints() {
                     onClose={() => setSelectedDetailComplaint(null)} 
                 />
             )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Complaints Data"
+                fields={[
+                    {
+                        name: "status",
+                        label: "Complaint Status",
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Pending', value: 'Pending' },
+                            { label: 'In progress', value: 'In progress' },
+                            { label: 'Resolved', value: 'Resolved' },
+                        ]
+                    }
+                ]}
+            />
         </div>
     );
 }

@@ -56,23 +56,23 @@ export default function StudentComplaintFormModal({
                                 onClick={() => {
                                     if (onWithdraw) onWithdraw();
                                 }}
-                                className="px-6 py-2 text-xs font-medium text-danger bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+                                className="px-6 py-2.5 text-xs font-medium text-danger bg-danger/10 border border-danger/20 rounded-lg hover:bg-danger/20 transition-colors cursor-pointer"
                             >
                                 Withdraw Complaint
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex justify-end gap-3">
                         <button
                             type="submit"
-                            className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
+                            className="px-6 py-2.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
                         >
                             {editingComplaint ? 'Save Changes' : 'Save'}
                         </button>
                         <button
                             type="button"
                             onClick={onCancel || onClose}
-                            className="px-6 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                            className="px-6 py-2.5 text-xs font-medium text-text-secondary bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                         >
                             Cancel
                         </button>
@@ -86,7 +86,7 @@ export default function StudentComplaintFormModal({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-text-primary mb-1">Room No <span className="text-danger">*</span></label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-primary">
                                 <input
                                     required
                                     type="text"
@@ -100,7 +100,7 @@ export default function StudentComplaintFormModal({
 
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-text-primary mb-1">Category <span className="text-danger">*</span></label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-primary">
                                 <select
                                     required
                                     value={formData.category}
@@ -116,7 +116,7 @@ export default function StudentComplaintFormModal({
 
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-text-primary mb-1">Subject <span className="text-danger">*</span></label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-primary">
                                 <input
                                     required
                                     type="text"
@@ -130,7 +130,7 @@ export default function StudentComplaintFormModal({
 
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-text-primary mb-1">Description</label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-primary">
                                 <textarea
                                     rows={4}
                                     placeholder="Please provide any additional details..."

@@ -11,7 +11,7 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 cursor-pointer"
+                    className="absolute top-6 right-6 p-1.5 rounded-full border border-gray-200 text-text-secondary hover:text-text-secondary hover:bg-gray-50 cursor-pointer"
                 >
                     <X size={14} />
                 </button>
@@ -19,12 +19,12 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
+                        <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white">
                             <MessageSquare size={24} />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Complaint Details</h1>
-                            <p className="text-gray-400 text-sm">{complaint.category} - {complaint.subject}</p>
+                            <h1 className="text-2xl font-bold text-text-primary">Complaint Details</h1>
+                            <p className="text-text-secondary text-sm">{complaint.category} - {complaint.subject}</p>
                         </div>
                     </div>
                 </div>
@@ -36,32 +36,32 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                         {/* Basic Info */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 className="text-lg font-semibold text-primary mb-1">Complaint Information</h3>
-                            <p className="text-xs text-gray-400 mb-6">Basic Details about the complaint</p>
+                            <p className="text-xs text-text-secondary mb-6">Basic Details about the complaint</p>
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                    <span className="text-[#777777] flex items-center gap-1.5"><LayoutGrid className="w-4 h-4 text-gray-400" /> Category</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5"><LayoutGrid className="w-4 h-4 text-text-secondary" /> Category</span> 
                                     <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.category || 'N/A'}</span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                    <span className="text-[#777777] flex items-center gap-1.5"><Calendar className="w-4 h-4 text-gray-400" /> Date</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5"><Calendar className="w-4 h-4 text-text-secondary" /> Date</span> 
                                     <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.date || 'N/A'}</span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-[#777777] flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-gray-400" /> Priority</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-text-secondary" /> Priority</span> 
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
                                         <span className={`w-2 h-2 rounded-full bg-danger mr-2`}></span>
                                         High
                                     </span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-[#777777] flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-text-secondary" /> Status</span> 
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-green-500' : 'bg-warning'} mr-2`}></span>
+                                        <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : 'bg-warning'} mr-2`}></span>
                                         {complaint.status || 'Pending'}
                                     </span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                    <span className="text-[#777777] flex items-center gap-1.5"><Hash className="w-4 h-4 text-gray-400" /> Room No</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5"><Hash className="w-4 h-4 text-text-secondary" /> Room No</span> 
                                     <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.roomNo || 'N/A'}</span>
                                 </div>
                             </div>
@@ -70,14 +70,14 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                         {/* Complaint Description */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h3 className="text-lg font-semibold text-primary mb-1">Complaint Description</h3>
-                            <p className="text-xs text-gray-400 mb-6">Add brief description about complaint</p>
+                            <p className="text-xs text-text-secondary mb-6">Add brief description about complaint</p>
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start">
-                                    <span className="text-[#777777] flex items-center gap-1.5"><Tag className="w-4 h-4 text-gray-400" /> Subject</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5"><Tag className="w-4 h-4 text-text-secondary" /> Subject</span> 
                                     <span className="sm:col-span-2 font-medium leading-relaxed"><span className="hidden sm:inline">: </span>{complaint.subject || 'N/A'}</span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start mt-4">
-                                    <span className="text-[#777777] flex items-center gap-1.5 mt-0.5"><FileText className="w-4 h-4 text-gray-400" /> Description</span> 
+                                    <span className="text-text-secondary flex items-center gap-1.5 mt-0.5"><FileText className="w-4 h-4 text-text-secondary" /> Description</span> 
                                     <span className="sm:col-span-2 font-medium leading-relaxed">
                                         <span className="hidden sm:inline">: </span>
                                         <span className="block sm:inline">{complaint.description || 'N/A'}</span>
@@ -93,17 +93,17 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                         <h3 className="text-lg font-semibold text-primary mb-4">Quick Summary</h3>
                         <div className="space-y-4">
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                <span className="text-[#777777] flex items-center gap-1.5"><LayoutGrid className="w-4 h-4 text-gray-400" /> Category</span> 
+                                <span className="text-text-secondary flex items-center gap-1.5"><LayoutGrid className="w-4 h-4 text-text-secondary" /> Category</span> 
                                 <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.category || 'N/A'}</span>
                             </div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                <span className="text-[#777777] flex items-center gap-1.5"><Calendar className="w-4 h-4 text-gray-400" /> Date</span> 
+                                <span className="text-text-secondary flex items-center gap-1.5"><Calendar className="w-4 h-4 text-text-secondary" /> Date</span> 
                                 <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.date || 'N/A'}</span>
                             </div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                <span className="text-[#777777] flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span> 
+                                <span className="text-text-secondary flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-text-secondary" /> Status</span> 
                                 <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                    <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-green-500' : 'bg-warning'} mr-2`}></span>
+                                    <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : 'bg-warning'} mr-2`}></span>
                                     {complaint.status || 'Pending'}
                                 </span>
                             </div>

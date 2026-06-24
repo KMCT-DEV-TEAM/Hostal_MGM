@@ -175,6 +175,12 @@ export const DASHBOARD_NAV = {
 
             items: [
                 {
+                    icon: UserRoundCheck,
+                    label: 'Wardens',
+                    path: '/dashboard/wardens'
+                },
+
+                {
                     icon: GraduationCap,
                     label: 'Students',
                     path: '/dashboard/students'
@@ -188,7 +194,23 @@ export const DASHBOARD_NAV = {
             ]
         },
 
+        {
+            section: 'ORGANIZATION',
 
+            items: [
+                {
+                    icon: Building2,
+                    label: 'Organizations',
+                    path: '/dashboard/organizations'
+                },
+
+                {
+                    icon: Building,
+                    label: 'Hostels',
+                    path: '/dashboard/hostels'
+                }
+            ]
+        },
 
         {
             section: 'ACADEMICS',

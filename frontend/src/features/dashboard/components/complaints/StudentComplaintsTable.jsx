@@ -45,7 +45,7 @@ export default function StudentComplaintsTable({
                                             ]}
                                             value={complaint.category}
                                             onChange={(val) => handleCategoryChange(complaint.id, val)}
-                                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-gray-300 transition-colors cursor-pointer"
+                                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-text-primary hover:border-gray-300 transition-colors cursor-pointer"
                                         />
                                     </div>
                                 </td>
@@ -56,14 +56,14 @@ export default function StudentComplaintsTable({
                                     {complaint.date}
                                 </td>
                                 <td className="p-5 text-start">
-                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-400' : complaint.status === 'Resolved' ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-text-secondary'}`}>
+                                    <span className={`px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-gray-100 text-text-secondary'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>
                                 <td className="p-5 text-center" onClick={e => e.stopPropagation()}>
                                     <button
                                         onClick={() => openEditModal && openEditModal(complaint)}
-                                        className="text-blue-400 hover:text-blue-600 cursor-pointer transition-colors"
+                                        className="text-accent hover:text-blue-600 cursor-pointer transition-colors"
                                         title="Edit complaint"
                                     >
                                         <Pencil className="w-4 h-4 mx-auto" strokeWidth={1.5} />
