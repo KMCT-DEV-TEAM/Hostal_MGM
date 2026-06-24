@@ -14,6 +14,7 @@ import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagemen
 import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
+import Leaves from '@/features/dashboard/pages/Leaves';
 import Complaints from '@/features/dashboard/pages/Complaints';
 export const dashboardRoutes = [
 
@@ -142,6 +143,33 @@ export const dashboardRoutes = [
         element: PasswordRequests
     },
     {
+
+        path: 'leaves',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Leaves
+    },
+    {
+        path: 'leaves/:passType',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Leaves
+    },
+    {
+        path: 'leaves/:passType/:hostelName',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Leaves
+
         path: 'complaints',
         roles: [
             ROLES.SUPER_ADMIN,
@@ -150,6 +178,6 @@ export const dashboardRoutes = [
             ROLES.STUDENT
         ],
         element: Complaints
-    }
 
+    }
 ];
