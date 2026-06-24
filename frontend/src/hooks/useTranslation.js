@@ -26,6 +26,8 @@ const dictionary = {
         'mess management': "Mess Management",
         reports: "Reports",
         'password request': "Password Request",
+        categories: "Categories",
+        'complaint category': "Complaint Category",
         // Page Titles
         org_management: "Organization Management",
         hostel_management: "Hostel Management",
@@ -232,6 +234,8 @@ const dictionary = {
         'mess management': "മെസ്സ് മാനേജ്മെന്റ്",
         reports: "റിപ്പോർട്ടുകൾ",
         'password request': "പാസ്‌വേഡ് അഭ്യർത്ഥന",
+        categories: "വിഭാഗങ്ങൾ",
+        'complaint category': "പരാതി വിഭാഗം",
         // Page Titles
         org_management: "സ്ഥാപന മാനേജ്മെന്റ്",
         hostel_management: "ഹോസ്റ്റൽ മാനേജ്മെന്റ്",
