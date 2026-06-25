@@ -7,8 +7,12 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 export default function AdminComplaints() {
+    const { user } = useAuthStore();
+    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
     const [complaints, setComplaints] = useState([]);
     const [aggregatedData, setAggregatedData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -26,7 +30,7 @@ export default function AdminComplaints() {
             const response = await ComplaintService.getAllComplaints();
             const rawComplaints = response.data || [];
             setComplaints(rawComplaints);
-            
+
             // Aggregate data by Hostel
             const hostelMap = {};
             rawComplaints.forEach(c => {
@@ -34,8 +38,8 @@ export default function AdminComplaints() {
                 const orgName = c.organizationId?.name || 'Unknown Org';
                 // Note: Warden name isn't directly on complaint, we could get it if we populated it,
                 // but for now we put a placeholder or "N/A"
-                const wardenName = 'N/A'; 
-                
+                const wardenName = 'N/A';
+
                 if (!hostelMap[hostelName]) {
                     hostelMap[hostelName] = {
                         id: hostelName,
@@ -48,13 +52,13 @@ export default function AdminComplaints() {
                         resolved: 0
                     };
                 }
-                
+
                 hostelMap[hostelName].totalComplaints++;
                 if (c.status === 'Pending') hostelMap[hostelName].pending++;
                 if (c.status === 'In progress') hostelMap[hostelName].inProgress++;
                 if (c.status === 'Resolved') hostelMap[hostelName].resolved++;
             });
-            
+
             setAggregatedData(Object.values(hostelMap));
         } catch (error) {
             showErrorToast('Failed to load complaints', error.message);
@@ -88,17 +92,25 @@ export default function AdminComplaints() {
             let dataToExport = filteredComplaints;
 
             if (dataToExport && dataToExport.length > 0) {
-                const exportData = dataToExport.map((complaint, index) => ({
-                    "Organization": complaint.organization,
-                    "Hostel": complaint.hostel,
-                    "Warden": complaint.warden,
-                    "Total Complaints": complaint.totalComplaints,
-                    "Pending": complaint.pending,
-                    "In Progress": complaint.inProgress,
-                    "Resolved": complaint.resolved,
-                }));
+                const exportData = dataToExport.map((complaint, index) => {
+                    const row = {
+                        "Organization": complaint.organization,
+                        "Hostel": complaint.hostel,
+                        "Total Complaints": complaint.totalComplaints,
+                        "Pending": complaint.pending,
+                        "In Progress": complaint.inProgress,
+                        "Resolved": complaint.resolved,
+                    };
+                    if (isSuperAdmin) {
+                        // Insert Warden before Total Complaints in export
+                        const entries = Object.entries(row);
+                        entries.splice(2, 0, ["Warden", complaint.warden]);
+                        return Object.fromEntries(entries);
+                    }
+                    return row;
+                });
 
-                const isSuccess = exportToExcel(exportData, "SuperAdmin_Complaints_Export", "Complaints");
+                const isSuccess = exportToExcel(exportData, "Complaints_Export", "Complaints");
 
                 if (isSuccess) {
                     showSuccessToast('Export Successful', 'The complaints list has been downloaded.');
@@ -133,8 +145,8 @@ export default function AdminComplaints() {
     const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-white p-4 md:p-6 md:px-8 text-black flex flex-col">
-            
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 md:px-8 text-black flex flex-col">
+
             {/* Header Section */}
             <div className="mb-6 w-full text-left">
                 <h1 className="text-2xl font-bold text-black">Complaints</h1>
@@ -184,7 +196,7 @@ export default function AdminComplaints() {
                 </div>
             </div>
 
-            <div className="bg-white w-full flex-1 flex flex-col min-h-0 border border-transparent">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
                 {/* Toolbar Section */}
                 <ComplaintsToolbar
                     searchQuery={searchQuery}
@@ -198,19 +210,20 @@ export default function AdminComplaints() {
                 <SuperAdminComplaintsTable
                     complaints={paginatedComplaints}
                     onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}
+                    showWarden={isSuperAdmin}
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-row p-4 sm:p-5 bg-white items-center justify-between text-xs sm:text-sm font-semibold text-gray-700 shrink-0 mt-auto">
-                    <div>
-                        Showing {currentPage} Of {totalPages}
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                    <div className="hidden sm:block">
+                        Showing {totalComplaintsCount === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaintsCount)} of {totalComplaintsCount}
                     </div>
 
                     <div className="flex items-center gap-1">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -221,9 +234,9 @@ export default function AdminComplaints() {
                                 <button
                                     key={pageNum}
                                     onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer font-medium ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white'
-                                        : 'text-gray-600 hover:bg-gray-50'
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-500 hover:bg-gray-50'
                                         }`}
                                 >
                                     {pageNum}
@@ -234,7 +247,7 @@ export default function AdminComplaints() {
                         <button
                             disabled={currentPage === totalPages || totalPages === 0}
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
