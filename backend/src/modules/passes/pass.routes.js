@@ -19,7 +19,8 @@ import {
   approveWardenPass,
   rejectWardenPass,
   markStudentLeftHostel,
-  markStudentReturned
+  markStudentReturned,
+  wardenAdminCancelPass
 } from "./pass.controller.js";
 
 import {
@@ -107,6 +108,24 @@ parentPassRouter.patch(
   rejectPass
 );
 
+parentPassRouter.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateUpdatePass,
+  updatePass
+);
+
+parentPassRouter.patch(
+  "/:id/cancel",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateCancelPass,
+  cancelPass
+);
+
 // ----- Warden routes ----
 export const wardenPassRouter = express.Router();
 
@@ -168,3 +187,13 @@ wardenPassRouter.patch(
   validatePassIdParam,
   markStudentReturned
 );
+
+wardenPassRouter.patch(
+  "/:id/admin-cancel",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  validateRejectPass,
+  wardenAdminCancelPass
+);
+
