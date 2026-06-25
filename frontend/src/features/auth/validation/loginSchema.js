@@ -21,3 +21,9 @@ export const adminLoginSchema = z.object({
     email: emailField,
     password: passwordField,
 });
+
+export const maintenanceStaffLoginSchema = z.object({
+    role: z.literal('maintenance_staff'),
+    email: emailField,
+    password: passwordField,
+});

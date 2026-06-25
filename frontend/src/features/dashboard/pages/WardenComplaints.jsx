@@ -263,6 +263,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                     complaint={viewingComplaint}
                     onClose={() => setViewingComplaint(null)}
                     onOpenAssignStaff={(complaint) => setAssignStaffModalState({ isOpen: true, complaint })}
+                    onRefresh={fetchComplaints}
                 />
             )}
 

@@ -4,7 +4,7 @@ const timelineSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ['Pending', 'In progress', 'Resolved', 'Awaiting']
+        enum: ['Pending', 'In progress', 'Awaiting', 'Resolved']
     },
     message: {
         type: String,
@@ -58,7 +58,7 @@ const complaintSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['Pending', 'In progress', 'Resolved', 'Awaiting'],
+            enum: ['Pending', 'In progress', 'Awaiting', 'Resolved'],
             default: 'Pending'
         },
         priority: {
@@ -69,6 +69,14 @@ const complaintSchema = new mongoose.Schema(
         assignedStaff: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
+        },
+        materialsUsed: {
+            type: String,
+            trim: true,
+        },
+        resolutionNotes: {
+            type: String,
+            trim: true,
         },
         timeline: [timelineSchema]
     },
