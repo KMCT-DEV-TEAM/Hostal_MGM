@@ -6,9 +6,15 @@ import {
   getPassByIdDb,
   updatePassDb,
   addTimelineEventDb,
+  getDashboardStatsDb,
+  getPassesDb,
+  getPassDetailsDb,
+  updatePassApprovalDb,
+  getParentDb
 } from "./pass.service.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
+import Pass from "./pass.model.js";
 
 export const createPass = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
@@ -148,4 +154,95 @@ export const cancelPass = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, 200, "Pass cancelled successfully", updatedPass);
+});
+
+
+
+export const getPasses = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const parent = await getParentDb(parentId);
+
+  if (!parent || !parent.studentId) {
+    return sendError(res, 404, "Parent or linked student not found");
+  }
+
+  const { passes, pagination } = await getPassesDb(parent.studentId, req.query);
+  return sendSuccess(res, 200, "Passes fetched successfully", { passes, pagination });
+});
+
+export const getPassDetails = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const { id } = req.params;
+
+  const parent = await getParentDb(parentId);
+
+  if (!parent || !parent.studentId) {
+    return sendError(res, 404, "Parent or linked student not found");
+  }
+
+  const pass = await getPassDetailsDb(id, parent.studentId);
+  if (!pass) {
+    return sendError(res, 404, "Pass not found");
+  }
+
+  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+});
+
+export const approvePass = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const parent = await getParentDb(parentId);
+
+  if (!parent || !parent.isActive) {
+    return sendError(res, 403, "Parent account is inactive or not found");
+  }
+
+  if (!parent.defaultGuardian) {
+    return sendError(res, 403, "Only the default guardian can approve passes");
+  }
+
+
+
+  const pass = await Pass.findOne({ _id: id, studentId: parent.studentId });
+  if (!pass) {
+    return sendError(res, 404, "Pass not found");
+  }
+
+  if (pass.status !== "pending_parent") {
+    return sendError(res, 400, "Pass is not pending parent approval");
+  }
+
+  const updatedPass = await updatePassApprovalDb(id, parentId, "approve", remarks);
+  return sendSuccess(res, 200, "Pass approved successfully", updatedPass);
+});
+
+export const rejectPass = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const parent = await getParentDb(parentId);
+
+  if (!parent || !parent.isActive) {
+    return sendError(res, 403, "Parent account is inactive or not found");
+  }
+
+  if (!parent.defaultGuardian) {
+    return sendError(res, 403, "Only the default guardian can reject passes");
+  }
+
+  const pass = await Pass.findOne({ _id: id, studentId: parent.studentId });
+
+  if (!pass) {
+    return sendError(res, 404, "Pass not found");
+  }
+
+  if (pass.status !== "pending_parent") {
+    return sendError(res, 400, "Pass is not pending parent approval");
+  }
+
+  const updatedPass = await updatePassApprovalDb(id, parentId, "reject", remarks);
+  return sendSuccess(res, 200, "Pass rejected successfully", updatedPass);
 });
