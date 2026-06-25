@@ -31,6 +31,7 @@ export const getStudentPassesDb = async (studentId, query) => {
   if (query.status) filter.status = query.status;
   if (query.passType) filter.passType = query.passType;
   if (query.outTime) filter.outTime = query.outTime;
+  if (query.outPassCategory) filter.outPassCategory = query.outPassCategory;
 
   applyDateRangeFilter(filter, "fromDate", query.fromDate, query.toDate);
 
@@ -44,7 +45,7 @@ export const getStudentPassesDb = async (studentId, query) => {
 
   const [passes, totalRecords] = await Promise.all([
     Pass.find(filter)
-      .select("passType status reason fromDate toDate date createdAt returnTracking.returnStatus")
+      .select("passType outPassCategory status reason fromDate toDate date createdAt returnTracking.returnStatus")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -112,28 +113,62 @@ export const getPassesDb = async (studentId, query) => {
   const limit = parseInt(query.limit) || 10;
   const skip = (page - 1) * limit;
   
-  const filter = { studentId };
+  const filter = { studentId: new mongoose.Types.ObjectId(studentId) };
   
   if (query.status) filter.status = query.status;
   if (query.passType) filter.passType = query.passType;
+  if (query.outPassCategory) filter.outPassCategory = query.outPassCategory;
   
   applyDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
 
-  const [passes, totalRecords] = await Promise.all([
-    Pass.find(filter)
-      .select("passType status reason fromDate toDate date createdAt returnTracking.returnStatus")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate("hostelId", "name")
-      .lean(),
-    Pass.countDocuments(filter)
+  const stats = await Pass.aggregate([
+    { $match: filter },
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "totalRecords" }],
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: "students",
+              localField: "studentId",
+              foreignField: "_id",
+              as: "studentInfo"
+            }
+          },
+          { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } },
+          {
+            $project: {
+              _id: 1,
+              passType: 1,
+              outPassCategory: 1,
+              reason: 1,
+              status: 1,
+              fromDate: 1,
+              toDate: 1,
+              date: 1,
+              outTime: 1,
+              expectedReturnTime: 1,
+              createdAt: 1,
+              returnTracking: { returnStatus: 1 },
+              studentName: "$studentInfo.name",
+              admissionNumber: "$studentInfo.studentId",
+              parentApprovalStatus: "$parentApproval.status",
+              wardenApprovalStatus: "$wardenApproval.status"
+            }
+          }
+        ]
+      }
+    }
   ]);
 
+  const totalRecords = stats[0].metadata[0]?.totalRecords || 0;
   const totalPages = Math.ceil(totalRecords / limit);
 
   return {
-    passes,
+    passes: stats[0].data,
     pagination: {
       page,
       limit,
@@ -213,6 +248,8 @@ export const getWardenDashboardStatsDb = async (hostelId) => {
         returned: [{ $match: { status: "returned" } }, { $count: "count" }],
         homePassCount: [{ $match: { passType: "home_pass" } }, { $count: "count" }],
         outPassCount: [{ $match: { passType: "out_pass" } }, { $count: "count" }],
+        inHousePassCount: [{ $match: { passType: "out_pass", outPassCategory: "in_house" } }, { $count: "count" }],
+        outHousePassCount: [{ $match: { passType: "out_pass", outPassCategory: "out_house" } }, { $count: "count" }],
         todayRequests: [{ $match: { createdAt: { $gte: today, $lte: endOfToday } } }, { $count: "count" }],
         todayReturns: [{ $match: { "returnTracking.returnedAt": { $gte: today, $lte: endOfToday } } }, { $count: "count" }]
       }
@@ -229,6 +266,8 @@ export const getWardenDashboardStatsDb = async (hostelId) => {
     returned: result.returned[0]?.count || 0,
     homePassCount: result.homePassCount[0]?.count || 0,
     outPassCount: result.outPassCount[0]?.count || 0,
+    inHousePassCount: result.inHousePassCount[0]?.count || 0,
+    outHousePassCount: result.outHousePassCount[0]?.count || 0,
     todayRequests: result.todayRequests[0]?.count || 0,
     todayReturns: result.todayReturns[0]?.count || 0
   };
@@ -243,6 +282,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
 
   if (query.status) filter.status = query.status;
   if (query.passType) filter.passType = query.passType;
+  if (query.outPassCategory) filter.outPassCategory = query.outPassCategory;
   if (query.returnStatus) filter["returnTracking.returnStatus"] = query.returnStatus;
   
   applyDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
@@ -260,7 +300,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
   }
 
   const queryChain = Pass.find(filter)
-    .select("passType status reason fromDate toDate date createdAt returnTracking.returnStatus")
+    .select("passType outPassCategory status reason fromDate toDate date createdAt returnTracking.returnStatus")
     .sort({ createdAt: -1 })
     .populate({
       path: "studentId",
@@ -295,6 +335,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     studentInfo: p.studentId,
     parentInfo: p.parentId,
     passType: p.passType,
+    outPassCategory: p.outPassCategory,
     status: p.status,
     returnTracking: { returnStatus: p.returnTracking?.returnStatus },
     createdAt: p.createdAt,
