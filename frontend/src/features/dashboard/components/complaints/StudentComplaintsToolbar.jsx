@@ -20,7 +20,10 @@ export default function StudentComplaintsToolbar({
                     <input
                         type="text"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            if (setCurrentPage) setCurrentPage(1);
+                        }}
                         placeholder="Search..."
                         className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                     />
@@ -42,6 +45,7 @@ export default function StudentComplaintsToolbar({
                         options={[
                             { label: 'All status', value: 'All' },
                             { label: 'Pending', value: 'Pending' },
+                            { label: 'In Progress', value: 'In progress' },
                             { label: 'Resolved', value: 'Resolved' }
                         ]}
                         value={statusFilter}

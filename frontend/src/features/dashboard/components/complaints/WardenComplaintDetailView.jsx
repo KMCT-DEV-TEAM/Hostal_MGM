@@ -28,7 +28,7 @@ const InfoRow = ({ icon, label, children }) => (
 import { showSuccessToast } from "@/utils/toast";
 import { useState } from "react";
 
-const WardenComplaintDetailView = ({ complaint, onClose }) => {
+const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) => {
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [status, setStatus] = useState('In progress');
   const [note, setNote] = useState('Issue verified and food quality improved.');
@@ -124,28 +124,49 @@ const WardenComplaintDetailView = ({ complaint, onClose }) => {
 
           {/* Resolution note */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <div className="mb-4 flex justify-between items-start">
-                  <div>
-                      <h3 className="text-lg font-semibold text-primary">Resolution note</h3>
-                      <p className="text-xs text-text-secondary">updated status and notes</p>
+              <div className="mb-4 flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                      <div>
+                          <h3 className="text-lg font-semibold text-primary">Resolution note</h3>
+                          <p className="text-xs text-text-secondary">updated status and notes</p>
+                      </div>
+                      <div className="flex gap-2">
+                          <button 
+                              onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
+                              className="px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-md hover:bg-primary/20 transition-colors shadow-sm cursor-pointer"
+                          >
+                              Assign Staff
+                          </button>
+                          {isEditingStatus ? (
+                              <button 
+                                  onClick={() => {
+                                      setIsEditingStatus(false);
+                                      showSuccessToast("Status Updated", "Resolution note saved successfully");
+                                  }}
+                                  className="px-4 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors shadow-sm cursor-pointer"
+                              >
+                                  Save
+                              </button>
+                          ) : (
+                              <button 
+                                  onClick={() => setIsEditingStatus(true)}
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                              >
+                                  Update Status
+                              </button>
+                          )}
+                      </div>
                   </div>
-                  {isEditingStatus ? (
-                      <button 
-                          onClick={() => {
-                              setIsEditingStatus(false);
-                              showSuccessToast("Status Updated", "Resolution note saved successfully");
-                          }}
-                          className="px-4 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors shadow-sm cursor-pointer"
-                      >
-                          Save
-                      </button>
-                  ) : (
-                      <button 
-                          onClick={() => setIsEditingStatus(true)}
-                          className="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-                      >
-                          Update Status
-                      </button>
+                  
+                  {complaint.assignedStaff && (
+                      <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex items-center gap-2 mt-2">
+                          <User className="w-4 h-4 text-blue-600" />
+                          <div className="text-sm">
+                              <span className="text-text-secondary">Assigned to: </span>
+                              <span className="font-medium text-text-primary">{complaint.assignedStaff.name}</span>
+                              {complaint.assignedStaff.phone && <span className="text-text-secondary text-xs ml-2">({complaint.assignedStaff.phone})</span>}
+                          </div>
+                      </div>
                   )}
               </div>
               

@@ -16,7 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 export default function MaintenanceStaffManagement() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    
+
     const [activeModal, setActiveModal] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -294,11 +294,11 @@ export default function MaintenanceStaffManagement() {
                 setStaff(staff.map(s => s._id === emailChangeStaffId ? { ...s, email: newEmailForm } : s));
                 setIsEmailChangeModalOpen(false);
                 setIsEmailChangeSuccessModalOpen(true);
-                
+
                 if (selectedStaffDetail && selectedStaffDetail._id === emailChangeStaffId) {
                     setSelectedStaffDetail({ ...selectedStaffDetail, email: newEmailForm });
                 }
-                
+
                 setTimeout(() => {
                     setIsEmailChangeSuccessModalOpen(false);
                 }, 3000);
@@ -315,7 +315,8 @@ export default function MaintenanceStaffManagement() {
                 const res = await maintenanceStaffService.updateMaintenanceStaff(editingStaff._id, {
                     name: staffForm.name,
                     phone: staffForm.phone,
-                    specialization: staffForm.specialization
+                    specialization: staffForm.specialization,
+                    assignedTask: staffForm.assignedTask
                 });
                 if (res && res.data) {
                     setStaff(staff.map(w => w._id === editingStaff._id ? { ...w, ...res.data } : w));
@@ -334,7 +335,8 @@ export default function MaintenanceStaffManagement() {
                     name: staffForm.name,
                     email: staffForm.email,
                     phone: staffForm.phone,
-                    specialization: staffForm.specialization
+                    specialization: staffForm.specialization,
+                    assignedTask: staffForm.assignedTask
                 });
                 if (res && res.success) {
                     const newStaff = res.data;
@@ -359,11 +361,7 @@ export default function MaintenanceStaffManagement() {
     };
 
     const handleCancel = () => {
-        if (editingStaff) {
-            setIsDiscardConfirmOpen(true);
-        } else {
-            setActiveModal(null);
-        }
+        setIsDiscardConfirmOpen(true);
     };
 
     const confirmDiscard = () => {
@@ -380,7 +378,7 @@ export default function MaintenanceStaffManagement() {
         try {
             const params = { limit: 100000 };
             if (searchQuery) params.search = searchQuery;
-            
+
             if (exportFilters.isActive !== '') {
                 params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
             } else if (statusFilter !== 'All') {
@@ -388,7 +386,7 @@ export default function MaintenanceStaffManagement() {
             }
 
             const res = await maintenanceStaffService.getMaintenanceStaff(params);
-            
+
             const responseData = res?.data || res;
             const allStaff = responseData?.data || responseData || [];
 
@@ -408,7 +406,7 @@ export default function MaintenanceStaffManagement() {
             }));
 
             const isSuccess = exportToExcel(exportData, "MaintenanceStaff_Export", "MaintenanceStaff");
-            
+
             if (isSuccess) {
                 showSuccessToast('Export Successful', 'Staff list downloaded');
             } else {
@@ -429,8 +427,8 @@ export default function MaintenanceStaffManagement() {
             {/* HEADER ACTION SECTION */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('maintenance_staff', 'Maintenance Staff')}</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">{t('manage_maintenance_staff', 'Manage maintenance staff')}</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('Maintenance Staff')}</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">{t('Manage maintenance staff responsible for handling repair tasks.')}</p>
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -461,15 +459,15 @@ export default function MaintenanceStaffManagement() {
                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                                 type="text"
-                                placeholder={t('search_staff', 'Search Staff...')}
+                                placeholder={t('Search Staff...')}
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                                 className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                             />
                         </div>
                         <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
                             >
                                 <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
@@ -482,7 +480,7 @@ export default function MaintenanceStaffManagement() {
                             <Dropdown
                                 className="flex-1 sm:flex-none"
                                 options={[
-                                    { value: "All", label: "All" },
+                                    { value: "All Status", label: "All Status" },
                                     { value: "Active", label: "Active" },
                                     { value: "Inactive", label: "Inactive" }
                                 ]}
@@ -491,7 +489,7 @@ export default function MaintenanceStaffManagement() {
                                     setStatusFilter(val);
                                     setCurrentPage(1);
                                 }}
-                                placeholder="All"
+                                placeholder="All Status"
                                 minWidth="w-32"
                                 triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
                             />
@@ -507,7 +505,7 @@ export default function MaintenanceStaffManagement() {
                             onClick={openAddStaffModal}
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
-                            <Plus className="w-4 h-4" /> {t('add_new')}
+                            <Plus className="w-4 h-4" /> {t('Add New')}
                         </button>
                     </div>
                 </div>
@@ -753,7 +751,7 @@ export default function MaintenanceStaffManagement() {
                                     <p className="text-xs text-gray-400 mb-6">Basic information of the Maintenance Staff</p>
                                     <div className="space-y-4">
                                         <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.name}</span></div>
-                                        
+
                                         <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                             <span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span>
                                             <span className="sm:col-span-2 font-medium text-gray-900 flex items-center justify-between"><span className="hidden sm:inline">: </span>
@@ -814,11 +812,11 @@ export default function MaintenanceStaffManagement() {
                         e.preventDefault();
                         const code = otpCode.join('');
                         if (code.length < 6) return;
-                        
+
                         try {
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : staffForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
-                            
+
                             setIsOtpModalOpen(false);
                             setIsEmailVerified(true);
                             if (otpSource === 'emailChange') {
@@ -826,7 +824,7 @@ export default function MaintenanceStaffManagement() {
                             } else {
                                 showSuccessToast('Success', 'Email verified successfully!');
                             }
-                        } catch(err) {
+                        } catch (err) {
                             showErrorToast('Error', err?.message || 'Invalid OTP');
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
@@ -976,7 +974,7 @@ export default function MaintenanceStaffManagement() {
                             <h4 className="text-sm font-semibold text-gray-900">Email Updated</h4>
                             <p className="text-xs text-gray-500">The email address has been successfully updated.</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setIsEmailChangeSuccessModalOpen(false)}
                             className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                         >

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
+import { Loader2 } from 'lucide-react';
 
 export default function StudentComplaintFormModal({
     editingComplaint,
+    isSubmitting,
     onClose,
     onSave,
     onCancel,
@@ -40,8 +42,8 @@ export default function StudentComplaintFormModal({
         if (editingComplaint) {
             setFormData({
                 roomNo: editingComplaint.roomNo || '',
-                // check if the existing complaint has an object for category, if so use its ID
-                category: editingComplaint.category?._id || editingComplaint.category || (categories.length > 0 ? categories[0]._id : ''),
+                // Use categoryId from the formatted complaint, or fallback to first category's ID
+                category: editingComplaint.categoryId || editingComplaint.category?._id || (categories.length > 0 ? categories[0]._id : ''),
                 subject: editingComplaint.subject || '',
                 description: editingComplaint.description || ''
             });
@@ -80,14 +82,21 @@ export default function StudentComplaintFormModal({
                     <div className="flex justify-end gap-3">
                         <button
                             type="submit"
-                            className="px-6 py-2.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer"
+                            disabled={isSubmitting}
+                            className="px-6 py-2.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                         >
-                            {editingComplaint ? 'Save Changes' : 'Save'}
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : editingComplaint ? 'Save Changes' : 'Save'}
                         </button>
                         <button
                             type="button"
                             onClick={onCancel || onClose}
-                            className="px-6 py-2.5 text-xs font-medium text-text-secondary bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                            disabled={isSubmitting}
+                            className="px-6 py-2.5 text-xs font-medium text-text-secondary bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-70"
                         >
                             Cancel
                         </button>

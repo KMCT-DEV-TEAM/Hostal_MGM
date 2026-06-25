@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import LogoutModal from '@/components/ui/LogoutModal';
+import ComplaintService from '@/services/complaint.service';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -161,6 +162,28 @@ function Sidebar({ isOpen, setIsOpen }) {
 
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const navigate = useNavigate();
+    const [pendingComplaints, setPendingComplaints] = useState(0);
+
+    useEffect(() => {
+        if (user?.role === 'student') {
+            const fetchPendingComplaints = async () => {
+                try {
+                    const res = await ComplaintService.getMyComplaints();
+                    const pending = (res.data || []).filter(c => c.status === 'Pending').length;
+                    setPendingComplaints(pending);
+                } catch (error) {
+                    console.error("Failed to fetch pending complaints for sidebar:", error);
+                }
+            };
+            
+            fetchPendingComplaints();
+
+            window.addEventListener('complaintsUpdated', fetchPendingComplaints);
+            return () => {
+                window.removeEventListener('complaintsUpdated', fetchPendingComplaints);
+            };
+        }
+    }, [user?.role]);
 
     const handleLogout = () => {
         setIsLogoutModalOpen(true);
@@ -188,17 +211,28 @@ function Sidebar({ isOpen, setIsOpen }) {
 
                     {sections.map((section) => (
                         <NavSection key={section.section} title={section.section}>
-                            {section.items.map((item) => (
-                                <NavItem
-                                    key={item.path}
-                                    icon={item.icon}
-                                    label={t(item.label.toLowerCase())}
-                                    to={item.path}
-                                    badge={item.badge}
-                                    onClose={() => setIsOpen(false)}
-                                    subItems={item.subItems}
-                                />
-                            ))}
+                            {section.items.map((item) => {
+                                let badge = item.badge;
+                                if (user?.role === 'student' && item.label === 'Complaints') {
+                                    if (pendingComplaints > 0) {
+                                        badge = { count: pendingComplaints, variant: 'danger' };
+                                    } else {
+                                        badge = null;
+                                    }
+                                }
+
+                                return (
+                                    <NavItem
+                                        key={item.path}
+                                        icon={item.icon}
+                                        label={t(item.label.toLowerCase())}
+                                        to={item.path}
+                                        badge={badge}
+                                        onClose={() => setIsOpen(false)}
+                                        subItems={item.subItems}
+                                    />
+                                );
+                            })}
                         </NavSection>
                     ))}
 

@@ -56,7 +56,7 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-text-secondary flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-text-secondary" /> Status</span> 
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : 'bg-warning'} mr-2`}></span>
+                                        <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'} mr-2`}></span>
                                         {complaint.status || 'Pending'}
                                     </span>
                                 </div>
@@ -103,7 +103,7 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                 <span className="text-text-secondary flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-text-secondary" /> Status</span> 
                                 <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                    <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : 'bg-warning'} mr-2`}></span>
+                                    <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'} mr-2`}></span>
                                     {complaint.status || 'Pending'}
                                 </span>
                             </div>

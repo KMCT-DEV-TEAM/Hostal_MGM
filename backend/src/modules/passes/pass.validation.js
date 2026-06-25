@@ -19,14 +19,14 @@ export const validateCreatePass = async (req, res, next) => {
     if (!passType || !["home_pass", "out_pass"].includes(passType)) {
       return res.status(400).json({
         success: false,
-        message: "Valid passType is required (home_pass or out_pass)",
+        message: "Please select a valid pass type (Home Pass or Out Pass).",
       });
     }
 
     if (!reason || reason.trim() === "") {
       return res.status(400).json({
         success: false,
-        message: "Reason is required",
+        message: "Please provide a reason for your leave.",
       });
     }
 
@@ -34,7 +34,7 @@ export const validateCreatePass = async (req, res, next) => {
       if (!fromDate || !toDate || totalDays === undefined) {
         return res.status(400).json({
           success: false,
-          message: "fromDate, toDate, and totalDays are required for home_pass",
+          message: "Please provide the start date, end date, and total days for your Home Pass.",
         });
       }
 
@@ -47,7 +47,7 @@ export const validateCreatePass = async (req, res, next) => {
       if (start < today) {
         return res.status(400).json({
           success: false,
-          message: "fromDate cannot be in the past",
+          message: "The start date cannot be in the past. Please select a valid date.",
         });
       }
 
@@ -55,7 +55,7 @@ export const validateCreatePass = async (req, res, next) => {
       if (end < start) {
         return res.status(400).json({
           success: false,
-          message: "toDate must be after or equal to fromDate",
+          message: "The end date must be after or the same as the start date.",
         });
       }
 
@@ -64,7 +64,7 @@ export const validateCreatePass = async (req, res, next) => {
       if (totalDays > maxLeaveDays) {
         return res.status(400).json({
           success: false,
-          message: `Leave cannot exceed maximum of ${maxLeaveDays} days`,
+          message: `You cannot request leave for more than ${maxLeaveDays} days.`,
         });
       }
 
@@ -80,7 +80,7 @@ export const validateCreatePass = async (req, res, next) => {
       if (overlappingPass) {
         return res.status(400).json({
           success: false,
-          message: "You already have an overlapping home pass for these dates",
+          message: "You already have another home pass requested or approved during these dates.",
         });
       }
     }
@@ -89,7 +89,7 @@ export const validateCreatePass = async (req, res, next) => {
       if (!date || !outTime || !expectedReturnTime) {
         return res.status(400).json({
           success: false,
-          message: "date, outTime, and expectedReturnTime are required for out_pass",
+          message: "Please provide the date, departure time, and expected return time for your Out Pass.",
         });
       }
 
@@ -100,14 +100,47 @@ export const validateCreatePass = async (req, res, next) => {
       if (passDate < today) {
         return res.status(400).json({
           success: false,
-          message: "date cannot be in the past",
+          message: "The date cannot be in the past. Please select a valid date.",
         });
       }
 
       if (expectedReturnTime <= outTime) {
         return res.status(400).json({
           success: false,
-          message: "expectedReturnTime must be greater than outTime",
+          message: "The expected return time must be later than the departure time.",
+        });
+      }
+
+      const [outHour, outMinute] = outTime.split(":").map(Number);
+      const [returnHour, returnMinute] = expectedReturnTime.split(":").map(Number);
+
+      const outDateTime = new Date(passDate);
+      outDateTime.setHours(outHour, outMinute, 0, 0);
+
+      const returnDateTime = new Date(passDate);
+      returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+      const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
+      const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
+
+      if (durationInHours > MAX_OUT_PASS_HOURS) {
+        return res.status(400).json({
+          success: false,
+          message: `Out Pass cannot exceed ${MAX_OUT_PASS_HOURS} hours. Please apply for a Home Pass instead.`,
+        });
+      }
+
+      const existingOutPass = await Pass.findOne({
+        studentId,
+        passType: "out_pass",
+        status: { $nin: ["rejected", "cancelled", "completed"] },
+        date: passDate,
+      });
+
+      if (existingOutPass) {
+        return res.status(400).json({
+          success: false,
+          message: "You already have an Out Pass requested or approved for this date.",
         });
       }
     }
@@ -124,7 +157,7 @@ export const validatePassIdParam = (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
-      message: "Invalid Pass ID",
+      message: "The pass you are looking for is invalid or does not exist.",
     });
   }
 
@@ -134,7 +167,8 @@ export const validatePassIdParam = (req, res, next) => {
 export const validateUpdatePass = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const studentId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role; // Assuming role is attached by authMiddleware
     const {
       reason,
       fromDate,
@@ -142,7 +176,7 @@ export const validateUpdatePass = async (req, res, next) => {
       totalDays,
       date,
       outTime,
-      expectedReturnTime,
+      expectedReturnTime
     } = req.body;
 
     if (
@@ -156,13 +190,20 @@ export const validateUpdatePass = async (req, res, next) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "At least one field must be provided for update",
+        message: "Please provide at least one detail to update.",
       });
     }
 
     const existingPass = await Pass.findById(id);
     if (!existingPass) {
-      return res.status(404).json({ success: false, message: "Pass not found" });
+      return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
+    }
+
+    if (userRole === "student" && existingPass.studentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to edit this pass." });
+    }
+    if (userRole === "parent" && existingPass.parentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to edit this pass." });
     }
 
     const passType = existingPass.passType;
@@ -175,7 +216,7 @@ export const validateUpdatePass = async (req, res, next) => {
       if (!newFromDate || !newToDate || newTotalDays === undefined) {
         return res.status(400).json({
           success: false,
-          message: "fromDate, toDate, and totalDays must be valid for home_pass",
+          message: "Please ensure the start date, end date, and total days are correctly filled for your Home Pass.",
         });
       }
 
@@ -187,28 +228,28 @@ export const validateUpdatePass = async (req, res, next) => {
       if (fromDate && start < today) {
         return res.status(400).json({
           success: false,
-          message: "fromDate cannot be in the past",
+          message: "The start date cannot be in the past. Please select a valid date.",
         });
       }
 
       if (end < start) {
         return res.status(400).json({
           success: false,
-          message: "toDate must be after or equal to fromDate",
+          message: "The end date must be after or the same as the start date.",
         });
       }
 
       // if (newTotalDays > maxLeaveDays) {
       //   return res.status(400).json({
       //     success: false,
-      //     message: `Leave cannot exceed maximum of ${maxLeaveDays} days`,
+      //     message: `You cannot request leave for more than ${maxLeaveDays} days.`,
       //   });
       // }
 
       if (fromDate || toDate) {
         const overlappingPass = await Pass.findOne({
           _id: { $ne: id },
-          studentId,
+          userId,
           passType: "home_pass",
           status: { $nin: ["rejected", "cancelled", "completed"] },
           fromDate: { $lte: end },
@@ -218,7 +259,7 @@ export const validateUpdatePass = async (req, res, next) => {
         if (overlappingPass) {
           return res.status(400).json({
             success: false,
-            message: "These updated dates overlap with another home pass",
+            message: "The updated dates overlap with another home pass you've already requested.",
           });
         }
       }
@@ -232,7 +273,7 @@ export const validateUpdatePass = async (req, res, next) => {
       if (!newDate || !newOutTime || !newReturnTime) {
         return res.status(400).json({
           success: false,
-          message: "date, outTime, and expectedReturnTime must be valid for out_pass",
+          message: "Please ensure the date, departure time, and expected return time are correctly filled for your Out Pass.",
         });
       }
 
@@ -244,7 +285,7 @@ export const validateUpdatePass = async (req, res, next) => {
         if (passDate < today) {
           return res.status(400).json({
             success: false,
-            message: "date cannot be in the past",
+            message: "The date cannot be in the past. Please select a valid date.",
           });
         }
       }
@@ -252,8 +293,45 @@ export const validateUpdatePass = async (req, res, next) => {
       if (newReturnTime <= newOutTime) {
         return res.status(400).json({
           success: false,
-          message: "expectedReturnTime must be greater than outTime",
+          message: "The expected return time must be later than the departure time.",
         });
+      }
+
+      const updatedPassDate = new Date(newDate);
+      const [outHour, outMinute] = newOutTime.split(":").map(Number);
+      const [returnHour, returnMinute] = newReturnTime.split(":").map(Number);
+
+      const outDateTime = new Date(updatedPassDate);
+      outDateTime.setHours(outHour, outMinute, 0, 0);
+
+      const returnDateTime = new Date(updatedPassDate);
+      returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+      const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
+      const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
+
+      if (durationInHours > MAX_OUT_PASS_HOURS) {
+        return res.status(400).json({
+          success: false,
+          message: `Out Pass cannot exceed ${MAX_OUT_PASS_HOURS} hours. Please apply for a Home Pass instead.`,
+        });
+      }
+
+      if (date) {
+        const existingOutPass = await Pass.findOne({
+          _id: { $ne: id },
+          studentId: existingPass.studentId,
+          passType: "out_pass",
+          status: { $nin: ["rejected", "cancelled", "completed"] },
+          date: updatedPassDate,
+        });
+
+        if (existingOutPass) {
+          return res.status(400).json({
+            success: false,
+            message: "You already have another Out Pass requested or approved for this date.",
+          });
+        }
       }
     }
 
@@ -266,19 +344,23 @@ export const validateUpdatePass = async (req, res, next) => {
 export const validateCancelPass = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const studentId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
     const existingPass = await Pass.findById(id);
     if (!existingPass) {
-      return res.status(404).json({ success: false, message: "Pass not found" });
+      return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
     }
 
-    if (existingPass.studentId.toString() !== studentId) {
-      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass" });
+    if (userRole === "student" && existingPass.studentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
+    }
+    if (userRole === "parent" && existingPass.parentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
     }
 
-    if (!["pending_parent", "pending_warden"].includes(existingPass.status)) {
-      return res.status(400).json({ success: false, message: "Pass cannot be cancelled in its current status" });
+    if (!["pending_parent", "pending_warden", "approved"].includes(existingPass.status)) {
+      return res.status(400).json({ success: false, message: "This pass cannot be cancelled because it has already been processed or completed." });
     }
 
     // Pass is valid to cancel, attach to request to save DB calls in controller
@@ -293,19 +375,19 @@ export const validateGetPasses = (req, res, next) => {
   const { page, limit, status, passType } = req.query;
 
   if (page && isNaN(parseInt(page))) {
-    return res.status(400).json({ success: false, message: "Page must be a valid number" });
+    return res.status(400).json({ success: false, message: "The page number must be valid." });
   }
 
   if (limit && isNaN(parseInt(limit))) {
-    return res.status(400).json({ success: false, message: "Limit must be a valid number" });
+    return res.status(400).json({ success: false, message: "The display limit must be a valid number." });
   }
 
   if (status && !["pending_parent", "pending_warden", "approved", "rejected", "cancelled", "returned", "completed"].includes(status)) {
-    return res.status(400).json({ success: false, message: "Invalid status filter" });
+    return res.status(400).json({ success: false, message: "The selected status filter is invalid." });
   }
 
   if (passType && !["home_pass", "out_pass"].includes(passType)) {
-    return res.status(400).json({ success: false, message: "Invalid passType filter" });
+    return res.status(400).json({ success: false, message: "The selected pass type filter is invalid." });
   }
 
   next();
@@ -313,10 +395,12 @@ export const validateGetPasses = (req, res, next) => {
 
 export const validateRejectPass = (req, res, next) => {
   const { remarks } = req.body;
-  
+
   if (!remarks || remarks.trim() === "") {
-    return res.status(400).json({ success: false, message: "Remarks are required when rejecting a pass" });
+    return res.status(400).json({ success: false, message: "Please provide a reason or remark for rejecting this pass." });
   }
 
   next();
 };
+
+

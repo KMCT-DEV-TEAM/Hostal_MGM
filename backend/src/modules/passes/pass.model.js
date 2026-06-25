@@ -14,6 +14,14 @@ const timelineSchema = new mongoose.Schema(
         "cancelled",
         "returned",
         "completed",
+        "student_edited_leave",
+        "parent_edited_leave",
+        "approval_reset",
+        "parent_reapproved",
+        "warden_reapproved",
+        "student_cancelled_request",
+        "parent_cancelled_request",
+        "admin_cancelled"
       ],
       required: true,
     },
@@ -117,6 +125,21 @@ const passSchema = new mongoose.Schema(
 
     // --- Embedded Timeline ---
     timeline: [timelineSchema],
+
+    // --- Revision Tracking ---
+    changeInfo: {
+      edited: { type: Boolean, default: false },
+      editedBy: { type: String, enum: ["student", "parent"] },
+      editedAt: { type: Date },
+      reason: { type: String }
+    },
+
+    // --- Cancellation Request ---
+    cancellationRequest: {
+      requested: { type: Boolean, default: false },
+      requestedBy: { type: String, enum: ["student", "parent"] },
+      reason: { type: String }
+    },
   },
   {
     timestamps: true,

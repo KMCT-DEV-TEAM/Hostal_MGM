@@ -71,6 +71,7 @@ export default function Administrator() {
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [newEmailForm, setNewEmailForm] = useState('');
+    const [passwordConfirm, setPasswordConfirm] = useState('');
     const [emailChangeAdminId, setEmailChangeAdminId] = useState(null);
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
@@ -235,16 +236,23 @@ export default function Administrator() {
         setEmailChangeAdminId(admin._id);
         setEmailChangeForm(admin.email || '');
         setNewEmailForm('');
+        setPasswordConfirm('');
         setIsEmailVerified(false);
         setIsEmailChangeModalOpen(true);
     };
 
     const confirmEmailChange = async (e) => {
         e.preventDefault();
+        if (!isEmailVerified) return;
+        if (!passwordConfirm) {
+            showErrorToast('Validation Error', 'Please enter your password to confirm');
+            return;
+        }
         try {
             await adminService.updateEmail(emailChangeAdminId, {
                 oldEmail: emailChangeForm,
-                newEmail: newEmailForm
+                newEmail: newEmailForm,
+                password: passwordConfirm
             });
 
             setAdmins(admins.map(a => a._id === emailChangeAdminId ? { ...a, email: newEmailForm } : a));
@@ -447,11 +455,7 @@ export default function Administrator() {
     };
 
     const handleCancel = () => {
-        if (editingAdmin) {
-            setIsDiscardConfirmOpen(true);
-        } else {
-            setActiveModal(null);
-        }
+        setIsDiscardConfirmOpen(true);
     };
 
     const confirmDiscard = () => {
@@ -874,13 +878,11 @@ export default function Administrator() {
                                 <input
                                     type="email"
                                     required
-
                                     value={newEmailForm}
                                     onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
                                     className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
                                     disabled={isEmailVerified}
-
                                 />
                                 {isEmailVerified ? (
                                     <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
@@ -894,10 +896,24 @@ export default function Administrator() {
                             </div>
                         </div>
 
+                        {isEmailVerified && (
+                            <div className="mb-8">
+                                <label className="block text-sm font-medium text-[#222222] mb-2">Your Password <span className="text-red-500">*</span></label>
+                                <input
+                                    type="password"
+                                    value={passwordConfirm}
+                                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                                    required
+                                    placeholder="Enter your password to confirm"
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                                />
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={!isEmailVerified}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                            disabled={!isEmailVerified || !passwordConfirm}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified && passwordConfirm ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
                             Change Email
                         </button>

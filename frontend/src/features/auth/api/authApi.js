@@ -17,6 +17,9 @@ const authApi = {
   changePassword: (payload) =>
     api.post("/auth/change-password", payload),
 
+  verifyPassword: (payload) =>
+    api.post("/auth/verify-password", payload),
+
   getProfile: () =>
     api.get("/auth/me"),
     

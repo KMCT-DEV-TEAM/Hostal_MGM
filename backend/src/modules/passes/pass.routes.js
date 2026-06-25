@@ -3,6 +3,7 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
+
 import {
   createPass,
   getMyPasses,
@@ -11,7 +12,15 @@ import {
   getPasses,
   approvePass,
   rejectPass,
-  getPassDetails
+  getPassDetails,
+  getWardenDashboardStats,
+  getWardenPasses,
+  getWardenPassDetails,
+  approveWardenPass,
+  rejectWardenPass,
+  markStudentLeftHostel,
+  markStudentReturned,
+  wardenAdminCancelPass
 } from "./pass.controller.js";
 
 import {
@@ -99,4 +108,92 @@ parentPassRouter.patch(
   rejectPass
 );
 
+parentPassRouter.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateUpdatePass,
+  updatePass
+);
+
+parentPassRouter.patch(
+  "/:id/cancel",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateCancelPass,
+  cancelPass
+);
+
+// ----- Warden routes ----
+export const wardenPassRouter = express.Router();
+
+// Dashboard
+wardenPassRouter.get(
+  "/dashboard-stats",
+  authMiddleware,
+  roleMiddleware("warden"),
+  getWardenDashboardStats
+);
+
+// Pass Listing & Details
+wardenPassRouter.get(
+  "/",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validateGetPasses,
+  getWardenPasses
+);
+
+wardenPassRouter.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  getWardenPassDetails
+);
+
+// Actions
+wardenPassRouter.patch(
+  "/:id/approve",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  approveWardenPass
+);
+
+wardenPassRouter.patch(
+  "/:id/reject",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  validateRejectPass,
+  rejectWardenPass
+);
+
+wardenPassRouter.patch(
+  "/:id/mark-left",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  markStudentLeftHostel
+);
+
+wardenPassRouter.patch(
+  "/:id/mark-returned",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  markStudentReturned
+);
+
+wardenPassRouter.patch(
+  "/:id/admin-cancel",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  validateRejectPass,
+  wardenAdminCancelPass
+);
 
