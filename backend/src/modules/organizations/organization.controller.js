@@ -12,6 +12,7 @@ import {
 } from "./organization.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const createOrganization = asyncHandler(async (req, res) => {
     const { name, code, organisationNumber, email, phone, address } = req.body;
@@ -44,6 +45,16 @@ const createOrganization = asyncHandler(async (req, res) => {
       email,
       phone,
       address,
+    });
+
+    await createLogDb({
+      action: "Created Organization",
+      entityType: "Organization",
+      entityId: organization._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Created new organization: ${name}`,
+      status: "success"
     });
 
     return sendSuccess(res, 201, "Organization created successfully", { data: organization });
@@ -123,6 +134,16 @@ const updateOrganization = asyncHandler(async (req, res) => {
       return sendError(res, 404, "Organization not found");
     }
 
+    await createLogDb({
+      action: "Updated Organization",
+      entityType: "Organization",
+      entityId: organization._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Updated organization details for: ${name || organization.name}`,
+      status: "success"
+    });
+
     return sendSuccess(res, 200, "Organization updated successfully", { data: organization });
 });
 
@@ -138,6 +159,16 @@ const toggleOrganizationStatus = asyncHandler(async (req, res) => {
     const message = organization.isActive
       ? "Organization activated successfully"
       : "Organization deactivated successfully";
+
+    await createLogDb({
+      action: organization.isActive ? "Activated Organization" : "Deactivated Organization",
+      entityType: "Organization",
+      entityId: organization._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Changed status of organization ${organization.name} to ${organization.isActive ? 'Active' : 'Inactive'}`,
+      status: "success"
+    });
 
     return sendSuccess(res, 200, message, { data: organization });
 });
@@ -155,6 +186,15 @@ const bulkUpdateOrganizationStatus = asyncHandler(async (req, res) => {
 
   const result = await bulkUpdateOrganizationStatusDb(ids, isActive);
   
+  await createLogDb({
+    action: "Bulk Updated Organizations",
+    entityType: "Organization",
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Bulk updated ${ids.length} organizations to ${isActive ? 'Active' : 'Inactive'} status`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, `Successfully updated ${ids.length} organizations to ${isActive ? 'Active' : 'Inactive'} status`, { result });
 });
 

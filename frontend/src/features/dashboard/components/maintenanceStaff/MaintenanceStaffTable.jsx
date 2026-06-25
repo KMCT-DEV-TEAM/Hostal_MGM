@@ -41,6 +41,9 @@ const MaintenanceStaffTable = ({
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             {t('phone')}
                         </th>
+                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                            {t('Assigned Task')}
+                        </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             {t('status')}
                         </th>
@@ -51,14 +54,14 @@ const MaintenanceStaffTable = ({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
-                        <TableSkeletonLoader columns={6} />
+                        <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="6" className="p-8 text-center text-danger">{error}</td>
+                            <td colSpan="7" className="p-8 text-center text-danger">{error}</td>
                         </tr>
                     ) : paginatedStaff.length === 0 ? (
                         <tr>
-                            <td colSpan="6" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
+                            <td colSpan="7" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
                         </tr>
                     ) : (
                         paginatedStaff.map((staff) => {
@@ -91,11 +94,15 @@ const MaintenanceStaffTable = ({
                                     <td className="p-4 text-start text-gray-500">
                                         {staff.specialization || 'N/A'}
                                     </td>
+
                                     <td className="p-4">
                                         <div className="flex items-start justify-start gap-1.5 text-gray-500">
                                             <Phone size={14} className="text-gray-400" />
                                             <span>{staff.phone || 'N/A'}</span>
                                         </div>
+                                    </td>
+                                    <td className="p-4 text-center text-gray-500">
+                                        {staff.assignedTask || 'N/A'}
                                     </td>
                                     <td className="p-4">
                                         <div className="relative w-[105px]">

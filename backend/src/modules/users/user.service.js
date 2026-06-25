@@ -22,6 +22,7 @@ const getAllUsersByRoleDb = async (role) => {
       createdAt: 1,
       organization: 1,
       specialization: 1,
+      assignedTask: 1,
     }
   ).populate("organization", "name code organisationNumber email phone");
 };
@@ -55,6 +56,7 @@ const getPaginatedUsersByRoleDb = async (role, page = 1, limit = 10, status, sea
         createdAt: 1,
         organization: 1,
         specialization: 1,
+        assignedTask: 1,
       }
     )
       .populate("organization", "name code organisationNumber email phone")
@@ -79,49 +81,51 @@ const getUserByIdDb = async (id) => {
   return await User.findById(id).select("-password");
 };
 
+const getUserWithPasswordByIdDb = async (id) => {
+  return await User.findById(id);
+};
+
 const updateUserByRoleDb = async (id, role, data) => {
-  const user = await User.findOne({
-    _id: id,
-    role,
-  });
+  const updateData = {};
+  if (data.name) updateData.name = data.name;
+  if (data.phone) updateData.phone = data.phone;
+  if (data.email) updateData.email = data.email;
+  if (data.specialization !== undefined) updateData.specialization = data.specialization;
+  if (data.assignedTask !== undefined) updateData.assignedTask = data.assignedTask;
 
-  if (!user) return null;
-
-  if (data.name) user.name = data.name;
-  if (data.phone) user.phone = data.phone;
-  if (data.email) user.email = data.email;
-  if (data.specialization !== undefined) user.specialization = data.specialization;
-
-  await user.save();
+  const user = await User.findOneAndUpdate(
+    { _id: id, role },
+    { $set: updateData },
+    { new: true, runValidators: true }
+  );
   return user;
 };
 
 const updateUserDb = async (id, data) => {
-  const user = await User.findById(id);
+  const updateData = {};
+  if (data.name) updateData.name = data.name;
+  if (data.phone) updateData.phone = data.phone;
+  if (data.email) updateData.email = data.email;
+  if (data.specialization !== undefined) updateData.specialization = data.specialization;
+  if (data.assignedTask !== undefined) updateData.assignedTask = data.assignedTask;
 
-  if (!user) return null;
-
-  if (data.name) user.name = data.name;
-  if (data.phone) user.phone = data.phone;
-  if (data.email) user.email = data.email;
-  if (data.specialization !== undefined) user.specialization = data.specialization;
-
-  await user.save();
+  const user = await User.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true, runValidators: true }
+  );
   return user;
 };
 
 const toggleUserActiveStatusByRoleDb = async (id, role) => {
-  const user = await User.findOne({
-    _id: id,
-    role,
-  });
-
+  const user = await User.findOne({ _id: id, role });
   if (!user) return null;
 
-  user.isActive = !user.isActive;
-  await user.save();
-  
-  return user;
+  return await User.findOneAndUpdate(
+    { _id: id, role },
+    { $set: { isActive: !user.isActive } },
+    { new: true, runValidators: true }
+  );
 };
 
 const bulkToggleUserStatusByRoleDb = async (ids, role, isActive) => {
@@ -138,6 +142,7 @@ export {
   getPaginatedUsersByRoleDb,
   getUserByIdAndRoleDb,
   getUserByIdDb,
+  getUserWithPasswordByIdDb,
   updateUserByRoleDb,
   updateUserDb,
   toggleUserActiveStatusByRoleDb,

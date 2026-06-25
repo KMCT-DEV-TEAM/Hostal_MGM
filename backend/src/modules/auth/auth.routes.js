@@ -1,5 +1,5 @@
 import express from "express";
-import { login, refreshToken, logout, me, changePassword, forgotPassword, verifyResetOtp, resetPassword, updateProfile, requestEmailChange, verifyEmailChange } from "./auth.controller.js";
+import { login, refreshToken, logout, me, changePassword, forgotPassword, verifyResetOtp, resetPassword, updateProfile, requestEmailChange, verifyEmailChange, verifyUserPassword } from "./auth.controller.js";
 import { validateLogin, validateRefreshToken } from "./auth.validation.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 
@@ -13,6 +13,7 @@ router.post("/change-password", authMiddleware, changePassword);
 router.patch("/profile", authMiddleware, updateProfile);
 router.post("/request-email-change", authMiddleware, requestEmailChange);
 router.post("/verify-email-change", authMiddleware, verifyEmailChange);
+router.post("/verify-password", authMiddleware, verifyUserPassword);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-reset-otp", verifyResetOtp);

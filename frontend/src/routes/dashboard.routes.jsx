@@ -19,6 +19,7 @@ import Complaints from '@/features/dashboard/pages/Complaints';
 import ComplaintCategories from '@/features/dashboard/pages/ComplaintCategories';
 import MaintenanceStaffManagement from '@/features/dashboard/pages/MaintenanceStaffManagement';
 import MaintenanceStaffTasks from '@/features/dashboard/pages/MaintenanceStaffTasks';
+import Logs from '@/features/dashboard/pages/Logs';
 
 export const dashboardRoutes = [
 
@@ -214,5 +215,12 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: ComplaintCategories
+    },
+    {
+        path: 'logs',
+        roles: [
+            ROLES.SUPER_ADMIN
+        ],
+        element: Logs
     }
 ];

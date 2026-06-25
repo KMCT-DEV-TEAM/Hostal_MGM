@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
+    assignedTask: {
+      type: String,
+    },
+
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
