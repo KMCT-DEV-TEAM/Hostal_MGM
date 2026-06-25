@@ -45,16 +45,16 @@ export default function WardenComplaintsTable({
                                 onClick={() => onViewClick && onViewClick(complaint)}
                                 className="hover:bg-gray-50/40 transition-colors cursor-pointer"
                             >
-                                <td className="p-4 text-center text-[#777777] font-medium">{index + 1}</td>
+                                <td className="p-4 text-center text-text-secondary font-medium">{index + 1}</td>
                                 <td className="p-4 text-start">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs uppercase shrink-0">
                                             {complaint.student.split(' ').map(n => n[0]).join('')}
                                         </div>
-                                        <span className="text-[#222222] font-medium">{complaint.student}</span>
+                                        <span className="text-text-secondary font-medium">{complaint.student}</span>
                                     </div>
                                 </td>
-                                <td className="p-4 text-start text-[#777777] font-medium">
+                                <td className="p-4 text-start text-text-secondary font-medium">
                                     {complaint.roomNo}
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
@@ -68,10 +68,10 @@ export default function WardenComplaintsTable({
                                         />
                                     </div>
                                 </td>
-                                <td className="p-4 text-start text-[#777777]">
+                                <td className="p-4 text-start text-text-secondary">
                                     {complaint.subject}
                                 </td>
-                                <td className="p-4 text-start text-[#777777]">
+                                <td className="p-4 text-start text-text-secondary">
                                     {complaint.date}
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>

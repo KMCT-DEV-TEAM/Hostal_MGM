@@ -31,27 +31,27 @@ export default function SuperAdminComplaintsTable({
                                 className="hover:bg-gray-50/40 transition-colors cursor-pointer"
                                 onClick={() => onRowClick && onRowClick(complaint)}
                             >
-                                <td className="p-4 px-6 text-start font-medium text-[#777777]">
+                                <td className="p-4 px-6 text-start font-medium text-text-secondary">
                                     {complaint.organization}
                                 </td>
-                                <td className="p-4 px-6 text-start text-[#777777]">
+                                <td className="p-4 px-6 text-start text-text-secondary">
                                     {complaint.hostel}
                                 </td>
                                 {showWarden && (
-                                    <td className="p-4 px-6 text-start text-[#777777]">
+                                    <td className="p-4 px-6 text-start text-text-secondary">
                                         {complaint.warden}
                                     </td>
                                 )}
-                                <td className="p-4 px-6 text-center text-[#777777]">
+                                <td className="p-4 px-6 text-center text-text-secondary">
                                     {complaint.totalComplaints}
                                 </td>
-                                <td className="p-4 px-6 text-center text-[#777777]">
+                                <td className="p-4 px-6 text-center text-text-secondary">
                                     {complaint.pending}
                                 </td>
-                                <td className="p-4 px-6 text-center text-[#777777]">
+                                <td className="p-4 px-6 text-center text-text-secondary">
                                     {complaint.inProgress}
                                 </td>
-                                <td className="p-4 px-6 text-center text-[#777777]">
+                                <td className="p-4 px-6 text-center text-text-secondary">
                                     {complaint.resolved}
                                 </td>
                             </tr>
