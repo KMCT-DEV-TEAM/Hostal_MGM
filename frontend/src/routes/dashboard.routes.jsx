@@ -14,7 +14,7 @@ import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagemen
 import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
-import Leaves from '@/features/dashboard/pages/Leaves';
+import Leaves from '@/features/leaves/pages/Leaves';
 import Complaints from '@/features/dashboard/pages/Complaints';
 import ComplaintCategories from '@/features/dashboard/pages/ComplaintCategories';
 import MaintenanceStaffManagement from '@/features/dashboard/pages/MaintenanceStaffManagement';

@@ -1,0 +1,18 @@
+import api from '@/services/axios';
+
+const leaveApi = {
+  // Student endpoints
+  createLeave: (payload) => api.post("/passes/", payload),
+  getMyLeaves: (params) => api.get("/passes/my-passes", { params }),
+  updateLeave: (id, payload) => api.put(`/passes/${id}`, payload),
+  cancelLeave: (id, payload) => api.patch(`/passes/${id}/cancel`, payload),
+
+  // Placeholders for future roles (Admin, Parent, Warden, etc.)
+  getLeavesByAdmin: (params) => api.get("/admin/passes", { params }),
+  updateLeaveStatusByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/status`, payload),
+
+  getLeavesByParent: (params) => api.get("/parent/passes", { params }),
+  updateLeaveStatusByParent: (id, payload) => api.patch(`/parent/passes/${id}/status`, payload),
+};
+
+export default leaveApi;

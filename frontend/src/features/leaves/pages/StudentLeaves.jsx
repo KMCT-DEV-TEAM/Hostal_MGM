@@ -18,95 +18,22 @@ import ListTable from '@/components/ui/ListTable';
 import Modal from '@/components/ui/Modal';
 import Pagination from '@/components/ui/Pagination';
 import Dropdown from '@/components/ui/Dropdown';
-import { showSuccessToast } from '@/utils/toast';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import leaveService from '@/services/leave.service';
 
-const STUDENT_MOCK_DATA = [
-    {
-        id: 'LR001',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        reason: 'Family function',
-        status: 'Pending',
-        returnStatus: '-----',
-        appliedDate: '2023-10-10'
-    },
-    {
-        id: 'LR002',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        reason: 'Family function',
-        status: 'Approved',
-        returnStatus: 'Returned',
-        appliedDate: '2023-10-10'
-    },
-    {
-        id: 'LR003',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        reason: 'Family function',
-        status: 'Pending',
-        returnStatus: '-----',
-        appliedDate: '2023-10-10'
-    },
-    {
-        id: 'LR004',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        reason: 'Family function',
-        status: 'Approved',
-        returnStatus: 'Not Returned',
-        appliedDate: '2023-10-10'
-    },
-    {
-        id: 'LR005',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        type: 'In House',
-        outTime: '10 : 00 AM',
-        returnTime: '09 : 00 AM',
-        status: 'Pending',
-        returnStatus: '-----',
-        appliedDate: '2023-10-18'
-    },
-    {
-        id: 'LR006',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        type: 'In House',
-        outTime: '10 : 00 AM',
-        returnTime: '09 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Returned',
-        appliedDate: '2023-10-18'
-    },
-    {
-        id: 'LR007',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        type: 'In House',
-        outTime: '10 : 00 AM',
-        returnTime: '09 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Not Returned',
-        appliedDate: '2023-10-18'
-    }
-];
+const formatDate = (dateString) => {
+    if (!dateString) return '-----';
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
 
 const leaveSchema = z.object({
     passType: z.enum(['Home Pass', 'Out Pass']),
-    fromDate: z.string().min(1, 'From date is required'),
+    fromDate: z.string().min(1, 'Date is required'),
     toDate: z.string().optional(),
     outTime: z.string().optional(),
     returnTime: z.string().optional(),
-    destination: z.string().optional(),
     reason: z.string().min(5, 'Reason must be at least 5 characters')
 }).superRefine((data, ctx) => {
     if (data.passType === 'Home Pass') {
@@ -121,9 +48,6 @@ const leaveSchema = z.object({
         if (!data.returnTime) {
             ctx.addIssue({ path: ['returnTime'], message: 'Return time is required', code: z.ZodIssueCode.custom });
         }
-        if (!data.destination) {
-            ctx.addIssue({ path: ['destination'], message: 'Destination is required', code: z.ZodIssueCode.custom });
-        }
     }
 });
 
@@ -133,28 +57,54 @@ export default function StudentLeaves() {
     const pageTitle = isHomePass ? 'Home Pass' : 'Out Pass';
     const pageSubtitle = isHomePass ? 'Manage your leave applications' : 'Manage your permissions requests';
 
-    const [requests, setRequests] = useState(STUDENT_MOCK_DATA);
+    const [requests, setRequests] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [totalItems, setTotalItems] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [statsData, setStatsData] = useState({ total: 0, approved: 0, pending: 0 });
+
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('Approved');
+    const [filterStatus, setFilterStatus] = useState('All');
     const [page, setPage] = useState(1);
-    const limit = 5;
+    const limit = 10;
+
+    const fetchLeaves = async () => {
+        try {
+            setLoading(true);
+            const res = await leaveService.getMyLeaves({
+                page,
+                limit,
+                passType: isHomePass ? 'home_pass' : 'out_pass',
+                ...(filterStatus !== 'All' && { status: filterStatus.toLowerCase() })
+            });
+            setRequests(res.passes);
+            setTotalItems(res.pagination.totalRecords);
+            setTotalPages(res.pagination.totalPages);
+            
+            // Temporary local stats counting based on fetched data 
+            // Replace with real stats endpoint if backend adds one
+            setStatsData({
+                total: res.pagination.totalRecords,
+                approved: res.passes.filter(r => r.status === 'approved').length,
+                pending: res.passes.filter(r => r.status.includes('pending')).length
+            });
+        } catch (err) {
+            showErrorToast('Failed to load leaves');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         setSearchQuery('');
         setPage(1);
     }, [isHomePass]);
 
-    const filteredList = useMemo(() => {
-        const typeFilter = isHomePass ? 'Home Pass' : 'Out Pass';
-        return requests.filter(item => item.passType === typeFilter);
-    }, [requests, isHomePass]);
-
-    const paginatedList = useMemo(() => {
-        const start = (page - 1) * limit;
-        return filteredList.slice(start, start + limit);
-    }, [filteredList, page]);
+    useEffect(() => {
+        fetchLeaves();
+    }, [page, isHomePass, filterStatus]);
 
     const { register, handleSubmit, watch, formState: { errors }, reset, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
@@ -163,65 +113,78 @@ export default function StudentLeaves() {
 
     const passTypeVal = watch('passType');
 
-    const onSubmit = (data) => {
-        const newReq = {
-            id: `LR00${requests.length + 1}`,
-            passType: data.passType,
-            fromDate: data.fromDate,
-            toDate: data.passType === 'Home Pass' ? data.toDate : data.fromDate,
-            duration: data.passType === 'Home Pass' ? 'TBD' : '-----',
-            type: 'In House',
-            outTime: data.outTime,
-            returnTime: data.returnTime,
-            destination: data.destination,
-            reason: data.reason,
-            status: 'Pending',
-            returnStatus: '-----',
-            appliedDate: new Date().toISOString().split('T')[0]
-        };
-        setRequests([newReq, ...requests]);
-        showSuccessToast('Leave request submitted successfully');
-        setIsApplyModalOpen(false);
-        reset();
+    const onSubmit = async (data) => {
+        try {
+            const payload = {
+                passType: data.passType === 'Home Pass' ? 'home_pass' : 'out_pass',
+                reason: data.reason
+            };
+            if (data.passType === 'Home Pass') {
+                payload.fromDate = new Date(data.fromDate).toISOString();
+                payload.toDate = new Date(data.toDate).toISOString();
+                
+                const start = new Date(data.fromDate);
+                const end = new Date(data.toDate);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                payload.totalDays = diffDays;
+            } else {
+                payload.date = new Date(data.fromDate).toISOString();
+                payload.outTime = data.outTime;
+                payload.expectedReturnTime = data.returnTime;
+            }
+
+            await leaveService.createLeave(payload);
+            showSuccessToast('Leave request submitted successfully');
+            setIsApplyModalOpen(false);
+            reset();
+            fetchLeaves(); // Refresh data
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to submit request');
+        }
     };
 
     const stats = useMemo(() => {
-        const total = filteredList.length;
-        const approved = filteredList.filter(r => r.status === 'Approved').length;
-        const pending = filteredList.filter(r => r.status === 'Pending').length;
-        return { total: 10, approved: isHomePass ? 7 : 9, pending: isHomePass ? 3 : 10 }; // Hardcoded to match screenshots for demo
-    }, [filteredList, isHomePass]);
+        return statsData;
+    }, [statsData]);
 
     const tableHeaders = isHomePass
         ? ["Leave Period", "Days", "Status", "Return", "Action"]
         : ["Date", "Type", "In", "Out", "Status", "Return", "Action"];
 
     const renderStatusBadge = (status) => {
-        const bgClass = status === 'Approved' ? 'bg-success/10' : status === 'Rejected' ? 'bg-danger/10' : 'bg-warning/10';
-        const textClass = status === 'Approved' ? 'text-success' : status === 'Rejected' ? 'text-danger' : 'text-warning';
+        const s = status ? status.toLowerCase() : '';
+        const isApproved = s === 'approved';
+        const isRejected = s === 'rejected' || s === 'cancelled';
+        const bgClass = isApproved ? 'bg-success/10' : isRejected ? 'bg-danger/10' : 'bg-warning/10';
+        const textClass = isApproved ? 'text-success' : isRejected ? 'text-danger' : 'text-warning';
+        const displayStatus = s.replace('_', ' ');
         return (
-            <span className={`px-3.5 py-1.5 rounded-lg text-xs font-bold ${bgClass} ${textClass}`}>
-                {status}
+            <span className={`px-3.5 py-1.5 rounded-lg text-xs font-bold capitalize ${bgClass} ${textClass}`}>
+                {displayStatus}
             </span>
         );
     };
 
     const renderReturnBadge = (returnStatus) => {
-        if (returnStatus === 'Returned') {
+        if (!returnStatus || returnStatus === 'pending') {
+            return <span className="text-gray-400 font-semibold">-----</span>;
+        }
+        if (returnStatus === 'on_time') {
             return (
                 <span className="px-3.5 py-1.5 bg-success/10 text-success rounded-lg text-xs font-bold inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Returned
+                    <CheckCircle2 className="w-3.5 h-3.5" /> On Time
                 </span>
             );
         }
-        if (returnStatus === 'Not Returned') {
+        if (returnStatus === 'late') {
             return (
                 <span className="px-3.5 py-1.5 bg-danger/10 text-danger rounded-lg text-xs font-bold inline-flex items-center gap-1.5">
-                    <XCircle className="w-3.5 h-3.5" /> Not Returned
+                    <XCircle className="w-3.5 h-3.5" /> Late
                 </span>
             );
         }
-        return <span className="text-gray-400 font-semibold">-----</span>;
+        return <span className="text-gray-400 font-semibold capitalize">{returnStatus.replace('_', ' ')}</span>;
     };
 
     return (
@@ -290,7 +253,8 @@ export default function StudentLeaves() {
                 <div className="flex-1 overflow-auto">
                     <ListTable
                         headers={tableHeaders}
-                        items={paginatedList}
+                        items={requests}
+                        loading={loading}
                         canSelect={false}
                         emptyText="No leave records found."
                         renderRow={(r) => (
@@ -298,25 +262,25 @@ export default function StudentLeaves() {
                                 {isHomePass ? (
                                     <>
                                         <td className="p-4 text-text-secondary text-sm">
-                                            {r.fromDate} - {r.toDate}
+                                            {formatDate(r.fromDate)} - {formatDate(r.toDate)}
                                         </td>
                                         <td className="p-4 text-text-secondary text-sm">
-                                            {r.duration}
+                                            {r.totalDays ? `${r.totalDays} days` : '-----'}
                                         </td>
                                     </>
                                 ) : (
                                     <>
                                         <td className="p-4 text-text-secondary text-sm">
-                                            {r.fromDate}
+                                            {formatDate(r.date)}
                                         </td>
                                         <td className="p-4 text-text-secondary text-sm">
-                                            {r.type}
+                                            In House
                                         </td>
                                         <td className="p-4 text-text-secondary text-sm">
-                                            {r.returnTime}
+                                            {r.expectedReturnTime || '-----'}
                                         </td>
                                         <td className="p-4 text-text-secondary text-sm">
-                                            {r.outTime}
+                                            {r.outTime || '-----'}
                                         </td>
                                     </>
                                 )}
@@ -324,7 +288,7 @@ export default function StudentLeaves() {
                                     {renderStatusBadge(r.status)}
                                 </td>
                                 <td className="p-4">
-                                    {renderReturnBadge(r.returnStatus)}
+                                    {renderReturnBadge(r.returnTracking?.returnStatus)}
                                 </td>
                                 <td className="p-4">
                                     <button className="text-accent hover:text-primary transition-colors cursor-pointer">
@@ -340,8 +304,8 @@ export default function StudentLeaves() {
                     page={page}
                     setPage={setPage}
                     limit={limit}
-                    totalItems={filteredList.length}
-                    totalPages={Math.ceil(filteredList.length / limit) || 1}
+                    totalItems={totalItems}
+                    totalPages={totalPages || 1}
                 />
             </div>
 
@@ -417,16 +381,6 @@ export default function StudentLeaves() {
                                     />
                                     {errors.returnTime && <p className="text-danger text-xs mt-1">{errors.returnTime.message}</p>}
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                                <input
-                                    type="text"
-                                    {...register('destination')}
-                                    placeholder="Where are you going?"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                />
-                                {errors.destination && <p className="text-danger text-xs mt-1">{errors.destination.message}</p>}
                             </div>
                         </>
                     )}
