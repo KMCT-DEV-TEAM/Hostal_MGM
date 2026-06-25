@@ -87,7 +87,7 @@ app.use("/api/parent/passes", parentPassRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);
-app.use("/api/passes", passRoutes);
+
 app.use("/api/logs", logRoutes);
 app.use(errorMiddleware);
 

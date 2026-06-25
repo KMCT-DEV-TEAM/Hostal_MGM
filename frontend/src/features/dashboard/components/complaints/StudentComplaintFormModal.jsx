@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
 import { Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function StudentComplaintFormModal({
     editingComplaint,
@@ -124,24 +125,21 @@ export default function StudentComplaintFormModal({
 
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-text-primary mb-1">Category <span className="text-danger">*</span></label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-primary">
-                                <select
-                                    required
-                                    value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full px-3 py-2 outline-none bg-transparent text-xs text-text-primary appearance-none cursor-pointer"
-                                    disabled={loadingCategories}
-                                >
-                                    {loadingCategories ? (
-                                        <option value="">Loading categories...</option>
-                                    ) : (
-                                        categories.map((cat) => (
-                                            <option key={cat._id} value={cat._id}>
-                                                {cat.name}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
+                            <div className="relative">
+                                {loadingCategories ? (
+                                    <div className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-text-primary flex items-center gap-2">
+                                        <Loader2 className="w-3 h-3 animate-spin" /> Loading categories...
+                                    </div>
+                                ) : (
+                                    <Dropdown
+                                        options={categories.map(cat => ({ value: cat._id, label: cat.name }))}
+                                        value={formData.category}
+                                        onChange={(val) => setFormData({ ...formData, category: val })}
+                                        placeholder="Select category"
+                                        minWidth="w-full"
+                                        triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-text-primary focus:border-[#0A437A] text-start"
+                                    />
+                                )}
                             </div>
                         </div>
 
