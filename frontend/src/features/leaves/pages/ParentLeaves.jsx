@@ -197,7 +197,7 @@ export default function ParentLeaves() {
                                     {formatDate(r.fromDate || r.date)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
-                                    Out Pass
+                                    {r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {r.expectedReturnTime || r.returnTime || '--'}
@@ -242,7 +242,7 @@ export default function ParentLeaves() {
                                 {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
                             </span>
                             <span className="text-xs text-text-secondary font-medium bg-white px-2 py-1 rounded shadow-sm border border-gray-100">
-                                {isHomePass ? `${getDurationDays(r)} Days` : 'Out Pass'}
+                                {isHomePass ? `${getDurationDays(r)} Days` : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}
                             </span>
                         </div>
 

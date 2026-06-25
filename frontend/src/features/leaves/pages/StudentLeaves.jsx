@@ -28,7 +28,13 @@ export default function StudentLeaves() {
     const [statsData, setStatsData] = useState({ total: 0, approved: 0, pending: 0 });
 
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    const [editData, setEditData] = useState(null);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+    const openEditModal = (r) => {
+        setEditData(r);
+        setIsApplyModalOpen(true);
+    };
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [page, setPage] = useState(1);
@@ -98,7 +104,7 @@ export default function StudentLeaves() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => setIsApplyModalOpen(true)}
+                            onClick={() => { setEditData(null); setIsApplyModalOpen(true); }}
                             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap shadow-sm md:shadow-none"
                         >
                             <Plus className="w-4 h-4" /> Apply
@@ -127,7 +133,7 @@ export default function StudentLeaves() {
                                     {formatDate(r.date)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
-                                    In House
+                                    {r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {r.expectedReturnTime || '-----'}
@@ -144,9 +150,15 @@ export default function StudentLeaves() {
                             <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus} />
                         </td>
                         <td className="p-4">
-                            <button className="text-accent hover:text-primary transition-colors cursor-pointer">
-                                <Pencil className="w-4 h-4" />
-                            </button>
+                            {['pending_parent', 'pending_warden', 'approved'].includes(r.status) ? (
+                                <button onClick={() => openEditModal(r)} className="text-accent hover:text-primary transition-colors cursor-pointer">
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                            ) : (
+                                <span className="text-gray-300 cursor-not-allowed">
+                                    <Pencil className="w-4 h-4" />
+                                </span>
+                            )}
                         </td>
                     </>
                 )}
@@ -157,7 +169,7 @@ export default function StudentLeaves() {
                                 {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.date)}
                             </span>
                             <span className="text-xs text-gray-400 font-medium">
-                                {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : 'In House'}
+                                {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}
                             </span>
                         </div>
                         <hr className="border-gray-50" />
@@ -174,6 +186,13 @@ export default function StudentLeaves() {
                                 <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus} />
                             </div>
                         </div>
+                        {['pending_parent', 'pending_warden', 'approved'].includes(r.status) && (
+                            <div className="flex justify-end pt-2 border-t border-gray-50 mt-2">
+                                <button onClick={() => openEditModal(r)} className="text-accent flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors">
+                                    <Pencil className="w-3.5 h-3.5" /> Edit Request
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
                 page={page}
@@ -185,9 +204,10 @@ export default function StudentLeaves() {
 
             <ApplyLeaveModal
                 isOpen={isApplyModalOpen}
-                onClose={() => setIsApplyModalOpen(false)}
+                onClose={() => { setIsApplyModalOpen(false); setEditData(null); }}
                 onSuccess={fetchLeaves}
                 initialPassType={isHomePass ? 'Home Pass' : 'Out Pass'}
+                editData={editData}
             />
 
             <FilterLeavesModal

@@ -4,12 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Modal from '@/components/ui/Modal';
 import DateInput from '@/components/ui/DateInput';
 import TimeInput from '@/components/ui/TimeInput';
+import Dropdown from '@/components/ui/Dropdown';
 import { leaveSchema } from '../../utils/validation';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { createLeave } from '@/services/leave.service';
+import { createLeave, updateLeave } from '@/services/leave.service';
 
-export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass' }) {
-    const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch } = useForm({
+export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass', editData }) {
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
     });
 
@@ -17,7 +18,13 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     const toDateVal = watch('toDate');
     const outTimeVal = watch('outTime');
     const returnTimeVal = watch('returnTime');
-    
+    const outPassCategoryVal = watch('outPassCategory');
+
+    const outPassCategoryOptions = [
+        { label: 'In House', value: 'in_house' },
+        { label: 'Out House', value: 'out_house' }
+    ];
+
     // Get today's date in local YYYY-MM-DD format
     const d = new Date();
     const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -25,14 +32,37 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            reset();
+            if (editData) {
+                reset({
+                    reason: editData.reason || '',
+                    fromDate: editData.fromDate ? new Date(editData.fromDate).toISOString().split('T')[0] : (editData.date ? new Date(editData.date).toISOString().split('T')[0] : ''),
+                    toDate: editData.toDate ? new Date(editData.toDate).toISOString().split('T')[0] : '',
+                    outTime: editData.outTime || '',
+                    returnTime: editData.expectedReturnTime || editData.returnTime || '',
+                    outPassCategory: editData.outPassCategory || '',
+                    passType: editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass'
+                });
+            } else {
+                reset({
+                    reason: '',
+                    fromDate: '',
+                    toDate: '',
+                    outTime: '',
+                    returnTime: '',
+                    outPassCategory: '',
+                    passType: initialPassType
+                });
+            }
         }
-    }, [isOpen, reset]);
+    }, [isOpen, editData, reset]);
 
     const onSubmit = async (data) => {
+        console.log('data:', data);
         try {
             let payload;
-            if (initialPassType === 'Home Pass') {
+            const actualPassType = editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType;
+
+            if (actualPassType === 'Home Pass') {
                 payload = {
                     ...data,
                     passType: 'home_pass',
@@ -44,11 +74,21 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                     date: data.fromDate,
                     outTime: data.outTime,
                     expectedReturnTime: data.returnTime,
+                    outPassCategory: data.outPassCategory,
                     reason: data.reason
                 };
             }
-            await createLeave(payload);
-            showSuccessToast('Leave applied successfully');
+
+            if (editData) {
+                payload.revision = editData.revision ?? editData.__v ?? 0;
+                console.log('editing....')
+                await updateLeave(editData._id, payload);
+                showSuccessToast('Leave updated successfully');
+            } else {
+                await createLeave(payload);
+                showSuccessToast('Leave applied successfully');
+            }
+
             onClose();
             reset();
             if (onSuccess) onSuccess();
@@ -69,10 +109,10 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     return (
         <Modal
             isOpen={isOpen}
-            onClose={() => { onClose(); reset(); }}
-            title={`${initialPassType} Request`}
+            onClose={() => { onClose(); reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType }); }}
+            title={editData ? `Edit ${editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass'}` : `${initialPassType} Request`}
             titleSize="text-lg"
-            subtitle="Apply for leave"
+            subtitle={editData ? "Update your leave request" : "Apply for leave"}
             maxWidth="max-w-md"
             asForm
             onSubmit={handleSubmit(onSubmit)}
@@ -84,11 +124,11 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                         className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
                         {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                        Submit Request
+                        {editData ? "Update Request" : "Submit Request"}
                     </button>
                     <button
                         type="button"
-                        onClick={() => { onClose(); reset(); }}
+                        onClick={() => { onClose(); reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType }); }}
                         disabled={isSubmitting}
                         className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
                     >
@@ -97,9 +137,9 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                 </div>
             }
         >
-            <input type="hidden" {...register('passType')} value={initialPassType} />
+            <input type="hidden" {...register('passType')} value={editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType} />
             <div className="grid grid-cols-2 gap-5">
-                {initialPassType === 'Home Pass' ? (
+                {(editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType) === 'Home Pass' ? (
                     <>
                         <DateInput
                             label="From Date"
@@ -121,15 +161,30 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                     </>
                 ) : (
                     <>
-                        <DateInput
-                            className="col-span-2"
-                            label="Date"
-                            required
-                            min={todayStr}
-                            error={errors.fromDate}
-                            value={fromDateVal}
-                            {...register('fromDate')}
-                        />
+                        <div className="col-span-2 grid grid-cols-2 gap-5">
+                            <DateInput
+                                label="Date"
+                                required
+                                min={todayStr}
+                                error={errors.fromDate}
+                                value={fromDateVal}
+                                {...register('fromDate')}
+                            />
+                            <div>
+                                <label className="block mb-1.5 text-xs font-medium">Out Pass Category <span className="text-red-500">*</span></label>
+                                <Dropdown
+                                    options={outPassCategoryOptions}
+                                    value={outPassCategoryVal || ''}
+                                    onChange={(val) => setValue('outPassCategory', val, { shouldValidate: true, shouldDirty: true })}
+                                    placeholder="Select category..."
+                                    className="w-full"
+                                    minWidth="w-full"
+                                    triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors bg-white ${errors.outPassCategory ? "border-red-300 focus:border-red-500 bg-red-50/30 text-red-500" : "border-gray-200 focus:border-secondary text-gray-700"}`}
+                                />
+                                <input type="hidden" {...register('outPassCategory')} />
+                                <ErrorMessage error={errors.outPassCategory} />
+                            </div>
+                        </div>
                         <TimeInput
                             label="Out Time"
                             required
