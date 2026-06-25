@@ -7,7 +7,9 @@ import {
   Clock,
   Home
 } from "lucide-react";
-import { showSuccessToast } from "@/utils/toast";
+import { showSuccessToast, showErrorToast } from "@/utils/toast";
+import ComplaintService from "@/services/complaint.service";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const InfoRow = ({ label, children }) => (
   <div className="flex text-[13px] gap-2 items-start py-1">
@@ -19,8 +21,12 @@ const InfoRow = ({ label, children }) => (
   </div>
 );
 
-const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) => {
+const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRefresh }) => {
+  const { user } = useAuthStore();
   const [internalNote, setInternalNote] = useState('');
+  const [showRejectPrompt, setShowRejectPrompt] = useState(false);
+  const [rejectNote, setRejectNote] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!complaint) return null;
 
@@ -30,7 +36,17 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) =>
   const recentUpdates = timeline.slice().reverse();
 
   // "Staff Updates" logic based on assignments and progress
-  const staffUpdates = timeline.filter(t => t.by === 'Student' || t.status === 'Pending' || t.by.toLowerCase().includes('staff') || t.status === 'In progress' || t.message.toLowerCase().includes('assign'));
+  const staffUpdates = timeline.filter(t => 
+      t.by === 'Student' || 
+      t.status === 'Pending' || 
+      t.by.toLowerCase().includes('staff') || 
+      t.status === 'In progress' || 
+      t.status === 'Awaiting' ||
+      t.status === 'Resolved' ||
+      t.message.toLowerCase().includes('assign') ||
+      t.message.toLowerCase().includes('reject') ||
+      t.message.toLowerCase().includes('approv')
+  );
   
   // "Internal notes"
   const internalNotes = timeline.filter(t => t.by === 'Warden' || t.by === 'Admin' || t.message.toLowerCase().includes('note'));
@@ -44,7 +60,40 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) =>
   const getStatusBadgeColors = (status) => {
     if (status === 'In progress') return 'bg-blue-50 text-blue-600';
     if (status === 'Pending') return 'bg-yellow-50 text-yellow-600';
+    if (status === 'Awaiting') return 'bg-orange-50 text-orange-600';
     return 'bg-purple-50 text-purple-600';
+  };
+
+  const handleApprove = async () => {
+    setIsProcessing(true);
+    try {
+      await ComplaintService.approveComplaintResolution(complaint.id);
+      showSuccessToast('Success', 'Complaint resolution approved.');
+      if (onRefresh) onRefresh();
+      onClose();
+    } catch (error) {
+      showErrorToast('Error', error.message || 'Could not approve resolution.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectNote.trim()) {
+      showErrorToast('Validation', 'Please provide a note for rejection.');
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await ComplaintService.rejectComplaintResolution(complaint.id, rejectNote);
+      showSuccessToast('Success', 'Complaint resolution rejected.');
+      if (onRefresh) onRefresh();
+      onClose();
+    } catch (error) {
+      showErrorToast('Error', error.message || 'Could not reject resolution.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -95,6 +144,79 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) =>
             </div>
           </div>
 
+          {/* Internal Notes */}
+          <div className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm mt-6">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-sm font-semibold text-purple-900 mb-1">Resolution Details</h3>
+                <p className="text-[11px] text-gray-500">Details submitted by maintenance staff</p>
+              </div>
+            </div>
+            
+            {complaint.status === 'Awaiting' || complaint.status === 'Resolved' ? (
+              <div className="space-y-4">
+                <InfoRow label="Materials Used">
+                  {complaint.materialsUsed || 'None'}
+                </InfoRow>
+                <InfoRow label="Resolution Notes">
+                  {complaint.resolutionNotes || 'No notes provided.'}
+                </InfoRow>
+                
+                {complaint.status === 'Awaiting' && user?.role === 'warden' && (
+                  <div className="pt-4 border-t border-gray-100 mt-4 space-y-4">
+                    {!showRejectPrompt ? (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleApprove}
+                          disabled={isProcessing}
+                          className="flex-1 bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors cursor-pointer"
+                        >
+                          Approve Resolution
+                        </button>
+                        <button
+                          onClick={() => setShowRejectPrompt(true)}
+                          disabled={isProcessing}
+                          className="flex-1 bg-red-50 text-red-600 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <label className="block text-xs font-medium text-gray-700">Rejection Note *</label>
+                        <textarea
+                          rows={2}
+                          value={rejectNote}
+                          onChange={(e) => setRejectNote(e.target.value)}
+                          placeholder="Explain why the resolution is rejected..."
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500"
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleReject}
+                            disabled={isProcessing}
+                            className="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                          >
+                            Confirm Reject
+                          </button>
+                          <button
+                            onClick={() => setShowRejectPrompt(false)}
+                            disabled={isProcessing}
+                            className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-[13px] text-gray-400 italic">No resolution details available yet.</div>
+            )}
+          </div>
+
           {/* Internal note */}
           <div className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
             <div className="flex justify-between items-start mb-4">
@@ -135,12 +257,14 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) =>
                 <h3 className="text-sm font-semibold text-blue-900 mb-1">Staff Updates</h3>
                 <p className="text-[11px] text-gray-500">Updates by the assigned maintenance staff</p>
               </div>
-              <button 
-                onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
-                className="px-4 py-1.5 text-[11px] font-medium text-white bg-blue-900 rounded-md hover:bg-blue-800 transition-colors cursor-pointer"
-              >
-                Assign staff
-              </button>
+              {user?.role === 'admin' && (
+                <button 
+                  onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
+                  className="px-4 py-1.5 text-[11px] font-medium text-white bg-blue-900 rounded-md hover:bg-blue-800 transition-colors cursor-pointer"
+                >
+                  Assign staff
+                </button>
+              )}
             </div>
             
             {staffUpdates.length > 0 ? (
@@ -192,7 +316,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff }) =>
               <div className="flex justify-between text-[12px] items-center">
                 <span className="text-gray-500 flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Status</span>
                 <span className="font-medium text-gray-800 flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-400' : complaint.status === 'Resolved' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-400' : complaint.status === 'Resolved' ? 'bg-green-500' : complaint.status === 'Awaiting' ? 'bg-orange-500' : 'bg-blue-500'}`}></span>
                   {complaint.status}
                 </span>
               </div>

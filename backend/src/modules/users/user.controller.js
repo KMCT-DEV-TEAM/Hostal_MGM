@@ -650,13 +650,26 @@ const getMaintenanceStaff = asyncHandler(async (req, res) => {
     
     let additionalQuery = {};
 
-    if (req.user.role === 'admin' || req.user.role === 'warden') {
+    if (req.user.role === 'admin') {
       if (!req.user.organization) {
-        return sendError(res, 400, `${req.user.role} is not assigned to any organization`);
+        return sendError(res, 400, `Admin is not assigned to any organization`);
       }
       additionalQuery = { 
           $or: [
               { organization: req.user.organization },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
+    } else if (req.user.role === 'warden') {
+      const { default: Hostel } = await import('../hostels/hostel.model.js');
+      const hostel = await Hostel.findOne({ wardens: req.user.id });
+      if (!hostel || !hostel.organizationId) {
+        return sendError(res, 400, `Warden is not assigned to any hostel or organization`);
+      }
+      additionalQuery = { 
+          $or: [
+              { organization: hostel.organizationId },
               { organization: { $exists: false } },
               { organization: null }
           ]
