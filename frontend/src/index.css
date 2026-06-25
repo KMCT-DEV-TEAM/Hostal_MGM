@@ -76,4 +76,34 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
+}
+
+/* Custom Time Input Styling */
+.custom-time-input {
+    position: relative;
+    line-height: normal;
+}
+
+.custom-time-input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.custom-time-input::-moz-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }

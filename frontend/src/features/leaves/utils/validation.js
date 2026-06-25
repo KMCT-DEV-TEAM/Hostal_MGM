@@ -33,5 +33,8 @@ export const leaveSchema = z.object({
         if (!data.returnTime) {
             ctx.addIssue({ path: ['returnTime'], message: 'Return time is required', code: z.ZodIssueCode.custom });
         }
+        if (data.outTime && data.returnTime && data.outTime >= data.returnTime) {
+            ctx.addIssue({ path: ['returnTime'], message: 'Return time must be after out time', code: z.ZodIssueCode.custom });
+        }
     }
 });

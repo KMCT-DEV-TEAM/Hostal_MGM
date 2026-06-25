@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Modal from '@/components/ui/Modal';
 import DateInput from '@/components/ui/DateInput';
+import TimeInput from '@/components/ui/TimeInput';
 import { leaveSchema } from '../../utils/validation';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { createLeave } from '@/services/leave.service';
@@ -14,6 +15,8 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
 
     const fromDateVal = watch('fromDate');
     const toDateVal = watch('toDate');
+    const outTimeVal = watch('outTime');
+    const returnTimeVal = watch('returnTime');
     
     // Get today's date in local YYYY-MM-DD format
     const d = new Date();
@@ -127,24 +130,20 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                             value={fromDateVal}
                             {...register('fromDate')}
                         />
-                        <div>
-                            <label className="block mb-1.5 text-xs font-medium">Out Time <span className="text-red-500">*</span></label>
-                            <input
-                                type="time"
-                                {...register('outTime')}
-                                className={inputClasses(errors.outTime)}
-                            />
-                            <ErrorMessage error={errors.outTime} />
-                        </div>
-                        <div>
-                            <label className="block mb-1.5 text-xs font-medium">Return Time <span className="text-red-500">*</span></label>
-                            <input
-                                type="time"
-                                {...register('returnTime')}
-                                className={inputClasses(errors.returnTime)}
-                            />
-                            <ErrorMessage error={errors.returnTime} />
-                        </div>
+                        <TimeInput
+                            label="Out Time"
+                            required
+                            max={returnTimeVal || undefined}
+                            error={errors.outTime}
+                            {...register('outTime')}
+                        />
+                        <TimeInput
+                            label="Return Time"
+                            required
+                            min={outTimeVal || undefined}
+                            error={errors.returnTime}
+                            {...register('returnTime')}
+                        />
                     </>
                 )}
 
