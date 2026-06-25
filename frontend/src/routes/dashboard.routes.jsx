@@ -19,6 +19,7 @@ import Complaints from '@/features/dashboard/pages/Complaints';
 import ComplaintCategories from '@/features/dashboard/pages/ComplaintCategories';
 import MaintenanceStaffManagement from '@/features/dashboard/pages/MaintenanceStaffManagement';
 import MaintenanceStaffTasks from '@/features/dashboard/pages/MaintenanceStaffTasks';
+import MaintenanceAssignedTasks from '@/features/dashboard/pages/MaintenanceAssignedTasks';
 import Logs from '@/features/dashboard/pages/Logs';
 
 export const dashboardRoutes = [
@@ -29,7 +30,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
-            ROLES.STUDENT
+            ROLES.STUDENT,
+            ROLES.MAINTENANCE_STAFF
         ],
         element: DashboardOverview
     },
@@ -222,5 +224,12 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: Logs
+    },
+    {
+        path: 'tasks',
+        roles: [
+            ROLES.MAINTENANCE_STAFF
+        ],
+        element: MaintenanceAssignedTasks
     }
 ];
