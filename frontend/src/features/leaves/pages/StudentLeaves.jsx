@@ -10,11 +10,13 @@ import {
     CheckCircle2,
     XCircle,
     Pencil,
-    Plus
+    Plus,
+    Download
 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import ListTable from '@/components/ui/ListTable';
+import MobileList from '@/components/ui/MobileList';
 import Modal from '@/components/ui/Modal';
 import Pagination from '@/components/ui/Pagination';
 import Dropdown from '@/components/ui/Dropdown';
@@ -82,7 +84,7 @@ export default function StudentLeaves() {
             setRequests(res.passes);
             setTotalItems(res.pagination.totalRecords);
             setTotalPages(res.pagination.totalPages);
-            
+
             // Temporary local stats counting based on fetched data 
             // Replace with real stats endpoint if backend adds one
             setStatsData({
@@ -122,7 +124,7 @@ export default function StudentLeaves() {
             if (data.passType === 'Home Pass') {
                 payload.fromDate = new Date(data.fromDate).toISOString();
                 payload.toDate = new Date(data.toDate).toISOString();
-                
+
                 const start = new Date(data.fromDate);
                 const end = new Date(data.toDate);
                 const diffTime = Math.abs(end - start);
@@ -220,85 +222,126 @@ export default function StudentLeaves() {
                 />
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
-                <div className="p-4 flex flex-row items-center justify-between gap-4 border-b border-gray-50 shrink-0">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+                <div className="p-4 flex flex-row items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
                     <div className="relative w-full max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
-                            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder-gray-400 font-medium text-gray-700"
+                            className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none placeholder-gray-400 font-medium text-gray-700"
                             placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     </div>
 
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
                             onClick={() => setIsFilterModalOpen(true)}
-                            className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700"
+                            className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700 shadow-sm md:shadow-none"
                         >
                             <Filter className="w-4 h-4" />
                         </button>
                         <button
                             type="button"
+                            onClick={() => showSuccessToast('Exporting leave data...')}
+                            className="hidden md:flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => { reset(); setIsApplyModalOpen(true); }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm hover:bg-primary/90 transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap shadow-sm md:shadow-none"
                         >
                             <Plus className="w-4 h-4" /> Apply
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto">
-                    <ListTable
-                        headers={tableHeaders}
-                        items={requests}
-                        loading={loading}
-                        canSelect={false}
-                        emptyText="No leave records found."
-                        renderRow={(r) => (
-                            <>
-                                {isHomePass ? (
-                                    <>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {formatDate(r.fromDate)} - {formatDate(r.toDate)}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {r.totalDays ? `${r.totalDays} days` : '-----'}
-                                        </td>
-                                    </>
-                                ) : (
-                                    <>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {formatDate(r.date)}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            In House
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {r.expectedReturnTime || '-----'}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {r.outTime || '-----'}
-                                        </td>
-                                    </>
+                {/* Desktop Grid Layout */}
+                <ListTable
+                    headers={tableHeaders}
+                    items={requests}
+                    loading={loading}
+                    canSelect={false}
+                    emptyText="No leave records found."
+                    renderRow={(r) => (
+                        <>
+                            {isHomePass ? (
+                                <>
+                                    <td className="p-4 text-text-secondary text-sm font-medium">
+                                        {formatDate(r.fromDate)} - {formatDate(r.toDate)}
+                                    </td>
+                                    <td className="p-4 text-text-secondary text-sm">
+                                        {r.totalDays ? `${r.totalDays} days` : '-----'}
+                                    </td>
+                                </>
+                            ) : (
+                                <>
+                                    <td className="p-4 text-text-secondary text-sm font-medium">
+                                        {formatDate(r.date)}
+                                    </td>
+                                    <td className="p-4 text-text-secondary text-sm">
+                                        In House
+                                    </td>
+                                    <td className="p-4 text-text-secondary text-sm">
+                                        {r.expectedReturnTime || '-----'}
+                                    </td>
+                                    <td className="p-4 text-text-secondary text-sm">
+                                        {r.outTime || '-----'}
+                                    </td>
+                                </>
+                            )}
+                            <td className="p-4">
+                                {renderStatusBadge(r.status)}
+                            </td>
+                            <td className="p-4">
+                                {renderReturnBadge(r.returnTracking?.returnStatus)}
+                            </td>
+                            <td className="p-4">
+                                <button className="text-accent hover:text-primary transition-colors cursor-pointer">
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                            </td>
+                        </>
+                    )}
+                />
+
+                {/* Mobile View */}
+                <MobileList
+                    items={requests}
+                    loading={loading}
+                    canSelect={false}
+                    emptyText="No leave records found."
+                    renderItem={(r) => (
+                        <div className="space-y-2.5">
+                            <div className="flex justify-between items-center">
+                                <span className="font-bold text-gray-700 text-sm">
+                                    {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.date)}
+                                </span>
+                                <span className="text-xs text-gray-400 font-medium">
+                                    {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : 'In House'}
+                                </span>
+                            </div>
+                            <hr className="border-gray-50" />
+                            <div className="text-xs text-text-secondary space-y-2">
+                                {!isHomePass && (
+                                    <div>{`Outing Time: ${r.outTime || '-----'} - ${r.expectedReturnTime || '-----'}`}</div>
                                 )}
-                                <td className="p-4">
+                                <div className="flex justify-between items-center gap-2 pt-1">
+                                    <span className="font-medium text-gray-500">Status:</span>
                                     {renderStatusBadge(r.status)}
-                                </td>
-                                <td className="p-4">
+                                </div>
+                                <div className="flex justify-between items-center gap-2">
+                                    <span className="font-medium text-gray-500">Return:</span>
                                     {renderReturnBadge(r.returnTracking?.returnStatus)}
-                                </td>
-                                <td className="p-4">
-                                    <button className="text-accent hover:text-primary transition-colors cursor-pointer">
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                </td>
-                            </>
-                        )}
-                    />
-                </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                />
 
                 <Pagination
                     page={page}
