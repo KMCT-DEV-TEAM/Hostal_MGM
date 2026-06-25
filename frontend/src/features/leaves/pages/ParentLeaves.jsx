@@ -49,14 +49,15 @@ export default function ParentLeaves() {
                 ...(filterStatus !== 'All' && { status: filterStatus.toLowerCase() }),
                 ...(searchQuery && { search: searchQuery })
             });
-            setRequests(res.passes);
-            setTotalItems(res.pagination.total);
-            setTotalPages(res.pagination.pages);
+            const passesArray = res.data || res.passes || [];
+            setRequests(passesArray);
+            setTotalItems(res.pagination?.totalRecords || res.pagination?.total || 0);
+            setTotalPages(res.pagination?.totalPages || res.pagination?.pages || 1);
 
             setStatsData({
-                total: res.pagination.total,
-                approved: res.passes.filter(r => r.status === 'approved').length,
-                pending: res.passes.filter(r => r.status.includes('pending')).length
+                total: res.pagination?.totalRecords || res.pagination?.total || 0,
+                approved: passesArray.filter(r => r.status === 'approved').length,
+                pending: passesArray.filter(r => r.status.includes('pending')).length
             });
         } catch (err) {
             showErrorToast(err.message || 'Failed to load leaves');
@@ -121,6 +122,16 @@ export default function ParentLeaves() {
         return r.studentId?.name || r.studentName || 'Student';
     };
 
+    const getDurationDays = (r) => {
+        if (r.totalDays) return r.totalDays;
+        if (r.fromDate && r.toDate) {
+            const days = Math.round((new Date(r.toDate) - new Date(r.fromDate)) / (1000 * 60 * 60 * 24));
+            // Add 1 if inclusive, but assuming standard difference
+            return days || 1;
+        }
+        return '--';
+    };
+
     const tableHeaders = isHomePass
         ? ["Child", "Leave Period", "Days", "Return", "Status"]
         : ["Child", "Date", "Type", "In", "Out", "Return", "Status"];
@@ -177,19 +188,19 @@ export default function ParentLeaves() {
                                     {formatDate(r.fromDate)} - {formatDate(r.toDate)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
-                                    {r.totalDays} Days
+                                    {getDurationDays(r)} Days
                                 </td>
                             </>
                         ) : (
                             <>
                                 <td className="p-4 text-text-secondary text-sm font-medium">
-                                    {formatDate(r.fromDate)}
+                                    {formatDate(r.fromDate || r.date)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     Out Pass
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
-                                    {r.returnTime || '--'}
+                                    {r.expectedReturnTime || r.returnTime || '--'}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {r.outTime || '--'}
@@ -228,10 +239,10 @@ export default function ParentLeaves() {
 
                         <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg">
                             <span className="font-bold text-gray-700 text-sm">
-                                {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate)}
+                                {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
                             </span>
                             <span className="text-xs text-text-secondary font-medium bg-white px-2 py-1 rounded shadow-sm border border-gray-100">
-                                {isHomePass ? `${r.totalDays} Days` : 'Out Pass'}
+                                {isHomePass ? `${getDurationDays(r)} Days` : 'Out Pass'}
                             </span>
                         </div>
 
@@ -239,7 +250,7 @@ export default function ParentLeaves() {
                             {!isHomePass && (
                                 <div className="flex justify-between items-center text-xs">
                                     <span className="font-medium text-gray-500">Outing Time:</span>
-                                    <span className="font-semibold text-gray-700 bg-gray-50 px-2 py-0.5 rounded">{r.outTime || '--'} - {r.returnTime || '--'}</span>
+                                    <span className="font-semibold text-gray-700 bg-gray-50 px-2 py-0.5 rounded">{r.outTime || '--'} - {r.expectedReturnTime || r.returnTime || '--'}</span>
                                 </div>
                             )}
 

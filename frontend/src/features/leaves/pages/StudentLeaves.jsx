@@ -43,16 +43,19 @@ export default function StudentLeaves() {
                 passType: isHomePass ? 'home_pass' : 'out_pass',
                 ...(filterStatus !== 'All' && { status: filterStatus.toLowerCase() })
             });
-            setRequests(res.passes);
+            console.log('response:', res)
+            setRequests(res.data);
             setTotalItems(res.pagination.totalRecords);
             setTotalPages(res.pagination.totalPages);
 
+            const passesArray = res.data || res.passes || [];
             setStatsData({
-                total: res.pagination.totalRecords,
-                approved: res.passes.filter(r => r.status === 'approved').length,
-                pending: res.passes.filter(r => r.status.includes('pending')).length
+                total: res.pagination?.totalRecords || res.pagination?.total || 0,
+                approved: passesArray.filter(r => r.status === 'approved').length,
+                pending: passesArray.filter(r => r.status.includes('pending')).length
             });
         } catch (err) {
+            console.log(err)
             showErrorToast('Failed to load leaves');
         } finally {
             setLoading(false);
