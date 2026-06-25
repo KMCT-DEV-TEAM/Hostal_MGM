@@ -84,6 +84,10 @@ const MaintenanceStaffMobileList = ({
                                         </div>
                                         <span className="hidden sm:inline">-</span>
                                         <div className="flex items-center gap-1">
+                                            <span>Task: {staff.assignedTask || 'N/A'}</span>
+                                        </div>
+                                        <span className="hidden sm:inline">-</span>
+                                        <div className="flex items-center gap-1">
                                             <Phone className="w-3 h-3" />
                                             <span>{staff.phone || 'N/A'}</span>
                                         </div>

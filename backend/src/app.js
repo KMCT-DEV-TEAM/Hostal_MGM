@@ -18,6 +18,7 @@ import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.ro
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
 import { studentPassRouter, parentPassRouter, wardenPassRouter } from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
+import logRoutes from "./modules/logs/log.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -86,7 +87,8 @@ app.use("/api/parent/passes", parentPassRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);
-
+app.use("/api/passes", passRoutes);
+app.use("/api/logs", logRoutes);
 app.use(errorMiddleware);
 
 export default app;

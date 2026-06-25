@@ -44,6 +44,68 @@ export const getStudentComplaintsDb = async (userId) => {
         .sort({ createdAt: -1 });
 };
 
+// Get complaints for a specific warden based on hostelId
+export const getWardenComplaintsDb = async (wardenId) => {
+    const warden = await User.findById(wardenId);
+    if (!warden || !warden.hostelId) throw new Error("Warden or associated hostel not found.");
+
+    return await Complaint.find({ hostelId: warden.hostelId })
+        .populate('category', 'name')
+        .populate('studentId', 'name studentId roomNo')
+        .sort({ createdAt: -1 });
+};
+
+// Update complaint
+export const updateComplaintDb = async (complaintId, user, updateData) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) {
+        throw new Error("Complaint not found.");
+    }
+    
+    // Ensure the complaint belongs to the student trying to update it, unless it's an admin/warden
+    if (user.role === 'student') {
+        const student = await Student.findById(user.id);
+        if (!student || complaint.studentId.toString() !== student._id.toString()) {
+            throw new Error("You do not have permission to update this complaint.");
+        }
+
+        // Only allow student to update if status is 'Pending'
+        if (complaint.status !== 'Pending') {
+            throw new Error("You can only edit pending complaints.");
+        }
+    } else if (!['admin', 'org_admin', 'warden', 'super_admin'].includes(user.role)) {
+        throw new Error("You do not have permission to update this complaint.");
+    }
+
+    if (updateData.category) complaint.category = updateData.category;
+    if (updateData.roomNo) complaint.roomNo = updateData.roomNo;
+    if (updateData.subject) complaint.subject = updateData.subject;
+    if (updateData.description !== undefined) complaint.description = updateData.description;
+    if (updateData.priority) complaint.priority = updateData.priority;
+
+    const savedComplaint = await complaint.save();
+    return await Complaint.findById(savedComplaint._id).populate('category', 'name');
+};
+
+// Delete complaint
+export const deleteComplaintDb = async (complaintId, studentId) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) {
+        throw new Error("Complaint not found.");
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student || complaint.studentId.toString() !== student._id.toString()) {
+        throw new Error("You do not have permission to delete this complaint.");
+    }
+
+    if (complaint.status !== 'Pending') {
+        throw new Error("You can only withdraw pending complaints.");
+    }
+
+    return await Complaint.findByIdAndDelete(complaintId);
+};
+
 // Get all complaints for admins/wardens
 export const getAllComplaintsDb = async (query = {}) => {
     // Query can include organizationId, hostelId based on the admin's scope
@@ -57,6 +119,7 @@ export const getAllComplaintsDb = async (query = {}) => {
         .populate('studentId', 'name studentId')
         .populate('hostelId', 'name')
         .populate('organizationId', 'name')
+        .populate('assignedStaff', 'name phone email')
         .sort({ createdAt: -1 });
 };
 
@@ -71,6 +134,24 @@ export const updateComplaintStatusDb = async (complaintId, newStatus, userRole, 
     complaint.timeline.push({
         status: newStatus,
         message: message || `Status updated to ${newStatus}`,
+        by: userRole || 'Admin',
+        date: new Date()
+    });
+
+    return await complaint.save();
+};
+
+// Assign maintenance staff to complaint
+export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) throw new Error("Complaint not found.");
+
+    complaint.assignedStaff = staffId;
+    
+    // Add to timeline
+    complaint.timeline.push({
+        status: complaint.status,
+        message: 'Maintenance staff assigned to this complaint.',
         by: userRole || 'Admin',
         date: new Date()
     });

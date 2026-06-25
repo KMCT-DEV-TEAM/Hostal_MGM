@@ -11,6 +11,7 @@ import {
   toggleHostelStatusDb,
   bulkUpdateHostelStatusDb
 } from "./hostel.service.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const createHostel = asyncHandler(async (req, res) => {
   const { code, email, organization } = req.body;
@@ -35,6 +36,18 @@ const createHostel = asyncHandler(async (req, res) => {
     ...req.body,
     organizations: finalOrganizations,
   });
+
+  if (req.user) {
+    await createLogDb({
+      action: "Created Hostel",
+      entityType: "Hostel",
+      entityId: newHostel._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Created new hostel: ${newHostel.name} (${newHostel.code})`,
+      status: "success"
+    });
+  }
 
   return sendSuccess(res, 201, "Hostel created successfully", {
     data: newHostel,
@@ -112,6 +125,18 @@ const updateHostel = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Hostel not found");
   }
 
+  if (req.user) {
+    await createLogDb({
+      action: "Updated Hostel",
+      entityType: "Hostel",
+      entityId: updatedHostel._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Updated hostel details for: ${updatedHostel.name} (${updatedHostel.code})`,
+      status: "success"
+    });
+  }
+
   return sendSuccess(res, 200, "Hostel updated successfully", {
     data: updatedHostel,
   });
@@ -125,6 +150,18 @@ const toggleHostelStatus = asyncHandler(async (req, res) => {
 
   if (!hostel) {
     return sendError(res, 404, "Hostel not found");
+  }
+
+  if (req.user) {
+    await createLogDb({
+      action: hostel.isActive ? "Activated Hostel" : "Deactivated Hostel",
+      entityType: "Hostel",
+      entityId: hostel._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Changed status of hostel ${hostel.name} to ${hostel.isActive ? 'Active' : 'Inactive'}`,
+      status: "success"
+    });
   }
 
   return sendSuccess(res, 200, `Hostel status updated to ${hostel.isActive ? 'Active' : 'Inactive'}`, {
@@ -148,6 +185,17 @@ const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
 
   const result = await bulkUpdateHostelStatusDb(ids, isActive, organizationId);
   console.log("bulkUpdateHostelStatus result:", result);
+
+  if (req.user) {
+    await createLogDb({
+      action: "Bulk Updated Hostel Status",
+      entityType: "Hostel",
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Bulk updated ${ids.length} hostels to ${isActive ? 'Active' : 'Inactive'}`,
+      status: "success"
+    });
+  }
 
   return sendSuccess(res, 200, `Successfully updated ${ids.length} hostels to ${isActive ? 'Active' : 'Inactive'} status`, { result });
 });

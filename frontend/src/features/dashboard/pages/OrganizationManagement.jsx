@@ -183,11 +183,7 @@ const OrganizationManagement = () => {
     };
 
     const handleCancel = () => {
-        if (isEditMode) {
-            setIsDiscardConfirmOpen(true);
-        } else {
-            setIsModalOpen(false);
-        }
+        setIsDiscardConfirmOpen(true);
     };
 
     const confirmDiscard = () => {
