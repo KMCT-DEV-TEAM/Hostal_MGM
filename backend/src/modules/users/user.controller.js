@@ -389,11 +389,18 @@ const getWardens = asyncHandler(async (req, res) => {
         return sendError(res, 400, "Admin is not assigned to any organization");
       }
       // Find all hostels under the admin's organization
-      const adminHostels = await Hostel.find({ organizationId: req.user.organization }).select("wardens");
+      const adminHostels = await Hostel.find({ organizations: req.user.organization }).select("wardens");
       const wardenIds = adminHostels.reduce((acc, hostel) => acc.concat(hostel.wardens), []);
       
       // Additional filter to only fetch these wardens
-      additionalQuery = { _id: { $in: wardenIds } };
+      additionalQuery = { 
+          $or: [
+              { _id: { $in: wardenIds } },
+              { organization: req.user.organization },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
     }
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit, status, search, additionalQuery);

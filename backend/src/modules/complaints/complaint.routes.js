@@ -27,10 +27,12 @@ router.get("/debug-data", async (req, res) => {
         const { default: User } = await import("../users/user.model.js");
         const { default: Student } = await import("../students/student.model.js");
 
-        const wardens = await User.find({ role: 'warden' }).select('name _id');
-        const hostels = await Hostel.find({}).select('name wardens _id');
+        const wardens = await User.find({ role: 'warden' }).select('name organization _id');
+        const hostels = await Hostel.find({}).select('name wardens organizations _id');
         const students = await Student.find({}).select('name hostelId _id');
         const complaints = await Complaint.find({}).select('hostelId subject studentId _id');
+        const { default: Course } = await import("../courses/course.model.js");
+        const courses = await Course.find({}).select('name code organizationId _id');
         
         const testWardenId = wardens.length > 0 ? wardens[0]._id.toString() : null;
         let testHostels = [];
@@ -38,7 +40,7 @@ router.get("/debug-data", async (req, res) => {
             testHostels = await Hostel.find({ wardens: testWardenId }).select('name wardens _id');
         }
 
-        res.json({ wardens, hostels, complaints, students, testWardenId, testHostels });
+        res.json({ wardens, hostels, complaints, students, testWardenId, testHostels, courses });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
