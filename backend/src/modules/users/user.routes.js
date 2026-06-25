@@ -175,7 +175,7 @@ router.post(
 router.post(
   "/maintenance-staff",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateCreateMaintenanceStaff,
   createMaintenanceStaff
 );
@@ -183,7 +183,7 @@ router.post(
 router.get(
   "/maintenance-staff",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware("super_admin", "admin", "warden"),
   getMaintenanceStaff
 );
 
@@ -198,7 +198,7 @@ router.get(
 router.patch(
   "/maintenance-staff/:id", 
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateMaintenanceStaffIdParam,
   validateUpdateMaintenanceStaff,
   updateMaintenanceStaff
@@ -207,7 +207,7 @@ router.patch(
 router.patch(
   "/maintenance-staff/:id/toggle-status",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateMaintenanceStaffIdParam,
   toggleMaintenanceStaffStatus 
 );
@@ -215,7 +215,7 @@ router.patch(
 router.post(
   "/maintenance-staff/bulk-toggle-status",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   bulkToggleMaintenanceStaffStatus
 );
 
