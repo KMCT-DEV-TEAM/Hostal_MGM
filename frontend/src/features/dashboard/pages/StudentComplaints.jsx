@@ -4,6 +4,7 @@ import StudentComplaintsHeader from '../components/complaints/StudentComplaintsH
 import StudentComplaintsToolbar from '../components/complaints/StudentComplaintsToolbar';
 import StudentComplaintFormModal from '../components/complaints/StudentComplaintFormModal';
 import StudentComplaintDetailModal from '../components/complaints/StudentComplaintDetailModal';
+import StudentComplaintsMobileList from '../components/complaints/StudentComplaintsMobileList';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -81,11 +82,14 @@ export default function StudentComplaints() {
     }, [searchQuery]);
 
     const handleCategoryChange = (id, newCategory) => {
-        // Find category object to get name
+        // Find category object to get name and ID
         const catObj = categories.find(c => c._id === newCategory || c.name === newCategory);
-        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategory });
-        // NOTE: In a real app we might also need to call an API to update the category, but the existing UI only did a local update.
-        // We'll leave it as local state update for now to match previous behavior, or implement the API call.
+        setConfirmCategoryChange({ 
+            isOpen: true, 
+            complaintId: id, 
+            newCategoryName: catObj ? catObj.name : newCategory,
+            newCategoryId: catObj ? catObj._id : newCategory
+        });
     };
 
     const handleEdit = (complaint) => {
@@ -219,7 +223,7 @@ export default function StudentComplaints() {
     const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <StudentComplaintsHeader />
             
             {/* Stat Cards Section */}
@@ -265,7 +269,7 @@ export default function StudentComplaints() {
                 </div>
             </div>
 
-            <div className="bg-transparent md:bg-[#F8FAFC] md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
                 {/* Toolbar Section */}
                 <StudentComplaintsToolbar
                     statusFilter={statusFilter}
@@ -279,6 +283,16 @@ export default function StudentComplaints() {
 
                 {/* Table Section */}
                 <StudentComplaintsTable
+                    loading={loading}
+                    complaints={paginatedComplaints}
+                    categories={categories}
+                    handleCategoryChange={handleCategoryChange}
+                    openEditModal={handleEdit}
+                    onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
+                />
+
+                {/* Mobile List Section */}
+                <StudentComplaintsMobileList
                     loading={loading}
                     complaints={paginatedComplaints}
                     categories={categories}
@@ -342,7 +356,7 @@ export default function StudentComplaints() {
                         setEditingComplaint(null);
                     }}
                     onSave={handleSaveComplaintClick}
-                    onCancel={confirmDiscard}
+                    onCancel={() => setIsDiscardConfirmOpen(true)}
                     onWithdraw={() => setIsWithdrawConfirmOpen(true)}
                 />
             )}
@@ -469,16 +483,27 @@ export default function StudentComplaints() {
 
             <ConfirmationModal
                 isOpen={confirmCategoryChange.isOpen}
-                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null })}
-                onConfirm={() => {
-                    setComplaints(complaints.map(c =>
-                        c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory } : c
-                    ));
-                    showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
-                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null });
+                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null })}
+                onConfirm={async () => {
+                    try {
+                        await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { 
+                            category: confirmCategoryChange.newCategoryId 
+                        });
+                        setComplaints(complaints.map(c =>
+                            c.id === confirmCategoryChange.complaintId 
+                                ? { ...c, category: confirmCategoryChange.newCategoryName, categoryId: confirmCategoryChange.newCategoryId } 
+                                : c
+                        ));
+                        showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategoryName}`);
+                    } catch (error) {
+                        console.error('Failed to update category:', error);
+                        showErrorToast('Error', error?.response?.data?.message || 'Failed to update category');
+                    } finally {
+                        setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null });
+                    }
                 }}
                 title="Confirm Category Change"
-                message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
+                message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategoryName}?`}
                 confirmText="Yes, Change"
             />
         </div>
