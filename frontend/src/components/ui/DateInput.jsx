@@ -41,7 +41,7 @@ const DateInput = forwardRef(({ label, error, className, min, max, value, onChan
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('scroll', updatePosition, true); // true = capture phase to catch modal scroll
             window.addEventListener('resize', updatePosition);
-            
+
             return () => {
                 document.removeEventListener('mousedown', handleClickOutside);
                 window.removeEventListener('scroll', updatePosition, true);
@@ -70,41 +70,40 @@ const DateInput = forwardRef(({ label, error, className, min, max, value, onChan
                     {label} {props.required && <span className="text-red-500">*</span>}
                 </label>
             )}
-            <div 
-                className={`relative flex items-center h-10 border rounded-md transition-colors bg-white cursor-pointer ${
-                    error ? "border-red-300 focus-within:border-red-500 bg-red-50/30" : "border-gray-200 hover:border-gray-300"
-                } ${isOpen ? 'ring-2 ring-primary/20 border-secondary' : ''}`}
+            <div
+                className={`relative flex items-center h-10 border rounded-md transition-colors bg-white cursor-pointer ${error ? "border-red-300 focus-within:border-red-500 bg-red-50/30" : "border-gray-200 hover:border-gray-300"
+                    } ${isOpen ? 'ring-2 ring-primary/20 border-secondary' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className={`pl-3 pr-2 flex items-center justify-center transition-colors ${error ? "text-red-400" : (isOpen ? "text-secondary" : "text-gray-400")}`}>
                     <CalendarIcon className="w-4 h-4" />
                 </div>
-                
+
                 {/* RHF compatible hidden text input that can receive focus */}
                 <input
                     type="text"
                     ref={ref}
                     value={displayValue}
-                    onChange={() => {}} // Handle React controlled warning
+                    onChange={() => { }} // Handle React controlled warning
                     readOnly
                     {...props}
                     className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
                 />
-                
+
                 <div className={`flex-1 w-full h-full pr-3 text-xs flex items-center bg-transparent ${displayValue ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
                     {displayValue ? displayValue : 'YYYY-MM-DD'}
                 </div>
-                
+
                 {/* Popover */}
                 {isOpen && typeof document !== 'undefined' && createPortal(
-                    <div 
+                    <div
                         ref={popoverRef}
                         className="fixed z-[9999] animate-in fade-in zoom-in-95 duration-100 shadow-xl rounded-xl"
                         style={{ top: popoverCoords.top, left: popoverCoords.left }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <Calendar 
-                            selectedDate={displayValue} 
+                        <Calendar
+                            selectedDate={displayValue}
                             onSelect={handleSelect}
                             min={min}
                             max={max}

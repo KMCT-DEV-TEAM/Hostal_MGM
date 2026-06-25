@@ -12,7 +12,8 @@ const leaveApi = {
   updateLeaveStatusByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/status`, payload),
 
   getLeavesByParent: (params) => api.get("/parent/passes", { params }),
-  updateLeaveStatusByParent: (id, payload) => api.patch(`/parent/passes/${id}/status`, payload),
+  approveLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/approve`, payload),
+  rejectLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/reject`, payload),
 };
 
 export default leaveApi;
