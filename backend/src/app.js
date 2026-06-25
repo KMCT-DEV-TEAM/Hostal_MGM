@@ -16,7 +16,7 @@ import batchRoutes from "./modules/batches/batch.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.routes.js";
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
-import passRoutes from "./modules/passes/pass.routes.js";
+import { studentPassRouter, parentPassRouter, wardenPassRouter } from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
@@ -78,9 +78,17 @@ app.use("/api/warden/students", studentRoutes);
 app.use("/api/warden/parents", parentRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+// ---studenbts routes ---
+app.use("/api/student/passes", studentPassRouter);
+
+
+// ---parents routes -------
+app.use("/api/parent/passes", parentPassRouter);
+
+// ---warden routes -------
+app.use("/api/warden/passes", wardenPassRouter);
 app.use("/api/passes", passRoutes);
 app.use("/api/logs", logRoutes);
-
 app.use(errorMiddleware);
 
 export default app;

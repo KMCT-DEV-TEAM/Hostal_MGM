@@ -288,3 +288,35 @@ export const validateCancelPass = async (req, res, next) => {
     next(error);
   }
 };
+
+export const validateGetPasses = (req, res, next) => {
+  const { page, limit, status, passType } = req.query;
+
+  if (page && isNaN(parseInt(page))) {
+    return res.status(400).json({ success: false, message: "Page must be a valid number" });
+  }
+
+  if (limit && isNaN(parseInt(limit))) {
+    return res.status(400).json({ success: false, message: "Limit must be a valid number" });
+  }
+
+  if (status && !["pending_parent", "pending_warden", "approved", "rejected", "cancelled", "returned", "completed"].includes(status)) {
+    return res.status(400).json({ success: false, message: "Invalid status filter" });
+  }
+
+  if (passType && !["home_pass", "out_pass"].includes(passType)) {
+    return res.status(400).json({ success: false, message: "Invalid passType filter" });
+  }
+
+  next();
+};
+
+export const validateRejectPass = (req, res, next) => {
+  const { remarks } = req.body;
+  
+  if (!remarks || remarks.trim() === "") {
+    return res.status(400).json({ success: false, message: "Remarks are required when rejecting a pass" });
+  }
+
+  next();
+};
