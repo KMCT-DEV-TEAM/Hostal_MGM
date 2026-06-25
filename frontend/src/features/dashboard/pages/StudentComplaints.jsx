@@ -17,6 +17,7 @@ export default function StudentComplaints() {
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
     const limit = 10;
@@ -28,6 +29,7 @@ export default function StudentComplaints() {
     
     // Confirmation modals state
     const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = useState(false);
     const [pendingFormData, setPendingFormData] = useState(null);
@@ -71,6 +73,13 @@ export default function StudentComplaints() {
         });
     }, []);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     const handleCategoryChange = (id, newCategory) => {
         // Find category object to get name
         const catObj = categories.find(c => c._id === newCategory || c.name === newCategory);
@@ -97,24 +106,28 @@ export default function StudentComplaints() {
     const confirmSaveComplaint = async () => {
         if (!pendingFormData) return;
         
+        setIsSubmitting(true);
         try {
             if (editingComplaint) {
-                // If the backend has an update endpoint we would call it here.
-                // For now, we only implement creation in this sprint.
-                showErrorToast('Not implemented', 'Updating complaints is not supported yet.');
+                await ComplaintService.updateComplaint(editingComplaint.id, pendingFormData);
+                showSuccessToast('Complaint updated successfully');
+                fetchComplaints();
+                window.dispatchEvent(new CustomEvent('complaintsUpdated'));
             } else {
                 await ComplaintService.createComplaint(pendingFormData);
                 showSuccessToast('Complaint created successfully');
                 fetchComplaints();
+                window.dispatchEvent(new CustomEvent('complaintsUpdated'));
             }
         } catch (error) {
             showErrorToast('Failed to save complaint', error.message);
+        } finally {
+            setIsSubmitting(false);
+            setIsSaveConfirmOpen(false);
+            setIsModalOpen(false);
+            setEditingComplaint(null);
+            setPendingFormData(null);
         }
-
-        setIsSaveConfirmOpen(false);
-        setIsModalOpen(false);
-        setEditingComplaint(null);
-        setPendingFormData(null);
     };
 
     const confirmDiscard = () => {
@@ -123,23 +136,42 @@ export default function StudentComplaints() {
         setEditingComplaint(null);
     };
 
-    const confirmWithdraw = () => {
+    const confirmWithdraw = async () => {
         if (editingComplaint) {
-            // Usually involves an API call to delete or cancel
-            showErrorToast('Not implemented', 'Withdrawing complaints is not supported yet.');
+            setIsSubmitting(true);
+            try {
+                await ComplaintService.deleteComplaint(editingComplaint.id);
+                showSuccessToast('Complaint withdrawn successfully');
+                fetchComplaints();
+                window.dispatchEvent(new CustomEvent('complaintsUpdated'));
+            } catch (error) {
+                showErrorToast('Failed to withdraw complaint', error.message);
+            } finally {
+                setIsSubmitting(false);
+                setIsWithdrawConfirmOpen(false);
+                setIsModalOpen(false);
+                setEditingComplaint(null);
+            }
+        } else {
+            setIsWithdrawConfirmOpen(false);
+            setIsModalOpen(false);
+            setEditingComplaint(null);
         }
-        setIsWithdrawConfirmOpen(false);
-        setIsModalOpen(false);
-        setEditingComplaint(null);
     };
 
     // Apply filtering
     let filteredComplaints = complaints.filter(c => {
-        const query = searchQuery.toLowerCase();
-        return Object.values(c).some(val => 
-            String(val).toLowerCase().includes(query)
+        if (!debouncedSearchQuery) return true;
+        const query = debouncedSearchQuery.toLowerCase();
+        
+        // Check relevant string fields
+        const searchableFields = [c.subject, c.category, c.description, c.roomNo, c.status, c.date];
+        
+        return searchableFields.some(val => 
+            val && String(val).toLowerCase().includes(query)
         );
     });
+    
     if (statusFilter !== 'All') {
         filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
     }
@@ -247,6 +279,7 @@ export default function StudentComplaints() {
 
                 {/* Table Section */}
                 <StudentComplaintsTable
+                    loading={loading}
                     complaints={paginatedComplaints}
                     categories={categories}
                     handleCategoryChange={handleCategoryChange}
@@ -303,19 +336,13 @@ export default function StudentComplaints() {
             {isModalOpen && (
                 <StudentComplaintFormModal 
                     editingComplaint={editingComplaint}
+                    isSubmitting={isSubmitting}
                     onClose={() => {
                         setIsModalOpen(false);
                         setEditingComplaint(null);
                     }}
                     onSave={handleSaveComplaintClick}
-                    onCancel={() => {
-                        if (editingComplaint) {
-                            setIsDiscardConfirmOpen(true);
-                        } else {
-                            setIsModalOpen(false);
-                            setEditingComplaint(null);
-                        }
-                    }}
+                    onCancel={confirmDiscard}
                     onWithdraw={() => setIsWithdrawConfirmOpen(true)}
                 />
             )}
@@ -330,15 +357,24 @@ export default function StudentComplaints() {
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsSaveConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmSaveComplaint}
-                                className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                Confirm
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Confirm'
+                                )}
                             </button>
                         </div>
                     </div>
@@ -380,15 +416,24 @@ export default function StudentComplaints() {
                         <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => setIsWithdrawConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmWithdraw}
-                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                Withdraw
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Withdrawing...
+                                    </>
+                                ) : (
+                                    'Withdraw'
+                                )}
                             </button>
                         </div>
                     </div>

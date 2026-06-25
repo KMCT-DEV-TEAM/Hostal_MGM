@@ -1,30 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import WardenComplaintsTable from '../components/complaints/WardenComplaintsTable';
 import WardenComplaintsToolbar from '../components/complaints/WardenComplaintsToolbar';
 import WardenComplaintsFilterModal from '../components/complaints/WardenComplaintsFilterModal';
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
+import AssignStaffModal from '../components/complaints/AssignStaffModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ComplaintService from '@/services/complaint.service';
+import ComplaintCategoryService from '@/services/complaintCategory.service';
 
 export default function WardenComplaints({ hostel, onBack }) {
-    // Initial mocked student complaints for warden view
-    const initialComplaints = [
-        {
-            id: '1',
-            student: 'Nila Mohan',
-            roomNo: 'A112390',
-            category: 'Mess',
-            subject: 'Food was cold and not fresh',
-            date: '12 June',
-            priority: 'High',
-            status: 'Pending'
-        }
-    ];
+    const [complaints, setComplaints] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [assignStaffModalState, setAssignStaffModalState] = useState({ isOpen: false, complaint: null });
 
-    const [complaints, setComplaints] = useState(initialComplaints);
+    const fetchComplaints = async () => {
+        setIsLoading(true);
+        try {
+            const response = await ComplaintService.getAllComplaints();
+            let rawData = response.data || [];
+            
+            const formatted = rawData.map(c => ({
+                id: c._id,
+                student: c.studentId?.name || 'Unknown',
+                roomNo: c.roomNo || 'N/A',
+                category: c.category?.name || 'Unknown',
+                categoryId: c.category?._id,
+                subject: c.subject,
+                date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+                priority: c.priority || 'Medium',
+                status: c.status,
+                hostelName: c.hostelId?.name || 'Unknown Hostel',
+                assignedStaff: c.assignedStaff,
+                timeline: c.timeline || []
+            }));
+
+            if (hostel) {
+                setComplaints(formatted.filter(c => c.hostelName === hostel));
+            } else {
+                setComplaints(formatted);
+            }
+        } catch (error) {
+            showErrorToast('Failed to load complaints', error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchComplaints();
+        ComplaintCategoryService.getComplaintCategories().then(res => {
+            setCategories(res.data || []);
+        }).catch(err => console.error("Failed to fetch categories", err));
+    }, [hostel]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [priorityFilter, setPriorityFilter] = useState('All');
@@ -39,12 +71,23 @@ export default function WardenComplaints({ hostel, onBack }) {
     const [confirmCategoryChange, setConfirmCategoryChange] = useState({
         isOpen: false,
         complaintId: null,
-        newCategory: null
+        newCategory: null,
+        newCategoryId: null
+    });
+    const [confirmPriorityChange, setConfirmPriorityChange] = useState({
+        isOpen: false,
+        complaintId: null,
+        newPriority: null
     });
     const limit = 10;
 
-    const handleCategoryChange = (id, newCategory) => {
-        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory });
+    const handleCategoryChange = (id, newCategoryVal) => {
+        const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });
+    };
+
+    const handlePriorityChange = (id, newPriority) => {
+        setConfirmPriorityChange({ isOpen: true, complaintId: id, newPriority });
     };
 
     // Apply filtering
@@ -133,22 +176,20 @@ export default function WardenComplaints({ hostel, onBack }) {
 
             {/* Table Section */}
             <WardenComplaintsTable
+                loading={isLoading}
                 complaints={paginatedComplaints}
+                categories={categories}
                 handleCategoryChange={handleCategoryChange}
+                handlePriorityChange={handlePriorityChange}
                 onViewClick={(complaint) => setViewingComplaint(complaint)}
             />
 
-            {/* PAGINATION BAR FOOTER */}
-            <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-text-secondary rounded-b-xl shadow-sm shrink-0 mt-auto">
-                <div className="hidden sm:block">
-                    Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
-                    {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
+            {/* Pagination Section */}
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between text-sm text-text-secondary">
+                <div className="mb-4 sm:mb-0">
+                    Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
                 </div>
-                <div className="sm:hidden">
-                    {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
-                </div>
-
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                     <button
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -156,23 +197,19 @@ export default function WardenComplaints({ hostel, onBack }) {
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
-
-                    {Array.from({ length: totalPages }, (_, index) => {
-                        const pageNum = index + 1;
-                        return (
-                            <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
-                                    ? 'bg-primary text-white shadow-sm font-bold'
-                                    : 'border border-transparent text-text-secondary hover:bg-gray-50'
-                                    }`}
-                            >
-                                {pageNum}
-                            </button>
-                        );
-                    })}
-
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-8 h-8 rounded flex items-center justify-center transition-colors cursor-pointer ${
+                                currentPage === page
+                                    ? 'bg-primary text-white font-medium'
+                                    : 'hover:bg-gray-100'
+                            }`}
+                        >
+                            {page}
+                        </button>
+                    ))}
                     <button
                         disabled={currentPage === totalPages || totalPages === 0}
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
@@ -207,8 +244,23 @@ export default function WardenComplaints({ hostel, onBack }) {
                 <WardenComplaintDetailView
                     complaint={viewingComplaint}
                     onClose={() => setViewingComplaint(null)}
+                    onOpenAssignStaff={(complaint) => setAssignStaffModalState({ isOpen: true, complaint })}
                 />
             )}
+
+            <AssignStaffModal
+                isOpen={assignStaffModalState.isOpen}
+                onClose={() => setAssignStaffModalState({ isOpen: false, complaint: null })}
+                complaint={assignStaffModalState.complaint}
+                onAssigned={(assignedStaff) => {
+                    setComplaints(complaints.map(c =>
+                        c.id === assignStaffModalState.complaint.id ? { ...c, assignedStaff } : c
+                    ));
+                    if (viewingComplaint && viewingComplaint.id === assignStaffModalState.complaint.id) {
+                        setViewingComplaint({ ...viewingComplaint, assignedStaff });
+                    }
+                }}
+            />
 
             <ExportFilterModal
                 isOpen={isExportConfirmOpen}
@@ -232,16 +284,41 @@ export default function WardenComplaints({ hostel, onBack }) {
 
             <ConfirmationModal
                 isOpen={confirmCategoryChange.isOpen}
-                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null })}
-                onConfirm={() => {
-                    setComplaints(complaints.map(c =>
-                        c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory } : c
-                    ));
-                    showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
-                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null });
+                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null })}
+                onConfirm={async () => {
+                    try {
+                        await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { category: confirmCategoryChange.newCategoryId });
+                        setComplaints(complaints.map(c =>
+                            c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory, categoryId: confirmCategoryChange.newCategoryId } : c
+                        ));
+                        showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
+                        setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null });
+                    } catch (error) {
+                        showErrorToast('Update Failed', error.message || 'Failed to update category');
+                    }
                 }}
                 title="Confirm Category Change"
                 message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
+                confirmText="Yes, Change"
+            />
+
+            <ConfirmationModal
+                isOpen={confirmPriorityChange.isOpen}
+                onClose={() => setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null })}
+                onConfirm={async () => {
+                    try {
+                        await ComplaintService.updateComplaint(confirmPriorityChange.complaintId, { priority: confirmPriorityChange.newPriority });
+                        setComplaints(complaints.map(c =>
+                            c.id === confirmPriorityChange.complaintId ? { ...c, priority: confirmPriorityChange.newPriority } : c
+                        ));
+                        showSuccessToast('Priority Updated', `Complaint priority changed to ${confirmPriorityChange.newPriority}`);
+                        setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null });
+                    } catch (error) {
+                        showErrorToast('Update Failed', error.message || 'Failed to update priority');
+                    }
+                }}
+                title="Confirm Priority Change"
+                message={`Are you sure you want to change the priority to ${confirmPriorityChange.newPriority}?`}
                 confirmText="Yes, Change"
             />
         </div>

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Pencil } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 export default function StudentComplaintsTable({
+    loading,
     complaints,
     categories = [],
     handleCategoryChange,
@@ -29,7 +31,9 @@ export default function StudentComplaintsTable({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
-                    {complaints.length === 0 ? (
+                    {loading ? (
+                        <TableSkeletonLoader columns={6} />
+                    ) : complaints.length === 0 ? (
                         <tr>
                             <td colSpan="6" className="p-8 text-center text-text-secondary">No complaints found</td>
                         </tr>
@@ -59,7 +63,7 @@ export default function StudentComplaintsTable({
                                     {complaint.date}
                                 </td>
                                 <td className="p-5 text-start">
-                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : 'bg-gray-100 text-text-secondary'}`}>
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'In progress' ? 'bg-accent/10 text-blue-500' : 'bg-gray-100 text-text-secondary'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>
