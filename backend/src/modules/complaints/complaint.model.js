@@ -61,6 +61,15 @@ const complaintSchema = new mongoose.Schema(
             enum: ['Pending', 'In progress', 'Resolved'],
             default: 'Pending'
         },
+        priority: {
+            type: String,
+            enum: ['High', 'Medium', 'Low'],
+            default: 'Medium'
+        },
+        assignedStaff: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        },
         timeline: [timelineSchema]
     },
     {
