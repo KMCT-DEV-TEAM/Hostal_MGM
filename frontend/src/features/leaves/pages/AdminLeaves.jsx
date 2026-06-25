@@ -1,318 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-    Calendar as CalendarIcon,
-    Check,
-    X,
-    Filter,
-    Download,
-} from 'lucide-react';
+import { Filter, Download } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import PageHeader from '@/components/ui/PageHeader';
-import StatsCard from '@/components/ui/StatsCard';
-import ListTable from '@/components/ui/ListTable';
-import MobileList from '@/components/ui/MobileList';
-import Modal from '@/components/ui/Modal';
+import DataTable from '@/components/ui/DataTable';
 import Dropdown from '@/components/ui/Dropdown';
-import Pagination from '@/components/ui/Pagination';
-import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { showSuccessToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
-
-// Mock leave/outpass requests with diverse hostel assignments to demonstrate drilldown filtering
-const STUDENT_LISTING_MOCK_DATA = [
-    {
-        id: 'LR001',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Pending',
-        returnStatus: '-----'
-    },
-    {
-        id: 'LR002',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Returned'
-    },
-    {
-        id: 'LR003',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'B223401',
-        hostel: 'Hostel B',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Pending',
-        returnStatus: '-----'
-    },
-    {
-        id: 'LR004',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Not Returned'
-    },
-    {
-        id: 'LR005',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'C334512',
-        hostel: 'Hostel C',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Returned'
-    },
-    {
-        id: 'LR006',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'B223401',
-        hostel: 'Hostel B',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Returned'
-    },
-    {
-        id: 'LR007',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Approved',
-        returnStatus: 'Returned'
-    },
-    {
-        id: 'LR008',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'C334512',
-        hostel: 'Hostel C',
-        passType: 'Home Pass',
-        fromDate: 'june 12',
-        toDate: 'june 15',
-        duration: '2 days',
-        type: 'In House',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        status: 'Pending',
-        returnStatus: '-----'
-    },
-    // Out Pass entries
-    {
-        id: 'LR009',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Pending',
-        returnStatus: '-----',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR010',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Approved',
-        returnStatus: 'Returned',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR011',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'B223401',
-        hostel: 'Hostel B',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Pending',
-        returnStatus: '-----',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR012',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Approved',
-        returnStatus: 'Not Returned',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR013',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'C334512',
-        hostel: 'Hostel C',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Approved',
-        returnStatus: 'Returned',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR014',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'B223401',
-        hostel: 'Hostel B',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Approved',
-        returnStatus: 'Returned',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR015',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'A112390',
-        hostel: 'Hostel A',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Approved',
-        returnStatus: 'Returned',
-        organization: 'KMCT Engineering College'
-    },
-    {
-        id: 'LR016',
-        studentName: 'Nila Mohan',
-        rollNo: 'KMCT-2023-014',
-        roomNo: 'C334512',
-        hostel: 'Hostel C',
-        passType: 'Out Pass',
-        fromDate: 'june 12',
-        toDate: 'june 12',
-        duration: '-----',
-        appliedDate: 'june 11',
-        outTime: '09 : 00 AM',
-        returnTime: '10 : 00 AM',
-        outPassType: 'In House',
-        reason: 'Purchase study materials',
-        status: 'Pending',
-        returnStatus: '-----',
-        organization: 'KMCT Engineering College'
-    }
-];
-
-const SUPER_ADMIN_AGGREGATE_MOCK_DATA = [
-    { id: 'SA001', organization: 'engineering', hostel: 'Hostel A', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA002', organization: 'engineering', hostel: 'Hostel B', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA003', organization: 'engineering', hostel: 'Hostel C', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA004', organization: 'medical', hostel: 'Hostel A', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA005', organization: 'medical', hostel: 'Hostel B', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA006', organization: 'pharmacy', hostel: 'Hostel A', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA007', organization: 'pharmacy', hostel: 'Hostel B', totalRequest: 10, pending: 2, approved: 8, rejected: 8 },
-    { id: 'SA008', organization: 'pharmacy', hostel: 'Hostel C', totalRequest: 10, pending: 2, approved: 8, rejected: 8 }
-];
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams(); // 'home-pass', 'outpass', and optional 'hostelName'
@@ -538,53 +232,15 @@ export default function AdminLeaves() {
                 />
             </div>
 
-            {/* 4 Stats Cards aligned side-by-side with top border colors */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 shrink-0">
-                <StatsCard
-                    label="TOTAL REQUESTS"
-                    value={stats.total}
-                    icon={<CalendarIcon className="w-4 h-4 text-blue-500" />}
-                    iconBg="bg-blue-50/50"
-                    borderColor="border-t-2 border-t-blue-500 border-gray-100 shadow-sm"
-                />
-                <StatsCard
-                    label="APPROVED REQUESTS"
-                    value={stats.approved}
-                    icon={<CalendarIcon className="w-4 h-4 text-success" />}
-                    iconBg="bg-green-50/50"
-                    borderColor="border-t-2 border-t-green-500 border-gray-100 shadow-sm"
-                />
-                <StatsCard
-                    label="PENDING REQUESTS"
-                    value={stats.pending}
-                    icon={<CalendarIcon className="w-4 h-4 text-warning" />}
-                    iconBg="bg-amber-50/50"
-                    borderColor="border-t-2 border-t-amber-500 border-gray-100 shadow-sm"
-                />
-                <StatsCard
-                    label="REJECTED REQUESTS"
-                    value={stats.rejected}
-                    icon={<CalendarIcon className="w-4 h-4 text-danger" />}
-                    iconBg="bg-rose-50/50"
-                    borderColor="border-t-2 border-t-rose-500 border-gray-100 shadow-sm"
-                />
-            </div>
+            <LeaveStatsCards stats={stats} isSuperAdmin={isSuperAdmin} />
 
             {/* List Table Panel */}
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-
-                {/* Search & Toolbar section */}
-                <div className="p-4 flex flex-row items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="relative w-full max-w-sm">
-                        <input
-                            className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none placeholder-gray-400 font-medium text-gray-700"
-                            placeholder="Search"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-3">
+            <DataTable
+                searchQuery={searchQuery}
+                onSearchChange={(e) => setSearchQuery(e.target.value)}
+                searchPlaceholder="Search"
+                toolbarActions={
+                    <>
                         {isSuperAdmin && !selectedHostel ? (
                             <>
                                 <Dropdown
@@ -597,7 +253,7 @@ export default function AdminLeaves() {
                                     value={orgFilter}
                                     onChange={(val) => setOrgFilter(val)}
                                     placeholder="All"
-                                    triggerClassName="px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white text-gray-700 flex justify-between items-center"
+                                    triggerClassName="px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white text-gray-700 flex justify-between items-center shadow-sm md:shadow-none"
                                 />
                             </>
                         ) : (
@@ -605,7 +261,7 @@ export default function AdminLeaves() {
                                 <button
                                     type="button"
                                     onClick={() => setStatusFilter(prev => prev ? '' : 'Pending')}
-                                    className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm shrink-0 flex items-center justify-center ${statusFilter ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-200 text-gray-400 hover:text-gray-600'
+                                    className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${statusFilter ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-200 text-gray-400 hover:text-gray-600'
                                         }`}
                                     title="Toggle Pending status filter"
                                 >
@@ -618,222 +274,205 @@ export default function AdminLeaves() {
                         <button
                             type="button"
                             onClick={() => showSuccessToast('Exporting leave data...')}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Download className="w-4 h-4" />
                             Export
                         </button>
-                    </div>
-                </div>
-
-                {/* Desktop Grid Layout */}
-                <ListTable
-                    headers={tableHeaders}
-                    items={paginatedItems}
-                    canSelect={false}
-                    emptyText="No leave records matching the active filters."
-                    renderRow={(r) => {
-                        // Display student rows if detailed view is active or user is not a Super Admin
-                        if (selectedHostel || !isSuperAdmin) {
-                            return (
-                                <>
-                                    {/* Student initials and full name */}
-                                    <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
-                                        <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                            {r.studentName.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                                        </div>
-                                        <span className="text-sm font-semibold">{r.studentName}</span>
-                                    </td>
-
-                                    {/* Room No (if drilldown/warden) or Hostel name (if admin) */}
-                                    <td className="p-4 text-text-secondary font-medium">
-                                        {selectedHostel || isWarden ? r.roomNo : (
-                                            <span
-                                                className="text-primary font-semibold hover:underline cursor-pointer"
-                                                onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
-                                            >
-                                                {r.hostel}
-                                            </span>
-                                        )}
-                                    </td>
-
-                                    {/* Period / Date */}
-                                    <td className="p-4 text-text-secondary lowercase">
-                                        {isHomePass ? `${r.fromDate} - ${r.toDate}` : r.fromDate}
-                                    </td>
-
-                                    {/* Days / Type */}
-                                    <td className="p-4 text-text-secondary capitalize">
-                                        {isHomePass ? r.duration : r.type}
-                                    </td>
-
-                                    {/* Times (Out pass only) */}
-                                    {!isHomePass && (
-                                        <>
-                                            <td className="p-4 text-text-secondary">
-                                                {r.outTime}
-                                            </td>
-                                            <td className="p-4 text-text-secondary">
-                                                {r.returnTime}
-                                            </td>
-                                        </>
-                                    )}
-
-                                    {/* Inline Status Dropdown */}
-                                    <td className="p-4">
-                                        <Dropdown
-                                            options={statusOptions}
-                                            value={r.status}
-                                            onChange={(val) => handleUpdateStatus(r.id, val)}
-                                            minWidth="w-28"
-                                            triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
-                                                r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
-                                                    'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hover:bg-[#fef3c7]'
-                                                }`}
-                                        />
-                                    </td>
-
-                                    {/* Inline Return Dropdown */}
-                                    <td className="p-4">
-                                        <Dropdown
-                                            options={returnOptions}
-                                            value={r.returnStatus || '-----'}
-                                            onChange={(val) => handleUpdateReturn(r.id, val)}
-                                            minWidth="w-32"
-                                            triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.returnStatus === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
-                                                r.returnStatus === 'Not Returned' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
-                                                    'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
-                                                }`}
-                                        />
-                                    </td>
-                                </>
-                            );
-                        }
-
-                        // Otherwise render Super Admin aggregates overview
+                    </>
+                }
+                headers={tableHeaders}
+                items={paginatedItems}
+                canSelect={false}
+                emptyText="No leave records matching the active filters."
+                renderRow={(r) => {
+                    // Display student rows if detailed view is active or user is not a Super Admin
+                    if (selectedHostel || !isSuperAdmin) {
                         return (
                             <>
-                                <td className="p-4 text-text-secondary capitalize">
-                                    {r.organization}
+                                {/* Student initials and full name */}
+                                <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
+                                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                                        {r.studentName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                    </div>
+                                    <span className="text-sm font-semibold">{r.studentName}</span>
                                 </td>
-                                <td
-                                    className="p-4 text-text-secondary hover:text-primary cursor-pointer"
-                                    onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
-                                >
-                                    {r.hostel}
-                                </td>
-                                <td className="p-4 text-text-secondary text-center sm:text-left">
-                                    {r.totalRequest}
-                                </td>
-                                <td className="p-4 text-text-secondary text-center sm:text-left">
-                                    {r.pending}
-                                </td>
-                                <td className="p-4 text-text-secondary text-center sm:text-left">
-                                    {r.approved}
-                                </td>
-                                {!isHomePass && (
-                                    <td className="p-4 text-text-secondary text-center sm:text-left">
-                                        {r.rejected}
-                                    </td>
-                                )}
-                            </>
-                        );
-                    }}
-                />
 
-                {/* Mobile View */}
-                <MobileList
-                    items={paginatedItems}
-                    canSelect={false}
-                    emptyText="No leave records matching filters."
-                    renderItem={(r) => {
-                        if (isSuperAdmin && !selectedHostel) {
-                            return (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-bold text-[#0A437A] capitalize">{r.organization}</span>
+                                {/* Room No (if drilldown/warden) or Hostel name (if admin) */}
+                                <td className="p-4 text-text-secondary font-medium">
+                                    {selectedHostel || isWarden ? r.roomNo : (
                                         <span
-                                            className="text-xs text-primary font-semibold hover:underline cursor-pointer"
+                                            className="text-primary font-semibold hover:underline cursor-pointer"
                                             onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
                                         >
                                             {r.hostel}
                                         </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-50 text-xs text-text-secondary font-semibold">
-                                        <div>Total: {r.totalRequest}</div>
-                                        <div>Pending: {r.pending}</div>
-                                        <div>Approved: {r.approved}</div>
-                                    </div>
-                                </div>
-                            );
-                        }
+                                    )}
+                                </td>
 
+                                {/* Period / Date */}
+                                <td className="p-4 text-text-secondary lowercase">
+                                    {isHomePass ? `${r.fromDate} - ${r.toDate}` : r.fromDate}
+                                </td>
+
+                                {/* Days / Type */}
+                                <td className="p-4 text-text-secondary capitalize">
+                                    {isHomePass ? r.duration : r.type}
+                                </td>
+
+                                {/* Times (Out pass only) */}
+                                {!isHomePass && (
+                                    <>
+                                        <td className="p-4 text-text-secondary">
+                                            {r.outTime}
+                                        </td>
+                                        <td className="p-4 text-text-secondary">
+                                            {r.returnTime}
+                                        </td>
+                                    </>
+                                )}
+
+                                {/* Inline Status Dropdown */}
+                                <td className="p-4">
+                                    <Dropdown
+                                        options={statusOptions}
+                                        value={r.status}
+                                        onChange={(val) => handleUpdateStatus(r.id, val)}
+                                        minWidth="w-28"
+                                        triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
+                                            r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
+                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hover:bg-[#fef3c7]'
+                                            }`}
+                                    />
+                                </td>
+
+                                {/* Inline Return Dropdown */}
+                                <td className="p-4">
+                                    <Dropdown
+                                        options={returnOptions}
+                                        value={r.returnStatus || '-----'}
+                                        onChange={(val) => handleUpdateReturn(r.id, val)}
+                                        minWidth="w-32"
+                                        triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.returnStatus === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
+                                            r.returnStatus === 'Not Returned' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
+                                                'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
+                                            }`}
+                                    />
+                                </td>
+                            </>
+                        );
+                    }
+
+                    // Otherwise render Super Admin aggregates overview
+                    return (
+                        <>
+                            <td className="p-4 text-text-secondary capitalize">
+                                {r.organization}
+                            </td>
+                            <td
+                                className="p-4 text-text-secondary hover:text-primary cursor-pointer"
+                                onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
+                            >
+                                {r.hostel}
+                            </td>
+                            <td className="p-4 text-text-secondary text-center sm:text-left">
+                                {r.totalRequest}
+                            </td>
+                            <td className="p-4 text-text-secondary text-center sm:text-left">
+                                {r.pending}
+                            </td>
+                            <td className="p-4 text-text-secondary text-center sm:text-left">
+                                {r.approved}
+                            </td>
+                            {!isHomePass && (
+                                <td className="p-4 text-text-secondary text-center sm:text-left">
+                                    {r.rejected}
+                                </td>
+                            )}
+                        </>
+                    );
+                }}
+                renderMobileItem={(r) => {
+                    if (isSuperAdmin && !selectedHostel) {
                         return (
-                            <div className="space-y-2.5">
+                            <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-[#0A437A]/10 text-text-secondary flex items-center justify-center">
-                                            {r.studentName.substring(0, 2)}
-                                        </div>
-                                        <span className="font-bold text-gray-700 text-sm">{r.studentName}</span>
-                                    </div>
-                                    <span className="text-xs text-gray-400 font-medium">
-                                        {selectedHostel || isWarden ? `Room ${r.roomNo}` : (
-                                            <span
-                                                className="text-[#0A437A] font-semibold hover:underline cursor-pointer"
-                                                onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
-                                            >
-                                                {r.hostel}
-                                            </span>
-                                        )}
+                                    <span className="font-bold text-[#0A437A] capitalize">{r.organization}</span>
+                                    <span
+                                        className="text-xs text-primary font-semibold hover:underline cursor-pointer"
+                                        onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
+                                    >
+                                        {r.hostel}
                                     </span>
                                 </div>
-                                <hr className="border-gray-50" />
-                                <div className="text-xs text-text-secondary space-y-1.5">
-                                    <div>{isHomePass ? `Period: ${r.fromDate} - ${r.toDate} (${r.duration})` : `Outing Time: ${r.outTime} - ${r.returnTime}`}</div>
-                                    <div className="flex justify-between items-center gap-2 pt-2">
-                                        <span>Status:</span>
-                                        <Dropdown
-                                            options={statusOptions}
-                                            value={r.status}
-                                            onChange={(val) => handleUpdateStatus(r.id, val)}
-                                            minWidth="w-24"
-                                            triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
-                                                r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
-                                                    'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
-                                                }`}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between items-center gap-2 pt-1.5">
-                                        <span>Return:</span>
-                                        <Dropdown
-                                            options={returnOptions}
-                                            value={r.returnStatus || '-----'}
-                                            onChange={(val) => handleUpdateReturn(r.id, val)}
-                                            minWidth="w-28"
-                                            triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.returnStatus === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
-                                                r.returnStatus === 'Not Returned' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
-                                                    'bg-white border-gray-200 text-gray-400'
-                                                }`}
-                                        />
-                                    </div>
+                                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-50 text-xs text-text-secondary font-semibold">
+                                    <div>Total: {r.totalRequest}</div>
+                                    <div>Pending: {r.pending}</div>
+                                    <div>Approved: {r.approved}</div>
                                 </div>
                             </div>
                         );
-                    }}
-                />
+                    }
 
-                {/* Pagination */}
-                {filteredList.length > 0 && (
-                    <Pagination
-                        page={page}
-                        setPage={setPage}
-                        limit={limit}
-                        totalItems={filteredList.length}
-                        totalPages={Math.ceil(filteredList.length / limit)}
-                    />
-                )}
-            </div>
+                    return (
+                        <div className="space-y-2.5">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                                        {r.studentName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                    </div>
+                                    <span className="font-bold text-gray-700 text-sm">{r.studentName}</span>
+                                </div>
+                                <span className="text-xs text-gray-400 font-medium">
+                                    {selectedHostel || isWarden ? `Room ${r.roomNo}` : (
+                                        <span
+                                            className="text-[#0A437A] font-semibold hover:underline cursor-pointer"
+                                            onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
+                                        >
+                                            {r.hostel}
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                            <hr className="border-gray-50" />
+                            <div className="text-xs text-text-secondary space-y-1.5">
+                                <div>{isHomePass ? `Period: ${r.fromDate} - ${r.toDate} (${r.duration})` : `Outing Time: ${r.outTime} - ${r.returnTime}`}</div>
+                                <div className="flex justify-between items-center gap-2 pt-2">
+                                    <span>Status:</span>
+                                    <Dropdown
+                                        options={statusOptions}
+                                        value={r.status}
+                                        onChange={(val) => handleUpdateStatus(r.id, val)}
+                                        minWidth="w-24"
+                                        triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                            r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                                            }`}
+                                    />
+                                </div>
+                                <div className="flex justify-between items-center gap-2 pt-1.5">
+                                    <span>Return:</span>
+                                    <Dropdown
+                                        options={returnOptions}
+                                        value={r.returnStatus || '-----'}
+                                        onChange={(val) => handleUpdateReturn(r.id, val)}
+                                        minWidth="w-28"
+                                        triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.returnStatus === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                            r.returnStatus === 'Not Returned' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                'bg-white border-gray-200 text-gray-400'
+                                            }`}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }}
+                page={page}
+                setPage={setPage}
+                limit={limit}
+                totalItems={filteredList.length}
+                totalPages={Math.ceil(filteredList.length / limit)}
+            />
         </div>
     );
 }
