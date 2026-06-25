@@ -86,7 +86,7 @@ const passSchema = new mongoose.Schema(
     outPassCategory: {
       type: String,
       enum: ["in_house", "out_house"],
-      required: function() {
+      required: function () {
         return this.passType === "out_pass";
       }
     },
