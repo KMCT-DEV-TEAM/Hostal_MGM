@@ -80,6 +80,11 @@ export default function WardenComplaints({ hostel, onBack }) {
         complaintId: null,
         newPriority: null
     });
+    const [confirmStatusChange, setConfirmStatusChange] = useState({
+        isOpen: false,
+        complaintId: null,
+        newStatus: null
+    });
     const limit = 10;
 
     const handleCategoryChange = (id, newCategoryVal) => {
@@ -89,6 +94,10 @@ export default function WardenComplaints({ hostel, onBack }) {
 
     const handlePriorityChange = (id, newPriority) => {
         setConfirmPriorityChange({ isOpen: true, complaintId: id, newPriority });
+    };
+
+    const handleStatusChange = (id, newStatus) => {
+        setConfirmStatusChange({ isOpen: true, complaintId: id, newStatus });
     };
 
     // Apply filtering
@@ -167,57 +176,65 @@ export default function WardenComplaints({ hostel, onBack }) {
                 </p>
             </div>
 
-            {/* Toolbar Section */}
-            <WardenComplaintsToolbar
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                openFilterModal={() => setIsFilterModalOpen(true)}
-                initiateExport={() => setIsExportConfirmOpen(true)}
-            />
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
+                {/* Toolbar Section */}
+                <WardenComplaintsToolbar
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    openFilterModal={() => setIsFilterModalOpen(true)}
+                    initiateExport={() => setIsExportConfirmOpen(true)}
+                />
 
-            {/* Table Section */}
-            <WardenComplaintsTable
-                loading={isLoading}
-                complaints={paginatedComplaints}
-                categories={categories}
-                handleCategoryChange={handleCategoryChange}
-                handlePriorityChange={handlePriorityChange}
-                onViewClick={(complaint) => setViewingComplaint(complaint)}
-            />
+                {/* Table Section */}
+                <WardenComplaintsTable
+                    loading={isLoading}
+                    complaints={paginatedComplaints}
+                    categories={categories}
+                    handleCategoryChange={handleCategoryChange}
+                    handlePriorityChange={handlePriorityChange}
+                    handleStatusChange={handleStatusChange}
+                    onViewClick={(complaint) => setViewingComplaint(complaint)}
+                />
 
-            {/* Pagination Section */}
-            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between text-sm text-text-secondary">
-                <div className="mb-4 sm:mb-0">
-                    Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                {/* Pagination Section */}
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                    <div className="hidden sm:block">
+                        Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                    </div>
+
+                    <div className="flex items-center gap-1">
                         <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-8 h-8 rounded flex items-center justify-center transition-colors cursor-pointer ${
-                                currentPage === page
-                                    ? 'bg-primary text-white font-medium'
-                                    : 'hover:bg-gray-100'
-                            }`}
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
-                            {page}
+                            <ChevronLeft className="w-4 h-4" />
                         </button>
-                    ))}
-                    <button
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
+
+                        {Array.from({ length: totalPages }, (_, index) => {
+                            const pageNum = index + 1;
+                            return (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            );
+                        })}
+
+                        <button
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -321,6 +338,26 @@ export default function WardenComplaints({ hostel, onBack }) {
                 }}
                 title="Confirm Priority Change"
                 message={`Are you sure you want to change the priority to ${confirmPriorityChange.newPriority}?`}
+                confirmText="Yes, Change"
+            />
+
+            <ConfirmationModal
+                isOpen={confirmStatusChange.isOpen}
+                onClose={() => setConfirmStatusChange({ isOpen: false, complaintId: null, newStatus: null })}
+                onConfirm={async () => {
+                    try {
+                        await ComplaintService.updateComplaintStatus(confirmStatusChange.complaintId, confirmStatusChange.newStatus, `Status updated to ${confirmStatusChange.newStatus}`);
+                        setComplaints(complaints.map(c =>
+                            c.id === confirmStatusChange.complaintId ? { ...c, status: confirmStatusChange.newStatus } : c
+                        ));
+                        showSuccessToast('Status Updated', `Complaint status changed to ${confirmStatusChange.newStatus}`);
+                        setConfirmStatusChange({ isOpen: false, complaintId: null, newStatus: null });
+                    } catch (error) {
+                        showErrorToast('Update Failed', error.message || 'Failed to update status');
+                    }
+                }}
+                title="Confirm Status Change"
+                message={`Are you sure you want to change the status to ${confirmStatusChange.newStatus}?`}
                 confirmText="Yes, Change"
             />
         </div>
