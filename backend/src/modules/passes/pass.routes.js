@@ -20,12 +20,6 @@ import {
   rejectWardenPass,
   markStudentLeftHostel,
   markStudentReturned,
-  studentAmendPass,
-  parentAmendPass,
-  parentApproveAmendment,
-  parentRejectAmendment,
-  wardenApproveAmendment,
-  wardenRejectAmendment,
   wardenAdminCancelPass
 } from "./pass.controller.js";
 
@@ -35,8 +29,7 @@ import {
   validateUpdatePass,
   validateCancelPass,
   validateGetPasses,
-  validateRejectPass,
-  validateAmendPass
+  validateRejectPass
 } from "./pass.validation.js";
 
 export const studentPassRouter = express.Router();
@@ -73,15 +66,6 @@ studentPassRouter.patch(
   validatePassIdParam,
   validateCancelPass,
   cancelPass
-);
-
-studentPassRouter.post(
-  "/:id/amend",
-  authMiddleware,
-  roleMiddleware("student"),
-  validatePassIdParam,
-  validateAmendPass,
-  studentAmendPass
 );
 
 // -----Parent routes----
@@ -124,30 +108,22 @@ parentPassRouter.patch(
   rejectPass
 );
 
-parentPassRouter.post(
-  "/:id/amend",
+parentPassRouter.put(
+  "/:id",
   authMiddleware,
   roleMiddleware("parent"),
   validatePassIdParam,
-  validateAmendPass,
-  parentAmendPass
+  validateUpdatePass,
+  updatePass
 );
 
 parentPassRouter.patch(
-  "/:id/amendment/approve",
+  "/:id/cancel",
   authMiddleware,
   roleMiddleware("parent"),
   validatePassIdParam,
-  parentApproveAmendment
-);
-
-parentPassRouter.patch(
-  "/:id/amendment/reject",
-  authMiddleware,
-  roleMiddleware("parent"),
-  validatePassIdParam,
-  validateRejectPass,
-  parentRejectAmendment
+  validateCancelPass,
+  cancelPass
 );
 
 // ----- Warden routes ----
@@ -210,23 +186,6 @@ wardenPassRouter.patch(
   roleMiddleware("warden"),
   validatePassIdParam,
   markStudentReturned
-);
-
-wardenPassRouter.patch(
-  "/:id/amendment/approve",
-  authMiddleware,
-  roleMiddleware("warden"),
-  validatePassIdParam,
-  wardenApproveAmendment
-);
-
-wardenPassRouter.patch(
-  "/:id/amendment/reject",
-  authMiddleware,
-  roleMiddleware("warden"),
-  validatePassIdParam,
-  validateRejectPass,
-  wardenRejectAmendment
 );
 
 wardenPassRouter.patch(

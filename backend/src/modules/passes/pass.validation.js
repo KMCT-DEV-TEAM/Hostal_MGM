@@ -110,6 +110,39 @@ export const validateCreatePass = async (req, res, next) => {
           message: "The expected return time must be later than the departure time.",
         });
       }
+
+      const [outHour, outMinute] = outTime.split(":").map(Number);
+      const [returnHour, returnMinute] = expectedReturnTime.split(":").map(Number);
+
+      const outDateTime = new Date(passDate);
+      outDateTime.setHours(outHour, outMinute, 0, 0);
+
+      const returnDateTime = new Date(passDate);
+      returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+      const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
+      const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
+
+      if (durationInHours > MAX_OUT_PASS_HOURS) {
+        return res.status(400).json({
+          success: false,
+          message: `Out Pass cannot exceed ${MAX_OUT_PASS_HOURS} hours. Please apply for a Home Pass instead.`,
+        });
+      }
+
+      const existingOutPass = await Pass.findOne({
+        studentId,
+        passType: "out_pass",
+        status: { $nin: ["rejected", "cancelled", "completed"] },
+        date: passDate,
+      });
+
+      if (existingOutPass) {
+        return res.status(400).json({
+          success: false,
+          message: "You already have an Out Pass requested or approved for this date.",
+        });
+      }
     }
 
     next();
@@ -134,7 +167,8 @@ export const validatePassIdParam = (req, res, next) => {
 export const validateUpdatePass = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const studentId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role; // Assuming role is attached by authMiddleware
     const {
       reason,
       fromDate,
@@ -142,7 +176,7 @@ export const validateUpdatePass = async (req, res, next) => {
       totalDays,
       date,
       outTime,
-      expectedReturnTime,
+      expectedReturnTime
     } = req.body;
 
     if (
@@ -163,6 +197,13 @@ export const validateUpdatePass = async (req, res, next) => {
     const existingPass = await Pass.findById(id);
     if (!existingPass) {
       return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
+    }
+
+    if (userRole === "student" && existingPass.studentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to edit this pass." });
+    }
+    if (userRole === "parent" && existingPass.parentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to edit this pass." });
     }
 
     const passType = existingPass.passType;
@@ -208,7 +249,7 @@ export const validateUpdatePass = async (req, res, next) => {
       if (fromDate || toDate) {
         const overlappingPass = await Pass.findOne({
           _id: { $ne: id },
-          studentId,
+          userId,
           passType: "home_pass",
           status: { $nin: ["rejected", "cancelled", "completed"] },
           fromDate: { $lte: end },
@@ -255,6 +296,43 @@ export const validateUpdatePass = async (req, res, next) => {
           message: "The expected return time must be later than the departure time.",
         });
       }
+
+      const updatedPassDate = new Date(newDate);
+      const [outHour, outMinute] = newOutTime.split(":").map(Number);
+      const [returnHour, returnMinute] = newReturnTime.split(":").map(Number);
+
+      const outDateTime = new Date(updatedPassDate);
+      outDateTime.setHours(outHour, outMinute, 0, 0);
+
+      const returnDateTime = new Date(updatedPassDate);
+      returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+      const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
+      const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
+
+      if (durationInHours > MAX_OUT_PASS_HOURS) {
+        return res.status(400).json({
+          success: false,
+          message: `Out Pass cannot exceed ${MAX_OUT_PASS_HOURS} hours. Please apply for a Home Pass instead.`,
+        });
+      }
+
+      if (date) {
+        const existingOutPass = await Pass.findOne({
+          _id: { $ne: id },
+          studentId: existingPass.studentId,
+          passType: "out_pass",
+          status: { $nin: ["rejected", "cancelled", "completed"] },
+          date: updatedPassDate,
+        });
+
+        if (existingOutPass) {
+          return res.status(400).json({
+            success: false,
+            message: "You already have another Out Pass requested or approved for this date.",
+          });
+        }
+      }
     }
 
     next();
@@ -266,18 +344,22 @@ export const validateUpdatePass = async (req, res, next) => {
 export const validateCancelPass = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const studentId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
     const existingPass = await Pass.findById(id);
     if (!existingPass) {
       return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
     }
 
-    if (existingPass.studentId.toString() !== studentId) {
+    if (userRole === "student" && existingPass.studentId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
+    }
+    if (userRole === "parent" && existingPass.parentId.toString() !== userId) {
       return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
     }
 
-    if (!["pending_parent", "pending_warden"].includes(existingPass.status)) {
+    if (!["pending_parent", "pending_warden", "approved"].includes(existingPass.status)) {
       return res.status(400).json({ success: false, message: "This pass cannot be cancelled because it has already been processed or completed." });
     }
 
@@ -313,7 +395,7 @@ export const validateGetPasses = (req, res, next) => {
 
 export const validateRejectPass = (req, res, next) => {
   const { remarks } = req.body;
-  
+
   if (!remarks || remarks.trim() === "") {
     return res.status(400).json({ success: false, message: "Please provide a reason or remark for rejecting this pass." });
   }
@@ -321,97 +403,4 @@ export const validateRejectPass = (req, res, next) => {
   next();
 };
 
-export const validateAmendPass = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const {
-      amendmentType,
-      reason,
-      proposedDates
-    } = req.body;
 
-    if (!amendmentType || !["date_change", "cancellation"].includes(amendmentType)) {
-      return res.status(400).json({ success: false, message: "Please select a valid type of change request (Date Change or Cancellation)." });
-    }
-
-    if (!reason || reason.trim() === "") {
-      return res.status(400).json({ success: false, message: "Please provide a reason for your change request." });
-    }
-
-    const existingPass = await Pass.findById(id);
-    if (!existingPass) {
-      return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
-    }
-
-    if (existingPass.returnTracking && existingPass.returnTracking.leftHostelAt) {
-      return res.status(422).json({ success: false, message: "This pass cannot be changed because the student has already left the hostel." });
-    }
-
-    if (["completed", "cancelled", "rejected", "returned"].includes(existingPass.status)) {
-      return res.status(422).json({ success: false, message: `This pass cannot be changed because it is currently marked as ${existingPass.status.replace('_', ' ')}.` });
-    }
-
-    if (existingPass.activeAmendment) {
-      return res.status(409).json({ success: false, message: "There is already a pending change request for this pass." });
-    }
-
-    if (amendmentType === "date_change") {
-      if (!proposedDates) {
-        return res.status(400).json({ success: false, message: "Please provide the new dates you wish to change to." });
-      }
-
-      if (existingPass.passType === "home_pass") {
-        const { fromDate, toDate, totalDays } = proposedDates;
-        if (!fromDate || !toDate || totalDays === undefined) {
-          return res.status(400).json({ success: false, message: "Please provide the new start date, end date, and total days." });
-        }
-        const start = new Date(fromDate);
-        const end = new Date(toDate);
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
-
-        if (start < today) {
-          return res.status(400).json({ success: false, message: "The new start date cannot be in the past. Please select a valid date." });
-        }
-        if (end < start) {
-          return res.status(400).json({ success: false, message: "The new end date must be after or the same as the start date." });
-        }
-
-        const overlappingPass = await Pass.findOne({
-          _id: { $ne: id },
-          studentId: existingPass.studentId,
-          passType: "home_pass",
-          status: { $nin: ["rejected", "cancelled", "completed"] },
-          fromDate: { $lte: end },
-          toDate: { $gte: start },
-        });
-
-        if (overlappingPass) {
-          return res.status(400).json({ success: false, message: "The new dates overlap with another home pass you've already requested." });
-        }
-      }
-
-      if (existingPass.passType === "out_pass") {
-        const { date, outTime, expectedReturnTime } = proposedDates;
-        if (!date || !outTime || !expectedReturnTime) {
-          return res.status(400).json({ success: false, message: "Please provide the new date, departure time, and expected return time." });
-        }
-        const passDate = new Date(date);
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
-
-        if (passDate < today) {
-          return res.status(400).json({ success: false, message: "The new date cannot be in the past. Please select a valid date." });
-        }
-        if (expectedReturnTime <= outTime) {
-          return res.status(400).json({ success: false, message: "The new expected return time must be later than the departure time." });
-        }
-      }
-    }
-
-    req.pass = existingPass; // Cache it
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
