@@ -191,11 +191,7 @@ export default function HostelManagement() {
     };
 
     const handleCancel = () => {
-        if (editingHostel) {
-            setIsDiscardConfirmOpen(true);
-        } else {
-            setActiveModal(null);
-        }
+        setIsDiscardConfirmOpen(true);
     };
 
     const confirmDiscard = () => {

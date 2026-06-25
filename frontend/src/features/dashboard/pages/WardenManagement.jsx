@@ -43,6 +43,7 @@ export default function WardenManagement() {
     const [emailChangeWardenId, setEmailChangeWardenId] = useState(null);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [newEmailForm, setNewEmailForm] = useState('');
+    const [passwordConfirm, setPasswordConfirm] = useState('');
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
@@ -238,19 +239,26 @@ export default function WardenManagement() {
 
     const openChangeEmailModal = (warden) => {
         setEmailChangeWardenId(warden.id);
-        setEmailChangeForm(warden.email || '');
+        setEmailChangeForm(warden.email);
         setNewEmailForm('');
+        setPasswordConfirm('');
         setIsEmailVerified(false);
         setIsEmailChangeModalOpen(true);
     };
 
     const confirmEmailChange = async (e) => {
         e.preventDefault();
+        if (!isEmailVerified) return;
+        if (!passwordConfirm) {
+            showErrorToast('Validation Error', 'Please enter your password to confirm');
+            return;
+        }
 
         try {
             const res = await wardenService.updateEmail(emailChangeWardenId, {
                 oldEmail: emailChangeForm,
-                newEmail: newEmailForm
+                newEmail: newEmailForm,
+                password: passwordConfirm
             });
 
             setWardens(wardens.map(w => w.id === emailChangeWardenId ? { ...w, email: newEmailForm } : w));
@@ -381,11 +389,7 @@ export default function WardenManagement() {
     };
 
     const handleCancel = () => {
-        if (editingWarden) {
-            setIsDiscardConfirmOpen(true);
-        } else {
-            setActiveModal(null);
-        }
+        setIsDiscardConfirmOpen(true);
     };
 
     const confirmDiscard = () => {
@@ -692,10 +696,24 @@ export default function WardenManagement() {
                             </div>
                         </div>
 
+                        {isEmailVerified && (
+                            <div className="mb-8">
+                                <label className="block text-sm font-medium text-[#222222] mb-2">Your Password <span className="text-red-500">*</span></label>
+                                <input
+                                    type="password"
+                                    value={passwordConfirm}
+                                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                                    required
+                                    placeholder="Enter your password to confirm"
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                                />
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={!isEmailVerified}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                            disabled={!isEmailVerified || !passwordConfirm}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified && passwordConfirm ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
                             Change Email
                         </button>

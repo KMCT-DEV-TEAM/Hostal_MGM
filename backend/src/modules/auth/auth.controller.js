@@ -341,6 +341,35 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Email updated successfully", { user: userObj });
 });
 
+const verifyUserPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  if (!password) {
+    return sendError(res, 400, "Password is required");
+  }
+
+  const userId = req.user.id;
+  let user = null;
+  
+  if (req.user.role === 'student') {
+    user = await Student.findById(userId);
+  } else if (req.user.role === 'parent') {
+    user = await Parent.findById(userId);
+  } else {
+    user = await User.findById(userId);
+  }
+
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
+
+  const isMatch = await verifyPassword(password, user.password);
+  if (!isMatch) {
+    return sendError(res, 401, "Incorrect password");
+  }
+
+  return sendSuccess(res, 200, "Password verified successfully");
+});
+
 export {
   login,
   refreshToken,
@@ -352,5 +381,6 @@ export {
   resetPassword,
   updateProfile,
   requestEmailChange,
-  verifyEmailChange
+  verifyEmailChange,
+  verifyUserPassword
 }

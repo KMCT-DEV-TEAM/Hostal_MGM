@@ -15,7 +15,8 @@ import {
     BookOpen,
     Layers,
     Tags,
-    Wrench
+    Wrench,
+    ClipboardList
 } from 'lucide-react';
 
 import { ROLES } from '@/constants/roles';
@@ -175,6 +176,11 @@ export const DASHBOARD_NAV = {
                     icon: KeyRound,
                     label: 'Password Request',
                     path: '/dashboard/password-request'
+                },
+                {
+                    icon: ClipboardList,
+                    label: 'Logs',
+                    path: '/dashboard/logs'
                 }
             ]
         }

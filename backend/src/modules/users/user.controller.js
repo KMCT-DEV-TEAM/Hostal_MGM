@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { getOrganizationByIdDb, updateOrganizationDb } from "../organizations/organization.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { hashPassword } from "../../utils/hash.js";
+import { hashPassword, comparePassword } from "../../utils/hash.js";
 import { sendMail } from "../../utils/mailer.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import {
@@ -11,6 +11,7 @@ import {
   getPaginatedUsersByRoleDb,
   getUserByIdAndRoleDb,
   getUserByIdDb,
+  getUserWithPasswordByIdDb,
   updateUserByRoleDb,
   updateUserDb,
   toggleUserActiveStatusByRoleDb,
@@ -18,6 +19,7 @@ import {
 } from "./user.service.js";
 import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
 import Hostel from "../hostels/hostel.model.js";
+import { createLogDb } from "../logs/log.service.js";
 
 // --- ADMIN CONTROLLERS ---
 
@@ -57,6 +59,18 @@ const createAdmin = asyncHandler(async (req, res) => {
         await sendMail(email, subject, text, html);
     } catch (error) {
         console.error("Failed to send temporary password email:", error);
+    }
+
+    if (req.user) {
+        await createLogDb({
+            action: "Created Admin",
+            entityType: "User",
+            entityId: admin._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Created new admin account for ${admin.name} (${admin.email})`,
+            status: "success"
+        });
     }
 
     return sendSuccess(res, 201, "Admin created successfully and email sent", admin);
@@ -109,6 +123,18 @@ const updateAdmin = asyncHandler(async (req, res) => {
       return sendError(res, 404, "Admin not found");
     }
 
+    if (req.user) {
+        await createLogDb({
+            action: "Updated Admin",
+            entityType: "User",
+            entityId: admin._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Updated details for admin ${admin.name}`,
+            status: "success"
+        });
+    }
+
     return sendSuccess(res, 200, "Admin updated successfully", {
       data: {
         _id: admin._id,
@@ -123,10 +149,24 @@ const updateAdmin = asyncHandler(async (req, res) => {
 
 const updateUserEmail = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { oldEmail, newEmail } = req.body;
+    const { oldEmail, newEmail, password } = req.body;
+
+    if (!password) {
+      return sendError(res, 400, "Password is required to change email");
+    }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid User ID");
+    }
+
+    const currentUser = await getUserWithPasswordByIdDb(req.user.id || req.user._id);
+    if (!currentUser) {
+      return sendError(res, 404, "Logged in user not found");
+    }
+
+    const isMatch = await comparePassword(password, currentUser.password);
+    if (!isMatch) {
+      return sendError(res, 401, "Invalid password");
     }
 
     const user = await getUserByIdDb(id);
@@ -187,6 +227,18 @@ const updateAdminOrganization = asyncHandler(async (req, res) => {
 
     const updatedAdmin = await updateUserByRoleDb(id, "admin", { organization: organizationId });
 
+    if (req.user) {
+        await createLogDb({
+            action: "Updated Admin Organization",
+            entityType: "User",
+            entityId: updatedAdmin._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Updated organization for admin ${updatedAdmin.name}`,
+            status: "success"
+        });
+    }
+
     return sendSuccess(res, 200, "Admin organization updated successfully", {
       data: {
         _id: updatedAdmin._id,
@@ -218,6 +270,18 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
       ? "Admin activated successfully" 
       : "Admin deactivated successfully";
 
+    if (req.user) {
+        await createLogDb({
+            action: admin.isActive ? "Activated Admin" : "Deactivated Admin",
+            entityType: "User",
+            entityId: admin._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Changed status of admin ${admin.name} to ${admin.isActive ? 'Active' : 'Inactive'}`,
+            status: "success"
+        });
+    }
+
     return sendSuccess(res, 200, message, {
       data: {
         _id: admin._id,
@@ -241,6 +305,17 @@ const bulkToggleAdminStatus = asyncHandler(async (req, res) => {
     }
 
     await bulkToggleUserStatusByRoleDb(ids, "admin", isActive);
+
+    if (req.user) {
+        await createLogDb({
+            action: "Bulk Updated Admin Status",
+            entityType: "User",
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Bulk updated ${ids.length} admins to ${isActive ? 'Active' : 'Inactive'}`,
+            status: "success"
+        });
+    }
 
     return sendSuccess(res, 200, "Bulk admin status updated successfully");
 });
@@ -284,6 +359,18 @@ const createWarden = asyncHandler(async (req, res) => {
         await sendMail(email, subject, text, html);
     } catch (error) {
         console.error("Failed to send temporary password email:", error);
+    }
+
+    if (req.user) {
+        await createLogDb({
+            action: "Created Warden",
+            entityType: "User",
+            entityId: warden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Created new warden account for ${warden.name} (${warden.email})`,
+            status: "success"
+        });
     }
 
     return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
@@ -373,6 +460,18 @@ const updateWarden = asyncHandler(async (req, res) => {
       return sendError(res, 404, "Warden not found");
     }
 
+    if (req.user) {
+        await createLogDb({
+            action: "Updated Warden",
+            entityType: "User",
+            entityId: warden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Updated details for warden ${warden.name}`,
+            status: "success"
+        });
+    }
+
     return sendSuccess(res, 200, "Warden updated successfully", {
       data: {
         _id: warden._id,
@@ -410,6 +509,18 @@ const updateWardenHostel = asyncHandler(async (req, res) => {
     // Add warden to new hostel
     await Hostel.findByIdAndUpdate(hostelId, { $push: { wardens: id } });
 
+    if (req.user) {
+        await createLogDb({
+            action: "Updated Warden Hostel",
+            entityType: "User",
+            entityId: warden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Reassigned warden ${warden.name} to new hostel`,
+            status: "success"
+        });
+    }
+
     return sendSuccess(res, 200, "Warden hostel updated successfully", {
         data: warden
     });
@@ -431,6 +542,18 @@ const toggleWardenStatus = asyncHandler(async (req, res) => {
     const message = warden.isActive 
       ? "Warden activated successfully" 
       : "Warden deactivated successfully";
+
+    if (req.user) {
+        await createLogDb({
+            action: warden.isActive ? "Activated Warden" : "Deactivated Warden",
+            entityType: "User",
+            entityId: warden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Changed status of warden ${warden.name} to ${warden.isActive ? 'Active' : 'Inactive'}`,
+            status: "success"
+        });
+    }
 
     return sendSuccess(res, 200, message, {
       data: {
@@ -456,13 +579,24 @@ const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
 
     await bulkToggleUserStatusByRoleDb(ids, "warden", isActive);
 
+    if (req.user) {
+        await createLogDb({
+            action: "Bulk Updated Warden Status",
+            entityType: "User",
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Bulk updated ${ids.length} wardens to ${isActive ? 'Active' : 'Inactive'}`,
+            status: "success"
+        });
+    }
+
     return sendSuccess(res, 200, "Bulk warden status updated successfully");
 });
 
 // --- MAINTENANCE STAFF CONTROLLERS ---
 
 const createMaintenanceStaff = asyncHandler(async (req, res) => {
-    const { name, email, phone, specialization, organizationId } = req.body;
+    const { name, email, phone, specialization, assignedTask, organizationId } = req.body;
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -485,6 +619,7 @@ const createMaintenanceStaff = asyncHandler(async (req, res) => {
         email,
         phone,
         specialization,
+        assignedTask,
         password: hashedPassword,
         organization: organizationId,
         temppass: true,
@@ -556,13 +691,13 @@ const getMaintenanceStaffById = asyncHandler(async (req, res) => {
 
 const updateMaintenanceStaff = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, phone, specialization } = req.body;
+    const { name, phone, specialization, assignedTask } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Maintenance Staff ID");
     }
 
-    const staff = await updateUserByRoleDb(id, "maintenance_staff", { name, phone, specialization });
+    const staff = await updateUserByRoleDb(id, "maintenance_staff", { name, phone, specialization, assignedTask });
 
     if (!staff) {
       return sendError(res, 404, "Maintenance Staff not found");
@@ -575,6 +710,7 @@ const updateMaintenanceStaff = asyncHandler(async (req, res) => {
         email: staff.email,
         phone: staff.phone,
         specialization: staff.specialization,
+        assignedTask: staff.assignedTask,
         role: staff.role,
         isActive: staff.isActive,
       }

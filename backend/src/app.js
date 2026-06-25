@@ -18,6 +18,7 @@ import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.ro
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
 import passRoutes from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
+import logRoutes from "./modules/logs/log.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -78,6 +79,7 @@ app.use("/api/warden/parents", parentRoutes);
 
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/passes", passRoutes);
+app.use("/api/logs", logRoutes);
 
 app.use(errorMiddleware);
 
