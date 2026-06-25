@@ -4,144 +4,145 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Modal from '@/components/ui/Modal';
 import { leaveSchema } from '../../utils/validation';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import leaveService from '@/services/leave.service';
+import { createLeave } from '@/services/leave.service';
 
 export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass' }) {
-    const { register, handleSubmit, formState: { errors }, watch, reset, setValue } = useForm({
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
         resolver: zodResolver(leaveSchema),
-        defaultValues: {
-            passType: initialPassType
-        }
     });
 
-    const passTypeVal = watch('passType');
-
-    // Reset form when modal opens with new initialPassType
+    // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            reset({ passType: initialPassType });
+            reset();
         }
-    }, [isOpen, initialPassType, reset]);
+    }, [isOpen, reset]);
 
     const onSubmit = async (data) => {
         try {
             const payload = {
                 ...data,
-                passType: data.passType === 'Home Pass' ? 'home_pass' : 'out_pass',
-                totalDays: data.passType === 'Home Pass' ? 
+                passType: initialPassType === 'Home Pass' ? 'home_pass' : 'out_pass',
+                totalDays: initialPassType === 'Home Pass' ?
                     Math.ceil((new Date(data.toDate) - new Date(data.fromDate)) / (1000 * 60 * 60 * 24)) : undefined
             };
-            await leaveService.applyLeave(payload);
+            await createLeave(payload);
             showSuccessToast('Leave applied successfully');
             onClose();
             reset();
             if (onSuccess) onSuccess();
         } catch (err) {
-            showErrorToast('Failed to apply leave');
+            showErrorToast(err.message || 'Failed to apply leave');
         }
     };
+
+    const ErrorMessage = ({ error }) => {
+        if (!error) return null;
+        return <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error.message}</p>;
+    };
+
+    const inputClasses = (hasError) =>
+        `w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors bg-white ${hasError ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+        }`;
 
     return (
         <Modal
             isOpen={isOpen}
             onClose={() => { onClose(); reset(); }}
-            title="Apply Leave"
+            title={`${initialPassType} Request`}
+            titleSize="text-lg"
+            subtitle="Apply for leave"
             maxWidth="max-w-md"
-        >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Pass Type</label>
-                    <select
-                        {...register('passType')}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            asForm
+            onSubmit={handleSubmit(onSubmit)}
+            footer={
+                <div className="flex justify-end gap-3">
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
-                        <option value="Home Pass">Home Pass</option>
-                        <option value="Out Pass">Out Pass</option>
-                    </select>
+                        {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                        Submit Request
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { onClose(); reset(); }}
+                        disabled={isSubmitting}
+                        className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
                 </div>
-
-                {passTypeVal === 'Home Pass' ? (
-                    <div className="grid grid-cols-2 gap-4">
+            }
+        >
+            <input type="hidden" {...register('passType')} value={initialPassType} />
+            <div className="grid grid-cols-2 gap-5">
+                {initialPassType === 'Home Pass' ? (
+                    <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                            <label className="block mb-1.5 text-xs font-medium">From Date <span className="text-red-500">*</span></label>
                             <input
                                 type="date"
                                 {...register('fromDate')}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className={inputClasses(errors.fromDate)}
                             />
-                            {errors.fromDate && <p className="text-danger text-xs mt-1">{errors.fromDate.message}</p>}
+                            <ErrorMessage error={errors.fromDate} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                            <label className="block mb-1.5 text-xs font-medium">To Date <span className="text-red-500">*</span></label>
                             <input
                                 type="date"
                                 {...register('toDate')}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className={inputClasses(errors.toDate)}
                             />
-                            {errors.toDate && <p className="text-danger text-xs mt-1">{errors.toDate.message}</p>}
+                            <ErrorMessage error={errors.toDate} />
                         </div>
-                    </div>
+                    </>
                 ) : (
                     <>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <div className="col-span-2">
+                            <label className="block mb-1.5 text-xs font-medium">Date <span className="text-red-500">*</span></label>
                             <input
                                 type="date"
                                 {...register('fromDate')}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className={inputClasses(errors.fromDate)}
                             />
-                            {errors.fromDate && <p className="text-danger text-xs mt-1">{errors.fromDate.message}</p>}
+                            <ErrorMessage error={errors.fromDate} />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Out Time</label>
-                                <input
-                                    type="time"
-                                    {...register('outTime')}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                />
-                                {errors.outTime && <p className="text-danger text-xs mt-1">{errors.outTime.message}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Return Time</label>
-                                <input
-                                    type="time"
-                                    {...register('returnTime')}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                />
-                                {errors.returnTime && <p className="text-danger text-xs mt-1">{errors.returnTime.message}</p>}
-                            </div>
+                        <div>
+                            <label className="block mb-1.5 text-xs font-medium">Out Time <span className="text-red-500">*</span></label>
+                            <input
+                                type="time"
+                                {...register('outTime')}
+                                className={inputClasses(errors.outTime)}
+                            />
+                            <ErrorMessage error={errors.outTime} />
+                        </div>
+                        <div>
+                            <label className="block mb-1.5 text-xs font-medium">Return Time <span className="text-red-500">*</span></label>
+                            <input
+                                type="time"
+                                {...register('returnTime')}
+                                className={inputClasses(errors.returnTime)}
+                            />
+                            <ErrorMessage error={errors.returnTime} />
                         </div>
                     </>
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                <div className="col-span-2">
+                    <label className="block mb-1.5 text-xs font-medium">Reason <span className="text-red-500">*</span></label>
                     <textarea
                         {...register('reason')}
                         rows={3}
                         placeholder="Please provide a reason..."
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                        className={`w-full py-2 px-3 border rounded-md text-xs outline-none transition-colors bg-white resize-none ${errors.reason ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+                            }`}
                     ></textarea>
-                    {errors.reason && <p className="text-danger text-xs mt-1">{errors.reason.message}</p>}
+                    <ErrorMessage error={errors.reason} />
                 </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                    <button
-                        type="button"
-                        onClick={() => { onClose(); reset(); }}
-                        className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors"
-                    >
-                        Submit Request
-                    </button>
-                </div>
-            </form>
+            </div>
         </Modal>
     );
 }

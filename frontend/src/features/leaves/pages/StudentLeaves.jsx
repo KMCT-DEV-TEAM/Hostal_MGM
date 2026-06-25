@@ -13,6 +13,7 @@ import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import ApplyLeaveModal from '../components/modals/ApplyLeaveModal';
+import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 
 export default function StudentLeaves() {
     const { passType } = useParams();
@@ -88,22 +89,14 @@ export default function StudentLeaves() {
                         <button
                             type="button"
                             onClick={() => setIsFilterModalOpen(true)}
-                            className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700 shadow-sm md:shadow-none"
+                            className="p-2.5 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700 shadow-sm md:shadow-none"
                         >
                             <Filter className="w-4 h-4" />
                         </button>
                         <button
                             type="button"
-                            onClick={() => showSuccessToast('Exporting leave data...')}
-                            className="hidden md:flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" />
-                            Export
-                        </button>
-                        <button
-                            type="button"
                             onClick={() => setIsApplyModalOpen(true)}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm hover:bg-primary/90 transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap shadow-sm md:shadow-none"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap shadow-sm md:shadow-none"
                         >
                             <Plus className="w-4 h-4" /> Apply
                         </button>
@@ -187,69 +180,22 @@ export default function StudentLeaves() {
                 totalPages={totalPages || 1}
             />
 
-            <ApplyLeaveModal 
-                isOpen={isApplyModalOpen} 
-                onClose={() => setIsApplyModalOpen(false)} 
-                onSuccess={fetchLeaves} 
-                initialPassType={isHomePass ? 'Home Pass' : 'Out Pass'} 
+            <ApplyLeaveModal
+                isOpen={isApplyModalOpen}
+                onClose={() => setIsApplyModalOpen(false)}
+                onSuccess={fetchLeaves}
+                initialPassType={isHomePass ? 'Home Pass' : 'Out Pass'}
             />
 
-            {/* Filter Modal */}
-            <Modal
+            <FilterLeavesModal
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
-                title={`Filter ${pageTitle} requests`}
-                subtitle={`Filter specific ${pageTitle} Requests from the list`}
-                maxWidth="max-w-sm"
-            >
-                <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-text-primary mb-1">From</label>
-                            <input
-                                type="date"
-                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-text-primary mb-1">To</label>
-                            <input
-                                type="date"
-                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                            <option value="All">All Status</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-2">
-                        <button
-                            onClick={() => { setFilterStatus('All'); setIsFilterModalOpen(false); }}
-                            className="px-6 py-2.5 text-sm font-semibold text-primary bg-white border border-primary rounded-xl hover:bg-gray-50 transition-colors"
-                        >
-                            Reset
-                        </button>
-                        <button
-                            onClick={() => setIsFilterModalOpen(false)}
-                            className="px-6 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
-                        >
-                            Apply Filter
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                pageTitle={pageTitle}
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                onApply={() => setIsFilterModalOpen(false)}
+                onReset={() => { setFilterStatus('All'); setIsFilterModalOpen(false); }}
+            />
         </div>
     );
 }

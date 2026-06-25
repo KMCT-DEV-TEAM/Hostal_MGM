@@ -5,8 +5,11 @@ import { useAuthStore } from '@/store/useAuthStore';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import Dropdown from '@/components/ui/Dropdown';
+import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import { showSuccessToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
+import { STUDENT_LISTING_MOCK_DATA } from '../utils/mockData';
+import { MOCK_SUPER_ADMIN_AGGREGATES } from '../utils/mockData';
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams(); // 'home-pass', 'outpass', and optional 'hostelName'
@@ -20,7 +23,7 @@ export default function AdminLeaves() {
 
     // Data states
     const [studentRequests, setStudentRequests] = useState(STUDENT_LISTING_MOCK_DATA);
-    const [aggregateData, setAggregateData] = useState(SUPER_ADMIN_AGGREGATE_MOCK_DATA);
+    const [aggregateData, setAggregateData] = useState(MOCK_SUPER_ADMIN_AGGREGATES);
 
     // Detail view state derived from route
     const selectedHostel = hostelName ? decodeURIComponent(hostelName) : null;
