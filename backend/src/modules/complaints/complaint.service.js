@@ -1,5 +1,6 @@
 import Complaint from "./complaint.model.js";
 import Student from "../students/student.model.js";
+import User from "../users/user.model.js";
 
 // Create a new complaint
 export const createComplaintDb = async (complaintData, user) => {
@@ -23,7 +24,7 @@ export const createComplaintDb = async (complaintData, user) => {
         timeline: [
             {
                 status: 'Pending',
-                message: 'Complaint registered by this student',
+                message: `${student.name} registered complaint`,
                 by: 'Student',
                 date: new Date()
             }
@@ -119,7 +120,7 @@ export const getAllComplaintsDb = async (query = {}) => {
         .populate('studentId', 'name studentId')
         .populate('hostelId', 'name')
         .populate('organizationId', 'name')
-        .populate('assignedStaff', 'name phone email')
+        .populate('assignedStaff', 'name phone email specialization')
         .sort({ createdAt: -1 });
 };
 
@@ -146,12 +147,16 @@ export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) =
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
 
+    const staff = await User.findById(staffId);
+    if (!staff) throw new Error("Maintenance staff not found.");
+
     complaint.assignedStaff = staffId;
+    complaint.status = 'In progress';
     
     // Add to timeline
     complaint.timeline.push({
-        status: complaint.status,
-        message: 'Maintenance staff assigned to this complaint.',
+        status: 'In progress',
+        message: `Admin assigned to this maintenance user ${staff.name}`,
         by: userRole || 'Admin',
         date: new Date()
     });

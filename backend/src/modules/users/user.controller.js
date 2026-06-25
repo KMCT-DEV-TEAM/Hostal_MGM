@@ -596,7 +596,11 @@ const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
 // --- MAINTENANCE STAFF CONTROLLERS ---
 
 const createMaintenanceStaff = asyncHandler(async (req, res) => {
-    const { name, email, phone, specialization, assignedTask, organizationId } = req.body;
+    let { name, email, phone, specialization, assignedTask, organizationId } = req.body;
+
+    if (req.user.role === 'admin' && req.user.organization) {
+        organizationId = req.user.organization;
+    }
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -646,11 +650,17 @@ const getMaintenanceStaff = asyncHandler(async (req, res) => {
     
     let additionalQuery = {};
 
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'admin' || req.user.role === 'warden') {
       if (!req.user.organization) {
-        return sendError(res, 400, "Admin is not assigned to any organization");
+        return sendError(res, 400, `${req.user.role} is not assigned to any organization`);
       }
-      additionalQuery = { organization: req.user.organization };
+      additionalQuery = { 
+          $or: [
+              { organization: req.user.organization },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
     }
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("maintenance_staff", page, limit, status, search, additionalQuery);
