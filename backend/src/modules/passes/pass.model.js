@@ -83,6 +83,13 @@ const passSchema = new mongoose.Schema(
     date: { type: Date },
     outTime: { type: String },
     expectedReturnTime: { type: String },
+    outPassCategory: {
+      type: String,
+      enum: ["in_house", "out_house"],
+      required: function() {
+        return this.passType === "out_pass";
+      }
+    },
 
     // --- Status Management ---
     status: {

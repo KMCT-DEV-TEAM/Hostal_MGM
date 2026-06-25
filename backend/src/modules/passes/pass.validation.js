@@ -12,6 +12,7 @@ export const validateCreatePass = async (req, res, next) => {
       date,
       outTime,
       expectedReturnTime,
+      outPassCategory
     } = req.body;
 
     const studentId = req.user.id;
@@ -86,10 +87,17 @@ export const validateCreatePass = async (req, res, next) => {
     }
 
     if (passType === "out_pass") {
-      if (!date || !outTime || !expectedReturnTime) {
+      if (!date || !outTime || !expectedReturnTime || !outPassCategory) {
         return res.status(400).json({
           success: false,
-          message: "Please provide the date, departure time, and expected return time for your Out Pass.",
+          message: "Please provide the date, departure time, expected return time, and out pass category for your Out Pass.",
+        });
+      }
+
+      if (!["in_house", "out_house"].includes(outPassCategory)) {
+        return res.status(400).json({
+          success: false,
+          message: "Out Pass category must be either in_house or out_house.",
         });
       }
 
@@ -176,7 +184,8 @@ export const validateUpdatePass = async (req, res, next) => {
       totalDays,
       date,
       outTime,
-      expectedReturnTime
+      expectedReturnTime,
+      outPassCategory
     } = req.body;
 
     if (
@@ -186,7 +195,8 @@ export const validateUpdatePass = async (req, res, next) => {
       totalDays === undefined &&
       !date &&
       !outTime &&
-      !expectedReturnTime
+      !expectedReturnTime &&
+      !outPassCategory
     ) {
       return res.status(400).json({
         success: false,
@@ -330,6 +340,15 @@ export const validateUpdatePass = async (req, res, next) => {
           return res.status(400).json({
             success: false,
             message: "You already have another Out Pass requested or approved for this date.",
+          });
+        }
+      }
+
+      if (outPassCategory) {
+        if (!["in_house", "out_house"].includes(outPassCategory)) {
+          return res.status(400).json({
+            success: false,
+            message: "Out Pass category must be either in_house or out_house.",
           });
         }
       }

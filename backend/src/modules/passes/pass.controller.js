@@ -33,6 +33,7 @@ export const createPass = asyncHandler(async (req, res) => {
     date,
     outTime,
     expectedReturnTime,
+    outPassCategory
   } = req.body;
 
   const student = await Student.findById(studentId);
@@ -82,6 +83,7 @@ export const createPass = asyncHandler(async (req, res) => {
     passData.date = date;
     passData.outTime = outTime;
     passData.expectedReturnTime = expectedReturnTime;
+    passData.outPassCategory = outPassCategory;
   }
 
   const newPass = await createPassDb(passData);
@@ -114,7 +116,7 @@ export const updatePass = asyncHandler(async (req, res) => {
     return sendError(res, 422, `Cannot edit pass in status ${pass.status}`);
   }
 
-  const allowedFields = ["reason", "fromDate", "toDate", "totalDays", "date", "outTime", "expectedReturnTime"];
+  const allowedFields = ["reason", "fromDate", "toDate", "totalDays", "date", "outTime", "expectedReturnTime", "outPassCategory"];
   const updateQuery = { $set: {} };
   
   let isEdited = false;
