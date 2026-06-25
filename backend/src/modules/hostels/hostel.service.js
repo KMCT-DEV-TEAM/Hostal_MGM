@@ -23,9 +23,9 @@ const getHostelsDb = async (organizationId) => {
     .populate("organizations", "name code");
 };
 
-const getPaginatedHostelsDb = async (organizationId, page = 1, limit = 10, search = "", status = "") => {
+const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status = "") => {
   const skip = (page - 1) * limit;
-  const query = organizationId ? { organizations: organizationId } : {};
+  const query = {};
 
   if (status && status !== "All") {
     query.isActive = status === "Active";
@@ -92,7 +92,7 @@ const toggleHostelStatusDb = async (id, organizationId) => {
   if (organizationId) {
     query.organizations = organizationId;
   }
-  
+
   const hostel = await Hostel.findOne(query);
   if (!hostel) return null;
 
@@ -112,7 +112,7 @@ const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId) => {
       query.organizations = organizationId;
     }
     const result = await Hostel.updateMany(query, { $set: { isActive } });
-    
+
     // Find the affected hostels to sync wardens
     const affectedHostels = await Hostel.find(query).select("_id");
     const affectedIds = affectedHostels.map(h => h._id);

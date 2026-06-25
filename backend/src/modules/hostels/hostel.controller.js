@@ -42,16 +42,16 @@ const createHostel = asyncHandler(async (req, res) => {
 });
 
 const getHostels = asyncHandler(async (req, res) => {
-  let organizationId = req.user.organization;
-  if (req.user.role === "super_admin" && req.query.organizationId) {
-    organizationId = req.query.organizationId;
-  }
+  // let organizationId = req.user.organization;
+  // if (req.user.role === "super_admin" && req.query.organizationId) {
+  //   organizationId = req.query.organizationId;
+  // }
   const page = parseInt(req.query.page) || 1;
   const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 10;
   const search = req.query.search || "";
   const status = req.query.status || "";
 
-  const { hostels, totalCount } = await getPaginatedHostelsDb(organizationId, page, limit, search, status);
+  const { hostels, totalCount } = await getPaginatedHostelsDb(page, limit, search, status);
 
   return sendSuccess(res, 200, "Hostels fetched successfully", {
     count: hostels.length,
