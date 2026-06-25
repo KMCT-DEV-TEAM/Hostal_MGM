@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import DateInput from '@/components/ui/DateInput';
 
 export default function FilterLeavesModal({ 
     isOpen, 
@@ -66,24 +67,16 @@ export default function FilterLeavesModal({
             }
         >
             <div className="grid grid-cols-2 gap-5">
-                <div>
-                    <label className="block mb-1.5 text-xs font-medium">From Date</label>
-                    <input
-                        type="date"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        className={inputClasses}
-                    />
-                </div>
-                <div>
-                    <label className="block mb-1.5 text-xs font-medium">To Date</label>
-                    <input
-                        type="date"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        className={inputClasses}
-                    />
-                </div>
+                <DateInput
+                    label="From Date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                />
+                <DateInput
+                    label="To Date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                />
 
                 <div className="col-span-2">
                     <label className="block mb-1.5 text-xs font-medium">Status</label>

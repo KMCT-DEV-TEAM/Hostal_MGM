@@ -2,14 +2,22 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Modal from '@/components/ui/Modal';
+import DateInput from '@/components/ui/DateInput';
 import { leaveSchema } from '../../utils/validation';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { createLeave } from '@/services/leave.service';
 
 export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass' }) {
-    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch } = useForm({
         resolver: zodResolver(leaveSchema),
     });
+
+    const fromDateVal = watch('fromDate');
+    const toDateVal = watch('toDate');
+    
+    // Get today's date in local YYYY-MM-DD format
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
     // Reset form when modal opens
     useEffect(() => {
@@ -20,12 +28,22 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
 
     const onSubmit = async (data) => {
         try {
-            const payload = {
-                ...data,
-                passType: initialPassType === 'Home Pass' ? 'home_pass' : 'out_pass',
-                totalDays: initialPassType === 'Home Pass' ?
-                    Math.ceil((new Date(data.toDate) - new Date(data.fromDate)) / (1000 * 60 * 60 * 24)) : undefined
-            };
+            let payload;
+            if (initialPassType === 'Home Pass') {
+                payload = {
+                    ...data,
+                    passType: 'home_pass',
+                    totalDays: Math.ceil((new Date(data.toDate) - new Date(data.fromDate)) / (1000 * 60 * 60 * 24))
+                };
+            } else {
+                payload = {
+                    passType: 'out_pass',
+                    date: data.fromDate,
+                    outTime: data.outTime,
+                    expectedReturnTime: data.returnTime,
+                    reason: data.reason
+                };
+            }
             await createLeave(payload);
             showSuccessToast('Leave applied successfully');
             onClose();
@@ -80,36 +98,35 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
             <div className="grid grid-cols-2 gap-5">
                 {initialPassType === 'Home Pass' ? (
                     <>
-                        <div>
-                            <label className="block mb-1.5 text-xs font-medium">From Date <span className="text-red-500">*</span></label>
-                            <input
-                                type="date"
-                                {...register('fromDate')}
-                                className={inputClasses(errors.fromDate)}
-                            />
-                            <ErrorMessage error={errors.fromDate} />
-                        </div>
-                        <div>
-                            <label className="block mb-1.5 text-xs font-medium">To Date <span className="text-red-500">*</span></label>
-                            <input
-                                type="date"
-                                {...register('toDate')}
-                                className={inputClasses(errors.toDate)}
-                            />
-                            <ErrorMessage error={errors.toDate} />
-                        </div>
+                        <DateInput
+                            label="From Date"
+                            required
+                            min={todayStr}
+                            max={toDateVal || undefined}
+                            error={errors.fromDate}
+                            value={fromDateVal}
+                            {...register('fromDate')}
+                        />
+                        <DateInput
+                            label="To Date"
+                            required
+                            min={fromDateVal || todayStr}
+                            error={errors.toDate}
+                            value={toDateVal}
+                            {...register('toDate')}
+                        />
                     </>
                 ) : (
                     <>
-                        <div className="col-span-2">
-                            <label className="block mb-1.5 text-xs font-medium">Date <span className="text-red-500">*</span></label>
-                            <input
-                                type="date"
-                                {...register('fromDate')}
-                                className={inputClasses(errors.fromDate)}
-                            />
-                            <ErrorMessage error={errors.fromDate} />
-                        </div>
+                        <DateInput
+                            className="col-span-2"
+                            label="Date"
+                            required
+                            min={todayStr}
+                            error={errors.fromDate}
+                            value={fromDateVal}
+                            {...register('fromDate')}
+                        />
                         <div>
                             <label className="block mb-1.5 text-xs font-medium">Out Time <span className="text-red-500">*</span></label>
                             <input

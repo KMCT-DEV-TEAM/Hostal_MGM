@@ -46,4 +46,34 @@ body {
 .swal-toast-container {
   z-index: 999999 !important;
 }
-
+
+/* Custom Date Input Styling */
+.custom-date-input {
+    position: relative;
+    /* Make text vertically centered */
+    line-height: normal;
+}
+
+.custom-date-input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.custom-date-input::-moz-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
