@@ -1,4 +1,5 @@
 import Pass from "./pass.model.js";
+import Parent from "../parents/parent.model.js";
 
 /**
  * Creates a new pass in the database.
@@ -103,4 +104,102 @@ export const addTimelineEventDb = async (passId, timelineEvent) => {
     { $push: { timeline: timelineEvent } },
     { new: true }
   );
+};
+
+export const getDashboardStatsDb = async (studentId) => {
+  const total = await Pass.countDocuments({ studentId });
+  const pending = await Pass.countDocuments({ studentId, status: "pending_parent" });
+  const approved = await Pass.countDocuments({ 
+    studentId, 
+    "parentApproval.status": "approved" 
+  });
+  const rejected = await Pass.countDocuments({ 
+    studentId, 
+    "parentApproval.status": "rejected" 
+  });
+
+  return { total, pending, approved, rejected };
+};
+
+export const getPassesDb = async (studentId, query) => {
+  const { page = 1, limit = 10, status, passType, startDate, endDate } = query;
+  
+  const filter = { studentId };
+  
+  if (status) filter.status = status;
+  if (passType) filter.passType = passType;
+  
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) filter.createdAt.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      filter.createdAt.$lte = end;
+    }
+  }
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  
+  const passes = await Pass.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit))
+    .populate("hostelId", "name")
+    .lean();
+
+  const total = await Pass.countDocuments(filter);
+  
+  return {
+    passes,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      pages: Math.ceil(total / parseInt(limit)),
+    },
+  };
+};
+
+export const getPassDetailsDb = async (passId, studentId) => {
+  return await Pass.findOne({ _id: passId, studentId })
+    .populate("studentId", "name enrollmentNo roomNo")
+    .populate("hostelId", "name")
+    .lean();
+};
+
+export const updatePassApprovalDb = async (passId, parentId, action, remarks) => {
+  const statusUpdate = action === "approve" ? "pending_warden" : "rejected";
+  const parentStatus = action === "approve" ? "approved" : "rejected";
+  const timelineAction = action === "approve" ? "parent_approved" : "parent_rejected";
+  const defaultRemark = action === "approve" ? "Approved by parent" : "Rejected by parent";
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: passId },
+    {
+      $set: {
+        status: statusUpdate,
+        "parentApproval.status": parentStatus,
+        "parentApproval.actionBy": parentId,
+        "parentApproval.actionAt": new Date(),
+        "parentApproval.remarks": remarks || ""
+      },
+      $push: {
+        timeline: {
+          action: timelineAction,
+          actorId: parentId,
+          actorRole: "parent",
+          remarks: remarks || defaultRemark,
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  ).populate("studentId", "name enrollmentNo roomNo");
+
+  return updatedPass;
+};
+
+export const getParentDb = async (parentId) => {
+  return await Parent.findById(parentId).lean();
 };

@@ -8,6 +8,10 @@ import {
   getMyPasses,
   updatePass,
   cancelPass,
+  getPasses,
+  approvePass,
+  rejectPass,
+  getPassDetails
 } from "./pass.controller.js";
 
 import {
@@ -15,12 +19,14 @@ import {
   validatePassIdParam,
   validateUpdatePass,
   validateCancelPass,
+  validateGetPasses,
+  validateRejectPass
 } from "./pass.validation.js";
 
-const router = express.Router();
+export const studentPassRouter = express.Router();
 
 // -----Student routes----
-router.post(
+studentPassRouter.post(
   "/",
   authMiddleware,
   roleMiddleware("student"),
@@ -28,14 +34,14 @@ router.post(
   createPass
 );
 
-router.get(
+studentPassRouter.get(
   "/my-passes",
   authMiddleware,
   roleMiddleware("student"),
   getMyPasses
 );
 
-router.put(
+studentPassRouter.put(
   "/:id",
   authMiddleware,
   roleMiddleware("student"),
@@ -44,7 +50,7 @@ router.put(
   updatePass
 );
 
-router.patch(
+studentPassRouter.patch(
   "/:id/cancel",
   authMiddleware,
   roleMiddleware("student"),
@@ -53,4 +59,44 @@ router.patch(
   cancelPass
 );
 
-export default router;
+// -----Parent routes----
+
+export const parentPassRouter = express.Router();
+
+
+// Pass Listing & Details
+parentPassRouter.get(
+  "/",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validateGetPasses,
+  getPasses
+);
+
+parentPassRouter.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  getPassDetails
+);
+
+// Actions
+parentPassRouter.patch(
+  "/:id/approve",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  approvePass
+);
+
+parentPassRouter.patch(
+  "/:id/reject",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateRejectPass,
+  rejectPass
+);
+
+
