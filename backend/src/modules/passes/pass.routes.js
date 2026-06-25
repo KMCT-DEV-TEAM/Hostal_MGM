@@ -19,7 +19,14 @@ import {
   approveWardenPass,
   rejectWardenPass,
   markStudentLeftHostel,
-  markStudentReturned
+  markStudentReturned,
+  studentAmendPass,
+  parentAmendPass,
+  parentApproveAmendment,
+  parentRejectAmendment,
+  wardenApproveAmendment,
+  wardenRejectAmendment,
+  wardenAdminCancelPass
 } from "./pass.controller.js";
 
 import {
@@ -28,7 +35,8 @@ import {
   validateUpdatePass,
   validateCancelPass,
   validateGetPasses,
-  validateRejectPass
+  validateRejectPass,
+  validateAmendPass
 } from "./pass.validation.js";
 
 export const studentPassRouter = express.Router();
@@ -65,6 +73,15 @@ studentPassRouter.patch(
   validatePassIdParam,
   validateCancelPass,
   cancelPass
+);
+
+studentPassRouter.post(
+  "/:id/amend",
+  authMiddleware,
+  roleMiddleware("student"),
+  validatePassIdParam,
+  validateAmendPass,
+  studentAmendPass
 );
 
 // -----Parent routes----
@@ -105,6 +122,32 @@ parentPassRouter.patch(
   validatePassIdParam,
   validateRejectPass,
   rejectPass
+);
+
+parentPassRouter.post(
+  "/:id/amend",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateAmendPass,
+  parentAmendPass
+);
+
+parentPassRouter.patch(
+  "/:id/amendment/approve",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  parentApproveAmendment
+);
+
+parentPassRouter.patch(
+  "/:id/amendment/reject",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validatePassIdParam,
+  validateRejectPass,
+  parentRejectAmendment
 );
 
 // ----- Warden routes ----
@@ -168,3 +211,30 @@ wardenPassRouter.patch(
   validatePassIdParam,
   markStudentReturned
 );
+
+wardenPassRouter.patch(
+  "/:id/amendment/approve",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  wardenApproveAmendment
+);
+
+wardenPassRouter.patch(
+  "/:id/amendment/reject",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  validateRejectPass,
+  wardenRejectAmendment
+);
+
+wardenPassRouter.patch(
+  "/:id/admin-cancel",
+  authMiddleware,
+  roleMiddleware("warden"),
+  validatePassIdParam,
+  validateRejectPass,
+  wardenAdminCancelPass
+);
+

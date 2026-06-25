@@ -1,5 +1,27 @@
 import Pass from "./pass.model.js";
 import Parent from "../parents/parent.model.js";
+import Hostel from "../hostels/hostel.model.js";
+
+// --- Helpers ---
+
+/**
+ * Helper to apply date range filtering
+ * @param {Object} filter - The Mongoose filter object
+ * @param {String} field - The date field to filter on
+ * @param {String} startDate - The start date string
+ * @param {String} endDate - The end date string
+ */
+const applyDateRangeFilter = (filter, field, startDate, endDate) => {
+  if (startDate || endDate) {
+    filter[field] = {};
+    if (startDate) filter[field].$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      filter[field].$lte = end;
+    }
+  }
+};
 
 /**
  * Creates a new pass in the database.
@@ -23,22 +45,12 @@ export const getStudentPassesDb = async (studentId, query) => {
 
   const filter = { studentId };
 
-  if (query.status) {
-    filter.status = query.status;
-  }
+  if (query.status) filter.status = query.status;
+  if (query.passType) filter.passType = query.passType;
+  if (query.outTime) filter.outTime = query.outTime;
 
-  if (query.passType) {
-    filter.passType = query.passType;
-  }
+  applyDateRangeFilter(filter, "fromDate", query.fromDate, query.toDate);
 
-  // Filter by 'fromDate' and 'toDate' (typically for home_pass)
-  if (query.fromDate || query.toDate) {
-    filter.fromDate = {};
-    if (query.fromDate) filter.fromDate.$gte = new Date(query.fromDate);
-    if (query.toDate) filter.fromDate.$lte = new Date(query.toDate);
-  }
-
-  // Filter by specific 'date' (typically for out_pass)
   if (query.date) {
     const searchDate = new Date(query.date);
     searchDate.setUTCHours(0, 0, 0, 0);
@@ -47,20 +59,17 @@ export const getStudentPassesDb = async (studentId, query) => {
     filter.date = { $gte: searchDate, $lte: endSearchDate };
   }
 
-  // Filter by outTime
-  if (query.outTime) {
-    filter.outTime = query.outTime;
-  }
-
-  const passes = await Pass.find(filter)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate("parentId", "parentName phone email")
-    .populate("hostelId", "name")
-    .lean();
-
-  const totalRecords = await Pass.countDocuments(filter);
+  const [passes, totalRecords] = await Promise.all([
+    Pass.find(filter)
+      .select("-timeline")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("parentId", "parentName phone email")
+      .populate("hostelId", "name")
+      .lean(),
+    Pass.countDocuments(filter)
+  ]);
 
   return {
     passes,
@@ -107,56 +116,46 @@ export const addTimelineEventDb = async (passId, timelineEvent) => {
 };
 
 export const getDashboardStatsDb = async (studentId) => {
-  const total = await Pass.countDocuments({ studentId });
-  const pending = await Pass.countDocuments({ studentId, status: "pending_parent" });
-  const approved = await Pass.countDocuments({ 
-    studentId, 
-    "parentApproval.status": "approved" 
-  });
-  const rejected = await Pass.countDocuments({ 
-    studentId, 
-    "parentApproval.status": "rejected" 
-  });
+  const [total, pending, approved, rejected] = await Promise.all([
+    Pass.countDocuments({ studentId }),
+    Pass.countDocuments({ studentId, status: "pending_parent" }),
+    Pass.countDocuments({ studentId, "parentApproval.status": "approved" }),
+    Pass.countDocuments({ studentId, "parentApproval.status": "rejected" })
+  ]);
 
   return { total, pending, approved, rejected };
 };
 
 export const getPassesDb = async (studentId, query) => {
-  const { page = 1, limit = 10, status, passType, startDate, endDate } = query;
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
   
   const filter = { studentId };
   
-  if (status) filter.status = status;
-  if (passType) filter.passType = passType;
+  if (query.status) filter.status = query.status;
+  if (query.passType) filter.passType = query.passType;
   
-  if (startDate || endDate) {
-    filter.createdAt = {};
-    if (startDate) filter.createdAt.$gte = new Date(startDate);
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
-      filter.createdAt.$lte = end;
-    }
-  }
+  applyDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  
-  const passes = await Pass.find(filter)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(parseInt(limit))
-    .populate("hostelId", "name")
-    .lean();
+  const [passes, total] = await Promise.all([
+    Pass.find(filter)
+      .select("-timeline")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("hostelId", "name")
+      .lean(),
+    Pass.countDocuments(filter)
+  ]);
 
-  const total = await Pass.countDocuments(filter);
-  
   return {
     passes,
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
       total,
-      pages: Math.ceil(total / parseInt(limit)),
+      pages: Math.ceil(total / limit),
     },
   };
 };
@@ -174,7 +173,7 @@ export const updatePassApprovalDb = async (passId, parentId, action, remarks) =>
   const timelineAction = action === "approve" ? "parent_approved" : "parent_rejected";
   const defaultRemark = action === "approve" ? "Approved by parent" : "Rejected by parent";
 
-  const updatedPass = await Pass.findOneAndUpdate(
+  return await Pass.findOneAndUpdate(
     { _id: passId },
     {
       $set: {
@@ -196,8 +195,6 @@ export const updatePassApprovalDb = async (passId, parentId, action, remarks) =>
     },
     { new: true }
   ).populate("studentId", "name enrollmentNo roomNo");
-
-  return updatedPass;
 };
 
 export const getParentDb = async (parentId) => {
@@ -205,43 +202,50 @@ export const getParentDb = async (parentId) => {
 };
 
 // --- Warden Services ---
-import Hostel from "../hostels/hostel.model.js";
 
 export const getWardenHostelDb = async (wardenId) => {
   return await Hostel.findOne({ wardens: wardenId, isActive: true }).lean();
 };
 
 export const getWardenDashboardStatsDb = async (hostelId) => {
-  const total = await Pass.countDocuments({ hostelId });
-  const pending = await Pass.countDocuments({ hostelId, status: "pending_warden" });
-  const approved = await Pass.countDocuments({ hostelId, status: "approved" });
-  const rejected = await Pass.countDocuments({ hostelId, status: "rejected" });
-  
-  const studentsOutside = await Pass.countDocuments({ 
-    hostelId, 
-    "returnTracking.leftHostelAt": { $exists: true, $ne: null },
-    "returnTracking.returnedAt": null
-  });
-  
-  const returned = await Pass.countDocuments({ hostelId, status: "returned" });
-  
-  const homePassCount = await Pass.countDocuments({ hostelId, passType: "home_pass" });
-  const outPassCount = await Pass.countDocuments({ hostelId, passType: "out_pass" });
-  
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const endOfToday = new Date(today);
   endOfToday.setUTCHours(23, 59, 59, 999);
-  
-  const todayRequests = await Pass.countDocuments({
-    hostelId,
-    createdAt: { $gte: today, $lte: endOfToday }
-  });
-  
-  const todayReturns = await Pass.countDocuments({
-    hostelId,
-    "returnTracking.returnedAt": { $gte: today, $lte: endOfToday }
-  });
+
+  const [
+    total,
+    pending,
+    approved,
+    rejected,
+    studentsOutside,
+    returned,
+    homePassCount,
+    outPassCount,
+    todayRequests,
+    todayReturns
+  ] = await Promise.all([
+    Pass.countDocuments({ hostelId }),
+    Pass.countDocuments({ hostelId, status: "pending_warden" }),
+    Pass.countDocuments({ hostelId, status: "approved" }),
+    Pass.countDocuments({ hostelId, status: "rejected" }),
+    Pass.countDocuments({ 
+      hostelId, 
+      "returnTracking.leftHostelAt": { $exists: true, $ne: null },
+      "returnTracking.returnedAt": null
+    }),
+    Pass.countDocuments({ hostelId, status: "returned" }),
+    Pass.countDocuments({ hostelId, passType: "home_pass" }),
+    Pass.countDocuments({ hostelId, passType: "out_pass" }),
+    Pass.countDocuments({
+      hostelId,
+      createdAt: { $gte: today, $lte: endOfToday }
+    }),
+    Pass.countDocuments({
+      hostelId,
+      "returnTracking.returnedAt": { $gte: today, $lte: endOfToday }
+    })
+  ]);
 
   return {
     total,
@@ -258,102 +262,82 @@ export const getWardenDashboardStatsDb = async (hostelId) => {
 };
 
 export const getWardenPassesDb = async (hostelId, query) => {
-  const { page = 1, limit = 10, status, passType, search, returnStatus, startDate, endDate } = query;
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
   
-  const pipeline = [
-    { $match: { hostelId: hostelId } }
-  ];
+  const filter = { hostelId };
 
-  if (status) pipeline.push({ $match: { status } });
-  if (passType) pipeline.push({ $match: { passType } });
-  if (returnStatus) pipeline.push({ $match: { "returnTracking.returnStatus": returnStatus } });
+  if (query.status) filter.status = query.status;
+  if (query.passType) filter.passType = query.passType;
+  if (query.returnStatus) filter["returnTracking.returnStatus"] = query.returnStatus;
   
-  if (startDate || endDate) {
-    const dateMatch = {};
-    if (startDate) dateMatch.$gte = new Date(startDate);
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
-      dateMatch.$lte = end;
-    }
-    pipeline.push({ $match: { createdAt: dateMatch } });
+  applyDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
+
+  let studentMatch = null;
+  if (query.search) {
+    const searchRegex = new RegExp(query.search, "i");
+    studentMatch = {
+      $or: [
+        { name: searchRegex },
+        { admissionNo: searchRegex },
+        { roomNo: searchRegex }
+      ]
+    };
   }
 
-  pipeline.push({
-    $lookup: {
-      from: "students",
-      localField: "studentId",
-      foreignField: "_id",
-      as: "studentInfo"
-    }
-  });
-  pipeline.push({ $unwind: "$studentInfo" });
+  const queryChain = Pass.find(filter)
+    .select("-timeline")
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "studentId",
+      select: "name admissionNo roomNo department course",
+      match: studentMatch
+    })
+    .populate("parentId", "parentName phone");
 
-  if (search) {
-    const searchRegex = new RegExp(search, "i");
-    pipeline.push({
-      $match: {
-        $or: [
-          { "studentInfo.name": searchRegex },
-          { "studentInfo.admissionNo": searchRegex },
-          { "studentInfo.roomNo": searchRegex }
-        ]
-      }
-    });
+  let passesPromise, countPromise;
+
+  if (studentMatch) {
+    passesPromise = queryChain.lean();
+    countPromise = Promise.resolve(null); 
+  } else {
+    passesPromise = queryChain.skip(skip).limit(limit).lean();
+    countPromise = Pass.countDocuments(filter);
   }
 
-  // Count total matching records before pagination
-  const countPipeline = [...pipeline, { $count: "total" }];
-  
-  pipeline.push({ $sort: { createdAt: -1 } });
-  
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  pipeline.push({ $skip: skip });
-  pipeline.push({ $limit: parseInt(limit) });
-  
-  pipeline.push({
-    $lookup: {
-      from: "parents",
-      localField: "parentId",
-      foreignField: "_id",
-      as: "parentInfo"
-    }
-  });
-  pipeline.push({ $unwind: { path: "$parentInfo", preserveNullAndEmptyArrays: true } });
+  const [fetchedPasses, dbCount] = await Promise.all([passesPromise, countPromise]);
 
-  pipeline.push({
-    $project: {
-      "studentInfo.name": 1,
-      "studentInfo.admissionNo": 1,
-      "studentInfo.roomNo": 1,
-      "studentInfo.department": 1,
-      "studentInfo.course": 1,
-      "parentInfo.parentName": 1,
-      "parentInfo.phone": 1,
-      passType: 1,
-      status: 1,
-      "returnTracking.returnStatus": 1,
-      createdAt: 1,
-      fromDate: 1,
-      toDate: 1,
-      date: 1
-    }
-  });
+  let finalPasses = fetchedPasses;
+  let total = dbCount;
 
-  const [passesResult, countResult] = await Promise.all([
-    Pass.aggregate(pipeline),
-    Pass.aggregate(countPipeline)
-  ]);
+  if (studentMatch) {
+    finalPasses = fetchedPasses.filter(p => p.studentId !== null);
+    total = finalPasses.length;
+    finalPasses = finalPasses.slice(skip, skip + limit);
+  }
 
-  const total = countResult.length > 0 ? countResult[0].total : 0;
+  const passesResult = finalPasses.map(p => ({
+    _id: p._id,
+    studentInfo: p.studentId,
+    parentInfo: p.parentId,
+    passType: p.passType,
+    status: p.status,
+    returnTracking: { returnStatus: p.returnTracking?.returnStatus },
+    createdAt: p.createdAt,
+    fromDate: p.fromDate,
+    toDate: p.toDate,
+    date: p.date,
+    activeAmendment: p.activeAmendment
+  }));
 
   return {
     passes: passesResult,
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
       total,
-      pages: Math.ceil(total / parseInt(limit))
+      pages: Math.ceil(total / limit)
     }
   };
 };
@@ -368,7 +352,6 @@ export const getWardenPassDetailsDb = async (passId, hostelId) => {
 };
 
 export const updateWardenPassWorkflowDb = async (passId, hostelId, updateQuery) => {
-  // We include hostelId in filter to ensure atomic validation of hostel boundary
   return await Pass.findOneAndUpdate(
     { _id: passId, hostelId },
     updateQuery,

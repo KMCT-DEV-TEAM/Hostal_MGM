@@ -14,6 +14,17 @@ const timelineSchema = new mongoose.Schema(
         "cancelled",
         "returned",
         "completed",
+        "student_requested_change",
+        "student_requested_cancellation",
+        "parent_requested_change",
+        "parent_requested_cancellation",
+        "parent_approved_amendment",
+        "parent_rejected_amendment",
+        "warden_approved_amendment",
+        "warden_rejected_amendment",
+        "amendment_applied",
+        "amendment_cancelled",
+        "admin_cancelled"
       ],
       required: true,
     },
@@ -36,6 +47,48 @@ const timelineSchema = new mongoose.Schema(
     },
   },
   { _id: false }
+);
+
+const amendmentSchema = new mongoose.Schema(
+  {
+    requestedBy: { type: mongoose.Schema.Types.ObjectId, required: true },
+    requesterRole: { type: String, enum: ["student", "parent"], required: true },
+    amendmentType: { type: String, enum: ["date_change", "cancellation"], required: true },
+    
+    previous: {
+      fromDate: { type: Date },
+      toDate: { type: Date },
+      totalDays: { type: Number },
+      date: { type: Date },
+      outTime: { type: String },
+      expectedReturnTime: { type: String }
+    },
+    proposed: {
+      fromDate: { type: Date },
+      toDate: { type: Date },
+      totalDays: { type: Number },
+      date: { type: Date },
+      outTime: { type: String },
+      expectedReturnTime: { type: String }
+    },
+    
+    reason: { type: String, required: true },
+
+    parentApproval: {
+      status: { type: String, enum: ["pending", "approved", "rejected", "not_required"], default: "not_required" },
+      actionAt: { type: Date },
+      remarks: { type: String }
+    },
+    wardenApproval: {
+      status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+      actionAt: { type: Date },
+      remarks: { type: String }
+    },
+    
+    status: { type: String, enum: ["pending", "approved", "rejected", "cancelled"], default: "pending" },
+    expiresAt: { type: Date }
+  },
+  { timestamps: true, _id: false }
 );
 
 const passSchema = new mongoose.Schema(
@@ -117,6 +170,12 @@ const passSchema = new mongoose.Schema(
 
     // --- Embedded Timeline ---
     timeline: [timelineSchema],
+
+    // --- Amendment Management ---
+    activeAmendment: {
+      type: amendmentSchema,
+      default: null,
+    },
   },
   {
     timestamps: true,

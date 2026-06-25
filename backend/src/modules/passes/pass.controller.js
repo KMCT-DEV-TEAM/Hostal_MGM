@@ -496,3 +496,404 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Student marked as returned successfully", updatedPass);
 });
 
+// --- Amendment Controllers ---
+
+export const studentAmendPass = asyncHandler(async (req, res) => {
+  const studentId = req.user.id;
+  const pass = req.pass;
+
+  if (pass.studentId.toString() !== studentId) {
+    return sendError(res, 403, "You can only amend your own passes.");
+  }
+
+  const { amendmentType, reason, proposedDates } = req.body;
+
+  const activeAmendment = {
+    requestedBy: studentId,
+    requesterRole: "student",
+    amendmentType,
+    previous: {
+      fromDate: pass.fromDate,
+      toDate: pass.toDate,
+      totalDays: pass.totalDays,
+      date: pass.date,
+      outTime: pass.outTime,
+      expectedReturnTime: pass.expectedReturnTime
+    },
+    proposed: proposedDates || {},
+    reason,
+    parentApproval: { status: "pending" },
+    wardenApproval: { status: "pending" },
+    status: "pending",
+    expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) 
+  };
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: pass._id, activeAmendment: null },
+    { 
+      $set: { activeAmendment },
+      $push: {
+        timeline: {
+          action: amendmentType === "date_change" ? "student_requested_change" : "student_requested_cancellation",
+          actorId: studentId,
+          actorRole: "student",
+          remarks: reason,
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Could not create amendment. It may have already been amended.");
+  }
+
+  await Notification.create({
+    recipient: pass.parentId,
+    title: "Amendment Requested",
+    message: `Your ward requested a ${amendmentType.replace("_", " ")} for their pass.`,
+    type: "info"
+  });
+
+  return sendSuccess(res, 200, "Amendment requested successfully", updatedPass);
+});
+
+export const parentAmendPass = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const pass = req.pass; 
+
+  if (pass.parentId.toString() !== parentId) {
+    return sendError(res, 403, "You can only amend passes for your linked student.");
+  }
+
+  const { amendmentType, reason, proposedDates } = req.body;
+
+  const activeAmendment = {
+    requestedBy: parentId,
+    requesterRole: "parent",
+    amendmentType,
+    previous: {
+      fromDate: pass.fromDate,
+      toDate: pass.toDate,
+      totalDays: pass.totalDays,
+      date: pass.date,
+      outTime: pass.outTime,
+      expectedReturnTime: pass.expectedReturnTime
+    },
+    proposed: proposedDates || {},
+    reason,
+    parentApproval: { status: "not_required" },
+    wardenApproval: { status: "pending" },
+    status: "pending",
+    expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+  };
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: pass._id, activeAmendment: null },
+    { 
+      $set: { activeAmendment },
+      $push: {
+        timeline: {
+          action: amendmentType === "date_change" ? "parent_requested_change" : "parent_requested_cancellation",
+          actorId: parentId,
+          actorRole: "parent",
+          remarks: reason,
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Could not create amendment. It may have already been amended.");
+  }
+  
+  return sendSuccess(res, 200, "Amendment requested successfully", updatedPass);
+});
+
+export const parentApproveAmendment = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const { id } = req.params;
+
+  const pass = await Pass.findOne({ _id: id, parentId });
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (!pass.activeAmendment || pass.activeAmendment.status !== "pending") {
+    return sendError(res, 422, "No pending amendment to approve.");
+  }
+
+  if (pass.activeAmendment.parentApproval.status !== "pending") {
+    return sendError(res, 422, "Parent approval is not pending for this amendment.");
+  }
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: id, "activeAmendment.status": "pending", "activeAmendment.parentApproval.status": "pending" },
+    {
+      $set: {
+        "activeAmendment.parentApproval.status": "approved",
+        "activeAmendment.parentApproval.actionAt": new Date(),
+        "activeAmendment.parentApproval.remarks": "Approved by parent"
+      },
+      $push: {
+        timeline: {
+          action: "parent_approved_amendment",
+          actorId: parentId,
+          actorRole: "parent",
+          remarks: "Approved student's amendment request.",
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Could not approve amendment. State has changed.");
+  }
+
+  return sendSuccess(res, 200, "Amendment approved by parent successfully", updatedPass);
+});
+
+export const parentRejectAmendment = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const pass = await Pass.findOne({ _id: id, parentId });
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (!pass.activeAmendment || pass.activeAmendment.status !== "pending") {
+    return sendError(res, 422, "No pending amendment to reject.");
+  }
+
+  if (pass.activeAmendment.parentApproval.status !== "pending") {
+    return sendError(res, 422, "Parent approval is not pending for this amendment.");
+  }
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: id, "activeAmendment.status": "pending", "activeAmendment.parentApproval.status": "pending" },
+    {
+      $set: {
+        activeAmendment: null 
+      },
+      $push: {
+        timeline: {
+          action: "parent_rejected_amendment",
+          actorId: parentId,
+          actorRole: "parent",
+          remarks: remarks,
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Could not reject amendment. State has changed.");
+  }
+
+  await Notification.create({
+    recipient: pass.studentId,
+    title: "Amendment Rejected",
+    message: `Your parent rejected your pass amendment request.`,
+    type: "error"
+  });
+
+  return sendSuccess(res, 200, "Amendment rejected by parent successfully", updatedPass);
+});
+
+export const wardenApproveAmendment = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const { id } = req.params;
+
+  const hostel = await getWardenHostelDb(wardenId);
+  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
+
+  const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (!pass.activeAmendment || pass.activeAmendment.status !== "pending") {
+    return sendError(res, 422, "No pending amendment to approve.");
+  }
+
+  if (pass.activeAmendment.parentApproval.status === "pending") {
+    return sendError(res, 422, "Cannot approve. Parent approval is still pending.");
+  }
+
+  const amendment = pass.activeAmendment;
+  const updateQuery = {
+    $set: { activeAmendment: null },
+    $push: {
+      timeline: {
+        action: "warden_approved_amendment",
+        actorId: wardenId,
+        actorRole: "warden",
+        remarks: "Warden approved the amendment.",
+        timestamp: new Date()
+      }
+    }
+  };
+
+  if (amendment.amendmentType === "date_change") {
+    if (pass.passType === "home_pass") {
+      updateQuery.$set.fromDate = amendment.proposed.fromDate;
+      updateQuery.$set.toDate = amendment.proposed.toDate;
+      updateQuery.$set.totalDays = amendment.proposed.totalDays;
+    } else {
+      updateQuery.$set.date = amendment.proposed.date;
+      updateQuery.$set.outTime = amendment.proposed.outTime;
+      updateQuery.$set.expectedReturnTime = amendment.proposed.expectedReturnTime;
+    }
+    updateQuery.$push.timeline = {
+      action: "amendment_applied",
+      actorId: wardenId,
+      actorRole: "warden",
+      remarks: "Applied new dates.",
+      timestamp: new Date(Date.now() + 10)
+    };
+  } else if (amendment.amendmentType === "cancellation") {
+    updateQuery.$set.status = "cancelled";
+    updateQuery.$push.timeline = {
+      action: "amendment_cancelled",
+      actorId: wardenId,
+      actorRole: "warden",
+      remarks: "Applied cancellation.",
+      timestamp: new Date(Date.now() + 10)
+    };
+  }
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { 
+      _id: id, 
+      hostelId: hostel._id, 
+      "activeAmendment.status": "pending",
+      "activeAmendment.parentApproval.status": { $ne: "pending" }
+    },
+    updateQuery,
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Race condition detected or pass state changed. Could not apply amendment.");
+  }
+
+  await Notification.create({
+    recipient: pass.studentId,
+    title: "Amendment Approved",
+    message: `Your pass amendment request has been approved by the warden.`,
+    type: "success"
+  });
+
+  return sendSuccess(res, 200, "Amendment approved and applied successfully", updatedPass);
+});
+
+export const wardenRejectAmendment = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const hostel = await getWardenHostelDb(wardenId);
+  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
+
+  const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (!pass.activeAmendment || pass.activeAmendment.status !== "pending") {
+    return sendError(res, 422, "No pending amendment to reject.");
+  }
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: id, hostelId: hostel._id, "activeAmendment.status": "pending" },
+    {
+      $set: { activeAmendment: null },
+      $push: {
+        timeline: {
+          action: "warden_rejected_amendment",
+          actorId: wardenId,
+          actorRole: "warden",
+          remarks: remarks,
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Race condition detected. Could not reject amendment.");
+  }
+
+  await Notification.create({
+    recipient: pass.studentId,
+    title: "Amendment Rejected",
+    message: `Your pass amendment request has been rejected by the warden. Reason: ${remarks}`,
+    type: "error"
+  });
+
+  return sendSuccess(res, 200, "Amendment rejected successfully", updatedPass);
+});
+
+export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const hostel = await getWardenHostelDb(wardenId);
+  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
+
+  const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (["completed", "cancelled", "rejected", "returned"].includes(pass.status)) {
+    return sendError(res, 422, `Cannot administratively cancel a pass with status ${pass.status}`);
+  }
+
+  if (pass.returnTracking && pass.returnTracking.leftHostelAt) {
+    return sendError(res, 422, "Cannot cancel. Student has already left the hostel.");
+  }
+
+  const updatedPass = await Pass.findOneAndUpdate(
+    { _id: id, hostelId: hostel._id, status: { $nin: ["completed", "cancelled", "rejected", "returned"] }, "returnTracking.leftHostelAt": null },
+    {
+      $set: { 
+        status: "cancelled",
+        activeAmendment: null 
+      },
+      $push: {
+        timeline: {
+          action: "admin_cancelled",
+          actorId: wardenId,
+          actorRole: "warden",
+          remarks: `Administrative Cancellation: ${remarks}`,
+          timestamp: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedPass) {
+    return sendError(res, 409, "Pass state changed. Could not apply administrative cancellation.");
+  }
+
+  await Notification.create({
+    recipient: pass.studentId,
+    title: "Pass Cancelled (Admin)",
+    message: `Your pass has been cancelled by the warden due to administrative reasons. Reason: ${remarks}`,
+    type: "error"
+  });
+  
+  await Notification.create({
+    recipient: pass.parentId,
+    title: "Pass Cancelled (Admin)",
+    message: `A pass for your ward has been cancelled by the warden due to administrative reasons. Reason: ${remarks}`,
+    type: "error"
+  });
+
+  return sendSuccess(res, 200, "Pass administratively cancelled successfully", updatedPass);
+});
+
+
