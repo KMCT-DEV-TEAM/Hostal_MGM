@@ -40,6 +40,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 createdAt: c.createdAt,
                 priority: c.priority || 'Medium',
                 status: c.status,
+                hostelId: c.hostelId,
                 hostelName: c.hostelId?.name || 'Unknown Hostel',
                 assignedStaff: c.assignedStaff,
                 timeline: c.timeline || [],
@@ -302,12 +303,25 @@ export default function WardenComplaints({ hostel, onBack }) {
                 isOpen={assignStaffModalState.isOpen}
                 onClose={() => setAssignStaffModalState({ isOpen: false, complaint: null })}
                 complaint={assignStaffModalState.complaint}
-                onAssigned={(assignedStaff) => {
-                    setComplaints(complaints.map(c =>
-                        c.id === assignStaffModalState.complaint.id ? { ...c, assignedStaff } : c
-                    ));
+                onAssigned={(assignedStaff, updatedComplaintData) => {
+                    setComplaints(complaints.map(c => {
+                        if (c.id === assignStaffModalState.complaint.id) {
+                            return {
+                                ...c,
+                                assignedStaff,
+                                status: updatedComplaintData?.status || 'In progress',
+                                timeline: updatedComplaintData?.timeline || c.timeline
+                            };
+                        }
+                        return c;
+                    }));
                     if (viewingComplaint && viewingComplaint.id === assignStaffModalState.complaint.id) {
-                        setViewingComplaint({ ...viewingComplaint, assignedStaff });
+                        setViewingComplaint({
+                            ...viewingComplaint,
+                            assignedStaff,
+                            status: updatedComplaintData?.status || 'In progress',
+                            timeline: updatedComplaintData?.timeline || viewingComplaint.timeline
+                        });
                     }
                 }}
             />

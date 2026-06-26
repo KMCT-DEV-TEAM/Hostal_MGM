@@ -150,7 +150,9 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                   {complaint.status}
                 </span>
               </InfoRow>
-              <InfoRow label="Warden">Arjun Menon</InfoRow>
+              <InfoRow label="Warden">
+                {complaint.hostelId?.wardens?.map(w => w.name).join(', ') || 'Not assigned'}
+              </InfoRow>
             </div>
           </div>
 
@@ -173,7 +175,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               </div>
             </div>
 
-            {(complaint.status === 'Awaiting' || complaint.status === 'Resolved' || complaint.resolutionNotes || complaint.materialsUsed) ? (
+            {(complaint.status === 'Awaiting' || complaint.status === 'Resolved') ? (
               <div className="space-y-4">
                 <InfoRow label="Materials Used">
                   {complaint.materialsUsed || 'None'}
@@ -329,7 +331,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                 <h3 className="text-sm font-semibold text-primary mb-1">Staff Updates</h3>
                 <p className="text-[11px] text-text-secondary">Updates by the assigned maintenance staff</p>
               </div>
-              {user?.role === 'admin' && (
+              {user?.role === 'admin' && !complaint.assignedStaff && (
                 <button
                   onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
                   className="px-4 py-1.5 text-[11px] font-medium text-white bg-primary rounded-md hover:bg-primary/80 transition-colors cursor-pointer"

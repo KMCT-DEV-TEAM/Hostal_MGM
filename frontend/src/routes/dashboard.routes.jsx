@@ -228,7 +228,8 @@ export const dashboardRoutes = [
     {
         path: 'tasks',
         roles: [
-            ROLES.MAINTENANCE_STAFF
+            ROLES.MAINTENANCE_STAFF,
+            ROLES.WARDEN
         ],
         element: MaintenanceAssignedTasks
     }
