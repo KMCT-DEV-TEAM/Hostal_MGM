@@ -18,6 +18,8 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   const [internalNote, setInternalNote] = useState('');
   const [showRejectPrompt, setShowRejectPrompt] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
+  const [showClosePrompt, setShowClosePrompt] = useState(false);
+  const [closeNote, setCloseNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!complaint) return null;
@@ -35,6 +37,8 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     t.status === 'In progress' ||
     t.status === 'Awaiting' ||
     t.status === 'Resolved' ||
+    t.status === 'Rejected' ||
+    t.status === 'Incomplete' ||
     t.message.toLowerCase().includes('assign') ||
     t.message.toLowerCase().includes('reject') ||
     t.message.toLowerCase().includes('approv')
@@ -47,6 +51,8 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     if (status === 'In progress') return 'bg-primary';
     if (status === 'Pending') return 'bg-warning';
     if (status === 'Awaiting') return 'bg-[#DB7017]';
+    if (status === 'Rejected') return 'bg-danger';
+    if (status === 'Incomplete') return 'bg-gray-500';
     return 'bg-purple-500';
   };
 
@@ -54,6 +60,8 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     if (status === 'In progress') return 'bg-primary/10 text-primary';
     if (status === 'Pending') return 'bg-warning/10 text-warning';
     if (status === 'Awaiting') return 'bg-[#DB7017]/10 text-[#DB7017]';
+    if (status === 'Rejected') return 'bg-danger/10 text-danger';
+    if (status === 'Incomplete') return 'bg-gray-100 text-gray-700';
     return 'bg-[#8F64C8]/10 text-[#8F64C8]';
   };
 
@@ -84,6 +92,24 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
       onClose();
     } catch (error) {
       showErrorToast('Error', error.message || 'Could not reject resolution.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCloseTask = async () => {
+    if (!closeNote.trim()) {
+      showErrorToast('Validation', 'Please provide a note for closing the task.');
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await ComplaintService.updateComplaintStatus(complaint.id, 'Incomplete', closeNote);
+      showSuccessToast('Success', 'Complaint closed as incomplete.');
+      if (onRefresh) onRefresh();
+      onClose();
+    } catch (error) {
+      showErrorToast('Error', error.message || 'Could not close complaint.');
     } finally {
       setIsProcessing(false);
     }
@@ -244,6 +270,58 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
             </div>
           </div>
 
+          {/* Task Rejected Actions */}
+          {complaint.status === 'Rejected' && ['admin', 'super_admin', 'warden'].includes(user?.role) && (
+            <div className="border border-red-200 bg-red-50 rounded-xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-red-600 mb-1">Task Rejected</h3>
+              <p className="text-[11px] text-red-500 mb-4">This task was rejected by the assigned maintenance staff. Please close the task or re-assign it to someone else.</p>
+              
+              {!showClosePrompt ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClosePrompt(true)}
+                    className="flex-1 bg-white border border-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Close Task
+                  </button>
+                  <button
+                    onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
+                    className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer"
+                  >
+                    Re-assign Staff
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3 mt-4">
+                  <label className="block text-xs font-medium text-gray-700">Closing Note *</label>
+                  <textarea
+                    rows={2}
+                    value={closeNote}
+                    onChange={(e) => setCloseNote(e.target.value)}
+                    placeholder="Explain why the task is being closed..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleCloseTask}
+                      disabled={isProcessing}
+                      className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      Confirm Close
+                    </button>
+                    <button
+                      onClick={() => setShowClosePrompt(false)}
+                      disabled={isProcessing}
+                      className="flex-1 bg-white border border-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Staff Updates */}
           <div className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
             <div className="flex justify-between items-start mb-6">
@@ -300,7 +378,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               <InfoRow label={<span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> Date</span>}>{complaint.date}</InfoRow>
               <InfoRow label={<span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Status</span>}>
                 <span className="flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-[#DB7017]' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Awaiting' ? 'bg-warning' : 'bg-primary'}`}></span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-[#DB7017]' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Awaiting' ? 'bg-warning' : complaint.status === 'Rejected' ? 'bg-danger' : complaint.status === 'Incomplete' ? 'bg-gray-500' : 'bg-primary'}`}></span>
                   {complaint.status}
                 </span>
               </InfoRow>

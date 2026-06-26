@@ -96,11 +96,14 @@ export default function WardenComplaintsTable({
                                             options={[
                                                 { value: "Pending", label: "Pending" },
                                                 { value: "In progress", label: "In progress" },
-                                                { value: "Resolved", label: "Resolved" }
+                                                { value: "Awaiting", label: "Awaiting" },
+                                                { value: "Resolved", label: "Resolved" },
+                                                { value: "Rejected", label: "Rejected" },
+                                                { value: "Incomplete", label: "Incomplete" }
                                             ]}
                                             value={complaint.status || 'Pending'}
                                             onChange={(val) => handleStatusChange && handleStatusChange(complaint.id, val)}
-                                            triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border-none flex justify-between items-center w-full ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : complaint.status === 'Resolved' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                                            triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border-none flex justify-between items-center w-full ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : complaint.status === 'Resolved' ? 'bg-green-50 text-success hover:bg-green-100' : complaint.status === 'Rejected' ? 'bg-red-50 text-red-600 hover:bg-red-100' : complaint.status === 'Awaiting' ? 'bg-purple-50 text-purple-600 hover:bg-purple-100' : complaint.status === 'Incomplete' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                                         />
                                     </div>
                                 </td>
