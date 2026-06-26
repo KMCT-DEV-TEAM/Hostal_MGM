@@ -120,7 +120,14 @@ export const getAllComplaintsDb = async (query = {}) => {
     return await Complaint.find(filter)
         .populate('category', 'name')
         .populate('studentId', 'name studentId')
-        .populate('hostelId', 'name')
+        .populate({
+            path: 'hostelId',
+            select: 'name wardens',
+            populate: {
+                path: 'wardens',
+                select: 'name'
+            }
+        })
         .populate('organizationId', 'name')
         .populate('assignedStaff', 'name phone email specialization')
         .sort({ createdAt: -1 });

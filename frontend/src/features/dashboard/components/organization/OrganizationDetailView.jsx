@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail } from 'lucide-react';
+import { X, Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Users } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 
 const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
@@ -88,6 +88,7 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                                     {selectedOrganizationDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </InfoRow>
+                            <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Students</>}>{selectedOrganizationDetail.studentsCount || 0}</InfoRow>
                             <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedOrganizationDetail.phone}</InfoRow>
                             <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedOrganizationDetail.email}</InfoRow>
                         </div>

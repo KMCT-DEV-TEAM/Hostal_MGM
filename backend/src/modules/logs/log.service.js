@@ -19,10 +19,16 @@ export const createLogDb = async (logData) => {
 /**
  * Retrieves paginated activity logs with optional filtering
  */
-export const getPaginatedLogsDb = async (page = 1, limit = 10, search = "", status = "All") => {
+export const getPaginatedLogsDb = async (page = 1, limit = 10, search = "", status = "All", startDate, endDate) => {
   const skip = (page - 1) * limit;
 
   let query = {};
+
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) query.createdAt.$gte = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+  }
 
   if (status && status.toLowerCase() !== "all") {
     query.status = status.toLowerCase();

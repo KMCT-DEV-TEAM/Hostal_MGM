@@ -11,8 +11,12 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 export default function WardenComplaints({ hostel, onBack }) {
+    const { user } = useAuthStore();
+    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
     const [complaints, setComplaints] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +42,9 @@ export default function WardenComplaints({ hostel, onBack }) {
                 status: c.status,
                 hostelName: c.hostelId?.name || 'Unknown Hostel',
                 assignedStaff: c.assignedStaff,
-                timeline: c.timeline || []
+                timeline: c.timeline || [],
+                materialsUsed: c.materialsUsed,
+                resolutionNotes: c.resolutionNotes
             }));
 
             if (hostel) {
@@ -60,6 +66,7 @@ export default function WardenComplaints({ hostel, onBack }) {
         }).catch(err => console.error("Failed to fetch categories", err));
     }, [hostel]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [priorityFilter, setPriorityFilter] = useState('All');
     const [roomNoFilter, setRoomNoFilter] = useState('');
@@ -101,9 +108,17 @@ export default function WardenComplaints({ hostel, onBack }) {
         setConfirmStatusChange({ isOpen: true, complaintId: id, newStatus });
     };
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Apply filtering
     const filteredComplaints = complaints.filter(complaint => {
-        const query = searchQuery.toLowerCase();
+        const query = debouncedSearch.toLowerCase();
         const matchesSearch = Object.values(complaint).some(val => 
             String(val).toLowerCase().includes(query)
         );
@@ -203,7 +218,8 @@ export default function WardenComplaints({ hostel, onBack }) {
                     handleCategoryChange={handleCategoryChange}
                     handlePriorityChange={handlePriorityChange}
                     handleStatusChange={handleStatusChange}
-                    onViewClick={(complaint) => setViewingComplaint(complaint)}
+                    onViewClick={(c) => setViewingComplaint(c)}
+                    isViewOnly={isSuperAdmin}
                 />
 
                 {/* Pagination Section */}

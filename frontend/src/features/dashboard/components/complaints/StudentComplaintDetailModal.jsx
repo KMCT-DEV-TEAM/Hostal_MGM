@@ -86,6 +86,32 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                             </div>
                         </div>
 
+                        {/* Resolution Details */}
+                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 className="text-lg font-semibold text-primary mb-1">Resolution Details</h3>
+                            <p className="text-xs text-text-secondary mb-6">Details of how the complaint was resolved</p>
+                            <div className="space-y-4">
+                                {complaint.status === 'Resolved' && (complaint.resolutionNotes || complaint.materialsUsed) ? (
+                                    <>
+                                        {complaint.resolutionNotes && (
+                                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start">
+                                                <span className="text-text-secondary flex items-center gap-1.5"><FileText className="w-4 h-4 text-text-secondary" /> Notes</span> 
+                                                <span className="sm:col-span-2 font-medium leading-relaxed"><span className="hidden sm:inline">: </span>{complaint.resolutionNotes}</span>
+                                            </div>
+                                        )}
+                                        {complaint.materialsUsed && (
+                                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start mt-4">
+                                                <span className="text-text-secondary flex items-center gap-1.5"><Tag className="w-4 h-4 text-text-secondary" /> Materials</span> 
+                                                <span className="sm:col-span-2 font-medium leading-relaxed"><span className="hidden sm:inline">: </span>{complaint.materialsUsed}</span>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-[13px] text-text-secondary italic font-semibold text-danger">Not resolved yet</div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* Right Summary Sidebar */}
