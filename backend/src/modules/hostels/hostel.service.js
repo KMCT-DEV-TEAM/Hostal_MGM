@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Hostel from "./hostel.model.js";
 import User from "../users/user.model.js";
+import Student from "../students/student.model.js";
 
 const checkExistingHostelCodeDb = async (code) => {
   return await Hostel.findOne({ code });
@@ -17,10 +18,20 @@ const createHostelDb = async (data) => {
 
 const getHostelsDb = async (organizationId) => {
   const query = organizationId ? { organizations: organizationId } : {};
-  return await Hostel.find(query)
+  const hostels = await Hostel.find(query)
     .populate("wardens", "name email")
     .populate("adminId", "name email")
-    .populate("organizations", "name code");
+    .populate("organizations", "name code")
+    .lean({ virtuals: true });
+
+  const hostelsWithCounts = await Promise.all(
+    hostels.map(async (hostel) => {
+      const studentsCount = await Student.countDocuments({ hostelId: hostel._id });
+      return { ...hostel, studentsCount };
+    })
+  );
+
+  return hostelsWithCounts;
 };
 
 const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status = "") => {
@@ -47,11 +58,19 @@ const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status =
       .populate("organizations", "name code")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 }),
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true }),
     Hostel.countDocuments(query),
   ]);
 
-  return { hostels, totalCount };
+  const hostelsWithCounts = await Promise.all(
+    hostels.map(async (hostel) => {
+      const studentsCount = await Student.countDocuments({ hostelId: hostel._id });
+      return { ...hostel, studentsCount };
+    })
+  );
+
+  return { hostels: hostelsWithCounts, totalCount };
 };
 
 const getHostelByIdDb = async (id, organizationId) => {
@@ -59,10 +78,17 @@ const getHostelByIdDb = async (id, organizationId) => {
   if (organizationId) {
     query.organizations = organizationId;
   }
-  return await Hostel.findOne(query)
+  const hostel = await Hostel.findOne(query)
     .populate("wardens", "name email")
     .populate("adminId", "name email")
-    .populate("organizations", "name code");
+    .populate("organizations", "name code")
+    .lean({ virtuals: true });
+
+  if (hostel) {
+    hostel.studentsCount = await Student.countDocuments({ hostelId: hostel._id });
+  }
+
+  return hostel;
 };
 
 const updateHostelDb = async (id, organizationId, updateData) => {

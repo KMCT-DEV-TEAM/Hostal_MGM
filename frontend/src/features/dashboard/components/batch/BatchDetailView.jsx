@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail } from 'lucide-react';
+import InfoRow from '@/components/ui/InfoRow';
 
 const BatchDetailView = ({ selectedBatchDetail, setView }) => {
     if (!selectedBatchDetail) return null;
@@ -35,61 +36,58 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                     <div className="lg:col-span-7 space-y-6">
                         {/* Basic Info */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                            <p className="text-xs text-gray-400 mb-6">Basic contact information of the Batch</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Batch Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.code}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Batch Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Department</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span> 
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Batch</p>
+                            <div className="space-y-1">
+                                <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedBatchDetail.code}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedBatchDetail.name}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Dept</>}>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</InfoRow>
+                                <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                    <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedBatchDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedBatchDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
-                                </div>
+                                </InfoRow>
                             </div>
                         </div>
 
-                        {/* Address Information */}
                         {selectedBatchDetail.address && (
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
-                                <p className="text-xs text-gray-400 mb-6">Address information of the Batch</p>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-gray-400" /> Full Address</span> <span className="sm:col-span-2 font-medium break-words whitespace-pre-wrap"><span className="hidden sm:inline">: </span>{selectedBatchDetail.address}</span></div>
+                                <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Address Information</h3>
+                                <p className="text-[11px] text-text-secondary mb-4">Address information of the Batch</p>
+                                <div className="space-y-1">
+                                    <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Address</>}><span className="break-words whitespace-pre-wrap">{selectedBatchDetail.address}</span></InfoRow>
+                                </div>
                             </div>
                         )}
 
-                        {/* Contact Information */}
                         {(selectedBatchDetail.phone || selectedBatchDetail.email) && (
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
-                                <p className="text-xs text-gray-400 mb-6">Contact information of the Batch</p>
-                                <div className="space-y-4">
-                                    {selectedBatchDetail.phone && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.phone}</span></div>}
-                                    {selectedBatchDetail.email && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.email}</span></div>}
+                                <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Contact Information</h3>
+                                <p className="text-[11px] text-text-secondary mb-4">Contact information of the Batch</p>
+                                <div className="space-y-1">
+                                    {selectedBatchDetail.phone && <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedBatchDetail.phone}</InfoRow>}
+                                    {selectedBatchDetail.email && <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedBatchDetail.email}</InfoRow>}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Right Summary Sidebar */}
                     <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                        <h3 className="text-lg font-semibold text-primary mb-4">Batch Summary</h3>
-                        <div className="space-y-4">
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Batch Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.code}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Batch Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.name}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Department</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail?.organization?.name || selectedBatchDetail?.organization || 'N/A'}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                <span className="text-[#777777] flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span> 
-                                <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                        <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Batch Summary</h3>
+                        <div className="space-y-1">
+                            <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedBatchDetail.code}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedBatchDetail.name}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Dept</>}>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedBatchDetail?.organization?.name || selectedBatchDetail?.organization || 'N/A'}</InfoRow>
+                            <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedBatchDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedBatchDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
-                            </div>
-                            {selectedBatchDetail.phone && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.phone}</span></div>}
-                            {selectedBatchDetail.email && <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedBatchDetail.email}</span></div>}
+                            </InfoRow>
+                            {selectedBatchDetail.phone && <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedBatchDetail.phone}</InfoRow>}
+                            {selectedBatchDetail.email && <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedBatchDetail.email}</InfoRow>}
                         </div>
                     </div>
                 </div>

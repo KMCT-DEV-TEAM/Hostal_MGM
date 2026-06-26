@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Pencil, ToggleRight, Calendar, Clock, Phone, Mail, Building2, Loader2, Hash, Home, Users, MapPin } from 'lucide-react';
 import hostelService from '@/services/hostel.service';
+import InfoRow from '@/components/ui/InfoRow';
 
 export default function WardenDetailView({ selectedWardenDetail, setView, openChangeEmailModal }) {
     const [hostelDetails, setHostelDetails] = useState(null);
@@ -61,14 +62,13 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                     <div className="lg:col-span-7 space-y-6">
                         {/* Basic Info Section */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                            <p className="text-xs text-gray-400 mb-6">Basic information of the Warden</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.phone ? `${selectedWardenDetail.phone}` : 'N/A'}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span>
-                                    <span className="sm:col-span-2 font-medium flex items-center justify-between"><span className="hidden sm:inline">: </span>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Basic information of the Warden</p>
+                            <div className="space-y-1">
+                                <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedWardenDetail?.name}</InfoRow>
+                                <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedWardenDetail?.phone ? `${selectedWardenDetail.phone}` : 'N/A'}</InfoRow>
+                                <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>
+                                    <span className="flex items-center justify-between">
                                         <span className="flex-1">{selectedWardenDetail?.email || 'N/A'}</span>
                                         <button
                                             onClick={() => openChangeEmailModal(selectedWardenDetail)}
@@ -77,7 +77,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                                             <Pencil className="h-4 w-4" />
                                         </button>
                                     </span>
-                                </div>
+                                </InfoRow>
                             </div>
                         </div>
 
@@ -86,57 +86,40 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
 
                         {/* Hostel Details */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Hostel Details</h3>
-                            <p className="text-xs text-gray-400 mb-6">Details of assigned hostel</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-3 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.hostel?.name || selectedWardenDetail?.hostel || 'N/A'}</span>
-                                    
-                                    {loadingHostel ? (
-                                        <div className="sm:col-span-3 flex justify-center py-2">
-                                            <Loader2 className="w-5 h-5 text-[#0A437A] animate-spin" />
-                                        </div>
-                                    ) : hostelDetails ? (
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Hostel Details</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Details of assigned hostel</p>
+                            <div className="space-y-1">
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Hostel</>}>{selectedWardenDetail?.hostel?.name || selectedWardenDetail?.hostel || 'N/A'}</InfoRow>
+                                
+                                {loadingHostel ? (
+                                    <div className="py-2">
+                                        <Loader2 className="w-5 h-5 text-[#0A437A] animate-spin mx-auto" />
+                                    </div>
+                                ) : hostelDetails ? (
+                                    <>
+                                        <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Code</>}>{hostelDetails.code || 'N/A'}</InfoRow>
+                                        <InfoRow label={<><Home className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{hostelDetails.hosteltype || 'N/A'}</span></InfoRow>
+                                        <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{hostelDetails.capacity || 'N/A'}</InfoRow>
+                                        <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Location</>}>{hostelDetails.location || 'N/A'}</InfoRow>
+                                    </>
+                                ) : (
+                                    typeof selectedWardenDetail?.hostel === 'object' && selectedWardenDetail?.hostel !== null && (
                                         <>
-                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Hash className="w-4 h-4 text-gray-400" /> Code</span>
-                                            <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{hostelDetails.code || 'N/A'}</span>
-
-                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Home className="w-4 h-4 text-gray-400" /> Type</span>
-                                            <span className="sm:col-span-2 font-medium capitalize"><span className="hidden sm:inline">: </span>{hostelDetails.hosteltype || 'N/A'}</span>
-
-                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Users className="w-4 h-4 text-gray-400" /> Capacity</span>
-                                            <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{hostelDetails.capacity || 'N/A'}</span>
-
-                                            <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><MapPin className="w-4 h-4 text-gray-400" /> Location</span>
-                                            <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{hostelDetails.location || 'N/A'}</span>
+                                            <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Code</>}>{selectedWardenDetail.hostel.code || 'N/A'}</InfoRow>
+                                            <InfoRow label={<><Home className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedWardenDetail.hostel.hosteltype || 'N/A'}</span></InfoRow>
+                                            <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedWardenDetail.hostel.capacity || 'N/A'}</InfoRow>
+                                            <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Location</>}>{selectedWardenDetail.hostel.location || 'N/A'}</InfoRow>
                                         </>
-                                    ) : (
-                                        typeof selectedWardenDetail?.hostel === 'object' && selectedWardenDetail?.hostel !== null && (
-                                            <>
-                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Hash className="w-4 h-4 text-gray-400" /> Code</span>
-                                                <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.code || 'N/A'}</span>
+                                    )
+                                )}
 
-                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Home className="w-4 h-4 text-gray-400" /> Type</span>
-                                                <span className="sm:col-span-2 font-medium capitalize"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.hosteltype || 'N/A'}</span>
-
-                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Users className="w-4 h-4 text-gray-400" /> Capacity</span>
-                                                <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.capacity || 'N/A'}</span>
-
-                                                <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><MapPin className="w-4 h-4 text-gray-400" /> Location</span>
-                                                <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail.hostel.location || 'N/A'}</span>
-                                            </>
-                                        )
-                                    )}
-
-                                    <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                    <span className="sm:col-span-2 font-medium flex items-center mt-2 sm:mt-0"><span className="hidden sm:inline mr-2">: </span>
+                                <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                    <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedWardenDetail?.status}
                                     </span>
-                                    <span className="text-gray-500 flex items-center gap-1.5 mt-2 sm:mt-0"><Calendar className="w-4 h-4 text-gray-400" /> Created On</span>
-                                    <span className="sm:col-span-2 font-medium mt-2 sm:mt-0"><span className="hidden sm:inline mr-2">: </span>{selectedWardenDetail?.createdAt ? new Date(selectedWardenDetail.createdAt).toLocaleDateString() : 'N/A'}</span>
-                                </div>
-
+                                </InfoRow>
+                                <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> Created</>}>{selectedWardenDetail?.createdAt ? new Date(selectedWardenDetail.createdAt).toLocaleDateString() : 'N/A'}</InfoRow>
                             </div>
                         </div>
 
@@ -144,18 +127,17 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
 
                     {/* Right Summary Sidebar */}
                     <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                        <h3 className="text-lg font-semibold text-primary mb-4">Warden Summary</h3>
-                        <div className="space-y-4">
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.name}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.hostel?.name || selectedWardenDetail?.hostel || 'N/A'}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedWardenDetail?.organization?.name || selectedWardenDetail?.organization || 'N/A'}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                        <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Warden Summary</h3>
+                        <div className="space-y-1">
+                            <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedWardenDetail?.name}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Hostel</>}>{selectedWardenDetail?.hostel?.name || selectedWardenDetail?.hostel || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedWardenDetail?.organization?.name || selectedWardenDetail?.organization || 'N/A'}</InfoRow>
+                            <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedWardenDetail?.status}
                                 </span>
-                            </div>
+                            </InfoRow>
                         </div>
                     </div>
                 </div>

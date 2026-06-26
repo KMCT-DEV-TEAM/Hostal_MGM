@@ -42,7 +42,8 @@ const LogsViewer = ({ entityType }) => {
             setPagination({ 
                 page: res.data.currentPage || 1, 
                 limit: 10, 
-                totalPages: res.data.totalPages || 1 
+                totalPages: res.data.totalPages || 1,
+                totalDocs: res.data.totalCount || res.data.totalLogs || res.data.totalRecords || res.data.totalDocs || res.data.total || 0
             });
         } catch (error) {
             showErrorToast('Failed to load system logs', error?.message);
@@ -209,7 +210,12 @@ const LogsViewer = ({ entityType }) => {
             {!isLoading && pagination.totalPages > 0 && (
                 <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
-                        <span className="hidden sm:inline">Page </span>{pagination.page} of {pagination.totalPages}
+                        <span className="hidden sm:inline">Showing </span>
+                        {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(pagination.page * pagination.limit, pagination.totalDocs || pagination.totalRecords || 0)} of {pagination.totalDocs || pagination.totalRecords || 0}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <button
