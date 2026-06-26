@@ -107,7 +107,7 @@ export default function HostelTable({
                                     <td className="p-4 text-center text-gray-500">
                                         <div className="flex items-center justify-center gap-1.5 text-gray-500">
                                             <Users size={14} className="text-gray-400" />
-                                            <span>0</span>
+                                            <span>{hostel.studentsCount || 0}</span>
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
@@ -217,7 +217,7 @@ export default function HostelTable({
                                         </div>
 
                                         <div className="text-[10px] sm:text-xs text-gray-400 mb-3 truncate">
-                                            {hostel.location || 'N/A'} • {hostel.capacity} Capacity
+                                            {hostel.location || 'N/A'} • {hostel.capacity} Capacity • {hostel.studentsCount || 0} Students
                                         </div>
                                     </div>
                                 </div>

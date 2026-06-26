@@ -309,13 +309,30 @@ const PasswordRequests = () => {
                                             </div>
                                         </td>
                                         <td className="p-4 text-start">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize border ${
-                                                request.status === 'approved' ? 'bg-green-50 text-success border-green-200' :
-                                                request.status === 'rejected' ? 'bg-danger/10 text-danger border-danger/20' :
-                                                'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                            }`}>
-                                                {request.status}
-                                            </span>
+                                            <div className="relative inline-block w-[105px]">
+                                                <Dropdown
+                                                    minWidth=""
+                                                    options={[
+                                                        { value: "pending", label: "Pending" },
+                                                        { value: "approved", label: "Approved" },
+                                                        { value: "rejected", label: "Rejected" }
+                                                    ]}
+                                                    value={request.status}
+                                                    onChange={(val) => {
+                                                        if (request.status !== 'pending') {
+                                                            showErrorToast('Action Not Allowed', 'Processed requests cannot be changed.');
+                                                            return;
+                                                        }
+                                                        if (val === 'approved') openConfirmModal('approve', request._id);
+                                                        else if (val === 'rejected') openConfirmModal('reject', request._id);
+                                                    }}
+                                                    triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${
+                                                        request.status === 'approved' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' :
+                                                        request.status === 'rejected' ? 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20' :
+                                                        'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
+                                                    }`}
+                                                />
+                                            </div>
                                         </td>
                                         <td className="p-4 text-center">
                                             {request.status === 'pending' ? (
@@ -392,13 +409,30 @@ const PasswordRequests = () => {
                                             <p className="text-xs text-gray-500">{request.user.email}</p>
                                         </div>
                                     </div>
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${
-                                        request.status === 'approved' ? 'bg-green-50 text-green-700' :
-                                        request.status === 'rejected' ? 'bg-danger/10 text-danger' :
-                                        'bg-yellow-50 text-yellow-700'
-                                    }`}>
-                                        {request.status}
-                                    </span>
+                                    <div className="relative inline-block w-[100px]">
+                                        <Dropdown
+                                            minWidth=""
+                                            options={[
+                                                { value: "pending", label: "Pending" },
+                                                { value: "approved", label: "Approved" },
+                                                { value: "rejected", label: "Rejected" }
+                                            ]}
+                                            value={request.status}
+                                            onChange={(val) => {
+                                                if (request.status !== 'pending') {
+                                                    showErrorToast('Action Not Allowed', 'Processed requests cannot be changed.');
+                                                    return;
+                                                }
+                                                if (val === 'approved') openConfirmModal('approve', request._id);
+                                                else if (val === 'rejected') openConfirmModal('reject', request._id);
+                                            }}
+                                            triggerClassName={`px-2 py-1 text-[10px] font-regular border transition-colors ${
+                                                request.status === 'approved' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' :
+                                                request.status === 'rejected' ? 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20' :
+                                                'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
+                                            }`}
+                                        />
+                                    </div>
                                 </div>
                                 
                                 <div className="flex justify-between items-end mt-4">
@@ -437,7 +471,12 @@ const PasswordRequests = () => {
                 {!isLoading && pagination.totalPages > 0 && (
                     <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                         <div>
-                            <span className="hidden sm:inline">Page </span>{pagination.page} of {pagination.totalPages}
+                            <span className="hidden sm:inline">Showing </span>
+                            {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}
+                            <span className="hidden sm:inline"> to </span>
+                            <span className="sm:hidden">-</span>
+                            {Math.min(pagination.page * pagination.limit, pagination.totalDocs || pagination.totalRecords || 0)} of {pagination.totalDocs || pagination.totalRecords || 0}
+                            <span className="hidden sm:inline"> entries</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <button

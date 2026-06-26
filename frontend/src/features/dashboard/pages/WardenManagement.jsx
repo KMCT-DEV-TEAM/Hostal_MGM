@@ -7,7 +7,7 @@ import WardenPagination from '../components/Warden/WardenPagination';
 import WardenDetailView from '../components/Warden/WardenDetailView';
 import WardenFormModal from '../components/Warden/WardenFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
-import { Pencil, X, ArrowLeft, Check } from 'lucide-react';
+import { Pencil, X, ArrowLeft, Check, Loader2 } from 'lucide-react';
 import otpService from '../../../services/otp.service';
 import hostelService from '../../../services/hostel.service';
 import wardenService from '../../../services/warden.service';
@@ -40,6 +40,7 @@ export default function WardenManagement() {
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isHostelConfirmOpen, setIsHostelConfirmOpen] = useState(false);
     const [hostelChangeToConfirm, setHostelChangeToConfirm] = useState(null);
+    const [isUpdatingHostel, setIsUpdatingHostel] = useState(false);
     const [emailChangeWardenId, setEmailChangeWardenId] = useState(null);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [newEmailForm, setNewEmailForm] = useState('');
@@ -189,6 +190,7 @@ export default function WardenManagement() {
     const confirmHostelChange = async () => {
         if (!hostelChangeToConfirm) return;
         const { id, newHostel } = hostelChangeToConfirm;
+        setIsUpdatingHostel(true);
         try {
             const res = await wardenService.updateWardenHostel(id, { hostelId: newHostel });
             fetchWardens();
@@ -199,6 +201,7 @@ export default function WardenManagement() {
         } finally {
             setIsHostelConfirmOpen(false);
             setHostelChangeToConfirm(null);
+            setIsUpdatingHostel(false);
         }
     };
 
@@ -839,24 +842,29 @@ export default function WardenManagement() {
             )}
             {/* Confirm Hostel Change Modal */}
             {isHostelConfirmOpen && (
-                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-[320px] max-w-[90vw] p-6 relative animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Change Hostel?</h3>
-                        <p className="text-gray-500 mb-6">Are you sure you want to change the hostel assignment for this warden?</p>
-                        <div className="flex gap-3 justify-end">
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Change Hostel</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the hostel assignment for this warden?
+                        </p>
+                        <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => {
                                     setIsHostelConfirmOpen(false);
                                     setHostelChangeToConfirm(null);
                                 }}
-                                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors cursor-pointer"
+                                disabled={isUpdatingHostel}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmHostelChange}
-                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-secondary font-medium transition-colors cursor-pointer"
+                                disabled={isUpdatingHostel}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
+                                {isUpdatingHostel && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Confirm
                             </button>
                         </div>

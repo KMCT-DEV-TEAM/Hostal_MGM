@@ -13,6 +13,7 @@ export default function Modal({
   asForm = false,
   onSubmit,
   avatar,
+  icon,
   zIndex = 50,
 }) {
   if (!isOpen || typeof document === "undefined") return null;
@@ -31,17 +32,21 @@ export default function Modal({
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div className="flex items-center gap-3">
-            {avatar && (
+            {icon ? (
+              <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
+                {icon}
+              </div>
+            ) : avatar ? (
               <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">
                 <span className="font-bold text-xl uppercase">
-                  {(avatar || title || "")
+                  {(typeof avatar === "string" ? avatar : title || "")
                     .split(" ")
                     .map((n) => n[0])
                     .join("")
                     .substring(0, 2) || "?"}
                 </span>
               </div>
-            )}
+            ) : null}
             <div>
               {title && (
                 <h2 className="text-xl font-bold text-gray-900">{title}</h2>

@@ -20,6 +20,7 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
             maxWidth="max-w-5xl"
             title="Complaint Details"
             subtitle={`${complaint.student} - ${complaint.id || 'A1007'}`}
+            icon={<User size={24} />}
         >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 

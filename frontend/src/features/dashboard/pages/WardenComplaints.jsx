@@ -33,6 +33,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 subject: c.subject,
                 description: c.description,
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                createdAt: c.createdAt,
                 priority: c.priority || 'Medium',
                 status: c.status,
                 hostelName: c.hostelId?.name || 'Unknown Hostel',
@@ -124,6 +125,15 @@ export default function WardenComplaints({ hostel, onBack }) {
                 dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
             }
 
+            if (exportFilters.startDate) {
+                const start = new Date(exportFilters.startDate).setHours(0,0,0,0);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0,0,0,0) >= start);
+            }
+            if (exportFilters.endDate) {
+                const end = new Date(exportFilters.endDate).setHours(23,59,59,999);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23,59,59,999) <= end);
+            }
+
             if (dataToExport && dataToExport.length > 0) {
                 const exportData = dataToExport.map((complaint, index) => ({
                     "SL No": index + 1,
@@ -198,8 +208,13 @@ export default function WardenComplaints({ hostel, onBack }) {
 
                 {/* Pagination Section */}
                 <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div className="hidden sm:block">
-                        Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                    <div>
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -288,6 +303,8 @@ export default function WardenComplaints({ hostel, onBack }) {
                 isExporting={isExporting}
                 title="Export Complaints Data"
                 fields={[
+                    { name: 'startDate', label: 'Start Date', type: 'date' },
+                    { name: 'endDate', label: 'End Date', type: 'date' },
                     {
                         name: "status",
                         label: "Complaint Status",

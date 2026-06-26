@@ -11,13 +11,7 @@ import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import ComplaintService from "@/services/complaint.service";
 import { useAuthStore } from "@/store/useAuthStore";
 
-const InfoRow = ({ label, children }) => (
-  <div className="flex text-[13px] gap-3 items-start py-1">
-    <span className="text-gray-500 w-20 shrink-0">{label}</span>
-    <span className="text-gray-400 shrink-0 -ml-1">:</span>
-    <span className="font-medium text-black flex-1">{children}</span>
-  </div>
-);
+import InfoRow from "@/components/ui/InfoRow";
 
 const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRefresh }) => {
   const { user } = useAuthStore();
@@ -102,6 +96,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
       maxWidth="max-w-5xl"
       title="Complaint Details"
       subtitle={`${complaint.student} - ${complaint.roomNo}`}
+      icon={<User size={24} />}
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 

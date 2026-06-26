@@ -23,6 +23,7 @@ import {
     FileDown
 } from 'lucide-react';
 import hostelService from '../../../services/hostel.service';
+import InfoRow from '@/components/ui/InfoRow';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import * as XLSX from 'xlsx';
@@ -357,39 +358,36 @@ export default function HostelManagement() {
                         <div className="md:col-span-7 flex flex-col">
                             {/* Basic Info Section */}
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
-                                <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                                <p className="text-xs text-gray-400 mb-6">Basic contact information of the Hostel</p>
-                                <div className="space-y-4">
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium text-capitalize"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                        <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                                <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                                <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Hostel</p>
+                                <div className="space-y-1">
+                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
+                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
+                                    <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedHostelDetail.capacity || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                        <span className="flex items-center">
                                             <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                             {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                         </span>
-                                    </div>
+                                    </InfoRow>
                                 </div>
                             </div>
                         </div>
 
                         {/* Right Summary Sidebar */}
                         <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm md:h-full">
-                            <h3 className="text-lg font-semibold text-primary mb-4">Hostel Summary</h3>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail?.organizations?.[0]?.name || selectedHostelDetail?.organizations || 'N/A'}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Hostel Summary</h3>
+                            <div className="space-y-1">
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hosteltype}</span></InfoRow>
+                                <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                    <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
-                                </div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity}</span></div>
+                                </InfoRow>
+                                <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedHostelDetail.capacity}</InfoRow>
                             </div>
                         </div>
                     </div>

@@ -126,11 +126,7 @@ const ComplaintCategories = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isEditMode) {
-            setIsEditConfirmOpen(true);
-        } else {
-            await saveCategory();
-        }
+        setIsEditConfirmOpen(true);
     };
 
     const saveCategory = async () => {
@@ -155,7 +151,7 @@ const ComplaintCategories = () => {
     };
 
     const handleCancel = () => {
-        if (isEditMode) {
+        if (isEditMode || formData.name.trim() !== '' || formData.description.trim() !== '') {
             setIsDiscardConfirmOpen(true);
         } else {
             setIsModalOpen(false);
@@ -224,7 +220,7 @@ const ComplaintCategories = () => {
             }
 
             const res = await ComplaintCategoryService.getComplaintCategories(params);
-            
+
             const responseData = res?.data || res;
             const allCategories = responseData?.data || responseData || [];
 
@@ -238,7 +234,7 @@ const ComplaintCategories = () => {
                 }));
 
                 const isSuccess = exportToExcel(exportData, "ComplaintCategories_Export", "Complaint Categories");
-                
+
                 if (isSuccess) {
                     showSuccessToast('Export Successful', 'The list has been downloaded.');
                 } else {
@@ -297,8 +293,8 @@ const ComplaintCategories = () => {
                             />
                         </div>
                         <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
                             >
                                 <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
@@ -311,7 +307,7 @@ const ComplaintCategories = () => {
                             <Dropdown
                                 className="flex-1 sm:flex-none"
                                 options={[
-                                    { label: 'All', value: 'All' },
+                                    { label: 'All Status', value: 'All' },
                                     { label: 'Active', value: 'Active' },
                                     { label: 'Inactive', value: 'Inactive' }
                                 ]}
@@ -432,9 +428,9 @@ const ComplaintCategories = () => {
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Save Changes</h3>
+                        <h3 className="text-sm font-bold text-gray-900">{isEditMode ? 'Save Changes' : 'Add Category'}</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to save these changes?
+                            {isEditMode ? 'Are you sure you want to save these changes?' : 'Are you sure you want to add this new category?'}
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
