@@ -4,6 +4,7 @@ import ComplaintService from '@/services/complaint.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import ResolveTaskModal from '../components/complaints/ResolveTaskModal';
+import RejectAssignedTaskModal from '../components/complaints/RejectAssignedTaskModal';
 
 export default function MaintenanceAssignedTasks() {
     const { user } = useAuthStore();
@@ -12,6 +13,7 @@ export default function MaintenanceAssignedTasks() {
     const [loading, setLoading] = useState(true);
     
     const [resolveModalOpen, setResolveModalOpen] = useState(false);
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
 
     useEffect(() => {
@@ -36,6 +38,7 @@ export default function MaintenanceAssignedTasks() {
             case 'In progress': return 'bg-blue-50 text-[#0A437A]';
             case 'Pending': return 'bg-gray-50 text-gray-600';
             case 'Awaiting': return 'bg-orange-50 text-orange-500';
+            case 'Rejected': return 'bg-red-50 text-red-600';
             default: return 'bg-gray-50 text-gray-600';
         }
     };
@@ -49,6 +52,11 @@ export default function MaintenanceAssignedTasks() {
     const handleResolveClick = (task) => {
         setSelectedTask(task);
         setResolveModalOpen(true);
+    };
+
+    const handleRejectClick = (task) => {
+        setSelectedTask(task);
+        setRejectModalOpen(true);
     };
 
     return (
@@ -118,12 +126,20 @@ export default function MaintenanceAssignedTasks() {
                                         </td>
                                         <td className="p-4 text-center">
                                             {task.status === 'In progress' ? (
-                                                <button 
-                                                    onClick={() => handleResolveClick(task)}
-                                                    className="px-3 py-1.5 bg-[#0A437A] text-white rounded text-xs font-medium hover:bg-blue-800 transition-colors cursor-pointer"
-                                                >
-                                                    Resolve
-                                                </button>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => handleResolveClick(task)}
+                                                        className="px-3 py-1.5 bg-[#0A437A] text-white rounded text-xs font-medium hover:bg-blue-800 transition-colors cursor-pointer"
+                                                    >
+                                                        Resolve
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleRejectClick(task)}
+                                                        className="px-3 py-1.5 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200 transition-colors cursor-pointer"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
                                             ) : (
                                                 <span className="text-xs text-gray-400">-</span>
                                             )}
@@ -146,6 +162,13 @@ export default function MaintenanceAssignedTasks() {
                 onClose={() => setResolveModalOpen(false)}
                 complaint={selectedTask}
                 onResolved={fetchTasks}
+            />
+
+            <RejectAssignedTaskModal
+                isOpen={rejectModalOpen}
+                onClose={() => setRejectModalOpen(false)}
+                complaint={selectedTask}
+                onRejected={fetchTasks}
             />
         </div>
     );

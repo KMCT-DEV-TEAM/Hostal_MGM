@@ -19,6 +19,7 @@ import complaintCategoryRoutes from "./modules/complaintCategories/complaintCate
 import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter, superAdminPassRouter } from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
+import { wardenAttendanceRouter, adminAttendanceRouter, superAdminAttendanceRouter } from "./modules/attendance/attendance.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -60,6 +61,7 @@ app.use("/api/super-admin/parents", parentRoutes);
 app.use("/api/super-admin/students", studentRoutes);
 app.use("/api/super-admin/password-requests", passwordRequestRoutes);
 app.use("/api/super-admin/passes", superAdminPassRouter);
+app.use("/api/super-admin/attendance", superAdminAttendanceRouter);
 
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/departments", departmentRoutes);
@@ -72,6 +74,7 @@ app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/students", studentRoutes);
 app.use("/api/admin/parents", parentRoutes);
 app.use("/api/admin/passes", adminPassRouter);
+app.use("/api/admin/attendance", adminAttendanceRouter);
 
 
 
@@ -89,6 +92,7 @@ app.use("/api/parent/passes", parentPassRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);
+app.use("/api/warden/attendance", wardenAttendanceRouter);
 app.use("/api/logs", logRoutes);
 app.use(errorMiddleware);
 

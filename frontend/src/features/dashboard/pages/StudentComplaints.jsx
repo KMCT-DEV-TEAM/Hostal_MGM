@@ -55,6 +55,7 @@ export default function StudentComplaints() {
                 description: c.description,
                 roomNo: c.roomNo,
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+                createdAt: c.createdAt,
                 status: c.status,
                 timeline: c.timeline || []
             }));
@@ -187,6 +188,15 @@ export default function StudentComplaints() {
             
             if (exportFilters.status) {
                 dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
+            }
+
+            if (exportFilters.startDate) {
+                const start = new Date(exportFilters.startDate).setHours(0,0,0,0);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0,0,0,0) >= start);
+            }
+            if (exportFilters.endDate) {
+                const end = new Date(exportFilters.endDate).setHours(23,59,59,999);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23,59,59,999) <= end);
             }
 
             if (dataToExport && dataToExport.length > 0) {
@@ -468,6 +478,8 @@ export default function StudentComplaints() {
                 isExporting={isExporting}
                 title="Export Complaints Data"
                 fields={[
+                    { name: 'startDate', label: 'Start Date', type: 'date' },
+                    { name: 'endDate', label: 'End Date', type: 'date' },
                     {
                         name: "status",
                         label: "Complaint Status",

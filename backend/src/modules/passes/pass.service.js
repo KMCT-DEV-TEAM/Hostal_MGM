@@ -37,7 +37,7 @@ export const getStudentPassesDb = async (studentId, query) => {
   if (query.outTime) filter.outTime = query.outTime;
   if (query.outPassCategory) filter.outPassCategory = query.outPassCategory;
 
-  applyDateRangeFilter(filter, "fromDate", query.fromDate, query.toDate);
+  applyDateRangeFilter(filter, "fromDate", query.startDate, query.endDate);
 
   if (query.date) {
     const searchDate = new Date(query.date);
@@ -199,7 +199,7 @@ export const getPassesDb = async (studentId, query) => {
               studentName: "$studentInfo.name",
               admissionNumber: "$studentInfo.studentId",
               parentApprovalStatus: "$parentApproval.status",
-              wardenApprovalStatus: "$wardenApproval.status"
+              adminApprovalStatus: "$adminApproval.status"
             }
           }
         ]
@@ -231,7 +231,7 @@ export const getPassDetailsDb = async (passId, studentId) => {
 };
 
 export const updatePassApprovalDb = async (passId, parentId, action, remarks) => {
-  const statusUpdate = action === "approve" ? "pending_warden" : "rejected";
+  const statusUpdate = action === "approve" ? "pending_admin" : "rejected";
   const parentStatus = action === "approve" ? "approved" : "rejected";
   const timelineAction = action === "approve" ? "parent_approved" : "parent_rejected";
   const defaultRemark = action === "approve" ? "Approved by parent" : "Rejected by parent";
@@ -281,9 +281,7 @@ export const getWardenDashboardStatsDb = async (hostelId) => {
     {
       $facet: {
         total: [{ $count: "count" }],
-        pending: [{ $match: { status: "pending_warden" } }, { $count: "count" }],
         approved: [{ $match: { status: "approved" } }, { $count: "count" }],
-        rejected: [{ $match: { status: "rejected" } }, { $count: "count" }],
         studentsOutside: [
           { $match: { "returnTracking.leftHostelAt": { $exists: true, $ne: null }, "returnTracking.returnedAt": null } },
           { $count: "count" }
@@ -302,9 +300,7 @@ export const getWardenDashboardStatsDb = async (hostelId) => {
   const result = stats[0];
   return {
     total: result.total[0]?.count || 0,
-    pending: result.pending[0]?.count || 0,
     approved: result.approved[0]?.count || 0,
-    rejected: result.rejected[0]?.count || 0,
     studentsOutside: result.studentsOutside[0]?.count || 0,
     returned: result.returned[0]?.count || 0,
     homePassCount: result.homePassCount[0]?.count || 0,
@@ -382,9 +378,6 @@ export const getWardenPassesDb = async (hostelId, query) => {
   const stats = await Pass.aggregate(pipeline);
   return formatPaginationResponse(stats, page, limit);
 };
-
-// --- Management Scope Services (Admin & Super Admin) ---
-
 export const getManagementDashboardStatsDb = async (scope) => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -393,14 +386,16 @@ export const getManagementDashboardStatsDb = async (scope) => {
 
   let matchQuery = {};
   if (scope.organizationId) {
-    const hostels = await Hostel.find({ organizationId: new mongoose.Types.ObjectId(scope.organizationId), isActive: true }).select('_id').lean();
-    matchQuery = { hostelId: { $in: hostels.map(h => h._id) } };
+    const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
+    matchQuery = { hostelId: { $in: hostelIds.filter(Boolean) } };
   }
 
+  console.log("matchQuery", matchQuery, scope)
+
   const [orgCount, hostelCount, studentCount, passStats] = await Promise.all([
-    scope.role === "superadmin" ? Organization.countDocuments({ isActive: true }) : Promise.resolve(0),
-    scope.role === "superadmin" ? Hostel.countDocuments({ isActive: true }) : Promise.resolve(0),
-    scope.role === "superadmin" ? Student.countDocuments({ isActive: true }) : Promise.resolve(0),
+    scope.role === "super_admin" ? Organization.countDocuments({ isActive: true }) : Promise.resolve(0),
+    scope.role === "super_admin" ? Hostel.countDocuments({ isActive: true }) : Promise.resolve(0),
+    scope.role === "super_admin" ? Student.countDocuments({ isActive: true }) : Promise.resolve(0),
     Pass.aggregate([
       { $match: matchQuery },
       buildDashboardStatsFacet(startOfToday, endOfToday)
@@ -409,7 +404,7 @@ export const getManagementDashboardStatsDb = async (scope) => {
 
   const response = parseDashboardStatsFacet(passStats);
 
-  if (scope.role === "superadmin") {
+  if (scope.role === "super_admin") {
     response.totalOrganizations = orgCount;
     response.totalHostels = hostelCount;
     response.totalStudents = studentCount;
@@ -421,7 +416,8 @@ export const getManagementDashboardStatsDb = async (scope) => {
 export const getManagementHostelsDb = async (scope) => {
   const matchQuery = { isActive: true };
   if (scope.organizationId) {
-    matchQuery.organizationId = new mongoose.Types.ObjectId(scope.organizationId);
+    const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
+    matchQuery._id = { $in: hostelIds.filter(Boolean) };
   }
 
   const pipeline = [
@@ -429,7 +425,7 @@ export const getManagementHostelsDb = async (scope) => {
     {
       $lookup: {
         from: "organizations",
-        localField: "organizationId",
+        localField: "organizations",
         foreignField: "_id",
         as: "orgInfo"
       }
@@ -466,7 +462,7 @@ export const getManagementHostelsDb = async (scope) => {
               _id: null,
               totalCount: { $sum: 1 },
               pendingCount: {
-                $sum: { $cond: [{ $in: ["$status", ["pending_parent", "pending_warden"]] }, 1, 0] }
+                $sum: { $cond: [{ $in: ["$status", ["pending_parent", "pending_admin"]] }, 1, 0] }
               },
               approvedCount: {
                 $sum: { $cond: [{ $eq: ["$status", "approved"] }, 1, 0] }
@@ -485,7 +481,7 @@ export const getManagementHostelsDb = async (scope) => {
     }
   ];
 
-  if (scope.role === "superadmin") {
+  if (scope.role === "super_admin") {
     pipeline.push({
       $project: {
         _id: 1,
@@ -525,7 +521,7 @@ export const getManagementHostelsDb = async (scope) => {
         outside: { $ifNull: ["$outside", 0] },
       }
     },
-    { $sort: scope.role === "superadmin" ? { organization: 1, hostel: 1 } : { name: 1 } }
+    { $sort: scope.role === "super_admin" ? { organization: 1, hostel: 1 } : { name: 1 } }
   );
 
   return await Hostel.aggregate(pipeline);
@@ -622,7 +618,7 @@ export const getWardenPassDetailsDb = async (passId, hostelId) => {
     .populate("studentId", "name admissionNo course department batch roomNo")
     .populate("parentId", "parentName phone relationship")
     .populate("hostelId", "name")
-    .populate("wardenApproval.actionBy", "name")
+    .populate("adminApproval.actionBy", "name")
     .lean();
 };
 

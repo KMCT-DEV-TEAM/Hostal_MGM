@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
 import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
 import MaintenanceStaffFormModal from '../components/maintenanceStaff/MaintenanceStaffFormModal';
+import MaintenanceStaffDetailView from '../components/maintenanceStaff/MaintenanceStaffDetailView';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import maintenanceStaffService from '../../../services/maintenanceStaff.service';
 import organizationService from '../../../services/organization.service';
 import otpService from '../../../services/otp.service';
+import InfoRow from '@/components/ui/InfoRow';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -30,6 +32,7 @@ export default function MaintenanceStaffManagement() {
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isAddConfirmOpen, setIsAddConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
@@ -250,7 +253,7 @@ export default function MaintenanceStaffManagement() {
         if (editingStaff) {
             setIsEditConfirmOpen(true);
         } else {
-            saveStaff();
+            setIsAddConfirmOpen(true);
         }
     };
 
@@ -375,6 +378,7 @@ export default function MaintenanceStaffManagement() {
         }
         setActiveModal(null);
         setIsEditConfirmOpen(false);
+        setIsAddConfirmOpen(false);
         setIsSubmitting(false);
     };
 
@@ -767,58 +771,53 @@ export default function MaintenanceStaffManagement() {
                             <div className="lg:col-span-7 space-y-6">
                                 {/* Basic Info Section */}
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                    <h3 className="text-lg font-semibold text-[#0A437A] mb-1">Basic Info</h3>
-                                    <p className="text-xs text-gray-400 mb-6">Basic information of the Maintenance Staff</p>
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.name}</span></div>
-
-                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                            <span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span>
-                                            <span className="sm:col-span-2 font-medium text-gray-900 flex items-center justify-between"><span className="hidden sm:inline">: </span>
-                                                <span className="flex-1 ml-1">{selectedStaffDetail?.email || 'N/A'}</span>
+                                    <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                                    <p className="text-[11px] text-text-secondary mb-4">Basic information of the Maintenance Staff</p>
+                                    <div className="space-y-1">
+                                        <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedStaffDetail.name}</InfoRow>
+                                        <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>
+                                            <div className="flex items-center justify-between w-full">
+                                                <span>{selectedStaffDetail?.email || 'N/A'}</span>
                                                 <button
                                                     onClick={() => openChangeEmailModal(selectedStaffDetail)}
                                                     className="text-[#0A437A] text-xs font-semibold hover:underline cursor-pointer ml-4"
                                                 >
                                                     <Pencil className="h-4 w-4" />
                                                 </button>
-                                            </span>
-                                        </div>
-
-                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.phone || 'N/A'}</span></div>
-                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-gray-400" /> Specialization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.specialization || 'N/A'}</span></div>
+                                            </div>
+                                        </InfoRow>
+                                        <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedStaffDetail.phone || 'N/A'}</InfoRow>
+                                        <InfoRow label={<><Wrench className="w-4 h-4 text-gray-400" /> Specialization</>}>{selectedStaffDetail.specialization || 'N/A'}</InfoRow>
                                     </div>
                                 </div>
 
                                 {/* Status Details */}
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                    <h3 className="text-lg font-semibold text-[#0A437A] mb-1">Status</h3>
-                                    <p className="text-xs text-gray-400 mb-6">Current activity status</p>
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-3 items-start sm:items-center">
-                                            <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                            <span className="sm:col-span-2 font-medium flex items-center mt-2 sm:mt-0"><span className="hidden sm:inline mr-2">: </span>
+                                    <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Status</h3>
+                                    <p className="text-[11px] text-text-secondary mb-4">Current activity status</p>
+                                    <div className="space-y-1">
+                                        <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                            <span className="flex items-center">
                                                 <span className={`w-2 h-2 rounded-full ${selectedStaffDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                                 {selectedStaffDetail.isActive ? 'Active' : 'Inactive'}
                                             </span>
-                                        </div>
+                                        </InfoRow>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Right Summary Sidebar */}
                             <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                                <h3 className="text-lg font-semibold text-[#0A437A] mb-4">Staff Summary</h3>
-                                <div className="space-y-4">
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.name}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-gray-400" /> Specialization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedStaffDetail.specialization || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                                        <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                                <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Staff Summary</h3>
+                                <div className="space-y-1">
+                                    <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedStaffDetail.name}</InfoRow>
+                                    <InfoRow label={<><Wrench className="w-4 h-4 text-gray-400" /> Specialization</>}>{selectedStaffDetail.specialization || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                        <span className="flex items-center">
                                             <span className={`w-2 h-2 rounded-full ${selectedStaffDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                             {selectedStaffDetail.isActive ? 'Active' : 'Inactive'}
                                         </span>
-                                    </div>
+                                    </InfoRow>
                                 </div>
                             </div>
                         </div>
@@ -1002,6 +1001,41 @@ export default function MaintenanceStaffManagement() {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* Confirm Add Staff Modal */}
+            {isAddConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Add Maintenance Staff</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to add this new maintenance staff member?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsAddConfirmOpen(false)}
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveStaff}
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                            >
+                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {view === 'detail' && (
+                <MaintenanceStaffDetailView
+                    selectedStaffDetail={selectedStaffDetail}
+                    setView={setView}
+                />
             )}
         </div>
     );

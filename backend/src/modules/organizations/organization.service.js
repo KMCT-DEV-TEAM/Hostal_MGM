@@ -3,6 +3,7 @@ import Organization from "./organization.model.js";
 import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
+import fs from "fs";
 
 const findExistingOrganization = async (code, organisationNumber) => {
   return await Organization.findOne({
@@ -40,7 +41,13 @@ const createOrganizationDb = async (data) => {
 };
 
 const getAllOrganizationsDb = async () => {
-  return await Organization.find().populate("adminId", "name email isActive");
+  const organizationsDocs = await Organization.find().populate("adminId", "name email isActive");
+  return await Promise.all(organizationsDocs.map(async (org) => {
+    const studentsCount = await Student.countDocuments({ organizationId: org._id });
+    const orgObj = org.toObject();
+    orgObj.studentsCount = studentsCount;
+    return orgObj;
+  }));
 };
 
 const getPaginatedOrganizationsDb = async (page = 1, limit = 10, search = "", status = "All", adminOrganizationId = null) => {
@@ -73,10 +80,21 @@ const getPaginatedOrganizationsDb = async (page = 1, limit = 10, search = "", st
     organizationsPromise = organizationsPromise.skip(skip).limit(limit);
   }
 
-  const [organizations, totalCount] = await Promise.all([
+  const [organizationsDocs, totalCount] = await Promise.all([
     organizationsPromise,
     Organization.countDocuments(query),
   ]);
+
+  const organizations = await Promise.all(organizationsDocs.map(async (org) => {
+    const studentsCount = await Student.countDocuments({ organizationId: org._id });
+    const orgObj = org.toObject();
+    orgObj.studentsCount = studentsCount;
+    return orgObj;
+  }));
+
+  try {
+    fs.writeFileSync('debug_orgs.json', JSON.stringify(organizations.map(o => ({ id: o._id, studentsCount: o.studentsCount })), null, 2));
+  } catch (err) {}
 
   return { organizations, totalCount };
 };

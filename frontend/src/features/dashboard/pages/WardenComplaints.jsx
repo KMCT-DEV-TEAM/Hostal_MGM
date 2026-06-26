@@ -11,8 +11,12 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 export default function WardenComplaints({ hostel, onBack }) {
+    const { user } = useAuthStore();
+    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
     const [complaints, setComplaints] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -33,11 +37,14 @@ export default function WardenComplaints({ hostel, onBack }) {
                 subject: c.subject,
                 description: c.description,
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                createdAt: c.createdAt,
                 priority: c.priority || 'Medium',
                 status: c.status,
                 hostelName: c.hostelId?.name || 'Unknown Hostel',
                 assignedStaff: c.assignedStaff,
-                timeline: c.timeline || []
+                timeline: c.timeline || [],
+                materialsUsed: c.materialsUsed,
+                resolutionNotes: c.resolutionNotes
             }));
 
             if (hostel) {
@@ -59,6 +66,7 @@ export default function WardenComplaints({ hostel, onBack }) {
         }).catch(err => console.error("Failed to fetch categories", err));
     }, [hostel]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [priorityFilter, setPriorityFilter] = useState('All');
     const [roomNoFilter, setRoomNoFilter] = useState('');
@@ -100,9 +108,17 @@ export default function WardenComplaints({ hostel, onBack }) {
         setConfirmStatusChange({ isOpen: true, complaintId: id, newStatus });
     };
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Apply filtering
     const filteredComplaints = complaints.filter(complaint => {
-        const query = searchQuery.toLowerCase();
+        const query = debouncedSearch.toLowerCase();
         const matchesSearch = Object.values(complaint).some(val => 
             String(val).toLowerCase().includes(query)
         );
@@ -122,6 +138,15 @@ export default function WardenComplaints({ hostel, onBack }) {
             
             if (exportFilters.status) {
                 dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
+            }
+
+            if (exportFilters.startDate) {
+                const start = new Date(exportFilters.startDate).setHours(0,0,0,0);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0,0,0,0) >= start);
+            }
+            if (exportFilters.endDate) {
+                const end = new Date(exportFilters.endDate).setHours(23,59,59,999);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23,59,59,999) <= end);
             }
 
             if (dataToExport && dataToExport.length > 0) {
@@ -193,13 +218,19 @@ export default function WardenComplaints({ hostel, onBack }) {
                     handleCategoryChange={handleCategoryChange}
                     handlePriorityChange={handlePriorityChange}
                     handleStatusChange={handleStatusChange}
-                    onViewClick={(complaint) => setViewingComplaint(complaint)}
+                    onViewClick={(c) => setViewingComplaint(c)}
+                    isViewOnly={isSuperAdmin}
                 />
 
                 {/* Pagination Section */}
                 <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div className="hidden sm:block">
-                        Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                    <div>
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -288,6 +319,8 @@ export default function WardenComplaints({ hostel, onBack }) {
                 isExporting={isExporting}
                 title="Export Complaints Data"
                 fields={[
+                    { name: 'startDate', label: 'Start Date', type: 'date' },
+                    { name: 'endDate', label: 'End Date', type: 'date' },
                     {
                         name: "status",
                         label: "Complaint Status",
@@ -296,6 +329,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                             { label: 'Pending', value: 'Pending' },
                             { label: 'In progress', value: 'In progress' },
                             { label: 'Resolved', value: 'Resolved' },
+                            { label: 'Incomplete', value: 'Incomplete' },
                         ]
                     }
                 ]}

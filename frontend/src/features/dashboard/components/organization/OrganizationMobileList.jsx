@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Mail, Phone, Square, CheckSquare } from 'lucide-react';
+import { Pencil, Mail, Phone, Square, CheckSquare, Users } from 'lucide-react';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 const OrganizationMobileList = ({
@@ -93,7 +93,11 @@ const OrganizationMobileList = ({
                             </div>
                         </div>
 
-                        <div className="flex justify-end mt-auto">
+                        <div className="flex justify-between items-center mt-auto">
+                            <span className="flex items-center gap-1.5 px-1 py-1 text-[10px] font-medium text-text-secondary">
+                                <Users className="w-3 h-3 text-gray-400" />
+                                {o.studentsCount || 0} Students
+                            </span>
                             <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium
                                 ${o.isActive ? 'bg-green-50 text-success' : 'bg-danger/10 text-danger'}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${o.isActive ? 'bg-green-600' : 'bg-danger'}`}></span>
