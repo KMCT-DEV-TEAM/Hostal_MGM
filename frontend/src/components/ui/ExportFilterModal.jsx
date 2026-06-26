@@ -75,12 +75,21 @@ export default function ExportFilterModal({
                 {fields.map((field, index) => (
                     <div key={field.name} className="relative" style={{ zIndex: 20 - index }}>
                         <label className="block mb-1.5 text-xs font-medium text-gray-700">{field.label}</label>
-                        <Dropdown
-                            options={field.options}
-                            value={filters[field.name] || ''}
-                            onChange={(val) => setFilters(prev => ({ ...prev, [field.name]: val }))}
-                            className="w-full"
-                        />
+                        {field.type === 'date' ? (
+                            <input
+                                type="date"
+                                value={filters[field.name] || ''}
+                                onChange={(e) => setFilters(prev => ({ ...prev, [field.name]: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-secondary"
+                            />
+                        ) : (
+                            <Dropdown
+                                options={field.options}
+                                value={filters[field.name] || ''}
+                                onChange={(val) => setFilters(prev => ({ ...prev, [field.name]: val }))}
+                                className="w-full"
+                            />
+                        )}
                     </div>
                 ))}
             </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, User, Mail, Phone, Building2, ToggleRight, Fingerprint, Pencil } from 'lucide-react';
+import InfoRow from '@/components/ui/InfoRow';
 
 const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal }) => {
     return (
@@ -29,14 +30,12 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                     <div className="md:col-span-7 space-y-6">
                         {/* Basic Info Section */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                            <p className="text-xs text-gray-400 mb-6">Basic contact information of the Administrator</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail?.name}</span></div>
-
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span>
-                                    <span className="sm:col-span-2 font-medium text-gray-900 flex items-center justify-between"><span className="hidden sm:inline">: </span>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Administrator</p>
+                            <div className="space-y-1">
+                                <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedAdminDetail?.name}</InfoRow>
+                                <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>
+                                    <span className="flex items-center justify-between">
                                         <span className="flex-1">{selectedAdminDetail?.email || 'N/A'}</span>
                                         <button
                                             onClick={() => openChangeEmailModal && openChangeEmailModal(selectedAdminDetail)}
@@ -45,45 +44,37 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                                             <Pencil className="h-4 w-4" />
                                         </button>
                                     </span>
-                                </div>
-
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</span></div>
-
+                                </InfoRow>
+                                <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</InfoRow>
                             </div>
                         </div>
                         {/* Organization Info Section */}
                         {selectedAdminDetail?.organization && typeof selectedAdminDetail.organization === 'object' && selectedAdminDetail.organization.name && (
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                <h3 className="text-lg font-semibold text-primary mb-1">Organization Details</h3>
-                                <p className="text-xs text-gray-400 mb-6">Assigned organization for this administrator</p>
-                                <div className="space-y-4">
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization Name</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail.organization.name}</span></div>
-
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Code</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail.organization.code || 'N/A'}</span></div>
-
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Registration No</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail.organization.organisationNumber || 'N/A'}</span></div>
-
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail.organization.email || 'N/A'}</span></div>
-
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail.organization.phone ? `+91 ${selectedAdminDetail.organization.phone}` : 'N/A'}</span></div>
+                                <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Organization Details</h3>
+                                <p className="text-[11px] text-text-secondary mb-4">Assigned organization for this administrator</p>
+                                <div className="space-y-1">
+                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org Name</>}>{selectedAdminDetail.organization.name}</InfoRow>
+                                    <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Code</>}>{selectedAdminDetail.organization.code || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Reg No</>}>{selectedAdminDetail.organization.organisationNumber || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedAdminDetail.organization.email || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail.organization.phone ? `+91 ${selectedAdminDetail.organization.phone}` : 'N/A'}</InfoRow>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Right Summary Sidebar */}
                     <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                        <h3 className="text-lg font-semibold text-primary mb-4">Admin Summary</h3>
-                        <div className="space-y-4">
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><User className="w-4 h-4 text-gray-400" /> Name</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail?.name}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium text-gray-900"><span className="hidden sm:inline">: </span>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                        <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Admin Summary</h3>
+                        <div className="space-y-1">
+                            <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedAdminDetail?.name}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</InfoRow>
+                            <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedAdminDetail?.isActive ? "Active" : "Inactive"}
                                 </span>
-                            </div>
+                            </InfoRow>
                         </div>
                     </div>
 
