@@ -34,6 +34,7 @@ import HostelTable from '../components/Hostel/HostelTable';
 import HostelPagination from '../components/Hostel/HostelPagination';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const AVAILABLE_HOSTELS = [
@@ -54,6 +55,7 @@ export default function HostelManagement() {
     const [activeModal, setActiveModal] = useState(null);
     const [editingHostel, setEditingHostel] = useState(null); // Holds object being edited
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isAddConfirmOpen, setIsAddConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
@@ -162,7 +164,7 @@ export default function HostelManagement() {
         if (editingHostel) {
             setIsEditConfirmOpen(true);
         } else {
-            saveHostel();
+            setIsAddConfirmOpen(true);
         }
     };
 
@@ -188,6 +190,7 @@ export default function HostelManagement() {
             showErrorToast('Action Failed', error?.message || 'Failed to save hostel. Please try again.');
         } finally {
             setIsSubmitting(false);
+            setIsAddConfirmOpen(false);
         }
     };
 
@@ -610,6 +613,29 @@ export default function HostelManagement() {
                     </form>
                 </div>
             )}
+            
+            {/* Confirmation Modal for Edit */}
+            <ConfirmationModal
+                isOpen={isEditConfirmOpen}
+                onClose={() => setIsEditConfirmOpen(false)}
+                onConfirm={saveHostel}
+                title="Save Changes"
+                message="Are you sure you want to save the changes made to this hostel?"
+                confirmText={isSubmitting ? "Saving..." : "Save Changes"}
+                cancelText="Cancel"
+            />
+
+            {/* Confirmation Modal for Add */}
+            <ConfirmationModal
+                isOpen={isAddConfirmOpen}
+                onClose={() => setIsAddConfirmOpen(false)}
+                onConfirm={saveHostel}
+                title="Add Hostel"
+                message="Are you sure you want to add this new hostel?"
+                confirmText={isSubmitting ? "Adding..." : "Add Hostel"}
+                cancelText="Cancel"
+            />
+
             <ExportFilterModal
                 isOpen={isExportConfirmOpen}
                 onClose={() => setIsExportConfirmOpen(false)}
@@ -617,31 +643,6 @@ export default function HostelManagement() {
                 isExporting={isExporting}
                 title="Export Hostels Data"
             />
-            {isEditConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900 cursor-pointer">Save Changes</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6 cursor-pointer">
-                            Are you sure you want to save these changes?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsEditConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={saveHostel}
-                                disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
-                            >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {isDiscardConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">

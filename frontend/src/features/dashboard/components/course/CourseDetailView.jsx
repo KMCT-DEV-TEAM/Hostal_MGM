@@ -39,6 +39,7 @@ const CourseDetailView = ({ selectedCourseDetail, setView }) => {
                             <div className="space-y-1">
                                 <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedCourseDetail.code}</InfoRow>
                                 <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedCourseDetail.name}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Organization</>}>{selectedCourseDetail?.organizationId?.name || selectedCourseDetail?.organization?.name || 'N/A'}</InfoRow>
                                 <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                     <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedCourseDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
@@ -77,7 +78,7 @@ const CourseDetailView = ({ selectedCourseDetail, setView }) => {
                         <div className="space-y-1">
                             <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedCourseDetail.code}</InfoRow>
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedCourseDetail.name}</InfoRow>
-                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedCourseDetail?.organization?.name || selectedCourseDetail?.organization || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedCourseDetail?.organizationId?.name || selectedCourseDetail?.organization?.name || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedCourseDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>

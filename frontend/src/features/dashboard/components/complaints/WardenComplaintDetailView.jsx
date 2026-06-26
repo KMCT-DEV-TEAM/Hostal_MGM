@@ -233,7 +233,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                 )}
               </div>
             ) : (
-              <div className="text-[13px] text-text-secondary italic">No resolution details available yet.</div>
+              <div className="text-[13px] font-semibold text-danger italic">Not resolved yet</div>
             )}
           </div>
 

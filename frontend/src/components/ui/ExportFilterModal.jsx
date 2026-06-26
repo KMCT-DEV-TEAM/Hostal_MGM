@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import Dropdown from '@/components/ui/Dropdown';
+import DateInput from '@/components/ui/DateInput';
 
 export default function ExportFilterModal({ 
     isOpen, 
@@ -76,10 +77,10 @@ export default function ExportFilterModal({
                     <div key={field.name} className="relative" style={{ zIndex: 20 - index }}>
                         <label className="block mb-1.5 text-xs font-medium text-gray-700">{field.label}</label>
                         {field.type === 'date' ? (
-                            <input
-                                type="date"
+                            <DateInput
                                 value={filters[field.name] || ''}
                                 onChange={(e) => setFilters(prev => ({ ...prev, [field.name]: e.target.value }))}
+                                placeholder="Select Date"
                                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-secondary"
                             />
                         ) : (

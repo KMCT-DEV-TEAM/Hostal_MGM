@@ -1,6 +1,7 @@
 import Batch from "./batch.model.js";
 import Department from "../departments/department.model.js";
 import Course from "../courses/course.model.js";
+import Student from "../students/student.model.js";
 import { deactivateStudentsByQuery } from "../students/student.service.js";
 
 const checkExistingBatchCodeDb = async (code) => {
@@ -19,16 +20,33 @@ const createBatchDb = async (data) => {
 };
 
 const getPaginatedBatchesDb = async (query, skip, limit, sort) => {
-  return await Batch.find(query)
+  const batches = await Batch.find(query)
     .populate("departmentId", "name code")
     .sort(sort)
     .skip(skip)
     .limit(limit)
     .select("-__v");
+    
+  return await Promise.all(batches.map(async (batch) => {
+    const studentsCount = await Student.countDocuments({ batchId: batch._id });
+    const batchObj = batch.toObject();
+    batchObj.studentsCount = studentsCount;
+    return batchObj;
+  }));
 };
 
 const getAllBatchesDb = async (query, sort) => {
-  return await Batch.find(query).populate("departmentId", "name code").sort(sort).select("-__v");
+  const batches = await Batch.find(query)
+    .populate("departmentId", "name code")
+    .sort(sort)
+    .select("-__v");
+    
+  return await Promise.all(batches.map(async (batch) => {
+    const studentsCount = await Student.countDocuments({ batchId: batch._id });
+    const batchObj = batch.toObject();
+    batchObj.studentsCount = studentsCount;
+    return batchObj;
+  }));
 };
 
 const getBatchByIdDb = async (id) => {

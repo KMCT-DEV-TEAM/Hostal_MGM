@@ -1,5 +1,5 @@
 import React from 'react';
-import { Square, CheckSquare, ChevronDown, Pencil, Mail, Phone, MapPin } from 'lucide-react';
+import { Square, CheckSquare, ChevronDown, Pencil, Mail, Phone, MapPin, Users } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -17,6 +17,7 @@ const OrganizationTable = ({
     openModal
 }) => {
     const { t } = useTranslation();
+    console.log("Orgs passed to OrganizationTable:", orgs);
     return (
         <div className="hidden md:block h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-start relative">
@@ -35,6 +36,7 @@ const OrganizationTable = ({
                         <th className="p-4 text-start">{t('email')}</th>
                         <th className="p-4 text-start">{t('phone')}</th>
                         <th className="p-4 text-start">{t('address')}</th>
+                        <th className="p-4 text-center">Students</th>
                         <th className="p-4 text-start">{t('status')}</th>
                         <th className="p-4 text-start rounded-tr-lg">{t('action')}</th>
                     </tr>
@@ -44,13 +46,13 @@ const OrganizationTable = ({
                         <TableSkeletonLoader columns={7} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-danger">
+                            <td colSpan="8" className="p-8 text-center text-danger">
                                 {error}
                             </td>
                         </tr>
                     ) : orgs.length === 0 ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-500">
+                            <td colSpan="8" className="p-8 text-center text-gray-500">
                                 {t('no_org_found')}
                             </td>
                         </tr>
@@ -96,6 +98,12 @@ const OrganizationTable = ({
                                     <div className="flex items-center gap-2">
                                         <MapPin className="w-3.5 h-3.5 text-gray-400" />
                                         <span className="truncate max-w-[150px]">{o.address || 'N/A'}</span>
+                                    </div>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex items-center justify-center gap-2 text-text-secondary">
+                                        <Users className="w-3.5 h-3.5 text-gray-400" />
+                                        <span className="font-medium">{o.studentsCount || 0}</span>
                                     </div>
                                 </td>
                                 <td className="p-4">

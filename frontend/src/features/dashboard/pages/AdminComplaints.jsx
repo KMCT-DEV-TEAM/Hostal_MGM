@@ -15,6 +15,7 @@ export default function AdminComplaints() {
     const [aggregatedData, setAggregatedData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedHostel, setSelectedHostel] = useState(null);
     const limit = 10;
@@ -31,9 +32,9 @@ export default function AdminComplaints() {
             rawComplaints.forEach(c => {
                 const hostelName = c.hostelId?.name || 'Unknown Hostel';
                 const orgName = c.organizationId?.name || 'Unknown Org';
-                // Note: Warden name isn't directly on complaint, we could get it if we populated it,
-                // but for now we put a placeholder or "N/A"
-                const wardenName = 'N/A';
+                const wardenName = c.hostelId?.wardens?.length > 0 
+                    ? c.hostelId.wardens.map(w => w.name).join(', ') 
+                    : 'N/A';
 
                 if (!hostelMap[hostelName]) {
                     hostelMap[hostelName] = {
@@ -66,11 +67,19 @@ export default function AdminComplaints() {
         fetchComplaints();
     }, []);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Apply filtering on aggregated data
     let filteredComplaints = aggregatedData.filter(c => {
         // Search Query
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
+        if (!debouncedSearch) return true;
+        const query = debouncedSearch.toLowerCase();
         return (
             c.organization.toLowerCase().includes(query) ||
             c.hostel.toLowerCase().includes(query) ||

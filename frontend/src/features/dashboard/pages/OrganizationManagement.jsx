@@ -45,6 +45,7 @@ const OrganizationManagement = () => {
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedOrganizationDetail, setSelectedOrganizationDetail] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isAddConfirmOpen, setIsAddConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
@@ -157,7 +158,7 @@ const OrganizationManagement = () => {
         if (isEditMode) {
             setIsEditConfirmOpen(true);
         } else {
-            await saveOrganization();
+            setIsAddConfirmOpen(true);
         }
     };
 
@@ -173,6 +174,7 @@ const OrganizationManagement = () => {
             }
             setIsModalOpen(false);
             setIsEditConfirmOpen(false);
+            setIsAddConfirmOpen(false);
             fetchOrganizations(); // Refresh list after saving
         } catch (err) {
             console.error("Failed to save organization:", err);
@@ -576,6 +578,31 @@ const OrganizationManagement = () => {
                     selectedOrganizationDetail={selectedOrganizationDetail}
                     setView={setView}
                 />
+            )}
+            {isAddConfirmOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Add Organization</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to add this new organization?
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setIsAddConfirmOpen(false)}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveOrganization}
+                                disabled={isSubmitting}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
