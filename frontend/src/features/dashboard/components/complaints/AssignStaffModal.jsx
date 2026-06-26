@@ -22,7 +22,7 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
         setLoading(true);
         try {
             const res = await getMaintenanceStaff({ limit: 100, status: 'Active' });
-            setStaffList(res.users || []);
+            setStaffList(res.data || []);
         } catch (error) {
             showErrorToast('Failed to load staff', error.message);
         } finally {

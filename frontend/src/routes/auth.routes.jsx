@@ -11,6 +11,7 @@ const ContactAdministrator = load(() => import('@/features/auth/pages/ContactAdm
 const ForgotPassword = load(() => import('@/features/auth/pages/ForgotPassword'));
 const VerifyOtp = load(() => import('@/features/auth/pages/VerifyOtp'));
 const ResetPassword = load(() => import('@/features/auth/pages/ResetPassword'));
+const MaintenanceStaffLogin = load(() => import('@/features/auth/pages/MaintenanceStaffLogin'));
 
 export const guestRoute = (path, Component) => ({
     path,
@@ -28,5 +29,6 @@ export const authRoutes = [
     ['/contact-administrator', ContactAdministrator],
     ['/forgot-password', ForgotPassword],
     ['/verify-otp', VerifyOtp],
-    ['/reset-password', ResetPassword]
+    ['/reset-password', ResetPassword],
+    ['/m-user/login', MaintenanceStaffLogin]
 ].map(([path, Component]) => guestRoute(path, Component));

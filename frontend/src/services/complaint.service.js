@@ -35,6 +35,26 @@ const deleteComplaint = async (id) => {
     return response.data;
 };
 
+const getAssignedComplaints = async (params = {}) => {
+    const response = await apiClient.get('/complaints/assigned', { params });
+    return response.data;
+};
+
+const submitComplaintResolution = async (id, data) => {
+    const response = await apiClient.patch(`/complaints/${id}/resolve-request`, data);
+    return response.data;
+};
+
+const approveComplaintResolution = async (id) => {
+    const response = await apiClient.patch(`/complaints/${id}/approve-resolution`);
+    return response.data;
+};
+
+const rejectComplaintResolution = async (id, rejectNote) => {
+    const response = await apiClient.patch(`/complaints/${id}/reject-resolution`, { rejectNote });
+    return response.data;
+};
+
 const ComplaintService = {
     createComplaint,
     getMyComplaints,
@@ -42,7 +62,11 @@ const ComplaintService = {
     updateComplaintStatus,
     updateComplaint,
     assignComplaintStaff,
-    deleteComplaint
+    deleteComplaint,
+    getAssignedComplaints,
+    submitComplaintResolution,
+    approveComplaintResolution,
+    rejectComplaintResolution
 };
 
 export default ComplaintService;

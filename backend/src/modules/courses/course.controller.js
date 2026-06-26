@@ -12,7 +12,11 @@ import {
 } from "./course.service.js";
 
 const createCourse = asyncHandler(async (req, res) => {
-  const { name, code, organizationId } = req.body;
+  let { name, code, organizationId } = req.body;
+
+  if (req.user.role === 'admin' && req.user.organization) {
+    organizationId = req.user.organization;
+  }
 
   const existingCourse = await checkExistingCourseCodeDb(code);
   if (existingCourse) {
@@ -30,16 +34,33 @@ const getCourses = asyncHandler(async (req, res) => {
   const { page, limit, search, status, organizationId } = req.query;
 
   const query = {};
-  const orgId = req.user.role === "super_admin" ? organizationId : req.user.organization;
-  if (orgId) {
-    query.organizationId = orgId;
+  const andConditions = [];
+
+  if (req.user.role === "admin") {
+    andConditions.push({
+      $or: [
+        { organizationId: req.user.organization },
+        { organizationId: { $exists: false } },
+        { organizationId: null }
+      ]
+    });
+  } else if (organizationId) {
+    query.organizationId = organizationId;
   }
+  
   if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { code: { $regex: search, $options: "i" } },
-    ];
+    andConditions.push({
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { code: { $regex: search, $options: "i" } },
+      ]
+    });
   }
+
+  if (andConditions.length > 0) {
+    query.$and = andConditions;
+  }
+
   if (status && status !== "All") {
     query.isActive = status === "Active";
   }

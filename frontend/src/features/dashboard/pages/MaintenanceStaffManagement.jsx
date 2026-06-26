@@ -12,8 +12,10 @@ import otpService from '../../../services/otp.service';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function MaintenanceStaffManagement() {
+    const { user } = useAuthStore();
     const { t } = useTranslation();
     const navigate = useNavigate();
 
@@ -106,7 +108,22 @@ export default function MaintenanceStaffManagement() {
 
     useEffect(() => {
         fetchStaff();
+        if (user?.role === 'super_admin') {
+            fetchOrganizations();
+        }
     }, [currentPage, debouncedSearch, statusFilter]);
+
+    const fetchOrganizations = async () => {
+        try {
+            const res = await organizationService.getOrganizations();
+            if (res && res.data) {
+                const orgs = res.data.data || res.data;
+                setOrganizations(Array.isArray(orgs) ? orgs : []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch organizations:", error);
+        }
+    };
 
     useEffect(() => {
         let interval = null;
@@ -336,7 +353,8 @@ export default function MaintenanceStaffManagement() {
                     email: staffForm.email,
                     phone: staffForm.phone,
                     specialization: staffForm.specialization,
-                    assignedTask: staffForm.assignedTask
+                    assignedTask: staffForm.assignedTask,
+                    organizationId: staffForm.organizationId
                 });
                 if (res && res.success) {
                     const newStaff = res.data;
@@ -599,6 +617,8 @@ export default function MaintenanceStaffManagement() {
                     handleVerifyClick={handleVerifyClick}
                     isSubmitting={isSubmitting}
                     isVerifying={isVerifying}
+                    userRole={user?.role}
+                    organizations={organizations}
                 />
             )}
 

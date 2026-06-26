@@ -30,44 +30,44 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                         <div className="mb-4">
                             <h3 className="text-lg font-semibold text-[#0A437A]">Complaint Information</h3>
-                            <p className="text-xs text-gray-500">Basic Details about the complaint</p>
+                            <p className="text-xs text-text-secondary">Basic Details about the complaint</p>
                         </div>
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Student</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.student}</span>
+                                <span className="text-text-secondary">Student</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.student}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Hostel</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.hostel}</span>
+                                <span className="text-text-secondary">Hostel</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.hostel}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Category</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.category}</span>
+                                <span className="text-text-secondary">Category</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.category}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Date</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.date || "12 June 2026"}</span>
+                                <span className="text-text-secondary">Date</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.date || "12 June 2026"}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm items-center">
-                                <span className="text-gray-500">Priority</span>
-                                <span className="col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                                <span className="text-text-secondary">Priority</span>
+                                <span className="col-span-2 font-medium text-text-secondary flex items-center gap-2">
                                     : &nbsp;
                                     <span className={`w-1.5 h-1.5 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Medium' ? 'bg-warning' : 'bg-gray-400'}`}></span>
                                     {complaint.priority || "High"}
                                 </span>
                             </div>
                             <div className="grid grid-cols-3 text-sm items-center">
-                                <span className="text-gray-500">Status</span>
-                                <span className="col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                                <span className="text-text-secondary">Status</span>
+                                <span className="col-span-2 font-medium text-text-secondary flex items-center gap-2">
                                     : &nbsp;
                                     <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : 'bg-blue-500'}`}></span>
                                     {complaint.status}
                                 </span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Warden</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; Arjun Menon</span>
+                                <span className="text-text-secondary">Warden</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; Arjun Menon</span>
                             </div>
                         </div>
                     </div>
@@ -76,16 +76,16 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                         <div className="mb-4">
                             <h3 className="text-lg font-semibold text-[#0A437A]">Complaint Description</h3>
-                            <p className="text-xs text-gray-500">Review the issue reported by the student.</p>
+                            <p className="text-xs text-text-secondary">Review the issue reported by the student.</p>
                         </div>
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Subject</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.subject || "Poor food quality"}</span>
+                                <span className="text-text-secondary">Subject</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.subject || "Poor food quality"}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Description</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.description || "Food served during lunch was not fresh."}</span>
+                                <span className="text-text-secondary">Description</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.description || "Food served during lunch was not fresh."}</span>
                             </div>
                         </div>
                     </div>
@@ -95,18 +95,18 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                         <div className="mb-4 flex justify-between items-end">
                             <div>
                                 <h3 className="text-lg font-semibold text-[#0A437A]">Internal note</h3>
-                                <p className="text-xs text-gray-500">Add a note by warden</p>
+                                <p className="text-xs text-text-secondary">Add a note by warden</p>
                             </div>
                             <button className="text-secondary text-xs cursor-pointer hover:underline">View all</button>
                         </div>
                         <div className="space-y-3">
                             <div className="border border-gray-100 rounded-lg p-3 text-sm flex justify-between items-center bg-gray-50/50">
                                 <span className="text-gray-700">Kitchen inspection scheduled.</span>
-                                <span className="text-xs text-gray-400">Today - 09:00 am</span>
+                                <span className="text-xs text-text-secondary">Today - 09:00 am</span>
                             </div>
                             <div className="border border-gray-100 rounded-lg p-3 text-sm flex justify-between items-center bg-gray-50/50">
                                 <span className="text-gray-700">Discussed with Admin</span>
-                                <span className="text-xs text-gray-400">Yesterday - 09:00 am</span>
+                                <span className="text-xs text-text-secondary">Yesterday - 09:00 am</span>
                             </div>
                         </div>
                     </div>
@@ -116,7 +116,7 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                         <div className="mb-4 flex justify-between items-start">
                             <div>
                                 <h3 className="text-lg font-semibold text-[#0A437A]">Resolution note</h3>
-                                <p className="text-xs text-gray-500">updated status and notes</p>
+                                <p className="text-xs text-text-secondary">updated status and notes</p>
                             </div>
                             {isEditingStatus ? (
                                 <button
@@ -166,10 +166,10 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                 </div>
                                 <div className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="text-sm text-gray-700">{note || "No resolution note provided."}</span>
-                                        <span className="text-xs text-gray-400">Today - 09:00 am</span>
+                                        <span className="text-sm text-text-secondary">{note || "No resolution note provided."}</span>
+                                        <span className="text-xs text-text-secondary">Today - 09:00 am</span>
                                     </div>
-                                    <span className="text-[10px] text-gray-400">by Admin</span>
+                                    <span className="text-[10px] text-text-secondary">by Admin</span>
                                 </div>
                             </>
                         )}
@@ -183,32 +183,32 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                         <div className="mb-4 border-b border-gray-100 pb-4">
                             <h3 className="text-lg font-semibold text-[#0A437A]">Quick Summary</h3>
-                            <p className="text-xs text-gray-500">Quick summary of the complaint</p>
+                            <p className="text-xs text-text-secondary">Quick summary of the complaint</p>
                         </div>
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500 flex items-center gap-2"><User className="w-4 h-4" /> Student</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.student}</span>
+                                <span className="text-text-secondary flex items-center gap-2"><User className="w-4 h-4" /> Student</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.student}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500 flex items-center gap-2"><Tag className="w-4 h-4" /> Category</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.category}</span>
+                                <span className="text-text-secondary flex items-center gap-2"><Tag className="w-4 h-4" /> Category</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.category}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4" /> Date</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.date || "12 June 2026"}</span>
+                                <span className="text-text-secondary flex items-center gap-2"><Calendar className="w-4 h-4" /> Date</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.date || "12 June 2026"}</span>
                             </div>
                             <div className="grid grid-cols-3 text-sm items-center">
-                                <span className="text-gray-500 flex items-center gap-2"><Clock className="w-4 h-4" /> Status</span>
-                                <span className="col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                                <span className="text-text-secondary flex items-center gap-2"><Clock className="w-4 h-4" /> Status</span>
+                                <span className="col-span-2 font-medium text-text-secondary flex items-center gap-2">
                                     : &nbsp;
                                     <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : 'bg-blue-500'}`}></span>
                                     {complaint.status}
                                 </span>
                             </div>
                             <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500 flex items-center gap-2"><Home className="w-4 h-4" /> Hostel</span>
-                                <span className="col-span-2 font-medium text-gray-900">: &nbsp; {complaint.hostel}</span>
+                                <span className="text-text-secondary flex items-center gap-2"><Home className="w-4 h-4" /> Hostel</span>
+                                <span className="col-span-2 font-medium text-text-secondary">: &nbsp; {complaint.hostel}</span>
                             </div>
                         </div>
                     </div>
@@ -217,12 +217,12 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                         <div className="mb-4 border-b border-gray-100 pb-4">
                             <h3 className="text-lg font-semibold text-[#0A437A]">Recent Activity</h3>
-                            <p className="text-xs text-gray-500">Recent activities about the complaint</p>
+                            <p className="text-xs text-text-secondary">Recent activities about the complaint</p>
                         </div>
                         <div className="space-y-4">
                             <div className="border border-gray-100 rounded-lg p-3 relative">
-                                <div className="absolute right-3 top-3 text-[10px] text-gray-400">Today - 09:00 am</div>
-                                <p className="text-xs text-gray-600 pr-20 pt-2">Issue verified and food quality improved.</p>
+                                <div className="absolute right-3 top-3 text-[10px] text-text-secondary">Today - 09:00 am</div>
+                                <p className="text-xs text-text-secondary pr-20 pt-2">Issue verified and food quality improved.</p>
                             </div>
                         </div>
                     </div>

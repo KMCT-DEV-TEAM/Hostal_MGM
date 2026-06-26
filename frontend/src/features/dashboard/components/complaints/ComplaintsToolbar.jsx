@@ -10,16 +10,16 @@ export default function ComplaintsToolbar({
     setFilterOption
 }) {
     return (
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 bg-white">
+        <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
             <div className="w-full sm:w-auto flex-1 sm:max-w-xs">
                 <div className="relative w-full flex items-center">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search"
-                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none placeholder-gray-300 transition-colors"
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                     />
                 </div>
             </div>
@@ -29,19 +29,19 @@ export default function ComplaintsToolbar({
                     <Dropdown
                         minWidth=""
                         options={[
-                            { value: "All", label: "All" },
+                            { value: "All", label: "All Status" },
                             { value: "Hostel A", label: "Hostel A" },
                             { value: "Hostel B", label: "Hostel B" }
                         ]}
                         value={filterOption || "All"}
                         onChange={(val) => setFilterOption && setFilterOption(val)}
-                        triggerClassName="px-4 py-2 text-sm font-medium text-start rounded-lg bg-white border border-gray-200 text-[#333333] hover:bg-gray-50 transition-colors cursor-pointer flex justify-between items-center w-full"
+                        triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
                     />
                 </div>
                 
                 <button
                     onClick={initiateExport}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                 >
                     <Download className="w-4 h-4" /> Export
                 </button>

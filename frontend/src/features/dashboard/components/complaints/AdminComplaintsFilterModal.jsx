@@ -2,21 +2,23 @@ import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Dropdown from '@/components/ui/Dropdown';
 import Input from '@/components/ui/Input';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
-export default function AdminComplaintsFilterModal({ 
+export default function AdminComplaintsFilterModal({
     initialHostel,
     initialCategory,
     initialDate,
-    initialPriority, 
-    initialStatus, 
-    onClose, 
-    onApply 
+    initialPriority,
+    initialStatus,
+    onClose,
+    onApply
 }) {
     const [hostel, setHostel] = useState(initialHostel || '');
     const [category, setCategory] = useState(initialCategory || 'All');
     const [date, setDate] = useState(initialDate || '');
     const [priority, setPriority] = useState(initialPriority || 'All');
     const [status, setStatus] = useState(initialStatus || 'All');
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const resetFilters = () => {
         setHostel('');
@@ -28,6 +30,7 @@ export default function AdminComplaintsFilterModal({
     };
 
     const handleApply = () => {
+        setIsConfirmOpen(false);
         onApply({ hostel, category, date, priority, status });
     };
 
@@ -39,7 +42,7 @@ export default function AdminComplaintsFilterModal({
     ];
 
     const statusOptions = [
-        { label: 'All Status', value: 'All' },
+        { label: 'All Status', value: 'All Status' },
         { label: 'Pending', value: 'Pending' },
         { label: 'In Progress', value: 'In progress' },
         { label: 'Resolved', value: 'Resolved' }
@@ -61,16 +64,16 @@ export default function AdminComplaintsFilterModal({
             maxWidth="max-w-md"
             footer={
                 <>
-                    <button 
-                        type="button" 
-                        onClick={resetFilters} 
+                    <button
+                        type="button"
+                        onClick={resetFilters}
                         className="flex-1 py-2.5 border border-[#0A437A] text-[#0A437A] rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                         Reset
                     </button>
-                    <button 
-                        type="button" 
-                        onClick={handleApply} 
+                    <button
+                        type="button"
+                        onClick={() => setIsConfirmOpen(true)}
                         className="flex-1 py-2.5 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#0A437A]/90 transition-colors cursor-pointer"
                     >
                         Filter
@@ -85,7 +88,7 @@ export default function AdminComplaintsFilterModal({
                         value={hostel}
                         onChange={(e) => setHostel(e.target.value)}
                         placeholder="Enter the hostel"
-                        className="w-full text-sm"
+                        className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#0A437A] transition-colors"
                     />
                 </div>
 
@@ -108,8 +111,8 @@ export default function AdminComplaintsFilterModal({
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full text-sm"
                         placeholder="Select"
+                        className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#0A437A] transition-colors"
                     />
                 </div>
 
@@ -123,7 +126,7 @@ export default function AdminComplaintsFilterModal({
                             placeholder="Select"
                             className="w-full"
                             minWidth=""
-                            triggerClassName="w-full px-3 py-2.5 text-sm bg-[#F0FDF4] text-[#166534] border-transparent focus:border-green-500 cursor-pointer font-medium"
+                            triggerClassName="w-full px-3 py-2.5 text-sm bg-white border-gray-200 focus:border-[#0A437A] cursor-pointer"
                         />
                     </div>
 
@@ -141,6 +144,15 @@ export default function AdminComplaintsFilterModal({
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleApply}
+                title="Confirm Filter"
+                message="Are you sure you want to apply these filters?"
+                confirmText="Yes, Apply"
+            />
         </Modal>
     );
 }
