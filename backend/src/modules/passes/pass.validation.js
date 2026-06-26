@@ -378,7 +378,7 @@ export const validateCancelPass = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
     }
 
-    if (!["pending_parent", "pending_warden", "approved"].includes(existingPass.status)) {
+    if (!["pending_parent", "pending_admin", "approved"].includes(existingPass.status)) {
       return res.status(400).json({ success: false, message: "This pass cannot be cancelled because it has already been processed or completed." });
     }
 
@@ -401,7 +401,7 @@ export const validateGetPasses = (req, res, next) => {
     return res.status(400).json({ success: false, message: "The display limit must be a valid number." });
   }
 
-  if (status && !["pending_parent", "pending_warden", "approved", "rejected", "cancelled", "returned", "completed"].includes(status)) {
+  if (status && !["pending_parent", "pending_admin", "approved", "rejected", "cancelled", "returned", "completed"].includes(status)) {
     return res.status(400).json({ success: false, message: "The selected status filter is invalid." });
   }
 

@@ -95,7 +95,7 @@ export const buildDashboardStatsFacet = (startOfToday, endOfToday) => ({
   $facet: {
     totalRequests: [{ $count: "count" }],
     pendingParent: [{ $match: { status: "pending_parent" } }, { $count: "count" }],
-    pendingWarden: [{ $match: { status: "pending_warden" } }, { $count: "count" }],
+    pendingAdmin: [{ $match: { status: "pending_admin" } }, { $count: "count" }],
     approved: [{ $match: { status: "approved" } }, { $count: "count" }],
     rejected: [{ $match: { status: "rejected" } }, { $count: "count" }],
     cancelled: [{ $match: { status: "cancelled" } }, { $count: "count" }],
@@ -113,7 +113,7 @@ export const parseDashboardStatsFacet = (facetResult) => {
   return {
     totalRequests: result.totalRequests[0]?.count || 0,
     pendingParent: result.pendingParent[0]?.count || 0,
-    pendingWarden: result.pendingWarden[0]?.count || 0,
+    pendingAdmin: result.pendingAdmin[0]?.count || 0,
     approved: result.approved[0]?.count || 0,
     rejected: result.rejected[0]?.count || 0,
     cancelled: result.cancelled[0]?.count || 0,

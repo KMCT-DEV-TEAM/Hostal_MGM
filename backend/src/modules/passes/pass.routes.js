@@ -17,8 +17,8 @@ import {
   getWardenDashboardStats,
   getWardenPasses,
   getWardenPassDetails,
-  approveWardenPass,
-  rejectWardenPass,
+  adminApprovePass,
+  adminRejectPass,
   markStudentLeftHostel,
   markStudentReturned,
   wardenAdminCancelPass,
@@ -174,22 +174,6 @@ wardenPassRouter.get(
 );
 
 // Actions
-wardenPassRouter.patch(
-  "/:id/approve",
-  authMiddleware,
-  roleMiddleware("warden"),
-  validatePassIdParam,
-  approveWardenPass
-);
-
-wardenPassRouter.patch(
-  "/:id/reject",
-  authMiddleware,
-  roleMiddleware("warden"),
-  validatePassIdParam,
-  validateRejectPass,
-  rejectWardenPass
-);
 
 wardenPassRouter.patch(
   "/:id/mark-left",
@@ -220,19 +204,21 @@ wardenPassRouter.patch(
 export const adminPassRouter = express.Router();
 
 adminPassRouter.use(authMiddleware);
-adminPassRouter.use(roleMiddleware("admin", "superadmin"));
+adminPassRouter.use(roleMiddleware("admin", "super_admin"));
 
 adminPassRouter.get("/dashboard", getAdminDashboardStats);
 adminPassRouter.get("/hostels", getAdminHostels);
 adminPassRouter.get("/hostels/:hostelId", getAdminPasses);
 adminPassRouter.get("/:id", getAdminPassDetails);
+adminPassRouter.patch("/:id/approve", validatePassIdParam, adminApprovePass);
+adminPassRouter.patch("/:id/reject", validatePassIdParam, validateRejectPass, adminRejectPass);
 adminPassRouter.put("/:id/cancel", adminCancelPass);
 
 // ----- Super Admin routes -----
 export const superAdminPassRouter = express.Router();
 
 superAdminPassRouter.use(authMiddleware);
-superAdminPassRouter.use(roleMiddleware("superadmin"));
+superAdminPassRouter.use(roleMiddleware("super_admin"));
 
 superAdminPassRouter.get("/dashboard", getSuperAdminDashboardStats);
 superAdminPassRouter.get("/hostels", getSuperAdminOrganizationsHostels);
