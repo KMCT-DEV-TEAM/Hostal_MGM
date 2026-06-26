@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const MaintenanceStaffFormModal = ({
@@ -13,7 +13,9 @@ const MaintenanceStaffFormModal = ({
     isEmailVerified,
     handleVerifyClick,
     isSubmitting,
-    isVerifying
+    isVerifying,
+    userRole,
+    organizations
 }) => {
     const { t } = useTranslation();
     if (activeModal !== 'staff') return null;
@@ -112,16 +114,7 @@ const MaintenanceStaffFormModal = ({
                                 />
                             </div>
 
-                            <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('assigned_task', 'Assigned Task')}</label>
-                                <input
-                                    type="text"
-                                    placeholder={t('Enter assigned task')}
-                                    value={staffForm.assignedTask || ''}
-                                    onChange={(e) => setStaffForm({ ...staffForm, assignedTask: e.target.value })}
-                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                />
-                            </div>
+
 
                             {/* Conditionally hide Email if editing */}
                             {!editingStaff && (

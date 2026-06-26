@@ -1,5 +1,6 @@
 import Complaint from "./complaint.model.js";
 import Student from "../students/student.model.js";
+import User from "../users/user.model.js";
 
 // Create a new complaint
 export const createComplaintDb = async (complaintData, user) => {
@@ -23,7 +24,7 @@ export const createComplaintDb = async (complaintData, user) => {
         timeline: [
             {
                 status: 'Pending',
-                message: 'Complaint registered by this student',
+                message: `${student.name} registered complaint`,
                 by: 'Student',
                 date: new Date()
             }
@@ -113,13 +114,15 @@ export const getAllComplaintsDb = async (query = {}) => {
     if (query.organizationId) filter.organizationId = query.organizationId;
     if (query.hostelId) filter.hostelId = query.hostelId;
     if (query.status) filter.status = query.status;
+    if (query.assignedStaff) filter.assignedStaff = query.assignedStaff;
+    if (query._id !== undefined) filter._id = query._id;
 
     return await Complaint.find(filter)
         .populate('category', 'name')
         .populate('studentId', 'name studentId')
         .populate('hostelId', 'name')
         .populate('organizationId', 'name')
-        .populate('assignedStaff', 'name phone email')
+        .populate('assignedStaff', 'name phone email specialization')
         .sort({ createdAt: -1 });
 };
 
@@ -146,13 +149,82 @@ export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) =
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
 
+    const staff = await User.findById(staffId);
+    if (!staff) throw new Error("Maintenance staff not found.");
+
     complaint.assignedStaff = staffId;
+    complaint.status = 'In progress';
     
     // Add to timeline
     complaint.timeline.push({
-        status: complaint.status,
-        message: 'Maintenance staff assigned to this complaint.',
+        status: 'In progress',
+        message: `Admin assigned to this maintenance user ${staff.name}`,
         by: userRole || 'Admin',
+        date: new Date()
+    });
+
+    return await complaint.save();
+};
+
+// Maintenance staff submits resolution
+export const submitComplaintResolutionDb = async (complaintId, staffId, materialsUsed, resolutionNotes) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) throw new Error("Complaint not found.");
+    
+    if (complaint.assignedStaff?.toString() !== staffId.toString()) {
+        throw new Error("You are not assigned to this complaint.");
+    }
+
+    complaint.status = 'Awaiting';
+    complaint.materialsUsed = materialsUsed;
+    complaint.resolutionNotes = resolutionNotes;
+    
+    complaint.timeline.push({
+        status: 'Awaiting',
+        message: 'Maintenance staff submitted resolution and is awaiting approval.',
+        by: 'Maintenance Staff',
+        date: new Date()
+    });
+
+    return await complaint.save();
+};
+
+// Warden approves resolution
+export const approveComplaintResolutionDb = async (complaintId, userRole) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) throw new Error("Complaint not found.");
+
+    if (complaint.status !== 'Awaiting') {
+        throw new Error("Complaint is not awaiting approval.");
+    }
+
+    complaint.status = 'Resolved';
+    
+    complaint.timeline.push({
+        status: 'Resolved',
+        message: 'Resolution approved and complaint marked as resolved.',
+        by: userRole || 'Warden',
+        date: new Date()
+    });
+
+    return await complaint.save();
+};
+
+// Warden rejects resolution
+export const rejectComplaintResolutionDb = async (complaintId, userRole, rejectNote) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) throw new Error("Complaint not found.");
+
+    if (complaint.status !== 'Awaiting') {
+        throw new Error("Complaint is not awaiting approval.");
+    }
+
+    complaint.status = 'In progress';
+    
+    complaint.timeline.push({
+        status: 'In progress',
+        message: `Resolution rejected. Note: ${rejectNote}`,
+        by: userRole || 'Warden',
         date: new Date()
     });
 

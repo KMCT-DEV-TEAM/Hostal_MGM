@@ -89,17 +89,23 @@ export const getAllComplaints = async (req, res) => {
             query.organizationId = req.user.organization;
         } else if (req.user.role === 'warden') {
             const { default: Hostel } = await import('../hostels/hostel.model.js');
-            const hostel = await Hostel.findOne({ wardens: req.user.id });
-            if (hostel) {
-                query.hostelId = hostel._id;
+            const hostels = await Hostel.find({ wardens: req.user.id });
+            console.log("Warden ID:", req.user.id);
+            console.log("Found Hostels:", hostels.map(h => h._id));
+            if (hostels.length > 0) {
+                query.hostelId = { $in: hostels.map(h => h._id) };
             } else {
                 // If warden is not assigned to any hostel, they shouldn't see any complaints
-                query.hostelId = null;
+                query._id = null; // Forces empty result
             }
         }
 
         if (req.query.status) {
             query.status = req.query.status;
+        }
+        
+        if (req.query.assignedStaff) {
+            query.assignedStaff = req.query.assignedStaff;
         }
 
         const complaints = await complaintService.getAllComplaintsDb(query);
@@ -156,6 +162,95 @@ export const assignMaintenanceStaff = async (req, res) => {
         res.status(400).json({
             success: false,
             message: error.message || "Failed to assign maintenance staff."
+        });
+    }
+};
+
+// @desc    Get assigned complaints for maintenance staff
+// @route   GET /api/complaints/assigned
+// @access  Private (Maintenance Staff)
+export const getAssignedComplaints = async (req, res) => {
+    try {
+        const query = { assignedStaff: req.user.id };
+        
+        if (req.query.status) {
+            query.status = req.query.status;
+        }
+
+        const complaints = await complaintService.getAllComplaintsDb(query);
+        res.status(200).json({
+            success: true,
+            data: complaints
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to fetch assigned complaints."
+        });
+    }
+};
+
+// @desc    Maintenance staff submits resolution
+// @route   PATCH /api/complaints/:id/resolve-request
+// @access  Private (Maintenance Staff)
+export const submitComplaintResolution = async (req, res) => {
+    try {
+        const { materialsUsed, resolutionNotes } = req.body;
+        const staffId = req.user.id;
+
+        const updatedComplaint = await complaintService.submitComplaintResolutionDb(req.params.id, staffId, materialsUsed, resolutionNotes);
+        res.status(200).json({
+            success: true,
+            data: updatedComplaint,
+            message: "Resolution submitted and awaiting approval."
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to submit resolution."
+        });
+    }
+};
+
+// @desc    Warden approves resolution
+// @route   PATCH /api/complaints/:id/approve-resolution
+// @access  Private (Warden/Admin)
+export const approveComplaintResolution = async (req, res) => {
+    try {
+        const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
+        
+        const updatedComplaint = await complaintService.approveComplaintResolutionDb(req.params.id, userRole);
+        res.status(200).json({
+            success: true,
+            data: updatedComplaint,
+            message: "Resolution approved successfully."
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to approve resolution."
+        });
+    }
+};
+
+// @desc    Warden rejects resolution
+// @route   PATCH /api/complaints/:id/reject-resolution
+// @access  Private (Warden/Admin)
+export const rejectComplaintResolution = async (req, res) => {
+    try {
+        const { rejectNote } = req.body;
+        const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
+
+        const updatedComplaint = await complaintService.rejectComplaintResolutionDb(req.params.id, userRole, rejectNote);
+        res.status(200).json({
+            success: true,
+            data: updatedComplaint,
+            message: "Resolution rejected."
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to reject resolution."
         });
     }
 };

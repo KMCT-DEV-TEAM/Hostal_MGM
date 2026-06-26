@@ -389,11 +389,18 @@ const getWardens = asyncHandler(async (req, res) => {
         return sendError(res, 400, "Admin is not assigned to any organization");
       }
       // Find all hostels under the admin's organization
-      const adminHostels = await Hostel.find({ organizationId: req.user.organization }).select("wardens");
+      const adminHostels = await Hostel.find({ organizations: req.user.organization }).select("wardens");
       const wardenIds = adminHostels.reduce((acc, hostel) => acc.concat(hostel.wardens), []);
       
       // Additional filter to only fetch these wardens
-      additionalQuery = { _id: { $in: wardenIds } };
+      additionalQuery = { 
+          $or: [
+              { _id: { $in: wardenIds } },
+              { organization: req.user.organization },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
     }
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("warden", page, limit, status, search, additionalQuery);
@@ -596,7 +603,11 @@ const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
 // --- MAINTENANCE STAFF CONTROLLERS ---
 
 const createMaintenanceStaff = asyncHandler(async (req, res) => {
-    const { name, email, phone, specialization, assignedTask, organizationId } = req.body;
+    let { name, email, phone, specialization, assignedTask, organizationId } = req.body;
+
+    if (req.user.role === 'admin' && req.user.organization) {
+        organizationId = req.user.organization;
+    }
 
     const existingUser = await findExistingUserByEmail(email);
 
@@ -648,9 +659,28 @@ const getMaintenanceStaff = asyncHandler(async (req, res) => {
 
     if (req.user.role === 'admin') {
       if (!req.user.organization) {
-        return sendError(res, 400, "Admin is not assigned to any organization");
+        return sendError(res, 400, `Admin is not assigned to any organization`);
       }
-      additionalQuery = { organization: req.user.organization };
+      additionalQuery = { 
+          $or: [
+              { organization: req.user.organization },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
+    } else if (req.user.role === 'warden') {
+      const { default: Hostel } = await import('../hostels/hostel.model.js');
+      const hostel = await Hostel.findOne({ wardens: req.user.id });
+      if (!hostel || !hostel.organizationId) {
+        return sendError(res, 400, `Warden is not assigned to any hostel or organization`);
+      }
+      additionalQuery = { 
+          $or: [
+              { organization: hostel.organizationId },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
     }
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("maintenance_staff", page, limit, status, search, additionalQuery);

@@ -4,4 +4,5 @@ export const ROLES = {
     WARDEN: 'warden',
     STUDENT: 'student',
     PARENT: 'parent',
+    MAINTENANCE_STAFF: 'maintenance_staff'
 };

@@ -479,6 +479,29 @@ export const DASHBOARD_NAV = {
                 }
             ]
         }
+    ],
+
+    [ROLES.MAINTENANCE_STAFF]: [
+        {
+            section: 'MAIN',
+            items: [
+                {
+                    icon: LayoutGrid,
+                    label: 'Dashboard',
+                    path: '/dashboard'
+                }
+            ]
+        },
+        {
+            section: 'OPERATIONS',
+            items: [
+                {
+                    icon: AlertTriangle,
+                    label: 'Assigned Tasks',
+                    path: '/dashboard/tasks'
+                }
+            ]
+        }
     ]
 
 };
