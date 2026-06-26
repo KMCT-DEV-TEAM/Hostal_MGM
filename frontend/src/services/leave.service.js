@@ -39,6 +39,26 @@ export async function getLeavesByAdmin(params) {
   return response.data;
 }
 
+export async function getAdminHostels(params) {
+  const response = await leaveApi.getAdminHostels(params);
+  return response.data;
+}
+
+export async function getLeavesBySuperAdmin(params) {
+  const response = await leaveApi.getLeavesBySuperAdmin(params);
+  return response.data;
+}
+
+export async function getSuperAdminHostels(params) {
+  const response = await leaveApi.getSuperAdminHostels(params);
+  return response.data;
+}
+
+export async function getLeavesByWarden(params) {
+  const response = await leaveApi.getLeavesByWarden(params);
+  return response.data;
+}
+
 export async function updateLeaveStatusByAdmin(id, payload) {
   const response = await leaveApi.updateLeaveStatusByAdmin(id, payload);
   return response.data;
@@ -80,9 +100,15 @@ export async function getLeaveByIdWarden(id) {
 // Set up Role Resolvers (matching the structure of other services)
 const LEAVE_FETCHERS = {
   [ROLES.ADMIN]: getLeavesByAdmin,
-  [ROLES.SUPER_ADMIN]: getLeavesByAdmin,
+  [ROLES.SUPER_ADMIN]: getLeavesBySuperAdmin,
   [ROLES.PARENT]: getLeavesByParent,
+  [ROLES.WARDEN]: getLeavesByWarden,
   [ROLES.STUDENT]: getMyLeaves,
+};
+
+const LEAVE_HOSTELS_FETCHERS = {
+  [ROLES.ADMIN]: getAdminHostels,
+  [ROLES.SUPER_ADMIN]: getSuperAdminHostels,
 };
 
 const LEAVE_STATUS_UPDATE_FETCHERS = {
@@ -99,6 +125,8 @@ const LEAVE_DETAILS_FETCHERS = {
 };
 
 export const getLeaves = createRoleResolver(LEAVE_FETCHERS, 'leave');
+
+export const getLeaveHostels = createRoleResolver(LEAVE_HOSTELS_FETCHERS, 'leave hostels');
 
 export const updateLeaveStatus = createRoleResolver(
   LEAVE_STATUS_UPDATE_FETCHERS,
@@ -119,6 +147,7 @@ const leaveService = {
   approveLeaveByParent,
   rejectLeaveByParent,
   getLeaves,
+  getLeaveHostels,
   updateLeaveStatus,
   getLeaveDetails,
 };
