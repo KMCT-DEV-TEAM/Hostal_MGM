@@ -92,7 +92,7 @@ export default function WardenComplaintsTable({
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
                                     {isViewOnly ? (
-                                        <div className={`px-3 py-1.5 text-xs font-medium text-start rounded-md border-none inline-block ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600' : complaint.status === 'Resolved' ? 'bg-green-50 text-success' : 'bg-blue-50 text-blue-600'}`}>
+                                        <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600' : complaint.status === 'Resolved' ? 'bg-green-50 text-success' : 'bg-blue-50 text-blue-600'}`}>
                                             {complaint.status || 'Pending'}
                                         </div>
                                     ) : (

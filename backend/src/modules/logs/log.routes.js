@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.use(authMiddleware); // Require authentication
 
-// Only super admins can view logs
-router.get("/", roleMiddleware("super_admin"), getLogs);
+// Admin and super admins can view logs
+router.get("/", roleMiddleware("super_admin", "admin"), getLogs);
 
 export default router;

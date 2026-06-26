@@ -48,17 +48,18 @@ const LogsViewer = ({ entityType }) => {
                 endDate
             });
             
-            let fetchedLogs = res.data.logs || [];
+            const responseData = res.data?.data || res.data;
+            let fetchedLogs = responseData.logs || [];
             if (entityType) {
                 fetchedLogs = fetchedLogs.filter(log => log.entityType === entityType);
             }
 
             setLogs(fetchedLogs);
             setPagination({ 
-                page: res.data.currentPage || 1, 
+                page: responseData.currentPage || 1, 
                 limit: 10, 
-                totalPages: res.data.totalPages || 1,
-                totalDocs: res.data.totalCount || res.data.totalLogs || res.data.totalRecords || res.data.totalDocs || res.data.total || 0
+                totalPages: responseData.totalPages || 1,
+                totalDocs: responseData.totalCount || responseData.totalLogs || responseData.totalRecords || responseData.totalDocs || responseData.total || 0
             });
         } catch (error) {
             showErrorToast('Failed to load system logs', error?.message);
@@ -95,7 +96,8 @@ const LogsViewer = ({ entityType }) => {
                 endDate: exportEndDate
             });
 
-            let fetchedLogs = res.data.logs || res.data || [];
+            const responseData = res.data?.data || res.data;
+            let fetchedLogs = responseData.logs || [];
             if (entityType) {
                 fetchedLogs = fetchedLogs.filter(log => log.entityType === entityType);
             }

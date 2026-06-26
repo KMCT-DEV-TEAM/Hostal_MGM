@@ -1,6 +1,7 @@
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
 import jwt from "jsonwebtoken";
 import { findUserForLoginDb, verifyPassword, findUserByIdForRefreshDb } from "./auth.service.js";
+import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { hashPassword } from "../../utils/hash.js";
@@ -168,6 +169,16 @@ const changePassword = asyncHandler(async (req, res) => {
   user.temppass = false;
   await user.save();
 
+  await createLogDb({
+      action: "Password Changed",
+      entityType: "User",
+      entityId: user._id,
+      user: userId,
+      userRole: req.user.role || 'System',
+      details: "User successfully changed their password.",
+      status: "success"
+  });
+
   return sendSuccess(res, 200, "Password changed successfully");
 });
 
@@ -272,6 +283,16 @@ const updateProfile = asyncHandler(async (req, res) => {
   const userObj = { ...user._doc };
   delete userObj.password;
 
+  await createLogDb({
+      action: "Profile Updated",
+      entityType: "User",
+      entityId: user._id,
+      user: req.user.id,
+      userRole: req.user.role || 'System',
+      details: "User successfully updated their profile settings.",
+      status: "success"
+  });
+
   return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
 });
 
@@ -342,6 +363,16 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
 
   const userObj = { ...user._doc ? user._doc : user };
   delete userObj.password;
+
+  await createLogDb({
+      action: "Email Changed",
+      entityType: "User",
+      entityId: user._id,
+      user: req.user.id,
+      userRole: req.user.role || 'System',
+      details: `User successfully updated their email to ${newEmail}`,
+      status: "success"
+  });
 
   return sendSuccess(res, 200, "Email updated successfully", { user: userObj });
 });

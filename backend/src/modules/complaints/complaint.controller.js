@@ -1,4 +1,5 @@
 import * as complaintService from "./complaint.service.js";
+import { createLogDb } from "../logs/log.service.js";
 
 // @desc    Create a new complaint
 // @route   POST /api/complaints
@@ -131,6 +132,17 @@ export const updateComplaintStatus = async (req, res) => {
         const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'org_admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
 
         const updatedComplaint = await complaintService.updateComplaintStatusDb(req.params.id, status, userRole, message);
+        
+        await createLogDb({
+            action: `Updated Complaint Status`,
+            entityType: "System",
+            entityId: null,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Updated complaint status to ${status} for complaint ID: ${req.params.id}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -153,6 +165,17 @@ export const assignMaintenanceStaff = async (req, res) => {
         const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'org_admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
 
         const updatedComplaint = await complaintService.assignStaffToComplaintDb(req.params.id, staffId, userRole);
+        
+        await createLogDb({
+            action: `Assigned Maintenance Staff`,
+            entityType: "System",
+            entityId: null,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Assigned maintenance staff (ID: ${staffId}) to complaint ID: ${req.params.id}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -220,6 +243,17 @@ export const approveComplaintResolution = async (req, res) => {
         const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
         
         const updatedComplaint = await complaintService.approveComplaintResolutionDb(req.params.id, userRole);
+        
+        await createLogDb({
+            action: `Approved Complaint Resolution`,
+            entityType: "System",
+            entityId: null,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Approved resolution for complaint ID: ${req.params.id}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -242,10 +276,21 @@ export const rejectComplaintResolution = async (req, res) => {
         const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
 
         const updatedComplaint = await complaintService.rejectComplaintResolutionDb(req.params.id, userRole, rejectNote);
+        
+        await createLogDb({
+            action: `Rejected Complaint Resolution`,
+            entityType: "System",
+            entityId: null,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Rejected resolution for complaint ID: ${req.params.id}. Reason: ${rejectNote}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             data: updatedComplaint,
-            message: "Resolution rejected."
+            message: "Resolution rejected successfully."
         });
     } catch (error) {
         res.status(400).json({

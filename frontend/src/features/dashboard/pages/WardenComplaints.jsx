@@ -17,6 +17,8 @@ import { ROLES } from '@/constants/roles';
 export default function WardenComplaints({ hostel, onBack }) {
     const { user } = useAuthStore();
     const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+    const isAdmin = user?.role === ROLES.ADMIN;
+    const isViewOnly = isSuperAdmin || isAdmin;
     const [complaints, setComplaints] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -219,7 +221,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                     handlePriorityChange={handlePriorityChange}
                     handleStatusChange={handleStatusChange}
                     onViewClick={(c) => setViewingComplaint(c)}
-                    isViewOnly={isSuperAdmin}
+                    isViewOnly={isViewOnly}
                 />
 
                 {/* Pagination Section */}

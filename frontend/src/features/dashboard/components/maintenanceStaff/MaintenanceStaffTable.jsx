@@ -42,7 +42,13 @@ const MaintenanceStaffTable = ({
                             {t('phone')}
                         </th>
                         <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                            {t('Assigned Task')}
+                            Assigned Count
+                        </th>
+                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                            Resolved Count
+                        </th>
+                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
+                            Pending Count
                         </th>
                         <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
                             {t('status')}
@@ -54,14 +60,14 @@ const MaintenanceStaffTable = ({
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
                     {loading ? (
-                        <TableSkeletonLoader columns={7} />
+                        <TableSkeletonLoader columns={9} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-danger">{error}</td>
+                            <td colSpan="9" className="p-8 text-center text-danger">{error}</td>
                         </tr>
                     ) : paginatedStaff.length === 0 ? (
                         <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
+                            <td colSpan="9" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
                         </tr>
                     ) : (
                         paginatedStaff.map((staff) => {
@@ -101,8 +107,20 @@ const MaintenanceStaffTable = ({
                                             <span>{staff.phone || 'N/A'}</span>
                                         </div>
                                     </td>
-                                    <td className="p-4 text-center text-gray-500">
-                                        {staff.assignedTask || 'N/A'}
+                                    <td className="p-4 text-center">
+                                        <div className="flex items-center justify-center">
+                                            <span className="font-semibold text-text-secondary">{staff.taskAssignedCount || 0}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex items-center justify-center">
+                                            <span className="font-semibold text-text-secondary">{staff.taskResolvedCount || 0}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex items-center justify-center">
+                                            <span className="font-semibold text-text-secondary">{staff.taskPendingCount || 0}</span>
+                                        </div>
                                     </td>
                                     <td className="p-4">
                                         <div className="relative w-[105px]">
