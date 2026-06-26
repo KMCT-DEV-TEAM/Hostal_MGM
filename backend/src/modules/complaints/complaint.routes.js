@@ -58,6 +58,7 @@ router.patch("/:id/assign", complaintController.assignMaintenanceStaff);
 // Maintenance Staff endpoints
 router.get("/assigned", complaintController.getAssignedComplaints);
 router.patch("/:id/resolve-request", complaintController.submitComplaintResolution);
+router.patch("/:id/reject-task", complaintController.rejectAssignedTask);
 
 // Warden/Admin resolution approval
 router.patch("/:id/approve-resolution", complaintController.approveComplaintResolution);

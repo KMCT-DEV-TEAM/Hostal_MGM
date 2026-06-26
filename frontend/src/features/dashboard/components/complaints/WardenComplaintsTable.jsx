@@ -110,6 +110,7 @@ export default function WardenComplaintsTable({
                                             />
                                         </div>
                                     )}
+
                                 </td>
                             </tr>
                         ))

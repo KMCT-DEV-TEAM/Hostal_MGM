@@ -74,7 +74,10 @@ export default function AdminComplaintsFilterModal({
         { label: 'All Status', value: 'All Status' },
         { label: 'Pending', value: 'Pending' },
         { label: 'In Progress', value: 'In progress' },
-        { label: 'Resolved', value: 'Resolved' }
+        { label: 'Awaiting', value: 'Awaiting' },
+        { label: 'Resolved', value: 'Resolved' },
+        { label: 'Rejected', value: 'Rejected' },
+        { label: 'Incomplete', value: 'Incomplete' }
     ];
 
     const categoryOptions = [

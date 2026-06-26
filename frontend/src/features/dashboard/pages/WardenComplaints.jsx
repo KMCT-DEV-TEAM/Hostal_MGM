@@ -329,6 +329,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                             { label: 'Pending', value: 'Pending' },
                             { label: 'In progress', value: 'In progress' },
                             { label: 'Resolved', value: 'Resolved' },
+                            { label: 'Incomplete', value: 'Incomplete' },
                         ]
                     }
                 ]}
