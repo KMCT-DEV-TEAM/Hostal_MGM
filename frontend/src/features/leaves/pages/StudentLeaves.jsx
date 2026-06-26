@@ -38,7 +38,7 @@ export default function StudentLeaves() {
         setIsApplyModalOpen(true);
     };
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('All');
+    const [filters, setFilters] = useState({ status: '', category: '', fromDate: '', toDate: '' });
     const [page, setPage] = useState(1);
     const limit = 10;
 
@@ -49,7 +49,10 @@ export default function StudentLeaves() {
                 page,
                 limit,
                 passType: isHomePass ? 'home_pass' : 'out_pass',
-                ...(filterStatus !== 'All' && { status: filterStatus.toLowerCase() })
+                ...(filters.status && { status: filters.status.toLowerCase() }),
+                ...(filters.category && !isHomePass && { outPassCategory: filters.category }),
+                ...(filters.fromDate && { startDate: filters.fromDate }),
+                ...(filters.toDate && { endDate: filters.toDate })
             });
             console.log('response:', res)
             setRequests(res.data);
@@ -77,7 +80,7 @@ export default function StudentLeaves() {
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, isHomePass, filterStatus]);
+    }, [page, isHomePass, filters.status, filters.category, filters.fromDate, filters.toDate]);
 
     const tableHeaders = isHomePass
         ? ["Leave Period", "Days", "Status", "Return", "Action"]
@@ -217,10 +220,16 @@ export default function StudentLeaves() {
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
                 pageTitle={pageTitle}
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                onApply={() => setIsFilterModalOpen(false)}
-                onReset={() => { setFilterStatus('All'); setIsFilterModalOpen(false); }}
+                isOutPass={!isHomePass}
+                filters={filters}
+                onApply={(newFilters) => {
+                    setFilters(newFilters);
+                    setIsFilterModalOpen(false);
+                }}
+                onReset={() => {
+                    setFilters({ status: '', category: '', fromDate: '', toDate: '' });
+                    setIsFilterModalOpen(false);
+                }}
             />
 
             <LeaveDetailsModal
