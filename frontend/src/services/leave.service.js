@@ -62,6 +62,21 @@ export async function rejectLeaveByParent(id, payload) {
   return response.data;
 }
 
+export async function getLeaveByIdParent(id) {
+  const response = await leaveApi.getLeaveByIdParent(id);
+  return response.data;
+}
+
+export async function getLeaveByIdAdmin(id) {
+  const response = await leaveApi.getLeaveByIdAdmin(id);
+  return response.data;
+}
+
+export async function getLeaveByIdWarden(id) {
+  const response = await leaveApi.getLeaveByIdWarden(id);
+  return response.data;
+}
+
 // Set up Role Resolvers (matching the structure of other services)
 const LEAVE_FETCHERS = {
   [ROLES.ADMIN]: getLeavesByAdmin,
@@ -75,12 +90,22 @@ const LEAVE_STATUS_UPDATE_FETCHERS = {
   [ROLES.SUPER_ADMIN]: updateLeaveStatusByAdmin,
 };
 
+const LEAVE_DETAILS_FETCHERS = {
+  [ROLES.STUDENT]: getLeaveById,
+  [ROLES.PARENT]: getLeaveByIdParent,
+  [ROLES.WARDEN]: getLeaveByIdWarden,
+  [ROLES.ADMIN]: getLeaveByIdAdmin,
+  [ROLES.SUPER_ADMIN]: getLeaveByIdAdmin,
+};
+
 export const getLeaves = createRoleResolver(LEAVE_FETCHERS, 'leave');
 
 export const updateLeaveStatus = createRoleResolver(
   LEAVE_STATUS_UPDATE_FETCHERS,
   'leave status update'
 );
+
+export const getLeaveDetails = createRoleResolver(LEAVE_DETAILS_FETCHERS, 'leave details');
 
 const leaveService = {
   createLeave,
@@ -95,6 +120,7 @@ const leaveService = {
   rejectLeaveByParent,
   getLeaves,
   updateLeaveStatus,
+  getLeaveDetails,
 };
 
 export default leaveService;

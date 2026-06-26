@@ -10,11 +10,17 @@ const leaveApi = {
 
   // Placeholders for future roles (Admin, Parent, Warden, etc.)
   getLeavesByAdmin: (params) => api.get("/admin/passes", { params }),
+  getLeaveByIdAdmin: (id) => api.get(`/admin/passes/${id}`),
   updateLeaveStatusByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/status`, payload),
 
   getLeavesByParent: (params) => api.get("/parent/passes", { params }),
+  getLeaveByIdParent: (id) => api.get(`/parent/passes/${id}`),
   approveLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/approve`, payload),
   rejectLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/reject`, payload),
+
+  // Warden
+  getLeavesByWarden: (params) => api.get("/warden/passes", { params }),
+  getLeaveByIdWarden: (id) => api.get(`/warden/passes/${id}`),
 };
 
 export default leaveApi;

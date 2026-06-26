@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { formatDate, formatDateTime } from '../../utils/formatters';
 import leaveService from '@/services/leave.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -36,12 +38,13 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
     const [request, setRequest] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const role = useAuthStore(s => s.user?.role);
 
     useEffect(() => {
         if (isOpen && leaveId) {
             setIsLoading(true);
             setError(null);
-            leaveService.getLeaveById(leaveId)
+            leaveService.getLeaveDetails(role, leaveId)
                 .then(res => {
                     setRequest(res.data || res);
                 })

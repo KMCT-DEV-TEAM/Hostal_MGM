@@ -14,6 +14,7 @@ import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import leaveService from '@/services/leave.service';
 import { formatDate } from '../utils/formatters';
 import { showErrorToast } from '@/utils/toast';
+import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 
 export default function ParentLeaves() {
     const { passType } = useParams();
@@ -33,6 +34,9 @@ export default function ParentLeaves() {
     const [actionModalConfig, setActionModalConfig] = useState({ isOpen: false, actionType: '', request: null });
     const [actionRemarks, setActionRemarks] = useState('');
     const [isActionSubmitting, setIsActionSubmitting] = useState(false);
+    
+    // View Modal State
+    const [viewId, setViewId] = useState(null);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
@@ -167,6 +171,7 @@ export default function ParentLeaves() {
                 headers={tableHeaders}
                 items={requests}
                 canSelect={false}
+                onRowClick={(item) => setViewId(item._id)}
                 emptyText="No requests found."
                 renderRow={(r) => (
                     <>
@@ -210,7 +215,7 @@ export default function ParentLeaves() {
                         <td className="p-4">
                             <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus || 'pending'} />
                         </td>
-                        <td className="p-4">
+                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
                             {r.status === 'pending_parent' ? (
                                 <Dropdown
                                     options={statusOptions}
@@ -226,7 +231,7 @@ export default function ParentLeaves() {
                     </>
                 )}
                 renderMobileItem={(r) => (
-                    <div className="space-y-3">
+                    <div className="space-y-3" onClick={() => setViewId(r._id)}>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                                 {getStudentName(r).split(' ').map(n => n[0]).join('').substring(0, 2)}
@@ -254,7 +259,7 @@ export default function ParentLeaves() {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center pt-1 border-t border-gray-50">
+                            <div className="flex justify-between items-center pt-1 border-t border-gray-50" onClick={(e) => e.stopPropagation()}>
                                 <span className="font-medium text-gray-500 text-xs">Approval Status:</span>
                                 {r.status === 'pending_parent' ? (
                                     <Dropdown
@@ -370,6 +375,12 @@ export default function ParentLeaves() {
                     </div>
                 </div>
             </Modal>
+
+            <LeaveDetailsModal
+                isOpen={!!viewId}
+                onClose={() => setViewId(null)}
+                leaveId={viewId}
+            />
         </div>
     );
 }
