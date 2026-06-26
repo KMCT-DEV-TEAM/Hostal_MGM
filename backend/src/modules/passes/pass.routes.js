@@ -7,6 +7,7 @@ import roleMiddleware from "../../middlewares/role.middleware.js";
 import {
   createPass,
   getMyPasses,
+  getStudentPassDetails,
   updatePass,
   cancelPass,
   getPasses,
@@ -58,6 +59,14 @@ studentPassRouter.get(
   authMiddleware,
   roleMiddleware("student"),
   getMyPasses
+);
+
+studentPassRouter.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("student"),
+  validatePassIdParam,
+  getStudentPassDetails
 );
 
 studentPassRouter.put(
