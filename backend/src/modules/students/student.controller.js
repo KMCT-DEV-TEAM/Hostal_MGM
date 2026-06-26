@@ -3,6 +3,7 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import { checkExistingUser, createStudentWithParentDb, updateStudentDb, bulkUpdateStudentStatusDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
 import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
+import { syncHostelOrganizations } from "../hostels/hostel.service.js";
 import User from "../users/user.model.js";
 import Student from "./student.model.js";
 import Hostel from "../hostels/hostel.model.js";
@@ -241,6 +242,10 @@ const toggleStudentStatus = asyncHandler(async (req, res) => {
     { isActive: student.isActive }
   );
 
+  if (student.hostelId) {
+    await syncHostelOrganizations(student.hostelId);
+  }
+
   const message = student.isActive
     ? "Student activated successfully"
     : "Student deactivated successfully";
@@ -325,6 +330,10 @@ const updateStudentHostelStatus = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
+  if (student.hostelId) {
+    await syncHostelOrganizations(student.hostelId);
+  }
+
   return sendSuccess(
     res,
     200,
@@ -356,8 +365,15 @@ const updateStudentHostel = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
+  const oldHostelId = student.hostelId;
+
   student.hostelId = hostelId;
   await student.save();
+
+  if (oldHostelId && oldHostelId.toString() !== hostelId.toString()) {
+    await syncHostelOrganizations(oldHostelId);
+  }
+  await syncHostelOrganizations(hostelId);
 
   return sendSuccess(res, 200, "Student hostel updated successfully", {
     studentId: student.studentId,
@@ -388,13 +404,15 @@ const updateStudentOrganization = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Student is already assigned to this organization");
   }
 
- 
-
-
+  const oldOrganizationId = student.organizationId;
 
   student.organizationId = organizationId;
 
   await student.save();
+
+  if (student.hostelId && oldOrganizationId?.toString() !== organizationId.toString()) {
+    await syncHostelOrganizations(student.hostelId);
+  }
 
   return sendSuccess(res, 200, "Student organization updated successfully", {
     data: {

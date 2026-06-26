@@ -4,6 +4,8 @@ import Parent from "../parents/parent.model.js";
 import crypto from "crypto";
 import { hashPassword } from "../../utils/hash.js";
 import mongoose from "mongoose";
+import Hostel from "../hostels/hostel.model.js";
+import { syncHostelOrganizations } from "../hostels/hostel.service.js";
 
 const generateRandomPassword = () => {
   return crypto.randomBytes(4).toString("hex"); // generates an 8-character string
@@ -85,6 +87,14 @@ const createStudentWithParentDb = async (
     { session }
   );
 
+  if (hostelId && organizationId) {
+    await Hostel.findByIdAndUpdate(
+      hostelId,
+      { $addToSet: { organizations: organizationId } },
+      { session }
+    );
+  }
+
   return {
     student: student[0],
     parent: parent[0],
@@ -136,6 +146,12 @@ const updateStudentDb = async (studentId, data) => {
   ];
 
   const isStatusChanged = data.isActive !== undefined && data.isActive !== student.isActive;
+  const oldHostelId = student.hostelId ? student.hostelId.toString() : null;
+  const newHostelId = data.hostelId ? data.hostelId.toString() : null;
+  const isHostelChanged = data.hostelId !== undefined && newHostelId !== oldHostelId;
+  const oldOrgId = student.organizationId ? student.organizationId.toString() : null;
+  const newOrgId = data.organizationId ? data.organizationId.toString() : null;
+  const isOrganizationChanged = data.organizationId !== undefined && newOrgId !== oldOrgId;
 
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) {
@@ -144,6 +160,13 @@ const updateStudentDb = async (studentId, data) => {
   });
 
   await student.save();
+
+  if (isHostelChanged) {
+    if (oldHostelId) await syncHostelOrganizations(oldHostelId);
+    if (student.hostelId) await syncHostelOrganizations(student.hostelId);
+  } else if ((isOrganizationChanged || isStatusChanged) && student.hostelId) {
+    await syncHostelOrganizations(student.hostelId);
+  }
 
   if (isStatusChanged) {
     await Parent.updateMany({ studentId: student._id }, { isActive: student.isActive });
@@ -169,7 +192,7 @@ const bulkUpdateStudentStatusDb = async (
     );
   }
 
-  const students = await Student.find(query).select("_id");
+  const students = await Student.find(query).select("_id hostelId");
   const studentIds = students.map((s) => s._id);
 
   const result = await Student.updateMany(query, {
@@ -185,15 +208,25 @@ const bulkUpdateStudentStatusDb = async (
     );
   }
 
+  const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+  for (const hId of affectedHostels) {
+    await syncHostelOrganizations(hId);
+  }
+
   return result;
 };
 
 const deactivateStudentsByQuery = async (query) => {
-  const students = await Student.find(query).select("_id");
+  const students = await Student.find(query).select("_id hostelId");
   const studentIds = students.map((s) => s._id);
   if (studentIds.length > 0) {
     await Student.updateMany({ _id: { $in: studentIds } }, { isActive: false });
     await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive: false });
+    
+    const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+    for (const hId of affectedHostels) {
+      await syncHostelOrganizations(hId);
+    }
   }
 };
 
