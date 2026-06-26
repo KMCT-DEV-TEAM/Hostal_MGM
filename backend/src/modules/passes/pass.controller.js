@@ -107,6 +107,18 @@ export const getMyPasses = asyncHandler(async (req, res) => {
   });
 });
 
+export const getStudentPassDetails = asyncHandler(async (req, res) => {
+  const studentId = req.user.id;
+  const { id } = req.params;
+
+  const pass = await getPassDetailsDb(id, studentId);
+  if (!pass) {
+    return sendError(res, 404, "Pass not found");
+  }
+
+  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+});
+
 export const updatePass = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const userRole = req.user.role;

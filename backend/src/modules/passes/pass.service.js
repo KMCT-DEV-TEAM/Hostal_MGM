@@ -84,6 +84,7 @@ export const getStudentPassesDb = async (studentId, query) => {
               fromDate: 1,
               toDate: 1,
               date: 1,
+              totalDays: 1,
               outTime: 1,
               expectedReturnTime: 1,
               createdAt: 1,
@@ -99,7 +100,6 @@ export const getStudentPassesDb = async (studentId, query) => {
   const stats = await Pass.aggregate(pipeline);
   const totalRecords = stats[0].metadata[0]?.totalRecords || 0;
   const totalPages = Math.ceil(totalRecords / limit);
-
   return {
     passes: stats[0].data,
     pagination: {
