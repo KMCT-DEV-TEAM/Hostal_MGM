@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Filter, Pencil, Plus, Download } from 'lucide-react';
+import { Filter, Pencil, Plus } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
@@ -14,6 +14,7 @@ import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import ApplyLeaveModal from '../components/modals/ApplyLeaveModal';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
+import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 
 export default function StudentLeaves() {
     const { passType } = useParams();
@@ -29,6 +30,7 @@ export default function StudentLeaves() {
 
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
     const [editData, setEditData] = useState(null);
+    const [viewData, setViewData] = useState(null);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
     const openEditModal = (r) => {
@@ -116,6 +118,7 @@ export default function StudentLeaves() {
                 loading={loading}
                 canSelect={false}
                 emptyText="No leave records found."
+                onRowClick={(item) => setViewData(item)}
                 renderRow={(r) => (
                     <>
                         {isHomePass ? (
@@ -151,7 +154,7 @@ export default function StudentLeaves() {
                         </td>
                         <td className="p-4">
                             {['pending_parent', 'pending_warden', 'approved'].includes(r.status) ? (
-                                <button onClick={() => openEditModal(r)} className="text-accent hover:text-primary transition-colors cursor-pointer">
+                                <button onClick={(e) => { e.stopPropagation(); openEditModal(r); }} className="text-accent hover:text-primary transition-colors cursor-pointer relative z-10">
                                     <Pencil className="w-4 h-4" />
                                 </button>
                             ) : (
@@ -187,8 +190,8 @@ export default function StudentLeaves() {
                             </div>
                         </div>
                         {['pending_parent', 'pending_warden', 'approved'].includes(r.status) && (
-                            <div className="flex justify-end pt-2 border-t border-gray-50 mt-2">
-                                <button onClick={() => openEditModal(r)} className="text-accent flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors">
+                            <div className="flex justify-end pt-2 border-t border-gray-50 mt-2 relative z-10">
+                                <button onClick={(e) => { e.stopPropagation(); openEditModal(r); }} className="text-accent flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors cursor-pointer p-1">
                                     <Pencil className="w-3.5 h-3.5" /> Edit Request
                                 </button>
                             </div>
@@ -218,6 +221,12 @@ export default function StudentLeaves() {
                 setFilterStatus={setFilterStatus}
                 onApply={() => setIsFilterModalOpen(false)}
                 onReset={() => { setFilterStatus('All'); setIsFilterModalOpen(false); }}
+            />
+
+            <LeaveDetailsModal
+                isOpen={!!viewData}
+                onClose={() => setViewData(null)}
+                request={viewData}
             />
         </div>
     );

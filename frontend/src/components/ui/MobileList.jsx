@@ -30,7 +30,8 @@ export default function MobileList({
     canEdit = false,
     statusLoadingIds = [],
     emptyText = "No items match the selected filter.",
-    renderItem
+    renderItem,
+    onRowClick
 }) {
     const isAllSelected = items.length > 0 && selectedIds.length === items.length;
 
@@ -72,9 +73,12 @@ export default function MobileList({
                     return (
                         <div
                             key={rowId || index}
+                            onClick={(e) => {
+                                if (onRowClick) onRowClick(item);
+                            }}
                             className={`bg-white p-4 rounded-xl shadow-sm flex flex-col relative border transition-all ${
                                 isSelected ? 'border-primary bg-blue-50/20' : 'border-gray-100'
-                            } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                            } ${isLoading ? 'opacity-50 pointer-events-none' : ''} ${onRowClick ? 'cursor-pointer active:bg-gray-50' : ''}`}
                         >
                             {(canSelect || (canEdit && onEdit)) && (
                                 <div className="flex justify-between items-start mb-3">

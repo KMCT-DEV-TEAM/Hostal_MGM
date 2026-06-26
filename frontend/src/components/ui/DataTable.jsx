@@ -28,6 +28,9 @@ export default function DataTable({
     // Mobile Props
     renderMobileItem, // (item, isSelected, isLoading) => ReactNode
 
+    // Row Click
+    onRowClick, // (item) => void
+
     // Selection Props
     canSelect = false,
     selectedIds = [],
@@ -132,9 +135,12 @@ export default function DataTable({
                                 return (
                                     <tr
                                         key={rowId || index}
-                                        className={`hover:bg-gray-50/40 transition-colors ${
+                                        onClick={(e) => {
+                                            if (onRowClick) onRowClick(item);
+                                        }}
+                                        className={`transition-colors relative ${onRowClick ? 'cursor-pointer hover:bg-gray-50/80' : 'hover:bg-gray-50/40'} ${
                                             isSelected ? 'bg-blue-50/20' : ''
-                                        } ${isLoading ? 'opacity-50 pointer-events-none' : ''} relative`}
+                                        } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
                                     >
                                         {canSelect && (
                                             <td className="p-4 text-center">
@@ -173,6 +179,7 @@ export default function DataTable({
                     statusLoadingIds={statusLoadingIds}
                     emptyText={emptyText}
                     renderItem={renderMobileItem}
+                    onRowClick={onRowClick}
                 />
             )}
 

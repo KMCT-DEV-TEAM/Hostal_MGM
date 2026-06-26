@@ -20,7 +20,17 @@ import {
   rejectWardenPass,
   markStudentLeftHostel,
   markStudentReturned,
-  wardenAdminCancelPass
+  wardenAdminCancelPass,
+  getAdminDashboardStats,
+  getAdminHostels,
+  getAdminPasses,
+  getAdminPassDetails,
+  adminCancelPass,
+  getSuperAdminDashboardStats,
+  getSuperAdminOrganizationsHostels,
+  getSuperAdminPasses,
+  getSuperAdminPassDetails,
+  superAdminCancelPass
 } from "./pass.controller.js";
 
 import {
@@ -197,3 +207,26 @@ wardenPassRouter.patch(
   wardenAdminCancelPass
 );
 
+// ----- Admin routes -----
+export const adminPassRouter = express.Router();
+
+adminPassRouter.use(authMiddleware);
+adminPassRouter.use(roleMiddleware("admin", "superadmin"));
+
+adminPassRouter.get("/dashboard", getAdminDashboardStats);
+adminPassRouter.get("/hostels", getAdminHostels);
+adminPassRouter.get("/hostels/:hostelId", getAdminPasses);
+adminPassRouter.get("/:id", getAdminPassDetails);
+adminPassRouter.put("/:id/cancel", adminCancelPass);
+
+// ----- Super Admin routes -----
+export const superAdminPassRouter = express.Router();
+
+superAdminPassRouter.use(authMiddleware);
+superAdminPassRouter.use(roleMiddleware("superadmin"));
+
+superAdminPassRouter.get("/dashboard", getSuperAdminDashboardStats);
+superAdminPassRouter.get("/hostels", getSuperAdminOrganizationsHostels);
+superAdminPassRouter.get("/hostels/:hostelId", getSuperAdminPasses);
+superAdminPassRouter.get("/:id", getSuperAdminPassDetails);
+superAdminPassRouter.put("/:id/cancel", superAdminCancelPass);
