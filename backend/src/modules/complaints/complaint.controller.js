@@ -254,3 +254,25 @@ export const rejectComplaintResolution = async (req, res) => {
         });
     }
 };
+
+// @desc    Maintenance staff rejects assigned task
+// @route   PATCH /api/complaints/:id/reject-task
+// @access  Private (Maintenance Staff)
+export const rejectAssignedTask = async (req, res) => {
+    try {
+        const { rejectNote } = req.body;
+        const staffId = req.user.id;
+
+        const updatedComplaint = await complaintService.rejectAssignedTaskDb(req.params.id, staffId, rejectNote);
+        res.status(200).json({
+            success: true,
+            data: updatedComplaint,
+            message: "Task rejected successfully."
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to reject task."
+        });
+    }
+};

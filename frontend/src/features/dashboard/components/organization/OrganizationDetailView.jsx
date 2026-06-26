@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail } from 'lucide-react';
+import { X, Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Users } from 'lucide-react';
+import InfoRow from '@/components/ui/InfoRow';
 
 const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
     if (!selectedOrganizationDetail) return null;
@@ -33,54 +34,63 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                     <div className="lg:col-span-7 space-y-6">
                         {/* Basic Info */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                            <p className="text-xs text-gray-400 mb-6">Basic contact information of the Organization</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Organization Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.code}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span> 
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Organization</p>
+                            <div className="space-y-1">
+                                <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedOrganizationDetail.code}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedOrganizationDetail.name}</InfoRow>
+                                <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                    <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedOrganizationDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
-                                </div>
+                                </InfoRow>
                             </div>
                         </div>
 
                         {/* Address Information */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Address Information</h3>
-                            <p className="text-xs text-gray-400 mb-6">Address information of the Organization</p>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-gray-400" /> Full Address</span> <span className="sm:col-span-2 font-medium break-words whitespace-pre-wrap"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.address}</span></div>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Address Information</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Address information of the Organization</p>
+                            <div className="p-3 rounded-lg border border-gray-100 flex items-start gap-3">
+                                <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                                <div className="text-xs font-medium text-black leading-relaxed">
+                                    {selectedOrganizationDetail.address ? (
+                                        selectedOrganizationDetail.address.split(',').map((line, index) => (
+                                            <div key={index}>{line.trim()}</div>
+                                        ))
+                                    ) : (
+                                        <span className="text-gray-500 italic">No address provided</span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Contact Information */}
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-lg font-semibold text-primary mb-1">Contact Information</h3>
-                            <p className="text-xs text-gray-400 mb-6">Contact information of the Organization</p>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.phone}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.email}</span></div>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Contact Information</h3>
+                            <p className="text-[11px] text-text-secondary mb-4">Contact information of the Organization</p>
+                            <div className="space-y-1">
+                                <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedOrganizationDetail.phone}</InfoRow>
+                                <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedOrganizationDetail.email}</InfoRow>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Summary Sidebar */}
                     <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                        <h3 className="text-lg font-semibold text-primary mb-4">Organization Summary</h3>
-                        <div className="space-y-4">
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Fingerprint className="w-4 h-4 text-gray-400" /> Organization Id</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.code}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.name}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                <span className="text-[#777777] flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span> 
-                                <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                        <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Organization Summary</h3>
+                        <div className="space-y-1">
+                            <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedOrganizationDetail.code}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedOrganizationDetail.name}</InfoRow>
+                            <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedOrganizationDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedOrganizationDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
-                            </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone No</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.phone}</span></div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-[#777777] flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Email</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedOrganizationDetail.email}</span></div>
+                            </InfoRow>
+                            <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Students</>}>{selectedOrganizationDetail.studentsCount || 0}</InfoRow>
+                            <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedOrganizationDetail.phone}</InfoRow>
+                            <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedOrganizationDetail.email}</InfoRow>
                         </div>
                     </div>
                 </div>

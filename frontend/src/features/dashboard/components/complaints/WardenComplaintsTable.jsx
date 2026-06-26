@@ -9,7 +9,8 @@ export default function WardenComplaintsTable({
     handleCategoryChange,
     handlePriorityChange,
     handleStatusChange,
-    onViewClick
+    onViewClick,
+    isViewOnly = false
 }) {
     const categoryOptions = categories.map(cat => ({
         value: cat._id,
@@ -90,19 +91,26 @@ export default function WardenComplaintsTable({
                                     </div>
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className="relative w-full max-w-[120px]">
-                                        <Dropdown
-                                            minWidth=""
-                                            options={[
-                                                { value: "Pending", label: "Pending" },
-                                                { value: "In progress", label: "In progress" },
-                                                { value: "Resolved", label: "Resolved" }
-                                            ]}
-                                            value={complaint.status || 'Pending'}
-                                            onChange={(val) => handleStatusChange && handleStatusChange(complaint.id, val)}
-                                            triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border-none flex justify-between items-center w-full ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : complaint.status === 'Resolved' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
-                                        />
-                                    </div>
+                                    {isViewOnly ? (
+                                        <div className={`px-3 py-1.5 text-xs font-medium text-start rounded-md border-none inline-block ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600' : complaint.status === 'Resolved' ? 'bg-green-50 text-success' : 'bg-blue-50 text-blue-600'}`}>
+                                            {complaint.status || 'Pending'}
+                                        </div>
+                                    ) : (
+                                        <div className="relative w-full max-w-[120px]">
+                                            <Dropdown
+                                                minWidth=""
+                                                options={[
+                                                    { value: "Pending", label: "Pending" },
+                                                    { value: "In progress", label: "In progress" },
+                                                    { value: "Resolved", label: "Resolved" }
+                                                ]}
+                                                value={complaint.status || 'Pending'}
+                                                onChange={(val) => handleStatusChange && handleStatusChange(complaint.id, val)}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border-none flex justify-between items-center w-full ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : complaint.status === 'Resolved' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                                            />
+                                        </div>
+                                    )}
+
                                 </td>
                             </tr>
                         ))

@@ -11,6 +11,7 @@ const createCourseDb = async (data) => {
 
 const getPaginatedCoursesDb = async (query, skip, limit, sort) => {
   return await Course.find(query)
+    .populate("organizationId", "name")
     .sort(sort)
     .skip(skip)
     .limit(limit)
@@ -18,11 +19,11 @@ const getPaginatedCoursesDb = async (query, skip, limit, sort) => {
 };
 
 const getAllCoursesDb = async (query, sort) => {
-  return await Course.find(query).sort(sort).select("-__v");
+  return await Course.find(query).populate("organizationId", "name").sort(sort).select("-__v");
 };
 
 const getCourseByIdDb = async (id) => {
-  return await Course.findById(id).select("-__v");
+  return await Course.findById(id).populate("organizationId", "name").select("-__v");
 };
 
 const updateCourseDb = async (id, data) => {

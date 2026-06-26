@@ -120,7 +120,14 @@ export const getAllComplaintsDb = async (query = {}) => {
     return await Complaint.find(filter)
         .populate('category', 'name')
         .populate('studentId', 'name studentId')
-        .populate('hostelId', 'name')
+        .populate({
+            path: 'hostelId',
+            select: 'name wardens',
+            populate: {
+                path: 'wardens',
+                select: 'name'
+            }
+        })
         .populate('organizationId', 'name')
         .populate('assignedStaff', 'name phone email specialization')
         .sort({ createdAt: -1 });
@@ -225,6 +232,28 @@ export const rejectComplaintResolutionDb = async (complaintId, userRole, rejectN
         status: 'In progress',
         message: `Resolution rejected. Note: ${rejectNote}`,
         by: userRole || 'Warden',
+        date: new Date()
+    });
+
+    return await complaint.save();
+};
+
+// Maintenance staff rejects assigned task
+export const rejectAssignedTaskDb = async (complaintId, staffId, rejectNote) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) throw new Error("Complaint not found.");
+    
+    if (complaint.assignedStaff?.toString() !== staffId.toString()) {
+        throw new Error("You are not assigned to this complaint.");
+    }
+
+    complaint.status = 'Rejected';
+    // Keeping assignedStaff so it shows up in their table
+    
+    complaint.timeline.push({
+        status: 'Rejected',
+        message: `Assigned task rejected by maintenance staff. Note: ${rejectNote}`,
+        by: 'Maintenance Staff',
         date: new Date()
     });
 

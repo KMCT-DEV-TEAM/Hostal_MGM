@@ -23,6 +23,7 @@ import {
     FileDown
 } from 'lucide-react';
 import hostelService from '../../../services/hostel.service';
+import InfoRow from '@/components/ui/InfoRow';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import * as XLSX from 'xlsx';
@@ -33,6 +34,7 @@ import HostelTable from '../components/Hostel/HostelTable';
 import HostelPagination from '../components/Hostel/HostelPagination';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const AVAILABLE_HOSTELS = [
@@ -53,6 +55,7 @@ export default function HostelManagement() {
     const [activeModal, setActiveModal] = useState(null);
     const [editingHostel, setEditingHostel] = useState(null); // Holds object being edited
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isAddConfirmOpen, setIsAddConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
@@ -161,7 +164,7 @@ export default function HostelManagement() {
         if (editingHostel) {
             setIsEditConfirmOpen(true);
         } else {
-            saveHostel();
+            setIsAddConfirmOpen(true);
         }
     };
 
@@ -187,6 +190,7 @@ export default function HostelManagement() {
             showErrorToast('Action Failed', error?.message || 'Failed to save hostel. Please try again.');
         } finally {
             setIsSubmitting(false);
+            setIsAddConfirmOpen(false);
         }
     };
 
@@ -357,39 +361,36 @@ export default function HostelManagement() {
                         <div className="md:col-span-7 flex flex-col">
                             {/* Basic Info Section */}
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
-                                <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                                <p className="text-xs text-gray-400 mb-6">Basic contact information of the Hostel</p>
-                                <div className="space-y-4">
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium text-capitalize"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity || 'N/A'}</span></div>
-                                    <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                        <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                        <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                                <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
+                                <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Hostel</p>
+                                <div className="space-y-1">
+                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
+                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
+                                    <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedHostelDetail.capacity || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                        <span className="flex items-center">
                                             <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                             {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                         </span>
-                                    </div>
+                                    </InfoRow>
                                 </div>
                             </div>
                         </div>
 
                         {/* Right Summary Sidebar */}
                         <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm md:h-full">
-                            <h3 className="text-lg font-semibold text-primary mb-4">Hostel Summary</h3>
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Name</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.name}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Hostel Type</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.hosteltype}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Organization</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail?.organizations?.[0]?.name || selectedHostelDetail?.organizations || 'N/A'}</span></div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
-                                    <span className="text-gray-500 flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-gray-400" /> Status</span>
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
+                            <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Hostel Summary</h3>
+                            <div className="space-y-1">
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hosteltype}</span></InfoRow>
+                                <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                    <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                         {selectedHostelDetail.isActive ? 'Active' : 'Inactive'}
                                     </span>
-                                </div>
-                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0"><span className="text-gray-500 flex items-center gap-1.5"><Users className="w-4 h-4 text-gray-400" /> Capacity</span> <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{selectedHostelDetail.capacity}</span></div>
+                                </InfoRow>
+                                <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedHostelDetail.capacity}</InfoRow>
                             </div>
                         </div>
                     </div>
@@ -612,6 +613,29 @@ export default function HostelManagement() {
                     </form>
                 </div>
             )}
+            
+            {/* Confirmation Modal for Edit */}
+            <ConfirmationModal
+                isOpen={isEditConfirmOpen}
+                onClose={() => setIsEditConfirmOpen(false)}
+                onConfirm={saveHostel}
+                title="Save Changes"
+                message="Are you sure you want to save the changes made to this hostel?"
+                confirmText={isSubmitting ? "Saving..." : "Save Changes"}
+                cancelText="Cancel"
+            />
+
+            {/* Confirmation Modal for Add */}
+            <ConfirmationModal
+                isOpen={isAddConfirmOpen}
+                onClose={() => setIsAddConfirmOpen(false)}
+                onConfirm={saveHostel}
+                title="Add Hostel"
+                message="Are you sure you want to add this new hostel?"
+                confirmText={isSubmitting ? "Adding..." : "Add Hostel"}
+                cancelText="Cancel"
+            />
+
             <ExportFilterModal
                 isOpen={isExportConfirmOpen}
                 onClose={() => setIsExportConfirmOpen(false)}
@@ -619,31 +643,6 @@ export default function HostelManagement() {
                 isExporting={isExporting}
                 title="Export Hostels Data"
             />
-            {isEditConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900 cursor-pointer">Save Changes</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6 cursor-pointer">
-                            Are you sure you want to save these changes?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsEditConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={saveHostel}
-                                disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
-                            >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {isDiscardConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">

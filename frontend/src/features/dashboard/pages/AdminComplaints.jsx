@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SuperAdminComplaintsTable from '../components/complaints/SuperAdminComplaintsTable';
 import ComplaintsToolbar from '../components/complaints/ComplaintsToolbar';
-import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import WardenComplaints from './WardenComplaints';
-import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
@@ -17,11 +15,9 @@ export default function AdminComplaints() {
     const [aggregatedData, setAggregatedData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterOption, setFilterOption] = useState('All');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedHostel, setSelectedHostel] = useState(null);
-    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
     const limit = 10;
 
     const fetchComplaints = async () => {
@@ -36,9 +32,9 @@ export default function AdminComplaints() {
             rawComplaints.forEach(c => {
                 const hostelName = c.hostelId?.name || 'Unknown Hostel';
                 const orgName = c.organizationId?.name || 'Unknown Org';
-                // Note: Warden name isn't directly on complaint, we could get it if we populated it,
-                // but for now we put a placeholder or "N/A"
-                const wardenName = 'N/A';
+                const wardenName = c.hostelId?.wardens?.length > 0 
+                    ? c.hostelId.wardens.map(w => w.name).join(', ') 
+                    : 'N/A';
 
                 if (!hostelMap[hostelName]) {
                     hostelMap[hostelName] = {
@@ -71,14 +67,19 @@ export default function AdminComplaints() {
         fetchComplaints();
     }, []);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Apply filtering on aggregated data
     let filteredComplaints = aggregatedData.filter(c => {
-        // Dropdown filter
-        if (filterOption !== 'All' && c.hostel !== filterOption && c.organization !== filterOption) return false;
-
         // Search Query
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
+        if (!debouncedSearch) return true;
+        const query = debouncedSearch.toLowerCase();
         return (
             c.organization.toLowerCase().includes(query) ||
             c.hostel.toLowerCase().includes(query) ||
@@ -86,48 +87,6 @@ export default function AdminComplaints() {
         );
     });
 
-    const confirmExport = async (exportFilters) => {
-        setIsExporting(true);
-        try {
-            let dataToExport = filteredComplaints;
-
-            if (dataToExport && dataToExport.length > 0) {
-                const exportData = dataToExport.map((complaint, index) => {
-                    const row = {
-                        "Organization": complaint.organization,
-                        "Hostel": complaint.hostel,
-                        "Total Complaints": complaint.totalComplaints,
-                        "Pending": complaint.pending,
-                        "In Progress": complaint.inProgress,
-                        "Resolved": complaint.resolved,
-                    };
-                    if (isSuperAdmin) {
-                        // Insert Warden before Total Complaints in export
-                        const entries = Object.entries(row);
-                        entries.splice(2, 0, ["Warden", complaint.warden]);
-                        return Object.fromEntries(entries);
-                    }
-                    return row;
-                });
-
-                const isSuccess = exportToExcel(exportData, "Complaints_Export", "Complaints");
-
-                if (isSuccess) {
-                    showSuccessToast('Export Successful', 'The complaints list has been downloaded.');
-                } else {
-                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
-                }
-            } else {
-                showErrorToast('Export Failed', 'No data available to export matching the filters.');
-            }
-        } catch (error) {
-            console.error("Export Failed", error);
-            showErrorToast('Export Failed', error?.message || 'Failed to export data.');
-        } finally {
-            setIsExportConfirmOpen(false);
-            setIsExporting(false);
-        }
-    };
 
     // Apply pagination
     const totalComplaintsCount = filteredComplaints.length;
@@ -201,9 +160,6 @@ export default function AdminComplaints() {
                 <ComplaintsToolbar
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
-                    initiateExport={() => setIsExportConfirmOpen(true)}
-                    filterOption={filterOption}
-                    setFilterOption={setFilterOption}
                 />
 
                 {/* Table Section */}
@@ -215,8 +171,13 @@ export default function AdminComplaints() {
 
                 {/* PAGINATION BAR FOOTER */}
                 <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div className="hidden sm:block">
-                        Showing {totalComplaintsCount === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaintsCount)} of {totalComplaintsCount}
+                    <div>
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalComplaintsCount === 0 ? 0 : (currentPage - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(currentPage * limit, totalComplaintsCount)} of {totalComplaintsCount}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -255,14 +216,7 @@ export default function AdminComplaints() {
                 </div>
             </div>
 
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                title="Export Complaints Data"
-                fields={[]}
-            />
+
         </div>
     );
 }

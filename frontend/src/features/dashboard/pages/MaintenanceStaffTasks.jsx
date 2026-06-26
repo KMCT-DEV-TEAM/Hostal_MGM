@@ -35,6 +35,7 @@ export default function MaintenanceStaffTasks() {
             case 'In progress': return 'bg-blue-50 text-[#0A437A]';
             case 'Pending': return 'bg-gray-50 text-gray-600';
             case 'Awaiting': return 'bg-orange-50 text-orange-500';
+            case 'Rejected': return 'bg-red-50 text-red-600';
             default: return 'bg-gray-50 text-gray-600';
         }
     };

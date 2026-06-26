@@ -378,9 +378,6 @@ export const getWardenPassesDb = async (hostelId, query) => {
   const stats = await Pass.aggregate(pipeline);
   return formatPaginationResponse(stats, page, limit);
 };
-
-// --- Management Scope Services (Admin & Super Admin) ---
-
 export const getManagementDashboardStatsDb = async (scope) => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);

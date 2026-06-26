@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Search, ChevronDown, ChevronLeft, ChevronRight, Clock, User, Info } from "lucide-react";
+import { Search, ChevronDown, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
+import DateInput from "@/components/ui/DateInput";
+import ExportPasswordModal from "@/components/ui/ExportPasswordModal";
+import ExportFilterModal from "@/components/ui/ExportFilterModal";
+import LogsFilterModal from "./LogsFilterModal";
+import authApi from "@/features/auth/api/authApi";
+import { exportToExcel } from "@/utils/exportUtils";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
 import { logApi } from "@/features/dashboard/api/logApi";
-import { showErrorToast } from "@/utils/toast";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
 
 const LogsViewer = ({ entityType }) => {
     const [logs, setLogs] = useState([]);
@@ -12,6 +18,13 @@ const LogsViewer = ({ entityType }) => {
     const [statusFilter, setStatusFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [isExportFilterModalOpen, setIsExportFilterModalOpen] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [exportDateRange, setExportDateRange] = useState({ startDate: '', endDate: '' });
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -30,7 +43,9 @@ const LogsViewer = ({ entityType }) => {
                 page, 
                 limit: 10, 
                 status: apiStatus,
-                search: debouncedSearch
+                search: debouncedSearch,
+                startDate,
+                endDate
             });
             
             let fetchedLogs = res.data.logs || [];
@@ -42,7 +57,8 @@ const LogsViewer = ({ entityType }) => {
             setPagination({ 
                 page: res.data.currentPage || 1, 
                 limit: 10, 
-                totalPages: res.data.totalPages || 1 
+                totalPages: res.data.totalPages || 1,
+                totalDocs: res.data.totalCount || res.data.totalLogs || res.data.totalRecords || res.data.totalDocs || res.data.total || 0
             });
         } catch (error) {
             showErrorToast('Failed to load system logs', error?.message);
@@ -53,7 +69,68 @@ const LogsViewer = ({ entityType }) => {
 
     useEffect(() => {
         fetchLogs(1);
-    }, [statusFilter, debouncedSearch, entityType]);
+    }, [statusFilter, debouncedSearch, entityType, startDate, endDate]);
+
+    const handleExportConfirm = async (password) => {
+        setIsExporting(true);
+        try {
+            const exportStartDate = exportDateRange.startDate;
+            const exportEndDate = exportDateRange.endDate;
+
+            // 1. Verify password
+            const verifyRes = await authApi.verifyPassword({ password });
+            if (!verifyRes || !verifyRes.data?.success) {
+                showErrorToast('Export Failed', 'Incorrect password');
+                setIsExporting(false);
+                return;
+            }
+
+            // 2. Fetch all logs matching filter
+            const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
+            const res = await logApi.getLogs({
+                limit: 100000,
+                status: apiStatus,
+                search: debouncedSearch,
+                startDate: exportStartDate,
+                endDate: exportEndDate
+            });
+
+            let fetchedLogs = res.data.logs || res.data || [];
+            if (entityType) {
+                fetchedLogs = fetchedLogs.filter(log => log.entityType === entityType);
+            }
+
+            if (fetchedLogs.length === 0) {
+                showErrorToast('Export Failed', 'No logs found matching your criteria.');
+                setIsExportModalOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = fetchedLogs.map((log, index) => ({
+                "SL No": index + 1,
+                "Timestamp": `${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                "Action": log.action,
+                "User": log.user?.name || log.user?.email || 'Unknown',
+                "Role": log.userRole || 'N/A',
+                "Status": log.status,
+                "Details": log.details
+            }));
+
+            const isSuccess = exportToExcel(exportData, "System_Logs_Export", "Logs");
+            if (isSuccess) {
+                showSuccessToast('Export Successful', 'Logs have been downloaded successfully.');
+            } else {
+                showErrorToast('Export Failed', 'Could not generate the Excel file.');
+            }
+        } catch (error) {
+            console.error("Export Failed", error);
+            showErrorToast('Export Failed', error?.response?.data?.message || error?.message || 'Incorrect password or failed to export logs.');
+        } finally {
+            setIsExportModalOpen(false);
+            setIsExporting(false);
+        }
+    };
 
     const getStatusStyles = (status) => {
         switch (status) {
@@ -95,21 +172,21 @@ const LogsViewer = ({ entityType }) => {
                 </div>
 
                 <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
-                    <div className="flex gap-3 w-full sm:w-auto">
-                        <Dropdown
-                            className="flex-1 sm:flex-none"
-                            options={[
-                                { value: "All", label: "All Status" },
-                                { value: "Success", label: "Success" },
-                                { value: "Error", label: "Error" },
-                                { value: "Warning", label: "Warning" }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => setStatusFilter(val)}
-                            placeholder="All"
-                            minWidth="w-32"
-                            triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                        />
+                    <div className="flex gap-3 w-full sm:w-auto items-center">
+                        <button
+                            onClick={() => setIsFilterModalOpen(true)}
+                            className="flex items-center justify-center gap-2 px-4 py-2 h-9 bg-white border border-gray-200 text-text-secondary rounded-lg text-sm hover:bg-gray-50 transition-colors cursor-pointer shadow-sm md:shadow-none"
+                        >
+                            <SlidersHorizontal className="w-4 h-4" /> 
+                            <span className="sm:hidden">Filter</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsExportFilterModalOpen(true)}
+                            className="flex items-center justify-center gap-2 h-9 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
+                            <Download className="w-4 h-4" /> Export
+                        </button>
                     </div>
                 </div>
             </div>
@@ -209,7 +286,12 @@ const LogsViewer = ({ entityType }) => {
             {!isLoading && pagination.totalPages > 0 && (
                 <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
-                        <span className="hidden sm:inline">Page </span>{pagination.page} of {pagination.totalPages}
+                        <span className="hidden sm:inline">Showing </span>
+                        {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(pagination.page * pagination.limit, pagination.totalDocs || pagination.totalRecords || 0)} of {pagination.totalDocs || pagination.totalRecords || 0}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <button
@@ -245,6 +327,50 @@ const LogsViewer = ({ entityType }) => {
                         </button>
                     </div>
                 </div>
+            )}
+            
+            <ExportFilterModal
+                isOpen={isExportFilterModalOpen}
+                onClose={() => setIsExportFilterModalOpen(false)}
+                title="Export Logs"
+                subtitle="Select date range to export logs"
+                fields={[
+                    { name: 'startDate', label: 'From Date', type: 'date' },
+                    { name: 'endDate', label: 'To Date', type: 'date' }
+                ]}
+                onExport={(filters) => {
+                    setExportDateRange({
+                        startDate: filters.startDate || '',
+                        endDate: filters.endDate || ''
+                    });
+                    setIsExportFilterModalOpen(false);
+                    setIsExportModalOpen(true);
+                }}
+            />
+
+            <ExportPasswordModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                onConfirm={handleExportConfirm}
+                isVerifying={isExporting}
+                title="Verify Password to Export Logs"
+                subtitle="Please enter your admin password to securely download the logs."
+                showDateFilters={false}
+            />
+
+            {isFilterModalOpen && (
+                <LogsFilterModal
+                    initialStartDate={startDate}
+                    initialEndDate={endDate}
+                    initialStatus={statusFilter}
+                    onClose={() => setIsFilterModalOpen(false)}
+                    onApply={(filters) => {
+                        setStartDate(filters.startDate);
+                        setEndDate(filters.endDate);
+                        setStatusFilter(filters.statusFilter);
+                        setIsFilterModalOpen(false);
+                    }}
+                />
             )}
         </div>
     );
