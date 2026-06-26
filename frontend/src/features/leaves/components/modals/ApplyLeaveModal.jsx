@@ -7,12 +7,13 @@ import TimeInput from '@/components/ui/TimeInput';
 import Dropdown from '@/components/ui/Dropdown';
 import { leaveSchema } from '../../utils/validation';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { createLeave, updateLeave } from '@/services/leave.service';
+import { createLeave, updateLeave, cancelLeave } from '@/services/leave.service';
 
 export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass', editData }) {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
     });
+    const [isWithdrawing, setIsWithdrawing] = React.useState(false);
 
     const fromDateVal = watch('fromDate');
     const toDateVal = watch('toDate');
@@ -102,6 +103,23 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
         return <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error.message}</p>;
     };
 
+    const handleWithdraw = async () => {
+        if (!editData) return;
+        if (!window.confirm("Are you sure you want to withdraw this request?")) return;
+        try {
+            setIsWithdrawing(true);
+            await cancelLeave(editData._id);
+            showSuccessToast('Request withdrawn successfully');
+            onClose();
+            reset();
+            if (onSuccess) onSuccess();
+        } catch (err) {
+            showErrorToast(err.message || 'Failed to withdraw request');
+        } finally {
+            setIsWithdrawing(false);
+        }
+    };
+
     const inputClasses = (hasError) =>
         `w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors bg-white ${hasError ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
         }`;
@@ -117,23 +135,37 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
             asForm
             onSubmit={handleSubmit(onSubmit)}
             footer={
-                <div className="flex justify-end gap-3">
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
-                    >
-                        {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                        {editData ? "Update Request" : "Submit Request"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => { onClose(); reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType }); }}
-                        disabled={isSubmitting}
-                        className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
-                    >
-                        Cancel
-                    </button>
+                <div className="flex items-center justify-between w-full">
+                    <div>
+                        {editData && (
+                            <button
+                                type="button"
+                                onClick={handleWithdraw}
+                                disabled={isSubmitting || isWithdrawing}
+                                className="px-5 py-2 bg-red-50 text-danger border border-danger rounded-md text-xs font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                            >
+                                {isWithdrawing ? "Withdrawing..." : "Withdraw"}
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => { onClose(); reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType }); }}
+                            disabled={isSubmitting || isWithdrawing}
+                            className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting || isWithdrawing}
+                            className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                            {editData ? "Update Request" : "Submit Request"}
+                        </button>
+                    </div>
                 </div>
             }
         >

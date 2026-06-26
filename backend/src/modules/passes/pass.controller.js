@@ -189,7 +189,7 @@ export const updatePass = asyncHandler(async (req, res) => {
     }
   ];
 
-  if (resetParent || resetWarden) {
+  if (resetParent) {
     timelineEvents.push({
       action: "approval_reset",
       actorId: userId,
