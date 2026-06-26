@@ -55,6 +55,11 @@ const rejectComplaintResolution = async (id, rejectNote) => {
     return response.data;
 };
 
+const rejectAssignedTask = async (id, rejectNote) => {
+    const response = await apiClient.patch(`/complaints/${id}/reject-task`, { rejectNote });
+    return response.data;
+};
+
 const ComplaintService = {
     createComplaint,
     getMyComplaints,
@@ -66,7 +71,8 @@ const ComplaintService = {
     getAssignedComplaints,
     submitComplaintResolution,
     approveComplaintResolution,
-    rejectComplaintResolution
+    rejectComplaintResolution,
+    rejectAssignedTask
 };
 
 export default ComplaintService;
