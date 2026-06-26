@@ -6,6 +6,7 @@ const leaveApi = {
   getMyLeaves: (params) => api.get("/student/passes/my-passes", { params }),
   updateLeave: (id, payload) => api.put(`/student/passes/${id}`, payload),
   cancelLeave: (id, payload) => api.patch(`/student/passes/${id}/cancel`, payload),
+  getLeaveById: (id) => api.get(`/student/passes/${id}`),
 
   // Placeholders for future roles (Admin, Parent, Warden, etc.)
   getLeavesByAdmin: (params) => api.get("/admin/passes", { params }),

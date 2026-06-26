@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, formatDateTime } from '../../utils/formatters';
+import leaveService from '@/services/leave.service';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -31,7 +32,59 @@ const getStatusLabel = (status) => {
     }
 };
 
-export default function LeaveDetailsModal({ isOpen, onClose, request }) {
+export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
+    const [request, setRequest] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (isOpen && leaveId) {
+            setIsLoading(true);
+            setError(null);
+            leaveService.getLeaveById(leaveId)
+                .then(res => {
+                    setRequest(res.data || res);
+                })
+                .catch(err => {
+                    console.error("Failed to fetch leave details:", err);
+                    setError("Failed to load details.");
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        } else {
+            setRequest(null);
+        }
+    }, [isOpen, leaveId]);
+
+    if (!isOpen) return null;
+
+    if (isLoading) {
+        return (
+            <Modal isOpen={isOpen} onClose={onClose} title="Loading Details..." maxWidth="max-w-5xl">
+                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
+                    <div className="space-y-6">
+                        <div className="h-[350px] bg-gray-100 animate-pulse rounded-xl"></div>
+                        <div className="h-32 bg-gray-100 animate-pulse rounded-xl"></div>
+                        <div className="h-[400px] bg-gray-100 animate-pulse rounded-xl"></div>
+                    </div>
+                    <div className="space-y-6">
+                        <div className="h-48 bg-gray-100 animate-pulse rounded-xl"></div>
+                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
+                    </div>
+                </div>
+            </Modal>
+        );
+    }
+
+    if (error) {
+        return (
+            <Modal isOpen={isOpen} onClose={onClose} title="Error" maxWidth="max-w-md">
+                <div className="p-4 text-center text-red-500 font-medium">{error}</div>
+            </Modal>
+        );
+    }
+
     if (!request) return null;
 
     const isHomePass = request.passType === 'home_pass';
@@ -49,17 +102,64 @@ export default function LeaveDetailsModal({ isOpen, onClose, request }) {
     const timeline = request.timeline || [];
 
     // Derived states for progress
-    const isSubmitted = true;
-    const isParentApproved = timeline.some(t => t.action === 'parent_approved') || request.status === 'pending_warden' || request.status === 'approved' || request.status === 'completed';
-    const isWardenApproved = timeline.some(t => t.action === 'warden_approved') || request.status === 'approved' || request.status === 'completed';
-    const isReturned = request.returnTracking?.returnStatus === 'returned';
+    const parentStatus = request.parentApproval?.status || 'pending';
+    const isParentApproved = parentStatus === 'approved';
+    const isParentRejected = parentStatus === 'rejected';
+
+    const wardenStatus = request.wardenApproval?.status || 'pending';
+    const isWardenApproved = wardenStatus === 'approved';
+    const isWardenRejected = wardenStatus === 'rejected';
+
+    const returnStatus = request.returnTracking?.returnStatus || 'pending';
+    const isReturned = returnStatus === 'returned';
 
     const renderBadge = (label, color) => (
-        <span className="inline-flex items-center gap-1.5 font-medium text-sm" style={{ color }}>
+        <span className="inline-flex items-center gap-1.5 font-bold text-[12px]" style={{ color }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }}></span>
             {label}
         </span>
     );
+
+    const renderProgressStep = ({ title, subtitle, status, date, iconLabel }) => {
+        let nodeColor = '#F3F4F6';
+        let iconColor = '#6B7280';
+        let icon = <span className="text-[10px] font-bold" style={{ color: iconColor }}>{iconLabel}</span>;
+        let badgeColor = 'var(--color-warning)';
+        let badgeLabel = 'Pending';
+
+        if (status === 'approved' || status === 'returned' || status === 'submitted') {
+            nodeColor = status === 'submitted' ? '#1E3A8A' : 'var(--color-success)'; // Dark blue for submitted
+            badgeColor = status === 'submitted' ? '#1E3A8A' : 'var(--color-success)';
+            badgeLabel = status === 'returned' ? 'Returned' : (status === 'submitted' ? 'Submitted' : 'Approved');
+            icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>;
+        } else if (status === 'rejected' || status === 'cancelled') {
+            nodeColor = 'var(--color-danger)';
+            badgeColor = 'var(--color-danger)';
+            badgeLabel = status === 'cancelled' ? 'Cancelled' : 'Rejected';
+            icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>;
+        }
+
+        return (
+            <div className="relative flex items-center justify-between group">
+                <div className="flex items-start gap-4 w-full">
+                    <div
+                        className="absolute left-[-32px] w-6 h-6 rounded-full border-2 border-white z-10 flex items-center justify-center shadow-sm bg-white"
+                        style={{ backgroundColor: nodeColor }}
+                    >
+                        {icon}
+                    </div>
+                    <div className="flex-1">
+                        <div className="mb-1">{renderBadge(badgeLabel, badgeColor)}</div>
+                        <h4 className="text-[14px] font-bold text-gray-800">{title}</h4>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[12px] text-gray-400 font-medium uppercase tracking-wider">{subtitle}</span>
+                        </div>
+                    </div>
+                </div>
+                {date && <div className="text-[12px] text-gray-500 font-medium bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-md shadow-sm whitespace-nowrap">{formatDateTime(date)}</div>}
+            </div>
+        );
+    };
 
     return (
         <Modal
@@ -128,72 +228,49 @@ export default function LeaveDetailsModal({ isOpen, onClose, request }) {
                     </div>
 
                     {/* Pass Progress */}
-                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">{isHomePass ? 'Home Pass' : 'Out Pass'} Progress</h3>
-                        <p className="text-xs text-gray-400 mb-8">Track the approval status of this {isHomePass ? 'home pass' : 'out pass'} request.</p>
+                    <div className="border border-gray-100 rounded-2xl p-6 bg-white shadow-sm relative overflow-hidden">
 
-                        <div className="relative pl-4 space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                        <h3 className="text-primary font-semibold text-sm mb-1">
+                            {isHomePass ? 'Home Pass' : 'Out Pass'} Progress
+                        </h3>
+                        <p className="text-xs text-gray-400 mb-6">Track the live approval status of this request.</p>
+
+                        <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
 
                             {/* Return Status */}
-                            <div className="relative flex items-center justify-between group">
-                                <div className="flex items-start gap-4">
-                                    <div className="absolute left-[-16px] w-3.5 h-3.5 rounded-full border-2 border-white z-10" style={{ backgroundColor: isReturned ? 'var(--color-success)' : (request.status === 'approved' ? 'var(--color-warning)' : '#D1D5DB') }}></div>
-                                    <div>
-                                        <div className="mb-1">{renderBadge(isReturned ? 'Returned' : 'Pending', isReturned ? 'var(--color-success)' : 'var(--color-warning)')}</div>
-                                        <h4 className="text-sm font-medium text-gray-700">Return Status {isReturned ? 'Completed' : 'pending'}</h4>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[9px] text-gray-500 font-bold">U</div>
-                                            <span className="text-xs text-gray-400">User</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {renderProgressStep({
+                                title: isReturned ? 'Returned to Hostel' : 'Return Status',
+                                subtitle: 'Security / User',
+                                status: returnStatus,
+                                iconLabel: 'R'
+                            })}
 
                             {/* Warden Approval */}
-                            <div className="relative flex items-center justify-between group">
-                                <div className="flex items-start gap-4">
-                                    <div className="absolute left-[-16px] w-3.5 h-3.5 rounded-full border-2 border-white z-10" style={{ backgroundColor: isWardenApproved ? 'var(--color-success)' : '#D1D5DB' }}></div>
-                                    <div>
-                                        <div className="mb-1">{renderBadge(isWardenApproved ? 'Approved' : 'Pending', isWardenApproved ? 'var(--color-success)' : 'var(--color-warning)')}</div>
-                                        <h4 className="text-sm font-medium text-gray-700">{isWardenApproved ? 'Approved by warden' : 'Warden Approval'}</h4>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[9px] text-white font-bold">W</div>
-                                            <span className="text-xs text-gray-400">Warden</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {renderProgressStep({
+                                title: isWardenApproved ? 'Approved by Warden' : (isWardenRejected ? 'Rejected by Warden' : 'Warden Approval'),
+                                subtitle: 'Warden',
+                                status: wardenStatus,
+                                date: request.wardenApproval?.actionAt,
+                                iconLabel: 'W'
+                            })}
 
                             {/* Parent Approval */}
-                            <div className="relative flex items-center justify-between group">
-                                <div className="flex items-start gap-4">
-                                    <div className="absolute left-[-16px] w-3.5 h-3.5 rounded-full border-2 border-white z-10" style={{ backgroundColor: isParentApproved ? 'var(--color-success)' : '#D1D5DB' }}></div>
-                                    <div>
-                                        <div className="mb-1">{renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}</div>
-                                        <h4 className="text-sm font-medium text-gray-700">{isParentApproved ? 'Approved by Parent' : 'Parent Approval'}</h4>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[9px] text-white font-bold">P</div>
-                                            <span className="text-xs text-gray-400">Parent</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {renderProgressStep({
+                                title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval'),
+                                subtitle: 'Parent',
+                                status: parentStatus,
+                                date: request.parentApproval?.actionAt,
+                                iconLabel: 'P'
+                            })}
 
                             {/* Submitted */}
-                            <div className="relative flex items-center justify-between group">
-                                <div className="flex items-start gap-4">
-                                    <div className="absolute left-[-16px] w-3.5 h-3.5 rounded-full border-2 border-white z-10" style={{ backgroundColor: 'var(--color-primary)' }}></div>
-                                    <div>
-                                        <div className="mb-1">{renderBadge('Submitted', 'var(--color-primary)')}</div>
-                                        <h4 className="text-sm font-medium text-gray-700">Request submitted</h4>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[9px] text-white font-bold">S</div>
-                                            <span className="text-xs text-gray-400">Student</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-[10px] text-gray-400">{formatDate(request.createdAt)}</div>
-                            </div>
+                            {renderProgressStep({
+                                title: 'Request Submitted',
+                                subtitle: 'Student',
+                                status: 'submitted',
+                                date: request.createdAt,
+                                iconLabel: 'S'
+                            })}
 
                         </div>
                     </div>

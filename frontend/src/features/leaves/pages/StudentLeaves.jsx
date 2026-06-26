@@ -30,7 +30,7 @@ export default function StudentLeaves() {
 
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
     const [editData, setEditData] = useState(null);
-    const [viewData, setViewData] = useState(null);
+    const [viewId, setViewId] = useState(null);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
     const openEditModal = (r) => {
@@ -118,7 +118,7 @@ export default function StudentLeaves() {
                 loading={loading}
                 canSelect={false}
                 emptyText="No leave records found."
-                onRowClick={(item) => setViewData(item)}
+                onRowClick={(item) => setViewId(item._id)}
                 renderRow={(r) => (
                     <>
                         {isHomePass ? (
@@ -224,9 +224,9 @@ export default function StudentLeaves() {
             />
 
             <LeaveDetailsModal
-                isOpen={!!viewData}
-                onClose={() => setViewData(null)}
-                request={viewData}
+                isOpen={!!viewId}
+                onClose={() => setViewId(null)}
+                leaveId={viewId}
             />
         </div>
     );

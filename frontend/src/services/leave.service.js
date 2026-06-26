@@ -15,6 +15,11 @@ export async function getMyLeaves(params) {
   return response.data;
 }
 
+export async function getLeaveById(id) {
+  const response = await leaveApi.getLeaveById(id);
+  return response.data;
+}
+
 export async function updateLeave(id, payload) {
   const response = await leaveApi.updateLeave(id, payload);
   return response.data;
@@ -80,6 +85,7 @@ export const updateLeaveStatus = createRoleResolver(
 const leaveService = {
   createLeave,
   getMyLeaves,
+  getLeaveById,
   updateLeave,
   cancelLeave,
   getLeavesByAdmin,
