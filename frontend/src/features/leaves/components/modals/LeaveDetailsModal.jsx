@@ -109,9 +109,9 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
     const isParentApproved = parentStatus === 'approved';
     const isParentRejected = parentStatus === 'rejected';
 
-    const wardenStatus = request.wardenApproval?.status || 'pending';
-    const isWardenApproved = wardenStatus === 'approved';
-    const isWardenRejected = wardenStatus === 'rejected';
+    const adminStatus = request.adminApproval?.status || 'pending';
+    const isAdminApproved = adminStatus === 'approved';
+    const isAdminRejected = adminStatus === 'rejected';
 
     const returnStatus = request.returnTracking?.returnStatus || 'pending';
     const isReturned = returnStatus === 'returned';
@@ -164,6 +164,29 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
         );
     };
 
+    const handleApprove = async () => {
+        if (!window.confirm("Are you sure you want to approve this request?")) return;
+        try {
+            await leaveService.approvePass(request._id, { remarks: 'Approved by Admin' });
+            onClose(); // Ideally refetch here, but closing modal is ok
+        } catch (err) {
+            console.error(err);
+            alert("Failed to approve");
+        }
+    };
+
+    const handleReject = async () => {
+        const remarks = window.prompt("Enter rejection remarks (required):");
+        if (!remarks) return;
+        try {
+            await leaveService.rejectPass(request._id, { remarks });
+            onClose(); // Ideally refetch here, but closing modal is ok
+        } catch (err) {
+            console.error(err);
+            alert("Failed to reject");
+        }
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -171,6 +194,26 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
             title={title}
             subtitle="Details about the leave request"
             maxWidth="max-w-5xl"
+            footer={
+                role === 'admin' && request.status === 'pending_admin' ? (
+                    <div className="flex justify-end gap-3 w-full">
+                        <button
+                            type="button"
+                            onClick={handleReject}
+                            className="px-5 py-2 bg-red-50 text-red-600 rounded-md text-xs font-medium hover:bg-red-100 transition-colors"
+                        >
+                            Reject Request
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleApprove}
+                            className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
+                        >
+                            Approve Request
+                        </button>
+                    </div>
+                ) : null
+            }
         >
             <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
 
@@ -248,13 +291,13 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
                                 iconLabel: 'R'
                             })}
 
-                            {/* Warden Approval */}
+                            {/* Admin Approval */}
                             {renderProgressStep({
-                                title: isWardenApproved ? 'Approved by Warden' : (isWardenRejected ? 'Rejected by Warden' : 'Warden Approval'),
-                                subtitle: 'Warden',
-                                status: wardenStatus,
-                                date: request.wardenApproval?.actionAt,
-                                iconLabel: 'W'
+                                title: isAdminApproved ? 'Approved by Admin' : (isAdminRejected ? 'Rejected by Admin' : 'Admin Approval'),
+                                subtitle: 'Admin',
+                                status: adminStatus,
+                                date: request.adminApproval?.actionAt,
+                                iconLabel: 'A'
                             })}
 
                             {/* Parent Approval */}

@@ -12,6 +12,7 @@ import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import { formatDate } from '../utils/formatters';
+import leaveService from '@/services/leave.service';
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams(); // 'home-pass', 'outpass', and optional 'hostelName'
@@ -105,8 +106,18 @@ export default function AdminLeaves() {
     const currentPagination = isDetailView ? passesPagination : { totalRecords: hostelData.length, totalPages: 1 };
 
     const handleUpdateStatus = async (id, newStatus) => {
-        // Implement status update via leaveService here if needed later
-        showSuccessToast('Status updated successfully');
+        if (!isAdmin) return;
+        try {
+            if (newStatus === 'Approved' || newStatus === 'approved') {
+                await leaveService.approvePass(id, { remarks: 'Approved by Admin' });
+            } else if (newStatus === 'Rejected' || newStatus === 'rejected') {
+                await leaveService.rejectPass(id, { remarks: 'Rejected by Admin' });
+            }
+            showSuccessToast('Status updated successfully');
+            if (refetchPasses) refetchPasses();
+        } catch (err) {
+            showErrorToast(err?.response?.data?.message || err.message || 'Failed to update status');
+        }
     };
 
     const getStudentName = (r) => r.studentId?.name || r.studentName || 'Unknown';
@@ -324,16 +335,25 @@ export default function AdminLeaves() {
 
                                 {/* Inline Status Dropdown */}
                                 <td className="p-4">
-                                    <Dropdown
-                                        options={statusOptions}
-                                        value={r.status}
-                                        onChange={(val) => handleUpdateStatus(r.id, val)}
-                                        minWidth="w-28"
-                                        triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
-                                            r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
-                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hover:bg-[#fef3c7]'
-                                            }`}
-                                    />
+                                    {isAdmin ? (
+                                        <Dropdown
+                                            options={statusOptions}
+                                            value={r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                            onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                            minWidth="w-28"
+                                            triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
+                                                r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
+                                                    'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hover:bg-[#fef3c7]'
+                                                }`}
+                                        />
+                                    ) : (
+                                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border inline-block ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                            r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                                            }`}>
+                                            {r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                        </span>
+                                    )}
                                 </td>
 
                                 {/* Inline Return Dropdown */}
@@ -434,20 +454,29 @@ export default function AdminLeaves() {
                                 <div>{isHomePass ? `Period: ${formatDate(r.fromDate)} - ${formatDate(r.toDate)} (${r.totalDays || r.duration})` : `Outing Time: ${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}`}</div>
                                 <div className="flex justify-between items-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                                     <span>Status:</span>
-                                    <Dropdown
-                                        options={[
-                                            { label: 'Pending', value: 'pending_warden' },
-                                            { label: 'Approved', value: 'approved' },
-                                            { label: 'Rejected', value: 'rejected' }
-                                        ]}
-                                        value={r.status}
-                                        onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
-                                        minWidth="w-24"
-                                        triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                    {isAdmin ? (
+                                        <Dropdown
+                                            options={[
+                                                { label: 'Pending', value: 'pending_admin' },
+                                                { label: 'Approved', value: 'approved' },
+                                                { label: 'Rejected', value: 'rejected' }
+                                            ]}
+                                            value={r.status}
+                                            onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                            minWidth="w-24"
+                                            triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                                r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                    'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                                                }`}
+                                        />
+                                    ) : (
+                                        <span className={`px-2 py-1 rounded border inline-block text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
                                             r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
                                                 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
-                                            }`}
-                                    />
+                                            }`}>
+                                            {r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>

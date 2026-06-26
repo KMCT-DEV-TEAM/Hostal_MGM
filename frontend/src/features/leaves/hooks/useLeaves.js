@@ -21,7 +21,7 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
 
     setLoading(true);
     setError(null);
-    
+
     const parsedFilters = JSON.parse(filterString);
     const params = Object.fromEntries(
       Object.entries(parsedFilters).filter(([, value]) => value !== '' && value !== null && value !== undefined)
@@ -33,15 +33,16 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
       .then(() => fetcher(role, params))
       .then((res) => {
         // Handle various response structures
+        console.log('res', res);
         const list = res?.data || res?.passes || res?.hostels || res || [];
         setData(Array.isArray(list) ? list : []);
         if (res?.pagination) {
-            setPagination(res.pagination);
+          setPagination(res.pagination);
         }
       })
       .catch((err) => {
-          console.error("Failed to fetch leaves:", err);
-          setError(err);
+        console.error("Failed to fetch leaves:", err);
+        setError(err);
       })
       .finally(() => setLoading(false));
   }, [role, filterString, isAggregate]);

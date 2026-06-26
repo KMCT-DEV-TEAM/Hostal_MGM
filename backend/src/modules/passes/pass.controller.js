@@ -482,7 +482,7 @@ export const getSuperAdminDashboardStats = asyncHandler(async (req, res) => {
 
 export const getSuperAdminOrganizationsHostels = asyncHandler(async (req, res) => {
   const orgHostels = await getManagementHostelsDb(buildSuperAdminScope(req));
-  return sendSuccess(res, 200, "Organizations and Hostels fetched successfully", orgHostels);
+  return sendSuccess(res, 200, "Organizations and Hostels fetched successfully", { data: orgHostels });
 });
 
 export const getSuperAdminPasses = asyncHandler(async (req, res) => {

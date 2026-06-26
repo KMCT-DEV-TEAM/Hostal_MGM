@@ -16,6 +16,8 @@ const leaveApi = {
   },
   getLeaveByIdAdmin: (id) => api.get(`/admin/passes/${id}`),
   updateLeaveStatusByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/status`, payload),
+  approveLeaveByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/approve`, payload),
+  rejectLeaveByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/reject`, payload),
 
   // Super Admin
   getSuperAdminHostels: (params) => api.get("/super-admin/passes/hostels", { params }),

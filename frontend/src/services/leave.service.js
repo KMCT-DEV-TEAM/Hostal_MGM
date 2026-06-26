@@ -64,6 +64,16 @@ export async function updateLeaveStatusByAdmin(id, payload) {
   return response.data;
 }
 
+export async function approveLeaveByAdmin(id, payload) {
+  const response = await leaveApi.approveLeaveByAdmin(id, payload);
+  return response.data;
+}
+
+export async function rejectLeaveByAdmin(id, payload) {
+  const response = await leaveApi.rejectLeaveByAdmin(id, payload);
+  return response.data;
+}
+
 /**
  * Parent Endpoints (Placeholders for future backend endpoints)
  */
@@ -135,6 +145,17 @@ export const updateLeaveStatus = createRoleResolver(
 
 export const getLeaveDetails = createRoleResolver(LEAVE_DETAILS_FETCHERS, 'leave details');
 
+const APPROVE_FETCHERS = {
+  [ROLES.ADMIN]: approveLeaveByAdmin,
+};
+
+const REJECT_FETCHERS = {
+  [ROLES.ADMIN]: rejectLeaveByAdmin,
+};
+
+export const approvePass = createRoleResolver(APPROVE_FETCHERS, 'approve pass');
+export const rejectPass = createRoleResolver(REJECT_FETCHERS, 'reject pass');
+
 const leaveService = {
   createLeave,
   getMyLeaves,
@@ -146,10 +167,14 @@ const leaveService = {
   getLeavesByParent,
   approveLeaveByParent,
   rejectLeaveByParent,
+  approveLeaveByAdmin,
+  rejectLeaveByAdmin,
   getLeaves,
   getLeaveHostels,
   updateLeaveStatus,
   getLeaveDetails,
+  approvePass,
+  rejectPass,
 };
 
 export default leaveService;
