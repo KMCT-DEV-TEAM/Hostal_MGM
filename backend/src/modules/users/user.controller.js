@@ -456,13 +456,20 @@ const getWardenById = asyncHandler(async (req, res) => {
 
 const updateWarden = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, phone } = req.body;
+    const { name, phone, hostelId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Warden ID");
     }
 
     const warden = await updateUserByRoleDb(id, "warden", { name, phone });
+
+    if (hostelId) {
+        // Remove warden from previous hostels
+        await Hostel.updateMany({ wardens: id }, { $pull: { wardens: id } });
+        // Add warden to new hostel
+        await Hostel.findByIdAndUpdate(hostelId, { $push: { wardens: id } });
+    }
 
     if (!warden) {
       return sendError(res, 404, "Warden not found");

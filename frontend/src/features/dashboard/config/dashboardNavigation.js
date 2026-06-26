@@ -374,6 +374,11 @@ export const DASHBOARD_NAV = {
                     badge: { count: 12, variant: 'danger' }
                 },
                 {
+                    icon: Wrench,
+                    label: 'Assigned Tasks',
+                    path: '/dashboard/tasks'
+                },
+                {
                     icon: Calendar,
                     label: 'Attendance',
                     path: '/dashboard/attendance'

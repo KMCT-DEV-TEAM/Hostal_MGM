@@ -151,21 +151,23 @@ export const updateComplaintStatusDb = async (complaintId, newStatus, userRole, 
     return await complaint.save();
 };
 
-// Assign maintenance staff to complaint
+// Assign staff to complaint
 export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) => {
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
 
     const staff = await User.findById(staffId);
-    if (!staff) throw new Error("Maintenance staff not found.");
+    if (!staff) throw new Error("Staff member not found.");
 
     complaint.assignedStaff = staffId;
     complaint.status = 'In progress';
     
+    const roleName = staff.role === 'warden' ? 'Warden' : 'maintenance user';
+
     // Add to timeline
     complaint.timeline.push({
         status: 'In progress',
-        message: `Admin assigned to this maintenance user ${staff.name}`,
+        message: `Admin assigned to this ${roleName} ${staff.name}`,
         by: userRole || 'Admin',
         date: new Date()
     });
@@ -173,7 +175,7 @@ export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) =
     return await complaint.save();
 };
 
-// Maintenance staff submits resolution
+// Maintenance staff or Warden submits resolution
 export const submitComplaintResolutionDb = async (complaintId, staffId, materialsUsed, resolutionNotes) => {
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
@@ -182,14 +184,19 @@ export const submitComplaintResolutionDb = async (complaintId, staffId, material
         throw new Error("You are not assigned to this complaint.");
     }
 
-    complaint.status = 'Awaiting';
+    const staff = await User.findById(staffId);
+    const isWarden = staff.role === 'warden';
+
+    complaint.status = isWarden ? 'Resolved' : 'Awaiting';
     complaint.materialsUsed = materialsUsed;
     complaint.resolutionNotes = resolutionNotes;
     
     complaint.timeline.push({
-        status: 'Awaiting',
-        message: 'Maintenance staff submitted resolution and is awaiting approval.',
-        by: 'Maintenance Staff',
+        status: isWarden ? 'Resolved' : 'Awaiting',
+        message: isWarden 
+            ? 'Warden submitted resolution and resolved the complaint directly.'
+            : 'Maintenance staff submitted resolution and is awaiting approval.',
+        by: isWarden ? 'Warden' : 'Maintenance Staff',
         date: new Date()
     });
 
@@ -238,7 +245,7 @@ export const rejectComplaintResolutionDb = async (complaintId, userRole, rejectN
     return await complaint.save();
 };
 
-// Maintenance staff rejects assigned task
+// Assigned staff rejects the task
 export const rejectAssignedTaskDb = async (complaintId, staffId, rejectNote) => {
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
@@ -247,13 +254,16 @@ export const rejectAssignedTaskDb = async (complaintId, staffId, rejectNote) => 
         throw new Error("You are not assigned to this complaint.");
     }
 
+    const staff = await User.findById(staffId);
+    const isWarden = staff.role === 'warden';
+
     complaint.status = 'Rejected';
     // Keeping assignedStaff so it shows up in their table
     
     complaint.timeline.push({
         status: 'Rejected',
-        message: `Assigned task rejected by maintenance staff. Note: ${rejectNote}`,
-        by: 'Maintenance Staff',
+        message: `Assigned task rejected by ${isWarden ? 'Warden' : 'maintenance staff'}. Note: ${rejectNote}`,
+        by: isWarden ? 'Warden' : 'Maintenance Staff',
         date: new Date()
     });
 
