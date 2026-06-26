@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil } from 'lucide-react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
 import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
@@ -443,8 +443,12 @@ export default function MaintenanceStaffManagement() {
         }
     };
 
+    const totalAssignedTasks = staff.reduce((acc, curr) => acc + (curr.taskAssignedCount || 0), 0);
+    const totalResolvedTasks = staff.reduce((acc, curr) => acc + (curr.taskResolvedCount || 0), 0);
+    const totalPendingTasks = staff.reduce((acc, curr) => acc + (curr.taskPendingCount || 0), 0);
+
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
             {/* HEADER ACTION SECTION */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
@@ -473,8 +477,51 @@ export default function MaintenanceStaffManagement() {
                 </div>
             </div>
 
+            {/* KPI CARDS SECTION */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Staff</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalStaff}</h3>
+                    </div>
+                    <div className="p-1.5 bg-purple-50 rounded text-purple-400">
+                        <Users className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned Tasks</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalAssignedTasks}</h3>
+                    </div>
+                    <div className="p-1.5 bg-blue-50 rounded text-blue-400">
+                        <ClipboardList className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved Tasks</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalResolvedTasks}</h3>
+                    </div>
+                    <div className="p-1.5 bg-green-50 rounded text-green-400">
+                        <CheckCircle className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending Tasks</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalPendingTasks}</h3>
+                    </div>
+                    <div className="p-1.5 bg-orange-50 rounded text-orange-400">
+                        <Clock className="w-4 h-4" />
+                    </div>
+                </div>
+            </div>
+
             {/* TOOLBAR SECTION */}
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
                     <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
                         <div className="relative w-full">
@@ -802,6 +849,25 @@ export default function MaintenanceStaffManagement() {
                                                 {selectedStaffDetail.isActive ? 'Active' : 'Inactive'}
                                             </span>
                                         </InfoRow>
+                                    </div>
+                                </div>
+                                {/* Task Statistics */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mt-6">
+                                    <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Task Statistics</h3>
+                                    <p className="text-[11px] text-text-secondary mb-4">Complaint tasks assigned to this staff</p>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex flex-col items-center justify-center">
+                                            <span className="text-2xl font-bold text-blue-600">{selectedStaffDetail.taskAssignedCount || 0}</span>
+                                            <span className="text-[11px] font-medium text-blue-600 uppercase mt-1">Assigned</span>
+                                        </div>
+                                        <div className="bg-green-50/50 p-4 rounded-xl border border-green-100 flex flex-col items-center justify-center">
+                                            <span className="text-2xl font-bold text-green-600">{selectedStaffDetail.taskResolvedCount || 0}</span>
+                                            <span className="text-[11px] font-medium text-green-600 uppercase mt-1">Resolved</span>
+                                        </div>
+                                        <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100 flex flex-col items-center justify-center">
+                                            <span className="text-2xl font-bold text-orange-600">{selectedStaffDetail.taskPendingCount || 0}</span>
+                                            <span className="text-[11px] font-medium text-orange-600 uppercase mt-1">Pending</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

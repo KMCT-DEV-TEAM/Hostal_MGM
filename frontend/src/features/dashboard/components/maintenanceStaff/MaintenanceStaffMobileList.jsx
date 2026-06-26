@@ -84,12 +84,22 @@ const MaintenanceStaffMobileList = ({
                                         </div>
                                         <span className="hidden sm:inline">-</span>
                                         <div className="flex items-center gap-1">
-                                            <span>Task: {staff.assignedTask || 'N/A'}</span>
-                                        </div>
-                                        <span className="hidden sm:inline">-</span>
-                                        <div className="flex items-center gap-1">
                                             <Phone className="w-3 h-3" />
                                             <span>{staff.phone || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-2 text-xs">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-gray-400">Assigned</span>
+                                            <span className="font-semibold text-text-secondary">{staff.taskAssignedCount || 0}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-gray-400">Resolved</span>
+                                            <span className="font-semibold text-text-secondary">{staff.taskResolvedCount || 0}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-gray-400">Pending</span>
+                                            <span className="font-semibold text-text-secondary">{staff.taskPendingCount || 0}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -7,8 +7,12 @@ import {
   toggleBatchStatus,
   bulkUpdateBatchStatus,
 } from "./batch.controller.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
+
+// Apply auth middleware to all batch routes
+router.use(authMiddleware);
 
 router.post("/", createBatch);
 router.get("/", getBatches);

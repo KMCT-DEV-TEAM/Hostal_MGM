@@ -221,7 +221,8 @@ export const dashboardRoutes = [
     {
         path: 'logs',
         roles: [
-            ROLES.SUPER_ADMIN
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
         ],
         element: Logs
     },

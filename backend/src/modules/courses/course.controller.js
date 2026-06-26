@@ -1,4 +1,5 @@
 import asyncHandler from "../../utils/asyncHandler.js";
+import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import {
   checkExistingCourseCodeDb,
@@ -24,6 +25,18 @@ const createCourse = asyncHandler(async (req, res) => {
   }
 
   const newCourse = await createCourseDb({ name, code, organizationId });
+
+  if (req.user) {
+      await createLogDb({
+          action: "Created Course",
+          entityType: "Course",
+          entityId: newCourse._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Created new course: ${name} (${code})`,
+          status: "success"
+      });
+  }
 
   return sendSuccess(res, 201, "Course created successfully", {
     data: newCourse,
@@ -118,6 +131,18 @@ const updateCourse = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Course not found");
   }
 
+  if (req.user) {
+      await createLogDb({
+          action: "Updated Course",
+          entityType: "Course",
+          entityId: course._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Updated details for course: ${name || course.name}`,
+          status: "success"
+      });
+  }
+
   return sendSuccess(res, 200, "Course updated successfully", { data: course });
 });
 
@@ -127,6 +152,18 @@ const toggleCourseStatus = asyncHandler(async (req, res) => {
 
   if (!course) {
     return sendError(res, 404, "Course not found");
+  }
+
+  if (req.user) {
+      await createLogDb({
+          action: "Updated Course Status",
+          entityType: "Course",
+          entityId: course._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Changed course status to ${course.isActive ? 'Active' : 'Inactive'} for course: ${course.name}`,
+          status: "success"
+      });
   }
 
   return sendSuccess(res, 200, "Course status toggled successfully", {
@@ -146,6 +183,18 @@ const bulkUpdateCourseStatus = asyncHandler(async (req, res) => {
   }
 
   await bulkUpdateCourseStatusDb(ids, isActive);
+
+  if (req.user) {
+      await createLogDb({
+          action: "Bulk Updated Course Status",
+          entityType: "Course",
+          entityId: null,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} courses`,
+          status: "success"
+      });
+  }
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

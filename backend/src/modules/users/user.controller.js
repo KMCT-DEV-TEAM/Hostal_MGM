@@ -20,6 +20,7 @@ import {
 import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
 import Hostel from "../hostels/hostel.model.js";
 import { createLogDb } from "../logs/log.service.js";
+import Complaint from "../complaints/complaint.model.js";
 
 // --- ADMIN CONTROLLERS ---
 
@@ -685,12 +686,20 @@ const getMaintenanceStaff = asyncHandler(async (req, res) => {
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("maintenance_staff", page, limit, status, search, additionalQuery);
 
+    const usersWithCounts = await Promise.all(users.map(async (user) => {
+        const userObj = user.toObject ? user.toObject() : user;
+        userObj.taskAssignedCount = await Complaint.countDocuments({ assignedStaff: user._id });
+        userObj.taskResolvedCount = await Complaint.countDocuments({ assignedStaff: user._id, status: 'Resolved' });
+        userObj.taskPendingCount = await Complaint.countDocuments({ assignedStaff: user._id, status: { $ne: 'Resolved' } });
+        return userObj;
+    }));
+
     return sendSuccess(res, 200, "Maintenance staff fetched successfully", { 
-      count: users.length, 
+      count: usersWithCounts.length, 
       totalCount,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
-      data: users 
+      data: usersWithCounts 
     });
 });
 
@@ -716,7 +725,12 @@ const getMaintenanceStaffById = asyncHandler(async (req, res) => {
       return sendError(res, 404, "Maintenance Staff not found");
     }
 
-    return sendSuccess(res, 200, "Maintenance Staff fetched successfully", { data: staff });
+    const staffObj = staff.toObject ? staff.toObject() : staff;
+    staffObj.taskAssignedCount = await Complaint.countDocuments({ assignedStaff: staff._id });
+    staffObj.taskResolvedCount = await Complaint.countDocuments({ assignedStaff: staff._id, status: 'Resolved' });
+    staffObj.taskPendingCount = await Complaint.countDocuments({ assignedStaff: staff._id, status: { $ne: 'Resolved' } });
+
+    return sendSuccess(res, 200, "Maintenance Staff fetched successfully", { data: staffObj });
 });
 
 const updateMaintenanceStaff = asyncHandler(async (req, res) => {

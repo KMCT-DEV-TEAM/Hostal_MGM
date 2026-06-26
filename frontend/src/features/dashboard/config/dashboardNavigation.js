@@ -314,6 +314,17 @@ export const DASHBOARD_NAV = {
                 }
             ]
         },
+
+        {
+            section: 'SUPPORT',
+            items: [
+                {
+                    icon: ClipboardList,
+                    label: 'Logs',
+                    path: '/dashboard/logs'
+                }
+            ]
+        }
     ],
 
 

@@ -1,4 +1,5 @@
 import asyncHandler from "../../utils/asyncHandler.js";
+import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import {
   checkExistingBatchCodeDb,
@@ -20,6 +21,18 @@ const createBatch = asyncHandler(async (req, res) => {
   }
 
   const newBatch = await createBatchDb({ name, code, departmentId });
+
+  if (req.user) {
+      await createLogDb({
+          action: "Created Batch",
+          entityType: "Batch",
+          entityId: newBatch._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Created new batch: ${name} (${code})`,
+          status: "success"
+      });
+  }
 
   return sendSuccess(res, 201, "Batch created successfully", {
     data: newBatch,
@@ -99,6 +112,18 @@ const updateBatch = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Batch not found");
   }
 
+  if (req.user) {
+      await createLogDb({
+          action: "Updated Batch",
+          entityType: "Batch",
+          entityId: batch._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Updated details for batch: ${name || batch.name}`,
+          status: "success"
+      });
+  }
+
   return sendSuccess(res, 200, "Batch updated successfully", { data: batch });
 });
 
@@ -108,6 +133,18 @@ const toggleBatchStatus = asyncHandler(async (req, res) => {
 
   if (!batch) {
     return sendError(res, 404, "Batch not found");
+  }
+
+  if (req.user) {
+      await createLogDb({
+          action: "Updated Batch Status",
+          entityType: "Batch",
+          entityId: batch._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Changed batch status to ${batch.isActive ? 'Active' : 'Inactive'} for batch: ${batch.name}`,
+          status: "success"
+      });
   }
 
   return sendSuccess(res, 200, "Batch status toggled successfully", {
@@ -127,6 +164,18 @@ const bulkUpdateBatchStatus = asyncHandler(async (req, res) => {
   }
 
   await bulkUpdateBatchStatusDb(ids, isActive);
+
+  if (req.user) {
+      await createLogDb({
+          action: "Bulk Updated Batch Status",
+          entityType: "Batch",
+          entityId: null,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} batches`,
+          status: "success"
+      });
+  }
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

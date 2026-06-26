@@ -19,10 +19,15 @@ export const createLogDb = async (logData) => {
 /**
  * Retrieves paginated activity logs with optional filtering
  */
-export const getPaginatedLogsDb = async (page = 1, limit = 10, search = "", status = "All", startDate, endDate) => {
+export const getPaginatedLogsDb = async (page = 1, limit = 10, search = "", status = "All", startDate, endDate, requesterRole = 'super_admin') => {
   const skip = (page - 1) * limit;
 
   let query = {};
+
+  // If the requester is an admin, hide logs made by super_admins
+  if (requesterRole === 'admin') {
+    query.userRole = { $ne: 'super_admin' };
+  }
 
   if (startDate || endDate) {
     query.createdAt = {};

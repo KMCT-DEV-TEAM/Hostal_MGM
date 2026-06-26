@@ -1,4 +1,5 @@
 import asyncHandler from "../../utils/asyncHandler.js";
+import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import {
   checkExistingDepartmentCodeDb,
@@ -20,6 +21,18 @@ const createDepartment = asyncHandler(async (req, res) => {
   }
 
   const newDepartment = await createDepartmentDb({ name, code, courseId });
+
+  if (req.user) {
+      await createLogDb({
+          action: "Created Department",
+          entityType: "Department",
+          entityId: newDepartment._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Created new department: ${name} (${code})`,
+          status: "success"
+      });
+  }
 
   return sendSuccess(res, 201, "Department created successfully", {
     data: newDepartment,
@@ -99,6 +112,18 @@ const updateDepartment = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Department not found");
   }
 
+  if (req.user) {
+      await createLogDb({
+          action: "Updated Department",
+          entityType: "Department",
+          entityId: Department._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Updated details for department: ${name || Department.name}`,
+          status: "success"
+      });
+  }
+
   return sendSuccess(res, 200, "Department updated successfully", { data: Department });
 });
 
@@ -108,6 +133,18 @@ const toggleDepartmentStatus = asyncHandler(async (req, res) => {
 
   if (!Department) {
     return sendError(res, 404, "Department not found");
+  }
+
+  if (req.user) {
+      await createLogDb({
+          action: "Updated Department Status",
+          entityType: "Department",
+          entityId: Department._id,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Changed department status to ${Department.isActive ? 'Active' : 'Inactive'} for department: ${Department.name}`,
+          status: "success"
+      });
   }
 
   return sendSuccess(res, 200, "Department status toggled successfully", {
@@ -127,6 +164,18 @@ const bulkUpdateDepartmentStatus = asyncHandler(async (req, res) => {
   }
 
   await bulkUpdateDepartmentStatusDb(ids, isActive);
+
+  if (req.user) {
+      await createLogDb({
+          action: "Bulk Updated Department Status",
+          entityType: "Department",
+          entityId: null,
+          user: req.user.id || req.user._id,
+          userRole: req.user.role || 'System',
+          details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} departments`,
+          status: "success"
+      });
+  }
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

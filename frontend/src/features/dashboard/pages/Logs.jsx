@@ -38,7 +38,7 @@ const Logs = () => {
                     
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Restricted Access</h2>
                     <p className="text-sm text-gray-500 text-center mb-8">
-                        System logs contain highly sensitive audit information. Please verify your identity by entering your Super Admin password.
+                        System logs contain highly sensitive audit information. Please verify your identity by entering your password.
                     </p>
 
                     <form onSubmit={handleUnlock} className="w-full flex flex-col gap-4">
