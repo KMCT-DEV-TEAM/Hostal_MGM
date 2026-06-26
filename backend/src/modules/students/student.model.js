@@ -114,6 +114,7 @@ const studentSchema = new mongoose.Schema(
 
 studentSchema.index({ organizationId: 1 });
 studentSchema.index({ hostelId: 1 });
+studentSchema.index({ hostelId: 1, isActive: 1, hostelStatus: 1 });
 studentSchema.index({ courseId: 1 });
 studentSchema.index({ departmentId: 1 });
 studentSchema.index({ batchId: 1 });
