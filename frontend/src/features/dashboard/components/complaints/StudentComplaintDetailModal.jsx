@@ -139,6 +139,31 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Activity Logs */}
+                    <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                        <div className="mb-4 border-b border-gray-100 pb-4">
+                            <h3 className="text-lg font-semibold text-primary">Activity Logs</h3>
+                            <p className="text-xs text-text-secondary">Recent updates about your complaint</p>
+                        </div>
+                        <div className="space-y-4">
+                            {complaint.timeline && complaint.timeline.length > 0 ? (
+                                [...complaint.timeline].reverse().map((update, idx) => (
+                                    <div key={idx} className="border border-gray-100 rounded-lg p-4 bg-white shadow-sm flex flex-col gap-3">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <span className="text-[13px] text-gray-700 leading-relaxed">{update.message}</span>
+                                            <span className="text-[11px] text-gray-400 whitespace-nowrap pt-0.5">
+                                                {new Date(update.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(update.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).toLowerCase()}
+                                            </span>
+                                        </div>
+                                        <span className="text-[12px] text-gray-400">by {update.by}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-[13px] text-text-secondary italic">No activity logs available.</div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
