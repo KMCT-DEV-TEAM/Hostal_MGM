@@ -392,7 +392,6 @@ export const getManagementDashboardStatsDb = async (scope) => {
     matchQuery = { hostelId: { $in: hostelIds.filter(Boolean) } };
   }
 
-  console.log("matchQuery", matchQuery, scope)
 
   const [orgCount, hostelCount, studentCount, passStats] = await Promise.all([
     scope.role === "super_admin" ? Organization.countDocuments({ isActive: true }) : Promise.resolve(0),
@@ -416,6 +415,11 @@ export const getManagementDashboardStatsDb = async (scope) => {
 };
 
 export const getManagementHostelsDb = async (scope, query = {}) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+
   const matchQuery = { isActive: true };
   if (scope.organizationId && scope.role === "admin") {
     const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
@@ -495,10 +499,33 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
       }
     },
     { $match: { total: { $gt: 0 } } },
-    { $sort: { hostel: 1 } }
+    { $sort: { hostel: 1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "totalRecords" }],
+        data: [
+          { $skip: skip },
+          { $limit: limit }
+        ]
+      }
+    }
   ];
 
-  return await Hostel.aggregate(pipeline);
+  const result = await Hostel.aggregate(pipeline);
+  const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  return {
+    hostels: result[0]?.data || [],
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
 };
 
 export const getManagementPassesDb = async (query, scope, specificHostelId = null) => {
@@ -575,6 +602,7 @@ export const getManagementPassesDb = async (query, scope, specificHostelId = nul
     toDate: 1,
     date: 1,
     outTime: 1,
+    totalDays: 1,
     expectedReturnTime: 1,
     createdAt: 1,
     returnTracking: { returnStatus: 1 },
@@ -600,11 +628,88 @@ export const getManagementPassesDb = async (query, scope, specificHostelId = nul
 };
 
 export const getManagementPassDetailsDb = async (passId) => {
-  return await Pass.findById(passId)
-    .populate("studentId", "name admissionNo course department roomNo")
-    .populate("parentId", "parentName phone relationship")
-    .populate("hostelId", "name")
-    .lean();
+  const pipeline = [
+    { $match: { _id: new mongoose.Types.ObjectId(passId) } },
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student"
+      }
+    },
+    { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "courses",
+        localField: "student.courseId",
+        foreignField: "_id",
+        as: "courseInfo"
+      }
+    },
+    { $unwind: { path: "$courseInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "departments",
+        localField: "student.departmentId",
+        foreignField: "_id",
+        as: "departmentInfo"
+      }
+    },
+    { $unwind: { path: "$departmentInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "parents",
+        localField: "parentId",
+        foreignField: "_id",
+        as: "parent"
+      }
+    },
+    { $unwind: { path: "$parent", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "hostelId",
+        foreignField: "_id",
+        as: "hostel"
+      }
+    },
+    { $unwind: { path: "$hostel", preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        studentId: {
+          _id: "$student._id",
+          name: "$student.name",
+          studentId: "$student.studentId",
+          course: "$courseInfo.name",
+          department: "$departmentInfo.name",
+          roomNo: "$student.roomNo"
+        },
+        parentId: {
+          _id: "$parent._id",
+          parentName: "$parent.parentName",
+          phone: "$parent.phone",
+          relationship: "$parent.relationship"
+        },
+        hostelId: {
+          _id: "$hostel._id",
+          name: "$hostel.name"
+        }
+      }
+    },
+    {
+      $project: {
+        student: 0,
+        courseInfo: 0,
+        departmentInfo: 0,
+        parent: 0,
+        hostel: 0
+      }
+    }
+  ];
+
+  const result = await Pass.aggregate(pipeline);
+  return result[0] || null;
 };
 
 export const managementCancelPassDb = async (passId, reason, scope) => {

@@ -261,9 +261,8 @@ export const getAdminDashboardStats = asyncHandler(async (req, res) => {
 });
 
 export const getAdminHostels = asyncHandler(async (req, res) => {
-  const hostels = await getManagementHostelsDb(buildAdminScope(req), req.query);
-  console.log(hostels)
-  return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels });
+  const { hostels, pagination } = await getManagementHostelsDb(buildAdminScope(req), req.query);
+  return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels, pagination });
 });
 
 export const getManagementAllPasses = asyncHandler(async (req, res) => {
@@ -491,9 +490,8 @@ export const getSuperAdminDashboardStats = asyncHandler(async (req, res) => {
 });
 
 export const getSuperAdminOrganizationsHostels = asyncHandler(async (req, res) => {
-  const orgHostels = await getManagementHostelsDb(buildSuperAdminScope(req), req.query);
-  console.log(orgHostels);
-  return sendSuccess(res, 200, "Organizations and Hostels loaded successfully.", { data: orgHostels });
+  const { hostels, pagination } = await getManagementHostelsDb(buildSuperAdminScope(req), req.query);
+  return sendSuccess(res, 200, "Organizations and Hostels loaded successfully.", { data: hostels, pagination });
 });
 
 
