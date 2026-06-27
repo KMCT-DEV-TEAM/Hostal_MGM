@@ -165,6 +165,7 @@ export default function AdminComplaints() {
                 {/* Table Section */}
                 <SuperAdminComplaintsTable
                     complaints={paginatedComplaints}
+                    loading={loading}
                     onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}
                     showWarden={true}
                 />

@@ -1,7 +1,9 @@
 import React from 'react';
+import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 export default function SuperAdminComplaintsTable({
     complaints,
+    loading,
     onRowClick,
     showWarden = false
 }) {
@@ -20,7 +22,9 @@ export default function SuperAdminComplaintsTable({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
-                    {complaints.length === 0 ? (
+                    {loading ? (
+                        <TableSkeletonLoader columns={showWarden ? 7 : 6} />
+                    ) : complaints.length === 0 ? (
                         <tr>
                             <td colSpan={showWarden ? "7" : "6"} className="p-8 text-center text-gray-400">No records found</td>
                         </tr>

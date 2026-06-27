@@ -77,7 +77,7 @@ const MaintenanceStaffLogin = () => {
                             </div>
                         )}
 
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button type="submit" isLoading={isSubmitting}>
                             {isSubmitting ? 'Signing in...' : 'Sign In'}
                         </Button>
                     </form>
