@@ -4,16 +4,39 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import ComplaintService from '@/services/complaint.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolved }) {
     const [materialsUsed, setMaterialsUsed] = useState('');
     const [resolutionNotes, setResolutionNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null); // 'submit' or 'discard'
 
     if (!isOpen) return null;
 
-    const handleSubmit = async (e) => {
+    const handleInitialSubmit = (e) => {
         e.preventDefault();
+        setConfirmAction('submit');
+    };
+
+    const handleInitialCancel = () => {
+        if (materialsUsed || resolutionNotes) {
+            setConfirmAction('discard');
+        } else {
+            onClose();
+        }
+    };
+
+    const handleConfirm = async () => {
+        if (confirmAction === 'discard') {
+            setConfirmAction(null);
+            setMaterialsUsed('');
+            setResolutionNotes('');
+            onClose();
+            return;
+        }
+
+        // if submit
         
         setIsSubmitting(true);
         try {
@@ -28,6 +51,7 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
             showErrorToast('Submission Failed', error.message || 'Could not submit resolution.');
         } finally {
             setIsSubmitting(false);
+            setConfirmAction(null);
         }
     };
 
@@ -39,7 +63,7 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
             subtitle="Submit resolution details for warden approval."
             maxWidth="max-w-md"
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleInitialSubmit} className="space-y-4">
                 <Input
                     label="Glossary / Materials Used"
                     placeholder="e.g., 1 pipe, 2 screws"
@@ -62,7 +86,7 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="outline" type="button" onClick={onClose} disabled={isSubmitting}>
+                    <Button variant="outline" type="button" onClick={handleInitialCancel} disabled={isSubmitting}>
                         Cancel
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>
@@ -70,6 +94,17 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
                     </Button>
                 </div>
             </form>
+
+            <ConfirmationModal
+                isOpen={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                onConfirm={handleConfirm}
+                title={confirmAction === 'submit' ? "Confirm Resolution" : "Discard Changes?"}
+                message={confirmAction === 'submit' ? "Are you sure you want to submit this resolution?" : "You have unsaved changes. Are you sure you want to discard them?"}
+                confirmText={confirmAction === 'submit' ? "Submit" : "Discard"}
+                confirmButtonClass={confirmAction === 'discard' ? "bg-red-600 text-white hover:bg-red-700" : "bg-[#0A437A] text-white hover:bg-[#083663]"}
+                isSubmitting={isSubmitting}
+            />
         </Modal>
     );
 }
