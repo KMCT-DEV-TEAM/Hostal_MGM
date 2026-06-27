@@ -8,8 +8,10 @@ import { hashPassword } from "../../utils/hash.js";
 import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
+import Hostel from "../hostels/hostel.model.js";
 import { generateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
+import { getIo } from "../../config/socket.js";
 
 const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -149,6 +151,11 @@ const me = asyncHandler(async (req, res) => {
         profileImage: user.profileImage || null,
       },
     });
+  }
+
+  if (userData.role === 'warden') {
+    const assignedHostels = await Hostel.find({ wardens: user._id }).select("name code");
+    userData.assignedHostels = assignedHostels;
   }
 
   return sendSuccess(res, 200, "Token is valid", { user: userData });
@@ -310,6 +317,8 @@ const updateProfile = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+  getIo()?.emit('profileUpdated', { id: user._id });
+
   return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
 });
 
@@ -390,6 +399,8 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
     details: `User successfully updated their email to ${newEmail}`,
     status: "success"
   });
+
+  getIo()?.emit('profileUpdated', { id: user._id });
 
   return sendSuccess(res, 200, "Email updated successfully", { user: userObj });
 });

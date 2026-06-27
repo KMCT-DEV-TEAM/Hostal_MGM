@@ -1,5 +1,6 @@
 import * as complaintService from "./complaint.service.js";
 import { createLogDb } from "../logs/log.service.js";
+import { getIo } from "../../config/socket.js";
 
 // @desc    Create a new complaint
 // @route   POST /api/complaints
@@ -7,6 +8,7 @@ import { createLogDb } from "../logs/log.service.js";
 export const createComplaint = async (req, res) => {
     try {
         const complaint = await complaintService.createComplaintDb(req.body, req.user);
+        getIo()?.emit('complaintCreated', complaint);
         res.status(201).json({
             success: true,
             data: complaint,
@@ -26,6 +28,7 @@ export const createComplaint = async (req, res) => {
 export const updateComplaint = async (req, res) => {
     try {
         const updatedComplaint = await complaintService.updateComplaintDb(req.params.id, req.user, req.body);
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -45,6 +48,7 @@ export const updateComplaint = async (req, res) => {
 export const deleteComplaint = async (req, res) => {
     try {
         await complaintService.deleteComplaintDb(req.params.id, req.user.id);
+        getIo()?.emit('complaintDeleted', { id: req.params.id });
         res.status(200).json({
             success: true,
             message: "Complaint withdrawn successfully."
@@ -143,6 +147,8 @@ export const updateComplaintStatus = async (req, res) => {
             status: "success"
         });
 
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
+
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -175,6 +181,8 @@ export const assignMaintenanceStaff = async (req, res) => {
             details: `Assigned maintenance staff (ID: ${staffId}) to complaint ID: ${req.params.id}`,
             status: "success"
         });
+
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
 
         res.status(200).json({
             success: true,
@@ -222,6 +230,7 @@ export const submitComplaintResolution = async (req, res) => {
         const staffId = req.user.id;
 
         const updatedComplaint = await complaintService.submitComplaintResolutionDb(req.params.id, staffId, materialsUsed, resolutionNotes);
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -253,6 +262,8 @@ export const approveComplaintResolution = async (req, res) => {
             details: `Approved resolution for complaint ID: ${req.params.id}`,
             status: "success"
         });
+
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
 
         res.status(200).json({
             success: true,
@@ -287,6 +298,8 @@ export const rejectComplaintResolution = async (req, res) => {
             status: "success"
         });
 
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
+
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -309,6 +322,7 @@ export const rejectAssignedTask = async (req, res) => {
         const staffId = req.user.id;
 
         const updatedComplaint = await complaintService.rejectAssignedTaskDb(req.params.id, staffId, rejectNote);
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
         res.status(200).json({
             success: true,
             data: updatedComplaint,
@@ -318,6 +332,49 @@ export const rejectAssignedTask = async (req, res) => {
         res.status(400).json({
             success: false,
             message: error.message || "Failed to reject task."
+        });
+    }
+};
+
+// @desc    Add an internal note to a complaint
+// @route   POST /api/complaints/:id/internal-notes
+// @access  Private (Admin/Warden/SuperAdmin)
+export const addInternalNote = async (req, res) => {
+    try {
+        const { note } = req.body;
+        if (!note || note.trim() === '') {
+            return res.status(400).json({ success: false, message: "Note text is required." });
+        }
+        
+        const userRole = req.user.role === 'super_admin' ? 'Super Admin' : req.user.role === 'org_admin' || req.user.role === 'admin' ? 'Admin' : req.user.role === 'warden' ? 'Warden' : 'System';
+        
+        const { default: User } = await import("../users/user.model.js");
+        const currentUser = await User.findById(req.user.id || req.user._id).select('name email');
+        const addedBy = currentUser?.name || currentUser?.email || 'Unknown';
+
+        const updatedComplaint = await complaintService.addInternalNoteDb(req.params.id, userRole, addedBy, note);
+        
+        await createLogDb({
+            action: `Added Internal Note`,
+            entityType: "System",
+            entityId: null,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Added internal note to complaint ID: ${req.params.id}`,
+            status: "success"
+        });
+
+        getIo()?.emit('complaintUpdated', { id: req.params.id });
+
+        res.status(200).json({
+            success: true,
+            data: updatedComplaint,
+            message: "Internal note added successfully."
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to add internal note."
         });
     }
 };

@@ -11,6 +11,7 @@ export default function WardenComplaintsFilterModal({
     initialDate,
     initialPriority,
     initialStatus,
+    categories = [],
     onClose,
     onApply
 }) {
@@ -73,15 +74,16 @@ export default function WardenComplaintsFilterModal({
     const statusOptions = [
         { label: 'All Status', value: 'All' },
         { label: 'Pending', value: 'Pending' },
-        { label: 'In Progress', value: 'In Progress' },
+        { label: 'Awaiting', value: 'Awaiting' },
+        { label: 'In progress', value: 'In progress' },
+        { label: 'Rejected', value: 'Rejected' },
+        { label: 'Incomplete', value: 'Incomplete' },
         { label: 'Resolved', value: 'Resolved' }
     ];
 
     const categoryOptions = [
         { label: 'All Categories', value: 'All' },
-        { label: 'Mess', value: 'Mess' },
-        { label: 'Maintenance', value: 'Maintenance' },
-        { label: 'Other', value: 'Other' }
+        ...categories.map(cat => ({ label: cat.name, value: cat.name }))
     ];
 
     return (
@@ -92,6 +94,8 @@ export default function WardenComplaintsFilterModal({
                 title="Filter Complaints"
                 subtitle="Filter specific complaints from the list"
                 maxWidth="max-w-md"
+                zIndex={60}
+                overflowClass="overflow-visible"
                 footer={
                     <>
                         <button

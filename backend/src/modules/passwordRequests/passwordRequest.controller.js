@@ -7,6 +7,7 @@ import {
   approvePasswordRequestDb,
   rejectPasswordRequestDb,
 } from "./passwordRequest.service.js";
+import { getIo } from "../../config/socket.js";
 
 export const verifyEmailForReset = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -37,6 +38,8 @@ export const submitPasswordRequest = asyncHandler(async (req, res) => {
 
   const result = await submitPasswordRequestDb(email, newPassword);
 
+  getIo()?.emit('passwordRequestCreated', result);
+
   return sendSuccess(res, 201, "Password reset request submitted successfully", result);
 });
 
@@ -48,11 +51,17 @@ export const getPasswordRequests = asyncHandler(async (req, res) => {
 export const approvePasswordRequest = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const result = await approvePasswordRequestDb(id);
+  
+  getIo()?.emit('passwordRequestUpdated', { id });
+
   return sendSuccess(res, 200, "Password request approved and password updated successfully", result);
 });
 
 export const rejectPasswordRequest = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const result = await rejectPasswordRequestDb(id);
+  
+  getIo()?.emit('passwordRequestUpdated', { id });
+
   return sendSuccess(res, 200, "Password request rejected successfully", result);
 });

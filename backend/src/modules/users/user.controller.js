@@ -21,6 +21,7 @@ import { getHostelByIdDb, updateHostelDb } from "../hostels/hostel.service.js";
 import Hostel from "../hostels/hostel.model.js";
 import { createLogDb } from "../logs/log.service.js";
 import Complaint from "../complaints/complaint.model.js";
+import { getIo } from "../../config/socket.js";
 
 // --- ADMIN CONTROLLERS ---
 
@@ -73,6 +74,8 @@ const createAdmin = asyncHandler(async (req, res) => {
             status: "success"
         });
     }
+
+    getIo()?.emit('userCreated', { role: 'admin', data: admin });
 
     return sendSuccess(res, 201, "Admin created successfully and email sent", admin);
 });
@@ -136,6 +139,8 @@ const updateAdmin = asyncHandler(async (req, res) => {
         });
     }
 
+    getIo()?.emit('userUpdated', { role: 'admin', id: admin._id });
+
     return sendSuccess(res, 200, "Admin updated successfully", {
       data: {
         _id: admin._id,
@@ -186,6 +191,8 @@ const updateUserEmail = asyncHandler(async (req, res) => {
     }
 
     const updatedUser = await updateUserDb(id, { email: newEmail });
+
+    getIo()?.emit('userUpdated', { role: updatedUser.role, id: updatedUser._id });
 
     return sendSuccess(res, 200, "User email updated successfully", {
       data: {
@@ -240,6 +247,8 @@ const updateAdminOrganization = asyncHandler(async (req, res) => {
         });
     }
 
+    getIo()?.emit('userUpdated', { role: 'admin', id: updatedAdmin._id });
+
     return sendSuccess(res, 200, "Admin organization updated successfully", {
       data: {
         _id: updatedAdmin._id,
@@ -283,6 +292,8 @@ const toggleAdminStatus = asyncHandler(async (req, res) => {
         });
     }
 
+    getIo()?.emit('userUpdated', { role: 'admin', id: admin._id });
+
     return sendSuccess(res, 200, message, {
       data: {
         _id: admin._id,
@@ -317,6 +328,8 @@ const bulkToggleAdminStatus = asyncHandler(async (req, res) => {
             status: "success"
         });
     }
+
+    getIo()?.emit('userUpdated', { role: 'admin', bulk: true });
 
     return sendSuccess(res, 200, "Bulk admin status updated successfully");
 });
@@ -373,6 +386,8 @@ const createWarden = asyncHandler(async (req, res) => {
             status: "success"
         });
     }
+
+    getIo()?.emit('userCreated', { role: 'warden', data: warden });
 
     return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
 });
@@ -487,6 +502,8 @@ const updateWarden = asyncHandler(async (req, res) => {
         });
     }
 
+    getIo()?.emit('userUpdated', { role: 'warden', id: warden._id });
+
     return sendSuccess(res, 200, "Warden updated successfully", {
       data: {
         _id: warden._id,
@@ -536,6 +553,8 @@ const updateWardenHostel = asyncHandler(async (req, res) => {
         });
     }
 
+    getIo()?.emit('userUpdated', { role: 'warden', id: warden._id });
+
     return sendSuccess(res, 200, "Warden hostel updated successfully", {
         data: warden
     });
@@ -569,6 +588,8 @@ const toggleWardenStatus = asyncHandler(async (req, res) => {
             status: "success"
         });
     }
+
+    getIo()?.emit('userUpdated', { role: 'warden', id: warden._id });
 
     return sendSuccess(res, 200, message, {
       data: {
@@ -604,6 +625,8 @@ const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
             status: "success"
         });
     }
+
+    getIo()?.emit('userUpdated', { role: 'warden', bulk: true });
 
     return sendSuccess(res, 200, "Bulk warden status updated successfully");
 });
@@ -654,6 +677,8 @@ const createMaintenanceStaff = asyncHandler(async (req, res) => {
         console.error("Failed to send temporary password email:", error);
     }
 
+    getIo()?.emit('userCreated', { role: 'maintenance_staff', data: maintenanceStaff });
+
     return sendSuccess(res, 201, "Maintenance Staff created successfully and email sent", { data: maintenanceStaff });
 });
 
@@ -679,16 +704,23 @@ const getMaintenanceStaff = asyncHandler(async (req, res) => {
     } else if (req.user.role === 'warden') {
       const { default: Hostel } = await import('../hostels/hostel.model.js');
       const hostel = await Hostel.findOne({ wardens: req.user.id });
-      if (!hostel || !hostel.organizationId) {
-        return sendError(res, 400, `Warden is not assigned to any hostel or organization`);
+      if (!hostel || !hostel.organizations || hostel.organizations.length === 0) {
+        // Return global maintenance staff if warden has no organization
+        additionalQuery = { 
+            $or: [
+                { organization: { $exists: false } },
+                { organization: null }
+            ]
+        };
+      } else {
+        additionalQuery = { 
+            $or: [
+                { organization: { $in: hostel.organizations } },
+                { organization: { $exists: false } },
+                { organization: null }
+            ]
+        };
       }
-      additionalQuery = { 
-          $or: [
-              { organization: hostel.organizationId },
-              { organization: { $exists: false } },
-              { organization: null }
-          ]
-      };
     }
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("maintenance_staff", page, limit, status, search, additionalQuery);
@@ -754,6 +786,8 @@ const updateMaintenanceStaff = asyncHandler(async (req, res) => {
       return sendError(res, 404, "Maintenance Staff not found");
     }
 
+    getIo()?.emit('userUpdated', { role: 'maintenance_staff', id: staff._id });
+
     return sendSuccess(res, 200, "Maintenance Staff updated successfully", {
       data: {
         _id: staff._id,
@@ -785,6 +819,8 @@ const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
       ? "Maintenance Staff activated successfully" 
       : "Maintenance Staff deactivated successfully";
 
+    getIo()?.emit('userUpdated', { role: 'maintenance_staff', id: staff._id });
+
     return sendSuccess(res, 200, message, {
       data: {
         _id: staff._id,
@@ -808,6 +844,8 @@ const bulkToggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
     }
 
     await bulkToggleUserStatusByRoleDb(ids, "maintenance_staff", isActive);
+
+    getIo()?.emit('userUpdated', { role: 'maintenance_staff', bulk: true });
 
     return sendSuccess(res, 200, "Bulk maintenance staff status updated successfully");
 });

@@ -8,7 +8,6 @@ export default function WardenComplaintsTable({
     categories = [],
     handleCategoryChange,
     handlePriorityChange,
-    handleStatusChange,
     onViewClick,
     isViewOnly = false
 }) {
@@ -91,26 +90,16 @@ export default function WardenComplaintsTable({
                                     </div>
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    {isViewOnly ? (
-                                        <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600' : complaint.status === 'Resolved' ? 'bg-green-50 text-success' : 'bg-blue-50 text-blue-600'}`}>
-                                            {complaint.status || 'Pending'}
-                                        </div>
-                                    ) : (
-                                        <div className="relative w-full max-w-[120px]">
-                                            <Dropdown
-                                                minWidth=""
-                                                options={[
-                                                    { value: "Pending", label: "Pending" },
-                                                    { value: "In progress", label: "In progress" },
-                                                    { value: "Resolved", label: "Resolved" }
-                                                ]}
-                                                value={complaint.status || 'Pending'}
-                                                onChange={(val) => handleStatusChange && handleStatusChange(complaint.id, val)}
-                                                triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border-none flex justify-between items-center w-full ${complaint.status === 'Pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : complaint.status === 'Resolved' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
-                                            />
-                                        </div>
-                                    )}
-
+                                    <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${
+                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success' :
+                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning' :
+                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' :
+                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' :
+                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger' :
+                                        'bg-blue-50 text-blue-600'
+                                    }`}>
+                                        {complaint.status || 'Pending'}
+                                    </div>
                                 </td>
                             </tr>
                         ))

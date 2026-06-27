@@ -37,6 +37,8 @@ export default function Parents() {
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -98,18 +100,20 @@ export default function Parents() {
         const id = getParentId(parent);
 
         setStatusLoadingIds((prev) => [...new Set([...prev, id])]);
-        setActiveModal(null);
-        setPendingStatusChange(null);
+        setIsConfirming(true);
 
         try {
             const response = await toggleParentStatus(role, id);
             applyStatusChange(id, response);
             showSuccessToast('Status updated successfully');
+            setActiveModal(null);
+            setPendingStatusChange(null);
         } catch (err) {
             console.error("Failed to toggle parent status", err);
             showErrorToast('Error updating status', err.response?.data?.message || err.message);
         } finally {
             setStatusLoadingIds((prev) => prev.filter((loadingId) => loadingId !== id));
+            setIsConfirming(false);
         }
     };
 
@@ -133,6 +137,7 @@ export default function Parents() {
     };
 
     const executeSave = async (payload) => {
+        setIsSubmitting(true);
         try {
             if (editingParent) {
                 await updateParent(getParentId(editingParent), payload || pendingPayload);
@@ -149,6 +154,8 @@ export default function Parents() {
         } catch (err) {
             console.error("Failed to save parent", err);
             showErrorToast('Error saving parent', err.response?.data?.message || err.message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -165,8 +172,7 @@ export default function Parents() {
         if (!idsToToggle.length) return;
 
         setStatusLoadingIds((prev) => [...new Set([...prev, ...idsToToggle])]);
-        setActiveModal(null);
-        setPendingStatusChange(null);
+        setIsConfirming(true);
 
         try {
             await bulkUpdateParentStatus(role, { ids: idsToToggle, isActive: targetActive });
@@ -177,11 +183,14 @@ export default function Parents() {
             )));
             setSelectedIds([]);
             showSuccessToast(`Successfully ${targetActive ? 'activated' : 'deactivated'} ${idsToToggle.length} parent(s)`);
+            setActiveModal(null);
+            setPendingStatusChange(null);
         } catch (err) {
             console.error("Failed to update bulk status", err);
             showErrorToast('Bulk Status Error', err.response?.data?.message || err.message);
         } finally {
             setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
+            setIsConfirming(false);
         }
     };
 
@@ -378,9 +387,10 @@ export default function Parents() {
             <ConfirmationModal
                 isOpen={activeModal === 'confirm-status'}
                 onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
-                onConfirm={pendingStatusChange?.confirmAction || confirmStatusChange}
+                onConfirm={pendingStatusChange?.confirmAction || (() => confirmStatusChange(pendingStatusChange?.parent))}
                 title={pendingStatusChange?.title || "Confirm Status Change"}
                 message={pendingStatusChange?.message || `Are you sure you want to change the status of ${pendingStatusChange?.parent?.parentName || 'this parent'} to ${pendingStatusChange?.newStatus}?`}
+                isSubmitting={isConfirming}
             />
 
             <ConfirmationModal
@@ -390,6 +400,7 @@ export default function Parents() {
                 title="Confirm Edit"
                 message="Are you sure you want to save these changes?"
                 confirmText="Save Changes"
+                isSubmitting={isSubmitting}
             />
 
             <ConfirmationModal

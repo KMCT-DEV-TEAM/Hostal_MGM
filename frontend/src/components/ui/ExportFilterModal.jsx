@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import Dropdown from '@/components/ui/Dropdown';
 import DateInput from '@/components/ui/DateInput';
+import PasswordConfirmModal from '@/components/ui/PasswordConfirmModal';
+import authService from '@/services/auth.service';
+import { showErrorToast } from '@/utils/toast';
 
 export default function ExportFilterModal({ 
     isOpen, 
@@ -23,6 +26,8 @@ export default function ExportFilterModal({
     ]
 }) {
     const [filters, setFilters] = useState({});
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -38,16 +43,31 @@ export default function ExportFilterModal({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onExport(filters);
+        setIsPasswordModalOpen(true);
+    };
+
+    const handlePasswordConfirm = async (password) => {
+        setIsVerifyingPassword(true);
+        try {
+            await authService.verifyPassword({ password });
+            setIsVerifyingPassword(false);
+            setIsPasswordModalOpen(false);
+            onExport(filters);
+        } catch (error) {
+            showErrorToast('Export Failed', 'Incorrect password');
+            setIsVerifyingPassword(false);
+        }
     };
 
     return (
+        <>
         <Modal
             isOpen={isOpen}
             onClose={onClose}
             title={title}
             subtitle={subtitle}
             maxWidth="max-w-md"
+            overflowClass="overflow-visible"
             asForm
             onSubmit={handleSubmit}
             footer={
@@ -95,5 +115,16 @@ export default function ExportFilterModal({
                 ))}
             </div>
         </Modal>
+        
+        <PasswordConfirmModal
+            isOpen={isPasswordModalOpen}
+            onClose={() => setIsPasswordModalOpen(false)}
+            onConfirm={handlePasswordConfirm}
+            title="Verify Password to Export"
+            message="Please enter your password to securely export the data."
+            confirmText={isVerifyingPassword ? "Verifying..." : "Verify & Export"}
+            isVerifying={isVerifyingPassword}
+        />
+        </>
     );
 }
