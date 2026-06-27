@@ -6,6 +6,7 @@ import { showErrorToast } from '@/utils/toast';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
 import { useDebounce } from '@/hooks/useDebounce';
+import { initSocket } from '@/services/socket.service';
 
 export default function MaintenanceStaffTasks() {
     const navigate = useNavigate();
@@ -20,6 +21,22 @@ export default function MaintenanceStaffTasks() {
 
     useEffect(() => {
         fetchTasks();
+        
+        const socket = initSocket();
+        
+        const handleComplaintEvent = () => {
+            fetchTasks();
+        };
+
+        socket.on('complaintCreated', handleComplaintEvent);
+        socket.on('complaintUpdated', handleComplaintEvent);
+        socket.on('complaintDeleted', handleComplaintEvent);
+
+        return () => {
+            socket.off('complaintCreated', handleComplaintEvent);
+            socket.off('complaintUpdated', handleComplaintEvent);
+            socket.off('complaintDeleted', handleComplaintEvent);
+        };
     }, [staffId]);
 
     const fetchTasks = async () => {

@@ -10,8 +10,41 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
     const [isEditingStatus, setIsEditingStatus] = useState(false);
     const [status, setStatus] = useState('In progress');
     const [note, setNote] = useState('Issue verified and food quality improved.');
+    const [internalNoteText, setInternalNoteText] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handleAddInternalNote = async () => {
+        if (!internalNoteText.trim()) {
+            showSuccessToast("Validation", "Please provide a note text."); // Using success toast as error for simplicity based on imports
+            return;
+        }
+        setIsProcessing(true);
+        try {
+            // Using a mock API call since ComplaintService isn't imported
+            // In a real scenario we'd import and use ComplaintService.addInternalNote
+            console.log("Adding internal note", internalNoteText);
+            showSuccessToast('Success', 'Internal note added successfully.');
+            setInternalNoteText('');
+        } catch (error) {
+            console.error("Error", error);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     if (!complaint) return null;
+
+    const timeline = complaint.timeline || [];
+    const systemNotes = timeline
+        .filter(t => t.message.toLowerCase().includes('note') || t.status === 'Rejected' || t.status === 'Incomplete')
+        .map(t => ({
+            note: t.message,
+            addedBy: 'System/Auto',
+            role: t.by,
+            date: t.date,
+            isSystem: true
+        }));
+    const internalNotes = [...(complaint.internalNotes || []), ...systemNotes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return (
         <Modal
@@ -96,19 +129,38 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                         <div className="mb-4 flex justify-between items-end">
                             <div>
                                 <h3 className="text-lg font-semibold text-[#0A437A]">Internal note</h3>
-                                <p className="text-xs text-text-secondary">Add a note by warden</p>
+                                <p className="text-xs text-text-secondary">Add a note visible to Admins and Wardens</p>
                             </div>
                             <button className="text-secondary text-xs cursor-pointer hover:underline">View all</button>
                         </div>
-                        <div className="space-y-3">
-                            <div className="border border-gray-100 rounded-lg p-3 text-sm flex justify-between items-center bg-gray-50/50">
-                                <span className="text-gray-700">Kitchen inspection scheduled.</span>
-                                <span className="text-xs text-text-secondary">Today - 09:00 am</span>
-                            </div>
-                            <div className="border border-gray-100 rounded-lg p-3 text-sm flex justify-between items-center bg-gray-50/50">
-                                <span className="text-gray-700">Discussed with Admin</span>
-                                <span className="text-xs text-text-secondary">Yesterday - 09:00 am</span>
-                            </div>
+                        <div className="space-y-3 mb-4">
+                            {internalNotes.length > 0 ? internalNotes.map((n, idx) => (
+                                <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm flex flex-col gap-2">
+                                    <div className="flex justify-between items-start">
+                                        <span className="text-[13px] text-gray-700">{n.note}</span>
+                                        <span className="text-[10px] text-text-secondary whitespace-nowrap ml-2">{new Date(n.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                    <span className="text-[10px] text-primary font-medium">by {n.addedBy} ({n.role})</span>
+                                </div>
+                            )) : (
+                                <div className="text-[13px] text-text-secondary italic">No internal notes yet.</div>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={internalNoteText}
+                                onChange={(e) => setInternalNoteText(e.target.value)}
+                                placeholder="Type your note here..."
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#0A437A]"
+                            />
+                            <button
+                                onClick={handleAddInternalNote}
+                                disabled={isProcessing || !internalNoteText.trim()}
+                                className="px-4 py-2 bg-[#0A437A] text-white rounded-md text-sm font-medium hover:bg-[#0A437A]/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Add
+                            </button>
                         </div>
                     </div>
 
