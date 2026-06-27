@@ -1,6 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
+import { getIo } from "../../config/socket.js";
 import {
   checkExistingDepartmentCodeDb,
   createDepartmentDb,
@@ -33,6 +34,8 @@ const createDepartment = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('departmentCreated', newDepartment);
 
   return sendSuccess(res, 201, "Department created successfully", {
     data: newDepartment,
@@ -124,6 +127,8 @@ const updateDepartment = asyncHandler(async (req, res) => {
       });
   }
 
+  getIo()?.emit('departmentUpdated', { id: Department._id });
+
   return sendSuccess(res, 200, "Department updated successfully", { data: Department });
 });
 
@@ -146,6 +151,8 @@ const toggleDepartmentStatus = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('departmentUpdated', { id: Department._id });
 
   return sendSuccess(res, 200, "Department status toggled successfully", {
     data: Department,
@@ -176,6 +183,8 @@ const bulkUpdateDepartmentStatus = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('departmentUpdated', { bulk: true });
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

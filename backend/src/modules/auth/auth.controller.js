@@ -11,6 +11,7 @@ import Parent from "../parents/parent.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import { generateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
+import { getIo } from "../../config/socket.js";
 
 const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -299,6 +300,8 @@ const updateProfile = asyncHandler(async (req, res) => {
       status: "success"
   });
 
+  getIo()?.emit('profileUpdated', { id: user._id });
+
   return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
 });
 
@@ -379,6 +382,8 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
       details: `User successfully updated their email to ${newEmail}`,
       status: "success"
   });
+
+  getIo()?.emit('profileUpdated', { id: user._id });
 
   return sendSuccess(res, 200, "Email updated successfully", { user: userObj });
 });

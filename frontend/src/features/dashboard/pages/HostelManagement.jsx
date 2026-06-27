@@ -26,6 +26,7 @@ import hostelService from '../../../services/hostel.service';
 import InfoRow from '@/components/ui/InfoRow';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { initSocket } from '@/services/socket.service';
 import * as XLSX from 'xlsx';
 
 import HostelHeader from '../components/Hostel/HostelHeader';
@@ -128,6 +129,24 @@ export default function HostelManagement() {
     React.useEffect(() => {
         fetchHostels();
     }, [currentPage, statusFilter, debouncedSearch]);
+
+    React.useEffect(() => {
+        const socket = initSocket();
+        
+        const handleHostelEvent = () => {
+            fetchHostels();
+        };
+
+        socket.on('hostelCreated', handleHostelEvent);
+        socket.on('hostelUpdated', handleHostelEvent);
+        socket.on('hostelDeleted', handleHostelEvent);
+
+        return () => {
+            socket.off('hostelCreated', handleHostelEvent);
+            socket.off('hostelUpdated', handleHostelEvent);
+            socket.off('hostelDeleted', handleHostelEvent);
+        };
+    }, []);
 
     // ==========================================
     // SELECTION & ACTION HANDLERS

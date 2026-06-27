@@ -8,6 +8,7 @@ import EmailVerificationModal from '@/components/ui/EmailVerificationModal';
 import PasswordConfirmModal from '@/components/ui/PasswordConfirmModal';
 import ProfileSkeleton from '@/components/ui/ProfileSkeleton';
 import { useTranslation } from '@/hooks/useTranslation';
+import { initSocket } from '@/services/socket.service';
 
 export default function Profile() {
     const { t } = useTranslation();
@@ -39,6 +40,18 @@ export default function Profile() {
             }
         };
         fetchProfile();
+        
+        const socket = initSocket();
+        
+        const handleProfileEvent = () => {
+            fetchProfile();
+        };
+
+        socket.on('profileUpdated', handleProfileEvent);
+
+        return () => {
+            socket.off('profileUpdated', handleProfileEvent);
+        };
     }, [updateUser]);
 
     const handleEditClick = (field, currentValue) => {

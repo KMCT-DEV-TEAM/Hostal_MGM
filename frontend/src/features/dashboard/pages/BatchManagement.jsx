@@ -15,6 +15,8 @@ import DepartmentService from '../../../services/department.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import BatchTable from '../components/batch/BatchTable';
 import BatchMobileList from '../components/batch/BatchMobileList';
 import BatchDetailView from '../components/batch/BatchDetailView';
@@ -95,6 +97,24 @@ const BatchManagement = () => {
     useEffect(() => {
         fetchBatches();
     }, [page, debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleBatchEvent = () => {
+            fetchBatches();
+        };
+
+        socket.on('batchCreated', handleBatchEvent);
+        socket.on('batchUpdated', handleBatchEvent);
+        socket.on('batchDeleted', handleBatchEvent);
+
+        return () => {
+            socket.off('batchCreated', handleBatchEvent);
+            socket.off('batchUpdated', handleBatchEvent);
+            socket.off('batchDeleted', handleBatchEvent);
+        };
+    }, []);
 
     useEffect(() => {
         const fetchDepartments = async () => {

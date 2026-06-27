@@ -1,6 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
+import { getIo } from "../../config/socket.js";
 import {
   checkExistingBatchCodeDb,
   createBatchDb,
@@ -33,6 +34,8 @@ const createBatch = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('batchCreated', newBatch);
 
   return sendSuccess(res, 201, "Batch created successfully", {
     data: newBatch,
@@ -124,6 +127,8 @@ const updateBatch = asyncHandler(async (req, res) => {
       });
   }
 
+  getIo()?.emit('batchUpdated', { id: batch._id });
+
   return sendSuccess(res, 200, "Batch updated successfully", { data: batch });
 });
 
@@ -146,6 +151,8 @@ const toggleBatchStatus = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('batchUpdated', { id: batch._id });
 
   return sendSuccess(res, 200, "Batch status toggled successfully", {
     data: batch,
@@ -176,6 +183,8 @@ const bulkUpdateBatchStatus = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('batchUpdated', { bulk: true });
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

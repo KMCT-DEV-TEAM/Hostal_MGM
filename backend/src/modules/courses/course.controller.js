@@ -1,6 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
+import { getIo } from "../../config/socket.js";
 import {
   checkExistingCourseCodeDb,
   createCourseDb,
@@ -37,6 +38,8 @@ const createCourse = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('courseCreated', newCourse);
 
   return sendSuccess(res, 201, "Course created successfully", {
     data: newCourse,
@@ -143,6 +146,8 @@ const updateCourse = asyncHandler(async (req, res) => {
       });
   }
 
+  getIo()?.emit('courseUpdated', { id: course._id });
+
   return sendSuccess(res, 200, "Course updated successfully", { data: course });
 });
 
@@ -165,6 +170,8 @@ const toggleCourseStatus = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('courseUpdated', { id: course._id });
 
   return sendSuccess(res, 200, "Course status toggled successfully", {
     data: course,
@@ -195,6 +202,8 @@ const bulkUpdateCourseStatus = asyncHandler(async (req, res) => {
           status: "success"
       });
   }
+
+  getIo()?.emit('courseUpdated', { bulk: true });
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

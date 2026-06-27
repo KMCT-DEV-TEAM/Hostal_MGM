@@ -10,6 +10,7 @@ import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import maintenanceStaffService from '../../../services/maintenanceStaff.service';
 import organizationService from '../../../services/organization.service';
 import otpService from '../../../services/otp.service';
+import { initSocket } from '@/services/socket.service';
 import InfoRow from '@/components/ui/InfoRow';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -116,6 +117,26 @@ export default function MaintenanceStaffManagement() {
             fetchOrganizations();
         }
     }, [currentPage, debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleStaffEvent = (data) => {
+            if (data?.role === 'maintenance_staff' || data?.bulk) {
+                fetchStaff();
+            }
+        };
+
+        socket.on('userCreated', handleStaffEvent);
+        socket.on('userUpdated', handleStaffEvent);
+        socket.on('userDeleted', handleStaffEvent);
+
+        return () => {
+            socket.off('userCreated', handleStaffEvent);
+            socket.off('userUpdated', handleStaffEvent);
+            socket.off('userDeleted', handleStaffEvent);
+        };
+    }, [currentPage]);
 
     const fetchOrganizations = async () => {
         try {

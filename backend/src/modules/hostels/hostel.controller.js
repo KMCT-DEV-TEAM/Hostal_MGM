@@ -12,6 +12,7 @@ import {
   bulkUpdateHostelStatusDb
 } from "./hostel.service.js";
 import { createLogDb } from "../logs/log.service.js";
+import { getIo } from "../../config/socket.js";
 
 const createHostel = asyncHandler(async (req, res) => {
   const { code, email, organization } = req.body;
@@ -48,6 +49,8 @@ const createHostel = asyncHandler(async (req, res) => {
       status: "success"
     });
   }
+
+  getIo()?.emit('hostelCreated', newHostel);
 
   return sendSuccess(res, 201, "Hostel created successfully", {
     data: newHostel,
@@ -137,6 +140,8 @@ const updateHostel = asyncHandler(async (req, res) => {
     });
   }
 
+  getIo()?.emit('hostelUpdated', { id: updatedHostel._id });
+
   return sendSuccess(res, 200, "Hostel updated successfully", {
     data: updatedHostel,
   });
@@ -163,6 +168,8 @@ const toggleHostelStatus = asyncHandler(async (req, res) => {
       status: "success"
     });
   }
+
+  getIo()?.emit('hostelUpdated', { id: hostel._id });
 
   return sendSuccess(res, 200, `Hostel status updated to ${hostel.isActive ? 'Active' : 'Inactive'}`, {
     data: hostel,
@@ -196,6 +203,8 @@ const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
       status: "success"
     });
   }
+
+  getIo()?.emit('hostelUpdated', { bulk: true });
 
   return sendSuccess(res, 200, `Successfully updated ${ids.length} hostels to ${isActive ? 'Active' : 'Inactive'} status`, { result });
 });
