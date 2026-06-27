@@ -679,16 +679,23 @@ const getMaintenanceStaff = asyncHandler(async (req, res) => {
     } else if (req.user.role === 'warden') {
       const { default: Hostel } = await import('../hostels/hostel.model.js');
       const hostel = await Hostel.findOne({ wardens: req.user.id });
-      if (!hostel || !hostel.organizationId) {
-        return sendError(res, 400, `Warden is not assigned to any hostel or organization`);
+      if (!hostel || !hostel.organizations || hostel.organizations.length === 0) {
+        // Return global maintenance staff if warden has no organization
+        additionalQuery = { 
+            $or: [
+                { organization: { $exists: false } },
+                { organization: null }
+            ]
+        };
+      } else {
+        additionalQuery = { 
+            $or: [
+                { organization: { $in: hostel.organizations } },
+                { organization: { $exists: false } },
+                { organization: null }
+            ]
+        };
       }
-      additionalQuery = { 
-          $or: [
-              { organization: hostel.organizationId },
-              { organization: { $exists: false } },
-              { organization: null }
-          ]
-      };
     }
     
     const { users, totalCount } = await getPaginatedUsersByRoleDb("maintenance_staff", page, limit, status, search, additionalQuery);
