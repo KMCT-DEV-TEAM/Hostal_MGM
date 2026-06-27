@@ -13,6 +13,9 @@ import {
   buildDashboardStatsFacet,
   parseDashboardStatsFacet
 } from "./pass.aggregation.js";
+import hostelModel from "../hostels/hostel.model.js";
+
+// --- Helpers ---
 
 // Date filter helper is moved to aggregation.js but kept here for backward compatibility for non-management services
 const applyDateRangeFilter = (filter, field, startDate, endDate) => {
@@ -423,8 +426,9 @@ export const getManagementHostelsDb = async (scope, query) => {
     matchQuery.name = { $regex: query.search, $options: "i" };
   }
 
-  if (query.passType) {
-    matchQuery.passType = query.passType;
+  const passMatch = { $expr: { $eq: ["$hostelId", "$$hostelId"] } };
+  if (query.passType && query.passType !== "all") {
+    passMatch.passType = query.passType;
   }
 
   const pipeline = [
@@ -445,7 +449,7 @@ export const getManagementHostelsDb = async (scope, query) => {
         from: "passes",
         let: { hostelId: "$_id" },
         pipeline: [
-          { $match: { $expr: { $eq: ["$hostelId", "$$hostelId"] } } },
+          { $match: passMatch },
           {
             $group: {
               _id: null,
@@ -483,7 +487,7 @@ export const getManagementHostelsDb = async (scope, query) => {
     {
       $addFields: {
         students: { $ifNull: ["$students", 0] },
-        total: { $ifNull: ["$leaves", 0] },
+        total: { $ifNull: ["$total", 0] },
         pending: { $ifNull: ["$pending", 0] },
         approved: { $ifNull: ["$approved", 0] },
         rejected: { $ifNull: ["$rejected", 0] },
@@ -509,7 +513,7 @@ export const getManagementPassesDb = async (query, scope, specificHostelId = nul
     filter.hostelId = new mongoose.Types.ObjectId(specificHostelId);
   } else if (scope.role === "admin" && scope.organizationId) {
 
-    const hostels = await Hostel.find({ organizations: scope.organizationId }).select("_id").lean();
+    const hostels = await hostelModel.find({ organizations: scope.organizationId }).select("_id").lean();
     filter.hostelId = { $in: hostels.map(h => h._id) };
   } else if (query.hostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
