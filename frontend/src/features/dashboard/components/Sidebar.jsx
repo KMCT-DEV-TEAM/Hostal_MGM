@@ -98,7 +98,6 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose, sub
                             <NavLink
                                 key={subItem.path}
                                 to={subItem.path}
-                                end
                                 onClick={onClose}
                                 className={({ isActive }) =>
                                     "flex items-center pl-5 pr-3 py-2 text-sm transition-all w-full border-l-2 " +

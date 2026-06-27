@@ -44,8 +44,28 @@ export async function getAdminHostels(params) {
   return response.data;
 }
 
+export async function getLeaveByIdAdmin(id) {
+  const response = await leaveApi.getLeaveByIdAdmin(id);
+  return response.data;
+}
+
+export async function getLeaveByIdSuperAdmin(id) {
+  const response = await leaveApi.getLeaveByIdSuperAdmin(id);
+  return response.data;
+}
+
 export async function getLeavesBySuperAdmin(params) {
   const response = await leaveApi.getLeavesBySuperAdmin(params);
+  return response.data;
+}
+
+export async function cancelLeaveAdmin(id, payload) {
+  const response = await leaveApi.cancelLeaveByAdmin(id, payload);
+  return response.data;
+}
+
+export async function cancelLeaveSuperAdmin(id, payload) {
+  const response = await leaveApi.cancelLeaveBySuperAdmin(id, payload);
   return response.data;
 }
 
@@ -56,6 +76,16 @@ export async function getSuperAdminHostels(params) {
 
 export async function getLeavesByWarden(params) {
   const response = await leaveApi.getLeavesByWarden(params);
+  return response.data;
+}
+
+export async function markStudentLeft(id) {
+  const response = await leaveApi.markStudentLeft(id);
+  return response.data;
+}
+
+export async function markStudentReturned(id) {
+  const response = await leaveApi.markStudentReturned(id);
   return response.data;
 }
 
@@ -97,10 +127,6 @@ export async function getLeaveByIdParent(id) {
   return response.data;
 }
 
-export async function getLeaveByIdAdmin(id) {
-  const response = await leaveApi.getLeaveByIdAdmin(id);
-  return response.data;
-}
 
 export async function getLeaveByIdWarden(id) {
   const response = await leaveApi.getLeaveByIdWarden(id);
@@ -131,7 +157,7 @@ const LEAVE_DETAILS_FETCHERS = {
   [ROLES.PARENT]: getLeaveByIdParent,
   [ROLES.WARDEN]: getLeaveByIdWarden,
   [ROLES.ADMIN]: getLeaveByIdAdmin,
-  [ROLES.SUPER_ADMIN]: getLeaveByIdAdmin,
+  [ROLES.SUPER_ADMIN]: getLeaveByIdSuperAdmin,
 };
 
 export const getLeaves = createRoleResolver(LEAVE_FETCHERS, 'leave');
@@ -169,6 +195,8 @@ const leaveService = {
   rejectLeaveByParent,
   approveLeaveByAdmin,
   rejectLeaveByAdmin,
+  markStudentLeft,
+  markStudentReturned,
   getLeaves,
   getLeaveHostels,
   updateLeaveStatus,

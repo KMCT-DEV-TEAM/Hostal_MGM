@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { formatDate, formatDateTime } from '../../utils/formatters';
 import leaveService from '@/services/leave.service';
+import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 
@@ -34,31 +35,36 @@ const getStatusLabel = (status) => {
     }
 };
 
-export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
+export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }) {
     const [request, setRequest] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const role = useAuthStore(s => s.user?.role);
+    const storeRole = useAuthStore(s => s.user?.role);
+    const role = userRole || storeRole;
 
     useEffect(() => {
-        if (isOpen && leaveId) {
+        const fetchLeaveDetails = async () => {
+            if (!isOpen || !leaveId) {
+                setRequest(null);
+                return;
+            }
+
             setIsLoading(true);
             setError(null);
-            leaveService.getLeaveDetails(role, leaveId)
-                .then(res => {
-                    setRequest(res.data || res);
-                })
-                .catch(err => {
-                    console.error("Failed to fetch leave details:", err);
-                    setError("Failed to load details.");
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        } else {
-            setRequest(null);
-        }
-    }, [isOpen, leaveId]);
+
+            try {
+                const res = await leaveService.getLeaveDetails(role, leaveId);
+                setRequest(res.data || res);
+            } catch (err) {
+                console.error("Failed to fetch leave details:", err);
+                setError("Failed to load details.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchLeaveDetails();
+    }, [isOpen, leaveId, role]);
 
     if (!isOpen) return null;
 
@@ -187,6 +193,22 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
         }
     };
 
+    const handleCancel = async () => {
+        const remarks = window.prompt("Enter cancellation remarks (required):");
+        if (!remarks) return;
+        try {
+            if (role === 'super_admin') {
+                await leaveService.cancelLeaveSuperAdmin(request._id, { remarks });
+            } else if (role === 'admin') {
+                await leaveService.cancelLeaveAdmin(request._id, { remarks });
+            }
+            onClose();
+        } catch (err) {
+            console.error(err);
+            alert(err?.response?.data?.message || "Failed to cancel request");
+        }
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -194,26 +216,6 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
             title={title}
             subtitle="Details about the leave request"
             maxWidth="max-w-5xl"
-            footer={
-                role === 'admin' && request.status === 'pending_admin' ? (
-                    <div className="flex justify-end gap-3 w-full">
-                        <button
-                            type="button"
-                            onClick={handleReject}
-                            className="px-5 py-2 bg-red-50 text-red-600 rounded-md text-xs font-medium hover:bg-red-100 transition-colors"
-                        >
-                            Reject Request
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleApprove}
-                            className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
-                        >
-                            Approve Request
-                        </button>
-                    </div>
-                ) : null
-            }
         >
             <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
 
@@ -229,7 +231,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
                             <div className="text-gray-500">Status</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
+                                <LeaveStatusBadge status={request.status} />
                             </div>
 
                             {isHomePass ? (
@@ -259,7 +261,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId }) {
                             <div className="text-gray-500">Parent approval</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
+                                <LeaveStatusBadge status={isParentApproved ? 'Approved' : 'Pending'} />
                             </div>
                         </div>
                     </div>

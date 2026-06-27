@@ -1,0 +1,210 @@
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Filter, Download } from 'lucide-react';
+import DataTable from '@/components/ui/DataTable';
+import Dropdown from '@/components/ui/Dropdown';
+import { formatDate } from '../../utils/formatters';
+import LeaveStatusBadge from '../badges/LeaveStatusBadge';
+
+export default function LeavesDetailView({
+    passesData,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    isHomePass,
+    isWarden,
+    isAdmin,
+    passType,
+    selectedHostel,
+    onRowClick,
+    handleUpdateStatus,
+    handleUpdateReturn,
+    onExport,
+    page,
+    setPage,
+    pagination
+}) {
+    const navigate = useNavigate();
+
+    const getStudentName = (r) => r.studentInfo?.name || r.studentName || 'Unknown';
+    const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    const getReturnStatus = (r) => {
+        if (r.returnTracking?.returnedAt) return 'Returned';
+        if (r.returnTracking?.leftHostelAt) return 'Left';
+        return '-----';
+    };
+
+    const statusOptions = [
+        { label: 'Pending', value: 'Pending' },
+        { label: 'Approved', value: 'Approved' },
+        { label: 'Rejected', value: 'Rejected' }
+    ];
+
+    const getReturnOptions = (status) => {
+        if (status === 'Returned') return [{ label: 'Returned', value: 'Returned' }];
+        if (status === 'Left') return [{ label: 'Left', value: 'Left' }, { label: 'Mark Returned', value: 'Returned' }];
+        return [{ label: '-----', value: '-----' }, { label: 'Mark Left', value: 'Left' }];
+    };
+
+    const tableHeaders = useMemo(() => {
+        if (selectedHostel) {
+            const midCol = "Room No";
+            const dateCol = isHomePass ? "Leave Period" : "Date";
+            const typeCol = isHomePass ? "Days" : "Type";
+            if (isHomePass) {
+                return ["Student", midCol, dateCol, typeCol, { label: "Status", align: "start" }, { label: "Return", align: "start" }];
+            } else {
+                return ["Student", midCol, dateCol, typeCol, "In", "Out", { label: "Status", align: "start" }, { label: "Return", align: "start" }];
+            }
+        }
+
+        const midCol = isWarden ? "Room No" : "Hostel";
+        const dateCol = isHomePass ? "Leave Period" : "Date";
+        const typeCol = isHomePass ? "Days" : "Type";
+
+        if (isHomePass) {
+            return ["Student", midCol, dateCol, typeCol, { label: "Status", align: "start" }, { label: "Return", align: "start" }];
+        } else {
+            return ["Student", midCol, dateCol, typeCol, "Out", "Return", { label: "Status", align: "start" }, { label: "Return", align: "start" }];
+        }
+    }, [isHomePass, isWarden, selectedHostel]);
+
+    return (
+        <DataTable
+            searchQuery={searchQuery}
+            onSearchChange={(e) => setSearchQuery(e.target.value)}
+            searchPlaceholder="Search"
+            loading={loading}
+            onRowClick={onRowClick}
+            toolbarActions={
+                <>
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(prev => prev ? '' : 'Pending')}
+                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${statusFilter ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                        title="Toggle Pending status filter"
+                    >
+                        <Filter className="w-4 h-4" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onExport}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export
+                    </button>
+                </>
+            }
+            headers={tableHeaders}
+            items={passesData}
+            canSelect={false}
+            emptyText="No leave records matching the active filters."
+            renderRow={(r) => {
+                const studentName = getStudentName(r);
+                return (
+                    <>
+                        {/* Student initials and full name */}
+                        <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
+                            <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                                {getStudentInitials(studentName)}
+                            </div>
+                            <span className="text-sm font-semibold">{studentName}</span>
+                        </td>
+
+                        {/* Room No (if drilldown/warden) or Hostel name (if admin) */}
+                        <td className="p-4 text-text-secondary font-medium">
+                            {selectedHostel || isWarden ? (r.studentInfo?.roomNo || r.roomNo || '--') : (
+                                <span
+                                    className="text-primary font-semibold hover:underline cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelId?._id || r.hostel)}`);
+                                    }}
+                                >
+                                    {r.hostelId?.name || r.hostel}
+                                </span>
+                            )}
+                        </td>
+
+                        {/* Period / Date */}
+                        <td className="p-4 text-text-secondary lowercase">
+                            {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
+                        </td>
+
+                        {/* Days / Type */}
+                        <td className="p-4 text-text-secondary capitalize">
+                            {isHomePass ? r.duration : r.type || r.outPassCategory}
+                        </td>
+
+                        {/* Times (Out pass only) */}
+                        {!isHomePass && (
+                            <>
+                                <td className="p-4 text-text-secondary">
+                                    {r.outTime || '--'}
+                                </td>
+                                <td className="p-4 text-text-secondary">
+                                    {r.expectedReturnTime || r.returnTime || '--'}
+                                </td>
+                            </>
+                        )}
+
+                        {/* Inline Status Dropdown */}
+                        <td className="p-4">
+                            {isAdmin && r.status.includes('pending') ? (
+                                <Dropdown
+                                    options={statusOptions}
+                                    value="Pending"
+                                    onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                    minWidth="w-28"
+                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20`}
+                                />
+                            ) : (
+                                <LeaveStatusBadge status={r.status} />
+                            )}
+                        </td>
+
+                        {/* Inline Return Dropdown */}
+                        <td className="p-4">
+                            {isWarden ? (
+                                <Dropdown
+                                    options={getReturnOptions(getReturnStatus(r))}
+                                    value={getReturnStatus(r)}
+                                    onChange={(val) => handleUpdateReturn(r._id || r.id, val)}
+                                    minWidth="w-32"
+                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50`}
+                                />
+                            ) : (
+                                <LeaveStatusBadge status={getReturnStatus(r)} />
+                            )}
+                        </td>
+                    </>
+                );
+            }}
+            renderMobileItem={(r) => {
+                const studentName = getStudentName(r);
+                return (
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm font-bold text-[#0A437A]">
+                                {studentName}
+                            </span>
+                            <LeaveStatusBadge status={r.status} />
+                        </div>
+                        <div className="text-xs text-text-secondary">
+                            {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
+                        </div>
+                    </div>
+                );
+            }}
+            page={page}
+            setPage={setPage}
+            limit={10}
+            totalItems={pagination?.totalRecords || 0}
+            totalPages={pagination?.totalPages || 1}
+        />
+    );
+}
