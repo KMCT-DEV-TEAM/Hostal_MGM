@@ -6,7 +6,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import Dropdown from '@/components/ui/Dropdown';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
-import { showSuccessToast } from '@/utils/toast';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -47,7 +47,7 @@ export default function AdminLeaves() {
     }, [passType, hostelName]);
 
     // Data Fetching
-    const isDetailView = !!selectedHostel || !isSuperAdmin;
+    const isDetailView = !!selectedHostel || isWarden;
 
     const { data: passesData, pagination: passesPagination, loading: passesLoading, refetch: refetchPasses } = useLeaves(
         {
@@ -120,15 +120,24 @@ export default function AdminLeaves() {
         }
     };
 
-    const getStudentName = (r) => r.studentId?.name || r.studentName || 'Unknown';
+    const getStudentName = (r) => r.studentInfo?.name || r.studentName || 'Unknown';
     const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
     // Update Return status
-    const handleUpdateReturn = (id, newReturn) => {
-        setStudentRequests(prev =>
-            prev.map(r => r.id === id ? { ...r, returnStatus: newReturn } : r)
-        );
-        showSuccessToast('Return status updated successfully');
+    const handleUpdateReturn = async (id, newReturn) => {
+        if (!isWarden) return;
+        try {
+            if (newReturn === 'Left') {
+                await leaveService.markStudentLeft(id);
+                showSuccessToast('Student marked as left');
+            } else if (newReturn === 'Returned') {
+                await leaveService.markStudentReturned(id);
+                showSuccessToast('Student marked as returned');
+            }
+            if (refetchPasses) refetchPasses();
+        } catch (err) {
+            showErrorToast(err?.response?.data?.message || err.message || 'Failed to update return status');
+        }
     };
 
     // Badges render helpers
@@ -150,14 +159,20 @@ export default function AdminLeaves() {
                 </span>
             );
         }
-        if (returnStatus === 'Not Returned') {
+        if (returnStatus === 'Left' || returnStatus === 'Not Returned') {
             return (
                 <span className="px-3.5 py-1.5 bg-[#FEF2F2] text-[#991B1B] border border-[#FEE2E2] rounded-lg text-xs font-bold inline-flex items-center gap-1.5">
-                    <X className="w-3.5 h-3.5 stroke-[2.5]" /> Not Returned
+                    <X className="w-3.5 h-3.5 stroke-[2.5]" /> Left Hostel
                 </span>
             );
         }
         return <span className="text-gray-400 font-semibold">-----</span>;
+    };
+
+    const getReturnStatus = (r) => {
+        if (r.returnTracking?.returnedAt) return 'Returned';
+        if (r.returnTracking?.leftHostelAt) return 'Left';
+        return '-----';
     };
 
     // Dropdown options inside list tables
@@ -167,11 +182,11 @@ export default function AdminLeaves() {
         { label: 'Rejected', value: 'Rejected' }
     ];
 
-    const returnOptions = [
-        { label: '-----', value: '-----' },
-        { label: 'Returned', value: 'Returned' },
-        { label: 'Not Returned', value: 'Not Returned' }
-    ];
+    const getReturnOptions = (status) => {
+        if (status === 'Returned') return [{ label: 'Returned', value: 'Returned' }];
+        if (status === 'Left') return [{ label: 'Left', value: 'Left' }, { label: 'Mark Returned', value: 'Returned' }];
+        return [{ label: '-----', value: '-----' }, { label: 'Mark Left', value: 'Left' }];
+    };
 
     // Table Headers Configuration based on Role, Subroute, and Drilldown State
     const tableHeaders = useMemo(() => {
@@ -285,7 +300,9 @@ export default function AdminLeaves() {
                 emptyText="No leave records matching the active filters."
                 renderRow={(r) => {
                     // Display student rows if detailed view is active or user is not a Super Admin
-                    if (selectedHostel || !isSuperAdmin) {
+                    if (isDetailView) {
+                        const studentName = getStudentName(r);
+                        console.log('this is student name: ', r)
                         return (
                             <>
                                 {/* Student initials and full name */}
@@ -358,16 +375,25 @@ export default function AdminLeaves() {
 
                                 {/* Inline Return Dropdown */}
                                 <td className="p-4">
-                                    <Dropdown
-                                        options={returnOptions}
-                                        value={r.returnStatus || '-----'}
-                                        onChange={(val) => handleUpdateReturn(r.id, val)}
-                                        minWidth="w-32"
-                                        triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.returnStatus === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
-                                            r.returnStatus === 'Not Returned' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
-                                                'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
-                                            }`}
-                                    />
+                                    {isWarden ? (
+                                        <Dropdown
+                                            options={getReturnOptions(getReturnStatus(r))}
+                                            value={getReturnStatus(r)}
+                                            onChange={(val) => handleUpdateReturn(r._id || r.id, val)}
+                                            minWidth="w-32"
+                                            triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${getReturnStatus(r) === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
+                                                getReturnStatus(r) === 'Left' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
+                                                    'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
+                                                }`}
+                                        />
+                                    ) : (
+                                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border inline-block ${getReturnStatus(r) === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                            getReturnStatus(r) === 'Left' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                'bg-white border-gray-200 text-gray-400'
+                                            }`}>
+                                            {getReturnStatus(r) === 'Left' ? 'Left Hostel' : getReturnStatus(r)}
+                                        </span>
+                                    )}
                                 </td>
                             </>
                         );
@@ -383,7 +409,7 @@ export default function AdminLeaves() {
                                 className="p-4 text-text-secondary hover:text-primary cursor-pointer"
                                 onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
                             >
-                                {r.hostel}
+                                {r.name}
                             </td>
                             <td className="p-4 text-text-secondary text-center sm:text-left">
                                 {r.totalRequest}
@@ -452,31 +478,57 @@ export default function AdminLeaves() {
                             <hr className="border-gray-50" />
                             <div className="text-xs text-text-secondary space-y-1.5">
                                 <div>{isHomePass ? `Period: ${formatDate(r.fromDate)} - ${formatDate(r.toDate)} (${r.totalDays || r.duration})` : `Outing Time: ${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}`}</div>
-                                <div className="flex justify-between items-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-                                    <span>Status:</span>
-                                    {isAdmin ? (
-                                        <Dropdown
-                                            options={[
-                                                { label: 'Pending', value: 'pending_admin' },
-                                                { label: 'Approved', value: 'approved' },
-                                                { label: 'Rejected', value: 'rejected' }
-                                            ]}
-                                            value={r.status}
-                                            onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
-                                            minWidth="w-24"
-                                            triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                
+                                <div className="flex flex-col gap-2 pt-2 border-t border-gray-50 mt-2" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex justify-between items-center">
+                                        <span>Status:</span>
+                                        {isAdmin ? (
+                                            <Dropdown
+                                                options={[
+                                                    { label: 'Pending', value: 'pending_admin' },
+                                                    { label: 'Approved', value: 'approved' },
+                                                    { label: 'Rejected', value: 'rejected' }
+                                                ]}
+                                                value={r.status}
+                                                onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                                minWidth="w-24"
+                                                triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                                    r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                        'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                                                    }`}
+                                            />
+                                        ) : (
+                                            <span className={`px-2 py-1 rounded border inline-block text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
                                                 r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
                                                     'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
-                                                }`}
-                                        />
-                                    ) : (
-                                        <span className={`px-2 py-1 rounded border inline-block text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
-                                            r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
-                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
-                                            }`}>
-                                            {r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
-                                        </span>
-                                    )}
+                                                }`}>
+                                                {r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span>Return:</span>
+                                        {isWarden ? (
+                                            <Dropdown
+                                                options={getReturnOptions(getReturnStatus(r))}
+                                                value={getReturnStatus(r)}
+                                                onChange={(val) => handleUpdateReturn(r._id || r.id, val)}
+                                                minWidth="w-24"
+                                                triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${getReturnStatus(r) === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                                    getReturnStatus(r) === 'Left' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                        'bg-white border-gray-200 text-gray-400'
+                                                    }`}
+                                            />
+                                        ) : (
+                                            <span className={`px-2 py-1 rounded border inline-block text-[10px] font-bold ${getReturnStatus(r) === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                                getReturnStatus(r) === 'Left' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                    'bg-white border-gray-200 text-gray-400'
+                                                }`}>
+                                                {getReturnStatus(r) === 'Left' ? 'Left Hostel' : getReturnStatus(r)}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -34,6 +34,8 @@ const leaveApi = {
   // Warden
   getLeavesByWarden: (params) => api.get("/warden/passes", { params }),
   getLeaveByIdWarden: (id) => api.get(`/warden/passes/${id}`),
+  markStudentLeft: (id) => api.patch(`/warden/passes/${id}/mark-left`),
+  markStudentReturned: (id) => api.patch(`/warden/passes/${id}/mark-returned`),
 };
 
 export default leaveApi;

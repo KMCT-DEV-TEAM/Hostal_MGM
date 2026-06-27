@@ -59,6 +59,16 @@ export async function getLeavesByWarden(params) {
   return response.data;
 }
 
+export async function markStudentLeft(id) {
+  const response = await leaveApi.markStudentLeft(id);
+  return response.data;
+}
+
+export async function markStudentReturned(id) {
+  const response = await leaveApi.markStudentReturned(id);
+  return response.data;
+}
+
 export async function updateLeaveStatusByAdmin(id, payload) {
   const response = await leaveApi.updateLeaveStatusByAdmin(id, payload);
   return response.data;
@@ -169,6 +179,8 @@ const leaveService = {
   rejectLeaveByParent,
   approveLeaveByAdmin,
   rejectLeaveByAdmin,
+  markStudentLeft,
+  markStudentReturned,
   getLeaves,
   getLeaveHostels,
   updateLeaveStatus,

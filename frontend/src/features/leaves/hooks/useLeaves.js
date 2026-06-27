@@ -33,8 +33,8 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
       .then(() => fetcher(role, params))
       .then((res) => {
         // Handle various response structures
-        console.log('res', res);
         const list = res?.data || res?.passes || res?.hostels || res || [];
+        console.log('res', list);
         setData(Array.isArray(list) ? list : []);
         if (res?.pagination) {
           setPagination(res.pagination);
