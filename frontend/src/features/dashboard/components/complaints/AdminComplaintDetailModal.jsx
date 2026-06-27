@@ -273,10 +273,21 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                             <p className="text-xs text-text-secondary">Recent activities about the complaint</p>
                         </div>
                         <div className="space-y-4">
-                            <div className="border border-gray-100 rounded-lg p-3 relative">
-                                <div className="absolute right-3 top-3 text-[10px] text-text-secondary">Today - 09:00 am</div>
-                                <p className="text-xs text-text-secondary pr-20 pt-2">Issue verified and food quality improved.</p>
-                            </div>
+                            {complaint.timeline && complaint.timeline.length > 0 ? (
+                                [...complaint.timeline].reverse().map((update, idx) => (
+                                    <div key={idx} className="border border-gray-100 rounded-lg p-4 bg-white shadow-sm flex flex-col gap-3">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <span className="text-[13px] text-gray-700 leading-relaxed">{update.message}</span>
+                                            <span className="text-[11px] text-gray-400 whitespace-nowrap pt-0.5">
+                                                {new Date(update.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(update.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).toLowerCase()}
+                                            </span>
+                                        </div>
+                                        <span className="text-[12px] text-gray-400">by {update.by}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-[13px] text-text-secondary italic">No recent activities available.</div>
+                            )}
                         </div>
                     </div>
 
