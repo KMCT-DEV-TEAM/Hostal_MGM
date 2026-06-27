@@ -14,8 +14,6 @@ import {
   parseDashboardStatsFacet
 } from "./pass.aggregation.js";
 
-// --- Helpers ---
-
 // Date filter helper is moved to aggregation.js but kept here for backward compatibility for non-management services
 const applyDateRangeFilter = (filter, field, startDate, endDate) => {
   buildDateRangeFilter(filter, field, startDate, endDate);
@@ -414,7 +412,7 @@ export const getManagementDashboardStatsDb = async (scope) => {
   return response;
 };
 
-export const getManagementHostelsDb = async (scope, query = {}) => {
+export const getManagementHostelsDb = async (scope, query) => {
   const matchQuery = { isActive: true };
   if (scope.organizationId && scope.role === "admin") {
     const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
@@ -425,9 +423,8 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
     matchQuery.name = { $regex: query.search, $options: "i" };
   }
 
-  const passMatch = { $expr: { $eq: ["$hostelId", "$$hostelId"] } };
   if (query.passType) {
-    passMatch.passType = query.passType;
+    matchQuery.passType = query.passType;
   }
 
   const pipeline = [
@@ -448,7 +445,7 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
         from: "passes",
         let: { hostelId: "$_id" },
         pipeline: [
-          { $match: passMatch },
+          { $match: { $expr: { $eq: ["$hostelId", "$$hostelId"] } } },
           {
             $group: {
               _id: null,
@@ -476,7 +473,7 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
         _id: 1,
         hostel: "$name",
         students: { $arrayElemAt: ["$studentsInfo.studentCount", 0] },
-        leaves: { $arrayElemAt: ["$passStats.totalCount", 0] },
+        total: { $arrayElemAt: ["$passStats.totalCount", 0] },
         pending: { $arrayElemAt: ["$passStats.pendingCount", 0] },
         approved: { $arrayElemAt: ["$passStats.approvedCount", 0] },
         rejected: { $arrayElemAt: ["$passStats.rejectedCount", 0] },
@@ -486,7 +483,7 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
     {
       $addFields: {
         students: { $ifNull: ["$students", 0] },
-        leaves: { $ifNull: ["$leaves", 0] },
+        total: { $ifNull: ["$leaves", 0] },
         pending: { $ifNull: ["$pending", 0] },
         approved: { $ifNull: ["$approved", 0] },
         rejected: { $ifNull: ["$rejected", 0] },
@@ -507,17 +504,17 @@ export const getManagementPassesDb = async (query, scope, specificHostelId = nul
 
   const filter = { ...buildStatusFilter(query) };
   if (query.passType) filter.passType = query.passType;
-  
+
   if (specificHostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(specificHostelId);
   } else if (scope.role === "admin" && scope.organizationId) {
-    const Hostel = (await import("../hostels/hostel.model.js")).default;
+
     const hostels = await Hostel.find({ organizations: scope.organizationId }).select("_id").lean();
     filter.hostelId = { $in: hostels.map(h => h._id) };
   } else if (query.hostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }
-  
+
   buildDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
 
   const pipeline = [
