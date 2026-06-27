@@ -8,8 +8,11 @@ import Dropdown from '@/components/ui/Dropdown';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import { showSuccessToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
-import { STUDENT_LISTING_MOCK_DATA } from '../utils/mockData';
-import { MOCK_SUPER_ADMIN_AGGREGATES } from '../utils/mockData';
+import { useLeaves } from '../hooks/useLeaves';
+import { useDebounce } from '@/hooks/useDebounce';
+import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
+import { formatDate } from '../utils/formatters';
+import leaveService from '@/services/leave.service';
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams(); // 'home-pass', 'outpass', and optional 'hostelName'
@@ -21,9 +24,8 @@ export default function AdminLeaves() {
     const isWarden = role === ROLES.WARDEN;
     const isAdmin = role === ROLES.ADMIN;
 
-    // Data states
-    const [studentRequests, setStudentRequests] = useState(STUDENT_LISTING_MOCK_DATA);
-    const [aggregateData, setAggregateData] = useState(MOCK_SUPER_ADMIN_AGGREGATES);
+    // View Modal State
+    const [viewId, setViewId] = useState(null);
 
     // Detail view state derived from route
     const selectedHostel = hostelName ? decodeURIComponent(hostelName) : null;
@@ -32,7 +34,9 @@ export default function AdminLeaves() {
     const [orgFilter, setOrgFilter] = useState('All');
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
-    const limit = 8;
+    const limit = 10;
+
+    const debouncedSearch = useDebounce(searchQuery, 500);
 
     // Reset pagination, search filters on subroute or hostel changes
     useEffect(() => {
@@ -41,6 +45,31 @@ export default function AdminLeaves() {
         setStatusFilter('');
         setPage(1);
     }, [passType, hostelName]);
+
+    // Data Fetching
+    const isDetailView = !!selectedHostel || !isSuperAdmin;
+
+    const { data: passesData, pagination: passesPagination, loading: passesLoading, refetch: refetchPasses } = useLeaves(
+        {
+            passType: isHomePass ? 'home_pass' : 'out_pass',
+            hostelId: selectedHostel,
+            status: statusFilter ? statusFilter.toLowerCase() : '',
+            search: debouncedSearch,
+            page,
+            limit
+        },
+        false,
+        { enabled: isDetailView }
+    );
+
+    const { data: hostelData, loading: hostelsLoading, refetch: refetchHostels } = useLeaves(
+        {
+            search: debouncedSearch,
+            organization: orgFilter !== 'All' ? orgFilter : ''
+        },
+        true,
+        { enabled: !isDetailView }
+    );
 
     // Role-based Subtitle Configuration
     const pageSubtitle = useMemo(() => {
@@ -72,63 +101,27 @@ export default function AdminLeaves() {
         return { total, approved, pending, rejected };
     }, [isSuperAdmin]);
 
-    // Filtered lists
-    const filteredList = useMemo(() => {
-        if (selectedHostel) {
-            // Detailed student request list filtered for a specific hostel
-            const typeFilter = isHomePass ? 'Home Pass' : 'Out Pass';
-            return studentRequests.filter(item => {
-                if (item.passType !== typeFilter) return false;
-                if (item.hostel.toLowerCase() !== selectedHostel.toLowerCase()) return false;
-                if (statusFilter && item.status !== statusFilter) return false;
-                if (searchQuery) {
-                    const q = searchQuery.toLowerCase();
-                    return item.studentName.toLowerCase().includes(q) || item.roomNo.toLowerCase().includes(q);
-                }
-                return true;
-            });
+    const paginatedItems = isDetailView ? passesData : hostelData;
+    const isLoading = isDetailView ? passesLoading : hostelsLoading;
+    const currentPagination = isDetailView ? passesPagination : { totalRecords: hostelData.length, totalPages: 1 };
+
+    const handleUpdateStatus = async (id, newStatus) => {
+        if (!isAdmin) return;
+        try {
+            if (newStatus === 'Approved' || newStatus === 'approved') {
+                await leaveService.approvePass(id, { remarks: 'Approved by Admin' });
+            } else if (newStatus === 'Rejected' || newStatus === 'rejected') {
+                await leaveService.rejectPass(id, { remarks: 'Rejected by Admin' });
+            }
+            showSuccessToast('Status updated successfully');
+            if (refetchPasses) refetchPasses();
+        } catch (err) {
+            showErrorToast(err?.response?.data?.message || err.message || 'Failed to update status');
         }
-
-        if (isSuperAdmin) {
-            return aggregateData.filter(item => {
-                if (orgFilter !== 'All' && item.organization !== orgFilter.toLowerCase()) return false;
-                if (searchQuery) {
-                    const q = searchQuery.toLowerCase();
-                    return item.organization.includes(q) || item.hostel.toLowerCase().includes(q);
-                }
-                return true;
-            });
-        } else {
-            const typeFilter = isHomePass ? 'Home Pass' : 'Out Pass';
-            return studentRequests.filter(item => {
-                if (item.passType !== typeFilter) return false;
-                if (statusFilter && item.status !== statusFilter) return false;
-                if (searchQuery) {
-                    const q = searchQuery.toLowerCase();
-                    return (
-                        item.studentName.toLowerCase().includes(q) ||
-                        item.roomNo.toLowerCase().includes(q) ||
-                        item.hostel.toLowerCase().includes(q)
-                    );
-                }
-                return true;
-            });
-        }
-    }, [isSuperAdmin, isHomePass, orgFilter, searchQuery, statusFilter, studentRequests, aggregateData, selectedHostel]);
-
-    // Paginated active subset
-    const paginatedItems = useMemo(() => {
-        const start = (page - 1) * limit;
-        return filteredList.slice(start, start + limit);
-    }, [filteredList, page]);
-
-    // Update Request status
-    const handleUpdateStatus = (id, newStatus) => {
-        setStudentRequests(prev =>
-            prev.map(r => r.id === id ? { ...r, status: newStatus } : r)
-        );
-        showSuccessToast('Status updated successfully');
     };
+
+    const getStudentName = (r) => r.studentId?.name || r.studentName || 'Unknown';
+    const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
     // Update Return status
     const handleUpdateReturn = (id, newReturn) => {
@@ -235,13 +228,15 @@ export default function AdminLeaves() {
                 />
             </div>
 
-            <LeaveStatsCards stats={stats} isSuperAdmin={isSuperAdmin} />
+            <LeaveStatsCards stats={stats} isAdmin={true} />
 
             {/* List Table Panel */}
             <DataTable
                 searchQuery={searchQuery}
                 onSearchChange={(e) => setSearchQuery(e.target.value)}
                 searchPlaceholder="Search"
+                loading={isLoading}
+                onRowClick={(r) => isDetailView && setViewId(r._id || r.id)}
                 toolbarActions={
                     <>
                         {isSuperAdmin && !selectedHostel ? (
@@ -296,26 +291,29 @@ export default function AdminLeaves() {
                                 {/* Student initials and full name */}
                                 <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
                                     <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                        {r.studentName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                        {getStudentInitials(studentName)}
                                     </div>
-                                    <span className="text-sm font-semibold">{r.studentName}</span>
+                                    <span className="text-sm font-semibold">{studentName}</span>
                                 </td>
 
                                 {/* Room No (if drilldown/warden) or Hostel name (if admin) */}
                                 <td className="p-4 text-text-secondary font-medium">
-                                    {selectedHostel || isWarden ? r.roomNo : (
+                                    {selectedHostel || isWarden ? (r.studentId?.roomNo || r.roomNo || '--') : (
                                         <span
                                             className="text-primary font-semibold hover:underline cursor-pointer"
-                                            onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelId?._id || r.hostel)}`);
+                                            }}
                                         >
-                                            {r.hostel}
+                                            {r.hostelId?.name || r.hostel}
                                         </span>
                                     )}
                                 </td>
 
                                 {/* Period / Date */}
                                 <td className="p-4 text-text-secondary lowercase">
-                                    {isHomePass ? `${r.fromDate} - ${r.toDate}` : r.fromDate}
+                                    {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
                                 </td>
 
                                 {/* Days / Type */}
@@ -337,16 +335,25 @@ export default function AdminLeaves() {
 
                                 {/* Inline Status Dropdown */}
                                 <td className="p-4">
-                                    <Dropdown
-                                        options={statusOptions}
-                                        value={r.status}
-                                        onChange={(val) => handleUpdateStatus(r.id, val)}
-                                        minWidth="w-28"
-                                        triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
-                                            r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
-                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hover:bg-[#fef3c7]'
-                                            }`}
-                                    />
+                                    {isAdmin ? (
+                                        <Dropdown
+                                            options={statusOptions}
+                                            value={r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                            onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                            minWidth="w-28"
+                                            triggerClassName={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] hover:bg-[#d1fae5]' :
+                                                r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B] hover:bg-[#fee2e2]' :
+                                                    'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E] hover:bg-[#fef3c7]'
+                                                }`}
+                                        />
+                                    ) : (
+                                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border inline-block ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                            r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                                            }`}>
+                                            {r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                        </span>
+                                    )}
                                 </td>
 
                                 {/* Inline Return Dropdown */}
@@ -396,20 +403,20 @@ export default function AdminLeaves() {
                     );
                 }}
                 renderMobileItem={(r) => {
-                    if (isSuperAdmin && !selectedHostel) {
+                    if (!isDetailView) {
                         return (
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                     <span className="font-bold text-[#0A437A] capitalize">{r.organization}</span>
                                     <span
                                         className="text-xs text-primary font-semibold hover:underline cursor-pointer"
-                                        onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
+                                        onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r._id || r.hostel)}`)}
                                     >
                                         {r.hostel}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-50 text-xs text-text-secondary font-semibold">
-                                    <div>Total: {r.totalRequest}</div>
+                                    <div>Total: {r.leaves}</div>
                                     <div>Pending: {r.pending}</div>
                                     <div>Approved: {r.approved}</div>
                                 </div>
@@ -417,54 +424,59 @@ export default function AdminLeaves() {
                         );
                     }
 
+                    const studentName = getStudentName(r);
+
                     return (
-                        <div className="space-y-2.5">
+                        <div className="space-y-2.5" onClick={() => setViewId(r._id || r.id)}>
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                        {r.studentName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                        {getStudentInitials(studentName)}
                                     </div>
-                                    <span className="font-bold text-gray-700 text-sm">{r.studentName}</span>
+                                    <span className="font-bold text-gray-700 text-sm">{studentName}</span>
                                 </div>
                                 <span className="text-xs text-gray-400 font-medium">
-                                    {selectedHostel || isWarden ? `Room ${r.roomNo}` : (
+                                    {selectedHostel || isWarden ? `Room ${r.studentId?.roomNo || r.roomNo}` : (
                                         <span
                                             className="text-[#0A437A] font-semibold hover:underline cursor-pointer"
-                                            onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelId?._id || r.hostel)}`);
+                                            }}
                                         >
-                                            {r.hostel}
+                                            {r.hostelId?.name || r.hostel}
                                         </span>
                                     )}
                                 </span>
                             </div>
                             <hr className="border-gray-50" />
                             <div className="text-xs text-text-secondary space-y-1.5">
-                                <div>{isHomePass ? `Period: ${r.fromDate} - ${r.toDate} (${r.duration})` : `Outing Time: ${r.outTime} - ${r.returnTime}`}</div>
-                                <div className="flex justify-between items-center gap-2 pt-2">
+                                <div>{isHomePass ? `Period: ${formatDate(r.fromDate)} - ${formatDate(r.toDate)} (${r.totalDays || r.duration})` : `Outing Time: ${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}`}</div>
+                                <div className="flex justify-between items-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                                     <span>Status:</span>
-                                    <Dropdown
-                                        options={statusOptions}
-                                        value={r.status}
-                                        onChange={(val) => handleUpdateStatus(r.id, val)}
-                                        minWidth="w-24"
-                                        triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'Approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
-                                            r.status === 'Rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                    {isAdmin ? (
+                                        <Dropdown
+                                            options={[
+                                                { label: 'Pending', value: 'pending_admin' },
+                                                { label: 'Approved', value: 'approved' },
+                                                { label: 'Rejected', value: 'rejected' }
+                                            ]}
+                                            value={r.status}
+                                            onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                            minWidth="w-24"
+                                            triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                                r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
+                                                    'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                                                }`}
+                                        />
+                                    ) : (
+                                        <span className={`px-2 py-1 rounded border inline-block text-[10px] font-bold ${r.status === 'approved' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
+                                            r.status === 'rejected' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
                                                 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
-                                            }`}
-                                    />
-                                </div>
-                                <div className="flex justify-between items-center gap-2 pt-1.5">
-                                    <span>Return:</span>
-                                    <Dropdown
-                                        options={returnOptions}
-                                        value={r.returnStatus || '-----'}
-                                        onChange={(val) => handleUpdateReturn(r.id, val)}
-                                        minWidth="w-28"
-                                        triggerClassName={`px-2 py-1 rounded border flex items-center justify-between text-[10px] font-bold ${r.returnStatus === 'Returned' ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]' :
-                                            r.returnStatus === 'Not Returned' ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]' :
-                                                'bg-white border-gray-200 text-gray-400'
-                                            }`}
-                                    />
+                                            }`}>
+                                            {r.status === 'pending_admin' || r.status === 'pending_parent' || r.status === 'pending_warden' ? 'Pending' : r.status === 'approved' ? 'Approved' : r.status === 'rejected' ? 'Rejected' : r.status}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -473,8 +485,8 @@ export default function AdminLeaves() {
                 page={page}
                 setPage={setPage}
                 limit={limit}
-                totalItems={filteredList.length}
-                totalPages={Math.ceil(filteredList.length / limit)}
+                totalItems={currentPagination.totalRecords || 0}
+                totalPages={currentPagination.totalPages || 1}
             />
         </div>
     );

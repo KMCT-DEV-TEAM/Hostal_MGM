@@ -2,9 +2,9 @@ import React from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import StatsCard from '@/components/ui/StatsCard';
 
-export default function LeaveStatsCards({ stats, isSuperAdmin = false, isStudent = false }) {
+export default function LeaveStatsCards({ stats, isAdmin = false, isStudent = false }) {
     return (
-        <div className={`grid grid-cols-1 sm:grid-cols-3 ${isSuperAdmin ? 'lg:grid-cols-4' : ''} gap-6 mb-8 shrink-0`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-3 ${isAdmin ? 'lg:grid-cols-4' : ''} gap-6 mb-8 shrink-0`}>
             {/* Super Admin gets a Total Requests card, others do too except maybe if custom layout */}
             <StatsCard
                 label="TOTAL REQUESTS"
@@ -13,7 +13,7 @@ export default function LeaveStatsCards({ stats, isSuperAdmin = false, isStudent
                 iconBg="bg-primary/10"
                 borderColor="border-t-2 border-t-primary"
             />
-            
+
             <StatsCard
                 label="APPROVED REQUESTS"
                 value={stats.approved || 0}
@@ -21,7 +21,7 @@ export default function LeaveStatsCards({ stats, isSuperAdmin = false, isStudent
                 iconBg="bg-success/10"
                 borderColor="border-t-2 border-t-success"
             />
-            
+
             <StatsCard
                 label="PENDING REQUESTS"
                 value={stats.pending || 0}

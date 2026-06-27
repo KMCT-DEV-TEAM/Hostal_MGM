@@ -15,6 +15,7 @@ export default function Modal({
   avatar,
   icon,
   zIndex = 50,
+  overflowClass = "overflow-y-auto",
 }) {
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -26,7 +27,7 @@ export default function Modal({
       style={{ zIndex }}
     >
       <Wrapper
-        className={`bg-white rounded-2xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
+        className={`bg-white rounded-2xl w-full ${maxWidth} max-h-[90vh] ${overflowClass} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
         onSubmit={asForm ? onSubmit : undefined}
       >
         {/* Header */}

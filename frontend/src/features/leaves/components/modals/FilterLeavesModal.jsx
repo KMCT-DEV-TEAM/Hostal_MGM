@@ -1,40 +1,48 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import DateInput from '@/components/ui/DateInput';
+import Dropdown from '@/components/ui/Dropdown';
 
-export default function FilterLeavesModal({ 
-    isOpen, 
-    onClose, 
-    pageTitle, 
-    filterStatus, 
-    setFilterStatus, 
-    onApply, 
-    onReset 
+export default function FilterLeavesModal({
+    isOpen,
+    onClose,
+    pageTitle,
+    isOutPass = false,
+    filters = {},
+    onApply,
+    onReset
 }) {
-    // Local state for dates if we want to filter by date later
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
-    // Local status state so we only apply on button click
-    const [localStatus, setLocalStatus] = useState(filterStatus);
+    const [localStatus, setLocalStatus] = useState('');
+    const [localCategory, setLocalCategory] = useState('');
+    const [localFromDate, setLocalFromDate] = useState('');
+    const [localToDate, setLocalToDate] = useState('');
 
-    // Sync local state when modal opens
     React.useEffect(() => {
         if (isOpen) {
-            setLocalStatus(filterStatus);
+            setLocalStatus(filters.status || '');
+            setLocalCategory(filters.category || '');
+            setLocalFromDate(filters.fromDate || '');
+            setLocalToDate(filters.toDate || '');
         }
-    }, [isOpen, filterStatus]);
+    }, [isOpen, filters]);
 
     const handleReset = () => {
-        setLocalStatus('All');
-        setFromDate('');
-        setToDate('');
+        setLocalStatus('');
+        setLocalCategory('');
+        setLocalFromDate('');
+        setLocalToDate('');
         if (onReset) onReset();
     };
 
     const handleApply = () => {
-        setFilterStatus(localStatus);
-        // If fromDate/toDate logic is needed, pass them up here
-        if (onApply) onApply({ filterStatus: localStatus, fromDate, toDate });
+        if (onApply) {
+            onApply({
+                status: localStatus,
+                category: localCategory,
+                fromDate: localFromDate,
+                toDate: localToDate
+            });
+        }
     };
 
     const inputClasses = "w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none transition-colors focus:border-secondary bg-white";
@@ -47,6 +55,7 @@ export default function FilterLeavesModal({
             titleSize="text-lg"
             subtitle={`Filter specific ${pageTitle} requests`}
             maxWidth="max-w-md"
+            overflowClass="overflow-visible"
             footer={
                 <div className="flex justify-end gap-3">
                     <button
@@ -69,28 +78,47 @@ export default function FilterLeavesModal({
             <div className="grid grid-cols-2 gap-5">
                 <DateInput
                     label="From Date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
+                    value={localFromDate}
+                    onChange={(e) => setLocalFromDate(e.target.value)}
                 />
                 <DateInput
                     label="To Date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
+                    value={localToDate}
+                    onChange={(e) => setLocalToDate(e.target.value)}
                 />
 
-                <div className="col-span-2">
+                <div className={isOutPass ? "col-span-1" : "col-span-2"}>
                     <label className="block mb-1.5 text-xs font-medium">Status</label>
-                    <select
+                    <Dropdown
+                        options={[
+                            { label: 'All Status', value: '' },
+                            { label: 'Pending Parent', value: 'pending_parent' },
+                            { label: 'Pending Warden', value: 'pending_warden' },
+                            { label: 'Approved', value: 'approved' },
+                            { label: 'Rejected', value: 'rejected' }
+                        ]}
                         value={localStatus}
-                        onChange={(e) => setLocalStatus(e.target.value)}
-                        className={inputClasses}
-                    >
-                        <option value="All">All Status</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
+                        onChange={(val) => setLocalStatus(val)}
+                        placeholder="All Status"
+                        triggerClassName="w-full h-10 px-3 border border-gray-200 rounded-md text-xs bg-white text-gray-700 flex justify-between items-center transition-colors focus:border-secondary"
+                    />
                 </div>
+                {isOutPass && (
+                    <div className="col-span-1">
+                        <label className="block mb-1.5 text-xs font-medium">Type</label>
+                        <Dropdown
+                            options={[
+                                { label: 'All Types', value: '' },
+                                { label: 'In House', value: 'in_house' },
+                                { label: 'Out House', value: 'out_house' }
+                            ]}
+                            value={localCategory}
+                            onChange={(val) => setLocalCategory(val)}
+                            placeholder="All Types"
+                            triggerClassName="w-full h-10 px-3 border border-gray-200 rounded-md text-xs bg-white text-gray-700 flex justify-between items-center transition-colors focus:border-secondary"
+                        />
+                    </div>
+                )}
             </div>
         </Modal>
     );
