@@ -140,13 +140,13 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               <InfoRow label="Date">{complaint.date}</InfoRow>
               <InfoRow label="Priority">
                 <span className="inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium text-danger ">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-danger"></span>
                   {complaint.priority || 'High'}
                 </span>
               </InfoRow>
               <InfoRow label="Status">
                 <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-black">
-                  <span className={`w-2 h-2 rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-400' : complaint.status === 'Resolved' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                  <span className={`w-2 h-2 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : 'bg-blue-500'}`}></span>
                   {complaint.status}
                 </span>
               </InfoRow>
@@ -211,13 +211,13 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                           value={rejectNote}
                           onChange={(e) => setRejectNote(e.target.value)}
                           placeholder="Explain why the resolution is rejected..."
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-danger"
                         />
                         <div className="flex gap-3">
                           <button
                             onClick={handleReject}
                             disabled={isProcessing}
-                            className="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                            className="flex-1 bg-danger text-white py-2 rounded-lg text-sm font-medium hover:bg-danger/90 transition-colors cursor-pointer"
                           >
                             Confirm Reject
                           </button>
@@ -274,9 +274,9 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
 
           {/* Task Rejected Actions */}
           {complaint.status === 'Rejected' && ['admin', 'super_admin', 'warden'].includes(user?.role) && (
-            <div className="border border-red-200 bg-red-50 rounded-xl p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-red-600 mb-1">Task Rejected</h3>
-              <p className="text-[11px] text-red-500 mb-4">This task was rejected by the assigned maintenance staff. Please close the task or re-assign it to someone else.</p>
+            <div className="border border-danger/20 bg-danger/10 rounded-xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-danger mb-1">Task Rejected</h3>
+              <p className="text-[11px] text-danger mb-4">This task was rejected by the assigned maintenance staff. Please close the task or re-assign it to someone else.</p>
               
               {!showClosePrompt ? (
                 <div className="flex gap-3">
