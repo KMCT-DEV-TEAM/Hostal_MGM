@@ -8,7 +8,10 @@ export default function LeaveStatusBadge({ status, className = '' }) {
 
     // Map the status string to standard displays
     let displayStatus = status;
-    if (normalizedStatus.includes('pending')) displayStatus = 'Pending';
+    if (normalizedStatus === 'pending_admin') displayStatus = 'Pending Admin';
+    else if (normalizedStatus === 'pending_parent') displayStatus = 'Pending Parent';
+    else if (normalizedStatus === 'pending_warden') displayStatus = 'Pending Warden';
+    else if (normalizedStatus.includes('pending')) displayStatus = 'Pending';
     if (normalizedStatus === 'approved') displayStatus = 'Approved';
     if (normalizedStatus === 'rejected') displayStatus = 'Rejected';
     if (normalizedStatus === 'cancelled') displayStatus = 'Cancelled';

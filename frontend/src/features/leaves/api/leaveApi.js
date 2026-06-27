@@ -9,10 +9,14 @@ const leaveApi = {
   getLeaveById: (id) => api.get(`/student/passes/${id}`),
 
   // Admin
-  getAdminHostels: (params) => api.get("/admin/passes/hostels", { params }),
+  getAdminHostels: (params) => api.get("/admin/passes", { params }),
+  getAdminDashboardStats: (params) => api.get("/admin/passes/dashboard", { params }),
   getLeavesByAdmin: (params) => {
     const { hostelId, ...rest } = params;
-    return api.get(`/admin/passes/hostels/${hostelId}`, { params: rest });
+    if (hostelId) {
+        return api.get(`/admin/passes/hostels/${hostelId}/passes`, { params: rest });
+    }
+    return api.get("/admin/passes", { params: rest });
   },
   getLeaveByIdAdmin: (id) => api.get(`/admin/passes/${id}`),
   updateLeaveStatusByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/status`, payload),
@@ -24,7 +28,7 @@ const leaveApi = {
   getSuperAdminHostels: (params) => api.get("/super-admin/passes/hostels", { params }),
   getLeavesBySuperAdmin: (params) => {
     const { hostelId, ...rest } = params;
-    return api.get(`/super-admin/passes/hostels/${hostelId}`, { params: rest });
+    return api.get(`/super-admin/passes/hostels/${hostelId}/passes`, { params: rest });
   },
   getLeaveByIdSuperAdmin: (id) => api.get(`/super-admin/passes/${id}`),
   cancelLeaveBySuperAdmin: (id, payload) => api.put(`/super-admin/passes/${id}/cancel`, payload),

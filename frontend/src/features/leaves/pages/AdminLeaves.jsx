@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import PageHeader from '@/components/ui/PageHeader';
@@ -8,7 +8,7 @@ import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
-import leaveService from '@/services/leave.service';
+import leaveService, { getAdminDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
 
@@ -16,7 +16,7 @@ export default function AdminLeaves() {
     const { passType, hostelName } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    
+
     const role = useAuthStore((s) => s.user?.role) || ROLES.SUPER_ADMIN;
 
     const isHomePass = passType === 'home-pass' || !passType;
@@ -26,7 +26,7 @@ export default function AdminLeaves() {
 
     const [viewId, setViewId] = useState(null);
     const selectedHostel = hostelName ? decodeURIComponent(hostelName) : null;
-    const isDetailView = !!selectedHostel || isWarden;
+    const isDetailView = !!selectedHostel || isWarden || isAdmin;
 
     const searchQuery = searchParams.get('search') || '';
     const orgFilter = searchParams.get('org') || 'All';
@@ -65,7 +65,25 @@ export default function AdminLeaves() {
         passType: isHomePass ? 'home_pass' : 'out_pass',
         search: debouncedSearch,
         organization: orgFilter !== 'All' ? orgFilter : undefined,
-    }, true);
+    }, true, { enabled: isSuperAdmin && !selectedHostel });
+
+    const [adminStats, setAdminStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
+
+    useEffect(() => {
+        if (isAdmin) {
+            getAdminDashboardStats({ passType: isHomePass ? 'home_pass' : 'out_pass' })
+                .then(res => {
+                    const statsData = res?.data?.data || res?.data || res;
+                    setAdminStats({
+                        total: statsData.total || statsData.totalRequests || statsData.totalRequest || 0,
+                        approved: statsData.approved || 0,
+                        pending: statsData.pending || 0,
+                        rejected: statsData.rejected || 0
+                    });
+                })
+                .catch(console.error);
+        }
+    }, [isAdmin, isHomePass]);
 
     const pageSubtitle = useMemo(() => {
         if (isSuperAdmin) return "Monitor leave requests and approvals across all hostels.";
@@ -75,6 +93,8 @@ export default function AdminLeaves() {
     }, [isSuperAdmin, isWarden, isAdmin, isHomePass]);
 
     const stats = useMemo(() => {
+        if (isAdmin) return adminStats;
+
         if (!hostelData || hostelData.length === 0) {
             return { total: 0, approved: 0, pending: 0, rejected: 0 };
         }
@@ -91,15 +111,15 @@ export default function AdminLeaves() {
                 rejected: acc.rejected + (curr.rejected || 0)
             };
         }, { total: 0, approved: 0, pending: 0, rejected: 0 });
-    }, [hostelData, isSuperAdmin, selectedHostel]);
+    }, [hostelData, isSuperAdmin, selectedHostel, isAdmin, adminStats]);
 
     const handleUpdateStatus = async (id, newStatus) => {
         if (!isAdmin) return;
         try {
             if (newStatus === 'Approved' || newStatus === 'approved') {
-                await leaveService.approvePass(id, { remarks: 'Approved by Admin' });
+                await leaveService.approvePass(role, id, { remarks: 'Approved by Admin' });
             } else if (newStatus === 'Rejected' || newStatus === 'rejected') {
-                await leaveService.rejectPass(id, { remarks: 'Rejected by Admin' });
+                await leaveService.rejectPass(role, id, { remarks: 'Rejected by Admin' });
             }
             showSuccessToast('Status updated successfully');
             if (refetchPasses) refetchPasses();

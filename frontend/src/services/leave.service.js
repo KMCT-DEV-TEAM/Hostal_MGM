@@ -44,6 +44,11 @@ export async function getAdminHostels(params) {
   return response.data;
 }
 
+export async function getAdminDashboardStats(params) {
+  const response = await leaveApi.getAdminDashboardStats(params);
+  return response.data;
+}
+
 export async function getLeaveByIdAdmin(id) {
   const response = await leaveApi.getLeaveByIdAdmin(id);
   return response.data;

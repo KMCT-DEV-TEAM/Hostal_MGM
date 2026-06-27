@@ -40,7 +40,7 @@ export default function Dropdown({
     };
 
     return (
-        <div className={`relative ${minWidth} ${className}`} ref={dropdownRef}>
+        <div className={`relative ${minWidth} ${className}`} ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
