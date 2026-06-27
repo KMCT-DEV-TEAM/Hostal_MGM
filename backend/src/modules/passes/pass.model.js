@@ -96,7 +96,7 @@ const passSchema = new mongoose.Schema(
       type: String,
       enum: [
         "pending_parent",
-        "pending_warden",
+        "pending_admin",
         "approved",
         "rejected",
         "cancelled",
@@ -114,8 +114,8 @@ const passSchema = new mongoose.Schema(
       remarks: { type: String, trim: true },
     },
 
-    // --- Warden Approval Tracking ---
-    wardenApproval: {
+    // --- Admin Approval Tracking ---
+    adminApproval: {
       status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
       actionBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       actionAt: { type: Date },
@@ -156,7 +156,7 @@ const passSchema = new mongoose.Schema(
 // Indexes
 passSchema.index({ studentId: 1, createdAt: -1 });
 passSchema.index({ hostelId: 1, status: 1 });
-passSchema.index({ "wardenApproval.status": 1, hostelId: 1 });
+passSchema.index({ "adminApproval.status": 1, hostelId: 1 });
 passSchema.index({ passType: 1, status: 1 });
 
 const Pass = mongoose.model("Pass", passSchema);

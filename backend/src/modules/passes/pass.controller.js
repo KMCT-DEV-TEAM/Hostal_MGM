@@ -153,18 +153,18 @@ export const updatePass = asyncHandler(async (req, res) => {
 
   let newStatus = pass.status;
   let resetParent = false;
-  let resetWarden = false;
+  let resetAdmin = false;
 
   if (userRole === "student") {
-    if (pass.status === "pending_warden" || pass.status === "approved") {
+    if (pass.status === "pending_admin" || pass.status === "approved") {
       resetParent = true;
-      resetWarden = true;
+      resetAdmin = true;
       newStatus = "pending_parent";
     }
   } else if (userRole === "parent") {
-    if (pass.status === "approved" || pass.status === "pending_warden") {
-      resetWarden = true;
-      newStatus = "pending_warden";
+    if (pass.status === "approved" || pass.status === "pending_admin") {
+      resetAdmin = true;
+      newStatus = "pending_admin";
     }
   }
 
@@ -174,9 +174,9 @@ export const updatePass = asyncHandler(async (req, res) => {
     updateQuery.$set["parentApproval.status"] = "pending";
     updateQuery.$set["parentApproval.remarks"] = "";
   }
-  if (resetWarden) {
-    updateQuery.$set["wardenApproval.status"] = "pending";
-    updateQuery.$set["wardenApproval.remarks"] = "";
+  if (resetAdmin) {
+    updateQuery.$set["adminApproval.status"] = "pending";
+    updateQuery.$set["adminApproval.remarks"] = "";
   }
 
   const timelineEvents = [
@@ -220,13 +220,17 @@ export const updatePass = asyncHandler(async (req, res) => {
   } else if (userRole === "parent") {
     const Hostel = (await import("../hostels/hostel.model.js")).default;
     const hostel = await Hostel.findById(updatedPass.hostelId);
-    if (hostel && hostel.wardens && hostel.wardens.length > 0) {
-      await Notification.insertMany(hostel.wardens.map(wardenId => ({
-        recipient: wardenId,
-        title: "Leave Modified",
-        message: `A parent modified a pass request for their ward.`,
-        type: "info"
-      })));
+    if (hostel) {
+      const User = (await import("../users/user.model.js")).default;
+      const admins = await User.find({ role: "admin", organization: { $in: hostel.organizations } }).select("_id").lean();
+      if (admins && admins.length > 0) {
+        await Notification.insertMany(admins.map(admin => ({
+          recipient: admin._id,
+          title: "Leave Modified",
+          message: `A parent modified a pass request for their ward.`,
+          type: "info"
+        })));
+      }
     }
   }
 
@@ -238,7 +242,7 @@ export const updatePass = asyncHandler(async (req, res) => {
 // Helpers for scoping
 const buildAdminScope = (req) => ({
   role: "admin",
-  organizationId: req.user.organizationId,
+  organizationId: req.user.organization,
   actorId: req.user.id
 });
 
@@ -250,6 +254,8 @@ const buildSuperAdminScope = (req) => ({
 
 // Admin Wrappers
 export const getAdminDashboardStats = asyncHandler(async (req, res) => {
+
+  console.log(req.user)
   const stats = await getManagementDashboardStatsDb(buildAdminScope(req));
   return sendSuccess(res, 200, "Dashboard stats fetched successfully", stats);
 });
@@ -263,7 +269,7 @@ export const getAdminPasses = asyncHandler(async (req, res) => {
   const scope = buildAdminScope(req);
   const { hostelId } = req.params;
 
-  const hostel = await Hostel.findOne({ _id: hostelId, organizationId: scope.organizationId });
+  const hostel = await Hostel.findOne({ _id: hostelId, organizations: scope.organizationId });
   if (!hostel) {
     return sendError(res, 403, "Hostel not found or you do not have permission to access it.");
   }
@@ -279,12 +285,153 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
   const pass = await getManagementPassDetailsDb(id, scope);
   if (!pass) return sendError(res, 404, "Pass not found.");
 
-  const hostel = await Hostel.findOne({ _id: pass.hostelId?._id, organizationId: scope.organizationId });
+  const hostel = await Hostel.findOne({ _id: pass.hostelId?._id, organizations: scope.organizationId });
   if (!hostel) {
     return sendError(res, 403, "You do not have permission to view this pass.");
   }
 
   return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+});
+
+export const adminApprovePass = asyncHandler(async (req, res) => {
+  const scope = buildAdminScope(req);
+  const adminId = scope.actorId;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const pass = await Pass.findById(id).populate("hostelId");
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
+    return sendError(res, 403, "You do not have permission to approve passes for this hostel.");
+  }
+
+  if (pass.status !== "pending_admin") {
+    return sendError(res, 422, `Pass cannot be approved in current status: ${pass.status}`);
+  }
+
+  const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
+
+  const updateQuery = {
+    $set: {
+      status: isCancellation ? "cancelled" : "approved",
+      "adminApproval.status": "approved",
+      "adminApproval.actionBy": adminId,
+      "adminApproval.actionAt": new Date(),
+      "adminApproval.remarks": remarks || "Approved by admin"
+    },
+    $push: {
+      timeline: {
+        action: "admin_approved",
+        actorId: adminId,
+        actorRole: "admin",
+        remarks: remarks || "Approved by admin",
+        timestamp: new Date()
+      }
+    }
+  };
+
+  const updatedPass = await Pass.findByIdAndUpdate(id, updateQuery, { new: true }).populate("studentId");
+
+  // Notify student
+  await Notification.create({
+    recipient: updatedPass.studentId._id,
+    title: isCancellation ? "Cancellation Approved" : "Pass Approved",
+    message: isCancellation ? "Your pass cancellation request has been approved." : `Your pass has been approved by the admin.`,
+    type: "success"
+  });
+
+  // Notify parent
+  if (updatedPass.parentId) {
+    await Notification.create({
+      recipient: updatedPass.parentId,
+      title: isCancellation ? "Cancellation Approved" : "Pass Approved",
+      message: isCancellation ? "Your ward's pass cancellation request has been approved." : `Your ward's pass has been approved by the admin.`,
+      type: "success"
+    });
+  }
+
+  // Notify assigned warden
+  const Hostel = (await import("../hostels/hostel.model.js")).default;
+  const hostel = await Hostel.findById(updatedPass.hostelId);
+  if (hostel && hostel.wardens && hostel.wardens.length > 0) {
+    await Notification.insertMany(hostel.wardens.map(wardenId => ({
+      recipient: wardenId,
+      title: isCancellation ? "Cancellation Approved" : "Pass Approved",
+      message: `A pass request for a student in your hostel was approved by the admin.`,
+      type: "info"
+    })));
+  }
+
+  return sendSuccess(res, 200, "Pass approved successfully", updatedPass);
+});
+
+export const adminRejectPass = asyncHandler(async (req, res) => {
+  const scope = buildAdminScope(req);
+  const adminId = scope.actorId;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const pass = await Pass.findById(id).populate("hostelId");
+  if (!pass) return sendError(res, 404, "Pass not found.");
+
+  if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
+    return sendError(res, 403, "You do not have permission to reject passes for this hostel.");
+  }
+
+  if (pass.status !== "pending_admin") {
+    return sendError(res, 422, `Pass cannot be rejected in current status: ${pass.status}`);
+  }
+
+  const updateQuery = {
+    $set: {
+      status: "rejected",
+      "adminApproval.status": "rejected",
+      "adminApproval.actionBy": adminId,
+      "adminApproval.actionAt": new Date(),
+      "adminApproval.remarks": remarks
+    },
+    $push: {
+      timeline: {
+        action: "admin_rejected",
+        actorId: adminId,
+        actorRole: "admin",
+        remarks: remarks,
+        timestamp: new Date()
+      }
+    }
+  };
+
+  const updatedPass = await Pass.findByIdAndUpdate(id, updateQuery, { new: true }).populate("studentId");
+
+  await Notification.create({
+    recipient: updatedPass.studentId._id,
+    title: "Pass Rejected",
+    message: `Your pass request was rejected by administration. Reason: ${remarks}`,
+    type: "error"
+  });
+
+  if (updatedPass.parentId) {
+    await Notification.create({
+      recipient: updatedPass.parentId,
+      title: "Pass Rejected",
+      message: `Your ward's pass request was rejected by administration. Reason: ${remarks}`,
+      type: "error"
+    });
+  }
+
+  const Hostel = (await import("../hostels/hostel.model.js")).default;
+  const hostel = await Hostel.findById(updatedPass.hostelId);
+  if (hostel && hostel.wardens && hostel.wardens.length > 0) {
+    await Notification.insertMany(hostel.wardens.map(wId => ({
+      recipient: wId,
+      title: "Pass Rejected",
+      message: `A pass request for a student in your hostel was rejected by the admin.`,
+      type: "info"
+    })));
+  }
+
+  return sendSuccess(res, 200, "Pass rejected successfully", updatedPass);
 });
 
 export const adminCancelPass = asyncHandler(async (req, res) => {
@@ -296,10 +443,10 @@ export const adminCancelPass = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Administrative cancellation requires a reason.");
   }
 
-  const pass = await Pass.findById(id).populate("hostelId", "organizationId");
+  const pass = await Pass.findById(id).populate("hostelId", "organizations");
   if (!pass) return sendError(res, 404, "Pass not found.");
 
-  if (pass.hostelId?.organizationId?.toString() !== scope.organizationId.toString()) {
+  if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
     return sendError(res, 403, "You do not have permission to cancel this pass.");
   }
 
@@ -413,14 +560,14 @@ export const cancelPass = asyncHandler(async (req, res) => {
   let newStatus = pass.status;
 
   if (userRole === "student") {
-    if (pass.status === "approved" || pass.status === "pending_warden") {
+    if (pass.status === "approved" || pass.status === "pending_admin") {
       requiresReapproval = true;
       newStatus = "pending_parent";
     }
   } else if (userRole === "parent") {
     if (pass.status === "approved") {
       requiresReapproval = true;
-      newStatus = "pending_warden";
+      newStatus = "pending_admin";
     }
   }
 
@@ -446,11 +593,11 @@ export const cancelPass = asyncHandler(async (req, res) => {
     if (userRole === "student") {
       updateQuery.$set["parentApproval.status"] = "pending";
       updateQuery.$set["parentApproval.remarks"] = "";
-      updateQuery.$set["wardenApproval.status"] = "pending";
-      updateQuery.$set["wardenApproval.remarks"] = "";
+      updateQuery.$set["adminApproval.status"] = "pending";
+      updateQuery.$set["adminApproval.remarks"] = "";
     } else if (userRole === "parent") {
-      updateQuery.$set["wardenApproval.status"] = "pending";
-      updateQuery.$set["wardenApproval.remarks"] = "";
+      updateQuery.$set["adminApproval.status"] = "pending";
+      updateQuery.$set["adminApproval.remarks"] = "";
     }
 
     const updatedPass = await Pass.findByIdAndUpdate(id, updateQuery, { new: true });
@@ -535,7 +682,7 @@ export const approvePass = asyncHandler(async (req, res) => {
 
   const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
 
-  const statusUpdate = "pending_warden";
+  const statusUpdate = "pending_admin";
   const parentStatus = "approved";
   const timelineAction = "parent_approved";
   let defaultRemark = "Approved by parent";
@@ -569,13 +716,17 @@ export const approvePass = asyncHandler(async (req, res) => {
 
   const Hostel = (await import("../hostels/hostel.model.js")).default;
   const hostel = await Hostel.findById(updatedPass.hostelId);
-  if (hostel && hostel.wardens && hostel.wardens.length > 0) {
-    await Notification.insertMany(hostel.wardens.map(wardenId => ({
-      recipient: wardenId,
-      title: isCancellation ? "Cancellation Approved by Parent" : "Pass Approved by Parent",
-      message: `A parent approved a ${isCancellation ? "cancellation " : ""}request. Awaiting warden approval.`,
-      type: "info"
-    })));
+  if (hostel) {
+    const User = (await import("../users/user.model.js")).default;
+    const admins = await User.find({ role: "admin", organizationId: hostel.organizationId }).select("_id").lean();
+    if (admins && admins.length > 0) {
+      await Notification.insertMany(admins.map(admin => ({
+        recipient: admin._id,
+        title: isCancellation ? "Cancellation Approved by Parent" : "Pass Approved by Parent",
+        message: `A parent approved a ${isCancellation ? "cancellation " : ""}request. Awaiting admin approval.`,
+        type: "info"
+      })));
+    }
   }
 
   return sendSuccess(res, 200, "Pass approved successfully", updatedPass);
@@ -653,100 +804,7 @@ export const getWardenPassDetails = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Pass details fetched successfully", pass);
 });
 
-export const approveWardenPass = asyncHandler(async (req, res) => {
-  const wardenId = req.user.id;
-  const { id } = req.params;
-  const { remarks } = req.body;
 
-  const hostel = await getWardenHostelDb(wardenId);
-  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
-
-  const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
-  if (!pass) return sendError(res, 404, "Pass not found.");
-
-  if (pass.status !== "pending_warden") {
-    return sendError(res, 422, `Pass cannot be approved in current status: ${pass.status}`);
-  }
-
-  const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
-
-  const updateQuery = {
-    $set: {
-      status: isCancellation ? "cancelled" : "approved",
-      "wardenApproval.status": "approved",
-      "wardenApproval.actionBy": wardenId,
-      "wardenApproval.actionAt": new Date(),
-      "wardenApproval.remarks": remarks || "Approved by warden"
-    },
-    $push: {
-      timeline: {
-        action: "warden_approved",
-        actorId: wardenId,
-        actorRole: "warden",
-        remarks: remarks || "Approved by warden",
-        timestamp: new Date()
-      }
-    }
-  };
-
-  const updatedPass = await updateWardenPassWorkflowDb(id, hostel._id, updateQuery);
-
-  // Notify student
-  await Notification.create({
-    recipient: updatedPass.studentId._id,
-    title: isCancellation ? "Cancellation Approved" : "Pass Approved",
-    message: isCancellation ? "Your pass cancellation request has been approved." : `Your pass has been approved by the warden.`,
-    type: "success"
-  });
-
-  return sendSuccess(res, 200, "Pass approved successfully", updatedPass);
-});
-
-export const rejectWardenPass = asyncHandler(async (req, res) => {
-  const wardenId = req.user.id;
-  const { id } = req.params;
-  const { remarks } = req.body;
-
-  const hostel = await getWardenHostelDb(wardenId);
-  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
-
-  const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
-  if (!pass) return sendError(res, 404, "Pass not found.");
-
-  if (pass.status !== "pending_warden") {
-    return sendError(res, 422, `Pass cannot be rejected in current status: ${pass.status}`);
-  }
-
-  const updateQuery = {
-    $set: {
-      status: "rejected",
-      "wardenApproval.status": "rejected",
-      "wardenApproval.actionBy": wardenId,
-      "wardenApproval.actionAt": new Date(),
-      "wardenApproval.remarks": remarks
-    },
-    $push: {
-      timeline: {
-        action: "warden_rejected",
-        actorId: wardenId,
-        actorRole: "warden",
-        remarks: remarks,
-        timestamp: new Date()
-      }
-    }
-  };
-
-  const updatedPass = await updateWardenPassWorkflowDb(id, hostel._id, updateQuery);
-
-  await Notification.create({
-    recipient: updatedPass.studentId._id,
-    title: "Pass Rejected",
-    message: `Your pass request was rejected. Reason: ${remarks}`,
-    type: "error"
-  });
-
-  return sendSuccess(res, 200, "Pass rejected successfully", updatedPass);
-});
 
 export const markStudentLeftHostel = asyncHandler(async (req, res) => {
   const wardenId = req.user.id;

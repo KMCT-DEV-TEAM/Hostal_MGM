@@ -154,6 +154,12 @@ const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId) => {
   }
 };
 
+const syncHostelOrganizations = async (hostelId) => {
+  if (!hostelId) return;
+  const organizations = await Student.distinct("organizationId", { hostelId });
+  await Hostel.findByIdAndUpdate(hostelId, { organizations });
+};
+
 export {
   checkExistingHostelCodeDb,
   checkExistingHostelEmailDb,
@@ -163,5 +169,6 @@ export {
   getHostelByIdDb,
   updateHostelDb,
   toggleHostelStatusDb,
-  bulkUpdateHostelStatusDb
+  bulkUpdateHostelStatusDb,
+  syncHostelOrganizations
 };
