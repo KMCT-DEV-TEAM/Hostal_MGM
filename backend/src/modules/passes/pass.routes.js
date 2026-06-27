@@ -24,12 +24,12 @@ import {
   wardenAdminCancelPass,
   getAdminDashboardStats,
   getAdminHostels,
-  getAdminPasses,
+  getManagementAllPasses,
+  getManagementHostelPasses,
   getAdminPassDetails,
   adminCancelPass,
   getSuperAdminDashboardStats,
   getSuperAdminOrganizationsHostels,
-  getSuperAdminPasses,
   getSuperAdminPassDetails,
   superAdminCancelPass
 } from "./pass.controller.js";
@@ -206,9 +206,10 @@ export const adminPassRouter = express.Router();
 adminPassRouter.use(authMiddleware);
 adminPassRouter.use(roleMiddleware("admin", "super_admin"));
 
+adminPassRouter.get("/", getManagementAllPasses);
 adminPassRouter.get("/dashboard", getAdminDashboardStats);
 adminPassRouter.get("/hostels", getAdminHostels);
-adminPassRouter.get("/hostels/:hostelId", getAdminPasses);
+adminPassRouter.get("/hostels/:hostelId/passes", getManagementHostelPasses);
 adminPassRouter.get("/:id", getAdminPassDetails);
 adminPassRouter.patch("/:id/approve", validatePassIdParam, adminApprovePass);
 adminPassRouter.patch("/:id/reject", validatePassIdParam, validateRejectPass, adminRejectPass);
@@ -220,8 +221,9 @@ export const superAdminPassRouter = express.Router();
 superAdminPassRouter.use(authMiddleware);
 superAdminPassRouter.use(roleMiddleware("super_admin"));
 
+superAdminPassRouter.get("/", getManagementAllPasses);
 superAdminPassRouter.get("/dashboard", getSuperAdminDashboardStats);
 superAdminPassRouter.get("/hostels", getSuperAdminOrganizationsHostels);
-superAdminPassRouter.get("/hostels/:hostelId", getSuperAdminPasses);
+superAdminPassRouter.get("/hostels/:hostelId/passes", getManagementHostelPasses);
 superAdminPassRouter.get("/:id", getSuperAdminPassDetails);
 superAdminPassRouter.put("/:id/cancel", superAdminCancelPass);

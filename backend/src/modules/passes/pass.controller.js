@@ -247,7 +247,7 @@ const buildAdminScope = (req) => ({
 });
 
 const buildSuperAdminScope = (req) => ({
-  role: "superadmin",
+  role: "super_admin",
   organizationId: null,
   actorId: req.user.id
 });
@@ -261,20 +261,30 @@ export const getAdminDashboardStats = asyncHandler(async (req, res) => {
 });
 
 export const getAdminHostels = asyncHandler(async (req, res) => {
-  const hostels = await getManagementHostelsDb(buildAdminScope(req));
+  const hostels = await getManagementHostelsDb(buildAdminScope(req), req.query);
+  console.log(hostels)
   return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels });
 });
 
-export const getAdminPasses = asyncHandler(async (req, res) => {
-  const scope = buildAdminScope(req);
+export const getManagementAllPasses = asyncHandler(async (req, res) => {
+  const scope = req.user.role === 'admin' ? buildAdminScope(req) : buildSuperAdminScope(req);
+  const { passes, pagination } = await getManagementPassesDb(req.query, scope, null);
+  return sendSuccess(res, 200, "All passes loaded successfully.", { data: passes, pagination });
+});
+
+export const getManagementHostelPasses = asyncHandler(async (req, res) => {
+  const scope = req.user.role === 'admin' ? buildAdminScope(req) : buildSuperAdminScope(req);
   const { hostelId } = req.params;
 
-  const hostel = await Hostel.findOne({ _id: hostelId, organizations: scope.organizationId });
+  let hostelQuery = { _id: hostelId };
+  if (scope.role === 'admin') hostelQuery.organizations = scope.organizationId;
+
+  const hostel = await Hostel.findOne(hostelQuery);
   if (!hostel) {
     return sendError(res, 403, "We couldn't find this hostel, or you might not have permission to view it.");
   }
 
-  const { passes, pagination } = await getManagementPassesDb(hostelId, req.query, scope);
+  const { passes, pagination } = await getManagementPassesDb(req.query, scope, hostelId);
   return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 
@@ -481,22 +491,12 @@ export const getSuperAdminDashboardStats = asyncHandler(async (req, res) => {
 });
 
 export const getSuperAdminOrganizationsHostels = asyncHandler(async (req, res) => {
-  const orgHostels = await getManagementHostelsDb(buildSuperAdminScope(req));
+  const orgHostels = await getManagementHostelsDb(buildSuperAdminScope(req), req.query);
+  console.log(orgHostels);
   return sendSuccess(res, 200, "Organizations and Hostels loaded successfully.", { data: orgHostels });
 });
 
-export const getSuperAdminPasses = asyncHandler(async (req, res) => {
-  const scope = buildSuperAdminScope(req);
-  const { hostelId } = req.params;
 
-  const hostel = await Hostel.findById(hostelId);
-  if (!hostel) {
-    return sendError(res, 404, "We couldn't find the hostel you're looking for.");
-  }
-
-  const { passes, pagination } = await getManagementPassesDb(hostelId, req.query, scope);
-  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
-});
 
 export const getSuperAdminPassDetails = asyncHandler(async (req, res) => {
   const scope = buildSuperAdminScope(req);
