@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import { AttendanceWindow, AttendanceRecord } from "./attendance.model.js";
 import Student from "../students/student.model.js";
+import Hostel from "../hostels/hostel.model.js";
+import { formatTime, formatDate, capitalize } from "../../utils/formatters.js";
 
 const getStartOfDay = (date) => {
   const d = new Date(date);
@@ -17,7 +19,14 @@ export const createAttendanceWindowDb = async (hostelId, wardenId) => {
   });
 
   if (existingWindow) {
-    return existingWindow;
+    return {
+      _id: existingWindow._id,
+      hostelId: existingWindow.hostelId,
+      attendanceDate: existingWindow.attendanceDate,
+      totalStudents: existingWindow.totalStudents,
+      status: existingWindow.status,
+      startedAt: existingWindow.createdAt
+    };
   }
 
   await AttendanceWindow.updateMany(
@@ -38,7 +47,14 @@ export const createAttendanceWindowDb = async (hostelId, wardenId) => {
     startedBy: wardenId,
   });
 
-  return newWindow;
+  return {
+    _id: newWindow._id,
+    hostelId: newWindow.hostelId,
+    attendanceDate: newWindow.attendanceDate,
+    totalStudents: newWindow.totalStudents,
+    status: newWindow.status,
+    startedAt: newWindow.createdAt
+  };
 };
 
 export const getAttendanceWindowsDb = async (query, scope) => {
@@ -49,9 +65,9 @@ export const getAttendanceWindowsDb = async (query, scope) => {
   const filter = {};
 
   if (scope.role === "warden") {
-     filter.hostelId = scope.hostelId;
+    filter.hostelId = scope.hostelId;
   } else if (query.hostelId) {
-     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
+    filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }
 
   if (query.status) {
@@ -126,7 +142,7 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 
   const result = await AttendanceWindow.aggregate(pipeline);
   const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;
-  
+
   return {
     windows: result[0]?.data || [],
     pagination: {
@@ -145,7 +161,7 @@ export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
   if (scope.role === "warden") {
     filter.hostelId = new mongoose.Types.ObjectId(scope.hostelId);
   }
-  
+
   const pipeline = [
     { $match: filter },
     {
@@ -204,7 +220,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   const skip = (page - 1) * limit;
 
   const filter = { attendanceWindowId: new mongoose.Types.ObjectId(windowId) };
-  
+
   if (query.status) {
     filter.status = query.status;
   }
@@ -278,24 +294,35 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
 export const scanStudentDb = async (windowId, studentId, wardenId) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     const window = await AttendanceWindow.findOne({ _id: windowId, status: "open" })
       .select("_id hostelId")
+      .lean()
       .session(session);
-      
+
     if (!window) {
       throw new Error("Attendance window is closed or does not exist.");
     }
 
-    const student = await Student.findOne({ _id: studentId, isActive: true, hostelStatus: "active" })
-      .select("_id hostelId")
+    const hostel = await Hostel.findOne({ _id: window.hostelId, isActive: true })
+      .select("_id")
+      .lean()
       .session(session);
-      
+
+    if (!hostel) {
+      throw new Error("Hostel is inactive or does not exist.");
+    }
+
+    const student = await Student.findOne({ _id: studentId, isActive: true, hostelStatus: "active" })
+      .select("_id hostelId studentId name profileImage")
+      .lean()
+      .session(session);
+
     if (!student) {
       throw new Error("Student is inactive or does not exist.");
     }
-    
+
     if (student.hostelId.toString() !== window.hostelId.toString()) {
       throw new Error("Student does not belong to this hostel.");
     }
@@ -306,7 +333,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
         [
           {
             attendanceWindowId: windowId,
-            studentId: studentId,
+            studentId: student._id,
             hostelId: window.hostelId,
             scannedBy: wardenId,
             status: "present",
@@ -328,7 +355,21 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
     );
 
     await session.commitTransaction();
-    return newRecord[0];
+    
+    const record = newRecord[0];
+    return {
+      attendance: {
+        _id: record._id,
+        status: record.status,
+        scannedAt: record.scannedAt
+      },
+      student: {
+        _id: student._id,
+        studentId: student.studentId,
+        name: student.name,
+        profileImage: student.profileImage || null
+      }
+    };
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -344,27 +385,27 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
   }
 
   const absentStudents = await Student.aggregate([
-    { 
-      $match: { 
-        hostelId: window.hostelId, 
-        isActive: true, 
-        hostelStatus: "active" 
-      } 
+    {
+      $match: {
+        hostelId: window.hostelId,
+        isActive: true,
+        hostelStatus: "active"
+      }
     },
     {
       $lookup: {
         from: "attendancerecords",
         let: { studentId: "$_id" },
         pipeline: [
-          { 
-            $match: { 
-              $expr: { 
+          {
+            $match: {
+              $expr: {
                 $and: [
                   { $eq: ["$studentId", "$$studentId"] },
                   { $eq: ["$attendanceWindowId", new mongoose.Types.ObjectId(windowId)] }
-                ] 
-              } 
-            } 
+                ]
+              }
+            }
           },
           { $project: { _id: 1 } }
         ],
@@ -384,7 +425,7 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
       status: "absent",
       remarks: "Marked absent automatically upon window completion."
     }));
-    
+
     await AttendanceRecord.insertMany(absentRecords);
   }
 
@@ -394,5 +435,188 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
   window.absentCount = absentStudents.length;
   await window.save();
 
-  return window;
+  return {
+    _id: window._id,
+    hostelId: window.hostelId,
+    attendanceDate: window.attendanceDate,
+    status: window.status,
+    totalStudents: window.totalStudents,
+    scannedCount: window.scannedCount,
+    presentCount: window.presentCount,
+    absentCount: window.absentCount,
+    completedAt: window.completedAt
+  };
+};
+
+// --- Shared Student & Parent Aggregations ---
+
+export const getStudentDashboardStatsDb = async (studentId) => {
+  const todayStart = getStartOfDay(new Date());
+  
+  const todayRecord = await AttendanceRecord.findOne({
+    studentId: new mongoose.Types.ObjectId(studentId),
+    scannedAt: { $gte: todayStart }
+  }).sort({ scannedAt: -1 }).lean();
+
+  let today = null;
+  if (todayRecord) {
+    today = {
+      status: capitalize(todayRecord.status),
+      markedAt: formatTime(todayRecord.scannedAt),
+      date: formatDate(todayRecord.scannedAt)
+    };
+  }
+
+  const summaryAgg = await AttendanceRecord.aggregate([
+    { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
+    {
+      $group: {
+        _id: null,
+        present: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+        absent: { $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] } }
+      }
+    }
+  ]);
+
+  let summary = { present: 0, absent: 0, percentage: 0 };
+  if (summaryAgg.length > 0) {
+    const s = summaryAgg[0];
+    const totalCount = s.present + s.absent;
+    summary = {
+      present: s.present,
+      absent: s.absent,
+      percentage: totalCount > 0 ? parseFloat(((s.present / totalCount) * 100).toFixed(2)) : 0
+    };
+  }
+
+  return { today, summary };
+};
+
+export const getStudentAttendanceHistoryDb = async (studentId, query) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filter = { studentId: new mongoose.Types.ObjectId(studentId) };
+  if (query.status) {
+    filter.status = query.status.toLowerCase();
+  }
+  if (query.from || query.to) {
+    filter.scannedAt = {};
+    if (query.from) filter.scannedAt.$gte = getStartOfDay(query.from);
+    if (query.to) filter.scannedAt.$lte = new Date(new Date(query.to).setUTCHours(23, 59, 59, 999));
+  }
+
+  const pipeline = [
+    { $match: filter },
+    { $sort: { scannedAt: -1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "totalRecords" }],
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: "users",
+              localField: "scannedBy",
+              foreignField: "_id",
+              as: "warden"
+            }
+          },
+          { $unwind: { path: "$warden", preserveNullAndEmptyArrays: true } }
+        ]
+      }
+    }
+  ];
+
+  const result = await AttendanceRecord.aggregate(pipeline);
+  const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;
+  
+  const formattedRecords = (result[0]?.data || []).map(record => ({
+    id: record._id,
+    date: formatDate(record.scannedAt),
+    markedAt: formatTime(record.scannedAt),
+    status: capitalize(record.status),
+    wardenName: record.warden ? record.warden.name : null
+  }));
+
+  return {
+    records: formattedRecords,
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limit),
+      hasNextPage: page * limit < totalRecords,
+      hasPreviousPage: page > 1,
+    }
+  };
+};
+
+export const getStudentAttendanceCalendarDb = async (studentId, month, year) => {
+  const m = parseInt(month);
+  const y = parseInt(year);
+  const startDate = new Date(Date.UTC(y, m - 1, 1));
+  const endDate = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+
+  const records = await AttendanceRecord.find({
+    studentId: new mongoose.Types.ObjectId(studentId),
+    scannedAt: { $gte: startDate, $lte: endDate }
+  }).select("scannedAt status").lean();
+
+  let present = 0;
+  let absent = 0;
+
+  const events = records.map(r => {
+    if (r.status === 'present') present++;
+    if (r.status === 'absent') absent++;
+    return {
+      date: formatDate(r.scannedAt),
+      status: r.status 
+    };
+  });
+  
+  const student = await Student.findById(studentId).select("hostelId").lean();
+  let notMarked = 0;
+  if (student && student.hostelId) {
+    const totalWindows = await AttendanceWindow.countDocuments({
+      hostelId: student.hostelId,
+      attendanceDate: { $gte: startDate, $lte: endDate },
+      status: "completed"
+    });
+    notMarked = Math.max(0, totalWindows - (present + absent));
+  }
+
+  return {
+    month: m,
+    year: y,
+    summary: { present, absent, notMarked },
+    events
+  };
+};
+
+export const getStudentAttendanceDetailsDb = async (studentId, dateStr) => {
+  const queryDate = getStartOfDay(dateStr);
+  const nextDay = new Date(queryDate);
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+  const record = await AttendanceRecord.findOne({
+    studentId: new mongoose.Types.ObjectId(studentId),
+    scannedAt: { $gte: queryDate, $lt: nextDay }
+  })
+  .populate("scannedBy", "name")
+  .lean();
+
+  if (!record) return null;
+
+  return {
+    date: formatDate(record.scannedAt),
+    status: capitalize(record.status),
+    markedAt: formatTime(record.scannedAt),
+    attendanceWindow: "Hostel Attendance",
+    warden: {
+      name: record.scannedBy ? record.scannedBy.name : null
+    }
+  };
 };

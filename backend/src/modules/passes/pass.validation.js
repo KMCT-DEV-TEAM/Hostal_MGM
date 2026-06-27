@@ -165,7 +165,7 @@ export const validatePassIdParam = (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
-      message: "The pass you are looking for is invalid or does not exist.",
+      message: "We couldn't find the pass you're looking for.",
     });
   }
 
@@ -210,10 +210,10 @@ export const validateUpdatePass = async (req, res, next) => {
     }
 
     if (userRole === "student" && existingPass.studentId.toString() !== userId) {
-      return res.status(403).json({ success: false, message: "You do not have permission to edit this pass." });
+      return res.status(403).json({ success: false, message: "You don't have permission to edit this pass." });
     }
     if (userRole === "parent" && existingPass.parentId.toString() !== userId) {
-      return res.status(403).json({ success: false, message: "You do not have permission to edit this pass." });
+      return res.status(403).json({ success: false, message: "You don't have permission to edit this pass." });
     }
 
     const passType = existingPass.passType;
@@ -372,14 +372,14 @@ export const validateCancelPass = async (req, res, next) => {
     }
 
     if (userRole === "student" && existingPass.studentId.toString() !== userId) {
-      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
+      return res.status(403).json({ success: false, message: "You don't have permission to cancel this pass." });
     }
     if (userRole === "parent" && existingPass.parentId.toString() !== userId) {
-      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
+      return res.status(403).json({ success: false, message: "You don't have permission to cancel this pass." });
     }
 
     if (!["pending_parent", "pending_admin", "approved"].includes(existingPass.status)) {
-      return res.status(400).json({ success: false, message: "This pass cannot be cancelled because it has already been processed or completed." });
+      return res.status(400).json({ success: false, message: "This pass can't be cancelled because it has already been processed or completed." });
     }
 
     // Pass is valid to cancel, attach to request to save DB calls in controller
