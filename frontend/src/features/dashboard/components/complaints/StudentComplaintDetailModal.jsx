@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MessageSquare, Calendar, AlertCircle, Clock, Hash, Tag, FileText, ToggleRight, LayoutGrid } from 'lucide-react';
+import { X, MessageSquare, Calendar, AlertCircle, Clock, Hash, Tag, FileText, ToggleRight, LayoutGrid, Building } from 'lucide-react';
 
 export default function StudentComplaintDetailModal({ complaint, onClose }) {
     if (!complaint) return null;
@@ -49,8 +49,8 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-text-secondary flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-text-secondary" /> Priority</span> 
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full bg-danger mr-2`}></span>
-                                        High
+                                        <span className={`w-2 h-2 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Low' ? 'bg-success' : 'bg-warning'} mr-2`}></span>
+                                        {complaint.priority || 'Medium'}
                                     </span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
@@ -59,6 +59,10 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                         <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'} mr-2`}></span>
                                         {complaint.status || 'Pending'}
                                     </span>
+                                </div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                                    <span className="text-text-secondary flex items-center gap-1.5"><Building className="w-4 h-4 text-text-secondary" /> Hostel</span> 
+                                    <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.hostelName || 'N/A'}</span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
                                     <span className="text-text-secondary flex items-center gap-1.5"><Hash className="w-4 h-4 text-text-secondary" /> Room No</span> 

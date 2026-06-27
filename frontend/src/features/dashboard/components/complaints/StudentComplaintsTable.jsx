@@ -73,8 +73,15 @@ export default function StudentComplaintsTable({
                                     {complaint.date}
                                 </td>
                                 <td className="p-4 text-start">
-                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'In progress' ? 'bg-accent/10 text-blue-500' : complaint.status === 'Rejected' ? 'bg-red-50 text-red-600' : complaint.status === 'Awaiting' ? 'bg-purple-50 text-purple-600' : complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-text-secondary'}`}>
-                                        {complaint.status}
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${
+                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success' :
+                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning' :
+                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' :
+                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' :
+                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger' :
+                                        'bg-blue-50 text-blue-600'
+                                    }`}>
+                                        {complaint.status || 'Pending'}
                                     </span>
                                 </td>
                                 <td className="p-4 text-center" onClick={e => e.stopPropagation()}>

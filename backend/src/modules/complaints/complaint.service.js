@@ -42,6 +42,7 @@ export const getStudentComplaintsDb = async (userId) => {
 
     return await Complaint.find({ studentId: student._id })
         .populate('category', 'name')
+        .populate('hostelId', 'name')
         .sort({ createdAt: -1 });
 };
 
