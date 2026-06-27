@@ -42,6 +42,14 @@ export function resetPassword(payload) {
 }
 
 /**
+ * Submit password request to super admin.
+ * @param {Object} payload - email, newPassword, confirmPassword
+ */
+export function submitPasswordRequest(payload) {
+  return authApi.submitPasswordRequest(payload);
+}
+
+/**
  * Change temporary password.
  * @param {Object} payload - oldPassword and newPassword
  */
@@ -93,17 +101,24 @@ export async function verifyEmailChange(payload) {
   return response.data;
 }
 
+export async function verifyPassword(payload) {
+  const response = await authApi.verifyPassword(payload);
+  return response.data;
+}
+
 const authService = {
   login,
   sendOtp,
   verifyOtp,
   resetPassword,
+  submitPasswordRequest,
   changePassword,
   logout,
   getProfile,
   updateProfile,
   requestEmailChange,
   verifyEmailChange,
+  verifyPassword,
 };
 
 export default authService;

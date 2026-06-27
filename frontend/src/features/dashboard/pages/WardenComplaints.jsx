@@ -142,6 +142,9 @@ const confirmExport = async (exportFilters) => {
             const end = new Date(exportFilters.endDate).setHours(23, 59, 59, 999);
             dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23, 59, 59, 999) <= end);
         }
+        if (exportFilters.category) {
+            dataToExport = dataToExport.filter(c => c.category === exportFilters.category);
+        }
 
         if (dataToExport && dataToExport.length > 0) {
             const exportData = dataToExport.map((complaint, index) => ({
@@ -269,6 +272,7 @@ return (
                 initialDate={dateFilter}
                 initialPriority={priorityFilter}
                 initialStatus={statusFilter}
+                categories={categories}
                 onClose={() => setIsFilterModalOpen(false)}
                 onApply={(filters) => {
                     setRoomNoFilter(filters.roomNo);
@@ -328,14 +332,24 @@ return (
                 { name: 'startDate', label: 'Start Date', type: 'date' },
                 { name: 'endDate', label: 'End Date', type: 'date' },
                 {
+                    name: "category",
+                    label: "Category",
+                    options: [
+                        { label: 'All Categories', value: '' },
+                        ...categories.map(cat => ({ label: cat.name, value: cat.name }))
+                    ]
+                },
+                {
                     name: "status",
                     label: "Complaint Status",
                     options: [
                         { label: 'All Status', value: '' },
                         { label: 'Pending', value: 'Pending' },
+                        { label: 'Awaiting', value: 'Awaiting' },
                         { label: 'In progress', value: 'In progress' },
-                        { label: 'Resolved', value: 'Resolved' },
+                        { label: 'Rejected', value: 'Rejected' },
                         { label: 'Incomplete', value: 'Incomplete' },
+                        { label: 'Resolved', value: 'Resolved' }
                     ]
                 }
             ]}

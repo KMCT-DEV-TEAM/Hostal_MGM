@@ -5,6 +5,7 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import SettingsSkeleton from '@/components/ui/SettingsSkeleton';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function Settings() {
     const { user, updateUser } = useAuthStore();
@@ -16,6 +17,7 @@ export default function Settings() {
         confirmPassword: ''
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     
     // Preferences State
     const [notifications, setNotifications] = useState({
@@ -109,6 +111,19 @@ export default function Settings() {
             return;
         }
 
+        if (user?.role === 'warden') {
+            setIsSaving(true);
+            try {
+                await authService.verifyPassword({ password: passwords.oldPassword });
+                setIsConfirmModalOpen(true);
+            } catch (error) {
+                showErrorToast('Error', 'Incorrect current password');
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
+
         setIsSaving(true);
         try {
             await authService.changePassword({
@@ -119,6 +134,24 @@ export default function Settings() {
             setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });
         } catch (error) {
             showErrorToast('Failed', error?.response?.data?.message || 'Failed to change password');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleConfirmWardenPasswordRequest = async () => {
+        setIsSaving(true);
+        try {
+            await authService.submitPasswordRequest({
+                email: user.email,
+                newPassword: passwords.newPassword,
+                confirmPassword: passwords.confirmPassword
+            });
+            showSuccessToast('Request Sent', 'Password change request submitted to Super Admin');
+            setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });
+            setIsConfirmModalOpen(false);
+        } catch (error) {
+            showErrorToast('Failed', error?.response?.data?.message || 'Failed to submit request');
         } finally {
             setIsSaving(false);
         }
@@ -275,6 +308,16 @@ export default function Settings() {
                 </div>
 
             </div>
+
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmWardenPasswordRequest}
+                title="Submit Password Request"
+                message="As a warden, your password change requires Super Admin approval. Are you sure you want to submit this request?"
+                confirmText="Submit Request"
+                isDestructive={false}
+            />
         </div>
     );
 }

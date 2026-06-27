@@ -15,6 +15,7 @@ export default function MaintenanceStaffTasks() {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState('All');
+    const [currentPage, setCurrentPage] = useState(1);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -53,6 +54,15 @@ export default function MaintenanceStaffTasks() {
         const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch, statusFilter]);
+
+    const limit = 10;
+    const totalTasks = filteredTasks.length;
+    const totalPages = Math.ceil(totalTasks / limit) || 1;
+    const paginatedTasks = filteredTasks.slice((currentPage - 1) * limit, currentPage * limit);
 
     const totalAll = tasks.length;
     const pendingAll = tasks.filter(t => t.status === 'Pending' || t.status === 'Awaiting').length;
@@ -121,7 +131,7 @@ export default function MaintenanceStaffTasks() {
                 </div>
             </div>
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-visible md:shadow-sm flex-1 flex flex-col min-h-0">
                 {/* Toolbar */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-gray-100 gap-4 bg-white">
                     <div className="relative w-full sm:w-64">
@@ -179,10 +189,10 @@ export default function MaintenanceStaffTasks() {
                         <tbody className="divide-y divide-gray-50 text-sm">
                             {loading ? (
                                 <TableSkeletonLoader columns={5} />
-                            ) : filteredTasks.length === 0 ? (
+                            ) : paginatedTasks.length === 0 ? (
                                 <tr><td colSpan="5" className="text-center p-8 text-gray-500">No tasks found.</td></tr>
                             ) : (
-                                filteredTasks.map((task) => (
+                                paginatedTasks.map((task) => (
                                     <tr key={task._id} className="hover:bg-gray-50/40 transition-colors">
                                         <td className="p-4 pl-8 text-start text-gray-500 font-medium">{task.roomNo}</td>
                                         <td className="p-4 text-start text-gray-500">{task.category?.name || 'N/A'}</td>
@@ -201,8 +211,49 @@ export default function MaintenanceStaffTasks() {
                 </div>
 
                 {/* Pagination */}
-                <div className="bg-white border-t border-gray-100 p-4 flex items-center justify-between">
-                    <p className="text-sm font-medium text-[#222222]">Showing {filteredTasks.length} tasks</p>
+                <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                    <div>
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalTasks === 0 ? 0 : (currentPage - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(currentPage * limit, totalTasks)} of {totalTasks}
+                        <span className="hidden sm:inline"> entries</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+
+                        {Array.from({ length: totalPages }, (_, index) => {
+                            const pageNum = index + 1;
+                            return (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            );
+                        })}
+
+                        <button
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

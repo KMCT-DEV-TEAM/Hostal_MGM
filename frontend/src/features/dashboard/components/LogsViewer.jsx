@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Search, ChevronDown, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
 import DateInput from "@/components/ui/DateInput";
-import ExportPasswordModal from "@/components/ui/ExportPasswordModal";
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import LogsFilterModal from "./LogsFilterModal";
 import authApi from "@/features/auth/api/authApi";
@@ -21,8 +20,6 @@ const LogsViewer = ({ entityType }) => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [isExportFilterModalOpen, setIsExportFilterModalOpen] = useState(false);
-    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [exportDateRange, setExportDateRange] = useState({ startDate: '', endDate: '' });
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
@@ -72,21 +69,13 @@ const LogsViewer = ({ entityType }) => {
         fetchLogs(1);
     }, [statusFilter, debouncedSearch, entityType, startDate, endDate]);
 
-    const handleExportConfirm = async (password) => {
+    const handleExportSubmit = async (filters) => {
         setIsExporting(true);
         try {
-            const exportStartDate = exportDateRange.startDate;
-            const exportEndDate = exportDateRange.endDate;
+            const exportStartDate = filters.startDate;
+            const exportEndDate = filters.endDate;
 
-            // 1. Verify password
-            const verifyRes = await authApi.verifyPassword({ password });
-            if (!verifyRes || !verifyRes.data?.success) {
-                showErrorToast('Export Failed', 'Incorrect password');
-                setIsExporting(false);
-                return;
-            }
-
-            // 2. Fetch all logs matching filter
+            // Fetch all logs matching filter
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
             const res = await logApi.getLogs({
                 limit: 100000,
@@ -104,7 +93,7 @@ const LogsViewer = ({ entityType }) => {
 
             if (fetchedLogs.length === 0) {
                 showErrorToast('Export Failed', 'No logs found matching your criteria.');
-                setIsExportModalOpen(false);
+                setIsExportFilterModalOpen(false);
                 setIsExporting(false);
                 return;
             }
@@ -127,9 +116,9 @@ const LogsViewer = ({ entityType }) => {
             }
         } catch (error) {
             console.error("Export Failed", error);
-            showErrorToast('Export Failed', error?.response?.data?.message || error?.message || 'Incorrect password or failed to export logs.');
+            showErrorToast('Export Failed', error?.response?.data?.message || error?.message || 'Failed to export logs.');
         } finally {
-            setIsExportModalOpen(false);
+            setIsExportFilterModalOpen(false);
             setIsExporting(false);
         }
     };
@@ -340,24 +329,7 @@ const LogsViewer = ({ entityType }) => {
                     { name: 'startDate', label: 'From Date', type: 'date' },
                     { name: 'endDate', label: 'To Date', type: 'date' }
                 ]}
-                onExport={(filters) => {
-                    setExportDateRange({
-                        startDate: filters.startDate || '',
-                        endDate: filters.endDate || ''
-                    });
-                    setIsExportFilterModalOpen(false);
-                    setIsExportModalOpen(true);
-                }}
-            />
-
-            <ExportPasswordModal
-                isOpen={isExportModalOpen}
-                onClose={() => setIsExportModalOpen(false)}
-                onConfirm={handleExportConfirm}
-                isVerifying={isExporting}
-                title="Verify Password to Export Logs"
-                subtitle="Please enter your admin password to securely download the logs."
-                showDateFilters={false}
+                onExport={handleExportSubmit}
             />
 
             {isFilterModalOpen && (

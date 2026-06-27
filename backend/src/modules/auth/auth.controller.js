@@ -8,6 +8,7 @@ import { hashPassword } from "../../utils/hash.js";
 import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
+import Hostel from "../hostels/hostel.model.js";
 import { generateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
 
@@ -132,6 +133,11 @@ const me = asyncHandler(async (req, res) => {
   const userData = user._doc ? { ...user._doc } : { ...user };
   if (!userData.role) {
     userData.role = req.user.role;
+  }
+
+  if (userData.role === 'warden') {
+    const assignedHostels = await Hostel.find({ wardens: user._id }).select("name code");
+    userData.assignedHostels = assignedHostels;
   }
 
   return sendSuccess(res, 200, "Token is valid", { user: userData });
