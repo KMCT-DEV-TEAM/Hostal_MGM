@@ -50,27 +50,18 @@ export default function LeavesDetailView({
     };
 
     const tableHeaders = useMemo(() => {
-        if (selectedHostel) {
-            const midCol = "Room No";
-            const dateCol = isHomePass ? "Leave Period" : "Date";
-            const typeCol = isHomePass ? "Days" : "Type";
-            if (isHomePass) {
-                return ["Student", midCol, dateCol, typeCol, { label: "Status", align: "start" }, { label: "Return", align: "start" }];
-            } else {
-                return ["Student", midCol, dateCol, typeCol, "In", "Out", { label: "Status", align: "start" }, { label: "Return", align: "start" }];
-            }
-        }
-
-        const midCol = isWarden ? "Room No" : "Hostel";
+        const isRoomCol = !!selectedHostel || isWarden || isAdmin;
+        const midCol = isRoomCol ? "Room No" : "Hostel";
         const dateCol = isHomePass ? "Leave Period" : "Date";
         const typeCol = isHomePass ? "Days" : "Type";
+        
+        const baseCols = ["Student", midCol, dateCol, typeCol];
+        const outPassCols = isHomePass ? [] : ["In", "Out"];
+        const statusCols = [{ label: "Status", align: "start" }, { label: "Return", align: "start" }];
+        
+        return [...baseCols, ...outPassCols, ...statusCols];
+    }, [selectedHostel, isWarden, isAdmin, isHomePass]);
 
-        if (isHomePass) {
-            return ["Student", midCol, dateCol, typeCol, { label: "Status", align: "start" }, { label: "Return", align: "start" }];
-        } else {
-            return ["Student", midCol, dateCol, typeCol, "Out", "Return", { label: "Status", align: "start" }, { label: "Return", align: "start" }];
-        }
-    }, [isHomePass, isWarden, selectedHostel]);
 
     return (
         <DataTable
@@ -115,17 +106,17 @@ export default function LeavesDetailView({
                             <span className="text-sm font-semibold">{studentName}</span>
                         </td>
 
-                        {/* Room No (if drilldown/warden) or Hostel name (if admin) */}
+                        {/* Room No (if drilldown/warden/admin) or Hostel name (if SuperAdmin aggregate view) */}
                         <td className="p-4 text-text-secondary font-medium">
-                            {selectedHostel || isWarden ? (r.studentInfo?.roomNo || r.roomNo || '--') : (
+                            {selectedHostel || isWarden || isAdmin ? (r.studentInfo?.roomNo || r.roomNo || '--') : (
                                 <span
                                     className="text-primary font-semibold hover:underline cursor-pointer"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelId?._id || r.hostel)}`);
+                                        navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelInfo?._id || r.hostelId?._id || r.hostel)}`);
                                     }}
                                 >
-                                    {r.hostelId?.name || r.hostel}
+                                    {r.hostelInfo?.name || r.hostelId?.name || r.hostel}
                                 </span>
                             )}
                         </td>
@@ -154,7 +145,7 @@ export default function LeavesDetailView({
 
                         {/* Inline Status Dropdown */}
                         <td className="p-4">
-                            {isAdmin && r.status.includes('pending') ? (
+                            {isAdmin && r.status === 'pending_admin' ? (
                                 <Dropdown
                                     options={statusOptions}
                                     value="Pending"
