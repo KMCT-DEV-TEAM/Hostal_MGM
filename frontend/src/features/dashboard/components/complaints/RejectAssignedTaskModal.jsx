@@ -2,18 +2,39 @@ import React, { useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, onRejected }) {
     const [note, setNote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null); // 'submit' or 'discard'
 
     if (!isOpen || !complaint) return null;
 
-    const handleSubmit = async (e) => {
+    const handleInitialSubmit = (e) => {
         e.preventDefault();
         
         if (!note.trim()) {
             showErrorToast('Error', 'Please provide a reason for rejecting the task');
+            return;
+        }
+
+        setConfirmAction('submit');
+    };
+
+    const handleInitialCancel = () => {
+        if (note.trim()) {
+            setConfirmAction('discard');
+        } else {
+            onClose();
+        }
+    };
+
+    const handleConfirm = async () => {
+        if (confirmAction === 'discard') {
+            setConfirmAction(null);
+            setNote('');
+            onClose();
             return;
         }
 
@@ -28,6 +49,7 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
             showErrorToast('Error', error.response?.data?.message || 'Failed to reject task');
         } finally {
             setIsSubmitting(false);
+            setConfirmAction(null);
         }
     };
 
@@ -40,7 +62,7 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                         <p className="text-sm text-gray-500 mt-1">Room {complaint.roomNo} - {complaint.subject}</p>
                     </div>
                     <button 
-                        onClick={onClose}
+                        onClick={handleInitialCancel}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
                     >
                         <X className="w-5 h-5" />
@@ -59,7 +81,7 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                <form onSubmit={handleInitialSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Reason for Rejection <span className="text-red-500">*</span>
@@ -78,14 +100,14 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                 <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleInitialCancel}
                         className="px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
                         disabled={isSubmitting}
                     >
                         Cancel
                     </button>
                     <button
-                        onClick={handleSubmit}
+                        onClick={handleInitialSubmit}
                         disabled={isSubmitting}
                         className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
@@ -100,6 +122,17 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                     </button>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                onConfirm={handleConfirm}
+                title={confirmAction === 'submit' ? "Confirm Rejection" : "Discard Changes?"}
+                message={confirmAction === 'submit' ? "Are you sure you want to reject this task? It will be sent back to the admin." : "You have unsaved changes. Are you sure you want to discard them?"}
+                confirmText={confirmAction === 'submit' ? "Reject Task" : "Discard"}
+                confirmButtonClass={confirmAction === 'submit' || confirmAction === 'discard' ? "bg-red-600 text-white hover:bg-red-700" : "bg-[#0A437A] text-white hover:bg-[#083663]"}
+                isSubmitting={isSubmitting}
+            />
         </div>
     );
 }

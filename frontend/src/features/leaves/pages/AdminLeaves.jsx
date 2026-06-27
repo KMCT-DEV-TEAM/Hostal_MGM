@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -16,7 +17,6 @@ export default function AdminLeaves() {
     const { passType, hostelName } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-
     const role = useAuthStore((s) => s.user?.role) || ROLES.SUPER_ADMIN;
 
     const isHomePass = passType === 'home-pass' || !passType;
@@ -27,7 +27,6 @@ export default function AdminLeaves() {
     const [viewId, setViewId] = useState(null);
     const selectedHostel = hostelName ? decodeURIComponent(hostelName) : null;
     const isDetailView = !!selectedHostel || isWarden || isAdmin;
-
     const searchQuery = searchParams.get('search') || '';
     const orgFilter = searchParams.get('org') || 'All';
     const statusFilter = searchParams.get('status') || '';
@@ -94,7 +93,6 @@ export default function AdminLeaves() {
 
     const stats = useMemo(() => {
         if (isAdmin) return adminStats;
-
         if (!hostelData || hostelData.length === 0) {
             return { total: 0, approved: 0, pending: 0, rejected: 0 };
         }

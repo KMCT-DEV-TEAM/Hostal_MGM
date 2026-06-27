@@ -27,6 +27,18 @@ body {
     font-size: 14px;
 }
 
+/* Global rule to ensure all naturally clickable elements have a pointer cursor */
+button, 
+[role="button"], 
+input[type="submit"], 
+input[type="button"], 
+input[type="reset"],
+select,
+label,
+a {
+    cursor: pointer !important;
+}
+
 @layer utilities {
 
     /* Hide scrollbar for Chrome, Safari and Opera */

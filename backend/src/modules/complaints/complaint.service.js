@@ -42,6 +42,7 @@ export const getStudentComplaintsDb = async (userId) => {
 
     return await Complaint.find({ studentId: student._id })
         .populate('category', 'name')
+        .populate('hostelId', 'name')
         .sort({ createdAt: -1 });
 };
 
@@ -83,6 +84,25 @@ export const updateComplaintDb = async (complaintId, user, updateData) => {
     if (updateData.subject) complaint.subject = updateData.subject;
     if (updateData.description !== undefined) complaint.description = updateData.description;
     if (updateData.priority) complaint.priority = updateData.priority;
+
+    let updaterName = "User";
+    if (user.role === 'student') {
+        const student = await Student.findById(user.id);
+        if (student) updaterName = student.name;
+    } else {
+        const staff = await User.findById(user.id);
+        if (staff) updaterName = staff.name;
+    }
+
+    const byRole = user.role === 'student' ? 'Student' : 
+                  (user.role === 'warden' ? 'Warden' : 'Admin');
+
+    complaint.timeline.push({
+        status: complaint.status,
+        message: `Complaint details updated by ${updaterName}`,
+        by: byRole,
+        date: new Date()
+    });
 
     const savedComplaint = await complaint.save();
     return await Complaint.findById(savedComplaint._id).populate('category', 'name');
