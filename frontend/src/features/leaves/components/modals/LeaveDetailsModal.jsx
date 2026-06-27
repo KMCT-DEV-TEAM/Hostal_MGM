@@ -215,40 +215,6 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
             title={title}
             subtitle="Details about the leave request"
             maxWidth="max-w-5xl"
-            footer={
-                <div className="flex justify-end gap-3 w-full">
-                    {/* Super Admin or Admin Cancel Button */}
-                    {(role === 'admin') && !['cancelled', 'rejected', 'completed', 'returned'].includes(request.status) ? (
-                        <button
-                            type="button"
-                            onClick={handleCancel}
-                            className="px-5 py-2 bg-red-50 text-red-600 rounded-md text-xs font-medium hover:bg-red-100 transition-colors"
-                        >
-                            Cancel Request
-                        </button>
-                    ) : null}
-
-                    {/* Admin Approve/Reject Buttons */}
-                    {role === 'admin' && request.status === 'pending_admin' ? (
-                        <>
-                            <button
-                                type="button"
-                                onClick={handleReject}
-                                className="px-5 py-2 bg-red-50 text-red-600 rounded-md text-xs font-medium hover:bg-red-100 transition-colors"
-                            >
-                                Reject Request
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleApprove}
-                                className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
-                            >
-                                Approve Request
-                            </button>
-                        </>
-                    ) : null}
-                </div>
-            }
         >
             <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
 

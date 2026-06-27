@@ -62,17 +62,11 @@ export default function AdminLeaves() {
         { enabled: isDetailView }
     );
 
-    const { data: hostelData, loading: hostelsLoading, refetch: refetchHostels } = useLeaves(
-        {
-            passType: isHomePass ? 'home_pass' : 'out_pass',
-            search: debouncedSearch,
-            organization: orgFilter !== 'All' ? orgFilter : '',
-            page,
-            limit
-        },
-        true,
-        { enabled: !isDetailView }
-    );
+    const { data: hostelData, loading: hostelsLoading } = useLeaves({
+        passType: isHomePass ? 'home_pass' : 'out_pass',
+        search: debouncedSearch,
+        organization: orgFilter !== 'All' ? orgFilter : undefined,
+    }, true);
 
     // Role-based Subtitle Configuration
     const pageSubtitle = useMemo(() => {
@@ -94,15 +88,25 @@ export default function AdminLeaves() {
 
     // Statistics Counts
     const stats = useMemo(() => {
-        if (isSuperAdmin) {
-            return { total: 40, approved: 30, pending: 10, rejected: 10 };
+        if (!hostelData || hostelData.length === 0) {
+            return { total: 0, approved: 0, pending: 0, rejected: 0 };
         }
-        const total = 40;
-        const approved = 30;
-        const pending = 10;
-        const rejected = 10;
-        return { total, approved, pending, rejected };
-    }, [isSuperAdmin]);
+
+        let relevantHostels = hostelData;
+        if (isSuperAdmin && selectedHostel) {
+            relevantHostels = hostelData.filter(h => h._id === selectedHostel);
+        }
+
+        return relevantHostels.reduce((acc, curr) => {
+            const total = curr.leaves ?? (curr.pending + curr.approved + curr.rejected);
+            return {
+                total: acc.total + (total || 0),
+                approved: acc.approved + (curr.approved || 0),
+                pending: acc.pending + (curr.pending || 0),
+                rejected: acc.rejected + (curr.rejected || 0)
+            };
+        }, { total: 0, approved: 0, pending: 0, rejected: 0 });
+    }, [hostelData, isSuperAdmin, selectedHostel]);
 
     const paginatedItems = isDetailView ? passesData : hostelData;
     const isLoading = isDetailView ? passesLoading : hostelsLoading;
