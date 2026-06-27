@@ -64,4 +64,7 @@ router.patch("/:id/reject-task", complaintController.rejectAssignedTask);
 router.patch("/:id/approve-resolution", complaintController.approveComplaintResolution);
 router.patch("/:id/reject-resolution", complaintController.rejectComplaintResolution);
 
+// Internal Notes
+router.post("/:id/internal-notes", complaintController.addInternalNote);
+
 export default router;

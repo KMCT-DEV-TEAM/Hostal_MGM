@@ -7,6 +7,7 @@ import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight }
 import ComplaintService from '@/services/complaint.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 
 export default function AdminComplaints() {
     const { user } = useAuthStore();
@@ -65,6 +66,22 @@ export default function AdminComplaints() {
 
     useEffect(() => {
         fetchComplaints();
+        
+        const socket = initSocket();
+        
+        const handleComplaintEvent = () => {
+            fetchComplaints();
+        };
+
+        socket.on('complaintCreated', handleComplaintEvent);
+        socket.on('complaintUpdated', handleComplaintEvent);
+        socket.on('complaintDeleted', handleComplaintEvent);
+
+        return () => {
+            socket.off('complaintCreated', handleComplaintEvent);
+            socket.off('complaintUpdated', handleComplaintEvent);
+            socket.off('complaintDeleted', handleComplaintEvent);
+        };
     }, []);
 
     useEffect(() => {

@@ -13,6 +13,7 @@ import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
+import { initSocket, getSocket } from '@/services/socket.service';
 
 export default function WardenComplaints({ hostel, onBack }) {
     const { user } = useAuthStore();
@@ -46,6 +47,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 hostelName: c.hostelId?.name || 'Unknown Hostel',
                 assignedStaff: c.assignedStaff,
                 timeline: c.timeline || [],
+                internalNotes: c.internalNotes || [],
                 materialsUsed: c.materialsUsed,
                 resolutionNotes: c.resolutionNotes
             }));
@@ -67,6 +69,23 @@ export default function WardenComplaints({ hostel, onBack }) {
         ComplaintCategoryService.getComplaintCategories().then(res => {
             setCategories(res.data || []);
         }).catch(err => console.error("Failed to fetch categories", err));
+
+        // Socket.IO real-time updates
+        const socket = initSocket();
+        
+        const handleComplaintEvent = () => {
+            fetchComplaints();
+        };
+
+        socket.on('complaintCreated', handleComplaintEvent);
+        socket.on('complaintUpdated', handleComplaintEvent);
+        socket.on('complaintDeleted', handleComplaintEvent);
+
+        return () => {
+            socket.off('complaintCreated', handleComplaintEvent);
+            socket.off('complaintUpdated', handleComplaintEvent);
+            socket.off('complaintDeleted', handleComplaintEvent);
+        };
     }, [hostel]);
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -91,6 +110,13 @@ export default function WardenComplaints({ hostel, onBack }) {
         complaintId: null,
     });
     const limit = 10;
+    
+    useEffect(() => {
+        if (viewingComplaint) {
+            const updated = complaints.find(c => c.id === viewingComplaint.id);
+            if (updated) setViewingComplaint(updated);
+        }
+    }, [complaints]);
 const handleCategoryChange = (id, newCategoryVal) => {
     const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
     setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });

@@ -60,6 +60,11 @@ const rejectAssignedTask = async (id, rejectNote) => {
     return response.data;
 };
 
+const addInternalNote = async (id, note) => {
+    const response = await apiClient.post(`/complaints/${id}/internal-notes`, { note });
+    return response.data;
+};
+
 const ComplaintService = {
     createComplaint,
     getMyComplaints,
@@ -72,7 +77,8 @@ const ComplaintService = {
     submitComplaintResolution,
     approveComplaintResolution,
     rejectComplaintResolution,
-    rejectAssignedTask
+    rejectAssignedTask,
+    addInternalNote
 };
 
 export default ComplaintService;

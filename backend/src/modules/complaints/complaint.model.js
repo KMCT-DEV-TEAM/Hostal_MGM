@@ -78,6 +78,24 @@ const complaintSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        internalNotes: [{
+            note: {
+                type: String,
+                required: true,
+            },
+            addedBy: {
+                type: String,
+                required: true,
+            },
+            role: {
+                type: String,
+                required: true,
+            },
+            date: {
+                type: Date,
+                default: Date.now
+            }
+        }],
         timeline: [timelineSchema]
     },
     {

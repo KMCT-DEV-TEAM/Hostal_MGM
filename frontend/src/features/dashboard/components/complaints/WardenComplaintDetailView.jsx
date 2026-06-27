@@ -22,6 +22,24 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   const [closeNote, setCloseNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const handleAddInternalNote = async () => {
+    if (!internalNote.trim()) {
+      showErrorToast('Validation', 'Please provide a note text.');
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await ComplaintService.addInternalNote(complaint.id, internalNote);
+      showSuccessToast('Success', 'Internal note added successfully.');
+      setInternalNote('');
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      showErrorToast('Error', error.message || 'Could not add internal note.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (!complaint) return null;
 
   const timeline = complaint.timeline || [];
@@ -45,7 +63,16 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   ).reverse();
 
   // "Internal notes"
-  const internalNotes = timeline.filter(t => t.by === 'Warden' || t.by === 'Admin' || t.message.toLowerCase().includes('note'));
+  const systemNotes = timeline
+    .filter(t => t.message.toLowerCase().includes('note') || t.status === 'Rejected' || t.status === 'Incomplete')
+    .map(t => ({
+      note: t.message,
+      addedBy: 'System/Auto',
+      role: t.by,
+      date: t.date,
+      isSystem: true
+    }));
+  const internalNotes = [...(complaint.internalNotes || []), ...systemNotes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const getStatusDotColor = (status) => {
     if (status === 'In progress') return 'bg-primary';
@@ -104,7 +131,11 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     }
     setIsProcessing(true);
     try {
-      await ComplaintService.updateComplaintStatus(complaint.id, 'Incomplete', closeNote);
+      const roleName = user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Warden';
+      const userName = user?.name || 'Unknown';
+      const formattedMessage = `${roleName} ${userName} closed the task with note: ${closeNote}`;
+      
+      await ComplaintService.updateComplaintStatus(complaint.id, 'Incomplete', formattedMessage);
       showSuccessToast('Success', 'Complaint closed as incomplete.');
       if (onRefresh) onRefresh();
       onClose();
@@ -244,20 +275,40 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-sm font-semibold text-primary mb-1">Internal note</h3>
-                <p className="text-[11px] text-text-secondary">Add a note by warden</p>
+                <p className="text-[11px] text-text-secondary">Add a note visible to Admins and Wardens</p>
               </div>
               <button className="text-[11px] text-primary hover:underline cursor-pointer">View all</button>
             </div>
 
-            <div className="space-y-3">
-              {internalNotes.length > 0 ? internalNotes.map((note, idx) => (
-                <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm flex justify-between items-center">
-                  <span className="text-[13px] text-text-secondary">{note.message}</span>
-                  <span className="text-[10px] text-text-secondary">{new Date(note.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(note.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <div className="space-y-3 mb-4">
+              {internalNotes.length > 0 ? internalNotes.map((n, idx) => (
+                <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[13px] text-text-secondary">{n.note}</span>
+                    <span className="text-[10px] text-text-secondary whitespace-nowrap ml-2">{new Date(n.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <span className="text-[10px] text-primary font-medium">by {n.addedBy} ({n.role})</span>
                 </div>
               )) : (
                 <div className="text-[13px] text-text-secondary italic">No internal notes yet.</div>
               )}
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={internalNote}
+                onChange={(e) => setInternalNote(e.target.value)}
+                placeholder="Type your note here..."
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
+              />
+              <button
+                onClick={handleAddInternalNote}
+                disabled={isProcessing || !internalNote.trim()}
+                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add
+              </button>
             </div>
           </div>
 
