@@ -1,6 +1,15 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import leaveService from '@/services/leave.service';
+
+// Deep equality check helper
+function useDeepCompareMemoize(value) {
+  const ref = useRef(value);
+  if (JSON.stringify(value) !== JSON.stringify(ref.current)) {
+    ref.current = value;
+  }
+  return ref.current;
+}
 
 export function useLeaves(filters, isAggregate = false, options = {}) {
   const { enabled = true } = options;
@@ -10,7 +19,7 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const filterString = JSON.stringify(filters || {});
+  const memoizedFilters = useDeepCompareMemoize(filters || {});
 
   const fetchLeaves = useCallback(() => {
     if (!role || !enabled) {
@@ -22,9 +31,8 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
     setLoading(true);
     setError(null);
 
-    const parsedFilters = JSON.parse(filterString);
     const params = Object.fromEntries(
-      Object.entries(parsedFilters).filter(([, value]) => value !== '' && value !== null && value !== undefined)
+      Object.entries(memoizedFilters).filter(([, value]) => value !== '' && value !== null && value !== undefined)
     );
 
     const fetcher = isAggregate ? leaveService.getLeaveHostels : leaveService.getLeaves;
@@ -46,7 +54,7 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
         setError(err);
       })
       .finally(() => setLoading(false));
-  }, [role, filterString, isAggregate]);
+  }, [role, memoizedFilters, isAggregate, enabled]);
 
   useEffect(() => { fetchLeaves(); }, [fetchLeaves]);
 

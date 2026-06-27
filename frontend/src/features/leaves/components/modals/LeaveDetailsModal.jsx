@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { formatDate, formatDateTime } from '../../utils/formatters';
 import leaveService from '@/services/leave.service';
+import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 
@@ -230,7 +231,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Status</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
+                                <LeaveStatusBadge status={request.status} />
                             </div>
 
                             {isHomePass ? (
@@ -260,7 +261,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Parent approval</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
+                                <LeaveStatusBadge status={isParentApproved ? 'Approved' : 'Pending'} />
                             </div>
                         </div>
                     </div>

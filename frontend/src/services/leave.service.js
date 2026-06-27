@@ -127,10 +127,6 @@ export async function getLeaveByIdParent(id) {
   return response.data;
 }
 
-// export async function getLeaveByIdAdmin(id) {
-//   const response = await leaveApi.getLeaveByIdAdmin(id);
-//   return response.data;
-// }
 
 export async function getLeaveByIdWarden(id) {
   const response = await leaveApi.getLeaveByIdWarden(id);
