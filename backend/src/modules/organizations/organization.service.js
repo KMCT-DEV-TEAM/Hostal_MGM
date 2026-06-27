@@ -92,9 +92,7 @@ const getPaginatedOrganizationsDb = async (page = 1, limit = 10, search = "", st
     return orgObj;
   }));
 
-  try {
-    fs.writeFileSync('debug_orgs.json', JSON.stringify(organizations.map(o => ({ id: o._id, studentsCount: o.studentsCount })), null, 2));
-  } catch (err) {}
+
 
   return { organizations, totalCount };
 };
@@ -141,7 +139,7 @@ const bulkUpdateOrganizationStatusDb = async (ids, isActive) => {
       { _id: { $in: objectIds } },
       { $set: { isActive } }
     );
-    
+
     await syncOrganizationStatus(objectIds, isActive);
 
     return result;

@@ -9,12 +9,19 @@ import {
   getAttendanceRecords,
   scanStudent,
   completeAttendanceWindow,
+  getAttendanceDashboard,
+  getAttendanceHistory,
+  getAttendanceCalendar,
+  getAttendanceDetails,
 } from "./attendance.controller.js";
 
 import {
   validateWindowIdParam,
   validateScanQR,
   validateGetWindows,
+  validateHistoryQuery,
+  validateCalendarQuery,
+  validateDateParam
 } from "./attendance.validation.js";
 
 export const wardenAttendanceRouter = express.Router();
@@ -42,3 +49,19 @@ superAdminAttendanceRouter.use(roleMiddleware("superadmin"));
 superAdminAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 superAdminAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
 superAdminAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);
+
+export const studentAttendanceRouter = express.Router();
+studentAttendanceRouter.use(authMiddleware);
+studentAttendanceRouter.use(roleMiddleware("student"));
+studentAttendanceRouter.get("/dashboard", getAttendanceDashboard);
+studentAttendanceRouter.get("/", validateHistoryQuery, getAttendanceHistory);
+studentAttendanceRouter.get("/calendar", validateCalendarQuery, getAttendanceCalendar);
+studentAttendanceRouter.get("/details/:date", validateDateParam, getAttendanceDetails);
+
+export const parentAttendanceRouter = express.Router();
+parentAttendanceRouter.use(authMiddleware);
+parentAttendanceRouter.use(roleMiddleware("parent"));
+parentAttendanceRouter.get("/dashboard", getAttendanceDashboard);
+parentAttendanceRouter.get("/", validateHistoryQuery, getAttendanceHistory);
+parentAttendanceRouter.get("/calendar", validateCalendarQuery, getAttendanceCalendar);
+parentAttendanceRouter.get("/details/:date", validateDateParam, getAttendanceDetails);

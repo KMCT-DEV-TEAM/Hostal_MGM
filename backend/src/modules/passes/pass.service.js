@@ -13,6 +13,7 @@ import {
   buildDashboardStatsFacet,
   parseDashboardStatsFacet
 } from "./pass.aggregation.js";
+import hostelModel from "../hostels/hostel.model.js";
 
 // --- Helpers ---
 
@@ -348,6 +349,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     outTime: 1,
     expectedReturnTime: 1,
     createdAt: 1,
+    totalDays: 1,
     returnTracking: { returnStatus: 1 },
     studentInfo: {
       _id: "$studentInfo._id",
@@ -413,33 +415,24 @@ export const getManagementDashboardStatsDb = async (scope) => {
   return response;
 };
 
-export const getManagementHostelsDb = async (scope) => {
+export const getManagementHostelsDb = async (scope, query = {}) => {
   const matchQuery = { isActive: true };
-  if (scope.organizationId) {
+  if (scope.organizationId && scope.role === "admin") {
     const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
     matchQuery._id = { $in: hostelIds.filter(Boolean) };
   }
 
+  if (query.search) {
+    matchQuery.name = { $regex: query.search, $options: "i" };
+  }
+
+  const passMatch = { $expr: { $eq: ["$hostelId", "$$hostelId"] } };
+  if (query.passType && query.passType !== "all") {
+    passMatch.passType = query.passType;
+  }
+
   const pipeline = [
     { $match: matchQuery },
-    {
-      $lookup: {
-        from: "organizations",
-        localField: "organizations",
-        foreignField: "_id",
-        as: "orgInfo"
-      }
-    },
-    { $unwind: { path: "$orgInfo", preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: "users",
-        localField: "warden",
-        foreignField: "_id",
-        as: "wardenInfo"
-      }
-    },
-    { $unwind: { path: "$wardenInfo", preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: "students",
@@ -456,7 +449,7 @@ export const getManagementHostelsDb = async (scope) => {
         from: "passes",
         let: { hostelId: "$_id" },
         pipeline: [
-          { $match: { $expr: { $eq: ["$hostelId", "$$hostelId"] } } },
+          { $match: passMatch },
           {
             $group: {
               _id: null,
@@ -478,61 +471,54 @@ export const getManagementHostelsDb = async (scope) => {
         ],
         as: "passStats"
       }
-    }
-  ];
-
-  if (scope.role === "super_admin") {
-    pipeline.push({
+    },
+    {
       $project: {
         _id: 1,
-        organization: "$orgInfo.name",
         hostel: "$name",
         students: { $arrayElemAt: ["$studentsInfo.studentCount", 0] },
-        leaves: { $arrayElemAt: ["$passStats.totalCount", 0] },
+        total: { $arrayElemAt: ["$passStats.totalCount", 0] },
         pending: { $arrayElemAt: ["$passStats.pendingCount", 0] },
         approved: { $arrayElemAt: ["$passStats.approvedCount", 0] },
         rejected: { $arrayElemAt: ["$passStats.rejectedCount", 0] },
         outside: { $arrayElemAt: ["$passStats.outsideCount", 0] }
       }
-    });
-  } else {
-    pipeline.push({
-      $project: {
-        _id: 1,
-        name: 1,
-        warden: "$wardenInfo.name",
-        students: { $arrayElemAt: ["$studentsInfo.studentCount", 0] },
-        pending: { $arrayElemAt: ["$passStats.pendingCount", 0] },
-        approved: { $arrayElemAt: ["$passStats.approvedCount", 0] },
-        rejected: { $arrayElemAt: ["$passStats.rejectedCount", 0] },
-        outside: { $arrayElemAt: ["$passStats.outsideCount", 0] }
-      }
-    });
-  }
-
-  pipeline.push(
+    },
     {
       $addFields: {
         students: { $ifNull: ["$students", 0] },
-        leaves: { $ifNull: ["$leaves", 0] },
+        total: { $ifNull: ["$total", 0] },
         pending: { $ifNull: ["$pending", 0] },
         approved: { $ifNull: ["$approved", 0] },
         rejected: { $ifNull: ["$rejected", 0] },
-        outside: { $ifNull: ["$outside", 0] },
+        outside: { $ifNull: ["$outside", 0] }
       }
     },
-    { $sort: scope.role === "super_admin" ? { organization: 1, hostel: 1 } : { name: 1 } }
-  );
+    { $match: { total: { $gt: 0 } } },
+    { $sort: { hostel: 1 } }
+  ];
 
   return await Hostel.aggregate(pipeline);
 };
 
-export const getManagementPassesDb = async (hostelId, query, scope) => {
+export const getManagementPassesDb = async (query, scope, specificHostelId = null) => {
   const page = parseInt(query.page) || 1;
   const limit = parseInt(query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const filter = { hostelId: new mongoose.Types.ObjectId(hostelId), ...buildStatusFilter(query) };
+  const filter = { ...buildStatusFilter(query) };
+  if (query.passType) filter.passType = query.passType;
+
+  if (specificHostelId) {
+    filter.hostelId = new mongoose.Types.ObjectId(specificHostelId);
+  } else if (scope.role === "admin" && scope.organizationId) {
+
+    const hostels = await hostelModel.find({ organizations: scope.organizationId }).select("_id").lean();
+    filter.hostelId = { $in: hostels.map(h => h._id) };
+  } else if (query.hostelId) {
+    filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
+  }
+
   buildDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
 
   const pipeline = [
@@ -545,11 +531,39 @@ export const getManagementPassesDb = async (hostelId, query, scope) => {
         as: "studentInfo"
       }
     },
-    { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } }
+    { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "hostelId",
+        foreignField: "_id",
+        as: "hostelInfo"
+      }
+    },
+    { $unwind: { path: "$hostelInfo", preserveNullAndEmptyArrays: true } }
   ];
 
-  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo.roomNo"]);
+  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo.roomNo", "hostelInfo.name"]);
   if (searchMatch) pipeline.push(searchMatch);
+
+  pipeline.push({
+    $addFields: {
+      sortPriority: {
+        $switch: {
+          branches: [
+            { case: { $eq: ["$status", "pending_admin"] }, then: 1 },
+            { case: { $eq: ["$status", "pending_parent"] }, then: 2 },
+            { case: { $eq: ["$status", "approved"] }, then: 3 },
+            { case: { $eq: ["$status", "returned"] }, then: 4 },
+            { case: { $eq: ["$status", "completed"] }, then: 5 },
+            { case: { $eq: ["$status", "cancelled"] }, then: 6 },
+            { case: { $eq: ["$status", "rejected"] }, then: 7 }
+          ],
+          default: 8
+        }
+      }
+    }
+  });
 
   const projectStage = {
     _id: 1,
@@ -569,11 +583,15 @@ export const getManagementPassesDb = async (hostelId, query, scope) => {
       name: "$studentInfo.name",
       admissionNo: "$studentInfo.admissionNo",
       roomNo: "$studentInfo.roomNo"
+    },
+    hostelInfo: {
+      _id: "$hostelInfo._id",
+      name: "$hostelInfo.name"
     }
   };
 
   pipeline.push(
-    { $sort: { createdAt: -1 } },
+    { $sort: { sortPriority: 1, createdAt: 1 } },
     buildPaginationFacet(skip, limit, projectStage)
   );
 
