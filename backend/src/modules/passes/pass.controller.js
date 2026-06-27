@@ -262,7 +262,7 @@ export const getAdminDashboardStats = asyncHandler(async (req, res) => {
 
 export const getAdminHostels = asyncHandler(async (req, res) => {
   const hostels = await getManagementHostelsDb(buildAdminScope(req));
-  return sendSuccess(res, 200, "Hostels fetched successfully", hostels);
+  return sendSuccess(res, 200, "Hostels fetched successfully", { data: hostels });
 });
 
 export const getAdminPasses = asyncHandler(async (req, res) => {
@@ -290,7 +290,7 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
     return sendError(res, 403, "You do not have permission to view this pass.");
   }
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+  return sendSuccess(res, 200, "Pass details fetched successfully", { data: pass });
 });
 
 export const adminApprovePass = asyncHandler(async (req, res) => {
@@ -772,7 +772,7 @@ export const getWardenDashboardStats = asyncHandler(async (req, res) => {
   }
 
   const stats = await getWardenDashboardStatsDb(hostel._id);
-  return sendSuccess(res, 200, "Dashboard stats fetched successfully", stats);
+  return sendSuccess(res, 200, "Dashboard stats fetched successfully", { data: stats });
 });
 
 export const getWardenPasses = asyncHandler(async (req, res) => {
@@ -801,7 +801,7 @@ export const getWardenPassDetails = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Pass not found or does not belong to your hostel.");
   }
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+  return sendSuccess(res, 200, "Pass details fetched successfully", { data: pass });
 });
 
 
