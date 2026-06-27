@@ -18,6 +18,7 @@ const leaveApi = {
   updateLeaveStatusByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/status`, payload),
   approveLeaveByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/approve`, payload),
   rejectLeaveByAdmin: (id, payload) => api.patch(`/admin/passes/${id}/reject`, payload),
+  cancelLeaveByAdmin: (id, payload) => api.put(`/admin/passes/${id}/cancel`, payload),
 
   // Super Admin
   getSuperAdminHostels: (params) => api.get("/super-admin/passes/hostels", { params }),
@@ -25,6 +26,8 @@ const leaveApi = {
     const { hostelId, ...rest } = params;
     return api.get(`/super-admin/passes/hostels/${hostelId}`, { params: rest });
   },
+  getLeaveByIdSuperAdmin: (id) => api.get(`/super-admin/passes/${id}`),
+  cancelLeaveBySuperAdmin: (id, payload) => api.put(`/super-admin/passes/${id}/cancel`, payload),
 
   getLeavesByParent: (params) => api.get("/parent/passes", { params }),
   getLeaveByIdParent: (id) => api.get(`/parent/passes/${id}`),

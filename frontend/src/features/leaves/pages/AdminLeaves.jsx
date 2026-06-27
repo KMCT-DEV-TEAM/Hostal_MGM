@@ -64,8 +64,11 @@ export default function AdminLeaves() {
 
     const { data: hostelData, loading: hostelsLoading, refetch: refetchHostels } = useLeaves(
         {
+            passType: isHomePass ? 'home_pass' : 'out_pass',
             search: debouncedSearch,
-            organization: orgFilter !== 'All' ? orgFilter : ''
+            organization: orgFilter !== 'All' ? orgFilter : '',
+            page,
+            limit
         },
         true,
         { enabled: !isDetailView }
@@ -202,9 +205,7 @@ export default function AdminLeaves() {
         }
 
         if (isSuperAdmin) {
-            return isHomePass
-                ? ["Organization", "Hostel", "Total Request", "Pending", "Approved"]
-                : ["Organization", "Hostel", "Total Request", "Pending", "Approved", "Rejected"];
+            return ["Hostel", "Total Request", "Pending", "Approved", "Rejected"];
         }
 
         // Warden and Admin views
@@ -237,9 +238,10 @@ export default function AdminLeaves() {
                         </svg>
                     </button>
                 )}
+                {console.log('selected hostel:', selectedHostel)}
                 <PageHeader
-                    title={selectedHostel ? `${selectedHostel} - ${isHomePass ? "Home Pass" : "Out Pass"}` : (isHomePass ? "Home Pass" : "Out Pass")}
-                    subtitle={selectedHostel ? `Monitoring student leave records for ${selectedHostel}` : pageSubtitle}
+                    title={selectedHostel ? `${isHomePass ? "Home Pass" : "Out Pass"}` : (isHomePass ? "Home Pass" : "Out Pass")}
+                    subtitle={selectedHostel ? `Monitoring student leave records` : pageSubtitle}
                 />
             </div>
 
@@ -251,25 +253,16 @@ export default function AdminLeaves() {
                 onSearchChange={(e) => setSearchQuery(e.target.value)}
                 searchPlaceholder="Search"
                 loading={isLoading}
-                onRowClick={(r) => isDetailView && setViewId(r._id || r.id)}
+                onRowClick={(r) => {
+                    if (isDetailView) {
+                        setViewId(r._id || r.id);
+                    } else {
+                        navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r._id)}`);
+                    }
+                }}
                 toolbarActions={
                     <>
-                        {isSuperAdmin && !selectedHostel ? (
-                            <>
-                                <Dropdown
-                                    options={[
-                                        { label: 'All', value: 'All' },
-                                        { label: 'Engineering', value: 'Engineering' },
-                                        { label: 'Medical', value: 'Medical' },
-                                        { label: 'Pharmacy', value: 'Pharmacy' }
-                                    ]}
-                                    value={orgFilter}
-                                    onChange={(val) => setOrgFilter(val)}
-                                    placeholder="All"
-                                    triggerClassName="px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white text-gray-700 flex justify-between items-center shadow-sm md:shadow-none"
-                                />
-                            </>
-                        ) : (
+                        {isDetailView && (
                             <>
                                 <button
                                     type="button"
@@ -402,13 +395,7 @@ export default function AdminLeaves() {
                     // Otherwise render Super Admin aggregates overview
                     return (
                         <>
-                            <td className="p-4 text-text-secondary capitalize">
-                                {r.organization}
-                            </td>
-                            <td
-                                className="p-4 text-text-secondary hover:text-primary cursor-pointer"
-                                onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostel)}`)}
-                            >
+                            <td className="p-4 text-text-secondary font-medium">
                                 {r.name}
                             </td>
                             <td className="p-4 text-text-secondary text-center sm:text-left">
@@ -420,11 +407,9 @@ export default function AdminLeaves() {
                             <td className="p-4 text-text-secondary text-center sm:text-left">
                                 {r.approved}
                             </td>
-                            {!isHomePass && (
-                                <td className="p-4 text-text-secondary text-center sm:text-left">
-                                    {r.rejected}
-                                </td>
-                            )}
+                            <td className="p-4 text-text-secondary text-center sm:text-left">
+                                {r.rejected}
+                            </td>
                         </>
                     );
                 }}
@@ -433,16 +418,12 @@ export default function AdminLeaves() {
                         return (
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <span className="font-bold text-[#0A437A] capitalize">{r.organization}</span>
-                                    <span
-                                        className="text-xs text-primary font-semibold hover:underline cursor-pointer"
-                                        onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r._id || r.hostel)}`)}
-                                    >
-                                        {r.hostel}
+                                    <span className="text-sm font-bold text-[#0A437A]">
+                                        {r.name}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-50 text-xs text-text-secondary font-semibold">
-                                    <div>Total: {r.leaves}</div>
+                                    <div>Total: {r.totalRequest}</div>
                                     <div>Pending: {r.pending}</div>
                                     <div>Approved: {r.approved}</div>
                                 </div>
@@ -478,7 +459,7 @@ export default function AdminLeaves() {
                             <hr className="border-gray-50" />
                             <div className="text-xs text-text-secondary space-y-1.5">
                                 <div>{isHomePass ? `Period: ${formatDate(r.fromDate)} - ${formatDate(r.toDate)} (${r.totalDays || r.duration})` : `Outing Time: ${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}`}</div>
-                                
+
                                 <div className="flex flex-col gap-2 pt-2 border-t border-gray-50 mt-2" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex justify-between items-center">
                                         <span>Status:</span>
@@ -539,6 +520,16 @@ export default function AdminLeaves() {
                 limit={limit}
                 totalItems={currentPagination.totalRecords || 0}
                 totalPages={currentPagination.totalPages || 1}
+            />
+
+            {/* Leave Details Modal */}
+            <LeaveDetailsModal
+                isOpen={!!viewId}
+                onClose={() => {
+                    setViewId(null);
+                }}
+                leaveId={viewId}
+                userRole={role}
             />
         </div>
     );
