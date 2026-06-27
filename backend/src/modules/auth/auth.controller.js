@@ -119,7 +119,7 @@ const me = asyncHandler(async (req, res) => {
 
   let user = null;
   if (req.user.role === 'student') {
-    user = await Student.findById(req.user.id).select("-password");
+    user = await Student.findById(req.user.id).select("-password").populate("hostelId", "name code");
   } else if (req.user.role === 'parent') {
     user = await Parent.findById(req.user.id).select("-password");
   } else {
@@ -139,6 +139,9 @@ const me = asyncHandler(async (req, res) => {
   if (userData.role === 'warden') {
     const assignedHostels = await Hostel.find({ wardens: user._id }).select("name code");
     userData.assignedHostels = assignedHostels;
+  } else if (userData.role === 'student' && userData.hostelId) {
+    // Map hostelId to assignedHostels format for UI compatibility
+    userData.assignedHostels = [userData.hostelId];
   }
 
   return sendSuccess(res, 200, "Token is valid", { user: userData });

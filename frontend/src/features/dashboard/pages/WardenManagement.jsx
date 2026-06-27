@@ -129,7 +129,7 @@ export default function WardenManagement() {
 
     useEffect(() => {
         const socket = initSocket();
-        
+
         const handleWardenEvent = (data) => {
             if (data?.role === 'warden' || data?.bulk) {
                 fetchWardens();
@@ -431,7 +431,7 @@ export default function WardenManagement() {
         try {
             const params = { limit: 100000 };
             if (searchQuery) params.search = searchQuery;
-            
+
             // Allow export modal filter to override table filter
             if (exportFilters.isActive !== '') {
                 params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
@@ -440,7 +440,7 @@ export default function WardenManagement() {
             }
 
             const res = await wardenService.getWardens(params);
-            
+
             // Handle different possible response structures
             const responseData = res?.data || res;
             const allWardens = responseData?.data || responseData || [];
@@ -457,7 +457,7 @@ export default function WardenManagement() {
                 }));
 
                 const isSuccess = exportToExcel(exportData, "Wardens_Export", "Wardens");
-                
+
                 if (isSuccess) {
                     showSuccessToast('Export Successful', 'The warden list has been downloaded.');
                 } else {
@@ -714,7 +714,7 @@ export default function WardenManagement() {
 
                                 />
                                 {isEmailVerified ? (
-                                    <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
+                                    <button type="button" className="px-6 py-2.5 bg-success-50 text-success border border-success-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
@@ -897,7 +897,7 @@ export default function WardenManagement() {
                     </div>
                 </div>
             )}
-            
+
             {/* Confirm Add Warden Modal */}
             {isAddConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
