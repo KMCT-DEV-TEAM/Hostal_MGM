@@ -44,11 +44,11 @@ export const createPass = asyncHandler(async (req, res) => {
 
   const student = await Student.findById(studentId);
   if (!student) {
-    return sendError(res, 404, "Student not found");
+    return sendError(res, 404, "We couldn't find your student account.");
   }
 
   if (!student.hostelId) {
-    return sendError(res, 400, "Student is not assigned to a hostel");
+    return sendError(res, 400, "It looks like you haven't been assigned to a hostel yet.");
   }
 
   const parent = await Parent.findOne({
@@ -61,7 +61,7 @@ export const createPass = asyncHandler(async (req, res) => {
     return sendError(
       res,
       400,
-      "No default guardian configured for this student"
+      "We couldn't find a default guardian linked to your account."
     );
   }
 
@@ -94,14 +94,14 @@ export const createPass = asyncHandler(async (req, res) => {
 
   const newPass = await createPassDb(passData);
 
-  return sendSuccess(res, 201, "Pass request created successfully", newPass);
+  return sendSuccess(res, 201, "Your pass request has been submitted successfully.", newPass);
 });
 
 export const getMyPasses = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
   const { passes, pagination } = await getStudentPassesDb(studentId, req.query);
 
-  return sendSuccess(res, 200, "Passes fetched successfully", {
+  return sendSuccess(res, 200, "Passes loaded successfully.", {
     data: passes,
     pagination,
   });
@@ -113,10 +113,10 @@ export const getStudentPassDetails = asyncHandler(async (req, res) => {
 
   const pass = await getPassDetailsDb(id, studentId);
   if (!pass) {
-    return sendError(res, 404, "Pass not found");
+    return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
 });
 
 export const updatePass = asyncHandler(async (req, res) => {
@@ -125,13 +125,13 @@ export const updatePass = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const pass = await getPassByIdDb(id);
-  if (!pass) return sendError(res, 404, "Pass not found");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (pass.returnTracking && pass.returnTracking.leftHostelAt) {
-    return sendError(res, 422, "Cannot edit pass after student has left the hostel.");
+    return sendError(res, 422, "You cannot edit this pass because the student has already left the hostel.");
   }
   if (["cancelled", "rejected", "completed", "returned"].includes(pass.status)) {
-    return sendError(res, 422, `Cannot edit pass in status ${pass.status}`);
+    return sendError(res, 422, "You cannot edit this pass because of its current status.");
   }
 
   const allowedFields = ["reason", "fromDate", "toDate", "totalDays", "date", "outTime", "expectedReturnTime", "outPassCategory"];
@@ -145,7 +145,7 @@ export const updatePass = asyncHandler(async (req, res) => {
     }
   });
 
-  if (!isEdited) return sendError(res, 400, "No changes provided");
+  if (!isEdited) return sendError(res, 400, "No changes were made to the pass.");
 
   updateQuery.$set["changeInfo.edited"] = true;
   updateQuery.$set["changeInfo.editedBy"] = userRole;
@@ -234,7 +234,7 @@ export const updatePass = asyncHandler(async (req, res) => {
     }
   }
 
-  return sendSuccess(res, 200, "Pass updated successfully", updatedPass);
+  return sendSuccess(res, 200, "Your pass has been updated successfully.", updatedPass);
 });
 
 // --- Management Controllers (Admin & Super Admin) ---
@@ -257,12 +257,12 @@ export const getAdminDashboardStats = asyncHandler(async (req, res) => {
 
   console.log(req.user)
   const stats = await getManagementDashboardStatsDb(buildAdminScope(req));
-  return sendSuccess(res, 200, "Dashboard stats fetched successfully", stats);
+  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
 });
 
 export const getAdminHostels = asyncHandler(async (req, res) => {
   const hostels = await getManagementHostelsDb(buildAdminScope(req));
-  return sendSuccess(res, 200, "Hostels fetched successfully", { data: hostels });
+  return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels });
 });
 
 export const getAdminPasses = asyncHandler(async (req, res) => {
@@ -271,11 +271,11 @@ export const getAdminPasses = asyncHandler(async (req, res) => {
 
   const hostel = await Hostel.findOne({ _id: hostelId, organizations: scope.organizationId });
   if (!hostel) {
-    return sendError(res, 403, "Hostel not found or you do not have permission to access it.");
+    return sendError(res, 403, "We couldn't find this hostel, or you might not have permission to view it.");
   }
 
   const { passes, pagination } = await getManagementPassesDb(hostelId, req.query, scope);
-  return sendSuccess(res, 200, "Passes fetched successfully", { data: passes, pagination });
+  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getAdminPassDetails = asyncHandler(async (req, res) => {
@@ -283,14 +283,14 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const pass = await getManagementPassDetailsDb(id, scope);
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   const hostel = await Hostel.findOne({ _id: pass.hostelId?._id, organizations: scope.organizationId });
   if (!hostel) {
-    return sendError(res, 403, "You do not have permission to view this pass.");
+    return sendError(res, 403, "You don't have permission to view this pass.");
   }
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", { data: pass });
+  return sendSuccess(res, 200, "Pass details loaded successfully.", { data: pass });
 });
 
 export const adminApprovePass = asyncHandler(async (req, res) => {
@@ -300,14 +300,14 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   const { remarks } = req.body;
 
   const pass = await Pass.findById(id).populate("hostelId");
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
-    return sendError(res, 403, "You do not have permission to approve passes for this hostel.");
+    return sendError(res, 403, "You don't have permission to approve passes for this hostel.");
   }
 
   if (pass.status !== "pending_admin") {
-    return sendError(res, 422, `Pass cannot be approved in current status: ${pass.status}`);
+    return sendError(res, 422, "This pass can't be approved right now because of its current status.");
   }
 
   const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
@@ -363,7 +363,7 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
     })));
   }
 
-  return sendSuccess(res, 200, "Pass approved successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been approved.", updatedPass);
 });
 
 export const adminRejectPass = asyncHandler(async (req, res) => {
@@ -373,14 +373,14 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
   const { remarks } = req.body;
 
   const pass = await Pass.findById(id).populate("hostelId");
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
-    return sendError(res, 403, "You do not have permission to reject passes for this hostel.");
+    return sendError(res, 403, "You don't have permission to reject passes for this hostel.");
   }
 
   if (pass.status !== "pending_admin") {
-    return sendError(res, 422, `Pass cannot be rejected in current status: ${pass.status}`);
+    return sendError(res, 422, "This pass can't be rejected right now because of its current status.");
   }
 
   const updateQuery = {
@@ -431,7 +431,7 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
     })));
   }
 
-  return sendSuccess(res, 200, "Pass rejected successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been rejected.", updatedPass);
 });
 
 export const adminCancelPass = asyncHandler(async (req, res) => {
@@ -440,19 +440,19 @@ export const adminCancelPass = asyncHandler(async (req, res) => {
   const { reason } = req.body;
 
   if (!reason || reason.trim() === "") {
-    return sendError(res, 400, "Administrative cancellation requires a reason.");
+    return sendError(res, 400, "Please provide a reason for cancelling this pass.");
   }
 
   const pass = await Pass.findById(id).populate("hostelId", "organizations");
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
-    return sendError(res, 403, "You do not have permission to cancel this pass.");
+    return sendError(res, 403, "You don't have permission to cancel this pass.");
   }
 
   const updatedPass = await managementCancelPassDb(id, reason, scope);
   if (!updatedPass) {
-    return sendError(res, 409, "Pass state changed. Could not apply administrative cancellation.");
+    return sendError(res, 409, "We couldn't cancel the pass because its status has recently changed. Please try again.");
   }
 
   await Notification.create({
@@ -471,18 +471,18 @@ export const adminCancelPass = asyncHandler(async (req, res) => {
     });
   }
 
-  return sendSuccess(res, 200, "Pass cancelled administratively successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
 
 // Super Admin Wrappers
 export const getSuperAdminDashboardStats = asyncHandler(async (req, res) => {
   const stats = await getManagementDashboardStatsDb(buildSuperAdminScope(req));
-  return sendSuccess(res, 200, "Super Admin Dashboard stats fetched successfully", stats);
+  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
 });
 
 export const getSuperAdminOrganizationsHostels = asyncHandler(async (req, res) => {
   const orgHostels = await getManagementHostelsDb(buildSuperAdminScope(req));
-  return sendSuccess(res, 200, "Organizations and Hostels fetched successfully", { data: orgHostels });
+  return sendSuccess(res, 200, "Organizations and Hostels loaded successfully.", { data: orgHostels });
 });
 
 export const getSuperAdminPasses = asyncHandler(async (req, res) => {
@@ -491,11 +491,11 @@ export const getSuperAdminPasses = asyncHandler(async (req, res) => {
 
   const hostel = await Hostel.findById(hostelId);
   if (!hostel) {
-    return sendError(res, 404, "Hostel not found.");
+    return sendError(res, 404, "We couldn't find the hostel you're looking for.");
   }
 
   const { passes, pagination } = await getManagementPassesDb(hostelId, req.query, scope);
-  return sendSuccess(res, 200, "Passes fetched successfully", { data: passes, pagination });
+  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getSuperAdminPassDetails = asyncHandler(async (req, res) => {
@@ -503,9 +503,9 @@ export const getSuperAdminPassDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const pass = await getManagementPassDetailsDb(id, scope);
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
 });
 
 export const superAdminCancelPass = asyncHandler(async (req, res) => {
@@ -514,15 +514,15 @@ export const superAdminCancelPass = asyncHandler(async (req, res) => {
   const { reason } = req.body;
 
   if (!reason || reason.trim() === "") {
-    return sendError(res, 400, "Administrative cancellation requires a reason.");
+    return sendError(res, 400, "Please provide a reason for cancelling this pass.");
   }
 
   const pass = await Pass.findById(id);
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   const updatedPass = await managementCancelPassDb(id, reason, scope);
   if (!updatedPass) {
-    return sendError(res, 409, "Pass state changed. Could not apply administrative cancellation.");
+    return sendError(res, 409, "We couldn't cancel the pass because its status has recently changed. Please try again.");
   }
 
   await Notification.create({
@@ -541,7 +541,7 @@ export const superAdminCancelPass = asyncHandler(async (req, res) => {
     });
   }
 
-  return sendSuccess(res, 200, "Pass cancelled administratively successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
 
 export const cancelPass = asyncHandler(async (req, res) => {
@@ -550,10 +550,10 @@ export const cancelPass = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const pass = await getPassByIdDb(id);
-  if (!pass) return sendError(res, 404, "Pass not found");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (["cancelled", "rejected", "completed", "returned"].includes(pass.status)) {
-    return sendError(res, 422, `Cannot cancel pass in status ${pass.status}`);
+    return sendError(res, 422, "This pass can't be cancelled because of its current status.");
   }
 
   let requiresReapproval = false;
@@ -605,7 +605,7 @@ export const cancelPass = asyncHandler(async (req, res) => {
     if (userRole === "student") {
       await Notification.create({ recipient: updatedPass.parentId, title: "Cancellation Requested", message: "Student requested cancellation of a pass.", type: "info" });
     }
-    return sendSuccess(res, 200, "Cancellation requested. Awaiting approval.", updatedPass);
+    return sendSuccess(res, 200, "Your request to cancel the pass has been submitted and is awaiting approval.", updatedPass);
   }
 
   const updatedPass = await Pass.findByIdAndUpdate(id, {
@@ -621,7 +621,7 @@ export const cancelPass = asyncHandler(async (req, res) => {
     }
   }, { new: true });
 
-  return sendSuccess(res, 200, "Pass cancelled successfully", updatedPass);
+  return sendSuccess(res, 200, "Your pass has been cancelled.", updatedPass);
 });
 
 
@@ -631,11 +631,11 @@ export const getPasses = asyncHandler(async (req, res) => {
   const parent = await getParentDb(parentId);
 
   if (!parent || !parent.studentId) {
-    return sendError(res, 404, "Parent or linked student not found");
+    return sendError(res, 404, "We couldn't find your account or your linked student.");
   }
 
   const { passes, pagination } = await getPassesDb(parent.studentId, req.query);
-  return sendSuccess(res, 200, "Passes fetched successfully", { data: passes, pagination });
+  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getPassDetails = asyncHandler(async (req, res) => {
@@ -645,15 +645,15 @@ export const getPassDetails = asyncHandler(async (req, res) => {
   const parent = await getParentDb(parentId);
 
   if (!parent || !parent.studentId) {
-    return sendError(res, 404, "Parent or linked student not found");
+    return sendError(res, 404, "We couldn't find your account or your linked student.");
   }
 
   const pass = await getPassDetailsDb(id, parent.studentId);
   if (!pass) {
-    return sendError(res, 404, "Pass not found");
+    return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", pass);
+  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
 });
 
 export const approvePass = asyncHandler(async (req, res) => {
@@ -664,20 +664,20 @@ export const approvePass = asyncHandler(async (req, res) => {
   const parent = await getParentDb(parentId);
 
   if (!parent || !parent.isActive) {
-    return sendError(res, 403, "Parent account is inactive or not found");
+    return sendError(res, 403, "Your account is either inactive or couldn't be found.");
   }
 
   if (!parent.defaultGuardian) {
-    return sendError(res, 403, "Only the default guardian can approve passes");
+    return sendError(res, 403, "Only the default guardian has permission to approve passes.");
   }
 
   const pass = await Pass.findOne({ _id: id, studentId: parent.studentId });
   if (!pass) {
-    return sendError(res, 404, "Pass not found");
+    return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
 
   if (pass.status !== "pending_parent") {
-    return sendError(res, 400, "Pass is not pending parent approval");
+    return sendError(res, 400, "This pass is not waiting for your approval.");
   }
 
   const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
@@ -729,7 +729,7 @@ export const approvePass = asyncHandler(async (req, res) => {
     }
   }
 
-  return sendSuccess(res, 200, "Pass approved successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been successfully approved.", updatedPass);
 });
 
 export const rejectPass = asyncHandler(async (req, res) => {
@@ -740,25 +740,25 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const parent = await getParentDb(parentId);
 
   if (!parent || !parent.isActive) {
-    return sendError(res, 403, "Parent account is inactive or not found");
+    return sendError(res, 403, "Your account is either inactive or couldn't be found.");
   }
 
   if (!parent.defaultGuardian) {
-    return sendError(res, 403, "Only the default guardian can reject passes");
+    return sendError(res, 403, "Only the default guardian has permission to reject passes.");
   }
 
   const pass = await Pass.findOne({ _id: id, studentId: parent.studentId });
 
   if (!pass) {
-    return sendError(res, 404, "Pass not found");
+    return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
 
   if (pass.status !== "pending_parent") {
-    return sendError(res, 400, "Pass is not pending parent approval");
+    return sendError(res, 400, "This pass is not waiting for your rejection.");
   }
 
   const updatedPass = await updatePassApprovalDb(id, parentId, "reject", remarks);
-  return sendSuccess(res, 200, "Pass rejected successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been successfully rejected.", updatedPass);
 });
 
 // --- Warden Controllers ---
@@ -768,11 +768,11 @@ export const getWardenDashboardStats = asyncHandler(async (req, res) => {
   const hostel = await getWardenHostelDb(wardenId);
 
   if (!hostel) {
-    return sendError(res, 403, "No active hostel assignment found for this warden.");
+    return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
   }
 
   const stats = await getWardenDashboardStatsDb(hostel._id);
-  return sendSuccess(res, 200, "Dashboard stats fetched successfully", { data: stats });
+  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", { data: stats });
 });
 
 export const getWardenPasses = asyncHandler(async (req, res) => {
@@ -780,11 +780,11 @@ export const getWardenPasses = asyncHandler(async (req, res) => {
   const hostel = await getWardenHostelDb(wardenId);
 
   if (!hostel) {
-    return sendError(res, 403, "No active hostel assignment found for this warden.");
+    return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
   }
 
   const { passes, pagination } = await getWardenPassesDb(hostel._id, req.query);
-  return sendSuccess(res, 200, "Passes fetched successfully", { data: passes, pagination });
+  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getWardenPassDetails = asyncHandler(async (req, res) => {
@@ -793,15 +793,15 @@ export const getWardenPassDetails = asyncHandler(async (req, res) => {
   const hostel = await getWardenHostelDb(wardenId);
 
   if (!hostel) {
-    return sendError(res, 403, "No active hostel assignment found.");
+    return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
   }
 
   const pass = await getWardenPassDetailsDb(id, hostel._id);
   if (!pass) {
-    return sendError(res, 404, "Pass not found or does not belong to your hostel.");
+    return sendError(res, 404, "We couldn't find the pass, or it might not belong to your hostel.");
   }
 
-  return sendSuccess(res, 200, "Pass details fetched successfully", { data: pass });
+  return sendSuccess(res, 200, "Pass details loaded successfully.", { data: pass });
 });
 
 
@@ -811,17 +811,17 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const hostel = await getWardenHostelDb(wardenId);
-  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
+  if (!hostel) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
 
   const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (pass.status !== "approved") {
-    return sendError(res, 422, `Student cannot leave. Pass status is ${pass.status}`);
+    return sendError(res, 422, "The student cannot leave right now because of the pass status.");
   }
 
   if (pass.returnTracking && pass.returnTracking.leftHostelAt) {
-    return sendError(res, 409, "Student has already been marked as left.");
+    return sendError(res, 409, "The student has already been marked as left.");
   }
 
   const updateQuery = {
@@ -849,7 +849,7 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
     type: "info"
   });
 
-  return sendSuccess(res, 200, "Student marked as left successfully", updatedPass);
+  return sendSuccess(res, 200, "The student has been marked as left.", updatedPass);
 });
 
 export const markStudentReturned = asyncHandler(async (req, res) => {
@@ -857,17 +857,17 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const hostel = await getWardenHostelDb(wardenId);
-  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
+  if (!hostel) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
 
   const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (!pass.returnTracking || !pass.returnTracking.leftHostelAt) {
-    return sendError(res, 422, "Student has not left the hostel yet.");
+    return sendError(res, 422, "The student hasn't left the hostel yet.");
   }
 
   if (pass.returnTracking.returnedAt) {
-    return sendError(res, 409, "Student is already marked as returned.");
+    return sendError(res, 409, "The student is already marked as returned.");
   }
 
   const returnedAt = new Date();
@@ -911,7 +911,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
     type: "info"
   });
 
-  return sendSuccess(res, 200, "Student marked as returned successfully", updatedPass);
+  return sendSuccess(res, 200, "The student has been marked as returned.", updatedPass);
 });
 
 
@@ -922,17 +922,17 @@ export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
   const { remarks } = req.body;
 
   const hostel = await getWardenHostelDb(wardenId);
-  if (!hostel) return sendError(res, 403, "No active hostel assignment found.");
+  if (!hostel) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
 
   const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
-  if (!pass) return sendError(res, 404, "Pass not found.");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
   if (["completed", "cancelled", "rejected", "returned"].includes(pass.status)) {
-    return sendError(res, 422, `Cannot administratively cancel a pass with status ${pass.status}`);
+    return sendError(res, 422, "This pass can't be cancelled because of its current status.");
   }
 
   if (pass.returnTracking && pass.returnTracking.leftHostelAt) {
-    return sendError(res, 422, "Cannot cancel. Student has already left the hostel.");
+    return sendError(res, 422, "You cannot cancel this pass because the student has already left the hostel.");
   }
 
   const updatedPass = await Pass.findOneAndUpdate(
@@ -955,7 +955,7 @@ export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
   );
 
   if (!updatedPass) {
-    return sendError(res, 409, "Pass state changed. Could not apply administrative cancellation.");
+    return sendError(res, 409, "We couldn't cancel the pass because its status has recently changed. Please try again.");
   }
 
   await Notification.create({
@@ -972,7 +972,7 @@ export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
     type: "error"
   });
 
-  return sendSuccess(res, 200, "Pass administratively cancelled successfully", updatedPass);
+  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
 
 

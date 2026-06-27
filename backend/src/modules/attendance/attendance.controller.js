@@ -29,17 +29,26 @@ const getScope = async (req) => {
 
 export const createAttendanceWindow = asyncHandler(async (req, res) => {
   const scope = await getScope(req);
-  
+
   if (scope.role !== "warden") {
     return sendError(res, 403, "Only wardens can create an attendance window.");
   }
-  
+
   if (!scope.hostelId) {
     return sendError(res, 403, "No active hostel assignment found for this warden.");
   }
 
-  const window = await createAttendanceWindowDb(scope.hostelId, scope.userId);
-  return sendSuccess(res, 201, "Attendance window created successfully", window);
+  const attendanceWindow = await createAttendanceWindowDb(
+    scope.hostelId,
+    scope.userId
+  );
+
+  return sendSuccess(
+    res,
+    201,
+    "Attendance window created successfully",
+    attendanceWindow.toObject()
+  );
 });
 
 export const getAttendanceWindows = asyncHandler(async (req, res) => {

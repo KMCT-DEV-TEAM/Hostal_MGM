@@ -49,9 +49,9 @@ export const getAttendanceWindowsDb = async (query, scope) => {
   const filter = {};
 
   if (scope.role === "warden") {
-     filter.hostelId = scope.hostelId;
+    filter.hostelId = scope.hostelId;
   } else if (query.hostelId) {
-     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
+    filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }
 
   if (query.status) {
@@ -126,7 +126,7 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 
   const result = await AttendanceWindow.aggregate(pipeline);
   const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;
-  
+
   return {
     windows: result[0]?.data || [],
     pagination: {
@@ -145,7 +145,7 @@ export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
   if (scope.role === "warden") {
     filter.hostelId = new mongoose.Types.ObjectId(scope.hostelId);
   }
-  
+
   const pipeline = [
     { $match: filter },
     {
@@ -204,7 +204,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   const skip = (page - 1) * limit;
 
   const filter = { attendanceWindowId: new mongoose.Types.ObjectId(windowId) };
-  
+
   if (query.status) {
     filter.status = query.status;
   }
@@ -278,12 +278,12 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
 export const scanStudentDb = async (windowId, studentId, wardenId) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     const window = await AttendanceWindow.findOne({ _id: windowId, status: "open" })
       .select("_id hostelId")
       .session(session);
-      
+
     if (!window) {
       throw new Error("Attendance window is closed or does not exist.");
     }
@@ -291,11 +291,11 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
     const student = await Student.findOne({ _id: studentId, isActive: true, hostelStatus: "active" })
       .select("_id hostelId")
       .session(session);
-      
+
     if (!student) {
       throw new Error("Student is inactive or does not exist.");
     }
-    
+
     if (student.hostelId.toString() !== window.hostelId.toString()) {
       throw new Error("Student does not belong to this hostel.");
     }
@@ -344,27 +344,27 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
   }
 
   const absentStudents = await Student.aggregate([
-    { 
-      $match: { 
-        hostelId: window.hostelId, 
-        isActive: true, 
-        hostelStatus: "active" 
-      } 
+    {
+      $match: {
+        hostelId: window.hostelId,
+        isActive: true,
+        hostelStatus: "active"
+      }
     },
     {
       $lookup: {
         from: "attendancerecords",
         let: { studentId: "$_id" },
         pipeline: [
-          { 
-            $match: { 
-              $expr: { 
+          {
+            $match: {
+              $expr: {
                 $and: [
                   { $eq: ["$studentId", "$$studentId"] },
                   { $eq: ["$attendanceWindowId", new mongoose.Types.ObjectId(windowId)] }
-                ] 
-              } 
-            } 
+                ]
+              }
+            }
           },
           { $project: { _id: 1 } }
         ],
@@ -384,7 +384,7 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
       status: "absent",
       remarks: "Marked absent automatically upon window completion."
     }));
-    
+
     await AttendanceRecord.insertMany(absentRecords);
   }
 
