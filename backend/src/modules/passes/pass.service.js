@@ -415,7 +415,7 @@ export const getManagementDashboardStatsDb = async (scope) => {
   return response;
 };
 
-export const getManagementHostelsDb = async (scope, query) => {
+export const getManagementHostelsDb = async (scope, query = {}) => {
   const matchQuery = { isActive: true };
   if (scope.organizationId && scope.role === "admin") {
     const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
@@ -494,7 +494,7 @@ export const getManagementHostelsDb = async (scope, query) => {
         outside: { $ifNull: ["$outside", 0] }
       }
     },
-    { $match: { leaves: { $gt: 0 } } },
+    { $match: { total: { $gt: 0 } } },
     { $sort: { hostel: 1 } }
   ];
 
