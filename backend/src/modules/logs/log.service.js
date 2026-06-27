@@ -1,4 +1,5 @@
 import ActivityLog from "./log.model.js";
+import { getIo } from "../../config/socket.js";
 
 /**
  * Creates a new activity log entry
@@ -8,6 +9,7 @@ import ActivityLog from "./log.model.js";
 export const createLogDb = async (logData) => {
   try {
     const log = await ActivityLog.create(logData);
+    getIo()?.emit('logCreated', log);
     return log;
   } catch (error) {
     console.error("Error creating activity log:", error);

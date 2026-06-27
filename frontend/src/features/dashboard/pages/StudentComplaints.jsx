@@ -12,6 +12,7 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
+import { initSocket, getSocket } from '@/services/socket.service';
 
 export default function StudentComplaints() {
     const [complaints, setComplaints] = useState([]);
@@ -73,7 +74,31 @@ export default function StudentComplaints() {
         ComplaintCategoryService.getComplaintCategories().then(res => {
             setCategories(res.data || []);
         });
+
+        // Socket.IO real-time updates
+        const socket = initSocket();
+        
+        const handleComplaintEvent = () => {
+            fetchComplaints();
+        };
+
+        socket.on('complaintCreated', handleComplaintEvent);
+        socket.on('complaintUpdated', handleComplaintEvent);
+        socket.on('complaintDeleted', handleComplaintEvent);
+
+        return () => {
+            socket.off('complaintCreated', handleComplaintEvent);
+            socket.off('complaintUpdated', handleComplaintEvent);
+            socket.off('complaintDeleted', handleComplaintEvent);
+        };
     }, []);
+
+    useEffect(() => {
+        if (selectedDetailComplaint) {
+            const updated = complaints.find(c => c.id === selectedDetailComplaint.id);
+            if (updated) setSelectedDetailComplaint(updated);
+        }
+    }, [complaints]);
 
     useEffect(() => {
         const timer = setTimeout(() => {

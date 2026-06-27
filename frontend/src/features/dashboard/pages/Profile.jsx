@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { User, Mail, Phone, Shield, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Shield, Pencil, Check, X, Loader2, Building } from 'lucide-react';
 import authService from '@/services/auth.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import EmailVerificationModal from '@/components/ui/EmailVerificationModal';
+import PasswordConfirmModal from '@/components/ui/PasswordConfirmModal';
 import ProfileSkeleton from '@/components/ui/ProfileSkeleton';
 import { useTranslation } from '@/hooks/useTranslation';
+import { initSocket } from '@/services/socket.service';
 
 export default function Profile() {
     const { t } = useTranslation();
@@ -18,6 +20,8 @@ export default function Profile() {
 
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, field: null });
     const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
     const formatRole = (role) => {
         if (!role) return '';
@@ -36,6 +40,18 @@ export default function Profile() {
             }
         };
         fetchProfile();
+        
+        const socket = initSocket();
+        
+        const handleProfileEvent = () => {
+            fetchProfile();
+        };
+
+        socket.on('profileUpdated', handleProfileEvent);
+
+        return () => {
+            socket.off('profileUpdated', handleProfileEvent);
+        };
     }, [updateUser]);
 
     const handleEditClick = (field, currentValue) => {
@@ -73,16 +89,7 @@ export default function Profile() {
                 return;
             }
 
-            setIsSaving(true);
-            try {
-                await authService.requestEmailChange({ newEmail: editValue });
-                showSuccessToast('OTP Sent', 'Check your new email for the verification code');
-                setIsEmailVerifyModalOpen(true);
-            } catch (error) {
-                showErrorToast('Failed', error?.message || 'Failed to send OTP');
-            } finally {
-                setIsSaving(false);
-            }
+            setIsPasswordModalOpen(true);
             return;
         }
 
@@ -107,6 +114,26 @@ export default function Profile() {
             setIsSaving(false);
         }
     };
+
+    const handleVerifyPasswordForEmailChange = async (password) => {
+        setIsVerifyingPassword(true);
+        try {
+            await authService.verifyPassword({ password });
+            
+            setIsPasswordModalOpen(false);
+            setIsSaving(true);
+            
+            await authService.requestEmailChange({ newEmail: editValue });
+            showSuccessToast('OTP Sent', 'Check your new email for the verification code');
+            setIsEmailVerifyModalOpen(true);
+        } catch (error) {
+            showErrorToast('Verification Failed', error?.message || 'Incorrect password');
+        } finally {
+            setIsVerifyingPassword(false);
+            setIsSaving(false);
+        }
+    };
+
 
     const handleVerifyEmail = async (otp) => {
         setIsSaving(true);
@@ -304,6 +331,24 @@ export default function Profile() {
                                     )}
                                 </div>
                             </div>
+                            
+                            {user?.role === 'warden' && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
+                                    <div className="text-gray-500 font-medium">{t('assigned_hostel') || 'Assigned Hostel'}</div>
+                                    <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+                                        {user?.assignedHostels && user.assignedHostels.length > 0 ? (
+                                            user.assignedHostels.map((hostel, index) => (
+                                                <span key={index} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-xs font-semibold tracking-wide">
+                                                    <Building className="w-3 h-3" />
+                                                    {hostel.name} ({hostel.code})
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-gray-400 text-sm italic">Not assigned to any hostel</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -346,6 +391,14 @@ export default function Profile() {
                 onVerify={handleVerifyEmail}
                 email={editValue}
                 isSubmitting={isSaving}
+            />
+            <PasswordConfirmModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+                onConfirm={handleVerifyPasswordForEmailChange}
+                isVerifying={isVerifyingPassword}
+                title="Security Verification"
+                subtitle="Please enter your password to change your email address."
             />
         </div>
     );

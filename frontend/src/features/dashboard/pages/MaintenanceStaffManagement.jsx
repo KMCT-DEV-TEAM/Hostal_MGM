@@ -10,6 +10,7 @@ import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import maintenanceStaffService from '../../../services/maintenanceStaff.service';
 import organizationService from '../../../services/organization.service';
 import otpService from '../../../services/otp.service';
+import { initSocket } from '@/services/socket.service';
 import InfoRow from '@/components/ui/InfoRow';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -40,6 +41,7 @@ export default function MaintenanceStaffManagement() {
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isConfirming, setIsConfirming] = useState(false);
 
     // Email verification state
     const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -116,6 +118,26 @@ export default function MaintenanceStaffManagement() {
         }
     }, [currentPage, debouncedSearch, statusFilter]);
 
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleStaffEvent = (data) => {
+            if (data?.role === 'maintenance_staff' || data?.bulk) {
+                fetchStaff();
+            }
+        };
+
+        socket.on('userCreated', handleStaffEvent);
+        socket.on('userUpdated', handleStaffEvent);
+        socket.on('userDeleted', handleStaffEvent);
+
+        return () => {
+            socket.off('userCreated', handleStaffEvent);
+            socket.off('userUpdated', handleStaffEvent);
+            socket.off('userDeleted', handleStaffEvent);
+        };
+    }, [currentPage]);
+
     const fetchOrganizations = async () => {
         try {
             const res = await organizationService.getOrganizations();
@@ -178,6 +200,7 @@ export default function MaintenanceStaffManagement() {
 
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
+        setIsConfirming(true);
         try {
             const res = await maintenanceStaffService.toggleStatus(statusToUpdate.id);
             if (res && res.data) {
@@ -188,9 +211,11 @@ export default function MaintenanceStaffManagement() {
         } catch (error) {
             console.error("Failed to update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to change status');
+        } finally {
+            setIsConfirming(false);
+            setIsStatusConfirmOpen(false);
+            setStatusToUpdate(null);
         }
-        setIsStatusConfirmOpen(false);
-        setStatusToUpdate(null);
     };
 
     const handleBulkStatusClick = (isActive) => {
@@ -200,6 +225,7 @@ export default function MaintenanceStaffManagement() {
 
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
+        setIsConfirming(true);
         try {
             const res = await maintenanceStaffService.bulkToggleStatus({
                 ids: selectedIds,
@@ -215,10 +241,12 @@ export default function MaintenanceStaffManagement() {
         } catch (error) {
             console.error("Failed to update bulk status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to update bulk status');
+        } finally {
+            setIsConfirming(false);
+            setSelectedIds([]);
+            setIsBulkStatusConfirmOpen(false);
+            setBulkStatusToUpdate(null);
         }
-        setSelectedIds([]);
-        setIsBulkStatusConfirmOpen(false);
-        setBulkStatusToUpdate(null);
     };
 
     // ==========================================
@@ -751,9 +779,10 @@ export default function MaintenanceStaffManagement() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
+                                disabled={isConfirming}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
-                                Confirm
+                                {isConfirming ? 'Confirming...' : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -779,9 +808,10 @@ export default function MaintenanceStaffManagement() {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
+                                disabled={isConfirming}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                             >
-                                Confirm
+                                {isConfirming ? 'Confirming...' : 'Confirm'}
                             </button>
                         </div>
                     </div>

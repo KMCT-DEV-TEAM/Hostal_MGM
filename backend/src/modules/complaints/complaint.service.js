@@ -269,3 +269,18 @@ export const rejectAssignedTaskDb = async (complaintId, staffId, rejectNote) => 
 
     return await complaint.save();
 };
+
+// Add internal note to a complaint
+export const addInternalNoteDb = async (complaintId, userRole, addedBy, noteText) => {
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) throw new Error("Complaint not found.");
+
+    complaint.internalNotes.push({
+        note: noteText,
+        addedBy: addedBy,
+        role: userRole,
+        date: new Date()
+    });
+
+    return await complaint.save();
+};

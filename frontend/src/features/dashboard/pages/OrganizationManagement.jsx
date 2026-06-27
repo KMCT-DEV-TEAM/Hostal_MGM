@@ -13,6 +13,9 @@ import { saveAs } from 'file-saver';
 import { exportToExcel } from '@/utils/exportUtils';
 import organizationService from '../../../services/organization.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import OrganizationTable from '../components/organization/OrganizationTable';
 import OrganizationMobileList from '../components/organization/OrganizationMobileList';
 import OrganizationDetailView from '../components/organization/OrganizationDetailView';
@@ -97,6 +100,24 @@ const OrganizationManagement = () => {
     useEffect(() => {
         fetchOrganizations();
     }, [page, debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleOrgEvent = () => {
+            fetchOrganizations();
+        };
+
+        socket.on('organizationCreated', handleOrgEvent);
+        socket.on('organizationUpdated', handleOrgEvent);
+        socket.on('organizationDeleted', handleOrgEvent);
+
+        return () => {
+            socket.off('organizationCreated', handleOrgEvent);
+            socket.off('organizationUpdated', handleOrgEvent);
+            socket.off('organizationDeleted', handleOrgEvent);
+        };
+    }, []);
 
     const handleStatusChangeClick = (id, currentStatus) => {
         setStatusToUpdate({ id, currentStatus });

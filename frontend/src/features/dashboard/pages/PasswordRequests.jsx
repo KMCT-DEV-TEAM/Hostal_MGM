@@ -4,7 +4,10 @@ import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import { passwordRequestApi } from "@/features/dashboard/api/passwordRequestApi";
-import { exportToExcel } from "@/utils/exportUtils";
+import { exportToExcel } from '@/utils/exportUtils';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
@@ -70,6 +73,22 @@ const PasswordRequests = () => {
     useEffect(() => {
         fetchRequests(1);
     }, [statusFilter, debouncedSearch]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handlePasswordRequestEvent = () => {
+            fetchRequests(pagination.page);
+        };
+
+        socket.on('passwordRequestCreated', handlePasswordRequestEvent);
+        socket.on('passwordRequestUpdated', handlePasswordRequestEvent);
+
+        return () => {
+            socket.off('passwordRequestCreated', handlePasswordRequestEvent);
+            socket.off('passwordRequestUpdated', handlePasswordRequestEvent);
+        };
+    }, [pagination.page]);
 
     useEffect(() => {
         setSelectedRequests([]);
