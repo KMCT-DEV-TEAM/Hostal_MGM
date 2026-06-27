@@ -72,7 +72,7 @@ export default function ComplaintsTable({
                                 <td className="p-4 text-start text-[#777777]">{complaint.date}</td>
                                 <td className="p-4 text-start text-[#777777]">{complaint.due}</td>
                                 <td className="p-4 text-start">
-                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'Rejected' ? 'bg-red-50 text-red-600' : complaint.status === 'Awaiting' ? 'bg-purple-50 text-purple-600' : complaint.status === 'Incomplete' ? 'bg-gray-100 text-gray-700' : 'bg-blue-50/80 text-secondary'}`}>
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'Rejected' ? 'bg-red-50 text-red-600' : complaint.status === 'Awaiting' ? 'bg-purple-50 text-purple-600' : complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' : 'bg-blue-50/80 text-secondary'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>

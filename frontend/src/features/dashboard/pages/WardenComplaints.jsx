@@ -5,6 +5,7 @@ import WardenComplaintsFilterModal from '../components/complaints/WardenComplain
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
 import AssignStaffModal from '../components/complaints/AssignStaffModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -124,10 +125,23 @@ const filteredComplaints = complaints.filter(complaint => {
     return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesRoomNo && matchesDate;
 });
 
-const confirmExport = async () => {
+const confirmExport = async (exportFilters) => {
     setIsExporting(true);
     try {
-        let dataToExport = filteredComplaints;
+        let dataToExport = complaints;
+
+        if (exportFilters.status) {
+            dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
+        }
+
+        if (exportFilters.startDate) {
+            const start = new Date(exportFilters.startDate).setHours(0, 0, 0, 0);
+            dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0, 0, 0, 0) >= start);
+        }
+        if (exportFilters.endDate) {
+            const end = new Date(exportFilters.endDate).setHours(23, 59, 59, 999);
+            dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23, 59, 59, 999) <= end);
+        }
 
         if (dataToExport && dataToExport.length > 0) {
             const exportData = dataToExport.map((complaint, index) => ({
@@ -304,15 +318,27 @@ return (
             }}
         />
 
-        <ConfirmationModal
+        <ExportFilterModal
             isOpen={isExportConfirmOpen}
             onClose={() => setIsExportConfirmOpen(false)}
-            onConfirm={confirmExport}
-            isSubmitting={isExporting}
-            loadingText="Exporting..."
-            title="Confirm Export"
-            message="Are you sure you want to export the current complaints list to Excel?"
-            confirmText="Yes, Export"
+            onExport={confirmExport}
+            isExporting={isExporting}
+            title="Export Complaints Data"
+            fields={[
+                { name: 'startDate', label: 'Start Date', type: 'date' },
+                { name: 'endDate', label: 'End Date', type: 'date' },
+                {
+                    name: "status",
+                    label: "Complaint Status",
+                    options: [
+                        { label: 'All Status', value: '' },
+                        { label: 'Pending', value: 'Pending' },
+                        { label: 'In progress', value: 'In progress' },
+                        { label: 'Resolved', value: 'Resolved' },
+                        { label: 'Incomplete', value: 'Incomplete' },
+                    ]
+                }
+            ]}
         />
 
         <ConfirmationModal

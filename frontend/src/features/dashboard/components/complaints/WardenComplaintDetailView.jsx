@@ -52,7 +52,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     if (status === 'Pending') return 'bg-warning';
     if (status === 'Awaiting') return 'bg-[#DB7017]';
     if (status === 'Rejected') return 'bg-danger';
-    if (status === 'Incomplete') return 'bg-gray-500';
+    if (status === 'Incomplete') return 'bg-primary';
     return 'bg-purple-500';
   };
 
@@ -61,7 +61,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     if (status === 'Pending') return 'bg-warning/10 text-warning';
     if (status === 'Awaiting') return 'bg-[#DB7017]/10 text-[#DB7017]';
     if (status === 'Rejected') return 'bg-danger/10 text-danger';
-    if (status === 'Incomplete') return 'bg-gray-100 text-gray-700';
+    if (status === 'Incomplete') return 'bg-primary/10 text-primary';
     return 'bg-[#8F64C8]/10 text-[#8F64C8]';
   };
 
@@ -380,7 +380,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               <InfoRow label={<span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> Date</span>}>{complaint.date}</InfoRow>
               <InfoRow label={<span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Status</span>}>
                 <span className="flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-[#DB7017]' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Awaiting' ? 'bg-warning' : complaint.status === 'Rejected' ? 'bg-danger' : complaint.status === 'Incomplete' ? 'bg-gray-500' : 'bg-primary'}`}></span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-[#DB7017]' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Awaiting' ? 'bg-warning' : complaint.status === 'Rejected' ? 'bg-danger' : complaint.status === 'Incomplete' ? 'bg-primary' : 'bg-primary'}`}></span>
                   {complaint.status}
                 </span>
               </InfoRow>
