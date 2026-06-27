@@ -14,6 +14,9 @@ const authApi = {
   resetPassword: (payload) =>
     api.post("/auth/reset-password", payload),
 
+  submitPasswordRequest: (payload) =>
+    api.post("/auth/password-request", payload),
+
   changePassword: (payload) =>
     api.post("/auth/change-password", payload),
 
