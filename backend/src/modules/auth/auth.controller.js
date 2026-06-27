@@ -133,6 +133,23 @@ const me = asyncHandler(async (req, res) => {
   if (!userData.role) {
     userData.role = req.user.role;
   }
+  if (req.user.role === "student") {
+    const qrToken = jwt.sign(
+      {
+        studentId: user._id,
+        type: "attendance_qr",
+      },
+      process.env.JWT_ACCESS_TOKEN
+    );
+
+    return sendSuccess(res, 200, "Token is valid", {
+      user: {
+        ...userData,
+        qrToken,
+        profileImage: user.profileImage || null,
+      },
+    });
+  }
 
   return sendSuccess(res, 200, "Token is valid", { user: userData });
 });
@@ -170,13 +187,13 @@ const changePassword = asyncHandler(async (req, res) => {
   await user.save();
 
   await createLogDb({
-      action: "Password Changed",
-      entityType: "User",
-      entityId: user._id,
-      user: userId,
-      userRole: req.user.role || 'System',
-      details: "User successfully changed their password.",
-      status: "success"
+    action: "Password Changed",
+    entityType: "User",
+    entityId: user._id,
+    user: userId,
+    userRole: req.user.role || 'System',
+    details: "User successfully changed their password.",
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Password changed successfully");
@@ -284,13 +301,13 @@ const updateProfile = asyncHandler(async (req, res) => {
   delete userObj.password;
 
   await createLogDb({
-      action: "Profile Updated",
-      entityType: "User",
-      entityId: user._id,
-      user: req.user.id,
-      userRole: req.user.role || 'System',
-      details: "User successfully updated their profile settings.",
-      status: "success"
+    action: "Profile Updated",
+    entityType: "User",
+    entityId: user._id,
+    user: req.user.id,
+    userRole: req.user.role || 'System',
+    details: "User successfully updated their profile settings.",
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Profile updated successfully", { user: userObj });
@@ -365,13 +382,13 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
   delete userObj.password;
 
   await createLogDb({
-      action: "Email Changed",
-      entityType: "User",
-      entityId: user._id,
-      user: req.user.id,
-      userRole: req.user.role || 'System',
-      details: `User successfully updated their email to ${newEmail}`,
-      status: "success"
+    action: "Email Changed",
+    entityType: "User",
+    entityId: user._id,
+    user: req.user.id,
+    userRole: req.user.role || 'System',
+    details: `User successfully updated their email to ${newEmail}`,
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Email updated successfully", { user: userObj });
@@ -385,7 +402,7 @@ const verifyUserPassword = asyncHandler(async (req, res) => {
 
   const userId = req.user.id;
   let user = null;
-  
+
   if (req.user.role === 'student') {
     user = await Student.findById(userId);
   } else if (req.user.role === 'parent') {

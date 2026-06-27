@@ -19,7 +19,13 @@ import complaintCategoryRoutes from "./modules/complaintCategories/complaintCate
 import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter, superAdminPassRouter } from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
-import { wardenAttendanceRouter, adminAttendanceRouter, superAdminAttendanceRouter } from "./modules/attendance/attendance.routes.js";
+import { 
+  wardenAttendanceRouter, 
+  adminAttendanceRouter, 
+  superAdminAttendanceRouter,
+  studentAttendanceRouter,
+  parentAttendanceRouter
+} from "./modules/attendance/attendance.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -85,10 +91,12 @@ app.use("/api/warden/parents", parentRoutes);
 app.use("/api/notifications", notificationRoutes);
 // ---studenbts routes ---
 app.use("/api/student/passes", studentPassRouter);
+app.use("/api/student/attendance", studentAttendanceRouter);
 
 
 // ---parents routes -------
 app.use("/api/parent/passes", parentPassRouter);
+app.use("/api/parent/attendance", parentAttendanceRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);

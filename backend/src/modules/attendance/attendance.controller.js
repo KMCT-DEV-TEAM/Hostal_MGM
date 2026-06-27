@@ -2,6 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import jwt from "jsonwebtoken";
 import Hostel from "../hostels/hostel.model.js";
+import Parent from "../parents/parent.model.js";
 import {
   createAttendanceWindowDb,
   getAttendanceWindowsDb,
@@ -9,6 +10,10 @@ import {
   getAttendanceRecordsDb,
   scanStudentDb,
   completeAttendanceWindowDb,
+  getStudentDashboardStatsDb,
+  getStudentAttendanceHistoryDb,
+  getStudentAttendanceCalendarDb,
+  getStudentAttendanceDetailsDb,
 } from "./attendance.service.js";
 
 const getScope = async (req) => {
@@ -42,12 +47,11 @@ export const createAttendanceWindow = asyncHandler(async (req, res) => {
     scope.hostelId,
     scope.userId
   );
-
   return sendSuccess(
     res,
     201,
     "Attendance window created successfully",
-    attendanceWindow.toObject()
+    attendanceWindow
   );
 });
 
@@ -93,8 +97,11 @@ export const scanStudent = asyncHandler(async (req, res) => {
 
   let studentId;
   try {
-    const decoded = jwt.verify(qrToken, process.env.JWT_ACCESS_TOKEN || "fallback_secret");
-    studentId = decoded.id || decoded.studentId;
+    const decoded = jwt.verify(qrToken, process.env.JWT_ACCESS_TOKEN);
+    if (decoded.type !== "attendance_qr") {
+      return sendError(res, 400, "Invalid QR code.");
+    }
+    studentId = decoded.studentId || decoded.id;
   } catch (err) {
     return sendError(res, 400, "Invalid or expired QR code.");
   }
@@ -103,8 +110,12 @@ export const scanStudent = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Invalid QR code payload.");
   }
 
-  const record = await scanStudentDb(id, studentId, scope.userId);
-  return sendSuccess(res, 201, "Student scanned successfully", record);
+  try {
+    const result = await scanStudentDb(id, studentId, scope.userId);
+    return sendSuccess(res, 201, "Attendance marked successfully", result);
+  } catch (error) {
+    return sendError(res, 400, error.message);
+  }
 });
 
 export const completeAttendanceWindow = asyncHandler(async (req, res) => {
@@ -117,4 +128,62 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
 
   const window = await completeAttendanceWindowDb(id, scope.userId);
   return sendSuccess(res, 200, "Attendance window completed successfully", window);
+});
+
+// --- Shared Student & Parent Controllers ---
+const resolveStudentId = async (req) => {
+  if (req.user.role === 'parent') {
+    const parent = await Parent.findById(req.user.id).select("studentId isActive").lean();
+    if (!parent || !parent.isActive) {
+      throw new Error("Parent account is inactive or not found");
+    }
+    if (!parent.studentId) {
+      throw new Error("No student linked to this parent account");
+    }
+    return parent.studentId;
+  }
+  return req.user.id;
+};
+
+export const getAttendanceDashboard = asyncHandler(async (req, res) => {
+  try {
+    const studentId = await resolveStudentId(req);
+    const result = await getStudentDashboardStatsDb(studentId);
+    return sendSuccess(res, 200, "Dashboard stats fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceHistory = asyncHandler(async (req, res) => {
+  try {
+    const studentId = await resolveStudentId(req);
+    const result = await getStudentAttendanceHistoryDb(studentId, req.query);
+    return sendSuccess(res, 200, "Attendance history fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceCalendar = asyncHandler(async (req, res) => {
+  const { month, year } = req.query;
+  try {
+    const studentId = await resolveStudentId(req);
+    const result = await getStudentAttendanceCalendarDb(studentId, month, year);
+    return sendSuccess(res, 200, "Calendar events fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceDetails = asyncHandler(async (req, res) => {
+  const { date } = req.params;
+  try {
+    const studentId = await resolveStudentId(req);
+    const result = await getStudentAttendanceDetailsDb(studentId, date);
+    if (!result) return sendError(res, 404, "No attendance record found for this date.");
+    return sendSuccess(res, 200, "Attendance details fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
 });
