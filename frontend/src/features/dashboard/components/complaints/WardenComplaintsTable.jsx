@@ -90,7 +90,14 @@ export default function WardenComplaintsTable({
                                     </div>
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${complaint.status === 'Pending' ? 'bg-warning-50 text-warning-600' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' : 'bg-blue-50 text-blue-600'}`}>
+                                    <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${
+                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success' :
+                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning' :
+                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' :
+                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' :
+                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger' :
+                                        'bg-blue-50 text-blue-600'
+                                    }`}>
                                         {complaint.status || 'Pending'}
                                     </div>
                                 </td>
