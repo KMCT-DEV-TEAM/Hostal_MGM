@@ -32,6 +32,7 @@ export default function Students() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [statusLoadingIds, setStatusLoadingIds] = useState([]);
   const [pendingConfirm, setPendingConfirm] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [viewingStudent, setViewingStudent] = useState(null);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -424,12 +425,15 @@ export default function Students() {
         isOpen={!!pendingConfirm}
         onClose={() => setPendingConfirm(null)}
         onConfirm={async () => {
+          setIsConfirming(true);
           try {
             await pendingConfirm?.confirmAction?.();
           } finally {
+            setIsConfirming(false);
             setPendingConfirm(null);
           }
         }}
+        isSubmitting={isConfirming}
         title={pendingConfirm?.title}
         message={pendingConfirm?.message}
         confirmText={pendingConfirm?.confirmText}
