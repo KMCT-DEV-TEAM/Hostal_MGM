@@ -58,6 +58,7 @@ const createOrganization = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+
   getIo()?.emit('organizationCreated', organization);
 
   return sendSuccess(res, 201, "Organization created successfully", { data: organization });
@@ -148,6 +149,7 @@ const updateOrganization = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+
   getIo()?.emit('organizationUpdated', { id: organization._id });
 
   return sendSuccess(res, 200, "Organization updated successfully", { data: organization });
@@ -175,6 +177,7 @@ const toggleOrganizationStatus = asyncHandler(async (req, res) => {
     details: `Changed status of organization ${organization.name} to ${organization.isActive ? 'Active' : 'Inactive'}`,
     status: "success"
   });
+
 
   getIo()?.emit('organizationUpdated', { id: organization._id });
 
