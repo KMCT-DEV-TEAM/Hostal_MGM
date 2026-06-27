@@ -14,6 +14,9 @@ import CourseService from '../../../services/course.service';
 import organizationService from '../../../services/organization.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import CourseTable from '../components/course/CourseTable';
 import CourseMobileList from '../components/course/CourseMobileList';
 import CourseDetailView from '../components/course/CourseDetailView';
@@ -108,6 +111,24 @@ const CourseManagement = () => {
     useEffect(() => {
         fetchCourses();
     }, [page, debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleCourseEvent = () => {
+            fetchCourses();
+        };
+
+        socket.on('courseCreated', handleCourseEvent);
+        socket.on('courseUpdated', handleCourseEvent);
+        socket.on('courseDeleted', handleCourseEvent);
+
+        return () => {
+            socket.off('courseCreated', handleCourseEvent);
+            socket.off('courseUpdated', handleCourseEvent);
+            socket.off('courseDeleted', handleCourseEvent);
+        };
+    }, []);
 
     const handleStatusChangeClick = (id, currentStatus) => {
         setStatusToUpdate({ id, currentStatus });

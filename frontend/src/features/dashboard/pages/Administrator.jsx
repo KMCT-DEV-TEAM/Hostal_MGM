@@ -45,6 +45,10 @@ import adminService from '../../../services/admin.service';
 import organizationService from '../../../services/organization.service';
 import otpService from '../../../services/otp.service';
 import { exportToExcel } from '@/utils/exportUtils';
+import authService from '../../../services/auth.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 export default function Administrator() {
@@ -178,6 +182,26 @@ export default function Administrator() {
     useEffect(() => {
         fetchAdmins();
     }, [currentPage, debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleAdminEvent = (data) => {
+            if (data?.role === 'admin' || data?.bulk) {
+                fetchAdmins();
+            }
+        };
+
+        socket.on('userCreated', handleAdminEvent);
+        socket.on('userUpdated', handleAdminEvent);
+        socket.on('userDeleted', handleAdminEvent);
+
+        return () => {
+            socket.off('userCreated', handleAdminEvent);
+            socket.off('userUpdated', handleAdminEvent);
+            socket.off('userDeleted', handleAdminEvent);
+        };
+    }, [currentPage]);
 
     // ==========================================
     // SELECTION & ACTION HANDLERS

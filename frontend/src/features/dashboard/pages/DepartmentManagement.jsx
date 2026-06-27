@@ -14,6 +14,9 @@ import DepartmentService from '../../../services/department.service';
 import CourseService from '../../../services/course.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import DepartmentTable from '../components/Department/DepartmentTable';
 import DepartmentMobileList from '../components/Department/DepartmentMobileList';
 import DepartmentDetailView from '../components/Department/DepartmentDetailView';
@@ -94,6 +97,24 @@ const DepartmentManagement = () => {
     useEffect(() => {
         fetchDepartments();
     }, [page, debouncedSearch, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleDepartmentEvent = () => {
+            fetchDepartments();
+        };
+
+        socket.on('departmentCreated', handleDepartmentEvent);
+        socket.on('departmentUpdated', handleDepartmentEvent);
+        socket.on('departmentDeleted', handleDepartmentEvent);
+
+        return () => {
+            socket.off('departmentCreated', handleDepartmentEvent);
+            socket.off('departmentUpdated', handleDepartmentEvent);
+            socket.off('departmentDeleted', handleDepartmentEvent);
+        };
+    }, []);
 
     useEffect(() => {
         const fetchCourses = async () => {

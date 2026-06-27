@@ -10,6 +10,7 @@ import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
 import { logApi } from "@/features/dashboard/api/logApi";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import { initSocket } from '@/services/socket.service';
 
 const LogsViewer = ({ entityType }) => {
     const [logs, setLogs] = useState([]);
@@ -68,6 +69,20 @@ const LogsViewer = ({ entityType }) => {
     useEffect(() => {
         fetchLogs(1);
     }, [statusFilter, debouncedSearch, entityType, startDate, endDate]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleLogEvent = () => {
+            fetchLogs(pagination.page);
+        };
+
+        socket.on('logCreated', handleLogEvent);
+
+        return () => {
+            socket.off('logCreated', handleLogEvent);
+        };
+    }, [pagination.page]);
 
     const handleExportSubmit = async (filters) => {
         setIsExporting(true);

@@ -11,8 +11,12 @@ import { Pencil, X, ArrowLeft, Check, Loader2 } from 'lucide-react';
 import otpService from '../../../services/otp.service';
 import hostelService from '../../../services/hostel.service';
 import wardenService from '../../../services/warden.service';
+import authService from '../../../services/auth.service';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { initSocket } from '@/services/socket.service';
 import * as XLSX from 'xlsx';
 
 export default function WardenManagement() {
@@ -122,6 +126,26 @@ export default function WardenManagement() {
     useEffect(() => {
         fetchWardens();
     }, [currentPage, searchQuery, statusFilter]);
+
+    useEffect(() => {
+        const socket = initSocket();
+        
+        const handleWardenEvent = (data) => {
+            if (data?.role === 'warden' || data?.bulk) {
+                fetchWardens();
+            }
+        };
+
+        socket.on('userCreated', handleWardenEvent);
+        socket.on('userUpdated', handleWardenEvent);
+        socket.on('userDeleted', handleWardenEvent);
+
+        return () => {
+            socket.off('userCreated', handleWardenEvent);
+            socket.off('userUpdated', handleWardenEvent);
+            socket.off('userDeleted', handleWardenEvent);
+        };
+    }, [currentPage]);
 
     useEffect(() => {
         const fetchHostels = async () => {

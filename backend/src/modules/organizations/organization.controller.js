@@ -13,6 +13,7 @@ import {
 import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { createLogDb } from "../logs/log.service.js";
+import { getIo } from "../../config/socket.js";
 
 const createOrganization = asyncHandler(async (req, res) => {
     const { name, code, organisationNumber, email, phone, address } = req.body;
@@ -56,6 +57,8 @@ const createOrganization = asyncHandler(async (req, res) => {
       details: `Created new organization: ${name}`,
       status: "success"
     });
+
+    getIo()?.emit('organizationCreated', organization);
 
     return sendSuccess(res, 201, "Organization created successfully", { data: organization });
 });
@@ -145,6 +148,8 @@ const updateOrganization = asyncHandler(async (req, res) => {
       status: "success"
     });
 
+    getIo()?.emit('organizationUpdated', { id: organization._id });
+
     return sendSuccess(res, 200, "Organization updated successfully", { data: organization });
 });
 
@@ -171,6 +176,8 @@ const toggleOrganizationStatus = asyncHandler(async (req, res) => {
       status: "success"
     });
 
+    getIo()?.emit('organizationUpdated', { id: organization._id });
+
     return sendSuccess(res, 200, message, { data: organization });
 });
 
@@ -195,6 +202,8 @@ const bulkUpdateOrganizationStatus = asyncHandler(async (req, res) => {
     details: `Bulk updated ${ids.length} organizations to ${isActive ? 'Active' : 'Inactive'} status`,
     status: "success"
   });
+
+  getIo()?.emit('organizationUpdated', { bulk: true });
 
   return sendSuccess(res, 200, `Successfully updated ${ids.length} organizations to ${isActive ? 'Active' : 'Inactive'} status`, { result });
 });
