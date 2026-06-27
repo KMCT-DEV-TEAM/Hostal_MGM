@@ -8,7 +8,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle, LayoutGrid, List } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -23,6 +23,7 @@ export default function WardenComplaints({ hostel, onBack }) {
     const [complaints, setComplaints] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showKPIs, setShowKPIs] = useState(false);
     const [assignStaffModalState, setAssignStaffModalState] = useState({ isOpen: false, complaint: null });
 
     const fetchComplaints = async () => {
@@ -208,21 +209,83 @@ const totalComplaints = filteredComplaints.length;
 const totalPages = Math.ceil(totalComplaints / limit) || 1;
 const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
 
+    // Top cards aggregate
+    const totalAll = complaints.length;
+    const pendingAll = complaints.filter(c => c.status === 'Pending').length;
+    const inProgressAll = complaints.filter(c => c.status === 'In progress').length;
+    const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
+
 return (
     <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-        <div className="mb-6">
-            {onBack && (
-                <button onClick={onBack} className="flex items-center text-sm text-text-secondary hover:text-primary mb-2 cursor-pointer transition-colors">
-                    <ChevronLeft className="w-4 h-4 mr-1" /> Back to Organizations
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
+            <div>
+                {onBack && (
+                    <button onClick={onBack} className="flex items-center text-sm text-text-secondary hover:text-primary mb-2 cursor-pointer transition-colors">
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to Organizations
+                    </button>
+                )}
+                <h1 className="text-2xl font-bold text-black">
+                    {hostel ? `${hostel} Complaints` : 'Complaints'}
+                </h1>
+                <p className="text-sm text-text-secondary mt-1">
+                    {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
+                </p>
+            </div>
+
+            <div className="flex items-center self-end sm:self-auto">
+                <button
+                    onClick={() => setShowKPIs(!showKPIs)}
+                    className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                    {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
                 </button>
-            )}
-            <h1 className="text-2xl font-bold text-black">
-                {hostel ? `${hostel} Complaints` : 'Complaints'}
-            </h1>
-            <p className="text-sm text-text-secondary mt-1">
-                {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
-            </p>
+            </div>
         </div>
+
+        {/* Stat Cards Section */}
+        {showKPIs && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
+            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
+                    <h3 className="text-xl font-bold text-gray-900">{totalAll}</h3>
+                </div>
+                <div className="p-1.5 bg-red-50 rounded text-red-400">
+                    <AlertTriangle className="w-4 h-4" />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
+                    <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
+                </div>
+                <div className="p-1.5 bg-orange-50 rounded text-orange-400">
+                    <Clock className="w-4 h-4" />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
+                    <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
+                </div>
+                <div className="p-1.5 bg-blue-50 rounded text-blue-400">
+                    <Loader2 className="w-4 h-4" />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
+                    <h3 className="text-xl font-bold text-gray-900">{resolvedAll}</h3>
+                </div>
+                <div className="p-1.5 bg-green-50 rounded text-green-500">
+                    <CheckCircle className="w-4 h-4" />
+                </div>
+            </div>
+        </div>
+        )}
 
         <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
             {/* Toolbar Section */}

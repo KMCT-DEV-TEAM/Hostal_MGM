@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList } from 'lucide-react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
 import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
@@ -65,6 +65,7 @@ export default function MaintenanceStaffManagement() {
     const [loading, setLoading] = useState(true);
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [organizations, setOrganizations] = useState([]);
+    const [showKPIs, setShowKPIs] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -503,9 +504,19 @@ export default function MaintenanceStaffManagement() {
                         </div>
                     )}
                 </div>
+                
+                <div className="flex items-center self-end sm:self-auto mt-4 sm:mt-0">
+                    <button
+                        onClick={() => setShowKPIs(!showKPIs)}
+                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                    >
+                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+                    </button>
+                </div>
             </div>
 
             {/* KPI CARDS SECTION */}
+            {showKPIs && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
@@ -547,6 +558,7 @@ export default function MaintenanceStaffManagement() {
                     </div>
                 </div>
             </div>
+            )}
 
             {/* TOOLBAR SECTION */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
