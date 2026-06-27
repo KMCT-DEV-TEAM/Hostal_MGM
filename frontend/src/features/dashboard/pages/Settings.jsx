@@ -111,7 +111,7 @@ export default function Settings() {
             return;
         }
 
-        if (user?.role === 'warden') {
+        if (user?.role !== 'super_admin') {
             setIsSaving(true);
             try {
                 await authService.verifyPassword({ password: passwords.oldPassword });
@@ -139,7 +139,7 @@ export default function Settings() {
         }
     };
 
-    const handleConfirmWardenPasswordRequest = async () => {
+    const handleConfirmPasswordRequest = async () => {
         setIsSaving(true);
         try {
             await authService.submitPasswordRequest({
@@ -312,9 +312,9 @@ export default function Settings() {
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
-                onConfirm={handleConfirmWardenPasswordRequest}
+                onConfirm={handleConfirmPasswordRequest}
                 title="Submit Password Request"
-                message="As a warden, your password change requires Super Admin approval. Are you sure you want to submit this request?"
+                message="Your password change requires Admin approval. Are you sure you want to submit this request?"
                 confirmText="Submit Request"
                 isDestructive={false}
             />
