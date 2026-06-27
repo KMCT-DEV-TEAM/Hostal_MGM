@@ -348,6 +348,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     outTime: 1,
     expectedReturnTime: 1,
     createdAt: 1,
+    totalDays: 1,
     returnTracking: { returnStatus: 1 },
     studentInfo: {
       _id: "$studentInfo._id",
