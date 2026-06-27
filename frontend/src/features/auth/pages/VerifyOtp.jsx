@@ -111,7 +111,7 @@ const VerifyOtp = () => {
 
                             <Button
                                 type='submit'
-                                disabled={isSubmitting}
+                                isLoading={isSubmitting}
                             >
                                 {isSubmitting ? 'Verifying...' : 'Verify'}
                             </Button>

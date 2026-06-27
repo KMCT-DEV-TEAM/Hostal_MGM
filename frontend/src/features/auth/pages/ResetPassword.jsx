@@ -97,7 +97,7 @@ const ResetPassword = () => {
 
                             <Button
                                 type='submit'
-                                disabled={isSubmitting}
+                                isLoading={isSubmitting}
                             >
                                 {isSubmitting ? 'Updating...' : 'Update Password'}
                             </Button>

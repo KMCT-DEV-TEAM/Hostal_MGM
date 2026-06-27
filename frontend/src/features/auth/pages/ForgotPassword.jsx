@@ -68,7 +68,7 @@ const ForgotPassword = () => {
 
                             <Button
                                 type='submit'
-                                disabled={isSubmitting}
+                                isLoading={isSubmitting}
                             >
                                 {isSubmitting ? 'Sending...' : 'Send verification code'}
                             </Button>

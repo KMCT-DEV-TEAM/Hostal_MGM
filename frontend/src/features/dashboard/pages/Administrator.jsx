@@ -15,7 +15,8 @@ import {
     Download,
     User,
     ArrowLeft,
-    Check
+    Check,
+    Loader2
 } from 'lucide-react';
 
 import AdminTable from '../components/admin/AdminTable';
@@ -67,6 +68,10 @@ export default function Administrator() {
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isOrgConfirmOpen, setIsOrgConfirmOpen] = useState(false);
     const [orgChangeToConfirm, setOrgChangeToConfirm] = useState(null);
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
+    const [isOrgUpdating, setIsOrgUpdating] = useState(false);
+    const [isEmailUpdating, setIsEmailUpdating] = useState(false);
 
     // Email Change Flow State
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
@@ -218,6 +223,7 @@ export default function Administrator() {
 
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
+        setIsStatusUpdating(true);
         try {
             const res = await adminService.toggleStatus(statusToUpdate.id);
             if (res && res.data) {
@@ -228,9 +234,11 @@ export default function Administrator() {
         } catch (error) {
             console.error("Failed to update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to change administrator status');
+        } finally {
+            setIsStatusUpdating(false);
+            setIsStatusConfirmOpen(false);
+            setStatusToUpdate(null);
         }
-        setIsStatusConfirmOpen(false);
-        setStatusToUpdate(null);
     };
 
     const openChangeEmailModal = (admin) => {
@@ -249,6 +257,7 @@ export default function Administrator() {
             showErrorToast('Validation Error', 'Please enter your password to confirm');
             return;
         }
+        setIsEmailUpdating(true);
         try {
             await adminService.updateEmail(emailChangeAdminId, {
                 oldEmail: emailChangeForm,
@@ -272,6 +281,8 @@ export default function Administrator() {
             }, 2500);
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to update email');
+        } finally {
+            setIsEmailUpdating(false);
         }
     };
 
@@ -282,6 +293,7 @@ export default function Administrator() {
 
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
+        setIsBulkStatusUpdating(true);
         try {
             const res = await adminService.bulkToggleStatus({
                 ids: selectedIds,
@@ -298,10 +310,12 @@ export default function Administrator() {
         } catch (error) {
             console.error("Failed to update bulk status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to update bulk status');
+        } finally {
+            setIsBulkStatusUpdating(false);
+            setSelectedIds([]);
+            setIsBulkStatusConfirmOpen(false);
+            setBulkStatusToUpdate(null);
         }
-        setSelectedIds([]);
-        setIsBulkStatusConfirmOpen(false);
-        setBulkStatusToUpdate(null);
     };
 
     const handleOrganizationChange = (id, organizationId) => {
@@ -312,6 +326,7 @@ export default function Administrator() {
     const confirmOrganizationChange = async () => {
         if (!orgChangeToConfirm) return;
         const { id, organizationId } = orgChangeToConfirm;
+        setIsOrgUpdating(true);
         try {
             const res = await adminService.updateOrganization(id, { organizationId });
             if (res && res.data) {
@@ -325,6 +340,7 @@ export default function Administrator() {
             console.error("Failed to update organization:", err);
             showErrorToast('Action Failed', err?.message || 'Failed to update organization');
         } finally {
+            setIsOrgUpdating(false);
             setIsOrgConfirmOpen(false);
             setOrgChangeToConfirm(null);
         }
@@ -734,9 +750,9 @@ export default function Administrator() {
                             <button
                                 onClick={saveAdmin}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -795,9 +811,10 @@ export default function Administrator() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isStatusUpdating}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                Confirm
+                                {isStatusUpdating ? <><Loader2 className="w-3 h-3 animate-spin" /> Updating...</> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -823,9 +840,10 @@ export default function Administrator() {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isBulkStatusUpdating}
+                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                Confirm
+                                {isBulkStatusUpdating ? <><Loader2 className="w-3 h-3 animate-spin" /> Updating...</> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -914,10 +932,10 @@ export default function Administrator() {
 
                         <button
                             type="submit"
-                            disabled={!isEmailVerified || !passwordConfirm}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified && passwordConfirm ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                            disabled={!isEmailVerified || !passwordConfirm || isEmailUpdating}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${isEmailVerified && passwordConfirm && !isEmailUpdating ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
-                            Change Email
+                            {isEmailUpdating ? <><Loader2 className="w-4 h-4 animate-spin" /> Updating...</> : 'Change Email'}
                         </button>
                     </form>
                 </div>
@@ -1053,9 +1071,10 @@ export default function Administrator() {
                             </button>
                             <button
                                 onClick={confirmOrganizationChange}
-                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-secondary font-medium transition-colors cursor-pointer"
+                                disabled={isOrgUpdating}
+                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-secondary font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                Confirm
+                                {isOrgUpdating ? <><Loader2 className="w-3 h-3 animate-spin" /> Updating...</> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -1083,7 +1102,7 @@ export default function Administrator() {
                                 disabled={isSubmitting}
                                 className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
                             >
-                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                                {isSubmitting ? <><Loader2 className="w-3 h-3 animate-spin" /> Adding...</> : 'Confirm'}
                             </button>
                         </div>
                     </div>

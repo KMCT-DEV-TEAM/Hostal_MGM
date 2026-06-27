@@ -114,9 +114,9 @@ const ContactAdministrator = () => {
                                 placeholder="Enter your registered email"
                             />
 
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" isLoading={isLoading}>
                                 <div className="flex items-center justify-center gap-2">
-                                    <span>Verify Email</span>
+                                    <span>{isLoading ? 'Verifying...' : 'Verify Email'}</span>
                                 </div>
                             </Button>
                         </form>
@@ -142,9 +142,9 @@ const ContactAdministrator = () => {
                                 placeholder="Confirm new password"
                             />
 
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" isLoading={isLoading}>
                                 <div className="flex items-center justify-center gap-2">
-                                    <span>Send Password Request</span>
+                                    <span>{isLoading ? 'Sending...' : 'Send Password Request'}</span>
                                 </div>
                             </Button>
                         </form>
