@@ -183,6 +183,7 @@ export const getDashboardStatsDb = async (dateStr, scope) => {
         totalStudents: { $sum: "$totalStudents" },
         presentToday: { $sum: "$presentCount" },
         absentToday: { $sum: "$absentCount" },
+        windowId: { $first: "$_id" },
         windowStatus: { $first: "$status" },
         windowStartedAt: { $first: "$createdAt" },
         windowStartedByName: { $first: "$startedByInfo.name" }
@@ -205,6 +206,7 @@ export const getDashboardStatsDb = async (dateStr, scope) => {
     totalStudents: result[0].totalStudents,
     presentToday: result[0].presentToday,
     absentToday: result[0].absentToday,
+    windowId: result[0].windowId,
     windowStatus: result[0].windowStatus,
     windowStartedAt: result[0].windowStartedAt,
     windowStartedByName: result[0].windowStartedByName

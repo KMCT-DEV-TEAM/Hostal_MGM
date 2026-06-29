@@ -8,18 +8,21 @@ export const getWindowDetailsByWarden = (id) => apiClient.get(`/warden/attendanc
 export const getRecordsByWarden = (id, params) => apiClient.get(`/warden/attendance/windows/${id}/records`, { params });
 export const scanStudentByWarden = (id, data) => apiClient.post(`/warden/attendance/windows/${id}/scan`, data);
 export const completeWindowByWarden = (id) => apiClient.patch(`/warden/attendance/windows/${id}/complete`);
+export const getStudentCalendarByWarden = (params) => apiClient.get('/warden/attendance/student-calendar', { params });
 
 // --- ADMIN API ---
 export const getWindowsByAdmin = (params) => apiClient.get('/admin/attendance/windows', { params });
 export const getDashboardStatsByAdmin = (params) => apiClient.get('/admin/attendance/stats', { params });
 export const getWindowDetailsByAdmin = (id) => apiClient.get(`/admin/attendance/windows/${id}`);
 export const getRecordsByAdmin = (id, params) => apiClient.get(`/admin/attendance/windows/${id}/records`, { params });
+export const getStudentCalendarByAdmin = (params) => apiClient.get('/admin/attendance/student-calendar', { params });
 
 // --- SUPER ADMIN API ---
 export const getWindowsBySuperAdmin = (params) => apiClient.get('/super-admin/attendance/windows', { params });
 export const getDashboardStatsBySuperAdmin = (params) => apiClient.get('/super-admin/attendance/stats', { params });
 export const getWindowDetailsBySuperAdmin = (id) => apiClient.get(`/super-admin/attendance/windows/${id}`);
 export const getRecordsBySuperAdmin = (id, params) => apiClient.get(`/super-admin/attendance/windows/${id}/records`, { params });
+export const getStudentCalendarBySuperAdmin = (params) => apiClient.get('/super-admin/attendance/student-calendar', { params });
 
 // --- STUDENT API ---
 export const getStudentDashboard = () => apiClient.get('/student/attendance/dashboard');
@@ -34,9 +37,9 @@ export const getParentCalendar = (params) => apiClient.get('/parent/attendance/c
 export const getParentDetails = (date) => apiClient.get(`/parent/attendance/details/${date}`);
 
 const attendanceApi = {
-    getWindowsByWarden, getDashboardStatsByWarden, createWindowsByWarden, getWindowDetailsByWarden, getRecordsByWarden, scanStudentByWarden, completeWindowByWarden,
-    getWindowsByAdmin, getDashboardStatsByAdmin, getWindowDetailsByAdmin, getRecordsByAdmin,
-    getWindowsBySuperAdmin, getDashboardStatsBySuperAdmin, getWindowDetailsBySuperAdmin, getRecordsBySuperAdmin,
+    getWindowsByWarden, getDashboardStatsByWarden, createWindowsByWarden, getWindowDetailsByWarden, getRecordsByWarden, scanStudentByWarden, completeWindowByWarden, getStudentCalendarByWarden,
+    getWindowsByAdmin, getDashboardStatsByAdmin, getWindowDetailsByAdmin, getRecordsByAdmin, getStudentCalendarByAdmin,
+    getWindowsBySuperAdmin, getDashboardStatsBySuperAdmin, getWindowDetailsBySuperAdmin, getRecordsBySuperAdmin, getStudentCalendarBySuperAdmin,
     getStudentDashboard, getStudentHistory, getStudentCalendar, getStudentDetails,
     getParentDashboard, getParentHistory, getParentCalendar, getParentDetails
 };

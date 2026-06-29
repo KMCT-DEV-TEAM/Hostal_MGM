@@ -140,6 +140,13 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
 
 // --- Shared Student & Parent Controllers ---
 const resolveStudentId = async (req) => {
+  if (["warden", "admin", "superadmin"].includes(req.user.role)) {
+    if (!req.query.studentId && !req.params.studentId) {
+      throw new Error("studentId is required for staff roles to view student details.");
+    }
+    return req.query.studentId || req.params.studentId;
+  }
+
   if (req.user.role === 'parent') {
     const parent = await Parent.findById(req.user.id).select("studentId isActive").lean();
     if (!parent || !parent.isActive) {

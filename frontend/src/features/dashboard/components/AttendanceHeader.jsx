@@ -6,11 +6,12 @@ import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 
-export default function AttendanceHeader() {
+export default function AttendanceHeader({ onStatsFetched }) {
     const [stats, setStats] = useState({
         totalStudents: 0,
         presentToday: 0,
         absentToday: 0,
+        windowId: null,
         windowStatus: null,
         windowStartedAt: null,
         windowStartedByName: null
@@ -27,20 +28,25 @@ export default function AttendanceHeader() {
             const today = new Date().toISOString();
             const response = await attendanceService.getAdminWardenDashboardStatsByRole(user.role, { date: today });
             const data = response || {};
-            setStats({
-                totalStudents: data.totalStudents || 0,
-                presentToday: data.presentToday || 0,
+            const newStats = { 
+                totalStudents: data.totalStudents || 0, 
+                presentToday: data.presentToday || 0, 
                 absentToday: data.absentToday || 0,
+                windowId: data.windowId || null,
                 windowStatus: data.windowStatus || null,
                 windowStartedAt: data.windowStartedAt || null,
                 windowStartedByName: data.windowStartedByName || null
-            });
+            };
+            setStats(newStats);
+            if (onStatsFetched) {
+                onStatsFetched(newStats);
+            }
         } catch (error) {
             showErrorToast('Failed to load attendance stats', error.message);
         } finally {
             setIsLoading(false);
         }
-    }, [user?.role]);
+    }, [user?.role, onStatsFetched]);
 
     useEffect(() => {
         fetchTodayStats();
