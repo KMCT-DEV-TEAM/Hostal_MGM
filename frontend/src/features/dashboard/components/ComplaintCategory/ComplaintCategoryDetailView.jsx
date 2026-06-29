@@ -28,7 +28,7 @@ const ComplaintCategoryDetailView = ({ selectedCategoryDetail, setView }) => {
                         <div>
                             <h3 className="text-xl font-bold text-gray-900">{selectedCategoryDetail.name}</h3>
                             <div className="flex items-center gap-2 mt-2">
-                                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${selectedCategoryDetail.isActive ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${selectedCategoryDetail.isActive ? 'bg-success/10 text-success' : 'bg-red-50 text-danger'}`}>
                                     {selectedCategoryDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </div>

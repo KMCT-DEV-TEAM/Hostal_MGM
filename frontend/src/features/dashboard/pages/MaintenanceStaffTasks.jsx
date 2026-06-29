@@ -59,7 +59,7 @@ export default function MaintenanceStaffTasks() {
             case 'In progress': return 'bg-blue-50 text-blue-600';
             case 'Pending': return 'bg-warning-50 text-warning-600';
             case 'Awaiting': return 'bg-warning-50 text-warning-600';
-            case 'Rejected': return 'bg-danger/10 text-danger';
+            case 'Rejected': return 'bg-red-50 text-danger';
             case 'Incomplete': return 'bg-primary/10 text-primary';
             default: return 'bg-text-secondary-50 text-text-secondary';
         }

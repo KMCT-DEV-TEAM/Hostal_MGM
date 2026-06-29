@@ -114,9 +114,9 @@ export default function WardenMobileList({
                                 type="button"
                                 onClick={() => handleStatusChangeClick(warden.id, warden.status)}
                                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
-                                        ${warden.status === 'Active' ? 'bg-success/10 text-success hover:bg-success/20' : 'bg-danger/10 text-danger hover:bg-danger/20'}`}
+                                        ${warden.status === 'Active' ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-red-50 text-danger hover:bg-red-100'}`}
                             >
-                                <span className={`w-1.5 h-1.5 rounded-full ${warden.status === 'Active' ? 'bg-success' : 'bg-danger'}`}></span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${warden.status === 'Active' ? 'bg-green-600' : 'bg-red-600'}`}></span>
                                 {warden.status === 'Active' ? "Active" : "Inactive"}
                             </button>
                         </div>

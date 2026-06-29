@@ -78,7 +78,7 @@ export default function StudentComplaintsTable({
                                         complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
                                         complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
                                         complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
-                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger border-danger/20' :
+                                        complaint.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
                                         'bg-blue-50 text-blue-600 border-blue-200'
                                     }`}>
                                         {complaint.status || 'Pending'}

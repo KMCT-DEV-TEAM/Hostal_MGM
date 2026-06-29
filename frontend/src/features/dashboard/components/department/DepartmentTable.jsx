@@ -110,7 +110,7 @@ const DepartmentTable = ({
                                             ]}
                                             value={o.isActive ? "Active" : "Inactive"}
                                             onChange={() => handleStatusChangeClick(o._id, o.isActive)}
-                                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${o.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20'}`}
+                                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${o.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
                                         />
                                     </div>
                                 </td>

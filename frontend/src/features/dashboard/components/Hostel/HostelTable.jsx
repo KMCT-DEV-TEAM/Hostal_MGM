@@ -120,7 +120,7 @@ export default function HostelTable({
                                                 ]}
                                                 value={hostel.isActive ? "Active" : "Inactive"}
                                                 onChange={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
-                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${hostel.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20'}`}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${hostel.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
                                             />
                                         </div>
                                     </td>
@@ -227,9 +227,9 @@ export default function HostelTable({
                                         type="button"
                                         onClick={() => handleStatusChangeClick(hostel._id, hostel.isActive)}
                                         className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium cursor-pointer transition-colors
-                                            ${hostel.isActive ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-danger/10 text-danger hover:bg-danger/20'}`}
+                                            ${hostel.isActive ? 'bg-green-50 text-success hover:bg-green-100' : 'bg-red-50 text-danger hover:bg-red-100'}`}
                                     >
-                                        <span className={`w-1.5 h-1.5 rounded-full ${hostel.isActive ? 'bg-green-600' : 'bg-danger'}`}></span>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${hostel.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
                                         {hostel.isActive ? "Active" : "Inactive"}
                                     </button>
                                 </div>

@@ -143,7 +143,7 @@ const LogsViewer = ({ entityType }) => {
             case 'success':
                 return 'bg-green-50 text-success border-green-200';
             case 'error':
-                return 'bg-danger/10 text-danger border-danger/20';
+                return 'bg-red-50 text-danger border-red-200';
             case 'warning':
                 return 'bg-yellow-50 text-yellow-700 border-yellow-200';
             default:

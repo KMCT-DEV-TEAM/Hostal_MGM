@@ -188,7 +188,7 @@ const PasswordRequests = () => {
                             </button>
                             <button
                                 onClick={() => openConfirmModal('bulkReject')}
-                                className="px-3 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5"
                             >
                                 <X className="w-4 h-4" /> Reject ({selectedRequests.length})
                             </button>
@@ -347,7 +347,7 @@ const PasswordRequests = () => {
                                                     }}
                                                     triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${
                                                         request.status === 'approved' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' :
-                                                        request.status === 'rejected' ? 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20' :
+                                                        request.status === 'rejected' ? 'bg-red-50 text-danger border-red-200 hover:bg-red-100' :
                                                         'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
                                                     }`}
                                                 />
@@ -364,7 +364,7 @@ const PasswordRequests = () => {
                                                         Approve
                                                     </button>
                                                     <button 
-                                                        className="px-2.5 py-1.5 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
+                                                        className="px-2.5 py-1.5 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
 
                                                         onClick={() => openConfirmModal('reject', request._id)}
                                                     >
@@ -447,7 +447,7 @@ const PasswordRequests = () => {
                                             }}
                                             triggerClassName={`px-2 py-1 text-[10px] font-regular border transition-colors ${
                                                 request.status === 'approved' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' :
-                                                request.status === 'rejected' ? 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20' :
+                                                request.status === 'rejected' ? 'bg-red-50 text-danger border-red-200 hover:bg-red-100' :
                                                 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
                                             }`}
                                         />

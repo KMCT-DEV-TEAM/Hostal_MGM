@@ -360,8 +360,8 @@ export default function Profile() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
                                 <div className="text-gray-500 font-medium">{t('status')}</div>
                                 <div className="sm:col-span-2">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-danger/10 text-danger border border-danger/10'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-danger'}`}></span>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-danger border border-red-200'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-red-600'}`}></span>
                                         {user?.isActive !== false ? t('active') : t('inactive')}
                                     </span>
                                 </div>
