@@ -170,6 +170,13 @@ const updateStudentDb = async (studentId, data) => {
 
   if (isStatusChanged) {
     await Parent.updateMany({ studentId: student._id }, { isActive: student.isActive });
+    
+    if (!student.isActive) {
+      const { getIo } = await import("../../config/socket.js");
+      getIo()?.to(student._id.toString()).emit("accountDeactivated");
+      const parents = await Parent.find({ studentId: student._id }).select("_id");
+      parents.forEach(p => getIo()?.to(p._id.toString()).emit("accountDeactivated"));
+    }
   }
 
   return student;
@@ -206,6 +213,13 @@ const bulkUpdateStudentStatusDb = async (
       { studentId: { $in: studentIds } },
       { $set: { isActive } }
     );
+    
+    if (!isActive) {
+      const { getIo } = await import("../../config/socket.js");
+      studentIds.forEach(id => getIo()?.to(id.toString()).emit("accountDeactivated"));
+      const parents = await Parent.find({ studentId: { $in: studentIds } }).select("_id");
+      parents.forEach(p => getIo()?.to(p._id.toString()).emit("accountDeactivated"));
+    }
   }
 
   const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
@@ -222,6 +236,13 @@ const updateStudentsStatusByQuery = async (query, isActive) => {
   if (studentIds.length > 0) {
     await Student.updateMany({ _id: { $in: studentIds } }, { isActive });
     await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive });
+
+    if (!isActive) {
+      const { getIo } = await import("../../config/socket.js");
+      studentIds.forEach(id => getIo()?.to(id.toString()).emit("accountDeactivated"));
+      const parents = await Parent.find({ studentId: { $in: studentIds } }).select("_id");
+      parents.forEach(p => getIo()?.to(p._id.toString()).emit("accountDeactivated"));
+    }
     
     const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
     for (const hId of affectedHostels) {
