@@ -10,6 +10,7 @@ import { showErrorToast } from '@/utils/toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatDate, formatDay } from '@/features/leaves/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
+import AttendanceQRModal from '../components/AttendanceQRModal';
 
 const StudentAttendance = () => {
     const pageTitle = "My Attendance";
@@ -25,6 +26,7 @@ const StudentAttendance = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({});
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -80,7 +82,10 @@ const StudentAttendance = () => {
             </div>
 
             <div className="mb-6 shrink-0">
-                <StudentAttendanceStatsCard todayStatus={todayStats} />
+                <StudentAttendanceStatsCard 
+                    todayStatus={todayStats} 
+                    onGenerateQR={() => setIsQRModalOpen(true)}
+                />
             </div>
 
             <DataTable
@@ -133,7 +138,7 @@ const StudentAttendance = () => {
                         <hr className="border-gray-50" />
                         <div className="flex justify-between items-center gap-2 pt-1">
                             <span className="font-medium text-gray-500 text-xs">Status:</span>
-                            <LeaveStatusBadge status={r.status || 'pending'} />
+                            <LeaveStatusBadge status={r.status} />
                         </div>
                     </div>
                 )}
@@ -158,6 +163,12 @@ const StudentAttendance = () => {
                     setPage(1);
                     setIsFilterModalOpen(false);
                 }}
+            />
+
+            <AttendanceQRModal 
+                isOpen={isQRModalOpen} 
+                onClose={() => setIsQRModalOpen(false)} 
+                qrToken={user?.qrToken} 
             />
         </div>
     );

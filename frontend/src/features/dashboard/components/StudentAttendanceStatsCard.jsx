@@ -2,14 +2,11 @@ import React from 'react';
 import Swal from 'sweetalert2';
 import Button from '@/components/ui/Button';
 
-export default function StudentAttendanceStatsCard({ todayStatus }) {
+export default function StudentAttendanceStatsCard({ todayStatus, onGenerateQR }) {
     const handleGenerateQR = () => {
-        Swal.fire({
-            title: 'Coming Soon!',
-            text: 'QR Code generation will be available shortly.',
-            icon: 'info',
-            confirmButtonColor: '#0A437A'
-        });
+        if (onGenerateQR) {
+            onGenerateQR();
+        }
     };
 
     const statusLabel = todayStatus?.status || 'Pending';
