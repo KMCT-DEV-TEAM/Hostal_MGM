@@ -64,15 +64,15 @@ export default function ComplaintsTable({
                                     </div>
                                 </td>
                                 <td className="p-4 text-start">
-                                    <div className="flex items-center gap-2">
+                                    <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md border ${complaint.priority === 'High' ? 'border-danger/20 bg-danger/5 text-danger' : complaint.priority === 'Medium' ? 'border-warning/20 bg-warning/5 text-warning' : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
                                         <span className={`w-1.5 h-1.5 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Medium' ? 'bg-warning' : 'bg-gray-400'}`}></span>
-                                        <span className="text-[#777777]">{complaint.priority}</span>
+                                        <span className="text-xs font-medium">{complaint.priority}</span>
                                     </div>
                                 </td>
                                 <td className="p-4 text-start text-[#777777]">{complaint.date}</td>
                                 <td className="p-4 text-start text-[#777777]">{complaint.due}</td>
                                 <td className="p-4 text-start">
-                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'Rejected' ? 'bg-red-50 text-red-600' : complaint.status === 'Awaiting' ? 'bg-purple-50 text-purple-600' : complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' : 'bg-blue-50/80 text-secondary'}`}>
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning border-warning/20' : complaint.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' : complaint.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200' : complaint.status === 'Awaiting' ? 'bg-purple-50 text-purple-600 border-purple-200' : complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-blue-50/80 text-secondary border-blue-200'}`}>
                                         {complaint.status}
                                     </span>
                                 </td>
