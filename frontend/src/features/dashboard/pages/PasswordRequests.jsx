@@ -544,6 +544,7 @@ const PasswordRequests = () => {
                     {
                         name: "status",
                         label: "Request Status",
+                        defaultValue: "all",
                         options: [
                             { label: 'All Status', value: 'all' },
                             { label: 'Pending', value: 'pending' },

@@ -233,7 +233,7 @@ export default function Profile() {
                                     ) : (
                                         <>
                                             <div className="text-gray-900 font-semibold">{user?.name || t('not_provided')}</div>
-                                            <button onClick={() => handleEditClick('name', user?.name)} className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-md transition-all cursor-pointer">
+                                            <button onClick={() => handleEditClick('name', user?.name)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
                                         </>
@@ -276,7 +276,7 @@ export default function Profile() {
                                                 {user?.email || t('not_provided')}
                                             </div>
                                             {user?.role !== 'super_admin' && (
-                                                <button onClick={() => handleEditClick('email', user?.email)} className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-md transition-all cursor-pointer">
+                                                <button onClick={() => handleEditClick('email', user?.email)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
                                             )}
@@ -324,7 +324,7 @@ export default function Profile() {
                                                 <Phone className="w-4 h-4 text-gray-400" />
                                                 {user?.phone || t('not_provided')}
                                             </div>
-                                            <button onClick={() => handleEditClick('phone', user?.phone)} className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-md transition-all cursor-pointer">
+                                            <button onClick={() => handleEditClick('phone', user?.phone)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
                                         </>

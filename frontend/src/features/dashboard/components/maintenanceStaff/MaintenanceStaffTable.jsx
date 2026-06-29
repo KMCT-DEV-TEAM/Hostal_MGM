@@ -109,17 +109,17 @@ const MaintenanceStaffTable = ({
                                     </td>
                                     <td className="p-4 text-center">
                                         <div className="flex items-center justify-center">
-                                            <span className="font-semibold text-text-secondary">{staff.taskAssignedCount || 0}</span>
+                                            <span className="text-sm font-medium text-gray-500">{staff.taskAssignedCount || 0}</span>
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
                                         <div className="flex items-center justify-center">
-                                            <span className="font-semibold text-text-secondary">{staff.taskResolvedCount || 0}</span>
+                                            <span className="text-sm font-medium text-gray-500">{staff.taskResolvedCount || 0}</span>
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
                                         <div className="flex items-center justify-center">
-                                            <span className="font-semibold text-text-secondary">{staff.taskPendingCount || 0}</span>
+                                            <span className="text-sm font-medium text-gray-500">{staff.taskPendingCount || 0}</span>
                                         </div>
                                     </td>
                                     <td className="p-4">

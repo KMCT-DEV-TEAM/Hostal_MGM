@@ -33,7 +33,7 @@ export default function ExportFilterModal({
         if (isOpen) {
             const initial = {};
             fields.forEach(f => {
-                initial[f.name] = '';
+                initial[f.name] = f.defaultValue !== undefined ? f.defaultValue : '';
             });
             setFilters(initial);
         }
