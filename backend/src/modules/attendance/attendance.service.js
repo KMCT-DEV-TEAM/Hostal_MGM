@@ -162,11 +162,11 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 
 export const getDashboardStatsDb = async (dateStr, scope) => {
   const filter = {};
-  
+
   if (scope.role === "warden") {
     filter.hostelId = new mongoose.Types.ObjectId(scope.hostelId);
   }
-  
+
   const queryDate = getStartOfDay(dateStr || new Date());
   filter.attendanceDate = queryDate;
 
@@ -282,6 +282,13 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
 
   const filter = { attendanceWindowId: new mongoose.Types.ObjectId(windowId) };
 
+  // Get the window to find its hostelId
+  const window = await AttendanceWindow.findById(windowId).select("hostelId");
+  let totalStudentsCount = 0;
+  if (window && window.hostelId) {
+    totalStudentsCount = await Student.countDocuments({ hostelId: window.hostelId, isActive: true });
+  }
+
   if (query.status) {
     filter.status = query.status;
   }
@@ -315,7 +322,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   if (query.room) {
     studentMatch["studentInfo.roomNo"] = { $regex: query.room, $options: "i" };
   }
-  
+
   if (Object.keys(studentMatch).length > 0) {
     pipeline.push({ $match: studentMatch });
   }
@@ -365,6 +372,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
 
   return {
     records: result[0]?.data || [],
+    totalStudentsCount,
     pagination: {
       page,
       limit,
@@ -440,7 +448,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
     );
 
     await session.commitTransaction();
-    
+
     const record = newRecord[0];
     return {
       attendance: {
@@ -537,7 +545,7 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
 
 export const getStudentDashboardStatsDb = async (studentId) => {
   const todayStart = getStartOfDay(new Date());
-  
+
   const todayRecord = await AttendanceRecord.findOne({
     studentId: new mongoose.Types.ObjectId(studentId),
     scannedAt: { $gte: todayStart }
@@ -617,7 +625,7 @@ export const getStudentAttendanceHistoryDb = async (studentId, query) => {
 
   const result = await AttendanceRecord.aggregate(pipeline);
   const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;
-  
+
   const formattedRecords = (result[0]?.data || []).map(record => ({
     id: record._id,
     date: formatDate(record.scannedAt),
@@ -658,10 +666,10 @@ export const getStudentAttendanceCalendarDb = async (studentId, month, year) => 
     if (r.status === 'absent') absent++;
     return {
       date: formatDate(r.scannedAt),
-      status: r.status 
+      status: r.status
     };
   });
-  
+
   const student = await Student.findById(studentId).select("hostelId").lean();
   let notMarked = 0;
   if (student && student.hostelId) {
@@ -690,8 +698,8 @@ export const getStudentAttendanceDetailsDb = async (studentId, dateStr) => {
     studentId: new mongoose.Types.ObjectId(studentId),
     scannedAt: { $gte: queryDate, $lt: nextDay }
   })
-  .populate("scannedBy", "name")
-  .lean();
+    .populate("scannedBy", "name")
+    .lean();
 
   if (!record) return null;
 

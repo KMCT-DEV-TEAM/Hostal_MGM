@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users, CalendarCheck, CalendarX, ScanLine, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import StatsCard from '@/components/ui/StatsCard';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
@@ -19,6 +20,7 @@ export default function AttendanceHeader({ onStatsFetched }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const { user } = useAuthStore();
+    const navigate = useNavigate();
 
     const fetchTodayStats = useCallback(async () => {
         if (!user?.role) return;
@@ -53,12 +55,21 @@ export default function AttendanceHeader({ onStatsFetched }) {
     }, [fetchTodayStats]);
 
     const handleCreateAttendance = async () => {
-        if (!user?.role) return;
-        setIsCreating(true);
+        if (stats.windowStatus === 'open' && stats.windowId) {
+            navigate(`/dashboard/attendance/scan/${stats.windowId}`);
+            return;
+        }
+
         try {
-            await attendanceService.createWindowByRole(user.role);
-            showSuccessToast('Success', 'Attendance window created for today');
-            fetchTodayStats();
+            setIsCreating(true);
+            const response = await attendanceService.createWindowByRole(user.role);
+            showSuccessToast('Success', response?.message || 'Attendance window created');
+            
+            if (response?.data?._id) {
+                navigate(`/dashboard/attendance/scan/${response.data._id}`);
+            } else {
+                fetchTodayStats();
+            }
         } catch (error) {
             showErrorToast('Failed to create attendance', error.message);
         } finally {
@@ -80,7 +91,7 @@ export default function AttendanceHeader({ onStatsFetched }) {
                     <div className="flex flex-col items-end">
                         <button
                             onClick={handleCreateAttendance}
-                            disabled={isCreating || stats.windowStatus === 'open'}
+                            disabled={isCreating}
                             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary transition-colors text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanLine className="w-4 h-4" />}

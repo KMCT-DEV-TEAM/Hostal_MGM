@@ -178,6 +178,7 @@ const studentService = {
   getStudentFilterOptionsByWarden,
   toggleStudentStatus,
   bulkUpdateStudentStatus,
+  getStudentsByWarden,
   toggleStatusByAdmin,
   bulkStatusByAdmin,
   toggleStatusBySuperAdmin,

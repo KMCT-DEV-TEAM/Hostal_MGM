@@ -6,6 +6,7 @@ export const getDashboardStatsByWarden = (params) => apiClient.get('/warden/atte
 export const createWindowsByWarden = () => apiClient.post('/warden/attendance/windows');
 export const getWindowDetailsByWarden = (id) => apiClient.get(`/warden/attendance/windows/${id}`);
 export const getRecordsByWarden = (id, params) => apiClient.get(`/warden/attendance/windows/${id}/records`, { params });
+
 export const scanStudentByWarden = (id, data) => apiClient.post(`/warden/attendance/windows/${id}/scan`, data);
 export const completeWindowByWarden = (id) => apiClient.patch(`/warden/attendance/windows/${id}/complete`);
 export const getStudentCalendarByWarden = (params) => apiClient.get('/warden/attendance/student-calendar', { params });

@@ -143,7 +143,11 @@ const me = asyncHandler(async (req, res) => {
   if (req.user.role === "student") {
     const qrToken = jwt.sign(
       {
-        studentId: user._id,
+        studentId: user._id, // This is the MongoDB _id
+        idString: user.studentId,
+        name: user.name,
+        roomNo: user.roomNo,
+        // profileImage: user.profileImage || null,
         type: "attendance_qr",
       },
       process.env.JWT_ACCESS_TOKEN
