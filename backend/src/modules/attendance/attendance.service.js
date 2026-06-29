@@ -76,6 +76,10 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 
   if (query.date) {
     filter.attendanceDate = getStartOfDay(query.date);
+  } else if (query.fromDate || query.toDate) {
+    filter.attendanceDate = {};
+    if (query.fromDate) filter.attendanceDate.$gte = getStartOfDay(query.fromDate);
+    if (query.toDate) filter.attendanceDate.$lte = new Date(new Date(query.toDate).setHours(23, 59, 59, 999));
   } else if (query.month && query.year) {
     const startOfMonth = new Date(Date.UTC(query.year, query.month - 1, 1));
     const endOfMonth = new Date(Date.UTC(query.year, query.month, 0, 23, 59, 59, 999));
@@ -282,8 +286,41 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     filter.status = query.status;
   }
 
+  if (query.fromDate || query.toDate) {
+    filter.scannedAt = {};
+    if (query.fromDate) filter.scannedAt.$gte = new Date(query.fromDate);
+    if (query.toDate) filter.scannedAt.$lte = new Date(new Date(query.toDate).setHours(23, 59, 59, 999));
+  }
+
   const pipeline = [
     { $match: filter },
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "studentInfo"
+      }
+    },
+    { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } }
+  ];
+
+  const studentMatch = {};
+  if (query.search) {
+    studentMatch.$or = [
+      { "studentInfo.name": { $regex: query.search, $options: "i" } },
+      { "studentInfo.studentId": { $regex: query.search, $options: "i" } }
+    ];
+  }
+  if (query.room) {
+    studentMatch["studentInfo.roomNo"] = { $regex: query.room, $options: "i" };
+  }
+  
+  if (Object.keys(studentMatch).length > 0) {
+    pipeline.push({ $match: studentMatch });
+  }
+
+  pipeline.push(
     { $sort: { scannedAt: -1 } },
     {
       $facet: {
@@ -291,15 +328,6 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
         data: [
           { $skip: skip },
           { $limit: limit },
-          {
-            $lookup: {
-              from: "students",
-              localField: "studentId",
-              foreignField: "_id",
-              as: "studentInfo"
-            }
-          },
-          { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } },
           {
             $lookup: {
               from: "users",
@@ -330,7 +358,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
         ]
       }
     }
-  ];
+  );
 
   const result = await AttendanceRecord.aggregate(pipeline);
   const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;

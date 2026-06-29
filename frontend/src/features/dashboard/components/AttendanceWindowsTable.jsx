@@ -4,6 +4,8 @@ import { formatDate, formatTime, capitalize } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
+import FilterWindowsModal from './FilterWindowsModal';
+import { Filter } from 'lucide-react';
 
 export default function AttendanceWindowsTable({ showHostel = true, showWarden = true, onRowClick }) {
     const { user } = useAuthStore();
@@ -11,6 +13,8 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(1);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [filters, setFilters] = useState({});
     const [pagination, setPagination] = useState({
         totalRecords: 0,
         totalPages: 1
@@ -25,7 +29,8 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
                 page,
                 limit: 10,
                 // if search is supported backend side we pass it, otherwise we could do frontend filtering
-                ...(searchQuery && { search: searchQuery })
+                ...(searchQuery && { search: searchQuery }),
+                ...filters
             };
             const response = await attendanceService.getWindowsByRole(user.role, params);
 
@@ -36,7 +41,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
         } finally {
             setLoading(false);
         }
-    }, [user?.role, page, searchQuery]);
+    }, [user?.role, page, searchQuery, filters]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -122,6 +127,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
     };
 
     return (
+        <>
         <DataTable
             searchQuery={searchQuery}
             onSearchChange={(e) => {
@@ -129,6 +135,15 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
                 setPage(1);
             }}
             searchPlaceholder="Search by date or hostel..."
+            toolbarActions={
+                <button
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2 rounded-md transition-colors ${Object.keys(filters).length > 0 ? 'bg-primary text-white hover:bg-secondary' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    title="Filter windows"
+                >
+                    <Filter className="w-5 h-5" />
+                </button>
+            }
             headers={headers}
             items={windows}
             loading={loading}
@@ -142,5 +157,24 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
             totalPages={pagination.totalPages}
             emptyText="No attendance windows found."
         />
+        <FilterWindowsModal
+            isOpen={isFilterModalOpen}
+            onClose={() => setIsFilterModalOpen(false)}
+            filters={filters}
+            onApply={(newFilters) => {
+                const cleanedFilters = Object.fromEntries(
+                    Object.entries(newFilters).filter(([_, v]) => v !== '')
+                );
+                setFilters(cleanedFilters);
+                setIsFilterModalOpen(false);
+                setPage(1);
+            }}
+            onReset={() => {
+                setFilters({});
+                setIsFilterModalOpen(false);
+                setPage(1);
+            }}
+        />
+        </>
     );
 }

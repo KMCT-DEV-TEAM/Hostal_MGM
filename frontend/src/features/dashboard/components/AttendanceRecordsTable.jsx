@@ -5,6 +5,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import StudentAttendanceModal from './StudentAttendanceModal';
+import FilterAttendanceModal from './FilterAttendanceModal';
+import { Filter } from 'lucide-react';
 
 export default function AttendanceRecordsTable({ windowId }) {
     const { user } = useAuthStore();
@@ -14,20 +16,22 @@ export default function AttendanceRecordsTable({ windowId }) {
     const [page, setPage] = useState(1);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [filters, setFilters] = useState({});
     const [pagination, setPagination] = useState({
         totalRecords: 0,
         totalPages: 1
     });
 
     const fetchRecords = useCallback(async () => {
-        if (!windowId || !user?.role) return;
-
+        if (!user?.role || !windowId) return;
         try {
             setLoading(true);
             const params = {
                 page,
                 limit: 10,
-                ...(searchQuery && { search: searchQuery })
+                ...(searchQuery && { search: searchQuery }),
+                ...filters
             };
             const response = await attendanceService.getRecordsByRole(user.role, windowId, params);
             setRecords(response?.records || []);
@@ -37,7 +41,7 @@ export default function AttendanceRecordsTable({ windowId }) {
         } finally {
             setLoading(false);
         }
-    }, [windowId, user?.role, page, searchQuery]);
+    }, [windowId, user?.role, page, searchQuery, filters]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -148,6 +152,15 @@ export default function AttendanceRecordsTable({ windowId }) {
                     setPage(1);
                 }}
                 searchPlaceholder="Search student..."
+                toolbarActions={
+                    <button
+                        onClick={() => setIsFilterModalOpen(true)}
+                        className={`p-2 rounded-md transition-colors ${Object.keys(filters).length > 0 ? 'bg-primary text-white hover:bg-secondary' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                        title="Filter records"
+                    >
+                        <Filter className="w-5 h-5" />
+                    </button>
+                }
                 headers={headers}
                 items={records}
                 loading={loading}
@@ -174,6 +187,26 @@ export default function AttendanceRecordsTable({ windowId }) {
                     setTimeout(() => setSelectedStudent(null), 200); // Clear after animation
                 }}
                 student={selectedStudent}
+            />
+
+            <FilterAttendanceModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                filters={filters}
+                onApply={(newFilters) => {
+                    // Remove empty filters
+                    const cleanedFilters = Object.fromEntries(
+                        Object.entries(newFilters).filter(([_, v]) => v !== '')
+                    );
+                    setFilters(cleanedFilters);
+                    setIsFilterModalOpen(false);
+                    setPage(1);
+                }}
+                onReset={() => {
+                    setFilters({});
+                    setIsFilterModalOpen(false);
+                    setPage(1);
+                }}
             />
         </>
     );
