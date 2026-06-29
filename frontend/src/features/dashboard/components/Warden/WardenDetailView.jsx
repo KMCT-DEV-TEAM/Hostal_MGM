@@ -115,7 +115,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
 
                                 <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                     <span className="flex items-center">
-                                        <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-success' : 'bg-danger'} mr-2`}></span>
+                                        <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-600' : 'bg-red-600'} mr-2`}></span>
                                         {selectedWardenDetail?.status}
                                     </span>
                                 </InfoRow>
@@ -134,7 +134,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedWardenDetail?.organization?.name || selectedWardenDetail?.organization || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
-                                    <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-success' : 'bg-danger'} mr-2`}></span>
+                                    <span className={`w-2 h-2 rounded-full ${selectedWardenDetail?.status === 'Active' ? 'bg-green-600' : 'bg-red-600'} mr-2`}></span>
                                     {selectedWardenDetail?.status}
                                 </span>
                             </InfoRow>
