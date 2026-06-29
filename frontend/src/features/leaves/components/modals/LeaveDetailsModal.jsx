@@ -119,8 +119,15 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
     const isAdminApproved = adminStatus === 'approved';
     const isAdminRejected = adminStatus === 'rejected';
 
-    const returnStatus = request.returnTracking?.returnStatus || 'pending';
-    const isReturned = returnStatus === 'returned';
+    let returnStatus = 'pending';
+    let isReturned = false;
+
+    if (request.returnTracking?.returnedAt) {
+        isReturned = true;
+        returnStatus = request.returnTracking.returnStatus === 'late' ? 'late' : 'on_time';
+    } else if (request.returnTracking?.leftHostelAt) {
+        returnStatus = 'left';
+    }
 
     const renderBadge = (label, color) => (
         <span className="inline-flex items-center gap-1.5 font-bold text-[12px]" style={{ color }}>
@@ -136,15 +143,15 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         let badgeColor = 'var(--color-warning)';
         let badgeLabel = 'Pending';
 
-        if (status === 'approved' || status === 'returned' || status === 'submitted') {
+        if (status === 'approved' || status === 'returned' || status === 'submitted' || status === 'on_time') {
             nodeColor = status === 'submitted' ? '#1E3A8A' : 'var(--color-success)'; // Dark blue for submitted
             badgeColor = status === 'submitted' ? '#1E3A8A' : 'var(--color-success)';
-            badgeLabel = status === 'returned' ? 'Returned' : (status === 'submitted' ? 'Submitted' : 'Approved');
+            badgeLabel = (status === 'returned' || status === 'on_time') ? 'Returned' : (status === 'submitted' ? 'Submitted' : 'Approved');
             icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>;
-        } else if (status === 'rejected' || status === 'cancelled') {
+        } else if (status === 'rejected' || status === 'cancelled' || status === 'late' || status === 'left') {
             nodeColor = 'var(--color-danger)';
             badgeColor = 'var(--color-danger)';
-            badgeLabel = status === 'cancelled' ? 'Cancelled' : 'Rejected';
+            badgeLabel = status === 'cancelled' ? 'Cancelled' : (status === 'late' ? 'Returned (Late)' : (status === 'left' ? 'Left' : 'Rejected'));
             icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>;
         }
 
@@ -287,7 +294,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
 
                             {/* Return Status */}
                             {renderProgressStep({
-                                title: isReturned ? 'Returned to Hostel' : 'Return Status',
+                                title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status'),
                                 subtitle: 'Security / User',
                                 status: returnStatus,
                                 iconLabel: 'R'

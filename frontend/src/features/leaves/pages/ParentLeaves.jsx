@@ -213,7 +213,7 @@ export default function ParentLeaves() {
                             </>
                         )}
                         <td className="p-4">
-                            <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus || 'pending'} />
+                            <LeaveReturnBadge returnTracking={r.returnTracking} />
                         </td>
                         <td className="p-4" onClick={(e) => e.stopPropagation()}>
                             {r.status === 'pending_parent' ? (
@@ -276,7 +276,7 @@ export default function ParentLeaves() {
 
                             <div className="flex justify-between items-center">
                                 <span className="font-medium text-gray-500 text-xs">Return Status:</span>
-                                <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus || 'pending'} />
+                                <LeaveReturnBadge returnTracking={r.returnTracking} />
                             </div>
                         </div>
                     </div>

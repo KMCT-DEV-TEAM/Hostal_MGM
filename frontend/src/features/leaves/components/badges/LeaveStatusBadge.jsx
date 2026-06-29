@@ -18,8 +18,10 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     if (normalizedStatus === 'cancelled') displayStatus = 'Cancelled';
 
     // For return status
-    if (normalizedStatus === 'left' || normalizedStatus === 'not returned') displayStatus = 'Left Hostel';
+    if (normalizedStatus === 'left' || normalizedStatus === 'not returned' || normalizedStatus === 'left (pending return)') displayStatus = 'Left (Pending Return)';
     if (normalizedStatus === 'returned') displayStatus = 'Returned';
+    if (normalizedStatus === 'returned (on time)') displayStatus = 'Returned (On Time)';
+    if (normalizedStatus === 'returned (late)') displayStatus = 'Returned (Late)';
     if (normalizedStatus === '-----') return <span className={`text-gray-400 font-semibold ${className}`}>-----</span>;
 
     // Define colors
@@ -28,16 +30,16 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     let borderClass = 'border';
     let icon = null;
 
-    if (displayStatus === 'Approved' || displayStatus === 'Returned') {
+    if (displayStatus === 'Approved' || displayStatus === 'Returned' || displayStatus === 'Returned (On Time)') {
         bgClass = 'bg-success/10';
         textClass = 'text-success';
         borderClass = 'border border-success/30';
-        if (displayStatus === 'Returned') icon = <Check className="w-3.5 h-3.5 stroke-[2.5]" />;
-    } else if (displayStatus === 'Rejected' || displayStatus === 'Left Hostel') {
+        if (displayStatus.startsWith('Returned')) icon = <Check className="w-3.5 h-3.5 stroke-[2.5]" />;
+    } else if (displayStatus === 'Rejected' || displayStatus === 'Left Hostel' || displayStatus === 'Left (Pending Return)' || displayStatus === 'Returned (Late)') {
         bgClass = 'bg-danger/10';
         textClass = 'text-danger';
         borderClass = 'border border-danger/30';
-        if (displayStatus === 'Left Hostel') icon = <X className="w-3.5 h-3.5 stroke-[2.5]" />;
+        if (displayStatus.includes('Left') || displayStatus.includes('Late')) icon = <X className="w-3.5 h-3.5 stroke-[2.5]" />;
     } else if (displayStatus === 'Cancelled') {
         bgClass = 'bg-gray-100';
         textClass = 'text-gray-600';
