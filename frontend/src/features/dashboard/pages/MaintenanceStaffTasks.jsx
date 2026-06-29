@@ -204,7 +204,7 @@ export default function MaintenanceStaffTasks() {
                 </div>
 
                 {/* Table */}
-                <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <table className="w-full text-left border-collapse bg-white">
                         <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
                             <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-700 text-sm font-semibold">
