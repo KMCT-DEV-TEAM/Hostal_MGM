@@ -105,19 +105,20 @@ export default function StudentAttendanceModal({ isOpen, onClose, student }) {
 
 
                 {/* Profile Section */}
-                <div className="flex flex-row items-center mb-6">
+                <div className="flex flex-row h-fit items-center mb-6">
                     {student.profileImage ? (
-                        <img src={student.profileImage} alt="" className="w-16 h-16 rounded-full object-cover shadow-sm mb-3" />
+                        <img src={student.profileImage} alt="" className="w-16 h-16 rounded-full object-cover shadow-sm" />
                     ) : (
-                        <div className="w-16 h-16 rounded-full bg-blue-50 text-primary flex items-center justify-center text-xl font-semibold mb-3 shadow-sm border border-blue-100">
+                        <div className="w-14 h-14 rounded-full bg-blue-50 text-primary flex items-center justify-center text-xl font-semibold shadow-sm border border-blue-100">
                             {student.name?.substring(0, 2).toUpperCase()}
                         </div>
                     )}
 
-                    <div className="ml-4">
+                    <div className="ml-4 flex flex-col items-start">
                         <h3 className="font-semibold text-gray-900">{student.name}</h3>
                         <p className="text-xs text-gray-500 mt-1">Room No : {student.room || 'N/A'}</p>
-                    </div>                </div>
+                    </div>
+                </div>
 
                 {/* Stats Boxes */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
