@@ -65,8 +65,6 @@ export default function AttendanceScan() {
     }, [fetchData]);
 
     const handleScanSuccess = (token) => {
-        setIsScanOpen(false);
-
         let decoded;
         try {
             // Try parsing as simple JSON first (for testing QRs)
@@ -90,15 +88,17 @@ export default function AttendanceScan() {
 
         if (!decoded || !decoded.studentId) {
             showErrorToast('Invalid QR Code', 'Could not extract student data from QR');
-            return;
+            return false;
         }
 
         // Check if already scanned
         const alreadyScanned = records.find(r => r.student?._id === decoded.studentId);
         if (alreadyScanned) {
             showErrorToast('Already Scanned', `${decoded.name || 'Student'} has already been marked present.`);
-            return;
+            return false;
         }
+
+        setIsScanOpen(false);
 
         // Map JWT payload to student object
         const student = {
@@ -112,6 +112,7 @@ export default function AttendanceScan() {
         setScannedStudent(student);
         setRawToken(token);
         setIsConfirmOpen(true);
+        return true;
     };
 
     const handleApproveScan = async () => {
