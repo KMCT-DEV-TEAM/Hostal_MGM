@@ -5,6 +5,7 @@ import adminService from "@/services/admin.service";
 import wardenService from "@/services/warden.service";
 import organizationService from "@/services/organization.service";
 import hostelService from "@/services/hostel.service";
+import complaintService from "@/services/complaint.service";
 import { logApi } from "@/features/dashboard/api/logApi";
 
 import newStudentIcon from "../../../assets/images/dashboard/Frame.png";
@@ -63,14 +64,7 @@ const attendanceData = [
     { month: "Dec", value: 50 },
 ];
 
-const complaintData = [
-    { name: "Maintenance", value: 40, color: "#0A467F", count: 499 },
-    { name: "Mess / Food", value: 25, color: "#9D77CE", count: 312 },
-    { name: "Roommate", value: 15, color: "#F8BA52", count: 187 },
-    { name: "Wifi Network", value: 10, color: "#55CDA6", count: 125 },
-    { name: "Other", value: 10, color: "#A6A6A6", count: 125 },
-];
-
+const COMPLAINT_COLORS = ["#0A467F", "#9D77CE", "#F8BA52", "#55CDA6", "#A6A6A6", "#FF6B6B", "#4DABF7", "#FF922B", "#20C997", "#339AF0"];
 
 const quickSummary = [
     {
@@ -112,6 +106,8 @@ function DashboardOverview() {
     const { user } = useAuthStore();
     const [period, setPeriod] = useState("This Year");
     const [recentActivities, setRecentActivities] = useState([]);
+    const [complaintData, setComplaintData] = useState([]);
+    const [complaintTotal, setComplaintTotal] = useState(0);
     const [dashboardStats, setDashboardStats] = useState({
         organizations: 0, admins: 0, wardens: 0, students: 0, hostels: 0,
         parents: 0, pendingComplaints: 0, leaveRequests: 0, presentToday: 0, absent: 0
@@ -184,8 +180,28 @@ function DashboardOverview() {
             }
         };
 
+        const fetchComplaintSummary = async () => {
+            try {
+                const res = await complaintService.getComplaintSummary();
+                if (res.success && res.data) {
+                    const total = res.data.total;
+                    const categories = res.data.categories.map((cat, index) => ({
+                        name: cat.name,
+                        count: cat.count,
+                        value: total > 0 ? Math.round((cat.count / total) * 100) : 0,
+                        color: COMPLAINT_COLORS[index % COMPLAINT_COLORS.length]
+                    }));
+                    setComplaintData(categories);
+                    setComplaintTotal(total);
+                }
+            } catch (error) {
+                console.error("Failed to fetch complaint summary", error);
+            }
+        };
+
         fetchStats();
         fetchActivities();
+        fetchComplaintSummary();
     }, [user?.role]);
 
     const formatRelativeTime = (dateString) => {
@@ -579,63 +595,70 @@ function DashboardOverview() {
                         <h2 className="text-sm font-bold text-[#000000] mb-5">
                             Complaint Summary
                         </h2>
-                        <div className="flex items-center justify-center gap-7 flex-wrap">
-                            <PieChart width={190} height={190}>
-                                <Pie
-                                    data={complaintData}
-                                    cx={90}
-                                    cy={90}
-                                    innerRadius={58}
-                                    outerRadius={88}
-                                    dataKey="value"
-                                    startAngle={90}
-                                    endAngle={-270}
-                                    labelLine={false}
-                                >
-                                    {complaintData.map((e, i) => (
-                                        <Cell key={i} fill={e.color} />
-                                    ))}
-                                </Pie>
-                                <text
-                                    x={90}
-                                    y={84}
-                                    textAnchor="middle"
-                                    fontSize={22}
-                                    fontWeight={700}
-                                    fill="#1A1F36"
-                                >
-                                    50
-                                </text>
-                                <text
-                                    x={90}
-                                    y={104}
-                                    textAnchor="middle"
-                                    fontSize={10}
-                                    fill="#000000"
-                                >
-                                    Total Complaints
-                                </text>
-                            </PieChart>
-
-                            <div className="flex flex-col gap-2.5">
-                                {complaintData.map((item) => (
-                                    <div
-                                        key={item.name}
-                                        className="flex items-center gap-2.5 text-xs"
+                        {complaintData.length > 0 ? (
+                            <div className="flex flex-col items-center justify-center gap-6">
+                                <PieChart width={190} height={190}>
+                                    <Pie
+                                        data={complaintData}
+                                        cx={90}
+                                        cy={90}
+                                        innerRadius={58}
+                                        outerRadius={88}
+                                        dataKey="value"
+                                        startAngle={90}
+                                        endAngle={-270}
+                                        labelLine={false}
                                     >
+                                        {complaintData.map((e, i) => (
+                                            <Cell key={i} fill={e.color} />
+                                        ))}
+                                    </Pie>
+                                    <text
+                                        x={90}
+                                        y={84}
+                                        textAnchor="middle"
+                                        fontSize={22}
+                                        fontWeight={700}
+                                        fill="#1A1F36"
+                                    >
+                                        {complaintTotal}
+                                    </text>
+                                    <text
+                                        x={90}
+                                        y={104}
+                                        textAnchor="middle"
+                                        fontSize={10}
+                                        fill="#000000"
+                                    >
+                                        Total Complaints
+                                    </text>
+                                </PieChart>
+
+                                <div className="flex flex-col gap-3 w-full max-w-[220px]">
+                                    {complaintData.map((item) => (
                                         <div
-                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                            style={{ background: item.color }}
-                                        />
-                                        <span className="text-gray-600 w-24">{item.name}</span>
-                                        <span className="font-bold text-gray-900 w-8 text-right">
-                                            {item.value}%
-                                        </span>
-                                        <span className="text-gray-300">({item.count})</span>
-                                    </div>
-                                ))}
+                                            key={item.name}
+                                            className="flex items-center gap-2.5 text-xs"
+                                        >
+                                            <div
+                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                                style={{ background: item.color }}
+                                            />
+                                            <span className="text-gray-600 w-24">{item.name}</span>
+                                            <span className="font-bold text-gray-900 w-8 text-right">
+                                                {item.value}%
+                                            </span>
+                                            <span className="text-gray-300">({item.count})</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                                <MessageSquare size={32} className="mb-2 text-gray-200" />
+                                <p className="text-sm">No complaints found</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

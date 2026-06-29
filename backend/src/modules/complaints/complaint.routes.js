@@ -49,6 +49,9 @@ router.get("/debug-data", async (req, res) => {
 // Get all complaints (Admin/Warden scoped)
 router.get("/", complaintController.getAllComplaints);
 
+// Get complaint summary (Admin/Warden/SuperAdmin)
+router.get("/summary", complaintController.getComplaintSummary);
+
 // Update complaint status (Admin/Warden)
 router.patch("/:id/status", complaintController.updateComplaintStatus);
 

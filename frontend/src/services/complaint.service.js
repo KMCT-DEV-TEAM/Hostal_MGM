@@ -15,6 +15,11 @@ const getAllComplaints = async (params = {}) => {
     return response.data;
 };
 
+const getComplaintSummary = async (params = {}) => {
+    const response = await apiClient.get('/complaints/summary', { params });
+    return response.data;
+};
+
 const updateComplaintStatus = async (id, status, message) => {
     const response = await apiClient.patch(`/complaints/${id}/status`, { status, message });
     return response.data;
@@ -69,6 +74,7 @@ const ComplaintService = {
     createComplaint,
     getMyComplaints,
     getAllComplaints,
+    getComplaintSummary,
     updateComplaintStatus,
     updateComplaint,
     assignComplaintStaff,
