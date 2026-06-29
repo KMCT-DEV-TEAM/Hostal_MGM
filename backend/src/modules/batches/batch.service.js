@@ -2,7 +2,7 @@ import Batch from "./batch.model.js";
 import Department from "../departments/department.model.js";
 import Course from "../courses/course.model.js";
 import Student from "../students/student.model.js";
-import { deactivateStudentsByQuery } from "../students/student.service.js";
+import { updateStudentsStatusByQuery } from "../students/student.service.js";
 
 const checkExistingBatchCodeDb = async (code) => {
   return await Batch.findOne({ code });
@@ -77,6 +77,15 @@ const updateBatchDb = async (id, data) => {
   return newBatch;
 };
 
+const updateBatchesStatusByQuery = async (query, isActive) => {
+  const batches = await Batch.find(query).select("_id");
+  const batchIds = batches.map(b => b._id);
+  if (batchIds.length > 0) {
+    await Batch.updateMany({ _id: { $in: batchIds } }, { isActive });
+    await updateStudentsStatusByQuery({ batchId: { $in: batchIds } }, isActive);
+  }
+};
+
 const toggleBatchStatusDb = async (id) => {
   const batch = await Batch.findById(id);
   if (!batch) throw new Error("Batch not found");
@@ -84,9 +93,7 @@ const toggleBatchStatusDb = async (id) => {
   batch.isActive = !batch.isActive;
   await batch.save();
 
-  if (!batch.isActive) {
-    await deactivateStudentsByQuery({ batchId: id });
-  }
+  await updateStudentsStatusByQuery({ batchId: id }, batch.isActive);
 
   return batch;
 };
@@ -97,9 +104,7 @@ const bulkUpdateBatchStatusDb = async (ids, isActive) => {
     { $set: { isActive } }
   );
 
-  if (!isActive) {
-    await deactivateStudentsByQuery({ batchId: { $in: ids } });
-  }
+  await updateStudentsStatusByQuery({ batchId: { $in: ids } }, isActive);
 
   return result;
 };
@@ -113,4 +118,5 @@ export {
   updateBatchDb,
   toggleBatchStatusDb,
   bulkUpdateBatchStatusDb,
+  updateBatchesStatusByQuery,
 };

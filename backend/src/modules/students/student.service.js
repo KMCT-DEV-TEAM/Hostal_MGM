@@ -216,12 +216,12 @@ const bulkUpdateStudentStatusDb = async (
   return result;
 };
 
-const deactivateStudentsByQuery = async (query) => {
+const updateStudentsStatusByQuery = async (query, isActive) => {
   const students = await Student.find(query).select("_id hostelId");
   const studentIds = students.map((s) => s._id);
   if (studentIds.length > 0) {
-    await Student.updateMany({ _id: { $in: studentIds } }, { isActive: false });
-    await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive: false });
+    await Student.updateMany({ _id: { $in: studentIds } }, { isActive });
+    await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive });
     
     const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
     for (const hId of affectedHostels) {
@@ -725,5 +725,5 @@ export {
   bulkUpdateStudentStatusDb,
   getStudentsService,
   getStudentFilterOptionsService,
-  deactivateStudentsByQuery,
+  updateStudentsStatusByQuery,
 };

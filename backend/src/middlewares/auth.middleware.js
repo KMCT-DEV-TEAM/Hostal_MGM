@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
+import User from "../modules/users/user.model.js";
+import Student from "../modules/students/student.model.js";
+import Parent from "../modules/parents/parent.model.js";
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -19,6 +22,24 @@ const authMiddleware = (req, res, next) => {
     );
 
     req.user = decoded;
+
+    let userModel = null;
+    if (decoded.role === 'student') {
+      userModel = Student;
+    } else if (decoded.role === 'parent') {
+      userModel = Parent;
+    } else {
+      userModel = User;
+    }
+
+    const user = await userModel.findById(decoded.id).select('isActive');
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "User deactivated",
+      });
+    }
 
     next();
   } catch (error) {

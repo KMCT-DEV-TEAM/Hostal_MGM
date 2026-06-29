@@ -1,4 +1,5 @@
 import User from "./user.model.js";
+import { getIo } from "../../config/socket.js";
 
 const findExistingUserByEmail = async (email) => {
   return await User.findOne({ email });
@@ -121,18 +122,30 @@ const toggleUserActiveStatusByRoleDb = async (id, role) => {
   const user = await User.findOne({ _id: id, role });
   if (!user) return null;
 
-  return await User.findOneAndUpdate(
+  const updatedUser = await User.findOneAndUpdate(
     { _id: id, role },
     { $set: { isActive: !user.isActive } },
     { new: true, runValidators: true }
   );
+
+  if (!updatedUser.isActive) {
+    getIo()?.to(id.toString()).emit("accountDeactivated");
+  }
+
+  return updatedUser;
 };
 
 const bulkToggleUserStatusByRoleDb = async (ids, role, isActive) => {
-  return await User.updateMany(
+  const result = await User.updateMany(
     { _id: { $in: ids }, role },
     { $set: { isActive } }
   );
+
+  if (!isActive) {
+    ids.forEach(id => getIo()?.to(id.toString()).emit("accountDeactivated"));
+  }
+
+  return result;
 };
 
 export {
