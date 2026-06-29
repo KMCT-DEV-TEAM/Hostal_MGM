@@ -1,5 +1,6 @@
 import Course from "./course.model.js";
-import { deactivateStudentsByQuery } from "../students/student.service.js";
+import { updateDepartmentsStatusByQuery } from "../departments/department.service.js";
+import { updateStudentsStatusByQuery } from "../students/student.service.js";
 
 const checkExistingCourseCodeDb = async (code) => {
   return await Course.findOne({ code });
@@ -33,6 +34,16 @@ const updateCourseDb = async (id, data) => {
   });
 };
 
+const updateCoursesStatusByQuery = async (query, isActive) => {
+  const courses = await Course.find(query).select("_id");
+  const courseIds = courses.map(c => c._id);
+  if (courseIds.length > 0) {
+    await Course.updateMany({ _id: { $in: courseIds } }, { isActive });
+    await updateDepartmentsStatusByQuery({ courseId: { $in: courseIds } }, isActive);
+    await updateStudentsStatusByQuery({ courseId: { $in: courseIds } }, isActive);
+  }
+};
+
 const toggleCourseStatusDb = async (id) => {
   const course = await Course.findById(id);
   if (!course) throw new Error("Course not found");
@@ -40,9 +51,8 @@ const toggleCourseStatusDb = async (id) => {
   course.isActive = !course.isActive;
   await course.save();
 
-  if (!course.isActive) {
-    await deactivateStudentsByQuery({ courseId: id });
-  }
+  await updateDepartmentsStatusByQuery({ courseId: id }, course.isActive);
+  await updateStudentsStatusByQuery({ courseId: id }, course.isActive);
 
   return course;
 };
@@ -53,9 +63,8 @@ const bulkUpdateCourseStatusDb = async (ids, isActive) => {
     { $set: { isActive } }
   );
 
-  if (!isActive) {
-    await deactivateStudentsByQuery({ courseId: { $in: ids } });
-  }
+  await updateDepartmentsStatusByQuery({ courseId: { $in: ids } }, isActive);
+  await updateStudentsStatusByQuery({ courseId: { $in: ids } }, isActive);
 
   return result;
 };
@@ -69,4 +78,5 @@ export {
   updateCourseDb,
   toggleCourseStatusDb,
   bulkUpdateCourseStatusDb,
+  updateCoursesStatusByQuery,
 };
