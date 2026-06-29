@@ -1,0 +1,130 @@
+import attendanceApi from '@/features/dashboard/api/attendanceApi';
+import { ROLES } from '@/constants/roles';
+import { createRoleResolver } from '@/utils/createRoleResolver';
+
+export async function getWindowsByWarden(params) {
+    const response = await attendanceApi.getWindowsByWarden(params);
+    return response.data;
+}
+
+export async function getDashboardStatsByWarden(params) {
+    const response = await attendanceApi.getDashboardStatsByWarden(params);
+    return response.data;
+}
+
+export async function getRecordsByWarden(id, params) {
+    const response = await attendanceApi.getRecordsByWarden(id, params);
+    return response.data;
+}
+
+export async function getStudentCalendarByWarden(params) {
+    const response = await attendanceApi.getStudentCalendarByWarden(params);
+    return response.data;
+}
+
+export async function createWindowsByWarden() {
+    const response = await attendanceApi.createWindowsByWarden();
+    return response.data;
+}
+
+export async function getWindowsByAdmin(params) {
+    const response = await attendanceApi.getWindowsByAdmin(params);
+    return response.data;
+}
+
+export async function getDashboardStatsByAdmin(params) {
+    const response = await attendanceApi.getDashboardStatsByAdmin(params);
+    return response.data;
+}
+
+export async function getRecordsByAdmin(id, params) {
+    const response = await attendanceApi.getRecordsByAdmin(id, params);
+    return response.data;
+}
+
+export async function getStudentCalendarByAdmin(params) {
+    const response = await attendanceApi.getStudentCalendarByAdmin(params);
+    return response.data;
+}
+
+export async function getWindowsBySuperAdmin(params) {
+    const response = await attendanceApi.getWindowsBySuperAdmin(params);
+    return response.data;
+}
+
+export async function getDashboardStatsBySuperAdmin(params) {
+    const response = await attendanceApi.getDashboardStatsBySuperAdmin(params);
+    return response.data;
+}
+
+export async function getRecordsBySuperAdmin(id, params) {
+    const response = await attendanceApi.getRecordsBySuperAdmin(id, params);
+    return response.data;
+}
+
+export async function getStudentCalendarBySuperAdmin(params) {
+    const response = await attendanceApi.getStudentCalendarBySuperAdmin(params);
+    return response.data;
+}
+
+export async function getStudentDashboard() {
+    const response = await attendanceApi.getStudentDashboard();
+    return response.data;
+}
+
+export async function getParentDashboard() {
+    const response = await attendanceApi.getParentDashboard();
+    return response.data;
+}
+
+const ATTENDANCE_WINDOWS_FETCHERS = {
+    [ROLES.WARDEN]: getWindowsByWarden,
+    [ROLES.ADMIN]: getWindowsByAdmin,
+    [ROLES.SUPER_ADMIN]: getWindowsBySuperAdmin,
+};
+
+const ATTENDANCE_RECORDS_FETCHERS = {
+    [ROLES.WARDEN]: getRecordsByWarden,
+    [ROLES.ADMIN]: getRecordsByAdmin,
+    [ROLES.SUPER_ADMIN]: getRecordsBySuperAdmin,
+};
+
+const ATTENDANCE_STUDENT_CALENDAR_FETCHERS = {
+    [ROLES.WARDEN]: getStudentCalendarByWarden,
+    [ROLES.ADMIN]: getStudentCalendarByAdmin,
+    [ROLES.SUPER_ADMIN]: getStudentCalendarBySuperAdmin,
+};
+
+const ATTENDANCE_DASHBOARD_STATS_FETCHERS = {
+    [ROLES.WARDEN]: getDashboardStatsByWarden,
+    [ROLES.ADMIN]: getDashboardStatsByAdmin,
+    [ROLES.SUPER_ADMIN]: getDashboardStatsBySuperAdmin,
+};
+
+const ATTENDANCE_DASHBOARD_FETCHERS = {
+    [ROLES.STUDENT]: getStudentDashboard,
+    [ROLES.PARENT]: getParentDashboard,
+};
+
+const ATTENDANCE_CREATE_WINDOW_FETCHERS = {
+    [ROLES.WARDEN]: createWindowsByWarden,
+};
+
+export const getWindowsByRole = createRoleResolver(ATTENDANCE_WINDOWS_FETCHERS, 'attendance windows');
+export const getRecordsByRole = createRoleResolver(ATTENDANCE_RECORDS_FETCHERS, 'attendance records');
+export const getStudentCalendarByRole = createRoleResolver(ATTENDANCE_STUDENT_CALENDAR_FETCHERS, 'student calendar');
+export const getAdminWardenDashboardStatsByRole = createRoleResolver(ATTENDANCE_DASHBOARD_STATS_FETCHERS, 'admin warden dashboard stats');
+export const getDashboardStatsByRole = createRoleResolver(ATTENDANCE_DASHBOARD_FETCHERS, 'attendance dashboard stats');
+export const createWindowByRole = createRoleResolver(ATTENDANCE_CREATE_WINDOW_FETCHERS, 'create attendance window');
+
+const attendanceService = {
+    getWindowsByRole,
+    getRecordsByRole,
+    getStudentCalendarByRole,
+    getAdminWardenDashboardStatsByRole,
+    getDashboardStatsByRole,
+    createWindowByRole,
+    // Add additional resolved functions below when needed
+};
+
+export default attendanceService;

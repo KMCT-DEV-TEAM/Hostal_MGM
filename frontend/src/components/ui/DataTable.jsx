@@ -52,7 +52,7 @@ export default function DataTable({
 
     return (
         <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-            
+
             {/* Toolbar section */}
             {hasToolbar && (
                 <div className="p-4 flex flex-row items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
@@ -111,8 +111,8 @@ export default function DataTable({
                             })}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 text-sm text-text-secondary">
-                        {loading ? (
+                    <tbody className="divide-y divide-gray-50 text-sm text-text-secondary relative">
+                        {loading && items.length === 0 ? (
                             <TableSkeletonLoader columns={totalCols} />
                         ) : error ? (
                             <tr>
@@ -127,40 +127,50 @@ export default function DataTable({
                                 </td>
                             </tr>
                         ) : (
-                            items.map((item, index) => {
-                                const rowId = item._id || item.id;
-                                const isSelected = selectedIds.includes(rowId);
-                                const isLoading = statusLoadingIds.includes(rowId);
-
-                                return (
-                                    <tr
-                                        key={rowId || index}
-                                        onClick={(e) => {
-                                            if (onRowClick) onRowClick(item);
-                                        }}
-                                        className={`transition-colors relative ${onRowClick ? 'cursor-pointer hover:bg-gray-50/80' : 'hover:bg-gray-50/40'} ${
-                                            isSelected ? 'bg-blue-50/20' : ''
-                                        } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
-                                    >
-                                        {canSelect && (
-                                            <td className="p-4 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onSelect && onSelect(rowId)}
-                                                    className="focus:outline-none flex items-center justify-center cursor-pointer mx-auto"
-                                                >
-                                                    {isSelected ? (
-                                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                                    ) : (
-                                                        <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                                                    )}
-                                                </button>
-                                            </td>
-                                        )}
-                                        {renderRow && renderRow(item, index, isSelected, isLoading)}
+                            <>
+                                {loading && (
+                                    <tr>
+                                        <td colSpan={totalCols} className="p-0">
+                                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10 min-h-[100px]">
+                                                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                        </td>
                                     </tr>
-                                );
-                            })
+                                )}
+                                {items.map((item, index) => {
+                                    const rowId = item._id || item.id;
+                                    const isSelected = selectedIds.includes(rowId);
+                                    const isLoading = statusLoadingIds.includes(rowId);
+
+                                    return (
+                                        <tr
+                                            key={rowId || index}
+                                            onClick={(e) => {
+                                                if (onRowClick) onRowClick(item);
+                                            }}
+                                            className={`transition-colors relative ${onRowClick ? 'cursor-pointer hover:bg-gray-50/80' : 'hover:bg-gray-50/40'} ${isSelected ? 'bg-blue-50/20' : ''
+                                                } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                                        >
+                                            {canSelect && (
+                                                <td className="p-4 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onSelect && onSelect(rowId)}
+                                                        className="focus:outline-none flex items-center justify-center cursor-pointer mx-auto"
+                                                    >
+                                                        {isSelected ? (
+                                                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                                        ) : (
+                                                            <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                                        )}
+                                                    </button>
+                                                </td>
+                                            )}
+                                            {renderRow && renderRow(item, index, isSelected, isLoading)}
+                                        </tr>
+                                    );
+                                })}
+                            </>
                         )}
                     </tbody>
                 </table>
@@ -184,15 +194,19 @@ export default function DataTable({
             )}
 
             {/* Pagination */}
-            {setPage && (!loading && !error && totalItems > 0) && (
-                <Pagination
-                    page={page}
-                    setPage={setPage}
-                    limit={limit}
-                    totalItems={totalItems}
-                    totalPages={totalPages}
-                />
+            {setPage && (!error && totalItems > 0) && (
+                <div className="relative">
+                    {loading && items.length > 0 && <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10" />}
+                    <Pagination
+                        page={page}
+                        setPage={setPage}
+                        limit={limit}
+                        totalItems={totalItems}
+                        totalPages={totalPages}
+                    />
+                </div>
             )}
+
         </div>
-    );
+    )
 }
