@@ -52,7 +52,6 @@ const StudentAttendance = () => {
                 ...filters
             };
             const res = await attendanceService.getAttendanceHistoryByRole(user.role, params);
-            console.log('Res from attendance page: ', res.records)
             setHistory(res?.records || []);
             setPagination(res?.pagination ? {
                 totalRecords: res.pagination.totalRecords,
@@ -82,8 +81,8 @@ const StudentAttendance = () => {
             </div>
 
             <div className="mb-6 shrink-0">
-                <StudentAttendanceStatsCard 
-                    todayStatus={todayStats} 
+                <StudentAttendanceStatsCard
+                    todayStatus={todayStats}
                     onGenerateQR={() => setIsQRModalOpen(true)}
                 />
             </div>
@@ -165,10 +164,10 @@ const StudentAttendance = () => {
                 }}
             />
 
-            <AttendanceQRModal 
-                isOpen={isQRModalOpen} 
-                onClose={() => setIsQRModalOpen(false)} 
-                qrToken={user?.qrToken} 
+            <AttendanceQRModal
+                isOpen={isQRModalOpen}
+                onClose={() => setIsQRModalOpen(false)}
+                qrToken={user?.qrToken}
             />
         </div>
     );
