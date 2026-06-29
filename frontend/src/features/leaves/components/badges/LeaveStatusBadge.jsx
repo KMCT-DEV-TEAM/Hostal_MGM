@@ -22,6 +22,8 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     if (normalizedStatus === 'returned') displayStatus = 'Returned';
     if (normalizedStatus === 'returned (on time)') displayStatus = 'Returned (On Time)';
     if (normalizedStatus === 'returned (late)') displayStatus = 'Returned (Late)';
+    if (normalizedStatus === 'present') displayStatus = 'Present';
+    if (normalizedStatus === 'absent') displayStatus = 'Absent';
     if (normalizedStatus === '-----') return <span className={`text-gray-400 font-semibold ${className}`}>-----</span>;
 
     // Define colors
@@ -30,12 +32,12 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     let borderClass = 'border';
     let icon = null;
 
-    if (displayStatus === 'Approved' || displayStatus === 'Returned' || displayStatus === 'Returned (On Time)') {
+    if (displayStatus === 'Approved' || displayStatus === 'Returned' || displayStatus === 'Returned (On Time)' || displayStatus === 'Present') {
         bgClass = 'bg-success/10';
         textClass = 'text-success';
         borderClass = 'border border-success/30';
         if (displayStatus.startsWith('Returned')) icon = <Check className="w-3.5 h-3.5 stroke-[2.5]" />;
-    } else if (displayStatus === 'Rejected' || displayStatus === 'Left Hostel' || displayStatus === 'Left (Pending Return)' || displayStatus === 'Returned (Late)') {
+    } else if (displayStatus === 'Rejected' || displayStatus === 'Left Hostel' || displayStatus === 'Left (Pending Return)' || displayStatus === 'Returned (Late)' || displayStatus === 'Absent') {
         bgClass = 'bg-danger/10';
         textClass = 'text-danger';
         borderClass = 'border border-danger/30';
@@ -52,7 +54,7 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     }
 
     return (
-        <span className={`px-3.5 py-1.5 rounded-md text-xs font-bold ${borderClass} inline-flex items-center gap-1.5 ${bgClass} ${textClass} ${className}`}>
+        <span className={`px-3.5 py-1.5 rounded-md text-xs ${borderClass} inline-flex items-center gap-1.5 ${bgClass} ${textClass} ${className}`}>
             {icon} {displayStatus}
         </span>
     );
