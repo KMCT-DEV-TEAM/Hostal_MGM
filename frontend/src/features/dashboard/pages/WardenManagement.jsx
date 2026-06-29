@@ -349,6 +349,7 @@ export default function WardenManagement() {
     };
 
     const handleResendOtp = async () => {
+        setIsVerifying(true);
         const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
         try {
             await otpService.sendOtp(emailToVerify);
@@ -357,7 +358,8 @@ export default function WardenManagement() {
             showSuccessToast('Success', 'OTP resent successfully!');
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to resend OTP');
-
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -833,7 +835,9 @@ export default function WardenManagement() {
                             Didn't receive it ? {resendTimer > 0 ? (
                                 <span className="text-gray-500 font-semibold ml-1">Resend in {formatTime(resendTimer)}</span>
                             ) : (
-                                <button type="button" onClick={handleResendOtp} className="text-[#0A437A] cursor-pointer hover:underline font-semibold ml-1">Resend the code</button>
+                                <button type="button" onClick={handleResendOtp} disabled={isVerifying} className="text-[#0A437A] cursor-pointer hover:underline font-semibold ml-1 disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed">
+                                    {isVerifying ? 'Sending...' : 'Resend the code'}
+                                </button>
                             )}
                         </p>
 
