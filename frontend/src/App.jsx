@@ -15,16 +15,32 @@ function App() {
     if (user) {
       const socket = initSocket();
       
-      socket.emit("joinRoom", user._id);
+      const joinUserRoom = () => {
+        const userId = user.id || user._id;
+        if (userId) {
+          socket.emit("joinRoom", userId);
+        }
+      };
 
-      socket.on("accountDeactivated", () => {
-        // You could also show a toast notification here
-        logout();
-        window.location.href = "/";
-      });
+      if (socket.connected) {
+        joinUserRoom();
+      }
+
+      socket.on("connect", joinUserRoom);
+
+      const handleDeactivated = () => {
+        logout()
+          .catch((err) => console.error("Logout error on deactivation:", err))
+          .finally(() => {
+            window.location.href = "/";
+          });
+      };
+
+      socket.on("accountDeactivated", handleDeactivated);
 
       return () => {
-        socket.off("accountDeactivated");
+        socket.off("connect", joinUserRoom);
+        socket.off("accountDeactivated", handleDeactivated);
       };
     }
   }, [user]);
