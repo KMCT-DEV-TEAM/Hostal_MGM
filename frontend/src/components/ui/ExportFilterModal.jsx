@@ -101,7 +101,7 @@ export default function ExportFilterModal({
                                 value={filters[field.name] || ''}
                                 onChange={(e) => setFilters(prev => ({ ...prev, [field.name]: e.target.value }))}
                                 placeholder="Select Date"
-                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-secondary"
+                                className="w-full"
                             />
                         ) : (
                             <Dropdown

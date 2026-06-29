@@ -9,9 +9,12 @@ import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
-import leaveService, { getAdminDashboardStats } from '@/services/leave.service';
+import leaveService, { getLeaves, getAdminDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { exportToExcel } from '@/utils/exportUtils';
+import { formatDate } from '@/utils/dateFormatter';
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams();
@@ -27,6 +30,10 @@ export default function AdminLeaves() {
     const [viewId, setViewId] = useState(null);
     const selectedHostel = hostelName ? decodeURIComponent(hostelName) : null;
     const isDetailView = !!selectedHostel || isWarden || isAdmin;
+
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
     const searchQuery = searchParams.get('search') || '';
     const orgFilter = searchParams.get('org') || 'All';
     const statusFilter = searchParams.get('status') || '';
@@ -34,6 +41,33 @@ export default function AdminLeaves() {
     const limit = 10;
 
     const debouncedSearch = useDebounce(searchQuery, 500);
+
+    const exportFields = useMemo(() => [
+        {
+            name: "startDate",
+            label: "From Date",
+            type: "date"
+        },
+        {
+            name: "endDate",
+            label: "To Date",
+            type: "date"
+        },
+        {
+            name: "status",
+            label: "Status",
+            options: [
+                { label: 'All Status', value: '' },
+                { label: 'Pending Admin', value: 'pending_admin' },
+                { label: 'Pending Parent', value: 'pending_parent' },
+                { label: 'Pending Warden', value: 'pending_warden' },
+                { label: 'Approved', value: 'approved' },
+                { label: 'Rejected', value: 'rejected' },
+                { label: 'Cancelled', value: 'cancelled' },
+                { label: 'Completed', value: 'completed' },
+            ]
+        }
+    ], []);
 
     const updateSearchParams = (updates) => {
         const newParams = new URLSearchParams(searchParams);
@@ -142,6 +176,92 @@ export default function AdminLeaves() {
         }
     };
 
+    const handleExport = () => {
+        setIsExportConfirmOpen(true);
+    };
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            const passTypeFilter = isHomePass ? 'home_pass' : 'out_pass';
+
+            const params = {
+                passType: passTypeFilter,
+                hostelId: selectedHostel,
+                search: debouncedSearch,
+                status: exportFilters.status || statusFilter,
+                organization: orgFilter !== 'All' ? orgFilter : undefined,
+                startDate: exportFilters.startDate,
+                endDate: exportFilters.endDate,
+                limit: 5000 // High limit to fetch all for export
+            };
+
+            // Clean up empty params
+            const cleanParams = Object.fromEntries(
+                Object.entries(params).filter(([, value]) => value !== '' && value !== undefined && value !== null)
+            );
+
+            const response = await getLeaves(role, cleanParams);
+            const dataToExport = response?.data || response?.passes || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No leave records match the selected filters');
+                setIsExportConfirmOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((r, index) => {
+                const base = {
+                    "S.No": index + 1,
+                    "Student Name": r.studentInfo?.name || r.studentName || 'Unknown',
+                    "Hostel": r.hostelInfo?.name || r.hostelId?.name || r.hostel || 'N/A',
+                    "Room No": r.studentInfo?.roomNo || r.roomNo || '--',
+                    "Pass Type": passTypeFilter === 'home_pass' ? 'Home Pass' : 'Out Pass',
+                };
+
+                if (passTypeFilter === 'home_pass') {
+                    base["Leave Period"] = `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}`;
+                    base["Days"] = r.duration || r.totalDays || '--';
+                } else {
+                    base["Date"] = formatDate(r.fromDate || r.date);
+                    base["Type"] = r.type || r.outPassCategory || '--';
+                    base["Out Time"] = r.outTime || '--';
+                    base["Expected Return"] = r.expectedReturnTime || '--';
+                }
+
+                base["Status"] = r.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
+
+                if (r.returnTracking?.returnedAt) {
+                    base["Return Status"] = 'Returned';
+                    base["Actual Return"] = formatDate(r.returnTracking.returnedAt);
+                } else if (r.returnTracking?.leftHostelAt) {
+                    base["Return Status"] = 'Left Hostel';
+                    base["Left At"] = formatDate(r.returnTracking.leftHostelAt);
+                } else {
+                    base["Return Status"] = '--';
+                }
+
+                return base;
+            });
+
+            const isSuccess = exportToExcel(exportData, `Leaves_Export_${passTypeFilter}`, "Leaves");
+
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+
+            setIsExportConfirmOpen(false);
+        } catch (err) {
+            console.error("Failed to export leaves:", err);
+            showErrorToast('Export failed', err.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
             <div className="mb-6 shrink-0 flex items-center gap-3">
@@ -180,9 +300,9 @@ export default function AdminLeaves() {
                     passType={passType}
                     selectedHostel={selectedHostel}
                     onRowClick={(r) => setViewId(r._id || r.id)}
-                    handleUpdateStatus={handleUpdateStatus}
-                    handleUpdateReturn={handleUpdateReturn}
-                    onExport={() => showSuccessToast('Exporting leave data...')}
+                    onUpdateStatus={handleUpdateStatus}
+                    onUpdateReturn={handleUpdateReturn}
+                    onExport={handleExport}
                     page={page}
                     setPage={(p) => updateSearchParams({ page: p })}
                     pagination={passesPagination}
@@ -209,6 +329,15 @@ export default function AdminLeaves() {
                 leaveId={viewId}
                 isHomePass={isHomePass}
                 userRole={role}
+            />
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title={`Export ${isHomePass ? 'Home Passes' : 'Out Passes'}`}
+                fields={exportFields}
             />
         </div>
     );
