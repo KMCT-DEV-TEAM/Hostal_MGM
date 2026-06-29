@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -19,7 +20,6 @@ export default function AdminLeaves() {
     const { passType, hostelName } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-
     const role = useAuthStore((s) => s.user?.role) || ROLES.SUPER_ADMIN;
 
     const isHomePass = passType === 'home-pass' || !passType;
@@ -127,7 +127,6 @@ export default function AdminLeaves() {
 
     const stats = useMemo(() => {
         if (isAdmin) return adminStats;
-
         if (!hostelData || hostelData.length === 0) {
             return { total: 0, approved: 0, pending: 0, rejected: 0 };
         }
@@ -185,7 +184,7 @@ export default function AdminLeaves() {
         setIsExporting(true);
         try {
             const passTypeFilter = isHomePass ? 'home_pass' : 'out_pass';
-            
+
             const params = {
                 passType: passTypeFilter,
                 hostelId: selectedHostel,
@@ -220,7 +219,7 @@ export default function AdminLeaves() {
                     "Room No": r.studentInfo?.roomNo || r.roomNo || '--',
                     "Pass Type": passTypeFilter === 'home_pass' ? 'Home Pass' : 'Out Pass',
                 };
-                
+
                 if (passTypeFilter === 'home_pass') {
                     base["Leave Period"] = `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}`;
                     base["Days"] = r.duration || r.totalDays || '--';
@@ -232,7 +231,7 @@ export default function AdminLeaves() {
                 }
 
                 base["Status"] = r.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
-                
+
                 if (r.returnTracking?.returnedAt) {
                     base["Return Status"] = 'Returned';
                     base["Actual Return"] = formatDate(r.returnTracking.returnedAt);

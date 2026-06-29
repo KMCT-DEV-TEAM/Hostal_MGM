@@ -45,7 +45,10 @@ export default function StudentComplaintsToolbar({
                         options={[
                             { label: 'All Status', value: 'All' },
                             { label: 'Pending', value: 'Pending' },
-                            { label: 'In Progress', value: 'In progress' },
+                            { label: 'Awaiting', value: 'Awaiting' },
+                            { label: 'In progress', value: 'In progress' },
+                            { label: 'Rejected', value: 'Rejected' },
+                            { label: 'Incomplete', value: 'Incomplete' },
                             { label: 'Resolved', value: 'Resolved' }
                         ]}
                         value={statusFilter}

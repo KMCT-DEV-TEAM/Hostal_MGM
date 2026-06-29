@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MessageSquare, Calendar, AlertCircle, Clock, Hash, Tag, FileText, ToggleRight, LayoutGrid } from 'lucide-react';
+import { X, MessageSquare, Calendar, AlertCircle, Clock, Hash, Tag, FileText, ToggleRight, LayoutGrid, Building } from 'lucide-react';
 
 export default function StudentComplaintDetailModal({ complaint, onClose }) {
     if (!complaint) return null;
@@ -49,8 +49,8 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-text-secondary flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-text-secondary" /> Priority</span> 
                                     <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full bg-danger mr-2`}></span>
-                                        High
+                                        <span className={`w-2 h-2 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Low' ? 'bg-success' : 'bg-warning'} mr-2`}></span>
+                                        {complaint.priority || 'Medium'}
                                     </span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
@@ -59,6 +59,10 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                         <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'} mr-2`}></span>
                                         {complaint.status || 'Pending'}
                                     </span>
+                                </div>
+                                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                                    <span className="text-text-secondary flex items-center gap-1.5"><Building className="w-4 h-4 text-text-secondary" /> Hostel</span> 
+                                    <span className="sm:col-span-2 font-medium"><span className="hidden sm:inline">: </span>{complaint.hostelName || 'N/A'}</span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
                                     <span className="text-text-secondary flex items-center gap-1.5"><Hash className="w-4 h-4 text-text-secondary" /> Room No</span> 
@@ -133,6 +137,31 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                     {complaint.status || 'Pending'}
                                 </span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Activity Logs */}
+                    <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                        <div className="mb-4 border-b border-gray-100 pb-4">
+                            <h3 className="text-lg font-semibold text-primary">Activity Logs</h3>
+                            <p className="text-xs text-text-secondary">Recent updates about your complaint</p>
+                        </div>
+                        <div className="space-y-4">
+                            {complaint.timeline && complaint.timeline.length > 0 ? (
+                                [...complaint.timeline].reverse().map((update, idx) => (
+                                    <div key={idx} className="border border-gray-100 rounded-lg p-4 bg-white shadow-sm flex flex-col gap-3">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <span className="text-[13px] text-gray-700 leading-relaxed">{update.message}</span>
+                                            <span className="text-[11px] text-gray-400 whitespace-nowrap pt-0.5">
+                                                {new Date(update.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(update.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).toLowerCase()}
+                                            </span>
+                                        </div>
+                                        <span className="text-[12px] text-gray-400">by {update.by}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-[13px] text-text-secondary italic">No activity logs available.</div>
+                            )}
                         </div>
                     </div>
                 </div>

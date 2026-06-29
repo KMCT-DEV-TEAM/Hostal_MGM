@@ -22,6 +22,7 @@ export default function StudentComplaints() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
+    const [showKPIs, setShowKPIs] = useState(false);
     const limit = 10;
     
     // Modal state
@@ -58,7 +59,11 @@ export default function StudentComplaints() {
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
                 createdAt: c.createdAt,
                 status: c.status,
-                timeline: c.timeline || []
+                priority: c.priority,
+                hostelName: c.hostelId?.name || 'Unknown',
+                timeline: c.timeline || [],
+                resolutionNotes: c.resolutionNotes,
+                materialsUsed: c.materialsUsed
             }));
             setComplaints(formatted);
         } catch (error) {
@@ -259,10 +264,11 @@ export default function StudentComplaints() {
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <StudentComplaintsHeader />
+            <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
             
             {/* Stat Cards Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
+            {showKPIs && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
@@ -303,6 +309,7 @@ export default function StudentComplaints() {
                     </div>
                 </div>
             </div>
+            )}
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
                 {/* Toolbar Section */}
@@ -511,8 +518,11 @@ export default function StudentComplaints() {
                         options: [
                             { label: 'All Status', value: '' },
                             { label: 'Pending', value: 'Pending' },
+                            { label: 'Awaiting', value: 'Awaiting' },
                             { label: 'In progress', value: 'In progress' },
-                            { label: 'Resolved', value: 'Resolved' },
+                            { label: 'Rejected', value: 'Rejected' },
+                            { label: 'Incomplete', value: 'Incomplete' },
+                            { label: 'Resolved', value: 'Resolved' }
                         ]
                     }
                 ]}

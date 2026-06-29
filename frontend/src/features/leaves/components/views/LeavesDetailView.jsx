@@ -62,6 +62,7 @@ export default function LeavesDetailView({
         return [...baseCols, ...outPassCols, ...statusCols];
     }, [selectedHostel, isWarden, isAdmin, isHomePass]);
 
+
     return (
         <DataTable
             searchQuery={searchQuery}

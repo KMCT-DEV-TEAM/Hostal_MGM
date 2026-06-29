@@ -12,6 +12,7 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     else if (normalizedStatus === 'pending_parent') displayStatus = 'Pending Parent';
     else if (normalizedStatus === 'pending_warden') displayStatus = 'Pending Warden';
     else if (normalizedStatus.includes('pending')) displayStatus = 'Pending';
+
     if (normalizedStatus === 'approved') displayStatus = 'Approved';
     if (normalizedStatus === 'rejected') displayStatus = 'Rejected';
     if (normalizedStatus === 'cancelled') displayStatus = 'Cancelled';

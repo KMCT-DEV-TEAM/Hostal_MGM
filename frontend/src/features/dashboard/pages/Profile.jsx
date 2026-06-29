@@ -332,15 +332,15 @@ export default function Profile() {
                                 </div>
                             </div>
                             
-                            {user?.role === 'warden' && (
+                            {(user?.role === 'warden' || user?.role === 'student') && (
                                 <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
-                                    <div className="text-gray-500 font-medium">{t('assigned_hostel') || 'Assigned Hostel'}</div>
+                                    <div className="text-gray-500 font-medium">{user?.role === 'warden' ? t('assigned_hostel') || 'Assigned Hostel' : 'Your Hostel'}</div>
                                     <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
                                         {user?.assignedHostels && user.assignedHostels.length > 0 ? (
                                             user.assignedHostels.map((hostel, index) => (
                                                 <span key={index} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-xs font-semibold tracking-wide">
                                                     <Building className="w-3 h-3" />
-                                                    {hostel.name} ({hostel.code})
+                                                    {hostel.name} {hostel.code ? `(${hostel.code})` : ''}
                                                 </span>
                                             ))
                                         ) : (

@@ -18,6 +18,7 @@ export default function Settings() {
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isDirectChangeConfirmModalOpen, setIsDirectChangeConfirmModalOpen] = useState(false);
     
     // Preferences State
     const [notifications, setNotifications] = useState({
@@ -111,7 +112,7 @@ export default function Settings() {
             return;
         }
 
-        if (user?.role === 'warden') {
+        if (user?.role !== 'super_admin') {
             setIsSaving(true);
             try {
                 await authService.verifyPassword({ password: passwords.oldPassword });
@@ -124,6 +125,19 @@ export default function Settings() {
             return;
         }
 
+        // For students and others, verify password then show direct confirmation modal
+        setIsSaving(true);
+        try {
+            await authService.verifyPassword({ password: passwords.oldPassword });
+            setIsDirectChangeConfirmModalOpen(true);
+        } catch (error) {
+            showErrorToast('Error', 'Incorrect current password');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleConfirmDirectPasswordChange = async () => {
         setIsSaving(true);
         try {
             await authService.changePassword({
@@ -132,6 +146,7 @@ export default function Settings() {
             });
             showSuccessToast('Success', 'Password changed successfully');
             setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });
+            setIsDirectChangeConfirmModalOpen(false);
         } catch (error) {
             showErrorToast('Failed', error?.response?.data?.message || 'Failed to change password');
         } finally {
@@ -139,7 +154,7 @@ export default function Settings() {
         }
     };
 
-    const handleConfirmWardenPasswordRequest = async () => {
+    const handleConfirmPasswordRequest = async () => {
         setIsSaving(true);
         try {
             await authService.submitPasswordRequest({
@@ -312,10 +327,20 @@ export default function Settings() {
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
-                onConfirm={handleConfirmWardenPasswordRequest}
+                onConfirm={handleConfirmPasswordRequest}
                 title="Submit Password Request"
-                message="As a warden, your password change requires Super Admin approval. Are you sure you want to submit this request?"
+                message="Your password change requires Admin approval. Are you sure you want to submit this request?"
                 confirmText="Submit Request"
+                isDestructive={false}
+            />
+
+            <ConfirmationModal
+                isOpen={isDirectChangeConfirmModalOpen}
+                onClose={() => setIsDirectChangeConfirmModalOpen(false)}
+                onConfirm={handleConfirmDirectPasswordChange}
+                title="Confirm Password Change"
+                message="Are you sure you want to change your password? This will update your login credentials immediately."
+                confirmText="Change Password"
                 isDestructive={false}
             />
         </div>
