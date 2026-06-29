@@ -89,7 +89,7 @@ export const getStudentPassesDb = async (studentId, query) => {
               outTime: 1,
               expectedReturnTime: 1,
               createdAt: 1,
-              returnTracking: { returnStatus: 1 },
+              returnTracking: { returnStatus: 1, leftHostelAt: 1, returnedAt: 1, markedBy: 1, markedAt: 1 },
               parentInfo: { parentName: "$parentInfo.parentName" },
               hostelId: { name: "$hostelInfo.name" }
             }
