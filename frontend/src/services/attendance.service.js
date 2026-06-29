@@ -1,4 +1,4 @@
-import attendanceApi from '@/features/dashboard/api/attendanceApi';
+import attendanceApi, { scanStudentByWarden } from '@/features/dashboard/api/attendanceApi';
 import { ROLES } from '@/constants/roles';
 import { createRoleResolver } from '@/utils/createRoleResolver';
 
@@ -11,6 +11,8 @@ export async function getDashboardStatsByWarden(params) {
     const response = await attendanceApi.getDashboardStatsByWarden(params);
     return response.data;
 }
+
+
 
 export async function getRecordsByWarden(id, params) {
     const response = await attendanceApi.getRecordsByWarden(id, params);
@@ -110,12 +112,20 @@ const ATTENDANCE_CREATE_WINDOW_FETCHERS = {
     [ROLES.WARDEN]: createWindowsByWarden,
 };
 
+
+
+const ATTENDANCE_SCAN_STUDENT_FETCHERS = {
+    [ROLES.WARDEN]: scanStudentByWarden,
+};
+
 export const getWindowsByRole = createRoleResolver(ATTENDANCE_WINDOWS_FETCHERS, 'attendance windows');
 export const getRecordsByRole = createRoleResolver(ATTENDANCE_RECORDS_FETCHERS, 'attendance records');
 export const getStudentCalendarByRole = createRoleResolver(ATTENDANCE_STUDENT_CALENDAR_FETCHERS, 'student calendar');
 export const getAdminWardenDashboardStatsByRole = createRoleResolver(ATTENDANCE_DASHBOARD_STATS_FETCHERS, 'admin warden dashboard stats');
 export const getDashboardStatsByRole = createRoleResolver(ATTENDANCE_DASHBOARD_FETCHERS, 'attendance dashboard stats');
 export const createWindowByRole = createRoleResolver(ATTENDANCE_CREATE_WINDOW_FETCHERS, 'create attendance window');
+
+export const scanStudentByRole = createRoleResolver(ATTENDANCE_SCAN_STUDENT_FETCHERS, 'scan student attendance');
 
 const attendanceService = {
     getWindowsByRole,
@@ -124,7 +134,7 @@ const attendanceService = {
     getAdminWardenDashboardStatsByRole,
     getDashboardStatsByRole,
     createWindowByRole,
-    // Add additional resolved functions below when needed
+    scanStudentByRole
 };
 
 export default attendanceService;

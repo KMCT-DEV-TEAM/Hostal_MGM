@@ -5,7 +5,9 @@ import Administrator from '@/features/dashboard/pages/Administrator';
 import WardenManagement from '@/features/dashboard/pages/WardenManagement';
 import Parents from '@/features/dashboard/pages/Parents';
 import Students from '@/features/dashboard/pages/Students';
-import OrganizationManagement from '@/features/dashboard/pages/OrganizationManagement';
+import AdminAttendance from '@/features/dashboard/pages/AdminAttendance';
+// import SuperAdminAttendance from '@/features/dashboard/pages/SuperAdminAttendance';
+import AttendanceScan from '@/features/dashboard/pages/AttendanceScan';
 import Maintenance from '@/features/dashboard/pages/Maintenance';
 import HostelManagement from '@/features/dashboard/pages/HostelManagement';
 import BatchManagement from '@/features/dashboard/pages/BatchManagement';
@@ -22,6 +24,7 @@ import MaintenanceStaffTasks from '@/features/dashboard/pages/MaintenanceStaffTa
 import MaintenanceAssignedTasks from '@/features/dashboard/pages/MaintenanceAssignedTasks';
 import Logs from '@/features/dashboard/pages/Logs';
 import Attendance from '@/features/dashboard/pages/Attendance';
+import OrganizationManagement from '@/features/dashboard/pages/OrganizationManagement';
 
 export const dashboardRoutes = [
 
@@ -233,6 +236,13 @@ export const dashboardRoutes = [
             ROLES.PARENT
         ],
         element: Attendance
+    },
+    {
+        path: 'attendance/scan/:windowId',
+        roles: [
+            ROLES.WARDEN
+        ],
+        element: AttendanceScan
     },
     {
         path: 'logs',

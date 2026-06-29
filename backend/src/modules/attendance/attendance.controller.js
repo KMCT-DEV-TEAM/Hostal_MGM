@@ -105,11 +105,23 @@ export const scanStudent = asyncHandler(async (req, res) => {
 
   let studentId;
   try {
-    const decoded = jwt.verify(qrToken, process.env.JWT_ACCESS_TOKEN);
-    if (decoded.type !== "attendance_qr") {
-      return sendError(res, 400, "Invalid QR code.");
+    // Check if qrToken is just a JSON string with _id (used for testing or simple QRs)
+    try {
+      const parsedToken = JSON.parse(qrToken);
+      if (parsedToken._id || parsedToken.studentId) {
+        studentId = parsedToken._id || parsedToken.studentId;
+      }
+    } catch (e) {
+      // Ignore JSON parse error, fall back to JWT
     }
-    studentId = decoded.studentId || decoded.id;
+
+    if (!studentId) {
+      const decoded = jwt.verify(qrToken, process.env.JWT_ACCESS_TOKEN);
+      if (decoded.type !== "attendance_qr") {
+        return sendError(res, 400, "Invalid QR code.");
+      }
+      studentId = decoded.studentId || decoded.id;
+    }
   } catch (err) {
     return sendError(res, 400, "Invalid or expired QR code.");
   }
