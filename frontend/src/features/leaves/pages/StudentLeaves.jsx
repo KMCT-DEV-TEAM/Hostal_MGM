@@ -153,7 +153,7 @@ export default function StudentLeaves() {
                             <LeaveStatusBadge status={r.status} />
                         </td>
                         <td className="p-4">
-                            <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus} />
+                            <LeaveReturnBadge returnTracking={r.returnTracking} />
                         </td>
                         <td className="p-4">
                             {['pending_parent', 'pending_warden', 'approved'].includes(r.status) ? (
@@ -189,7 +189,7 @@ export default function StudentLeaves() {
                             </div>
                             <div className="flex justify-between items-center gap-2">
                                 <span className="font-medium text-gray-500">Return:</span>
-                                <LeaveReturnBadge returnStatus={r.returnTracking?.returnStatus} />
+                                <LeaveReturnBadge returnTracking={r.returnTracking} />
                             </div>
                         </div>
                         {['pending_parent', 'pending_warden', 'approved'].includes(r.status) && (
