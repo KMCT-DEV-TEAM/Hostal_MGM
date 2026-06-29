@@ -5,6 +5,7 @@ import adminService from "@/services/admin.service";
 import wardenService from "@/services/warden.service";
 import organizationService from "@/services/organization.service";
 import hostelService from "@/services/hostel.service";
+import { logApi } from "@/features/dashboard/api/logApi";
 
 import newStudentIcon from "../../../assets/images/dashboard/Frame.png";
 import complaintIcon from "../../../assets/images/dashboard/Vector (1).png";
@@ -40,6 +41,9 @@ import {
     X,
     ChevronDown,
     KeyRound,
+    Info,
+    CheckCircle,
+    XCircle
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -67,60 +71,6 @@ const complaintData = [
     { name: "Other", value: 10, color: "#A6A6A6", count: 125 },
 ];
 
-const activities = [
-    {
-        icon: <Wrench size={18} className="text-[#2D7CC3]" />,
-        iconBg: "bg-[#EAF3FF]",
-        text: (
-            <>
-                Maintenance complaint filed - Room A07 <strong>Plumbing</strong>
-            </>
-        ),
-        tag: "New",
-        tagClass: "bg-[#EAF3FF] text-[#2D7CC3]",
-        by: "By Roy Mathew",
-        time: "5 min ago",
-    },
-    {
-        icon: <UserCheck size={18} className="text-[#6B8E23]" />,
-        iconBg: "bg-[#EEF7E7]",
-        text: (
-            <>
-                Leave Request from <strong>Rohan Mehtha</strong> approved
-            </>
-        ),
-        tag: "Approved",
-        tagClass: "bg-[#EEF7E7] text-[#6B8E23]",
-        by: "By Admin",
-        time: "10 min ago",
-    },
-    {
-        icon: <AlertTriangle size={18} className="text-[#F59E0B]" />,
-        iconBg: "bg-[#FFF4E5]",
-        text: (
-            <>
-                Maintenance complaint filed — Room A08 <strong>plumbing</strong>
-            </>
-        ),
-        tag: "Open",
-        tagClass: "bg-[#FFF4E5] text-[#F59E0B]",
-        by: "By Kiran Raj",
-        time: "18 min ago",
-    },
-    {
-        icon: <MessageSquare size={18} className="text-[#2D7CC3]" />,
-        iconBg: "bg-[#EAF3FF]",
-        text: (
-            <>
-                Parent of <strong>Aditya Sharma</strong> sent a message
-            </>
-        ),
-        tag: null,
-        tagClass: "",
-        by: "Via Student Portal",
-        time: "1 hour ago",
-    },
-];
 
 const quickSummary = [
     {
@@ -161,6 +111,7 @@ function DashboardOverview() {
     const { t } = useTranslation();
     const { user } = useAuthStore();
     const [period, setPeriod] = useState("This Year");
+    const [recentActivities, setRecentActivities] = useState([]);
     const [dashboardStats, setDashboardStats] = useState({
         organizations: 0, admins: 0, wardens: 0, students: 0, hostels: 0,
         parents: 0, pendingComplaints: 0, leaveRequests: 0, presentToday: 0, absent: 0
@@ -223,8 +174,38 @@ function DashboardOverview() {
             }
         };
 
+        const fetchActivities = async () => {
+            try {
+                const res = await logApi.getLogs({ page: 1, limit: 5 });
+                const responseData = res.data?.data || res.data;
+                setRecentActivities(responseData.logs || []);
+            } catch (error) {
+                console.error("Failed to fetch recent activities", error);
+            }
+        };
+
         fetchStats();
+        fetchActivities();
     }, [user?.role]);
+
+    const formatRelativeTime = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+        
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+        
+        return date.toLocaleDateString();
+    };
 
     const getStatCards = () => {
         if (user?.role === ROLES.SUPER_ADMIN) {
@@ -677,47 +658,75 @@ function DashboardOverview() {
                         </a>
                     </div>
 
-                    {activities.map((a, i) => (
-                        <div
-                            key={i}
-                            className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
-                        >
-                            <div className="flex items-center gap-4 flex-1">
-                                {/* Icon */}
-                                <div
-                                    className={`w-10 h-10 rounded-lg ${a.iconBg} flex items-center justify-center flex-shrink-0`}
-                                >
-                                    {a.icon}
-                                </div>
+                    {recentActivities.map((log) => {
+                        let iconBg = "bg-[#EAF3FF]";
+                        let iconColor = "text-[#2D7CC3]";
+                        let tagClass = "bg-[#EAF3FF] text-[#2D7CC3]";
+                        let icon = <Info size={18} className={iconColor} />;
 
-                                {/* Content */}
-                                <div className="flex-1">
-                                    <div className="flex items-center flex-wrap gap-2">
-                                        <p className="text-[13px] text-[#333333]">
-                                            {a.text}
-                                        </p>
+                        if (log.status === 'success') {
+                            iconBg = "bg-[#EEF7E7]";
+                            iconColor = "text-[#6B8E23]";
+                            tagClass = "bg-[#EEF7E7] text-[#6B8E23]";
+                            icon = <CheckCircle size={18} className={iconColor} />;
+                        } else if (log.status === 'error') {
+                            iconBg = "bg-[#FEE2E2]";
+                            iconColor = "text-[#EF4444]";
+                            tagClass = "bg-[#FEE2E2] text-[#EF4444]";
+                            icon = <XCircle size={18} className={iconColor} />;
+                        } else if (log.status === 'warning') {
+                            iconBg = "bg-[#FFF4E5]";
+                            iconColor = "text-[#F59E0B]";
+                            tagClass = "bg-[#FFF4E5] text-[#F59E0B]";
+                            icon = <AlertTriangle size={18} className={iconColor} />;
+                        }
 
-                                        {a.tag && (
-                                            <span
-                                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${a.tagClass}`}
-                                            >
-                                                {a.tag}
-                                            </span>
-                                        )}
+                        return (
+                            <div
+                                key={log._id}
+                                className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
+                            >
+                                <div className="flex items-center gap-4 flex-1">
+                                    {/* Icon */}
+                                    <div
+                                        className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0`}
+                                    >
+                                        {icon}
                                     </div>
 
-                                    <p className="text-xs text-[#9CA3AF] mt-1">
-                                        {a.by}
-                                    </p>
-                                </div>
-                            </div>
+                                    {/* Content */}
+                                    <div className="flex-1">
+                                        <div className="flex items-center flex-wrap gap-2">
+                                            <p className="text-[13px] text-[#333333]">
+                                                {log.action} - <strong className="font-medium">{log.details?.length > 60 ? log.details.substring(0, 60) + '...' : log.details}</strong>
+                                            </p>
 
-                            {/* Time */}
-                            <span className="text-xs text-[#9CA3AF] whitespace-nowrap ml-4">
-                                {a.time}
-                            </span>
-                        </div>
-                    ))}
+                                            {log.status && (
+                                                <span
+                                                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${tagClass}`}
+                                                >
+                                                    {log.status}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <p className="text-xs text-[#9CA3AF] mt-1 capitalize">
+                                            By {log.user?.name || log.user?.email || 'System'} {log.userRole ? `(${log.userRole})` : ''}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Time */}
+                                <span className="text-xs text-[#9CA3AF] whitespace-nowrap ml-4">
+                                    {formatRelativeTime(log.createdAt)}
+                                </span>
+                            </div>
+                        );
+                    })}
+
+                    {recentActivities.length === 0 && (
+                        <div className="text-center py-8 text-sm text-gray-500">No recent activities found.</div>
+                    )}
                 </div>
             </div>
 
