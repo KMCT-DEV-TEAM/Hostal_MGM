@@ -21,6 +21,7 @@ import MaintenanceStaffManagement from '@/features/dashboard/pages/MaintenanceSt
 import MaintenanceStaffTasks from '@/features/dashboard/pages/MaintenanceStaffTasks';
 import MaintenanceAssignedTasks from '@/features/dashboard/pages/MaintenanceAssignedTasks';
 import Logs from '@/features/dashboard/pages/Logs';
+import Attendance from '@/features/dashboard/pages/Attendance';
 
 export const dashboardRoutes = [
 
@@ -221,6 +222,17 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: ComplaintCategories
+    },
+    {
+        path: 'attendance',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
+        ],
+        element: Attendance
     },
     {
         path: 'logs',

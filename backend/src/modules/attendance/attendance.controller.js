@@ -6,6 +6,7 @@ import Parent from "../parents/parent.model.js";
 import {
   createAttendanceWindowDb,
   getAttendanceWindowsDb,
+  getDashboardStatsDb,
   getAttendanceWindowDetailsDb,
   getAttendanceRecordsDb,
   scanStudentDb,
@@ -59,6 +60,13 @@ export const getAttendanceWindows = asyncHandler(async (req, res) => {
   const scope = await getScope(req);
   const result = await getAttendanceWindowsDb(req.query, scope);
   return sendSuccess(res, 200, "Attendance windows fetched successfully", result);
+});
+
+export const getDashboardStats = asyncHandler(async (req, res) => {
+  const scope = await getScope(req);
+  const { date } = req.query;
+  const result = await getDashboardStatsDb(date, scope);
+  return sendSuccess(res, 200, "Dashboard stats fetched successfully", result);
 });
 
 export const getAttendanceWindowDetails = asyncHandler(async (req, res) => {

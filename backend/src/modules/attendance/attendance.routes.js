@@ -9,6 +9,7 @@ import {
   getAttendanceRecords,
   scanStudent,
   completeAttendanceWindow,
+  getDashboardStats,
   getAttendanceDashboard,
   getAttendanceHistory,
   getAttendanceCalendar,
@@ -30,6 +31,7 @@ wardenAttendanceRouter.use(authMiddleware);
 wardenAttendanceRouter.use(roleMiddleware("warden"));
 
 wardenAttendanceRouter.post("/windows", createAttendanceWindow);
+wardenAttendanceRouter.get("/stats", getDashboardStats);
 wardenAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 wardenAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
 wardenAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);
@@ -39,6 +41,7 @@ wardenAttendanceRouter.patch("/windows/:id/complete", validateWindowIdParam, com
 export const adminAttendanceRouter = express.Router();
 adminAttendanceRouter.use(authMiddleware);
 adminAttendanceRouter.use(roleMiddleware("admin", "superadmin"));
+adminAttendanceRouter.get("/stats", getDashboardStats);
 adminAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 adminAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
 adminAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);
@@ -46,6 +49,7 @@ adminAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAtte
 export const superAdminAttendanceRouter = express.Router();
 superAdminAttendanceRouter.use(authMiddleware);
 superAdminAttendanceRouter.use(roleMiddleware("superadmin"));
+superAdminAttendanceRouter.get("/stats", getDashboardStats);
 superAdminAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 superAdminAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
 superAdminAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);

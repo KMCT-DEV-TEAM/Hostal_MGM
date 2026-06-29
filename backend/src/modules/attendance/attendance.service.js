@@ -156,6 +156,61 @@ export const getAttendanceWindowsDb = async (query, scope) => {
   };
 };
 
+export const getDashboardStatsDb = async (dateStr, scope) => {
+  const filter = {};
+  
+  if (scope.role === "warden") {
+    filter.hostelId = new mongoose.Types.ObjectId(scope.hostelId);
+  }
+  
+  const queryDate = getStartOfDay(dateStr || new Date());
+  filter.attendanceDate = queryDate;
+
+  const result = await AttendanceWindow.aggregate([
+    { $match: filter },
+    {
+      $lookup: {
+        from: "users",
+        localField: "startedBy",
+        foreignField: "_id",
+        as: "startedByInfo"
+      }
+    },
+    { $unwind: { path: "$startedByInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $group: {
+        _id: null,
+        totalStudents: { $sum: "$totalStudents" },
+        presentToday: { $sum: "$presentCount" },
+        absentToday: { $sum: "$absentCount" },
+        windowStatus: { $first: "$status" },
+        windowStartedAt: { $first: "$createdAt" },
+        windowStartedByName: { $first: "$startedByInfo.name" }
+      }
+    }
+  ]);
+
+  if (result.length === 0) {
+    return {
+      totalStudents: 0,
+      presentToday: 0,
+      absentToday: 0,
+      windowStatus: null,
+      windowStartedAt: null,
+      windowStartedByName: null
+    };
+  }
+
+  return {
+    totalStudents: result[0].totalStudents,
+    presentToday: result[0].presentToday,
+    absentToday: result[0].absentToday,
+    windowStatus: result[0].windowStatus,
+    windowStartedAt: result[0].windowStartedAt,
+    windowStartedByName: result[0].windowStartedByName
+  };
+};
+
 export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
   const filter = { _id: new mongoose.Types.ObjectId(windowId) };
   if (scope.role === "warden") {
