@@ -5,6 +5,7 @@ import DataTable from '@/components/ui/DataTable';
 import Dropdown from '@/components/ui/Dropdown';
 import { formatDate } from '../../utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
+import LeaveReturnBadge from '../badges/LeaveReturnBadge';
 
 export default function LeavesDetailView({
     passesData,
@@ -19,9 +20,11 @@ export default function LeavesDetailView({
     passType,
     selectedHostel,
     onRowClick,
-    handleUpdateStatus,
-    handleUpdateReturn,
+    onUpdateStatus,
+    onUpdateReturn,
     onExport,
+    onFilterClick,
+    hasActiveFilters,
     page,
     setPage,
     pagination
@@ -32,8 +35,11 @@ export default function LeavesDetailView({
     const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
     const getReturnStatus = (r) => {
-        if (r.returnTracking?.returnedAt) return 'Returned';
-        if (r.returnTracking?.leftHostelAt) return 'Left';
+        console.log('return status', r.returnTracking);
+        if (r.returnTracking?.returnedAt) {
+            return r.returnTracking.returnStatus === 'late' ? 'Returned (Late)' : 'Returned (On Time)';
+        }
+        if (r.returnTracking?.leftHostelAt) return 'Left (Pending Return)';
         return '-----';
     };
 
@@ -44,9 +50,8 @@ export default function LeavesDetailView({
     ];
 
     const getReturnOptions = (status) => {
-        if (status === 'Returned') return [{ label: 'Returned', value: 'Returned' }];
-        if (status === 'Left') return [{ label: 'Left', value: 'Left' }, { label: 'Mark Returned', value: 'Returned' }];
-        return [{ label: '-----', value: '-----' }, { label: 'Mark Left', value: 'Left' }];
+        if (status === 'Left (Pending Return)') return [{ label: 'Mark Returned', value: 'Returned' }];
+        return [{ label: 'Mark Left', value: 'Left' }];
     };
 
     const tableHeaders = useMemo(() => {
@@ -54,11 +59,11 @@ export default function LeavesDetailView({
         const midCol = isRoomCol ? "Room No" : "Hostel";
         const dateCol = isHomePass ? "Leave Period" : "Date";
         const typeCol = isHomePass ? "Days" : "Type";
-        
+
         const baseCols = ["Student", midCol, dateCol, typeCol];
         const outPassCols = isHomePass ? [] : ["In", "Out"];
         const statusCols = [{ label: "Status", align: "start" }, { label: "Return", align: "start" }];
-        
+
         return [...baseCols, ...outPassCols, ...statusCols];
     }, [selectedHostel, isWarden, isAdmin, isHomePass]);
 
@@ -74,9 +79,9 @@ export default function LeavesDetailView({
                 <>
                     <button
                         type="button"
-                        onClick={() => setStatusFilter(prev => prev ? '' : 'Pending')}
-                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${statusFilter ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
-                        title="Toggle Pending status filter"
+                        onClick={onFilterClick}
+                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'border-[#0A437A] text-[#0A437A] bg-[#0A437A]/5' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                        title="Filter leaves"
                     >
                         <Filter className="w-4 h-4" />
                     </button>
@@ -149,7 +154,7 @@ export default function LeavesDetailView({
                                 <Dropdown
                                     options={statusOptions}
                                     value="Pending"
-                                    onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                    onChange={(val) => onUpdateStatus(r._id || r.id, val)}
                                     minWidth="w-28"
                                     triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20`}
                                 />
@@ -160,16 +165,17 @@ export default function LeavesDetailView({
 
                         {/* Inline Return Dropdown */}
                         <td className="p-4">
-                            {isWarden ? (
+                            {isWarden && r.status === 'approved' ? (
                                 <Dropdown
                                     options={getReturnOptions(getReturnStatus(r))}
-                                    value={getReturnStatus(r)}
-                                    onChange={(val) => handleUpdateReturn(r._id || r.id, val)}
+                                    value=""
+                                    placeholder={getReturnStatus(r)}
+                                    onChange={(val) => onUpdateReturn(r._id || r.id, val)}
                                     minWidth="w-32"
                                     triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50`}
                                 />
                             ) : (
-                                <LeaveStatusBadge status={getReturnStatus(r)} />
+                                <LeaveReturnBadge returnTracking={r.returnTracking} />
                             )}
                         </td>
                     </>

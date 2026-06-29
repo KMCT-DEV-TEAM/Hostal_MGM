@@ -89,8 +89,8 @@ const ComplaintCategoryMobileList = ({
 
                             <div className="flex justify-end mt-auto">
                                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium
-                                    ${c.isActive ? 'bg-green-50 text-success' : 'bg-danger/10 text-danger'}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-green-600' : 'bg-danger'}`}></span>
+                                    ${c.isActive ? 'bg-green-50 text-success' : 'bg-red-50 text-danger'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
                                     {c.isActive ? t('active') : t('inactive')}
                                 </span>
                             </div>

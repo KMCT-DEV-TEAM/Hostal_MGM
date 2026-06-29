@@ -87,7 +87,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
     if (status === 'In progress') return 'bg-primary/10 text-primary';
     if (status === 'Pending') return 'bg-warning/10 text-warning';
     if (status === 'Awaiting') return 'bg-[#DB7017]/10 text-[#DB7017]';
-    if (status === 'Rejected') return 'bg-danger/10 text-danger';
+    if (status === 'Rejected') return 'bg-red-50 text-danger';
     if (status === 'Incomplete') return 'bg-primary/10 text-primary';
     return 'bg-[#8F64C8]/10 text-[#8F64C8]';
   };

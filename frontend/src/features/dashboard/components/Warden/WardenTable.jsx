@@ -124,7 +124,7 @@ export default function WardenTable({
                                                 ]}
                                                 value={warden.status}
                                                 onChange={() => handleStatusChangeClick(warden.id, warden.status)}
-                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${warden.status === 'Active' ? 'bg-success/10 text-success border-success/20 hover:bg-success/20' : 'bg-danger/10 text-danger border-danger/20 hover:bg-danger/20'}`}
+                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${warden.status === 'Active' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
                                             />
                                         </div>
                                     </td>

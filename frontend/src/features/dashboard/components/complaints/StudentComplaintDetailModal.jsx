@@ -111,7 +111,7 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                         )}
                                     </>
                                 ) : (
-                                    <div className="text-[13px] text-text-secondary italic font-semibold text-danger">Not resolved yet</div>
+                                    <div className="text-[13px] font-semibold text-danger italic">Not resolved yet</div>
                                 )}
                             </div>
                         </div>

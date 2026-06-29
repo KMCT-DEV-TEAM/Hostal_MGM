@@ -49,7 +49,7 @@ export default function FilterAttendanceModal({
             onClose={onClose}
             title="Filter Attendance list"
             titleSize="text-lg"
-            subtitle="Filter specific Student attendance from the list"
+            subtitle="Filter specific attendance from the list"
             maxWidth="max-w-md"
             overflowClass="overflow-visible"
             footer={
@@ -83,7 +83,7 @@ export default function FilterAttendanceModal({
                     onChange={(e) => setLocalToDate(e.target.value)}
                 />
 
-                <div className="col-span-2">
+                {/* <div className="col-span-2">
                     <label className="block mb-1.5 text-xs font-medium">Room No</label>
                     <input
                         type="text"
@@ -92,7 +92,7 @@ export default function FilterAttendanceModal({
                         onChange={(e) => setLocalRoom(e.target.value)}
                         className="w-full h-10 px-3 border border-gray-200 rounded-md text-xs outline-none transition-colors focus:border-secondary bg-white"
                     />
-                </div>
+                </div> */}
 
                 <div className="col-span-1">
                     <label className="block mb-1.5 text-xs font-medium">Status</label>

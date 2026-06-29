@@ -197,6 +197,7 @@ const dictionary = {
         maintenance: "Maintenance",
         settings: "Settings",
         logout: "Logout",
+        logs: "Logs",
         // Settings Page
         settings_title: "Settings",
         settings_desc: "Manage your account settings and security preferences",
@@ -409,6 +410,7 @@ const dictionary = {
         maintenance: "മെയിൻ്റനൻസ്",
         settings: "ക്രമീകരണങ്ങൾ",
         logout: "ലോഗൗട്ട്",
+        logs: "ലോഗുകൾ",
         // Settings Page
         settings_title: "ക്രമീകരണങ്ങൾ",
         settings_desc: "നിങ്ങളുടെ അക്കൗണ്ട് ക്രമീകരണങ്ങളും സുരക്ഷാ മുൻഗണനകളും നിയന്ത്രിക്കുക",

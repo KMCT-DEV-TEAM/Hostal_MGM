@@ -91,15 +91,15 @@ const MaintenanceStaffMobileList = ({
                                     <div className="flex items-center gap-3 mt-2 text-xs">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-gray-400">Assigned</span>
-                                            <span className="font-semibold text-text-secondary">{staff.taskAssignedCount || 0}</span>
+                                            <span className="font-medium text-gray-500">{staff.taskAssignedCount || 0}</span>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-gray-400">Resolved</span>
-                                            <span className="font-semibold text-text-secondary">{staff.taskResolvedCount || 0}</span>
+                                            <span className="font-medium text-gray-500">{staff.taskResolvedCount || 0}</span>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-gray-400">Pending</span>
-                                            <span className="font-semibold text-text-secondary">{staff.taskPendingCount || 0}</span>
+                                            <span className="font-medium text-gray-500">{staff.taskPendingCount || 0}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -107,8 +107,8 @@ const MaintenanceStaffMobileList = ({
 
                             <div className="flex justify-end mt-auto">
                                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-medium
-                                    ${staff.isActive ? 'bg-green-50 text-success' : 'bg-danger/10 text-danger'}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${staff.isActive ? 'bg-green-600' : 'bg-danger'}`}></span>
+                                    ${staff.isActive ? 'bg-green-50 text-success' : 'bg-red-50 text-danger'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${staff.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
                                     {staff.isActive ? "Active" : "Inactive"}
                                 </span>
                             </div>

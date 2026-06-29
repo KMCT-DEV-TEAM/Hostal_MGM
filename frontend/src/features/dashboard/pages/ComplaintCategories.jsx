@@ -270,7 +270,7 @@ const ComplaintCategories = () => {
                             </button>
                             <button
                                 onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
                             >
                                 Inactive ({selectedIds.length})
                             </button>

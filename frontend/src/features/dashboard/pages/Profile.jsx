@@ -233,7 +233,7 @@ export default function Profile() {
                                     ) : (
                                         <>
                                             <div className="text-gray-900 font-semibold">{user?.name || t('not_provided')}</div>
-                                            <button onClick={() => handleEditClick('name', user?.name)} className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-md transition-all cursor-pointer">
+                                            <button onClick={() => handleEditClick('name', user?.name)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
                                         </>
@@ -276,7 +276,7 @@ export default function Profile() {
                                                 {user?.email || t('not_provided')}
                                             </div>
                                             {user?.role !== 'super_admin' && (
-                                                <button onClick={() => handleEditClick('email', user?.email)} className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-md transition-all cursor-pointer">
+                                                <button onClick={() => handleEditClick('email', user?.email)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
                                             )}
@@ -324,7 +324,7 @@ export default function Profile() {
                                                 <Phone className="w-4 h-4 text-gray-400" />
                                                 {user?.phone || t('not_provided')}
                                             </div>
-                                            <button onClick={() => handleEditClick('phone', user?.phone)} className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-md transition-all cursor-pointer">
+                                            <button onClick={() => handleEditClick('phone', user?.phone)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
                                         </>
@@ -360,8 +360,8 @@ export default function Profile() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
                                 <div className="text-gray-500 font-medium">{t('status')}</div>
                                 <div className="sm:col-span-2">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-danger/10 text-danger border border-danger/10'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-danger'}`}></span>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-danger border border-red-200'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-red-600'}`}></span>
                                         {user?.isActive !== false ? t('active') : t('inactive')}
                                     </span>
                                 </div>

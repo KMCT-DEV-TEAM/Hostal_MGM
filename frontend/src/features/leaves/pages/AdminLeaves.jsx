@@ -12,6 +12,7 @@ import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import leaveService, { getLeaves, getAdminDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
+import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDate } from '@/utils/dateFormatter';
@@ -37,8 +38,16 @@ export default function AdminLeaves() {
     const searchQuery = searchParams.get('search') || '';
     const orgFilter = searchParams.get('org') || 'All';
     const statusFilter = searchParams.get('status') || '';
+    const categoryFilter = searchParams.get('category') || '';
+    const fromDateFilter = searchParams.get('fromDate') || '';
+    const toDateFilter = searchParams.get('toDate') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = 10;
+
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    
+    // Check if any filters are active (excluding search and page)
+    const hasActiveFilters = Boolean(statusFilter || categoryFilter || fromDateFilter || toDateFilter || (orgFilter !== 'All'));
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 
@@ -86,6 +95,9 @@ export default function AdminLeaves() {
             passType: isHomePass ? 'home_pass' : 'out_pass',
             hostelId: selectedHostel,
             status: statusFilter ? statusFilter.toLowerCase() : '',
+            outPassCategory: categoryFilter,
+            startDate: fromDateFilter,
+            endDate: toDateFilter,
             search: debouncedSearch,
             page,
             limit
@@ -190,9 +202,10 @@ export default function AdminLeaves() {
                 hostelId: selectedHostel,
                 search: debouncedSearch,
                 status: exportFilters.status || statusFilter,
+                outPassCategory: categoryFilter,
                 organization: orgFilter !== 'All' ? orgFilter : undefined,
-                startDate: exportFilters.startDate,
-                endDate: exportFilters.endDate,
+                startDate: exportFilters.startDate || fromDateFilter,
+                endDate: exportFilters.endDate || toDateFilter,
                 limit: 5000 // High limit to fetch all for export
             };
 
@@ -303,6 +316,8 @@ export default function AdminLeaves() {
                     onUpdateStatus={handleUpdateStatus}
                     onUpdateReturn={handleUpdateReturn}
                     onExport={handleExport}
+                    onFilterClick={() => setIsFilterModalOpen(true)}
+                    hasActiveFilters={hasActiveFilters}
                     page={page}
                     setPage={(p) => updateSearchParams({ page: p })}
                     pagination={passesPagination}
@@ -329,6 +344,39 @@ export default function AdminLeaves() {
                 leaveId={viewId}
                 isHomePass={isHomePass}
                 userRole={role}
+            />
+
+            <FilterLeavesModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                pageTitle={isHomePass ? 'Home Passes' : 'Out Passes'}
+                isOutPass={!isHomePass}
+                filters={{
+                    status: statusFilter,
+                    category: categoryFilter,
+                    fromDate: fromDateFilter,
+                    toDate: toDateFilter
+                }}
+                onApply={(newFilters) => {
+                    updateSearchParams({
+                        status: newFilters.status,
+                        category: newFilters.category,
+                        fromDate: newFilters.fromDate,
+                        toDate: newFilters.toDate,
+                        page: 1
+                    });
+                    setIsFilterModalOpen(false);
+                }}
+                onReset={() => {
+                    updateSearchParams({
+                        status: '',
+                        category: '',
+                        fromDate: '',
+                        toDate: '',
+                        page: 1
+                    });
+                    setIsFilterModalOpen(false);
+                }}
             />
 
             <ExportFilterModal
