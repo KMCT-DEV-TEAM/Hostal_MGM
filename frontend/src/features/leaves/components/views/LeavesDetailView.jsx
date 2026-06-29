@@ -19,9 +19,11 @@ export default function LeavesDetailView({
     passType,
     selectedHostel,
     onRowClick,
-    handleUpdateStatus,
-    handleUpdateReturn,
+    onUpdateStatus,
+    onUpdateReturn,
     onExport,
+    onFilterClick,
+    hasActiveFilters,
     page,
     setPage,
     pagination
@@ -74,9 +76,9 @@ export default function LeavesDetailView({
                 <>
                     <button
                         type="button"
-                        onClick={() => setStatusFilter(prev => prev ? '' : 'Pending')}
-                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${statusFilter ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
-                        title="Toggle Pending status filter"
+                        onClick={onFilterClick}
+                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'border-[#0A437A] text-[#0A437A] bg-[#0A437A]/5' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                        title="Filter leaves"
                     >
                         <Filter className="w-4 h-4" />
                     </button>
@@ -149,7 +151,7 @@ export default function LeavesDetailView({
                                 <Dropdown
                                     options={statusOptions}
                                     value="Pending"
-                                    onChange={(val) => handleUpdateStatus(r._id || r.id, val)}
+                                    onChange={(val) => onUpdateStatus(r._id || r.id, val)}
                                     minWidth="w-28"
                                     triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20`}
                                 />
@@ -164,7 +166,7 @@ export default function LeavesDetailView({
                                 <Dropdown
                                     options={getReturnOptions(getReturnStatus(r))}
                                     value={getReturnStatus(r)}
-                                    onChange={(val) => handleUpdateReturn(r._id || r.id, val)}
+                                    onChange={(val) => onUpdateReturn(r._id || r.id, val)}
                                     minWidth="w-32"
                                     triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50`}
                                 />
