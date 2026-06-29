@@ -90,6 +90,7 @@ export default function Administrator() {
     const [isEmailChangeSuccessModalOpen, setIsEmailChangeSuccessModalOpen] = useState(false);
     const [resendTimer, setResendTimer] = useState(300);
     const [isTimerActive, setIsTimerActive] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
     const [admins, setAdmins] = useState([]);
     const [totalAdmins, setTotalAdmins] = useState(0);
@@ -430,6 +431,7 @@ export default function Administrator() {
     };
 
     const handleResendOtp = async () => {
+        setIsVerifying(true);
         const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
         try {
             await otpService.sendOtp(emailToVerify);
@@ -438,6 +440,8 @@ export default function Administrator() {
             showSuccessToast('Success', 'OTP resent successfully!');
         } catch (error) {
             showErrorToast('Error', error?.message || 'Failed to resend OTP');
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -774,9 +778,9 @@ export default function Administrator() {
                             <button
                                 onClick={saveAdmin}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</> : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -836,9 +840,9 @@ export default function Administrator() {
                             <button
                                 onClick={confirmStatusChange}
                                 disabled={isStatusUpdating}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isStatusUpdating ? <><Loader2 className="w-3 h-3 animate-spin" /> Updating...</> : 'Confirm'}
+                                {isStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -865,9 +869,9 @@ export default function Administrator() {
                             <button
                                 onClick={confirmBulkStatusChange}
                                 disabled={isBulkStatusUpdating}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isBulkStatusUpdating ? <><Loader2 className="w-3 h-3 animate-spin" /> Updating...</> : 'Confirm'}
+                                {isBulkStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -933,8 +937,13 @@ export default function Administrator() {
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer">
-                                        Verify
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} 
+                                        disabled={isVerifying}
+                                        className="flex items-center justify-center min-w-[80px] px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                                    >
+                                        {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
                                     </button>
                                 )}
                             </div>
@@ -972,6 +981,7 @@ export default function Administrator() {
                         const code = otpCode.join('');
                         if (code.length < 6) return;
                         
+                        setIsVerifyingOtp(true);
                         try {
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
@@ -985,6 +995,8 @@ export default function Administrator() {
                             }
                         } catch(err) {
                             showErrorToast('Error', err?.message || 'Invalid OTP');
+                        } finally {
+                            setIsVerifyingOtp(false);
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         <div className="flex justify-between items-center mb-6">
@@ -1044,15 +1056,18 @@ export default function Administrator() {
                             Didn't receive it ? {resendTimer > 0 ? (
                                 <span className="text-gray-500 font-semibold ml-1">Resend in {formatTime(resendTimer)}</span>
                             ) : (
-                                <button type="button" onClick={handleResendOtp} className="text-[#0A437A] cursor-pointer hover:underline font-semibold ml-1">Resend the code</button>
+                                <button type="button" onClick={handleResendOtp} disabled={isVerifying} className="text-[#0A437A] cursor-pointer hover:underline font-semibold ml-1 disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed">
+                                    {isVerifying ? 'Sending...' : 'Resend the code'}
+                                </button>
                             )}
                         </p>
 
                         <button
                             type="submit"
-                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer text-lg"
+                            disabled={isVerifyingOtp}
+                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors flex items-center justify-center gap-2 cursor-pointer text-lg disabled:opacity-70"
                         >
-                            Verify
+                            {isVerifyingOtp ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
                         </button>
                     </form>
                 </div>
@@ -1079,26 +1094,28 @@ export default function Administrator() {
             )}
             {/* Confirm Organization Change Modal */}
             {isOrgConfirmOpen && (
-                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-[320px] max-w-[90vw] p-6 relative animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Change Organization?</h3>
-                        <p className="text-gray-500 mb-6">Are you sure you want to change the organization for this administrator?</p>
-                        <div className="flex gap-3 justify-end">
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-sm font-bold text-gray-900">Change Organization?</h3>
+                        <p className="text-xs text-gray-500 mt-1 mb-6">
+                            Are you sure you want to change the organization for this administrator?
+                        </p>
+                        <div className="flex gap-2 justify-end">
                             <button
                                 onClick={() => {
                                     setIsOrgConfirmOpen(false);
                                     setOrgChangeToConfirm(null);
                                 }}
-                                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmOrganizationChange}
                                 disabled={isOrgUpdating}
-                                className="px-4 py-2 bg-[#0A437A] text-white rounded-lg hover:bg-secondary font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isOrgUpdating ? <><Loader2 className="w-3 h-3 animate-spin" /> Updating...</> : 'Confirm'}
+                                {isOrgUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -1124,9 +1141,9 @@ export default function Administrator() {
                             <button
                                 onClick={saveAdmin}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? <><Loader2 className="w-3 h-3 animate-spin" /> Adding...</> : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
