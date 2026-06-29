@@ -33,7 +33,7 @@ const StudentComplaintsMobileList = ({
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className={`inline-flex items-center justify-center px-2 py-1 text-[10px] font-medium rounded-md ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning' : complaint.status === 'Resolved' ? 'bg-success/10 text-success' : complaint.status === 'In progress' ? 'bg-accent/10 text-blue-500' : 'bg-gray-100 text-text-secondary'}`}>
+                                    <span className={`inline-flex items-center justify-center px-2 py-1 text-[10px] font-medium rounded-md border ${complaint.status === 'Pending' ? 'bg-warning/10 text-warning border-warning/20' : complaint.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' : complaint.status === 'In progress' ? 'bg-accent/10 text-blue-500 border-blue-200' : 'bg-gray-100 text-text-secondary border-gray-200'}`}>
                                         {complaint.status}
                                     </span>
                                 </div>

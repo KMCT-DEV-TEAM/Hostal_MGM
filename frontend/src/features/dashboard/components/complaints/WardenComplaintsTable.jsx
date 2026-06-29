@@ -85,18 +85,18 @@ export default function WardenComplaintsTable({
                                             ]}
                                             value={complaint.priority || 'Medium'}
                                             onChange={(val) => handlePriorityChange && handlePriorityChange(complaint.id, val)}
-                                            triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border-none ${complaint.priority === 'High' ? 'bg-danger/10 text-danger hover:bg-danger/20' : complaint.priority === 'Medium' ? 'bg-warning/10 text-warning hover:bg-warning/20' : 'bg-gray-100 text-text-secondary hover:bg-gray-200'}`}
+                                            triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border ${complaint.priority === 'High' ? 'bg-danger/10 text-danger hover:bg-danger/20 border-danger/20' : complaint.priority === 'Medium' ? 'bg-warning/10 text-warning hover:bg-warning/20 border-warning/20' : 'bg-gray-100 text-text-secondary hover:bg-gray-200 border-gray-200'}`}
                                         />
                                     </div>
                                 </td>
                                 <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${
-                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success' :
-                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning' :
-                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' :
-                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' :
-                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger' :
-                                        'bg-blue-50 text-blue-600'
+                                    <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
+                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
+                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
+                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
+                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger border-danger/20' :
+                                        'bg-blue-50 text-blue-600 border-blue-200'
                                     }`}>
                                         {complaint.status || 'Pending'}
                                     </div>

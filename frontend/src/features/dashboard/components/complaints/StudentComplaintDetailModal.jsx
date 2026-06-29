@@ -48,15 +48,15 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-text-secondary flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-text-secondary" /> Priority</span> 
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Low' ? 'bg-success' : 'bg-warning'} mr-2`}></span>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium ${complaint.priority === 'High' ? 'border-danger/20 bg-danger/5 text-danger' : complaint.priority === 'Low' ? 'border-success/20 bg-success/5 text-success' : 'border-warning/20 bg-warning/5 text-warning'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Low' ? 'bg-success' : 'bg-warning'}`}></span>
                                         {complaint.priority || 'Medium'}
                                     </span>
                                 </div>
                                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                     <span className="text-text-secondary flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-text-secondary" /> Status</span> 
-                                    <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                        <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'} mr-2`}></span>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium ${complaint.status === 'Resolved' ? 'border-success/20 bg-success/5 text-success' : complaint.status === 'In progress' ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-warning/20 bg-warning/5 text-warning'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'}`}></span>
                                         {complaint.status || 'Pending'}
                                     </span>
                                 </div>
@@ -132,8 +132,8 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
                             </div>
                             <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 items-start sm:items-center">
                                 <span className="text-text-secondary flex items-center gap-1.5"><ToggleRight className="w-4 h-4 text-text-secondary" /> Status</span> 
-                                <span className="sm:col-span-2 font-medium flex items-center"><span className="hidden sm:inline mr-2">: </span>
-                                    <span className={`w-2 h-2 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'} mr-2`}></span>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium ${complaint.status === 'Resolved' ? 'border-success/20 bg-success/5 text-success' : complaint.status === 'In progress' ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-warning/20 bg-warning/5 text-warning'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Resolved' ? 'bg-success/100' : complaint.status === 'In progress' ? 'bg-blue-500' : 'bg-warning'}`}></span>
                                     {complaint.status || 'Pending'}
                                 </span>
                             </div>

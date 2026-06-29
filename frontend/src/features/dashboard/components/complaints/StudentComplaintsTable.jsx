@@ -73,13 +73,13 @@ export default function StudentComplaintsTable({
                                     {complaint.date}
                                 </td>
                                 <td className="p-4 text-start">
-                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${
-                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success' :
-                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning' :
-                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' :
-                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary' :
-                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger' :
-                                        'bg-blue-50 text-blue-600'
+                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
+                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
+                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
+                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
+                                        complaint.status === 'Rejected' ? 'bg-danger/10 text-danger border-danger/20' :
+                                        'bg-blue-50 text-blue-600 border-blue-200'
                                     }`}>
                                         {complaint.status || 'Pending'}
                                     </span>
