@@ -17,7 +17,7 @@ export default function WardenComplaintsTable({
     }));
 
     return (
-        <div className="hidden md:block h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex-1 h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-start relative">
                 <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
                     <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
