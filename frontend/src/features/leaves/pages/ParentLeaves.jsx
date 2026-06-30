@@ -15,6 +15,7 @@ import leaveService from '@/services/leave.service';
 import { formatDate } from '../utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
+import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 
 export default function ParentLeaves() {
     const { passType } = useParams();
@@ -39,7 +40,7 @@ export default function ParentLeaves() {
     const [viewId, setViewId] = useState(null);
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('All');
+    const [filters, setFilters] = useState({ status: '', category: '', fromDate: '', toDate: '' });
     const [page, setPage] = useState(1);
     const limit = 10;
 
@@ -50,8 +51,8 @@ export default function ParentLeaves() {
                 page,
                 limit,
                 passType: isHomePass ? 'home_pass' : 'out_pass',
-                ...(filterStatus !== 'All' && { status: filterStatus.toLowerCase() }),
-                ...(searchQuery && { search: searchQuery })
+                ...(searchQuery && { search: searchQuery }),
+                ...filters
             });
             const passesArray = res.data || res.passes || [];
             setRequests(passesArray);
@@ -77,7 +78,7 @@ export default function ParentLeaves() {
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, isHomePass, filterStatus, searchQuery]);
+    }, [page, isHomePass, filters, searchQuery]);
 
     const openActionModal = (request, actionType) => {
         if (actionType === 'pending') return;
@@ -162,7 +163,7 @@ export default function ParentLeaves() {
                     <button
                         type="button"
                         onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2.5 bg-white border rounded-xl hover:bg-gray-50 transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${filterStatus !== 'All' ? 'border-[#0A437A] text-primary' : 'border-gray-200 text-gray-500 hover:text-gray-700'
+                        className={`p-2.5 bg-white border rounded-xl hover:bg-gray-50 transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.values(filters).some(Boolean) ? 'border-primary text-primary bg-primary/5' : 'border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         <Filter className="w-4 h-4" />
@@ -288,48 +289,23 @@ export default function ParentLeaves() {
                 totalPages={totalPages}
             />
 
-            {/* Filter Modal */}
-            <Modal
+            <FilterLeavesModal
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
-                title={`Filter ${pageTitle}`}
-                subtitle="Filter requests by their current status"
-                maxWidth="max-w-xs"
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                            <option value="All">All Status</option>
-                            <option value="pending_parent">Pending Parent</option>
-                            <option value="pending_warden">Pending Warden</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-4">
-                        <button
-                            onClick={() => { setFilterStatus('All'); setIsFilterModalOpen(false); }}
-                            className="px-6 py-2.5 text-sm font-semibold text-primary bg-white border border-primary rounded-xl hover:bg-gray-50 transition-colors w-full"
-                        >
-                            Reset
-                        </button>
-                        <button
-                            onClick={() => setIsFilterModalOpen(false)}
-                            className="px-6 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors w-full"
-                        >
-                            Apply
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                pageTitle={pageTitle}
+                isOutPass={!isHomePass}
+                filters={filters}
+                onApply={(newFilters) => {
+                    setFilters(newFilters);
+                    setPage(1);
+                    setIsFilterModalOpen(false);
+                }}
+                onReset={() => {
+                    setFilters({ status: '', category: '', fromDate: '', toDate: '' });
+                    setPage(1);
+                    setIsFilterModalOpen(false);
+                }}
+            />
 
             {/* Action Confirmation Modal */}
             <Modal
