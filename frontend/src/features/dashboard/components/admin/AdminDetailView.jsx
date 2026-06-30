@@ -48,27 +48,12 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                                 <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</InfoRow>
                             </div>
                         </div>
-                        {/* Organization Info Section */}
-                        {selectedAdminDetail?.organization && typeof selectedAdminDetail.organization === 'object' && selectedAdminDetail.organization.name && (
-                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Organization Details</h3>
-                                <p className="text-[11px] text-text-secondary mb-4">Assigned organization for this administrator</p>
-                                <div className="space-y-1">
-                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org Name</>}>{selectedAdminDetail.organization.name}</InfoRow>
-                                    <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Code</>}>{selectedAdminDetail.organization.code || 'N/A'}</InfoRow>
-                                    <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Reg No</>}>{selectedAdminDetail.organization.organisationNumber || 'N/A'}</InfoRow>
-                                    <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedAdminDetail.organization.email || 'N/A'}</InfoRow>
-                                    <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail.organization.phone ? `+91 ${selectedAdminDetail.organization.phone}` : 'N/A'}</InfoRow>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
                         <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Admin Summary</h3>
                         <div className="space-y-1">
                             <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedAdminDetail?.name}</InfoRow>
-                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>

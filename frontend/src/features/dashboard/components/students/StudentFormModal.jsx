@@ -633,7 +633,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 <Check className="w-3.5 h-3.5" /> Verified
               </>
             ) : sendingOtpFor === type ? (
-              "Sending..."
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending...
+              </>
             ) : (
               "Verify"
             )}
@@ -936,8 +938,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   type="button"
                   onClick={handleVerifyOtpSubmit}
                   disabled={verifyingOtp}
-                  className="px-3 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50"
+                  className="px-3 py-2 bg-primary text-white flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50"
                 >
+                  {verifyingOtp && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {verifyingOtp ? "Verifying..." : "Confirm OTP"}
                 </button>
               </div>
