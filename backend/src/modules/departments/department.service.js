@@ -1,6 +1,7 @@
 import Department from "./department.model.js";
 import Course from "../courses/course.model.js";
-import { deactivateStudentsByQuery } from "../students/student.service.js";
+import { updateBatchesStatusByQuery } from "../batches/batch.service.js";
+import { updateStudentsStatusByQuery } from "../students/student.service.js";
 
 const checkExistingDepartmentCodeDb = async (code) => {
   return await Department.findOne({ code });
@@ -59,6 +60,16 @@ const updateDepartmentDb = async (id, data) => {
   return newDept;
 };
 
+const updateDepartmentsStatusByQuery = async (query, isActive) => {
+  const departments = await Department.find(query).select("_id");
+  const deptIds = departments.map(d => d._id);
+  if (deptIds.length > 0) {
+    await Department.updateMany({ _id: { $in: deptIds } }, { isActive });
+    await updateBatchesStatusByQuery({ departmentId: { $in: deptIds } }, isActive);
+    await updateStudentsStatusByQuery({ departmentId: { $in: deptIds } }, isActive);
+  }
+};
+
 const toggleDepartmentStatusDb = async (id) => {
   const department = await Department.findById(id);
   if (!department) throw new Error("Department not found");
@@ -66,9 +77,8 @@ const toggleDepartmentStatusDb = async (id) => {
   department.isActive = !department.isActive;
   await department.save();
 
-  if (!department.isActive) {
-    await deactivateStudentsByQuery({ departmentId: id });
-  }
+  await updateBatchesStatusByQuery({ departmentId: id }, department.isActive);
+  await updateStudentsStatusByQuery({ departmentId: id }, department.isActive);
 
   return department;
 };
@@ -79,9 +89,8 @@ const bulkUpdateDepartmentStatusDb = async (ids, isActive) => {
     { $set: { isActive } }
   );
 
-  if (!isActive) {
-    await deactivateStudentsByQuery({ departmentId: { $in: ids } });
-  }
+  await updateBatchesStatusByQuery({ departmentId: { $in: ids } }, isActive);
+  await updateStudentsStatusByQuery({ departmentId: { $in: ids } }, isActive);
 
   return result;
 };
@@ -95,5 +104,5 @@ export {
   updateDepartmentDb,
   toggleDepartmentStatusDb,
   bulkUpdateDepartmentStatusDb,
+  updateDepartmentsStatusByQuery,
 };
-

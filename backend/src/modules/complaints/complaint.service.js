@@ -153,6 +153,48 @@ export const getAllComplaintsDb = async (query = {}) => {
         .sort({ createdAt: -1 });
 };
 
+// Get complaint summary by category
+export const getComplaintSummaryDb = async (query = {}) => {
+    const filter = {};
+    if (query.organizationId) filter.organizationId = query.organizationId;
+    if (query.hostelId) filter.hostelId = query.hostelId;
+
+    const summary = await Complaint.aggregate([
+        { $match: filter },
+        {
+            $group: {
+                _id: "$category",
+                count: { $sum: 1 }
+            }
+        },
+        {
+            $lookup: {
+                from: "complaintcategories",
+                localField: "_id",
+                foreignField: "_id",
+                as: "categoryDetails"
+            }
+        },
+        { $unwind: { path: "$categoryDetails", preserveNullAndEmptyArrays: true } },
+        {
+            $project: {
+                _id: 0,
+                name: { $ifNull: ["$categoryDetails.name", "Unknown"] },
+                count: 1
+            }
+        },
+        { $sort: { count: -1 } }
+    ]);
+    
+    // Calculate total count
+    const totalCount = summary.reduce((acc, curr) => acc + curr.count, 0);
+    
+    return {
+        total: totalCount,
+        categories: summary
+    };
+};
+
 // Update complaint status
 export const updateComplaintStatusDb = async (complaintId, newStatus, userRole, message) => {
     const complaint = await Complaint.findById(complaintId);

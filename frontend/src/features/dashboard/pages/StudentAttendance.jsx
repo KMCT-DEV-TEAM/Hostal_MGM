@@ -46,7 +46,6 @@ const StudentAttendance = () => {
                 ...filters
             };
             const res = await attendanceService.getAttendanceHistoryByRole(user.role, params);
-            console.log('Res from attendance page: ', res.records)
             setHistory(res?.records || []);
             setPagination(res?.pagination ? {
                 totalRecords: res.pagination.totalRecords,

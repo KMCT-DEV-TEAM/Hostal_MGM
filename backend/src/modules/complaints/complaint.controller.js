@@ -126,6 +126,42 @@ export const getAllComplaints = async (req, res) => {
     }
 };
 
+// @desc    Get complaint summary (Admin/Warden scoped)
+// @route   GET /api/complaints/summary
+// @access  Private (Admin/Warden/SuperAdmin)
+export const getComplaintSummary = async (req, res) => {
+    try {
+        const query = {};
+        
+        // Scope based on role
+        if (req.user.role === 'admin') {
+            if (!req.user.organization) {
+                return res.status(403).json({ success: false, message: "Admin user has no organization associated." });
+            }
+            query.organizationId = req.user.organization;
+        } else if (req.user.role === 'warden') {
+            const { default: Hostel } = await import('../hostels/hostel.model.js');
+            const hostels = await Hostel.find({ wardens: req.user.id });
+            if (hostels.length > 0) {
+                query.hostelId = { $in: hostels.map(h => h._id) };
+            } else {
+                query._id = null;
+            }
+        }
+
+        const summary = await complaintService.getComplaintSummaryDb(query);
+        res.status(200).json({
+            success: true,
+            data: summary
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || "Failed to fetch complaint summary."
+        });
+    }
+};
+
 // @desc    Update complaint status
 // @route   PATCH /api/complaints/:id/status
 // @access  Private (Admin/Warden)

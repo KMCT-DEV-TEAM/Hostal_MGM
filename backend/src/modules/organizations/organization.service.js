@@ -4,6 +4,8 @@ import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
 import fs from "fs";
+import { updateCoursesStatusByQuery } from "../courses/course.service.js";
+import { updateStudentsStatusByQuery } from "../students/student.service.js";
 
 const findExistingOrganization = async (code, organisationNumber) => {
   return await Organization.findOne({
@@ -111,13 +113,8 @@ const syncOrganizationStatus = async (orgIds, isActive) => {
     { isActive }
   );
 
-  const students = await Student.find({ organizationId: { $in: orgIds } }).select("_id");
-  const studentIds = students.map(s => s._id);
-
-  if (studentIds.length > 0) {
-    await Student.updateMany({ _id: { $in: studentIds } }, { isActive });
-    await Parent.updateMany({ studentId: { $in: studentIds } }, { isActive });
-  }
+  await updateCoursesStatusByQuery({ organizationId: { $in: orgIds } }, isActive);
+  await updateStudentsStatusByQuery({ organizationId: { $in: orgIds } }, isActive);
 };
 
 const toggleOrganizationStatusDb = async (id) => {

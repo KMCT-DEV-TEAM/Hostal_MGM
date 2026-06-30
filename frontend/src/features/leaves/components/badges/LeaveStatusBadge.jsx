@@ -54,7 +54,7 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     }
 
     return (
-        <span className={`px-3.5 py-1.5 rounded-md text-xs font-bold ${borderClass} inline-flex items-center gap-1.5 ${bgClass} ${textClass} ${className}`}>
+        <span className={`px-3.5 py-1.5 rounded-md text-xs ${borderClass} inline-flex items-center gap-1.5 ${bgClass} ${textClass} ${className}`}>
             {icon} {displayStatus}
         </span>
     );
