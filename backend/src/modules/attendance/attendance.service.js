@@ -594,10 +594,10 @@ export const getStudentAttendanceHistoryDb = async (studentId, query) => {
   if (query.status) {
     filter.status = query.status.toLowerCase();
   }
-  if (query.from || query.to) {
+  if (query.fromDate || query.toDate) {
     filter.scannedAt = {};
-    if (query.from) filter.scannedAt.$gte = getStartOfDay(query.from);
-    if (query.to) filter.scannedAt.$lte = new Date(new Date(query.to).setUTCHours(23, 59, 59, 999));
+    if (query.fromDate) filter.scannedAt.$gte = getStartOfDay(query.fromDate);
+    if (query.toDate) filter.scannedAt.$lte = new Date(new Date(query.toDate).setUTCHours(23, 59, 59, 999));
   }
 
   const pipeline = [

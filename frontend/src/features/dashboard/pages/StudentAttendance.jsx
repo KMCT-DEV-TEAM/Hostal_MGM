@@ -7,7 +7,7 @@ import FilterAttendanceModal from '../components/FilterAttendanceModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
-import { useDebounce } from '@/hooks/useDebounce';
+
 import { formatDate, formatDay } from '@/features/leaves/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
 import AttendanceQRModal from '../components/AttendanceQRModal';
@@ -20,16 +20,11 @@ const StudentAttendance = () => {
     const [todayStats, setTodayStats] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    // Pagination and Filtering
     const [page, setPage] = useState(1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({});
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
-
-    const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     const fetchDashboardStats = useCallback(async () => {
         if (!user?.role) return;
@@ -48,7 +43,6 @@ const StudentAttendance = () => {
             const params = {
                 page,
                 limit: 10,
-                ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
                 ...filters
             };
             const res = await attendanceService.getAttendanceHistoryByRole(user.role, params);
@@ -62,7 +56,7 @@ const StudentAttendance = () => {
         } finally {
             setLoading(false);
         }
-    }, [user?.role, page, debouncedSearchQuery, filters]);
+    }, [user?.role, page, filters]);
 
     useEffect(() => {
         fetchDashboardStats();
@@ -88,12 +82,7 @@ const StudentAttendance = () => {
             </div>
 
             <DataTable
-                searchQuery={searchQuery}
-                onSearchChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setPage(1);
-                }}
-                searchPlaceholder="Search"
+
                 toolbarActions={
                     <button
                         type="button"
