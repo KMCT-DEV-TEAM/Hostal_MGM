@@ -38,6 +38,7 @@ export default function MaintenanceStaffManagement() {
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -944,6 +945,7 @@ export default function MaintenanceStaffManagement() {
                         if (code.length < 6) return;
 
                         try {
+                            setIsVerifyingOtp(true);
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : staffForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
 
@@ -956,6 +958,8 @@ export default function MaintenanceStaffManagement() {
                             }
                         } catch (err) {
                             showErrorToast('Error', err?.message || 'Invalid OTP');
+                        } finally {
+                            setIsVerifyingOtp(false);
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         <div className="flex justify-between items-center mb-6">
@@ -1023,9 +1027,11 @@ export default function MaintenanceStaffManagement() {
 
                         <button
                             type="submit"
-                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer text-lg"
+                            disabled={isVerifyingOtp}
+                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer text-lg disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            Verify
+                            {isVerifyingOtp && <Loader2 className="w-5 h-5 animate-spin" />}
+                            {isVerifyingOtp ? 'Verifying...' : 'Verify'}
                         </button>
                     </form>
                 </div>
@@ -1075,11 +1081,11 @@ export default function MaintenanceStaffManagement() {
                                 />
                                 {isEmailVerified ? (
                                     <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
-                                        Verified
+                                        <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer">
-                                        Verify
+                                    <button type="button" disabled={isVerifying} onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                                        {isVerifying ? <Loader2 size={16} className="animate-spin" /> : 'Verify'}
                                     </button>
                                 )}
                             </div>
