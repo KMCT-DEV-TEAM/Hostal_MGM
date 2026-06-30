@@ -4,9 +4,9 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent, validateUpdateStudentOrganization, validateBulkStudentStatus } from "./student.validation.js";
-import { createStudent, updateStudent, changeStudentEmail, toggleStudentStatus, bulkUpdateStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentsByWarden, getStudentFilterOptions } from "./student.controller.js";
+import { createStudent, updateStudent, changeStudentEmail, toggleStudentStatus, bulkUpdateStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentsByWarden, getStudentFilterOptions, getStudentFurnitures } from "./student.controller.js";
 
-const router = express.Router(); 
+const router = express.Router();
 
 router.get(
   "/stats",
@@ -100,13 +100,20 @@ router.get(
   getStudentsBySuperAdmin
 )
 
+router.get(
+  "/:id/furnitures",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin", "warden"),
+  getStudentFurnitures
+);
+
 router.patch(
   "/:id/update-hostel",
   authMiddleware,
   roleMiddleware("admin", "super_admin"),
   validateStudentIdParam,
   updateStudentHostel
-)
+);
 
 
 // super admin change orgonisation

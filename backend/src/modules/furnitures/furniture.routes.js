@@ -6,7 +6,8 @@ import {
   updateFurnitureType,
   deleteFurnitureType,
   adjustAssetsCount,
-  changeAssetStatus
+  changeAssetStatus,
+  getFurnitureAssetsByType,
 } from "./furniture.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -25,6 +26,7 @@ router.delete("/:typeId", roleMiddleware("admin", "super_admin"), deleteFurnitur
 // --- Furniture Assets ---
 router.patch("/:typeId/assets-count", roleMiddleware("admin", "super_admin"), adjustAssetsCount);
 router.patch("/assets/:assetId/status", roleMiddleware("admin", "super_admin"), changeAssetStatus);
+router.get("/:typeId/assets", roleMiddleware("admin", "super_admin", "wardn"), getFurnitureAssetsByType);
 
 
 

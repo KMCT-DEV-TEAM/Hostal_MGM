@@ -146,7 +146,7 @@ const adjustAssetCountDb = async (typeId, newCount, remarks, userId) => {
 
     const match = {
       furnitureTypeId: typeId,
-      status: { $ne: "Retired" }
+      status: { $ne: "Available" }
     };
 
     const activeCount = await FurnitureAsset.countDocuments(match).session(session);
@@ -390,6 +390,7 @@ const deleteFurnitureTypeDb = async (typeId) => {
       result = await FurnitureType.findByIdAndDelete(typeId).session(session);
     }
 
+    // Delete the counter document for this prefix
 
     await session.commitTransaction();
   } catch (error) {
