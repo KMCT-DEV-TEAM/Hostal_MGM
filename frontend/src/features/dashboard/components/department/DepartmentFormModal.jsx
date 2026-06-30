@@ -64,7 +64,7 @@ const DepartmentFormModal = ({
                         <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_department_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">{t('department_name')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('department_name')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -75,7 +75,7 @@ const DepartmentFormModal = ({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">{t('department_code')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('department_code')} <span className="text-red-500">*</span></label>
                                 <div className="flex">
                                     {courseCode && (
                                         <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-xs font-medium">
@@ -87,7 +87,8 @@ const DepartmentFormModal = ({
                                         value={formData.code}
                                         onChange={handleInputChange}
                                         required
-                                        className={`flex-1 w-full p-2.5 border border-gray-200 text-xs outline-none focus:border-[#0A437A] ${courseCode ? 'rounded-r-lg' : 'rounded-lg'}`}
+                                        disabled={isEditMode}
+                                        className={`flex-1 w-full p-2.5 border border-gray-200 text-xs outline-none focus:border-[#0A437A] ${courseCode ? 'rounded-r-lg' : 'rounded-lg'} ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
                                         placeholder="DEPT"
                                     />
                                 </div>
@@ -95,7 +96,7 @@ const DepartmentFormModal = ({
                         </div>
                         <div className="grid grid-cols-1 gap-6 mt-6">
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">{t('course')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('course')} <span className="text-red-500">*</span></label>
                                 <Dropdown
                                     options={courses ? courses.map(course => ({
                                         label: `${course.name} (${course.code})`,

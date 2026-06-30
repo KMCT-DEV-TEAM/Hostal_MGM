@@ -21,7 +21,18 @@ const createBatchDb = async (data) => {
 
 const getPaginatedBatchesDb = async (query, skip, limit, sort) => {
   const batches = await Batch.find(query)
-    .populate("departmentId", "name code")
+    .populate({
+      path: "departmentId",
+      select: "name code",
+      populate: {
+        path: "courseId",
+        select: "name code",
+        populate: {
+          path: "organizationId",
+          select: "name code"
+        }
+      }
+    })
     .sort(sort)
     .skip(skip)
     .limit(limit)
@@ -37,7 +48,18 @@ const getPaginatedBatchesDb = async (query, skip, limit, sort) => {
 
 const getAllBatchesDb = async (query, sort) => {
   const batches = await Batch.find(query)
-    .populate("departmentId", "name code")
+    .populate({
+      path: "departmentId",
+      select: "name code",
+      populate: {
+        path: "courseId",
+        select: "name code",
+        populate: {
+          path: "organizationId",
+          select: "name code"
+        }
+      }
+    })
     .sort(sort)
     .select("-__v");
     
@@ -50,7 +72,20 @@ const getAllBatchesDb = async (query, sort) => {
 };
 
 const getBatchByIdDb = async (id) => {
-  return await Batch.findById(id).populate("departmentId", "name code").select("-__v");
+  return await Batch.findById(id)
+    .populate({
+      path: "departmentId",
+      select: "name code",
+      populate: {
+        path: "courseId",
+        select: "name code",
+        populate: {
+          path: "organizationId",
+          select: "name code"
+        }
+      }
+    })
+    .select("-__v");
 };
 
 const updateBatchDb = async (id, data) => {

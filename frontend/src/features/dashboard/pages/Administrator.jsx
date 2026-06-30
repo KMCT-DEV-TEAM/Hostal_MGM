@@ -150,7 +150,7 @@ export default function Administrator() {
     useEffect(() => {
         const fetchOrganizations = async () => {
             try {
-                const res = await organizationService.getOrganizations({ limit: 100, status: 'Active' });
+                const res = await organizationService.getOrganizations({ limit: 100, status: 'All' });
                 if (res && res.data) {
                     setOrganizations(res.data);
                 }

@@ -54,7 +54,7 @@ const AdminFormModal = ({
                         <div className="border-b border-gray-100 mb-4" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     required
@@ -65,7 +65,7 @@ const AdminFormModal = ({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     required
@@ -76,7 +76,7 @@ const AdminFormModal = ({
                                 />
                             </div>
                             <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -104,7 +104,7 @@ const AdminFormModal = ({
                             {/* Conditionally hide Email if editing */}
                             {!editingAdmin && (
                                 <div className="col-span-1 sm:col-span-2">
-                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} *</label>
+                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
                                     <div className="flex gap-2">
                                         <input
                                             type="email"
@@ -141,7 +141,7 @@ const AdminFormModal = ({
                         <section>
                             <h3 className="text-xs font-semibold text-[#0A437A] mb-2">{t('admin_org_assignment')}</h3>
                             <div className="border-b border-gray-100 mb-4" />
-                            <label className="block text-[10px] font-medium text-gray-500 mb-1">{t('admin_org_assignment_desc')} *</label>
+                            <label className="block text-[10px] font-medium text-gray-500 mb-1">{t('admin_org_assignment_desc')} <span className="text-red-500">*</span></label>
                             <div className="relative">
                                 <Dropdown
                                     options={organizations.map(org => ({ value: org._id, label: org.name }))}

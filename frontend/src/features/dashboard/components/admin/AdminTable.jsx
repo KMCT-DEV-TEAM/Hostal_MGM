@@ -106,7 +106,16 @@ const AdminTable = ({
                                         <div className="relative w-[145px]">
                                             <Dropdown
                                                 minWidth=""
-                                                options={organizations.map(org => ({ value: org._id, label: org.name }))}
+                                                options={(() => {
+                                                    const opts = organizations.map(org => ({ value: org._id, label: org.name }));
+                                                    // If the admin has a populated organization, ensure it's in the options so the label shows correctly
+                                                    if (admin.organization && typeof admin.organization === 'object') {
+                                                        if (!opts.find(opt => opt.value === admin.organization._id)) {
+                                                            opts.push({ value: admin.organization._id, label: admin.organization.name });
+                                                        }
+                                                    }
+                                                    return opts;
+                                                })()}
                                                 value={admin.organization?._id || admin.organization || ""}
                                                 onChange={(val) => handleOrganizationChange(admin._id, val)}
                                                 placeholder={t('select_organization')}
