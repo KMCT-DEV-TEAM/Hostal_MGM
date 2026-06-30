@@ -18,6 +18,7 @@ import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.ro
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
 import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter, superAdminPassRouter } from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
+import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
 import { 
   wardenAttendanceRouter, 
@@ -75,6 +76,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/batches", batchRoutes);
 app.use("/api/complaint-categories", complaintCategoryRoutes);
 app.use("/api/complaints", complaintRoutes);
+app.use("/api/furniture", furnitureRoutes);
 
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/students", studentRoutes);
