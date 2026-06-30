@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight
+    Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
 import ComplaintCategoryService from '../../../services/complaintCategory.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -38,6 +38,7 @@ const ComplaintCategories = () => {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isConfirming, setIsConfirming] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         description: ''
@@ -86,6 +87,7 @@ const ComplaintCategories = () => {
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
         try {
+            setIsConfirming(true);
             await ComplaintCategoryService.toggleStatus(statusToUpdate.id);
             setComplaintCategories((prev) =>
                 prev.map((c) =>
@@ -98,6 +100,8 @@ const ComplaintCategories = () => {
         } catch (err) {
             console.error("Failed to toggle status:", err);
             showErrorToast('Action Failed', err?.message || 'Failed to update status. Please try again.');
+        } finally {
+            setIsConfirming(false);
         }
     };
 
@@ -190,6 +194,7 @@ const ComplaintCategories = () => {
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
+            setIsConfirming(true);
             await ComplaintCategoryService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
             showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} categories`);
@@ -200,6 +205,8 @@ const ComplaintCategories = () => {
         } catch (error) {
             console.error("Failed to bulk update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
+        } finally {
+            setIsConfirming(false);
         }
     };
 
@@ -442,9 +449,9 @@ const ComplaintCategories = () => {
                             <button
                                 onClick={saveCategory}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -495,9 +502,10 @@ const ComplaintCategories = () => {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isConfirming}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isConfirming ? <Loader2 size={14} className="animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -523,9 +531,10 @@ const ComplaintCategories = () => {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isConfirming}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isConfirming ? <Loader2 size={14} className="animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

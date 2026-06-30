@@ -65,6 +65,7 @@ export default function HostelManagement() {
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isConfirming, setIsConfirming] = useState(false);
 
     const [view, setView] = useState('list'); // 'list' or 'detail'
     const [selectedHostelDetail, setSelectedHostelDetail] = useState(null);
@@ -234,6 +235,7 @@ export default function HostelManagement() {
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
         try {
+            setIsConfirming(true);
             await hostelService.toggleStatus(statusToUpdate.id);
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
@@ -242,6 +244,8 @@ export default function HostelManagement() {
         } catch (error) {
             console.error("Failed to update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to update status.');
+        } finally {
+            setIsConfirming(false);
         }
     };
 
@@ -253,6 +257,7 @@ export default function HostelManagement() {
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
+            setIsConfirming(true);
             setLoading(true);
             await hostelService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
@@ -265,6 +270,8 @@ export default function HostelManagement() {
             console.error("Failed to bulk update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
             setLoading(false);
+        } finally {
+            setIsConfirming(false);
         }
     };
 
@@ -493,7 +500,7 @@ export default function HostelManagement() {
                                 <div className="border-b border-gray-100 mb-4" />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="col-span-1 sm:col-span-2">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_name')} *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_name')} <span className="text-red-500">*</span></label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="text"
@@ -507,21 +514,22 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_code')} *</label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_code')} <span className="text-red-500">*</span></label>
+                                        <div className={`flex border border-gray-200 rounded-lg overflow-hidden ${editingHostel ? 'bg-gray-100' : 'bg-gray-50/50 focus-within:border-[#0A437A]'}`}>
                                             <input
                                                 type="text"
                                                 required
                                                 value={hostelForm.code}
                                                 onChange={(e) => setHostelForm({ ...hostelForm, code: e.target.value })}
                                                 placeholder="KMCT001"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase"
+                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase disabled:text-gray-500 disabled:cursor-not-allowed"
+                                                disabled={!!editingHostel}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('email')} *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('email')} <span className="text-red-500">*</span></label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 name="email"
@@ -536,7 +544,7 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
                                                 <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -563,7 +571,7 @@ export default function HostelManagement() {
                                     </div>
 
                                     <div className="col-span-1 sm:col-span-2">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('location')} *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('location')} <span className="text-red-500">*</span></label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="text"
@@ -578,7 +586,7 @@ export default function HostelManagement() {
 
                                     {/* Hostel Type Field */}
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_type')} *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_type')} <span className="text-red-500">*</span></label>
                                         <Dropdown
                                             options={[
                                                 { label: t('boys'), value: 'boys' },
@@ -594,7 +602,7 @@ export default function HostelManagement() {
 
                                     {/* Capacity Field */}
                                     <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('capacity')} *</label>
+                                        <label className="block text-[10px] font-medium text-black mb-1">{t('capacity')} <span className="text-red-500">*</span></label>
                                         <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
                                             <input
                                                 type="number"
@@ -616,10 +624,9 @@ export default function HostelManagement() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
+                                className="flex items-center justify-center min-w-[100px] px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                                {editingHostel ? t('save_changes') : t('save')}
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (editingHostel ? t('save_changes') : t('save'))}
                             </button>
                             <button
                                 type="button"
@@ -640,8 +647,11 @@ export default function HostelManagement() {
                 onConfirm={saveHostel}
                 title="Save Changes"
                 message="Are you sure you want to save the changes made to this hostel?"
-                confirmText={isSubmitting ? "Saving..." : "Save Changes"}
+                confirmText="Save Changes"
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                isSubmitting={isSubmitting}
                 cancelText="Cancel"
+                confirmButtonClass="bg-[#0A437A] text-white hover:bg-[#083663] min-w-[110px]"
             />
 
             {/* Confirmation Modal for Add */}
@@ -651,8 +661,11 @@ export default function HostelManagement() {
                 onConfirm={saveHostel}
                 title="Add Hostel"
                 message="Are you sure you want to add this new hostel?"
-                confirmText={isSubmitting ? "Adding..." : "Add Hostel"}
+                confirmText="Add Hostel"
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                isSubmitting={isSubmitting}
                 cancelText="Cancel"
+                confirmButtonClass="bg-[#0A437A] text-white hover:bg-[#083663] min-w-[100px]"
             />
 
             <ExportFilterModal
@@ -707,9 +720,10 @@ export default function HostelManagement() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isConfirming}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -735,9 +749,10 @@ export default function HostelManagement() {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isConfirming}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

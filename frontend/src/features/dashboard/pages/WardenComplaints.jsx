@@ -110,6 +110,8 @@ export default function WardenComplaints({ hostel, onBack }) {
         isOpen: false,
         complaintId: null,
     });
+    const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+    const [isSubmittingPriority, setIsSubmittingPriority] = useState(false);
     const limit = 10;
     
     useEffect(() => {
@@ -449,19 +451,25 @@ return (
             onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null })}
             onConfirm={async () => {
                 try {
+                    setIsSubmittingCategory(true);
                     await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { category: confirmCategoryChange.newCategoryId });
                     setComplaints(complaints.map(c =>
                         c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory, categoryId: confirmCategoryChange.newCategoryId } : c
                     ));
                     showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
-                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null });
                 } catch (error) {
                     showErrorToast('Update Failed', error.message || 'Failed to update category');
+                } finally {
+                    setIsSubmittingCategory(false);
+                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null });
                 }
             }}
             title="Confirm Category Change"
             message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
-            confirmText="Yes, Change"
+            confirmText="Change"
+            isSubmitting={isSubmittingCategory}
+            loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+            confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
         />
 
         <ConfirmationModal
@@ -469,19 +477,25 @@ return (
             onClose={() => setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null })}
             onConfirm={async () => {
                 try {
+                    setIsSubmittingPriority(true);
                     await ComplaintService.updateComplaint(confirmPriorityChange.complaintId, { priority: confirmPriorityChange.newPriority });
                     setComplaints(complaints.map(c =>
                         c.id === confirmPriorityChange.complaintId ? { ...c, priority: confirmPriorityChange.newPriority } : c
                     ));
                     showSuccessToast('Priority Updated', `Complaint priority changed to ${confirmPriorityChange.newPriority}`);
-                    setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null });
                 } catch (error) {
                     showErrorToast('Update Failed', error.message || 'Failed to update priority');
+                } finally {
+                    setIsSubmittingPriority(false);
+                    setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null });
                 }
             }}
             title="Confirm Priority Change"
             message={`Are you sure you want to change the priority to ${confirmPriorityChange.newPriority}?`}
-            confirmText="Yes, Change"
+            confirmText="Change"
+            isSubmitting={isSubmittingPriority}
+            loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+            confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
         />
 
 

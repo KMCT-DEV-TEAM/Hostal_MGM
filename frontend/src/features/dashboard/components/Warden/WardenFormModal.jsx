@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function WardenFormModal({
     activeModal,
@@ -54,7 +55,7 @@ export default function WardenFormModal({
                         <div className="border-b border-gray-100 mb-4" />
                         <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     required
@@ -65,7 +66,7 @@ export default function WardenFormModal({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     required
@@ -76,7 +77,7 @@ export default function WardenFormModal({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -104,7 +105,7 @@ export default function WardenFormModal({
                             {/* Conditionally hide Email if editing */}
                             {!editingWarden && (
                                 <div className="col-span-2 mt-2">
-                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} *</label>
+                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
                                     <div className="flex gap-2 items-center">
                                         <input
                                             type="email"
@@ -138,17 +139,6 @@ export default function WardenFormModal({
                         </div>
                     </section>
 
-                    {!editingWarden && (
-                        <div className="flex justify-end mb-4">
-                            <button
-                                type="button"
-                                onClick={() => setWardenForm({ ...wardenForm, password: Math.random().toString(36).slice(-8) + 'aA1@' })}
-                                className="text-xs text-primary font-medium hover:underline cursor-pointer"
-                            >
-                                {t('generate_password')}
-                            </button>
-                        </div>
-                    )}
 
                     {!editingWarden && (
                         <section>
@@ -156,20 +146,16 @@ export default function WardenFormModal({
                             <h5 className="text-xs text-[#777777] mb-4">{t('assigned_hostel_desc')}</h5>
                             <div className="border-b border-gray-100 mb-4" />
 
-                            <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')}*</label>
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')} <span className="text-red-500">*</span></label>
                             <div className="relative">
-                                <select
-                                    required
+                                <Dropdown
+                                    options={AVAILABLE_HOSTELS.map(h => ({ value: h._id || h, label: h.name || h }))}
                                     value={wardenForm.hostel}
-                                    onChange={(e) => setWardenForm({ ...wardenForm, hostel: e.target.value })}
-                                    className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-xs text-gray-700 focus:outline-none focus:border-[#0A437A] pr-10 cursor-pointer"
-                                >
-                                    <option value="" disabled>{t('select_hostel')}</option>
-                                    {AVAILABLE_HOSTELS.map(h => (
-                                        <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="w-3 h-3 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
+                                    onChange={(val) => setWardenForm({ ...wardenForm, hostel: val })}
+                                    placeholder={t('select_hostel')}
+                                    minWidth="w-full"
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                />
                             </div>
                         </section>
                     )}
@@ -179,11 +165,10 @@ export default function WardenFormModal({
                 <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
                     <button
                         type="submit"
-                        disabled={!isEmailVerified && !editingWarden || isSubmitting}
-                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer"
+                        disabled={(!isEmailVerified && !editingWarden) || isSubmitting}
+                        className="flex items-center justify-center min-w-[100px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting && <Loader2 size={14} className="animate-spin mr-1" />}
-                        {editingWarden ? t('save_changes') : t('save')}
+                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (editingWarden ? t('save_changes') : t('save'))}
                     </button>
                     <button
                         type="button"
