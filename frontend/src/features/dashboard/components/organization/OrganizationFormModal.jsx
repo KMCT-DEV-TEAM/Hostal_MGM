@@ -59,7 +59,7 @@ const OrganizationFormModal = ({
                         <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_info_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-xs mb-1.5 font-medium">{t('org_name')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('org_name')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -70,18 +70,19 @@ const OrganizationFormModal = ({
                                 />
                             </div>
                              <div>
-                                <label className="block text-xs mb-1.5 font-medium">{t('code')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('code')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="code"
                                     value={formData.code}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
+                                    disabled={isEditMode}
+                                    className={`w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
                                     placeholder="KMCTENG"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">{t('org_number')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('org_number')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="organisationNumber"
                                     value={formData.organisationNumber}
@@ -99,7 +100,7 @@ const OrganizationFormModal = ({
                         <h5 className="text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200">{t('contact_address_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-black mb-1">{t('email_address')} *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="email"
                                     value={formData.email}
@@ -111,7 +112,7 @@ const OrganizationFormModal = ({
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -137,7 +138,7 @@ const OrganizationFormModal = ({
                                 </div>
                             </div>
                             <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-xs font-medium text-black mb-1">{t('full_address')} *</label>
+                                <label className="block text-xs font-medium text-black mb-1">{t('full_address')} <span className="text-red-500">*</span></label>
                                 <textarea
                                     name="address"
                                     value={formData.address}

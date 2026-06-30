@@ -56,6 +56,8 @@ const BatchManagement = () => {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
     const [departments, setDepartments] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
@@ -137,6 +139,7 @@ const BatchManagement = () => {
 
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
+        setIsStatusUpdating(true);
         try {
             await BatchService.toggleStatus(statusToUpdate.id);
             // Re-fetch or locally update the status
@@ -151,6 +154,8 @@ const BatchManagement = () => {
         } catch (err) {
             console.error("Failed to toggle status:", err);
             showErrorToast('Action Failed', err?.message || 'Failed to update status. Please try again.');
+        } finally {
+            setIsStatusUpdating(false);
         }
     };
 
@@ -261,6 +266,7 @@ const BatchManagement = () => {
 
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
+        setIsBulkStatusUpdating(true);
         try {
             await BatchService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
@@ -272,6 +278,8 @@ const BatchManagement = () => {
         } catch (error) {
             console.error("Failed to bulk update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
+        } finally {
+            setIsBulkStatusUpdating(false);
         }
     };
 
@@ -529,9 +537,9 @@ const BatchManagement = () => {
                             <button
                                 onClick={saveBatch}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -582,9 +590,10 @@ const BatchManagement = () => {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isStatusUpdating}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -610,9 +619,10 @@ const BatchManagement = () => {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isBulkStatusUpdating}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isBulkStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -641,9 +651,9 @@ const BatchManagement = () => {
                             <button
                                 onClick={saveBatch}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

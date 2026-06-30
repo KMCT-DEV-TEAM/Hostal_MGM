@@ -96,11 +96,23 @@ const AdminMobileList = ({
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <option value="" disabled>Select Organization</option>
-                                        {organizations.map((org) => (
-                                            <option key={org._id} value={org._id}>
-                                                {org.name}
-                                            </option>
-                                        ))}
+                                        {(() => {
+                                            const opts = organizations.map((org) => (
+                                                <option key={org._id} value={org._id}>
+                                                    {org.name}
+                                                </option>
+                                            ));
+                                            if (o.organization && typeof o.organization === 'object') {
+                                                if (!organizations.find(org => org._id === o.organization._id)) {
+                                                    opts.push(
+                                                        <option key={o.organization._id} value={o.organization._id}>
+                                                            {o.organization.name}
+                                                        </option>
+                                                    );
+                                                }
+                                            }
+                                            return opts;
+                                        })()}
                                     </select>
                                 </div>
                             </div>

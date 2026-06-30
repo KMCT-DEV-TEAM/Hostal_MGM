@@ -65,7 +65,7 @@ const BatchFormModal = ({
                         <h5 className='text-xs font-medium text-[#777777] mb-4 pb-2 border-b border-gray-200 '>{t('basic_batch_desc')}</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">{t('name')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('name')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -76,8 +76,8 @@ const BatchFormModal = ({
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs mb-1.5 font-medium">{t('batch_code')} *</label>
-                                <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
+                                <label className="block text-xs mb-1.5 font-medium">{t('batch_code')} <span className="text-red-500">*</span></label>
+                                <div className={`flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A] ${isEditMode ? 'bg-gray-100' : 'bg-gray-50/50'}`}>
                                     {deptCode && (
                                         <div className="px-3 py-2 bg-gray-100 border-r border-gray-200 text-xs font-semibold text-gray-600 uppercase select-none">
                                             {deptCode}
@@ -88,7 +88,8 @@ const BatchFormModal = ({
                                         value={formData.code}
                                         onChange={handleInputChange}
                                         required
-                                        className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase"
+                                        disabled={isEditMode}
+                                        className={`w-full px-3 py-2 outline-none text-xs uppercase ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-transparent'}`}
                                         placeholder="BATCH1"
                                     />
                                 </div>
@@ -96,7 +97,7 @@ const BatchFormModal = ({
                         </div>
                         <div className="grid grid-cols-1 gap-6 mt-6">
                             <div>
-                                <label className="block text-xs mb-1.5 font-medium">{t('department')} *</label>
+                                <label className="block text-xs mb-1.5 font-medium">{t('department')} <span className="text-red-500">*</span></label>
                                 <Dropdown
                                     options={departments ? departments.map(dep => ({
                                         label: `${dep.name} (${dep.code})`,

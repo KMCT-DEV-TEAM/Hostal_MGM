@@ -57,6 +57,8 @@ const CourseManagement = () => {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -137,6 +139,7 @@ const CourseManagement = () => {
 
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
+        setIsStatusUpdating(true);
         try {
             await CourseService.toggleStatus(statusToUpdate.id);
             // Re-fetch or locally update the status
@@ -151,6 +154,8 @@ const CourseManagement = () => {
         } catch (err) {
             console.error("Failed to toggle status:", err);
             showErrorToast('Action Failed', err?.message || 'Failed to update status. Please try again.');
+        } finally {
+            setIsStatusUpdating(false);
         }
     };
 
@@ -160,14 +165,15 @@ const CourseManagement = () => {
             setEditingId(course._id);
             
             // Extract suffix code
-            const org = organizations.find(o => o._id === course.organizationId);
+            const orgId = course.organizationId?._id || course.organizationId;
+            const org = organizations.find(o => o._id === orgId);
             const prefix = org ? `${org.code}-` : '';
             const suffixCode = course.code?.startsWith(prefix) ? course.code.substring(prefix.length) : course.code;
 
             setFormData({
                 name: course.name || '',
                 code: suffixCode || '',
-                organizationId: course.organizationId || ''
+                organizationId: orgId || ''
             });
         } else {
             setEditingId(null);
@@ -260,6 +266,7 @@ const CourseManagement = () => {
 
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
+        setIsBulkStatusUpdating(true);
         try {
             await CourseService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
@@ -271,6 +278,8 @@ const CourseManagement = () => {
         } catch (error) {
             console.error("Failed to bulk update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
+        } finally {
+            setIsBulkStatusUpdating(false);
         }
     };
 
@@ -530,9 +539,9 @@ const CourseManagement = () => {
                             <button
                                 onClick={saveCourse}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -583,9 +592,10 @@ const CourseManagement = () => {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isStatusUpdating}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -611,9 +621,10 @@ const CourseManagement = () => {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isBulkStatusUpdating}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isBulkStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -643,9 +654,9 @@ const CourseManagement = () => {
                             <button
                                 onClick={saveCourse}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

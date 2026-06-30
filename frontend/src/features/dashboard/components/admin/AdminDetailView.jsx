@@ -46,6 +46,7 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                                     </span>
                                 </InfoRow>
                                 <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400 shrink-0" /> Organization</>}>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</InfoRow>
                             </div>
                         </div>
                     </div>
