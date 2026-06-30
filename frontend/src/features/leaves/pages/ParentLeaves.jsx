@@ -15,6 +15,7 @@ import leaveService from '@/services/leave.service';
 import { formatDate } from '../utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
+import LeaveActionModal from '../components/modals/LeaveActionModal';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 
 export default function ParentLeaves() {
@@ -83,22 +84,16 @@ export default function ParentLeaves() {
     const openActionModal = (request, actionType) => {
         if (actionType === 'pending') return;
         setActionModalConfig({ isOpen: true, actionType, request });
-        setActionRemarks('');
     };
 
-    const handleConfirmAction = async (e) => {
-        e?.preventDefault();
-        const { actionType, request } = actionModalConfig;
-
-        if (actionType === 'rejected' && !actionRemarks.trim()) {
-            showErrorToast('Remarks are required for rejection');
-            return;
-        }
-
+    const handleConfirmAction = async (remarks) => {
+        if (!actionModalConfig.request) return;
+        
         try {
             setIsActionSubmitting(true);
+            const { actionType, request } = actionModalConfig;
             const payload = {
-                remarks: actionRemarks,
+                remarks: remarks,
                 revision: request.revision ?? request.__v ?? 0
             };
 
@@ -112,7 +107,7 @@ export default function ParentLeaves() {
             setActionModalConfig({ isOpen: false, actionType: '', request: null });
             fetchLeaves();
         } catch (err) {
-            showErrorToast(err.message || `Failed to ${actionType} pass`);
+            showErrorToast(err.message || `Failed to ${actionModalConfig.actionType} pass`);
         } finally {
             setIsActionSubmitting(false);
         }
@@ -307,50 +302,13 @@ export default function ParentLeaves() {
                 }}
             />
 
-            {/* Action Confirmation Modal */}
-            <Modal
+            <LeaveActionModal
                 isOpen={actionModalConfig.isOpen}
                 onClose={() => setActionModalConfig({ isOpen: false, actionType: '', request: null })}
-                title={actionModalConfig.actionType === 'approved' ? 'Approve Pass Request' : 'Reject Pass Request'}
-                subtitle={`Provide remarks for this ${actionModalConfig.actionType === 'approved' ? 'approval' : 'rejection'}.`}
-                maxWidth="max-w-md"
-                asForm
+                actionType={actionModalConfig.actionType}
                 onSubmit={handleConfirmAction}
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1">
-                            Remarks {actionModalConfig.actionType === 'rejected' && <span className="text-red-500">*</span>}
-                        </label>
-                        <textarea
-                            value={actionRemarks}
-                            onChange={(e) => setActionRemarks(e.target.value)}
-                            required={actionModalConfig.actionType === 'rejected'}
-                            placeholder={actionModalConfig.actionType === 'rejected' ? "Please explain why this pass is rejected..." : "Optional remarks..."}
-                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] resize-y"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={() => setActionModalConfig({ isOpen: false, actionType: '', request: null })}
-                            disabled={isActionSubmitting}
-                            className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors w-full"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isActionSubmitting || (actionModalConfig.actionType === 'rejected' && !actionRemarks.trim())}
-                            className={`px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors w-full ${actionModalConfig.actionType === 'approved' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isActionSubmitting ? 'Processing...' : actionModalConfig.actionType === 'approved' ? 'Confirm Approval' : 'Confirm Rejection'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                isSubmitting={isActionSubmitting}
+            />
 
             <LeaveDetailsModal
                 isOpen={!!viewId}
