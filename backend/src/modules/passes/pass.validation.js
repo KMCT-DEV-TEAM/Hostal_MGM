@@ -391,7 +391,9 @@ export const validateCancelPass = async (req, res, next) => {
 };
 
 export const validateGetPasses = (req, res, next) => {
-  const { page, limit, status, passType } = req.query;
+  const { page, limit, status, passType, category, fromDate, toDate } = req.query;
+
+  console.log('from validation', fromDate, toDate)
 
   if (page && isNaN(parseInt(page))) {
     return res.status(400).json({ success: false, message: "The page number must be valid." });
@@ -407,6 +409,32 @@ export const validateGetPasses = (req, res, next) => {
 
   if (passType && !["home_pass", "out_pass"].includes(passType)) {
     return res.status(400).json({ success: false, message: "The selected pass type filter is invalid." });
+  }
+
+  if (category && !["in_house", "out_house"].includes(category)) {
+    return res.status(400).json({ success: false, message: "The selected out pass category filter is invalid." });
+  }
+
+  if (fromDate) {
+    const parsedDate = new Date(fromDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ success: false, message: "Invalid from date format. Please use YYYY-MM-DD." });
+    }
+  }
+
+  if (toDate) {
+    const parsedDate = new Date(toDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ success: false, message: "Invalid to date format. Please use YYYY-MM-DD." });
+    }
+  }
+
+  if (fromDate && toDate) {
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    if (from > to) {
+      return res.status(400).json({ success: false, message: "From date cannot be after to date." });
+    }
   }
 
   next();
