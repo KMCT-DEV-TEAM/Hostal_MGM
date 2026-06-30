@@ -41,7 +41,7 @@ wardenAttendanceRouter.get("/student-calendar", validateCalendarQuery, getAttend
 
 export const adminAttendanceRouter = express.Router();
 adminAttendanceRouter.use(authMiddleware);
-adminAttendanceRouter.use(roleMiddleware("admin", "superadmin"));
+adminAttendanceRouter.use(roleMiddleware("admin", "super_admin"));
 adminAttendanceRouter.get("/stats", getDashboardStats);
 adminAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 adminAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
@@ -50,7 +50,7 @@ adminAttendanceRouter.get("/student-calendar", validateCalendarQuery, getAttenda
 
 export const superAdminAttendanceRouter = express.Router();
 superAdminAttendanceRouter.use(authMiddleware);
-superAdminAttendanceRouter.use(roleMiddleware("superadmin"));
+superAdminAttendanceRouter.use(roleMiddleware("super_admin"));
 superAdminAttendanceRouter.get("/stats", getDashboardStats);
 superAdminAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 superAdminAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);

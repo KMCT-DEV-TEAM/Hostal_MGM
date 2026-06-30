@@ -25,6 +25,8 @@ import MaintenanceAssignedTasks from '@/features/dashboard/pages/MaintenanceAssi
 import Logs from '@/features/dashboard/pages/Logs';
 import Attendance from '@/features/dashboard/pages/Attendance';
 import OrganizationManagement from '@/features/dashboard/pages/OrganizationManagement';
+import Furniture from '@/features/furniture/pages/Furniture';
+import FurnitureDetails from '@/features/furniture/pages/FurnitureDetails';
 
 export const dashboardRoutes = [
 
@@ -101,6 +103,24 @@ export const dashboardRoutes = [
             ROLES.ADMIN
         ],
         element: BatchManagement
+    },
+    {
+        path: 'furniture',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Furniture
+    },
+    {
+        path: 'furniture/:id',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: FurnitureDetails
     },
 
     {
