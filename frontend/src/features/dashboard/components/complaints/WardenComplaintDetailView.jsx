@@ -5,7 +5,8 @@ import {
   Calendar,
   Tag,
   Clock,
-  Home
+  Home,
+  Loader2
 } from "lucide-react";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import ComplaintService from "@/services/complaint.service";
@@ -21,6 +22,8 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   const [showClosePrompt, setShowClosePrompt] = useState(false);
   const [closeNote, setCloseNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showAllNotes, setShowAllNotes] = useState(false);
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
 
   const handleAddInternalNote = async () => {
     if (!internalNote.trim()) {
@@ -222,9 +225,9 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                         <button
                           onClick={handleApprove}
                           disabled={isProcessing}
-                          className="flex-1 bg-success text-white py-2 rounded-lg text-sm font-medium hover:bg-success/60 transition-colors cursor-pointer"
+                          className="flex-1 flex items-center justify-center min-w-[150px] bg-success text-white py-2 rounded-lg text-sm font-medium hover:bg-success/60 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          Approve Resolution
+                          {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Approve Resolution'}
                         </button>
                         <button
                           onClick={() => setShowRejectPrompt(true)}
@@ -236,7 +239,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <label className="block text-xs font-medium text-text-secondary">Rejection Note *</label>
+                        <label className="block text-xs font-medium text-text-secondary">Rejection Note <span className="text-danger">*</span></label>
                         <textarea
                           rows={2}
                           value={rejectNote}
@@ -248,9 +251,9 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                           <button
                             onClick={handleReject}
                             disabled={isProcessing}
-                            className="flex-1 bg-danger text-white py-2 rounded-lg text-sm font-medium hover:bg-danger/90 transition-colors cursor-pointer"
+                            className="flex-1 flex items-center justify-center min-w-[120px] bg-danger text-white py-2 rounded-lg text-sm font-medium hover:bg-danger/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                           >
-                            Confirm Reject
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Reject'}
                           </button>
                           <button
                             onClick={() => setShowRejectPrompt(false)}
@@ -277,11 +280,15 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                 <h3 className="text-sm font-semibold text-primary mb-1">Internal note</h3>
                 <p className="text-[11px] text-text-secondary">Add a note visible to Admins and Wardens</p>
               </div>
-              <button className="text-[11px] text-primary hover:underline cursor-pointer">View all</button>
+              {internalNotes.length > 5 && (
+                <button onClick={() => setShowAllNotes(!showAllNotes)} className="text-[11px] text-primary hover:underline cursor-pointer">
+                  {showAllNotes ? 'View less' : 'View all'}
+                </button>
+              )}
             </div>
 
             <div className="space-y-3 mb-4">
-              {internalNotes.length > 0 ? internalNotes.map((n, idx) => (
+              {(showAllNotes ? internalNotes : internalNotes.slice(0, 5)).length > 0 ? (showAllNotes ? internalNotes : internalNotes.slice(0, 5)).map((n, idx) => (
                 <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm flex flex-col gap-2">
                   <div className="flex justify-between items-start">
                     <span className="text-[13px] text-text-secondary">{n.note}</span>
@@ -305,9 +312,9 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               <button
                 onClick={handleAddInternalNote}
                 disabled={isProcessing || !internalNote.trim()}
-                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center min-w-[60px] px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Add
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
               </button>
             </div>
           </div>
@@ -346,7 +353,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                 </div>
               ) : (
                 <div className="space-y-3 mt-4">
-                  <label className="block text-xs font-medium text-gray-700">Closing Note *</label>
+                  <label className="block text-xs font-medium text-gray-700">Closing Note <span className="text-danger">*</span></label>
                   <textarea
                     rows={2}
                     value={closeNote}
@@ -358,9 +365,9 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                     <button
                       onClick={handleCloseTask}
                       disabled={isProcessing}
-                      className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                      className="flex-1 flex items-center justify-center min-w-[120px] bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      Confirm Close
+                      {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Close'}
                     </button>
                     <button
                       onClick={() => setShowClosePrompt(false)}
@@ -382,19 +389,26 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                 <h3 className="text-sm font-semibold text-primary mb-1">Staff Updates</h3>
                 <p className="text-[11px] text-text-secondary">Updates by the assigned maintenance staff</p>
               </div>
-              {user?.role === 'admin' && !complaint.assignedStaff && (
-                <button
-                  onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
-                  className="px-4 py-1.5 text-[11px] font-medium text-white bg-primary rounded-md hover:bg-primary/80 transition-colors cursor-pointer"
-                >
-                  Assign staff
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {staffUpdates.length > 5 && (
+                  <button onClick={() => setShowAllUpdates(!showAllUpdates)} className="text-[11px] text-primary hover:underline cursor-pointer">
+                    {showAllUpdates ? 'View less' : 'View all'}
+                  </button>
+                )}
+                {user?.role === 'admin' && !complaint.assignedStaff && (
+                  <button
+                    onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
+                    className="px-4 py-1.5 text-[11px] font-medium text-white bg-primary rounded-md hover:bg-primary/80 transition-colors cursor-pointer"
+                  >
+                    Assign staff
+                  </button>
+                )}
+              </div>
             </div>
 
-            {staffUpdates.length > 0 ? (
+            {(showAllUpdates ? staffUpdates : staffUpdates.slice(0, 5)).length > 0 ? (
               <div className="relative pl-3 border-l-2 border-gray-100 space-y-6 ml-2">
-                {staffUpdates.map((update, idx) => (
+                {(showAllUpdates ? staffUpdates : staffUpdates.slice(0, 5)).map((update, idx) => (
                   <div key={idx} className="relative">
                     <div className={`absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white ${getStatusDotColor(update.status)}`}></div>
                     <div className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm ml-2">

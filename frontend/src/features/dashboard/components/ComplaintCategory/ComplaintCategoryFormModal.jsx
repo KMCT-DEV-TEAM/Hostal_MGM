@@ -47,7 +47,7 @@ const ComplaintCategoryFormModal = ({
                         <div className="border-b border-gray-100 mb-4" />
                         <div className="grid grid-cols-1 gap-4">
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">Category Name *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">Category Name <span className="text-danger">*</span></label>
                                 <input
                                     name="name"
                                     value={formData.name}
@@ -78,10 +78,9 @@ const ComplaintCategoryFormModal = ({
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center min-w-[100px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting && <Loader2 size={14} className="animate-spin mr-1" />}
-                        {isEditMode ? 'Save Changes' : 'Save'}
+                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (isEditMode ? 'Save Changes' : 'Save')}
                     </button>
                     <button
                         type="button"

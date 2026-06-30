@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
 import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
@@ -491,22 +491,6 @@ export default function MaintenanceStaffManagement() {
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    {selectedIds.length > 0 && (
-                        <div className="flex items-center gap-2 mr-2">
-                            <button
-                                onClick={() => handleBulkStatusClick(true)}
-                                className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-                            >
-                                Active ({selectedIds.length})
-                            </button>
-                            <button
-                                onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-                            >
-                                Inactive ({selectedIds.length})
-                            </button>
-                        </div>
-                    )}
                 </div>
                 
                 <div className="flex items-center self-end sm:self-auto mt-4 sm:mt-0">
@@ -562,6 +546,24 @@ export default function MaintenanceStaffManagement() {
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* BULK ACTIONS - Positioned below KPI cards but before toolbar */}
+            {selectedIds.length > 0 && (
+                <div className="flex items-center justify-end gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
+                    <button
+                        onClick={() => handleBulkStatusClick(true)}
+                        className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                        Active ({selectedIds.length})
+                    </button>
+                    <button
+                        onClick={() => handleBulkStatusClick(false)}
+                        className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                        Inactive ({selectedIds.length})
+                    </button>
+                </div>
             )}
 
             {/* TOOLBAR SECTION */}
@@ -734,9 +736,9 @@ export default function MaintenanceStaffManagement() {
                             <button
                                 onClick={saveStaff}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -796,9 +798,9 @@ export default function MaintenanceStaffManagement() {
                             <button
                                 onClick={confirmStatusChange}
                                 disabled={isConfirming}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isConfirming ? 'Confirming...' : 'Confirm'}
+                                {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -808,7 +810,7 @@ export default function MaintenanceStaffManagement() {
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Bulk Change Status</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
                             Are you sure you want to change the status of {selectedIds.length} staff members to {bulkStatusToUpdate ? 'Active' : 'Inactive'}?
                         </p>
@@ -825,9 +827,9 @@ export default function MaintenanceStaffManagement() {
                             <button
                                 onClick={confirmBulkStatusChange}
                                 disabled={isConfirming}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isConfirming ? 'Confirming...' : 'Confirm'}
+                                {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

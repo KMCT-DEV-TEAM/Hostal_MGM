@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -89,9 +90,9 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
                     <Button variant="outline" type="button" onClick={handleInitialCancel} disabled={isSubmitting}>
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Submitting...' : 'Submit Resolution'}
-                    </Button>
+                    <button type="submit" disabled={isSubmitting} className="flex items-center justify-center min-w-[140px] px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed">
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Resolution'}
+                    </button>
                 </div>
             </form>
 
@@ -102,8 +103,9 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
                 title={confirmAction === 'submit' ? "Confirm Resolution" : "Discard Changes?"}
                 message={confirmAction === 'submit' ? "Are you sure you want to submit this resolution?" : "You have unsaved changes. Are you sure you want to discard them?"}
                 confirmText={confirmAction === 'submit' ? "Submit" : "Discard"}
-                confirmButtonClass={confirmAction === 'discard' ? "bg-red-600 text-white hover:bg-red-700" : "bg-[#0A437A] text-white hover:bg-[#083663]"}
+                confirmButtonClass={confirmAction === 'discard' ? "bg-red-600 text-white hover:bg-red-700 min-w-[100px]" : "bg-[#0A437A] text-white hover:bg-[#083663] min-w-[100px]"}
                 isSubmitting={isSubmitting}
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
             />
         </Modal>
     );

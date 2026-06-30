@@ -43,6 +43,7 @@ export default function StudentComplaints() {
         complaintId: null,
         newCategory: null
     });
+    const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
     const fetchComplaints = async () => {
         try {
@@ -421,16 +422,9 @@ export default function StudentComplaints() {
                             <button
                                 onClick={confirmSaveComplaint}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    'Confirm'
-                                )}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -480,16 +474,9 @@ export default function StudentComplaints() {
                             <button
                                 onClick={confirmWithdraw}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Withdrawing...
-                                    </>
-                                ) : (
-                                    'Withdraw'
-                                )}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Withdraw'}
                             </button>
                         </div>
                     </div>
@@ -533,6 +520,7 @@ export default function StudentComplaints() {
                 onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null })}
                 onConfirm={async () => {
                     try {
+                        setIsSubmittingCategory(true);
                         await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { 
                             category: confirmCategoryChange.newCategoryId 
                         });
@@ -546,12 +534,16 @@ export default function StudentComplaints() {
                         console.error('Failed to update category:', error);
                         showErrorToast('Error', error?.response?.data?.message || 'Failed to update category');
                     } finally {
+                        setIsSubmittingCategory(false);
                         setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null });
                     }
                 }}
                 title="Confirm Category Change"
                 message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategoryName}?`}
-                confirmText="Yes, Change"
+                confirmText="Change"
+                isSubmitting={isSubmittingCategory}
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
             />
         </div>
     );

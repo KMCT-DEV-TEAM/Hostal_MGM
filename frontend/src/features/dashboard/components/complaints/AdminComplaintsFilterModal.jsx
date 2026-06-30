@@ -35,25 +35,6 @@ export default function AdminComplaintsFilterModal({
     };
 
     const handleFilterClick = () => {
-        const isNothingApplied = !hostel.trim() && category === 'All' && !date && (status === 'All' || status === 'All Status') && priority === 'All';
-        
-        if (isNothingApplied) {
-            setErrors({});
-            setIsConfirmOpen(true);
-            return;
-        }
-
-        const newErrors = {};
-        if (!hostel.trim()) newErrors.hostel = 'Hostel is required';
-        if (category === 'All') newErrors.category = 'Category is required';
-        if (!date) newErrors.date = 'Date is required';
-        if (status === 'All' || status === 'All Status') newErrors.status = 'Status is required';
-        if (priority === 'All') newErrors.priority = 'Priority is required';
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
         setErrors({});
         setIsConfirmOpen(true);
     };
@@ -189,7 +170,7 @@ export default function AdminComplaintsFilterModal({
                 onConfirm={handleApply}
                 title="Confirm Filter"
                 message="Are you sure you want to apply these filters?"
-                confirmText="Yes, Apply"
+                confirmText="Apply"
             />
 
             <ConfirmationModal

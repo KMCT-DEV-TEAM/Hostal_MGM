@@ -161,8 +161,7 @@ const MaintenanceStaffFormModal = ({
                         disabled={isSubmitting}
                         className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isSubmitting && <Loader2 size={14} className="animate-spin mr-1" />}
-                        {editingStaff ? t('Save Changes') : t('Save')}
+                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (editingStaff ? t('Save Changes') : t('Save'))}
                     </button>
                     <button
                         type="button"

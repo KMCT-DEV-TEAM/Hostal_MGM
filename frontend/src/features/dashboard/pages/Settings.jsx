@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import SettingsSkeleton from '@/components/ui/SettingsSkeleton';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function Settings() {
     const { user, updateUser } = useAuthStore();
@@ -308,15 +309,17 @@ export default function Settings() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('language')}</label>
-                                <select 
-                                    name="language"
+                                <Dropdown
+                                    options={[
+                                        { label: 'English (US)', value: 'en' },
+                                        { label: 'Malayalam (മലയാളം)', value: 'ml' }
+                                    ]}
                                     value={preferences.language}
-                                    onChange={handlePreferenceChange}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                                >
-                                    <option value="en">English (US)</option>
-                                    <option value="ml">Malayalam (മലയാളം)</option>
-                                </select>
+                                    onChange={(value) => handlePreferenceChange({ target: { name: 'language', value } })}
+                                    className="w-full"
+                                    triggerClassName="w-full px-3 py-2 text-sm bg-white border-gray-300 focus:border-[#0A437A] cursor-pointer rounded-md"
+                                    placement="top"
+                                />
                             </div>
                         </div>
                     </div>
