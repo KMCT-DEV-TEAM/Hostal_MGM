@@ -35,7 +35,7 @@ export default function LeavesDetailView({
     const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
     const getReturnStatus = (r) => {
-        console.log('return status', r.returnTracking);
+        console.log('return status', r);
         if (r.returnTracking?.returnedAt) {
             return r.returnTracking.returnStatus === 'late' ? 'Returned (Late)' : 'Returned (On Time)';
         }
