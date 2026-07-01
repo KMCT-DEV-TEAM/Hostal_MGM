@@ -56,7 +56,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
         ...(showHostel ? ['Hostel'] : []),
         ...(showWarden ? ['Warden'] : []),
         'Students',
-        'Scanned',
+        'Present',
         'Absent'
     ];
 
@@ -67,7 +67,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
             month: 'short',
             year: 'numeric'
         }).replace(/ /g, ' - ').toLowerCase(); // To match "17 - june - 2026"
-        
+
         return (
             <>
                 <td className="p-4 align-middle text-gray-500">
@@ -128,53 +128,53 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
 
     return (
         <>
-        <DataTable
-            searchQuery={searchQuery}
-            onSearchChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPage(1);
-            }}
-            searchPlaceholder="Search by date or hostel..."
-            toolbarActions={
-                <button
-                    onClick={() => setIsFilterModalOpen(true)}
-                    className={`p-2 rounded-md transition-colors ${Object.keys(filters).length > 0 ? 'bg-primary text-white hover:bg-secondary' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                    title="Filter windows"
-                >
-                    <Filter className="w-5 h-5" />
-                </button>
-            }
-            headers={headers}
-            items={windows}
-            loading={loading}
-            renderRow={renderRow}
-            renderMobileItem={renderMobileItem}
-            onRowClick={onRowClick}
-            page={page}
-            setPage={setPage}
-            limit={10}
-            totalItems={pagination.totalRecords}
-            totalPages={pagination.totalPages}
-            emptyText="No attendance windows found."
-        />
-        <FilterWindowsModal
-            isOpen={isFilterModalOpen}
-            onClose={() => setIsFilterModalOpen(false)}
-            filters={filters}
-            onApply={(newFilters) => {
-                const cleanedFilters = Object.fromEntries(
-                    Object.entries(newFilters).filter(([_, v]) => v !== '')
-                );
-                setFilters(cleanedFilters);
-                setIsFilterModalOpen(false);
-                setPage(1);
-            }}
-            onReset={() => {
-                setFilters({});
-                setIsFilterModalOpen(false);
-                setPage(1);
-            }}
-        />
+            <DataTable
+                searchQuery={searchQuery}
+                onSearchChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                }}
+                searchPlaceholder="Search by date or hostel..."
+                toolbarActions={
+                    <button
+                        onClick={() => setIsFilterModalOpen(true)}
+                        className={`p-2 rounded-md transition-colors ${Object.keys(filters).length > 0 ? 'bg-primary text-white hover:bg-secondary' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                        title="Filter windows"
+                    >
+                        <Filter className="w-5 h-5" />
+                    </button>
+                }
+                headers={headers}
+                items={windows}
+                loading={loading}
+                renderRow={renderRow}
+                renderMobileItem={renderMobileItem}
+                onRowClick={onRowClick}
+                page={page}
+                setPage={setPage}
+                limit={10}
+                totalItems={pagination.totalRecords}
+                totalPages={pagination.totalPages}
+                emptyText="No attendance windows found."
+            />
+            <FilterWindowsModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                filters={filters}
+                onApply={(newFilters) => {
+                    const cleanedFilters = Object.fromEntries(
+                        Object.entries(newFilters).filter(([_, v]) => v !== '')
+                    );
+                    setFilters(cleanedFilters);
+                    setIsFilterModalOpen(false);
+                    setPage(1);
+                }}
+                onReset={() => {
+                    setFilters({});
+                    setIsFilterModalOpen(false);
+                    setPage(1);
+                }}
+            />
         </>
     );
 }

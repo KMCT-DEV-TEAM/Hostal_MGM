@@ -36,12 +36,10 @@ export default function LeaveStatusBadge({ status, className = '' }) {
         bgClass = 'bg-success/10';
         textClass = 'text-success';
         borderClass = 'border border-success/30';
-        if (displayStatus.startsWith('Returned')) icon = <Check className="w-3.5 h-3.5 stroke-[2.5]" />;
     } else if (displayStatus === 'Rejected' || displayStatus === 'Left Hostel' || displayStatus === 'Left (Pending Return)' || displayStatus === 'Returned (Late)' || displayStatus === 'Absent') {
         bgClass = 'bg-danger/10';
         textClass = 'text-danger';
         borderClass = 'border border-danger/30';
-        if (displayStatus.includes('Left') || displayStatus.includes('Late')) icon = <X className="w-3.5 h-3.5 stroke-[2.5]" />;
     } else if (displayStatus === 'Cancelled') {
         bgClass = 'bg-gray-100';
         textClass = 'text-gray-600';
@@ -54,7 +52,7 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     }
 
     return (
-        <span className={`px-3.5 py-1.5 rounded-md text-xs ${borderClass} inline-flex items-center gap-1.5 ${bgClass} ${textClass} ${className}`}>
+        <span className={`px-3 py-1.5 rounded-md text-xs ${borderClass} inline-flex items-center justify-center gap-1.5 ${bgClass} ${textClass} ${className}`}>
             {icon} {displayStatus}
         </span>
     );

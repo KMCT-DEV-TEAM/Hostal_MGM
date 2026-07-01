@@ -9,7 +9,7 @@ import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
-import leaveService, { getLeaves, getAdminDashboardStats } from '@/services/leave.service';
+import leaveService, { getLeaves, getAdminDashboardStats, getWardenDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
@@ -136,8 +136,9 @@ export default function AdminLeaves() {
     const [adminStats, setAdminStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
 
     useEffect(() => {
-        if (isAdmin) {
-            getAdminDashboardStats({ passType: isHomePass ? 'home_pass' : 'out_pass' })
+        if (isAdmin || isWarden) {
+            const fetchStats = isWarden ? getWardenDashboardStats : getAdminDashboardStats;
+            fetchStats({ passType: isHomePass ? 'home_pass' : 'out_pass' })
                 .then(res => {
                     const statsData = res?.data?.data || res?.data || res;
                     setAdminStats({
@@ -149,7 +150,7 @@ export default function AdminLeaves() {
                 })
                 .catch(console.error);
         }
-    }, [isAdmin, isHomePass]);
+    }, [isAdmin, isWarden, isHomePass]);
 
     const pageSubtitle = useMemo(() => {
         if (isSuperAdmin) return "Monitor leave requests and approvals across all hostels.";
@@ -159,7 +160,7 @@ export default function AdminLeaves() {
     }, [isSuperAdmin, isWarden, isAdmin, isHomePass]);
 
     const stats = useMemo(() => {
-        if (isAdmin) return adminStats;
+        if (isAdmin || isWarden) return adminStats;
         if (!hostelData || hostelData.length === 0) {
             return { total: 0, approved: 0, pending: 0, rejected: 0 };
         }
