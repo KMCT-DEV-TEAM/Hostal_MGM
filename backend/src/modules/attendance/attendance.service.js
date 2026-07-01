@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { AttendanceWindow, AttendanceRecord } from "./attendance.model.js";
 import Student from "../students/student.model.js";
 import Hostel from "../hostels/hostel.model.js";
+import Pass from "../passes/pass.model.js";
 import { formatTime, formatDate, capitalize } from "../../utils/formatters.js";
 
 const getStartOfDay = (date) => {
@@ -510,15 +511,25 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
   ]);
 
   if (absentStudents.length > 0) {
+    const absentIds = absentStudents.map(s => s._id);
+    const onLeavePasses = await Pass.find({
+      studentId: { $in: absentIds },
+      status: "approved",
+      "reutrnTracking.leftHostelAt": { $ne: null },
+      "reutrnTracking.returnedAt": null
+    }).select("studentId").lean();
+    const onLeaveSet = new Set(onLeavePasses.map(p => p.studentId.toString()));
+
     const absentRecords = absentStudents.map(student => ({
       attendanceWindowId: windowId,
       studentId: student._id,
       hostelId: window.hostelId,
       scannedBy: wardenId,
-      status: "absent",
-      remarks: "Marked absent automatically upon window completion."
+      status: onLeaveSet.has(student._id.toString()) ? "on_leave" : "absent",
+      remarks: onLeaveSet.has(student._id.toString())
+        ? "Marked as on leave automatically upon window completion."
+        : "Marked absent automatically upon window completion."
     }));
-
     await AttendanceRecord.insertMany(absentRecords);
   }
 
