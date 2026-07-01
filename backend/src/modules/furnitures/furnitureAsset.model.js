@@ -6,17 +6,11 @@ const furnitureAssetSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      trim: true,
     },
     furnitureTypeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "FurnitureType",
       required: true,
-    },
-    hostelId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Hostel",
-      default: null
     },
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -25,13 +19,13 @@ const furnitureAssetSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Available", "Allocated", "Maintenance", "Lost", "Scrap"],
-      required: true,
+      enum: ["Available", "Allocated", "Maintenance", "Inactive", "Lost", "Scrap"],
       default: "Available",
+      required: true,
     },
     remarks: {
       type: String,
-      trim: true,
+      maxlength: 1000,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -47,9 +41,14 @@ const furnitureAssetSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
 furnitureAssetSchema.index({ furnitureId: 1 });
+furnitureAssetSchema.index({ status: 1 });
+furnitureAssetSchema.index({ studentId: 1 });
 furnitureAssetSchema.index({ furnitureTypeId: 1 });
+furnitureAssetSchema.index({ createdAt: 1 });
+
+furnitureAssetSchema.index({ status: 1, studentId: 1 });
 
 const FurnitureAsset = mongoose.model("FurnitureAsset", furnitureAssetSchema);
+
 export default FurnitureAsset;

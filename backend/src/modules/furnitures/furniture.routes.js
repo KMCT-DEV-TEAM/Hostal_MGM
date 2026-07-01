@@ -1,34 +1,89 @@
 import express from "express";
-import {
-  createFurnitureType,
-  getFurnitureTypes,
-  getFurnitureTypeDetails,
-  updateFurnitureType,
-  deleteFurnitureType,
-  adjustAssetsCount,
-  changeAssetStatus,
-  getFurnitureAssetsByType,
-} from "./furniture.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
+import {
+  createFurnitureType,
+  getFurnitureTypes,
+  adjustAssetCount,
+  allocateFurniture,
+  returnFurniture,
+  startMaintenance,
+  completeMaintenance,
+  getDashboardSummary
+} from "./furniture.controller.js";
+
+import { 
+  validateCreateFurnitureType,
+  validateAdjustAssetCount,
+  validateAllocate, 
+  validateReturn,
+  validateStartMaintenance, 
+  validateCompleteMaintenance 
+} from "./furniture.validation.js";
+
 const router = express.Router();
 
-router.use(authMiddleware);
+router.get(
+  "/types",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getFurnitureTypes
+);
 
-// --- Furniture Types ---
-router.get("/", getFurnitureTypes);
-router.get("/:typeId", getFurnitureTypeDetails);
-router.post("/", roleMiddleware("admin", "super_admin"), createFurnitureType);
-router.put("/:typeId", roleMiddleware("admin", "super_admin"), updateFurnitureType);
-router.delete("/:typeId", roleMiddleware("admin", "super_admin"), deleteFurnitureType);
+router.post(
+  "/types",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateCreateFurnitureType,
+  createFurnitureType
+);
 
-// --- Furniture Assets ---
-router.patch("/:typeId/assets-count", roleMiddleware("admin", "super_admin"), adjustAssetsCount);
-router.patch("/assets/:assetId/status", roleMiddleware("admin", "super_admin"), changeAssetStatus);
-router.get("/:typeId/assets", roleMiddleware("admin", "super_admin", "wardn"), getFurnitureAssetsByType);
+router.patch(
+  "/types/:typeId/assets-count",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateAdjustAssetCount,
+  adjustAssetCount
+);
 
+router.post(
+  "/students/:studentId/assets/:assetId/allocate",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  validateAllocate,
+  allocateFurniture
+);
 
+router.post(
+  "/students/:studentId/assets/:assetId/return",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  validateReturn,
+  returnFurniture
+);
 
+router.post(
+  "/assets/:assetId/maintenance/start",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  validateStartMaintenance,
+  startMaintenance
+);
+
+router.post(
+  "/assets/:assetId/maintenance/complete",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  validateCompleteMaintenance,
+  completeMaintenance
+);
+
+router.get(
+  "/dashboard",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getDashboardSummary
+);
 
 export default router;
