@@ -5,6 +5,7 @@ import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import { syncHostelOrganizations } from "../hostels/hostel.service.js";
 import User from "../users/user.model.js";
+import FurnitureAsset from "../furnitures/furnitureAsset.model.js";
 import Student from "./student.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Organization from "../organizations/organization.model.js";
@@ -64,7 +65,7 @@ const createStudent = asyncHandler(async (req, res) => {
       return sendError(res, 400, "Cannot create student in inactive organization");
     }
 
-    
+
 
     const existingStudent = await Student.findOne({
       email,
@@ -96,7 +97,7 @@ const createStudent = asyncHandler(async (req, res) => {
     const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
     const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp);
 
-    if (!isStudentOtpValid ) {
+    if (!isStudentOtpValid) {
       await session.abortTransaction();
       return sendError(
         res,
@@ -104,7 +105,7 @@ const createStudent = asyncHandler(async (req, res) => {
         "Invalid or expired OTP for student"
       );
     }
-     if ( !isParentOtpValid) {
+    if (!isParentOtpValid) {
       await session.abortTransaction();
       return sendError(
         res,
@@ -491,7 +492,7 @@ const getStudentsByAdmin = asyncHandler(async (req, res) => {
 const getStudentsByWarden = asyncHandler(async (req, res) => {
   const wardenId = req.user.id;
   const wardenHostels = await Hostel.find({ wardens: wardenId }).select('_id').lean();
-  
+
   if (!wardenHostels.length) {
     return sendSuccess(res, 200, "Students fetched successfully", {
       students: [],
@@ -549,6 +550,29 @@ const getStudentFilterOptions = asyncHandler(async (req, res) => {
 
 
 
+// Get allocated furniture assets for a specific student
+const getStudentFurnitures = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  // Verify student exists (optional)
+  const student = await Student.findById(id).lean();
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+  const assets = await FurnitureAsset.find({
+    studentId: id,
+    status: "Allocated",
+  })
+    .populate("furnitureTypeId", "name prefix")
+    .lean();
+  return sendSuccess(res, 200, "Furniture assets fetched successfully", {
+    studentId: id,
+    assets,
+  });
+});
+
+
+
+
 export {
   createStudent,
   updateStudent,
@@ -563,5 +587,6 @@ export {
   getStudentsBySuperAdmin,
   getStudentsByWarden,
   getStudentFilterOptions,
+  getStudentFurnitures,
   bulkUpdateStudentStatus,
 };

@@ -652,7 +652,6 @@ export const getStudentAttendanceCalendarDb = async (studentId, month, year) => 
   const y = parseInt(year);
   const startDate = new Date(Date.UTC(y, m - 1, 1));
   const endDate = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
-
   const records = await AttendanceRecord.find({
     studentId: new mongoose.Types.ObjectId(studentId),
     scannedAt: { $gte: startDate, $lte: endDate }

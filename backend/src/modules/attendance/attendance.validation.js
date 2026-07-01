@@ -72,7 +72,6 @@ export const validateHistoryQuery = (req, res, next) => {
 
 export const validateCalendarQuery = (req, res, next) => {
   const { month, year } = req.query;
-
   if (!month || isNaN(parseInt(month)) || parseInt(month) < 1 || parseInt(month) > 12) {
     return res.status(400).json({ success: false, message: "Valid month (1-12) is required." });
   }

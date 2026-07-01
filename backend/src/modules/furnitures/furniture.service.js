@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import FurnitureAsset from "./furnitureAsset.model.js";
 import FurnitureType from "./furnitureType.model.js";
-import FurnitureCounter from "./furnitureCounter.model.js";
 
 const validTransitions = {
   Available: ["Allocated", "Maintenance", "Lost", "Scrap", "Retired"],
@@ -24,13 +23,12 @@ const addAssetsDb = async (typeId, quantity, remarks, userId, existingSession = 
 
     const prefix = type.prefix;
 
-    const counter = await FurnitureCounter.findOneAndUpdate(
-      { prefix },
-      { $inc: { sequence: quantity } },
-      { new: true, upsert: true, session }
-    );
+    const lastAsset = await FurnitureAsset.findOne({ furnitureTypeId: typeId })
+      .sort({ furnitureId: -1 })
+      .session(session);
+    const lastSeq = lastAsset ? parseInt(lastAsset.furnitureId.split('-')[1], 10) : 0;
+    const startNumber = lastSeq + 1;
 
-    const startNumber = counter.sequence - quantity + 1;
 
     const newAssets = [];
     for (let i = 0; i < quantity; i++) {
@@ -108,7 +106,6 @@ const reduceAssetsDb = async (typeId, quantity, existingSession = null) => {
       status: "Available",
       studentId: null
     };
-    if (hostelId) match.hostelId = hostelId;
 
     const eligibleAssets = await FurnitureAsset.find(match)
       .session(session)
@@ -122,9 +119,8 @@ const reduceAssetsDb = async (typeId, quantity, existingSession = null) => {
 
     const assetIds = eligibleAssets.map(a => a._id);
 
-    await FurnitureAsset.updateMany(
+    await FurnitureAsset.deleteMany(
       { _id: { $in: assetIds } },
-      { $set: { status: "Retired" } },
       { session }
     );
 
@@ -150,7 +146,7 @@ const adjustAssetCountDb = async (typeId, newCount, remarks, userId) => {
 
     const match = {
       furnitureTypeId: typeId,
-      status: { $ne: "Retired" }
+      status: { $ne: "Available" }
     };
 
     const activeCount = await FurnitureAsset.countDocuments(match).session(session);
@@ -395,7 +391,6 @@ const deleteFurnitureTypeDb = async (typeId) => {
     }
 
     // Delete the counter document for this prefix
-    await FurnitureCounter.deleteOne({ prefix: type.prefix }).session(session);
 
     await session.commitTransaction();
   } catch (error) {
