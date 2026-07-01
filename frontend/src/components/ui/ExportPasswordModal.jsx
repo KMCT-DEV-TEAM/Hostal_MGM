@@ -43,7 +43,7 @@ export default function ExportPasswordModal({
       onClose={onClose}
       title={title}
       subtitle={subtitle}
-      maxWidth="max-w-md"
+      maxWidth="max-w-[90%] sm:max-w-md !p-5 sm:!p-8"
       asForm
       onSubmit={handleSubmit}
       footer={

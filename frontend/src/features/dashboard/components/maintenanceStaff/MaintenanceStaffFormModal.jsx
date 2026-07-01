@@ -54,7 +54,7 @@ const MaintenanceStaffFormModal = ({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name', 'First Name')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name', 'First Name')} <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     required
@@ -66,7 +66,7 @@ const MaintenanceStaffFormModal = ({
                             </div>
 
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name', 'Last Name')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name', 'Last Name')} <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     required
@@ -78,7 +78,7 @@ const MaintenanceStaffFormModal = ({
                             </div>
 
                             <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number', 'Phone Number')} *</label>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number', 'Phone Number')} <span className="text-red-500">*</span></label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600 bg-gray-50/50">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
@@ -119,7 +119,7 @@ const MaintenanceStaffFormModal = ({
                             {/* Conditionally hide Email if editing */}
                             {!editingStaff && (
                                 <div className="col-span-2 mt-2">
-                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address', 'Email Address')} *</label>
+                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address', 'Email Address')} <span className="text-red-500">*</span></label>
                                     <div className="flex gap-2 items-center">
                                         <input
                                             type="email"
