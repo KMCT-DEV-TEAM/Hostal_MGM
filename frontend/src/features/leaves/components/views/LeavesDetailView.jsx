@@ -80,7 +80,7 @@ export default function LeavesDetailView({
                     <button
                         type="button"
                         onClick={onFilterClick}
-                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'border-[#0A437A] text-[#0A437A] bg-[#0A437A]/5' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                        className={`p-3 border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                         title="Filter leaves"
                     >
                         <Filter className="w-4 h-4" />

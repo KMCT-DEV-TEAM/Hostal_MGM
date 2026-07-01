@@ -46,11 +46,11 @@ export default function AdminLeaves() {
     const limit = 10;
 
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-    
+
     // Action modal state for approve/reject
     const [actionModalConfig, setActionModalConfig] = useState({ isOpen: false, actionType: '', id: null });
     const [isActionSubmitting, setIsActionSubmitting] = useState(false);
-    
+
     // Check if any filters are active (excluding search and page)
     const hasActiveFilters = Boolean(statusFilter || categoryFilter || fromDateFilter || toDateFilter || (orgFilter !== 'All'));
 
@@ -92,11 +92,9 @@ export default function AdminLeaves() {
                 { label: 'All Status', value: '' },
                 { label: 'Pending Admin', value: 'pending_admin' },
                 { label: 'Pending Parent', value: 'pending_parent' },
-                { label: 'Pending Warden', value: 'pending_warden' },
                 { label: 'Approved', value: 'approved' },
                 { label: 'Rejected', value: 'rejected' },
-                { label: 'Cancelled', value: 'cancelled' },
-                { label: 'Completed', value: 'completed' },
+                { label: 'Returned', value: 'returned' },
             ]
         }
     ], []);

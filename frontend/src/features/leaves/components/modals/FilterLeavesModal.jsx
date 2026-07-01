@@ -8,6 +8,7 @@ export default function FilterLeavesModal({
     onClose,
     pageTitle,
     isOutPass = false,
+    isStudent = false,
     filters = {},
     onApply,
     onReset
@@ -93,9 +94,11 @@ export default function FilterLeavesModal({
                         options={[
                             { label: 'All Status', value: '' },
                             { label: 'Pending Parent', value: 'pending_parent' },
-                            { label: 'Pending Warden', value: 'pending_warden' },
+                            { label: 'Pending Admin', value: 'pending_admin' },
                             { label: 'Approved', value: 'approved' },
-                            { label: 'Rejected', value: 'rejected' }
+                            { label: 'Rejected', value: 'rejected' },
+                            { label: 'Returned', value: 'returned' },
+                            ...(isStudent ? [{ label: 'Cancelled', value: 'cancelled' }] : [])
                         ]}
                         value={localStatus}
                         onChange={(val) => setLocalStatus(val)}
