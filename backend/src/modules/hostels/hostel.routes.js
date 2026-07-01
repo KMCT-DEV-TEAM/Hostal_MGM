@@ -23,7 +23,7 @@ const router = express.Router();
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateCreateHostel,
   createHostel
 );
