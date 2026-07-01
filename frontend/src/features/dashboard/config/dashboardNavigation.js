@@ -16,7 +16,8 @@ import {
     Layers,
     Tags,
     Wrench,
-    ClipboardList
+    ClipboardList,
+    Armchair
 } from 'lucide-react';
 
 import { ROLES } from '@/constants/roles';
@@ -148,6 +149,11 @@ export const DASHBOARD_NAV = {
                     ],
                     badge: { count: 7, variant: 'warning' }
 
+                },
+                {
+                    icon: Armchair,
+                    label: 'Furniture',
+                    path: '/dashboard/furniture'
                 },
                 {
                     icon: UtensilsCrossed,
@@ -296,6 +302,11 @@ export const DASHBOARD_NAV = {
 
                 },
                 {
+                    icon: Armchair,
+                    label: 'Furniture',
+                    path: '/dashboard/furniture'
+                },
+                {
                     icon: UtensilsCrossed,
                     label: 'Mess Management',
                     path: '/dashboard/mess-management'
@@ -382,6 +393,11 @@ export const DASHBOARD_NAV = {
                     icon: Calendar,
                     label: 'Attendance',
                     path: '/dashboard/attendance'
+                },
+                {
+                    icon: Armchair,
+                    label: 'Furniture',
+                    path: '/dashboard/furniture'
                 },
                 {
                     icon: CalendarX,

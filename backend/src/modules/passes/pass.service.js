@@ -36,9 +36,9 @@ export const getStudentPassesDb = async (studentId, query) => {
   if (query.status) filter.status = query.status;
   if (query.passType) filter.passType = query.passType;
   if (query.outTime) filter.outTime = query.outTime;
-  if (query.outPassCategory) filter.outPassCategory = query.outPassCategory;
+  if (query.outPassCategory || query.category) filter.outPassCategory = query.outPassCategory || query.category;
 
-  applyDateRangeFilter(filter, "fromDate", query.startDate, query.endDate);
+  applyDateRangeFilter(filter, "fromDate", query.startDate || query.fromDate, query.endDate || query.toDate);
 
   if (query.date) {
     const searchDate = new Date(query.date);
@@ -161,9 +161,9 @@ export const getPassesDb = async (studentId, query) => {
 
   if (query.status) filter.status = query.status;
   if (query.passType) filter.passType = query.passType;
-  if (query.outPassCategory) filter.outPassCategory = query.outPassCategory;
+  if (query.outPassCategory || query.category) filter.outPassCategory = query.outPassCategory || query.category;
 
-  applyDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
+  applyDateRangeFilter(filter, "createdAt", query.startDate || query.fromDate, query.endDate || query.toDate);
 
   const stats = await Pass.aggregate([
     { $match: filter },

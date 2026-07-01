@@ -13,6 +13,7 @@ import leaveService, { getLeaves, getAdminDashboardStats } from '@/services/leav
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
+import LeaveActionModal from '../components/modals/LeaveActionModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDate } from '@/utils/dateFormatter';
@@ -45,6 +46,10 @@ export default function AdminLeaves() {
     const limit = 10;
 
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    
+    // Action modal state for approve/reject
+    const [actionModalConfig, setActionModalConfig] = useState({ isOpen: false, actionType: '', id: null });
+    const [isActionSubmitting, setIsActionSubmitting] = useState(false);
     
     // Check if any filters are active (excluding search and page)
     const hasActiveFilters = Boolean(statusFilter || categoryFilter || fromDateFilter || toDateFilter || (orgFilter !== 'All'));
@@ -157,18 +162,32 @@ export default function AdminLeaves() {
         }, { total: 0, approved: 0, pending: 0, rejected: 0 });
     }, [hostelData, isSuperAdmin, selectedHostel, isAdmin, adminStats]);
 
-    const handleUpdateStatus = async (id, newStatus) => {
+    const handleUpdateStatus = (id, newStatus) => {
         if (!isAdmin) return;
+        if (newStatus === 'Approved' || newStatus === 'approved') {
+            setActionModalConfig({ isOpen: true, actionType: 'approved', id });
+        } else if (newStatus === 'Rejected' || newStatus === 'rejected') {
+            setActionModalConfig({ isOpen: true, actionType: 'rejected', id });
+        }
+    };
+
+    const handleConfirmAction = async (remarks) => {
+        const { actionType, id } = actionModalConfig;
+        if (!id) return;
         try {
-            if (newStatus === 'Approved' || newStatus === 'approved') {
-                await leaveService.approvePass(role, id, { remarks: 'Approved by Admin' });
-            } else if (newStatus === 'Rejected' || newStatus === 'rejected') {
-                await leaveService.rejectPass(role, id, { remarks: 'Rejected by Admin' });
+            setIsActionSubmitting(true);
+            if (actionType === 'approved') {
+                await leaveService.approvePass(role, id, { remarks });
+            } else if (actionType === 'rejected') {
+                await leaveService.rejectPass(role, id, { remarks });
             }
             showSuccessToast('Status updated successfully');
             if (refetchPasses) refetchPasses();
+            setActionModalConfig({ isOpen: false, actionType: '', id: null });
         } catch (err) {
             showErrorToast(err?.response?.data?.message || err.message || 'Failed to update status');
+        } finally {
+            setIsActionSubmitting(false);
         }
     };
 
@@ -344,6 +363,14 @@ export default function AdminLeaves() {
                 leaveId={viewId}
                 isHomePass={isHomePass}
                 userRole={role}
+            />
+
+            <LeaveActionModal
+                isOpen={actionModalConfig.isOpen}
+                onClose={() => setActionModalConfig({ isOpen: false, actionType: '', id: null })}
+                actionType={actionModalConfig.actionType}
+                onSubmit={handleConfirmAction}
+                isSubmitting={isActionSubmitting}
             />
 
             <FilterLeavesModal

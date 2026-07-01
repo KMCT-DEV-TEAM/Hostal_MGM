@@ -59,13 +59,13 @@ export default function DataTable({
                     <div className="relative w-full max-w-sm">
                         {onSearchChange && (
                             <>
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
-                                    className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none placeholder-gray-400 font-medium text-gray-700"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none placeholder-gray-400 font-medium text-gray-700"
                                     placeholder={searchPlaceholder}
                                     value={searchQuery}
                                     onChange={onSearchChange}
                                 />
-                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             </>
                         )}
                     </div>

@@ -15,6 +15,8 @@ import leaveService from '@/services/leave.service';
 import { formatDate } from '../utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
+import LeaveActionModal from '../components/modals/LeaveActionModal';
+import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 
 export default function ParentLeaves() {
     const { passType } = useParams();
@@ -39,7 +41,7 @@ export default function ParentLeaves() {
     const [viewId, setViewId] = useState(null);
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('All');
+    const [filters, setFilters] = useState({ status: '', category: '', fromDate: '', toDate: '' });
     const [page, setPage] = useState(1);
     const limit = 10;
 
@@ -50,8 +52,8 @@ export default function ParentLeaves() {
                 page,
                 limit,
                 passType: isHomePass ? 'home_pass' : 'out_pass',
-                ...(filterStatus !== 'All' && { status: filterStatus.toLowerCase() }),
-                ...(searchQuery && { search: searchQuery })
+                ...(searchQuery && { search: searchQuery }),
+                ...filters
             });
             const passesArray = res.data || res.passes || [];
             setRequests(passesArray);
@@ -77,27 +79,21 @@ export default function ParentLeaves() {
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, isHomePass, filterStatus, searchQuery]);
+    }, [page, isHomePass, filters, searchQuery]);
 
     const openActionModal = (request, actionType) => {
         if (actionType === 'pending') return;
         setActionModalConfig({ isOpen: true, actionType, request });
-        setActionRemarks('');
     };
 
-    const handleConfirmAction = async (e) => {
-        e?.preventDefault();
-        const { actionType, request } = actionModalConfig;
-
-        if (actionType === 'rejected' && !actionRemarks.trim()) {
-            showErrorToast('Remarks are required for rejection');
-            return;
-        }
-
+    const handleConfirmAction = async (remarks) => {
+        if (!actionModalConfig.request) return;
+        
         try {
             setIsActionSubmitting(true);
+            const { actionType, request } = actionModalConfig;
             const payload = {
-                remarks: actionRemarks,
+                remarks: remarks,
                 revision: request.revision ?? request.__v ?? 0
             };
 
@@ -111,7 +107,7 @@ export default function ParentLeaves() {
             setActionModalConfig({ isOpen: false, actionType: '', request: null });
             fetchLeaves();
         } catch (err) {
-            showErrorToast(err.message || `Failed to ${actionType} pass`);
+            showErrorToast(err.message || `Failed to ${actionModalConfig.actionType} pass`);
         } finally {
             setIsActionSubmitting(false);
         }
@@ -162,7 +158,7 @@ export default function ParentLeaves() {
                     <button
                         type="button"
                         onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2.5 bg-white border rounded-xl hover:bg-gray-50 transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${filterStatus !== 'All' ? 'border-[#0A437A] text-primary' : 'border-gray-200 text-gray-500 hover:text-gray-700'
+                        className={`p-2.5 bg-white border rounded-xl hover:bg-gray-50 transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.values(filters).some(Boolean) ? 'border-primary text-primary bg-primary/5' : 'border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         <Filter className="w-4 h-4" />
@@ -288,93 +284,31 @@ export default function ParentLeaves() {
                 totalPages={totalPages}
             />
 
-            {/* Filter Modal */}
-            <Modal
+            <FilterLeavesModal
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
-                title={`Filter ${pageTitle}`}
-                subtitle="Filter requests by their current status"
-                maxWidth="max-w-xs"
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                            <option value="All">All Status</option>
-                            <option value="pending_parent">Pending Parent</option>
-                            <option value="pending_warden">Pending Warden</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
+                pageTitle={pageTitle}
+                isOutPass={!isHomePass}
+                filters={filters}
+                onApply={(newFilters) => {
+                    setFilters(newFilters);
+                    setPage(1);
+                    setIsFilterModalOpen(false);
+                }}
+                onReset={() => {
+                    setFilters({ status: '', category: '', fromDate: '', toDate: '' });
+                    setPage(1);
+                    setIsFilterModalOpen(false);
+                }}
+            />
 
-                    <div className="flex items-center gap-3 pt-4">
-                        <button
-                            onClick={() => { setFilterStatus('All'); setIsFilterModalOpen(false); }}
-                            className="px-6 py-2.5 text-sm font-semibold text-primary bg-white border border-primary rounded-xl hover:bg-gray-50 transition-colors w-full"
-                        >
-                            Reset
-                        </button>
-                        <button
-                            onClick={() => setIsFilterModalOpen(false)}
-                            className="px-6 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors w-full"
-                        >
-                            Apply
-                        </button>
-                    </div>
-                </div>
-            </Modal>
-
-            {/* Action Confirmation Modal */}
-            <Modal
+            <LeaveActionModal
                 isOpen={actionModalConfig.isOpen}
                 onClose={() => setActionModalConfig({ isOpen: false, actionType: '', request: null })}
-                title={actionModalConfig.actionType === 'approved' ? 'Approve Pass Request' : 'Reject Pass Request'}
-                subtitle={`Provide remarks for this ${actionModalConfig.actionType === 'approved' ? 'approval' : 'rejection'}.`}
-                maxWidth="max-w-md"
-                asForm
+                actionType={actionModalConfig.actionType}
                 onSubmit={handleConfirmAction}
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1">
-                            Remarks {actionModalConfig.actionType === 'rejected' && <span className="text-red-500">*</span>}
-                        </label>
-                        <textarea
-                            value={actionRemarks}
-                            onChange={(e) => setActionRemarks(e.target.value)}
-                            required={actionModalConfig.actionType === 'rejected'}
-                            placeholder={actionModalConfig.actionType === 'rejected' ? "Please explain why this pass is rejected..." : "Optional remarks..."}
-                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] resize-y"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={() => setActionModalConfig({ isOpen: false, actionType: '', request: null })}
-                            disabled={isActionSubmitting}
-                            className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors w-full"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isActionSubmitting || (actionModalConfig.actionType === 'rejected' && !actionRemarks.trim())}
-                            className={`px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors w-full ${actionModalConfig.actionType === 'approved' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isActionSubmitting ? 'Processing...' : actionModalConfig.actionType === 'approved' ? 'Confirm Approval' : 'Confirm Rejection'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                isSubmitting={isActionSubmitting}
+            />
 
             <LeaveDetailsModal
                 isOpen={!!viewId}

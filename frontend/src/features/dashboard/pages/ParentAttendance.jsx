@@ -18,6 +18,7 @@ const ParentAttendance = () => {
 
     const [todayStats, setTodayStats] = useState(null);
     const [summary, setSummary] = useState(null);
+    const [studentInfo, setStudentInfo] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -33,8 +34,10 @@ const ParentAttendance = () => {
     const fetchDashboard = useCallback(async () => {
         try {
             const res = await attendanceService.getDashboardStatsByRole(user.role);
+            // console.log('This is response: ', res)
             setTodayStats(res?.today || null);
-            setSummary(res?.summary || { present: 0, absent: 0, percentage: 0 });
+            setSummary(res?.summary);
+            setStudentInfo(res?.studentInfo || null);
         } catch (error) {
             console.error('Failed to load dashboard stats:', error);
         }
@@ -50,7 +53,6 @@ const ParentAttendance = () => {
                 ...filters
             };
             const res = await attendanceService.getAttendanceHistoryByRole(user.role, params);
-            console.log('Res from attendance page: ', res)
             setHistory(res?.records);
             setPagination(res?.pagination ? {
                 totalRecords: res.pagination.totalRecords,
@@ -83,7 +85,7 @@ const ParentAttendance = () => {
 
             <div className="mb-6 shrink-0 mt-4">
                 <ParentAttendanceStatsCards
-                    studentInfo={user?.studentId}
+                    studentInfo={studentInfo}
                     todayStatus={todayStats}
                     summary={summary}
                 />
@@ -118,7 +120,6 @@ const ParentAttendance = () => {
                             {formatDay(r.date)}
                         </td>
                         <td className="p-4 text-text-secondary text-sm">
-                            {console.log('this is response: ', r)}
                             {r.markedAt}
                         </td>
                         <td className="p-4">
