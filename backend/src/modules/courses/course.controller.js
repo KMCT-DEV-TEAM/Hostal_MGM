@@ -53,7 +53,6 @@ const getCourses = asyncHandler(async (req, res) => {
 
   const query = {};
   const andConditions = [];
-  console.log(req.query)
   if (req.user.role === "admin") {
     andConditions.push({
       $or: [
@@ -87,7 +86,6 @@ const getCourses = asyncHandler(async (req, res) => {
 
   if (limit && Number(limit) === 0) {
     const courses = await getAllCoursesDb(query, sort);
-    console.log(courses)
     return sendSuccess(res, 200, "All Courses retrieved successfully", {
       data: courses,
       totalCount: courses.length,
