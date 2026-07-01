@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, Loader2 } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -84,7 +84,7 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                 <form onSubmit={handleInitialSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Reason for Rejection <span className="text-red-500">*</span>
+                            Reason for Rejection <span className="text-danger">*</span>
                         </label>
                         <textarea
                             value={note}
@@ -109,16 +109,9 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                     <button
                         onClick={handleInitialSubmit}
                         disabled={isSubmitting}
-                        className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="flex items-center justify-center min-w-[120px] px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Rejecting...
-                            </>
-                        ) : (
-                            'Reject Task'
-                        )}
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reject Task'}
                     </button>
                 </div>
             </div>
@@ -130,8 +123,9 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
                 title={confirmAction === 'submit' ? "Confirm Rejection" : "Discard Changes?"}
                 message={confirmAction === 'submit' ? "Are you sure you want to reject this task? It will be sent back to the admin." : "You have unsaved changes. Are you sure you want to discard them?"}
                 confirmText={confirmAction === 'submit' ? "Reject Task" : "Discard"}
-                confirmButtonClass={confirmAction === 'submit' || confirmAction === 'discard' ? "bg-red-600 text-white hover:bg-red-700" : "bg-[#0A437A] text-white hover:bg-[#083663]"}
+                confirmButtonClass={confirmAction === 'submit' || confirmAction === 'discard' ? "bg-red-600 text-white hover:bg-red-700 min-w-[100px]" : "bg-[#0A437A] text-white hover:bg-[#083663] min-w-[100px]"}
                 isSubmitting={isSubmitting}
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
             />
         </div>
     );

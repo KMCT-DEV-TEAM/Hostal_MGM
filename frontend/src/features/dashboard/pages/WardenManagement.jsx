@@ -59,6 +59,9 @@ export default function WardenManagement() {
     const [resendTimer, setResendTimer] = useState(300);
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const [isChangingEmail, setIsChangingEmail] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -193,6 +196,7 @@ export default function WardenManagement() {
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
         try {
+            setIsConfirming(true);
             const res = await wardenService.toggleStatus(statusToUpdate.id);
             if (res && (res.success || res.data)) {
                 const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
@@ -202,6 +206,8 @@ export default function WardenManagement() {
         } catch (error) {
             console.error("Failed to update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to change warden status');
+        } finally {
+            setIsConfirming(false);
         }
         setIsStatusConfirmOpen(false);
         setStatusToUpdate(null);
@@ -239,6 +245,7 @@ export default function WardenManagement() {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
 
         try {
+            setIsConfirming(true);
             const res = await wardenService.bulkToggleStatus({
                 ids: selectedIds,
                 isActive: bulkStatusToUpdate
@@ -261,6 +268,7 @@ export default function WardenManagement() {
             setSelectedIds([]); // Clear selection after bulk update
             setIsBulkStatusConfirmOpen(false);
             setBulkStatusToUpdate(null);
+            setIsConfirming(false);
             fetchWardens();
         }
     };
@@ -283,6 +291,7 @@ export default function WardenManagement() {
         }
 
         try {
+            setIsChangingEmail(true);
             const res = await wardenService.updateEmail(emailChangeWardenId, {
                 oldEmail: emailChangeForm,
                 newEmail: newEmailForm,
@@ -305,6 +314,8 @@ export default function WardenManagement() {
             }, 2500);
         } catch (error) {
             showErrorToast('Action Failed', error?.message || 'Failed to update email');
+        } finally {
+            setIsChangingEmail(false);
         }
     };
 
@@ -580,9 +591,9 @@ export default function WardenManagement() {
                             <button
                                 onClick={saveWarden}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -633,9 +644,10 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isConfirming}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -661,9 +673,10 @@ export default function WardenManagement() {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isConfirming}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -716,12 +729,12 @@ export default function WardenManagement() {
 
                                 />
                                 {isEmailVerified ? (
-                                    <button type="button" className="px-6 py-2.5 bg-success-50 text-success border border-success-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
+                                    <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer">
-                                        Verify
+                                    <button type="button" disabled={isVerifying} onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="flex items-center justify-center min-w-[90px] px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed">
+                                        {isVerifying ? <Loader2 size={16} className="animate-spin" /> : 'Verify'}
                                     </button>
                                 )}
                             </div>
@@ -743,10 +756,10 @@ export default function WardenManagement() {
 
                         <button
                             type="submit"
-                            disabled={!isEmailVerified || !passwordConfirm}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified && passwordConfirm ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                            disabled={!isEmailVerified || !passwordConfirm || isChangingEmail}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${isEmailVerified && passwordConfirm && !isChangingEmail ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
-                            Change Email
+                            {isChangingEmail ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Change Email'}
                         </button>
                     </form>
                 </div>
@@ -760,6 +773,7 @@ export default function WardenManagement() {
                         if (code.length < 6) return;
 
                         try {
+                            setIsVerifyingOtp(true);
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
 
@@ -772,6 +786,8 @@ export default function WardenManagement() {
                             }
                         } catch (err) {
                             showErrorToast('Error', err?.message || 'Invalid OTP');
+                        } finally {
+                            setIsVerifyingOtp(false);
                         }
                     }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-in fade-in zoom-in-95 duration-200 text-center">
                         {/* Top action buttons */}
@@ -844,9 +860,10 @@ export default function WardenManagement() {
                         {/* Verify Button */}
                         <button
                             type="submit"
-                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer text-lg"
+                            disabled={isVerifyingOtp}
+                            className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors flex items-center justify-center gap-2 cursor-pointer text-lg disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            Verify
+                            {isVerifyingOtp ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'Verify'}
                         </button>
                     </form>
                 </div>
@@ -892,10 +909,9 @@ export default function WardenManagement() {
                             <button
                                 onClick={confirmHostelChange}
                                 disabled={isUpdatingHostel}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isUpdatingHostel && <Loader2 className="w-4 h-4 animate-spin" />}
-                                Confirm
+                                {isUpdatingHostel ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -921,9 +937,9 @@ export default function WardenManagement() {
                             <button
                                 onClick={saveWarden}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

@@ -93,6 +93,7 @@ const updateUserByRoleDb = async (id, role, data) => {
   if (data.email) updateData.email = data.email;
   if (data.specialization !== undefined) updateData.specialization = data.specialization;
   if (data.assignedTask !== undefined) updateData.assignedTask = data.assignedTask;
+  if (data.organization !== undefined) updateData.organization = data.organization;
 
   const user = await User.findOneAndUpdate(
     { _id: id, role },
@@ -109,6 +110,7 @@ const updateUserDb = async (id, data) => {
   if (data.email) updateData.email = data.email;
   if (data.specialization !== undefined) updateData.specialization = data.specialization;
   if (data.assignedTask !== undefined) updateData.assignedTask = data.assignedTask;
+  if (data.organization !== undefined) updateData.organization = data.organization;
 
   const user = await User.findByIdAndUpdate(
     id,

@@ -17,7 +17,14 @@ const createDepartmentDb = async (data) => {
 
 const getPaginatedDepartmentsDb = async (query, skip, limit, sort) => {
   return await Department.find(query)
-    .populate("courseId", "name code")
+    .populate({
+      path: "courseId",
+      select: "name code",
+      populate: {
+        path: "organizationId",
+        select: "name code"
+      }
+    })
     .sort(sort)
     .skip(skip)
     .limit(limit)
@@ -25,11 +32,30 @@ const getPaginatedDepartmentsDb = async (query, skip, limit, sort) => {
 };
 
 const getAllDepartmentsDb = async (query, sort) => {
-  return await Department.find(query).populate("courseId", "name code").sort(sort).select("-__v");
+  return await Department.find(query)
+    .populate({
+      path: "courseId",
+      select: "name code",
+      populate: {
+        path: "organizationId",
+        select: "name code"
+      }
+    })
+    .sort(sort)
+    .select("-__v");
 };
 
 const getDepartmentByIdDb = async (id) => {
-  return await Department.findById(id).populate("courseId", "name code").select("-__v");
+  return await Department.findById(id)
+    .populate({
+      path: "courseId",
+      select: "name code",
+      populate: {
+        path: "organizationId",
+        select: "name code"
+      }
+    })
+    .select("-__v");
 };
 
 const updateDepartmentDb = async (id, data) => {

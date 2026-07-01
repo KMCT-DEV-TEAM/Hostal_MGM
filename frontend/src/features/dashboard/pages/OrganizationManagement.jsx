@@ -31,6 +31,8 @@ const INITIAL_ORGS = [
 
 const OrganizationManagement = () => {
     const { t } = useTranslation();
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === ROLES.ADMIN;
     const [orgs, setOrgs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -56,6 +58,8 @@ const OrganizationManagement = () => {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -126,6 +130,7 @@ const OrganizationManagement = () => {
 
     const confirmStatusChange = async () => {
         if (!statusToUpdate) return;
+        setIsStatusUpdating(true);
         try {
             await organizationService.toggleStatus(statusToUpdate.id);
             // Re-fetch or locally update the status
@@ -140,6 +145,8 @@ const OrganizationManagement = () => {
         } catch (err) {
             console.error("Failed to toggle status:", err);
             showErrorToast('Action Failed', err?.message || 'Failed to update status. Please try again.');
+        } finally {
+            setIsStatusUpdating(false);
         }
     };
 
@@ -241,6 +248,7 @@ const OrganizationManagement = () => {
 
     const confirmBulkStatusChange = async () => {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
+        setIsBulkStatusUpdating(true);
         try {
             await organizationService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
@@ -252,6 +260,8 @@ const OrganizationManagement = () => {
         } catch (error) {
             console.error("Failed to bulk update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
+        } finally {
+            setIsBulkStatusUpdating(false);
         }
     };
 
@@ -367,33 +377,39 @@ const OrganizationManagement = () => {
 
                     <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
                         <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { label: 'All Status', value: 'All' },
-                                    { label: 'Active', value: 'Active' },
-                                    { label: 'Inactive', value: 'Inactive' }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => setStatusFilter(val)}
-                                placeholder="All Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
+                            {!isAdmin && (
+                                <Dropdown
+                                    className="flex-1 sm:flex-none"
+                                    options={[
+                                        { label: 'All Status', value: 'All' },
+                                        { label: 'Active', value: 'Active' },
+                                        { label: 'Inactive', value: 'Inactive' }
+                                    ]}
+                                    value={statusFilter}
+                                    onChange={(val) => setStatusFilter(val)}
+                                    placeholder="All Status"
+                                    minWidth="w-32"
+                                    triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
+                                />
+                            )}
 
-                            <button
-                                onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" /> Export
-                            </button>
+                            {!isAdmin && (
+                                <button
+                                    onClick={initiateExport}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                                >
+                                    <Download className="w-4 h-4" /> Export
+                                </button>
+                            )}
                         </div>
-                        <button
-                            onClick={() => openModal('add')}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> Add New
-                        </button>
+                        {!isAdmin && (
+                            <button
+                                onClick={() => openModal('add')}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            >
+                                <Plus className="w-4 h-4" /> Add New
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -408,6 +424,7 @@ const OrganizationManagement = () => {
                     setView={setView}
                     handleStatusChangeClick={handleStatusChangeClick}
                     openModal={openModal}
+                    isAdmin={isAdmin}
                 />
 
                 <OrganizationMobileList
@@ -420,6 +437,7 @@ const OrganizationManagement = () => {
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
+                    isAdmin={isAdmin}
                 />
 
                 {/* PAGINATION BAR FOOTER */}
@@ -497,9 +515,9 @@ const OrganizationManagement = () => {
                             <button
                                 onClick={saveOrganization}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Saving...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -558,9 +576,10 @@ const OrganizationManagement = () => {
                             </button>
                             <button
                                 onClick={confirmStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isStatusUpdating}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -586,9 +605,10 @@ const OrganizationManagement = () => {
                             </button>
                             <button
                                 onClick={confirmBulkStatusChange}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                disabled={isBulkStatusUpdating}
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Confirm
+                                {isBulkStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>
@@ -617,9 +637,9 @@ const OrganizationManagement = () => {
                             <button
                                 onClick={saveOrganization}
                                 disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Adding...' : 'Confirm'}
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                             </button>
                         </div>
                     </div>

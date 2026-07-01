@@ -12,6 +12,8 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
     const [note, setNote] = useState('Issue verified and food quality improved.');
     const [internalNoteText, setInternalNoteText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [showAllNotes, setShowAllNotes] = useState(false);
+    const [showAllActivities, setShowAllActivities] = useState(false);
 
     const handleAddInternalNote = async () => {
         if (!internalNoteText.trim()) {
@@ -131,10 +133,14 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                 <h3 className="text-lg font-semibold text-[#0A437A]">Internal note</h3>
                                 <p className="text-xs text-text-secondary">Add a note visible to Admins and Wardens</p>
                             </div>
-                            <button className="text-secondary text-xs cursor-pointer hover:underline">View all</button>
+                            {internalNotes.length > 5 && (
+                                <button onClick={() => setShowAllNotes(!showAllNotes)} className="text-secondary text-xs cursor-pointer hover:underline">
+                                    {showAllNotes ? 'View less' : 'View all'}
+                                </button>
+                            )}
                         </div>
                         <div className="space-y-3 mb-4">
-                            {internalNotes.length > 0 ? internalNotes.map((n, idx) => (
+                            {(showAllNotes ? internalNotes : internalNotes.slice(0, 5)).length > 0 ? (showAllNotes ? internalNotes : internalNotes.slice(0, 5)).map((n, idx) => (
                                 <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-white shadow-sm flex flex-col gap-2">
                                     <div className="flex justify-between items-start">
                                         <span className="text-[13px] text-gray-700">{n.note}</span>
@@ -268,13 +274,20 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
 
                     {/* Recent Activity */}
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="mb-4 border-b border-gray-100 pb-4">
-                            <h3 className="text-lg font-semibold text-[#0A437A]">Recent Activity</h3>
-                            <p className="text-xs text-text-secondary">Recent activities about the complaint</p>
+                        <div className="mb-4 border-b border-gray-100 pb-4 flex justify-between items-end">
+                            <div>
+                                <h3 className="text-lg font-semibold text-[#0A437A]">Recent Activity</h3>
+                                <p className="text-xs text-text-secondary">Recent activities about the complaint</p>
+                            </div>
+                            {complaint.timeline && complaint.timeline.length > 5 && (
+                                <button onClick={() => setShowAllActivities(!showAllActivities)} className="text-secondary text-xs cursor-pointer hover:underline">
+                                    {showAllActivities ? 'View less' : 'View all'}
+                                </button>
+                            )}
                         </div>
                         <div className="space-y-4">
                             {complaint.timeline && complaint.timeline.length > 0 ? (
-                                [...complaint.timeline].reverse().map((update, idx) => (
+                                (showAllActivities ? [...complaint.timeline].reverse() : [...complaint.timeline].reverse().slice(0, 5)).map((update, idx) => (
                                     <div key={idx} className="border border-gray-100 rounded-lg p-4 bg-white shadow-sm flex flex-col gap-3">
                                         <div className="flex justify-between items-start gap-4">
                                             <span className="text-[13px] text-gray-700 leading-relaxed">{update.message}</span>

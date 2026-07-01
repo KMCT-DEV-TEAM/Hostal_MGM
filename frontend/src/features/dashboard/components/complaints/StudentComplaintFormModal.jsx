@@ -84,14 +84,9 @@ export default function StudentComplaintFormModal({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-6 py-2.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                            className="flex items-center justify-center min-w-[100px] px-6 py-2.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : editingComplaint ? 'Save Changes' : 'Save'}
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingComplaint ? 'Save Changes' : 'Save')}
                         </button>
                         <button
                             type="button"

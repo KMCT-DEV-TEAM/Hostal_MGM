@@ -150,7 +150,7 @@ export default function Administrator() {
     useEffect(() => {
         const fetchOrganizations = async () => {
             try {
-                const res = await organizationService.getOrganizations({ limit: 100, status: 'Active' });
+                const res = await organizationService.getOrganizations({ limit: 100, status: 'All' });
                 if (res && res.data) {
                     setOrganizations(res.data);
                 }
@@ -968,7 +968,7 @@ export default function Administrator() {
                             disabled={!isEmailVerified || !passwordConfirm || isEmailUpdating}
                             className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${isEmailVerified && passwordConfirm && !isEmailUpdating ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
-                            {isEmailUpdating ? <><Loader2 className="w-4 h-4 animate-spin" /> Updating...</> : 'Change Email'}
+                            {isEmailUpdating ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Change Email'}
                         </button>
                     </form>
                 </div>
@@ -1067,7 +1067,7 @@ export default function Administrator() {
                             disabled={isVerifyingOtp}
                             className="w-full py-3.5 bg-[#0A437A] text-white font-medium rounded-lg hover:bg-secondary transition-colors flex items-center justify-center gap-2 cursor-pointer text-lg disabled:opacity-70"
                         >
-                            {isVerifyingOtp ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify'}
+                            {isVerifyingOtp ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Verify'}
                         </button>
                     </form>
                 </div>

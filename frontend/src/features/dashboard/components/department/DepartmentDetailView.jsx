@@ -75,7 +75,7 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                         <div className="space-y-1">
                             <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedDepartmentDetail.code}</InfoRow>
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedDepartmentDetail.name}</InfoRow>
-                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedDepartmentDetail?.organization?.name || selectedDepartmentDetail?.organization || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedDepartmentDetail?.courseId?.organizationId?.name || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedDepartmentDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
