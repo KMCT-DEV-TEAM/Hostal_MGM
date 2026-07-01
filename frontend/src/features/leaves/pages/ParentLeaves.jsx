@@ -151,9 +151,6 @@ export default function ParentLeaves() {
             <LeaveStatsCards stats={statsData} />
 
             <DataTable
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
-                searchPlaceholder="Search"
                 toolbarActions={
                     <button
                         type="button"

@@ -95,9 +95,6 @@ export default function StudentLeaves() {
             <LeaveStatsCards stats={statsData} isStudent />
 
             <DataTable
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
-                searchPlaceholder="Search"
                 toolbarActions={
                     <>
                         <button

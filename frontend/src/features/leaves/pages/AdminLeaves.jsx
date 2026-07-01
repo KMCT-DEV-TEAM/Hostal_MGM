@@ -36,7 +36,7 @@ export default function AdminLeaves() {
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
-    const searchQuery = searchParams.get('search') || '';
+    const urlSearchQuery = searchParams.get('search') || '';
     const orgFilter = searchParams.get('org') || 'All';
     const statusFilter = searchParams.get('status') || '';
     const categoryFilter = searchParams.get('category') || '';
@@ -54,7 +54,25 @@ export default function AdminLeaves() {
     // Check if any filters are active (excluding search and page)
     const hasActiveFilters = Boolean(statusFilter || categoryFilter || fromDateFilter || toDateFilter || (orgFilter !== 'All'));
 
-    const debouncedSearch = useDebounce(searchQuery, 500);
+    const [searchInput, setSearchInput] = useState(urlSearchQuery);
+    const debouncedInput = useDebounce(searchInput, 500);
+
+    useEffect(() => {
+        setSearchInput(urlSearchQuery);
+    }, [urlSearchQuery]);
+
+    useEffect(() => {
+        if (debouncedInput !== urlSearchQuery) {
+            const newParams = new URLSearchParams(searchParams);
+            if (!debouncedInput) {
+                newParams.delete('search');
+            } else {
+                newParams.set('search', debouncedInput);
+            }
+            newParams.set('page', 1);
+            setSearchParams(newParams);
+        }
+    }, [debouncedInput, urlSearchQuery, searchParams, setSearchParams]);
 
     const exportFields = useMemo(() => [
         {
@@ -103,7 +121,7 @@ export default function AdminLeaves() {
             outPassCategory: categoryFilter,
             startDate: fromDateFilter,
             endDate: toDateFilter,
-            search: debouncedSearch,
+            search: debouncedInput,
             page,
             limit
         },
@@ -113,7 +131,7 @@ export default function AdminLeaves() {
 
     const { data: hostelData, loading: hostelsLoading } = useLeaves({
         passType: isHomePass ? 'home_pass' : 'out_pass',
-        search: debouncedSearch,
+        search: debouncedInput,
         organization: orgFilter !== 'All' ? orgFilter : undefined,
     }, true, { enabled: isSuperAdmin && !selectedHostel });
 
@@ -322,8 +340,8 @@ export default function AdminLeaves() {
                 <LeavesDetailView
                     passesData={passesData}
                     loading={passesLoading}
-                    searchQuery={searchQuery}
-                    setSearchQuery={(q) => updateSearchParams({ search: q, page: 1 })}
+                    searchQuery={searchInput}
+                    setSearchQuery={setSearchInput}
                     statusFilter={statusFilter}
                     setStatusFilter={(s) => updateSearchParams({ status: s, page: 1 })}
                     isHomePass={isHomePass}
@@ -345,8 +363,8 @@ export default function AdminLeaves() {
                 <LeavesAggregateView
                     hostelData={hostelData}
                     loading={hostelsLoading}
-                    searchQuery={searchQuery}
-                    setSearchQuery={(q) => updateSearchParams({ search: q, page: 1 })}
+                    searchQuery={searchInput}
+                    setSearchQuery={setSearchInput}
                     onHostelClick={(id) => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(id)}`)}
                     page={page}
                     setPage={(p) => updateSearchParams({ page: p })}
