@@ -55,7 +55,7 @@ export const validateHistoryQuery = (req, res, next) => {
     return res.status(400).json({ success: false, message: "Limit must be a valid number." });
   }
 
-  if (status && !["present", "absent", "late", "excused"].includes(status.toLowerCase())) {
+  if (status && !["present", "absent", "late", "on_leave"].includes(status.toLowerCase())) {
     return res.status(400).json({ success: false, message: "Invalid status." });
   }
 
