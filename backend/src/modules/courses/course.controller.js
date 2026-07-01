@@ -12,6 +12,8 @@ import {
   toggleCourseStatusDb,
   bulkUpdateCourseStatusDb,
 } from "./course.service.js";
+import mongoose from "mongoose";
+import courseModel from "./course.model.js";
 
 const createCourse = asyncHandler(async (req, res) => {
   let { name, code, organizationId } = req.body;
@@ -28,15 +30,15 @@ const createCourse = asyncHandler(async (req, res) => {
   const newCourse = await createCourseDb({ name, code, organizationId });
 
   if (req.user) {
-      await createLogDb({
-          action: "Created Course",
-          entityType: "Course",
-          entityId: newCourse._id,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Created new course: ${name} (${code})`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Created Course",
+      entityType: "Course",
+      entityId: newCourse._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Created new course: ${name} (${code})`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('courseCreated', newCourse);
@@ -51,7 +53,7 @@ const getCourses = asyncHandler(async (req, res) => {
 
   const query = {};
   const andConditions = [];
-
+  console.log(req.query)
   if (req.user.role === "admin") {
     andConditions.push({
       $or: [
@@ -61,9 +63,9 @@ const getCourses = asyncHandler(async (req, res) => {
       ]
     });
   } else if (organizationId) {
-    query.organizationId = organizationId;
+    query.organizationId = new mongoose.Types.ObjectId(organizationId);
   }
-  
+
   if (search) {
     andConditions.push({
       $or: [
@@ -85,6 +87,7 @@ const getCourses = asyncHandler(async (req, res) => {
 
   if (limit && Number(limit) === 0) {
     const courses = await getAllCoursesDb(query, sort);
+    console.log(courses)
     return sendSuccess(res, 200, "All Courses retrieved successfully", {
       data: courses,
       totalCount: courses.length,
@@ -97,7 +100,7 @@ const getCourses = asyncHandler(async (req, res) => {
   const skip = (pageNum - 1) * limitNum;
 
   const courses = await getPaginatedCoursesDb(query, skip, limitNum, sort);
-  const totalCount = await import("./course.model.js").then((m) => m.default.countDocuments(query));
+  const totalCount = await courseModel.then((m) => m.default.countDocuments(query));
 
   return sendSuccess(res, 200, "Courses retrieved successfully", {
     data: courses,
@@ -135,15 +138,15 @@ const updateCourse = asyncHandler(async (req, res) => {
   }
 
   if (req.user) {
-      await createLogDb({
-          action: "Updated Course",
-          entityType: "Course",
-          entityId: course._id,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Updated details for course: ${name || course.name}`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Updated Course",
+      entityType: "Course",
+      entityId: course._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Updated details for course: ${name || course.name}`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('courseUpdated', { id: course._id });
@@ -160,15 +163,15 @@ const toggleCourseStatus = asyncHandler(async (req, res) => {
   }
 
   if (req.user) {
-      await createLogDb({
-          action: "Updated Course Status",
-          entityType: "Course",
-          entityId: course._id,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Changed course status to ${course.isActive ? 'Active' : 'Inactive'} for course: ${course.name}`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Updated Course Status",
+      entityType: "Course",
+      entityId: course._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Changed course status to ${course.isActive ? 'Active' : 'Inactive'} for course: ${course.name}`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('courseUpdated', { id: course._id });
@@ -192,15 +195,15 @@ const bulkUpdateCourseStatus = asyncHandler(async (req, res) => {
   await bulkUpdateCourseStatusDb(ids, isActive);
 
   if (req.user) {
-      await createLogDb({
-          action: "Bulk Updated Course Status",
-          entityType: "Course",
-          entityId: null,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} courses`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Bulk Updated Course Status",
+      entityType: "Course",
+      entityId: null,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} courses`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('courseUpdated', { bulk: true });
