@@ -97,7 +97,7 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                 <span className="text-text-secondary">Status</span>
                                 <span className="col-span-2 font-medium text-text-secondary flex items-center gap-2">
                                     : &nbsp;
-                                    <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : 'bg-blue-500'}`}></span>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Incomplete' ? 'bg-primary' : 'bg-blue-500'}`}></span>
                                     {complaint.status}
                                 </span>
                             </div>
@@ -218,8 +218,8 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                         ) : (
                             <>
                                 <div className="mb-4">
-                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium border ${status === 'Pending' ? 'bg-warning/10 text-warning border-warning/20' : status === 'Resolved' ? 'bg-success/10 text-success border-success/20' : 'bg-blue-50 text-secondary border-blue-100'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${status === 'Pending' ? 'bg-warning' : status === 'Resolved' ? 'bg-success' : 'bg-secondary'}`}></span>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium border ${status === 'Pending' ? 'bg-warning/10 text-warning border-warning/20' : status === 'Resolved' ? 'bg-success/10 text-success border-success/20' : status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-blue-50 text-secondary border-blue-100'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${status === 'Pending' ? 'bg-warning' : status === 'Resolved' ? 'bg-success' : status === 'Incomplete' ? 'bg-primary' : 'bg-secondary'}`}></span>
                                         {status}
                                     </span>
                                 </div>
@@ -261,7 +261,7 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                 <span className="text-text-secondary flex items-center gap-2"><Clock className="w-4 h-4" /> Status</span>
                                 <span className="col-span-2 font-medium text-text-secondary flex items-center gap-2">
                                     : &nbsp;
-                                    <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : 'bg-blue-500'}`}></span>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Incomplete' ? 'bg-primary' : 'bg-blue-500'}`}></span>
                                     {complaint.status}
                                 </span>
                             </div>

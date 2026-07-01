@@ -1071,22 +1071,22 @@ export default function MaintenanceStaffManagement() {
 
                         <div className="mb-8">
                             <label className="block text-sm font-medium text-[#222222] mb-2">New Email <span className="text-red-500">*</span></label>
-                            <div className="flex gap-3">
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <input
                                     type="email"
                                     required
                                     value={newEmailForm}
                                     onChange={(e) => setNewEmailForm(e.target.value)}
                                     placeholder="Enter your new email"
-                                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
+                                    className="flex-1 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] disabled:opacity-60 disabled:bg-gray-50"
                                     disabled={isEmailVerified}
                                 />
                                 {isEmailVerified ? (
-                                    <button type="button" className="px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-default">
+                                    <button type="button" className="w-full sm:w-auto px-6 py-2.5 bg-green-50 text-success border border-green-200 text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 cursor-default">
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button type="button" disabled={isVerifying} onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                                    <button type="button" disabled={isVerifying} onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} className="w-full sm:w-auto px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
                                         {isVerifying ? <Loader2 size={16} className="animate-spin" /> : 'Verify'}
                                     </button>
                                 )}

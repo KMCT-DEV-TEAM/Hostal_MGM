@@ -52,11 +52,11 @@ export default function HostelTable({
                         <TableSkeletonLoader columns={8} />
                     ) : error ? (
                         <tr>
-                            <td colSpan="8" className="p-8 text-start text-danger">{error}</td>
+                            <td colSpan="8" className="p-8 text-center text-danger">{error}</td>
                         </tr>
                     ) : hostels.length === 0 ? (
                         <tr>
-                            <td colSpan="8" className="p-8 text-start text-gray-400">{t('no_records_found')}</td>
+                            <td colSpan="8" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
                         </tr>
                     ) : (
                         hostels.map((hostel) => {
