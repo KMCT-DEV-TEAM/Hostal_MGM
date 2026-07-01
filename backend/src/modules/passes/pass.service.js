@@ -195,8 +195,7 @@ export const getPassesDb = async (studentId, query) => {
               date: 1,
               outTime: 1,
               expectedReturnTime: 1,
-              createdAt: 1,
-              returnTracking: { returnStatus: 1 },
+              returnTracking: 1,
               studentName: "$studentInfo.name",
               admissionNumber: "$studentInfo.studentId",
               parentApprovalStatus: "$parentApproval.status",
@@ -207,6 +206,7 @@ export const getPassesDb = async (studentId, query) => {
       }
     }
   ]);
+  console.log('passes', stats)
 
   const totalRecords = stats[0].metadata[0]?.totalRecords || 0;
   const totalPages = Math.ceil(totalRecords / limit);
@@ -350,7 +350,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     expectedReturnTime: 1,
     createdAt: 1,
     totalDays: 1,
-    returnTracking: { returnStatus: 1 },
+    returnTracking: 1,
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",

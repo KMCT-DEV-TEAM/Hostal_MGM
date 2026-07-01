@@ -393,8 +393,6 @@ export const validateCancelPass = async (req, res, next) => {
 export const validateGetPasses = (req, res, next) => {
   const { page, limit, status, passType, category, fromDate, toDate } = req.query;
 
-  console.log('from validation', fromDate, toDate)
-
   if (page && isNaN(parseInt(page))) {
     return res.status(400).json({ success: false, message: "The page number must be valid." });
   }

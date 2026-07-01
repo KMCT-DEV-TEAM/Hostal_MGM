@@ -515,8 +515,8 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
     const onLeavePasses = await Pass.find({
       studentId: { $in: absentIds },
       status: "approved",
-      "reutrnTracking.leftHostelAt": { $ne: null },
-      "reutrnTracking.returnedAt": null
+      "returnTracking.leftHostelAt": { $ne: null },
+      "returnTracking.returnedAt": null
     }).select("studentId").lean();
     const onLeaveSet = new Set(onLeavePasses.map(p => p.studentId.toString()));
 
