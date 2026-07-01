@@ -118,4 +118,9 @@ a {
     height: 100%;
     margin: 0;
     padding: 0;
+}
+
+/* Reduce stroke width for all lucide icons */
+.lucide {
+    stroke-width: 1.5 !important;
 }

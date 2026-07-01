@@ -34,8 +34,8 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
     if (!selectedWardenDetail) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl max-w-5xl w-full p-5 sm:p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-2 sm:p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-5xl w-full p-4 sm:p-6 md:p-8 shadow-2xl border border-gray-100 relative max-h-[95vh] sm:max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {/* Close Button */}
                 <button
                     onClick={() => setView('list')}
@@ -69,7 +69,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
                                 <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedWardenDetail?.phone ? `${selectedWardenDetail.phone}` : 'N/A'}</InfoRow>
                                 <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>
                                     <span className="flex items-center justify-between">
-                                        <span className="flex-1">{selectedWardenDetail?.email || 'N/A'}</span>
+                                        <span className="flex-1 break-all">{selectedWardenDetail?.email || 'N/A'}</span>
                                         <button
                                             onClick={() => openChangeEmailModal(selectedWardenDetail)}
                                             className="text-[#0A437A] text-xs font-semibold hover:underline cursor-pointer ml-4"
