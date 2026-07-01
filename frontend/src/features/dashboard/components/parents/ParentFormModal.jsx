@@ -125,7 +125,7 @@ export default function ParentFormModal({
   };
 
   return (
-    <Modal
+    <Modal bottomSheetOnMobile={true}
       isOpen
       onClose={onClose}
       title={isEdit ? "Edit Parent" : "Add New Parent"}
@@ -301,7 +301,7 @@ export default function ParentFormModal({
       </div>
 
       {verifyModalOpen && (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
           isOpen
           onClose={() => setVerifyModalOpen(false)}
           title="Verify Parent Email"

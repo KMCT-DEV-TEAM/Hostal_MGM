@@ -44,7 +44,7 @@ export default function FilterAttendanceModal({
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title="Filter Attendance list"

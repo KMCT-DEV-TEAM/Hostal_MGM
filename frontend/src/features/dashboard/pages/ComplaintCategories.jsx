@@ -367,6 +367,7 @@ const ComplaintCategories = () => {
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
+                    handleStatusChangeClick={handleStatusChangeClick}
                 />
 
                 <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
@@ -434,7 +435,7 @@ const ComplaintCategories = () => {
 
             {isEditConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">{isEditMode ? 'Save Changes' : 'Add Category'}</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
                             {isEditMode ? 'Are you sure you want to save these changes?' : 'Are you sure you want to add this new category?'}
@@ -460,7 +461,7 @@ const ComplaintCategories = () => {
 
             {isDiscardConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
                             Are you sure you want to discard your changes? Any unsaved edits will be lost.
@@ -485,7 +486,7 @@ const ComplaintCategories = () => {
 
             {isStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
                             Are you sure you want to change the status of this category?
@@ -514,7 +515,7 @@ const ComplaintCategories = () => {
 
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900"> Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
                             Are you sure you want to change the status for the {selectedIds.length} selected categor{selectedIds.length === 1 ? 'y' : 'ies'}?

@@ -34,7 +34,7 @@ export default function WardenDetailView({ selectedWardenDetail, setView, openCh
     if (!selectedWardenDetail) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-2 sm:p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4 z-50">
             <div className="bg-white rounded-2xl max-w-5xl w-full p-4 sm:p-6 md:p-8 shadow-2xl border border-gray-100 relative max-h-[95vh] sm:max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {/* Close Button */}
                 <button

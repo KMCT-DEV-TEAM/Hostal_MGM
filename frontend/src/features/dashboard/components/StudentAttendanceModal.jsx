@@ -96,7 +96,7 @@ export default function StudentAttendanceModal({ isOpen, onClose, student }) {
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             maxWidth="max-w-md"

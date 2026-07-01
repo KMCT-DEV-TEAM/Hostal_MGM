@@ -648,7 +648,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   // Edit modal
   if (editingStudent) {
     return (
-      <Modal
+      <Modal bottomSheetOnMobile={true}
         isOpen
         onClose={onClose}
         title="Edit Student"
@@ -879,7 +879,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   // Add New Student modal
   return (
-    <Modal
+    <Modal bottomSheetOnMobile={true}
       isOpen={true}
       onClose={onClose}
       title="Add New Student"
@@ -909,7 +909,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     >
       <div className="space-y-8">
         {verifyModalOpen && (
-          <Modal
+          <Modal bottomSheetOnMobile={true}
             isOpen={true}
             onClose={() => setVerifyModalOpen(false)}
             title={`Verify ${verifyTarget === "student" ? "Student" : "Parent"} Email`}

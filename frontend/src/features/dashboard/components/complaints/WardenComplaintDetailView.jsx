@@ -150,7 +150,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   };
 
   return (
-    <Modal
+    <Modal bottomSheetOnMobile={true}
       isOpen={true}
       onClose={onClose}
       maxWidth="max-w-5xl"

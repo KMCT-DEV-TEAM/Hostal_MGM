@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, X, Search, Mail, Clock, ShieldCheck, Download, ChevronDown, ChevronLeft, ChevronRight, Square, CheckSquare } from "lucide-react";
+import { Check, X, Search, Mail, Clock, ShieldCheck, Download, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Square, CheckSquare } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
@@ -25,6 +25,7 @@ const PasswordRequests = () => {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [expandedIds, setExpandedIds] = useState([]);
 
     const handleSelectAll = () => {
         if (selectedRequests.length === pendingRequestsCount && pendingRequestsCount > 0) {
@@ -41,6 +42,11 @@ const PasswordRequests = () => {
         setSelectedRequests(prev =>
             prev.includes(id) ? prev.filter(reqId => reqId !== id) : [...prev, id]
         );
+    };
+
+    const toggleExpand = (e, id) => {
+        e.stopPropagation();
+        setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
     useEffect(() => {
@@ -399,18 +405,26 @@ const PasswordRequests = () => {
                     {isLoading ? (
                         <MobileSkeletonLoader />
                     ) : requests.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500 bg-white rounded-xl border border-gray-200">
+                        <div className="p-6 text-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
                             No pending password requests found.
                         </div>
                     ) : (
                         requests.map((request) => {
                             const isSelected = selectedRequests.includes(request._id);
+                            const isExpanded = expandedIds.includes(request._id);
                             return (
-                                <div key={request._id} className={`p-4 bg-white rounded-xl shadow-sm flex flex-col relative border ${isSelected ? 'border-[#0A437A] bg-blue-50/20' : 'border-gray-200'}`}>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="flex items-start gap-3">
+                                <div key={request._id} className={`bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border overflow-hidden shrink-0 ${isSelected ? 'border-[#0A437A]' : 'border-gray-50'}`}>
+                                    {/* Header */}
+                                    <div 
+                                        className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
+                                        onClick={(e) => toggleExpand(e, request._id)}
+                                    >
+                                        <div className="flex items-center gap-2">
                                             {request.status === 'pending' ? (
-                                                <button onClick={() => handleSelectOne(request._id)} className="focus:outline-none text-gray-300 cursor-pointer mt-0.5 shrink-0">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleSelectOne(request._id); }}
+                                                    className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
+                                                >
                                                     {isSelected ? (
                                                         <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                                                     ) : (
@@ -418,68 +432,88 @@ const PasswordRequests = () => {
                                                     )}
                                                 </button>
                                             ) : (
-                                                <button disabled className="focus:outline-none text-gray-300 opacity-50 cursor-not-allowed mt-0.5 shrink-0">
+                                                <button disabled className="focus:outline-none text-gray-300 opacity-50 cursor-not-allowed flex items-center justify-center shrink-0">
                                                     <Square className="w-5 h-5" />
                                                 </button>
                                             )}
-                                            <div>
-                                                <h3 className="text-sm font-medium text-gray-900">{request.user.name}</h3>
-                                                <p className="text-xs text-gray-500">{request.user.email}</p>
-                                            </div>
+                                            <span className="font-bold text-gray-900 text-[13px]">{request.user.name}</span>
                                         </div>
-                                        <div className="relative inline-block w-[100px]">
-                                            <Dropdown
-                                                minWidth=""
-                                                options={[
-                                                    { value: "pending", label: "Pending" },
-                                                    { value: "approved", label: "Approved" },
-                                                    { value: "rejected", label: "Rejected" }
-                                                ]}
-                                                value={request.status}
-                                                onChange={(val) => {
-                                                    if (request.status !== 'pending') {
-                                                        showErrorToast('Action Not Allowed', 'Processed requests cannot be changed.');
-                                                        return;
-                                                    }
-                                                    if (val === 'approved') openConfirmModal('approve', request._id);
-                                                    else if (val === 'rejected') openConfirmModal('reject', request._id);
-                                                }}
-                                                triggerClassName={`px-2 py-1 text-[10px] font-regular border transition-colors ${request.status === 'approved' ? 'bg-success-50 text-success border-success hover:bg-success-100' :
-                                                    request.status === 'rejected' ? 'bg-danger-50 text-danger border-danger hover:bg-danger-100' :
-                                                        'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
-                                                    }`}
-                                            />
+                                        <div className="flex items-center gap-2">
+                                            <div className="relative inline-block w-[100px]">
+                                                <Dropdown
+                                                    minWidth=""
+                                                    options={[
+                                                        { value: "pending", label: "Pending" },
+                                                        { value: "approved", label: "Approved" },
+                                                        { value: "rejected", label: "Rejected" }
+                                                    ]}
+                                                    value={request.status}
+                                                    onChange={(val) => {
+                                                        if (request.status !== 'pending') {
+                                                            showErrorToast('Action Not Allowed', 'Processed requests cannot be changed.');
+                                                            return;
+                                                        }
+                                                        if (val === 'approved') openConfirmModal('approve', request._id);
+                                                        else if (val === 'rejected') openConfirmModal('reject', request._id);
+                                                    }}
+                                                    triggerClassName={`px-2 py-1 text-[10px] font-regular border transition-colors ${request.status === 'approved' ? 'bg-success-50 text-success border-success hover:bg-success-100' :
+                                                        request.status === 'rejected' ? 'bg-danger-50 text-danger border-danger hover:bg-danger-100' :
+                                                            'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
+                                                        }`}
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={(e) => toggleExpand(e, request._id)}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer shrink-0"
+                                            >
+                                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-between items-end mt-4">
-                                        <div className="text-[10px] text-gray-500 space-y-1">
-                                            <div>Role: <span className="capitalize text-gray-700 font-medium">{request.user.role}</span></div>
-                                            <div>{new Date(request.createdAt).toLocaleDateString()} at {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                        </div>
-
-                                        {request.status === 'pending' ? (
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    className="px-2 py-1 h-7 text-[10px] text-success border-success hover:bg-success-50 cursor-pointer"
-                                                    onClick={() => openConfirmModal('approve', request._id)}
-                                                >
-                                                    <Check className="w-3 h-3 mr-1" /> Approve
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    className="px-2 py-1 h-7 text-[10px] text-danger border-danger/20 hover:bg-danger/10 cursor-pointer"
-
-                                                    onClick={() => openConfirmModal('reject', request._id)}
-                                                >
-                                                    <X className="w-3 h-3 mr-1" /> Reject
-                                                </Button>
+                                    {/* Expandable Content */}
+                                    {isExpanded && (
+                                        <>
+                                            <div className="flex flex-col text-[13px]">
+                                                <div className="flex border-b border-gray-50/50">
+                                                    <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Email</div>
+                                                    <div className="w-2/3 py-2.5 px-3 text-gray-900 truncate">: {request.user.email}</div>
+                                                </div>
+                                                <div className="flex border-b border-gray-50/50 bg-gray-50/30">
+                                                    <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Role</div>
+                                                    <div className="w-2/3 py-2.5 px-3 text-gray-900 capitalize">: {request.user.role}</div>
+                                                </div>
+                                                <div className="flex border-b border-gray-50/50 items-center">
+                                                    <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Time</div>
+                                                    <div className="w-2/3 py-2.5 px-3 text-gray-900">: {new Date(request.createdAt).toLocaleDateString()} at {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <span className="text-gray-400 text-[10px] italic">Processed</span>
-                                        )}
-                                    </div>
+
+                                            {/* Bottom Button */}
+                                            {request.status === 'pending' ? (
+                                                <div className="flex p-3 gap-2 bg-gray-50/30">
+                                                    <Button
+                                                        variant="outline"
+                                                        className="flex-1 py-2 h-auto text-[12px] text-success border-success hover:bg-success-50 cursor-pointer"
+                                                        onClick={() => openConfirmModal('approve', request._id)}
+                                                    >
+                                                        <Check className="w-3 h-3 mr-1" /> Approve
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="flex-1 py-2 h-auto text-[12px] text-danger border-danger hover:bg-danger/10 cursor-pointer"
+                                                        onClick={() => openConfirmModal('reject', request._id)}
+                                                    >
+                                                        <X className="w-3 h-3 mr-1" /> Reject
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex p-3 justify-center text-[12px] text-gray-400 italic bg-gray-50/30">
+                                                    Request has been processed
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             )
                         })
@@ -557,7 +591,7 @@ const PasswordRequests = () => {
             {/* Confirmation Modal */}
             {confirmModal.isOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">
                             {confirmModal.type === 'approve' || confirmModal.type === 'bulkApprove' ? 'Approve Request' : 'Reject Request'}
                         </h3>

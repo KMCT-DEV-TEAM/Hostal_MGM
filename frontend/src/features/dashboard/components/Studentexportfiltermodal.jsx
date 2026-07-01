@@ -110,7 +110,7 @@ export default function StudentExportFilterModal({
   };
 
   return (
-    <Modal
+    <Modal bottomSheetOnMobile={true}
       isOpen={isOpen}
       onClose={onClose}
       title={title}

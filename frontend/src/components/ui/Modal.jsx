@@ -16,6 +16,7 @@ export default function Modal({
   icon,
   zIndex = 50,
   overflowClass = "overflow-y-auto",
+  bottomSheetOnMobile = false,
 }) {
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -23,15 +24,19 @@ export default function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center md:p-4  p-1"
+      className={`fixed inset-0 bg-black/40 backdrop-blur-[2px] flex md:p-4 ${bottomSheetOnMobile ? 'items-end md:items-center justify-center p-0' : 'items-center justify-center p-1'}`}
       style={{ zIndex }}
     >
       <Wrapper
-        className={`bg-white rounded-2xl w-full ${maxWidth} max-h-[90vh] ${overflowClass} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
+        className={`bg-white w-full ${maxWidth} max-h-[90vh] ${overflowClass} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-5 md:p-8 shadow-2xl ${
+          bottomSheetOnMobile 
+            ? 'rounded-t-2xl md:rounded-2xl rounded-b-none animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200' 
+            : 'rounded-2xl animate-in fade-in zoom-in-95 duration-200'
+        }`}
         onSubmit={asForm ? onSubmit : undefined}
       >
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-start mb-5 md:mb-8">
           <div className="flex items-center gap-3">
             {icon ? (
               <div className="w-12 h-12 bg-[#0A437A] rounded-xl flex items-center justify-center text-white">

@@ -23,10 +23,10 @@ export default function WardenFormModal({
     if (activeModal !== 'warden') return null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4 z-50">
             <form
                 onSubmit={handleSaveWarden}
-                className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
+                className="bg-white rounded-t-2xl md:rounded-2xl rounded-b-none max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200"
             >
                 {/* Modal Header */}
                 <div className="flex justify-between items-start mb-6">
@@ -53,7 +53,7 @@ export default function WardenFormModal({
                         <h3 className="text-sm font-semibold text-primary mb-1">{t('basic_info')}</h3>
                         <h5 className='text-xs text-[#777777] mb-4'>{t('basic_info_desc')}</h5>
                         <div className="border-b border-gray-100 mb-4" />
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-1">
                                 <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
                                 <input
@@ -76,7 +76,7 @@ export default function WardenFormModal({
                                     className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                                 />
                             </div>
-                            <div className="col-span-1">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                                 <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
@@ -104,7 +104,7 @@ export default function WardenFormModal({
 
                             {/* Conditionally hide Email if editing */}
                             {!editingWarden && (
-                                <div className="col-span-2 mt-2">
+                                <div className="col-span-1 sm:col-span-2 mt-2">
                                     <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
                                     <div className="flex gap-2 items-center">
                                         <input

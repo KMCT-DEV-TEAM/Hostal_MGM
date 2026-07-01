@@ -132,7 +132,7 @@ export default function ChangeEmailModal({
 
   return (
     <>
-      <Modal
+      <Modal bottomSheetOnMobile={true}
         isOpen={isOpen && !otpModalOpen}
         onClose={saving ? undefined : onClose}
         title={title}
@@ -207,7 +207,7 @@ export default function ChangeEmailModal({
         </div>
       </Modal>
 
-      <Modal
+      <Modal bottomSheetOnMobile={true}
         isOpen={otpModalOpen}
         onClose={() => {
           if (!verifyingOtp) setOtpModalOpen(false);

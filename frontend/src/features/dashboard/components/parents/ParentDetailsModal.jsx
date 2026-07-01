@@ -30,7 +30,7 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
     console.log("parent object:", parent.status);
 
     return (
-        <Modal isOpen={true}
+        <Modal bottomSheetOnMobile={true} isOpen={true}
             avatar={parent.parentName}
             title={parent.parentName}
             subtitle={`Parent - ${parent.student?.name}`}

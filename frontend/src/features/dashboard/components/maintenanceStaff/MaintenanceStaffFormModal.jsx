@@ -21,10 +21,10 @@ const MaintenanceStaffFormModal = ({
     if (activeModal !== 'staff') return null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4 z-50">
             <form
                 onSubmit={handleSaveStaff}
-                className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200"
+                className="bg-white rounded-t-2xl md:rounded-2xl rounded-b-none max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200"
             >
                 {/* Modal Header */}
                 <div className="flex justify-between items-start mb-6">

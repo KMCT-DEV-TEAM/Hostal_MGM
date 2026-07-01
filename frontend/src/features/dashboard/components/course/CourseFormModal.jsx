@@ -21,22 +21,19 @@ const CourseFormModal = ({
     const orgCode = selectedOrg ? `${selectedOrg.code}-` : '';
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4">
             <form
                 onSubmit={handleSubmit}
                 className="
                     bg-white
-                    rounded-2xl
+                    rounded-t-2xl md:rounded-2xl rounded-b-none md:rounded-b-2xl
                     w-full
                     max-w-3xl
                     max-h-[90vh]
                     overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
                     p-8
                     shadow-2xl
-                    animate-in
-                    fade-in
-                    zoom-in-95
-                    duration-200
+                    animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200
                 "
             >
                 {/* Header */}

@@ -31,6 +31,7 @@ export default function PasswordConfirmModal({
   return (
     <Modal
       isOpen={isOpen}
+      bottomSheetOnMobile={true}
       onClose={onClose}
       maxWidth="max-w-md"
     >

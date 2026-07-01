@@ -104,7 +104,7 @@ function Navbar({ onMenuClick }) {
 
                     {/* Dropdown Menu */}
                     {isProfileOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-lg border border-gray-100 py-1.5 z-50 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
 
 
                             <button

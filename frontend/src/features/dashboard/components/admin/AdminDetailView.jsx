@@ -5,19 +5,20 @@ import Modal from '@/components/ui/Modal';
 
 const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal }) => {
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={true}
             onClose={() => setView('list')}
             maxWidth="max-w-5xl"
             title={selectedAdminDetail?.name || 'Admin'}
             subtitle="Administrator Details"
             icon={<User size={24} />}
+            bottomSheetOnMobile={true}
         >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
                 {/* Main Content Area */}
-                <div className="md:col-span-7 space-y-6">
+                <div className="md:col-span-7 space-y-4 md:space-y-6">
                     {/* Basic Info Section */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
                         <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
                         <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Administrator</p>
                         <div className="space-y-1">
@@ -39,8 +40,8 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                     </div>
                 </div>
 
-                <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                    <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Admin Summary</h3>
+                <div className="md:col-span-5 bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+                    <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4">Admin Summary</h3>
                     <div className="space-y-1">
                         <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedAdminDetail?.name}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>

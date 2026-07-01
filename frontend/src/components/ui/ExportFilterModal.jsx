@@ -63,6 +63,7 @@ export default function ExportFilterModal({
         <>
         <Modal
             isOpen={isOpen}
+            bottomSheetOnMobile={true}
             onClose={onClose}
             title={title}
             subtitle={subtitle}

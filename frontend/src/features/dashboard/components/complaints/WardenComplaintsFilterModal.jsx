@@ -69,7 +69,7 @@ export default function WardenComplaintsFilterModal({
 
     return (
         <>
-            <Modal
+            <Modal bottomSheetOnMobile={true}
                 isOpen={true}
                 onClose={onClose}
                 title="Filter Complaints"
