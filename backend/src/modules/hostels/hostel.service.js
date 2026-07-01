@@ -16,8 +16,14 @@ const createHostelDb = async (data) => {
   return await hostel.save();
 };
 
-const getHostelsDb = async (organizationId) => {
-  const query = organizationId ? { organizations: organizationId } : {};
+const getHostelsDb = async (organizationId, adminId = null) => {
+  const query = {};
+  if (organizationId) {
+    query.organizations = organizationId;
+  }
+  if (adminId) {
+    query.adminId = adminId;
+  }
   const hostels = await Hostel.find(query)
     .populate("wardens", "name email")
     .populate("adminId", "name email")
@@ -34,9 +40,13 @@ const getHostelsDb = async (organizationId) => {
   return hostelsWithCounts;
 };
 
-const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status = "") => {
+const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status = "", adminId = null) => {
   const skip = (page - 1) * limit;
   const query = {};
+
+  if (adminId) {
+    query.adminId = adminId;
+  }
 
   if (status && status !== "All") {
     query.isActive = status === "Active";
@@ -73,10 +83,13 @@ const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status =
   return { hostels: hostelsWithCounts, totalCount };
 };
 
-const getHostelByIdDb = async (id, organizationId) => {
+const getHostelByIdDb = async (id, organizationId, adminId = null) => {
   const query = { _id: id };
   if (organizationId) {
     query.organizations = organizationId;
+  }
+  if (adminId) {
+    query.adminId = adminId;
   }
   const hostel = await Hostel.findOne(query)
     .populate("wardens", "name email")
@@ -91,10 +104,13 @@ const getHostelByIdDb = async (id, organizationId) => {
   return hostel;
 };
 
-const updateHostelDb = async (id, organizationId, updateData) => {
+const updateHostelDb = async (id, organizationId, adminId = null, updateData) => {
   const query = { _id: id };
   if (organizationId) {
     query.organizations = organizationId;
+  }
+  if (adminId) {
+    query.adminId = adminId;
   }
   return await Hostel.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
 };
@@ -113,10 +129,13 @@ const syncHostelStatus = async (hostelIds, isActive) => {
   }
 };
 
-const toggleHostelStatusDb = async (id, organizationId) => {
+const toggleHostelStatusDb = async (id, organizationId, adminId = null) => {
   const query = { _id: id };
   if (organizationId) {
     query.organizations = organizationId;
+  }
+  if (adminId) {
+    query.adminId = adminId;
   }
 
   const hostel = await Hostel.findOne(query);
@@ -130,12 +149,15 @@ const toggleHostelStatusDb = async (id, organizationId) => {
   return hostel;
 };
 
-const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId) => {
+const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId, adminId = null) => {
   try {
     const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
     const query = { _id: { $in: objectIds } };
     if (organizationId) {
       query.organizations = organizationId;
+    }
+    if (adminId) {
+      query.adminId = adminId;
     }
     const result = await Hostel.updateMany(query, { $set: { isActive } });
 

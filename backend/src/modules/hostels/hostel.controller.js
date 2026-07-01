@@ -36,6 +36,7 @@ const createHostel = asyncHandler(async (req, res) => {
   const newHostel = await createHostelDb({
     ...req.body,
     organizations: finalOrganizations,
+    adminId: req.user ? (req.user.id || req.user._id) : undefined,
   });
 
   if (req.user) {
@@ -67,7 +68,9 @@ const getHostels = asyncHandler(async (req, res) => {
   const search = req.query.search || "";
   const status = req.query.status || "";
 
-  const { hostels, totalCount } = await getPaginatedHostelsDb(page, limit, search, status);
+  const adminId = req.user && req.user.role === "admin" ? (req.user.id || req.user._id) : null;
+
+  const { hostels, totalCount } = await getPaginatedHostelsDb(page, limit, search, status, adminId);
 
   return sendSuccess(res, 200, "Hostels fetched successfully", {
     count: hostels.length,
@@ -81,8 +84,9 @@ const getHostels = asyncHandler(async (req, res) => {
 const getHostelById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const organizationId = req.user.organization;
+  const adminId = req.user && req.user.role === "admin" ? (req.user.id || req.user._id) : null;
 
-  const hostel = await getHostelByIdDb(id, organizationId);
+  const hostel = await getHostelByIdDb(id, organizationId, adminId);
 
   if (!hostel) {
     return sendError(res, 404, "Hostel not found");
@@ -96,6 +100,7 @@ const getHostelById = asyncHandler(async (req, res) => {
 const updateHostel = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const organizationId = req.user.role === "admin" ? req.user.organization : null;
+  const adminId = req.user.role === "admin" ? (req.user.id || req.user._id) : null;
   const { name, code, email, phone, location, capacity, hosteltype } = req.body;
 
   if (code) {
@@ -122,7 +127,7 @@ const updateHostel = asyncHandler(async (req, res) => {
   if (capacity !== undefined) updatePayload.capacity = capacity;
   if (hosteltype !== undefined) updatePayload.hosteltype = hosteltype;
 
-  const updatedHostel = await updateHostelDb(id, organizationId, updatePayload);
+  const updatedHostel = await updateHostelDb(id, organizationId, adminId, updatePayload);
 
   if (!updatedHostel) {
     return sendError(res, 404, "Hostel not found");
@@ -150,8 +155,9 @@ const updateHostel = asyncHandler(async (req, res) => {
 const toggleHostelStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const organizationId = req.user.role === "admin" ? req.user.organization : null;
+  const adminId = req.user.role === "admin" ? (req.user.id || req.user._id) : null;
 
-  const hostel = await toggleHostelStatusDb(id, organizationId);
+  const hostel = await toggleHostelStatusDb(id, organizationId, adminId);
 
   if (!hostel) {
     return sendError(res, 404, "Hostel not found");
@@ -181,6 +187,7 @@ const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
   console.log("Active Status", req.body);
 
   const organizationId = req.user.role === "admin" ? req.user.organization : null;
+  const adminId = req.user.role === "admin" ? (req.user.id || req.user._id) : null;
   console.log("Organization ID", organizationId);
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
     return sendError(res, 400, "Please provide an array of hostel IDs");
@@ -190,7 +197,7 @@ const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Please provide a valid boolean for isActive");
   }
 
-  const result = await bulkUpdateHostelStatusDb(ids, isActive, organizationId);
+  const result = await bulkUpdateHostelStatusDb(ids, isActive, organizationId, adminId);
   console.log("bulkUpdateHostelStatus result:", result);
 
   if (req.user) {

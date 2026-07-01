@@ -180,7 +180,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               </InfoRow>
               <InfoRow label="Status">
                 <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-black">
-                  <span className={`w-2 h-2 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : 'bg-blue-500'}`}></span>
+                  <span className={`w-2 h-2 rounded-full ${complaint.status === 'Pending' ? 'bg-warning' : complaint.status === 'Resolved' ? 'bg-success' : complaint.status === 'Incomplete' ? 'bg-primary' : 'bg-blue-500'}`}></span>
                   {complaint.status}
                 </span>
               </InfoRow>
