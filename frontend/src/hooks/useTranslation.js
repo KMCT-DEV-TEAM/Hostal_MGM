@@ -23,6 +23,7 @@ const dictionary = {
         complaints: "Complaints",
 
         attendance: "Attendance",
+        furniture: "Furniture",
         'leave requests': "Leave Requests",
         'maintenance staff': "Maintenance Staff",
         'mess management': "Mess Management",
@@ -236,6 +237,7 @@ const dictionary = {
         complaints: "പരാതികൾ",
         'all complaints': "എല്ലാ പരാതികളും",
         attendance: "ഹാജർ",
+        furniture: "ഫർണിച്ചർ",
         'leave requests': "അവധി അപേക്ഷകൾ",
         'maintenance staff': "മെയിൻ്റനൻസ് സ്റ്റാഫ്",
         'mess management': "മെസ്സ് മാനേജ്മെന്റ്",

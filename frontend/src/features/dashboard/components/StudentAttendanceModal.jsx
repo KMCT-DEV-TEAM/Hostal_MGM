@@ -77,9 +77,11 @@ export default function StudentAttendanceModal({ isOpen, onClose, student }) {
         const status = eventsMap[dayStr];
         let statusClasses = 'border-gray-200 text-gray-500'; // Not marked
         if (status === 'present') {
-            statusClasses = 'border-green-400 text-green-500';
+            statusClasses = 'border-success/70 text-success bg-success/5';
         } else if (status === 'absent') {
-            statusClasses = 'border-red-400 text-red-500';
+            statusClasses = 'border-danger/70 text-danger bg-danger/5';
+        } else if (status === 'on_leave') {
+            statusClasses = 'border-warning/70 text-warning bg-warning/5';
         }
 
         return (
@@ -179,12 +181,16 @@ export default function StudentAttendanceModal({ isOpen, onClose, student }) {
                     {/* Legend */}
                     <div className="flex justify-center items-center gap-6 mt-6 border-t border-gray-50 pt-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-success"></div>
                             <span className="text-[10px] font-medium text-gray-600">Present</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-danger"></div>
                             <span className="text-[10px] font-medium text-gray-600">Absent</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-warning"></div>
+                            <span className="text-[10px] font-medium text-gray-600">On Leave</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-200"></div>

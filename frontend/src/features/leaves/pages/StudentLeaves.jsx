@@ -95,15 +95,12 @@ export default function StudentLeaves() {
             <LeaveStatsCards stats={statsData} isStudent />
 
             <DataTable
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
-                searchPlaceholder="Search"
                 toolbarActions={
                     <>
                         <button
                             type="button"
                             onClick={() => setIsFilterModalOpen(true)}
-                            className="p-2.5 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700 shadow-sm md:shadow-none"
+                            className={`p-2.5 border rounded-md transition-colors shadow-sm md:shadow-none flex items-center justify-center ${Object.values(filters).some(Boolean) ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
                         >
                             <Filter className="w-4 h-4" />
                         </button>
@@ -221,6 +218,7 @@ export default function StudentLeaves() {
                 onClose={() => setIsFilterModalOpen(false)}
                 pageTitle={pageTitle}
                 isOutPass={!isHomePass}
+                isStudent={true}
                 filters={filters}
                 onApply={(newFilters) => {
                     setFilters(newFilters);
