@@ -57,7 +57,7 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title="Resolve Complaint"

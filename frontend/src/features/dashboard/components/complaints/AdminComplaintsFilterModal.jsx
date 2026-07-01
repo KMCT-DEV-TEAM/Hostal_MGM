@@ -70,7 +70,7 @@ export default function AdminComplaintsFilterModal({
 
     return (
         <>
-            <Modal
+            <Modal bottomSheetOnMobile={true}
                 isOpen={true}
                 onClose={onClose}
                 title="Filter Complaints"

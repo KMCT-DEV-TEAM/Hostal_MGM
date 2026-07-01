@@ -9,7 +9,7 @@ export default function AttendanceQRModal({ isOpen, onClose, qrToken }) {
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title="Today's Attendance QR"

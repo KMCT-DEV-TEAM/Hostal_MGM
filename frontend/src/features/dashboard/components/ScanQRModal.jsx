@@ -146,7 +146,7 @@ export default function ScanQRModal({
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title=""

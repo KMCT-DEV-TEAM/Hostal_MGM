@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import WardenComplaintsTable from '../components/complaints/WardenComplaintsTable';
+import WardenComplaintsMobileList from '../components/complaints/WardenComplaintsMobileList';
 import WardenComplaintsToolbar from '../components/complaints/WardenComplaintsToolbar';
 import WardenComplaintsFilterModal from '../components/complaints/WardenComplaintsFilterModal';
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
@@ -299,14 +300,25 @@ return (
             />
 
             {/* Table Section */}
-            <WardenComplaintsTable
+            <div className="hidden md:block flex-1 min-h-0">
+                <WardenComplaintsTable
+                    loading={isLoading}
+                    complaints={paginatedComplaints}
+                    categories={categories}
+                    handleCategoryChange={handleCategoryChange}
+                    handlePriorityChange={handlePriorityChange}
+                    onViewClick={(c) => setViewingComplaint(c)}
+                    isViewOnly={isViewOnly}
+                />
+            </div>
+
+            <WardenComplaintsMobileList
                 loading={isLoading}
                 complaints={paginatedComplaints}
                 categories={categories}
                 handleCategoryChange={handleCategoryChange}
                 handlePriorityChange={handlePriorityChange}
                 onViewClick={(c) => setViewingComplaint(c)}
-                isViewOnly={isViewOnly}
             />
 
             {/* Pagination Section */}

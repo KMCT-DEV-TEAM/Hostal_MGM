@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SuperAdminComplaintsTable from '../components/complaints/SuperAdminComplaintsTable';
+import AdminComplaintsMobileList from '../components/complaints/AdminComplaintsMobileList';
 import ComplaintsToolbar from '../components/complaints/ComplaintsToolbar';
 import WardenComplaints from './WardenComplaints';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -194,7 +195,16 @@ export default function AdminComplaints() {
                 />
 
                 {/* Table Section */}
-                <SuperAdminComplaintsTable
+                <div className="hidden md:block flex-1 min-h-0">
+                    <SuperAdminComplaintsTable
+                        complaints={paginatedComplaints}
+                        loading={loading}
+                        onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}
+                        showWarden={true}
+                    />
+                </div>
+
+                <AdminComplaintsMobileList
                     complaints={paginatedComplaints}
                     loading={loading}
                     onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}

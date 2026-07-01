@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, ChevronDown, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
 import DateInput from "@/components/ui/DateInput";
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
@@ -25,6 +25,7 @@ const LogsViewer = ({ entityType }) => {
     const [isExporting, setIsExporting] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [expandedIds, setExpandedIds] = useState([]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -151,6 +152,11 @@ const LogsViewer = ({ entityType }) => {
         }
     };
 
+    const toggleExpand = (e, id) => {
+        e.stopPropagation();
+        setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
     return (
         <div className="bg-transparent md:bg-white md:rounded-lg md:border md:border-gray-200 md:overflow-hidden flex flex-col min-h-0 h-full">
 
@@ -254,38 +260,54 @@ const LogsViewer = ({ entityType }) => {
                         No logs found matching your criteria.
                     </div>
                 ) : (
-                    logs.map((log) => (
-                        <div key={log._id} className="p-4 bg-white rounded-xl shadow-sm flex flex-col relative border border-gray-200">
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-start gap-3">
-                                    <div>
-                                        <h3 className="text-sm font-medium text-gray-900">{log.action}</h3>
-                                        <div className="flex items-center justify-start gap-1 mt-0.5 text-xs text-gray-500">
-                                            <User size={12} className="text-gray-400" />
-                                            <span>{log.user?.name || log.user?.email || 'Unknown'}</span>
-                                        </div>
+                    logs.map((log) => {
+                        const isExpanded = expandedIds.includes(log._id);
+                        return (
+                            <div key={log._id} className="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-50 overflow-hidden shrink-0">
+                                {/* Header */}
+                                <div 
+                                    className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
+                                    onClick={(e) => toggleExpand(e, log._id)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-gray-900 text-[13px] truncate max-w-[220px]">{log.action}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
+                                            {log.status}
+                                        </span>
+                                        <button
+                                            onClick={(e) => toggleExpand(e, log._id)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer shrink-0"
+                                        >
+                                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                        </button>
                                     </div>
                                 </div>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
-                                    {log.status}
-                                </span>
-                            </div>
 
-                            <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                <div className="flex items-start gap-1.5">
-                                    <Info size={12} className="text-gray-400 mt-0.5 shrink-0" />
-                                    <p>{log.details}</p>
-                                </div>
+                                {/* Expandable Content */}
+                                {isExpanded && (
+                                    <div className="flex flex-col text-[13px]">
+                                        <div className="flex border-b border-gray-50/50">
+                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">User</div>
+                                            <div className="w-2/3 py-2.5 px-3 text-gray-900 truncate">: {log.user?.name || log.user?.email || 'Unknown'}</div>
+                                        </div>
+                                        <div className="flex border-b border-gray-50/50 bg-gray-50/30">
+                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Time</div>
+                                            <div className="w-2/3 py-2.5 px-3 text-gray-900">: {new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                        </div>
+                                        <div className="flex border-b border-gray-50/50">
+                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium h-full">Details</div>
+                                            <div className="w-2/3 py-2.5 px-3 text-gray-900 flex items-start gap-1">
+                                                <span className="mr-1">:</span>
+                                                <span className="break-words">{log.details}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-
-                            <div className="flex justify-between items-end mt-3">
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1">
-                                    <Clock size={10} />
-                                    <span>{new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

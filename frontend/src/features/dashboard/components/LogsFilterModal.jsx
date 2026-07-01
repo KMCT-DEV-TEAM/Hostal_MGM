@@ -61,7 +61,7 @@ export default function LogsFilterModal({
 
     return (
         <>
-            <Modal
+            <Modal bottomSheetOnMobile={true}
                 isOpen={true}
                 onClose={onClose}
                 title="Filter Logs"

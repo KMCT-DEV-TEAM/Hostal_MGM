@@ -57,7 +57,7 @@ export default function StudentComplaintFormModal({
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={true}
             onClose={onCancel || onClose}
             title={editingComplaint ? "Edit Complaint" : "Add New Complaint"}

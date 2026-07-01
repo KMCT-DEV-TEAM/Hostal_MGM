@@ -85,7 +85,7 @@ export default function StudentFilterModal({ initialFilters, onClose, onApply })
     ];
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={true}
             onClose={onClose}
             title="Filter Students"

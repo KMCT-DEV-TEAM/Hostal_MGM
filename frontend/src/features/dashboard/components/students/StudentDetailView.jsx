@@ -133,7 +133,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
   };
 
   return (
-    <Modal
+    <Modal bottomSheetOnMobile={true}
       isOpen={true}
       onClose={onClose}
       maxWidth="max-w-5xl"

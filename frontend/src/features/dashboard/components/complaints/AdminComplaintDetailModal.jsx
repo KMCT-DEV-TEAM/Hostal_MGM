@@ -49,7 +49,7 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
     const internalNotes = [...(complaint.internalNotes || []), ...systemNotes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={true}
             onClose={onClose}
             maxWidth="max-w-5xl"

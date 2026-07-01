@@ -7,7 +7,7 @@ export default function SendNotificationModal({ isOpen, onClose, onSend, recipie
     if (!isOpen) return null;
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title="Send Notification"

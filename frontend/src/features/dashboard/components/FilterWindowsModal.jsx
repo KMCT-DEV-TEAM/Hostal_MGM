@@ -40,7 +40,7 @@ export default function FilterWindowsModal({
     };
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title="Filter Attendance Windows"

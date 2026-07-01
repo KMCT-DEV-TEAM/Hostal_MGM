@@ -85,7 +85,7 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
     if (!isOpen) return null;
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={isOpen}
             onClose={onClose}
             title={`Assign ${assigneeType === 'warden' ? 'Warden' : 'Maintenance Staff'}`}

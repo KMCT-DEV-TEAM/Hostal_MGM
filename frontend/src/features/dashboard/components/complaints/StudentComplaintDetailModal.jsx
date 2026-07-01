@@ -8,7 +8,7 @@ export default function StudentComplaintDetailModal({ complaint, onClose }) {
     if (!complaint) return null;
 
     return (
-        <Modal
+        <Modal bottomSheetOnMobile={true}
             isOpen={true}
             onClose={onClose}
             maxWidth="max-w-5xl"
