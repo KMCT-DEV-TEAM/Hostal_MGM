@@ -14,6 +14,7 @@ import {
   getAttendanceHistory,
   getAttendanceCalendar,
   getAttendanceDetails,
+  correctAttendance,
 } from "./attendance.controller.js";
 
 import {
@@ -22,7 +23,8 @@ import {
   validateGetWindows,
   validateHistoryQuery,
   validateCalendarQuery,
-  validateDateParam
+  validateDateParam,
+  validateManualCorrection,
 } from "./attendance.validation.js";
 
 export const wardenAttendanceRouter = express.Router();
@@ -37,8 +39,10 @@ wardenAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceW
 wardenAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);
 wardenAttendanceRouter.post("/windows/:id/scan", validateWindowIdParam, validateScanQR, scanStudent);
 wardenAttendanceRouter.patch("/windows/:id/complete", validateWindowIdParam, completeAttendanceWindow);
+wardenAttendanceRouter.patch("/windows/:windowId/students/:studentId", validateManualCorrection, correctAttendance);
 wardenAttendanceRouter.get("/student-calendar", validateCalendarQuery, getAttendanceCalendar);
 
+.......
 export const adminAttendanceRouter = express.Router();
 adminAttendanceRouter.use(authMiddleware);
 adminAttendanceRouter.use(roleMiddleware("admin", "super_admin"));

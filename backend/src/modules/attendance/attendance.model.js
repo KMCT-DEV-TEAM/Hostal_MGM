@@ -27,6 +27,10 @@ const attendanceWindowSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    onLeaveCount: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["open", "completed"],
@@ -93,6 +97,16 @@ const attendanceRecordSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    correctionHistory: [
+      {
+        previousStatus: { type: String },
+        newStatus: { type: String },
+        remarks: { type: String, trim: true },
+        wardenId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        changedAt: { type: Date, default: Date.now },
+        _id: false,
+      },
+    ],
   },
   { timestamps: true }
 );

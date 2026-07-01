@@ -723,3 +723,208 @@ export const getStudentAttendanceDetailsDb = async (studentId, dateStr) => {
     }
   };
 };
+
+// ---------------------------------------------------------------------------
+// Manual Attendance Correction
+// ---------------------------------------------------------------------------
+
+/**
+ * Recalculate and persist window stats from actual AttendanceRecord documents.
+ * Called after every correction — never manually inc/dec counters.
+ */
+const recalculateWindowStats = async (windowId) => {
+  const agg = await AttendanceRecord.aggregate([
+    { $match: { attendanceWindowId: new mongoose.Types.ObjectId(windowId) } },
+    {
+      $group: {
+        _id: null,
+        presentCount:  { $sum: { $cond: [{ $eq: ["$status", "present"] },  1, 0] } },
+        absentCount:   { $sum: { $cond: [{ $eq: ["$status", "absent"] },   1, 0] } },
+        onLeaveCount:  { $sum: { $cond: [{ $eq: ["$status", "on_leave"] }, 1, 0] } },
+        scannedCount:  { $sum: 1 },
+      },
+    },
+  ]);
+
+  const counts = agg[0] || { presentCount: 0, absentCount: 0, onLeaveCount: 0, scannedCount: 0 };
+
+  await AttendanceWindow.updateOne(
+    { _id: windowId },
+    {
+      $set: {
+        presentCount:  counts.presentCount,
+        absentCount:   counts.absentCount,
+        onLeaveCount:  counts.onLeaveCount,
+        scannedCount:  counts.scannedCount,
+      },
+    }
+  );
+
+  return counts;
+};
+
+/**
+ * PATCH /attendance/windows/:windowId/students/:studentId
+ * Manual correction of an attendance record by a warden.
+ */
+export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenHostelId, { status, remarks }) => {
+  // ── 1. Fetch attendance window ────────────────────────────────────────────
+  const window = await AttendanceWindow.findById(windowId).lean();
+
+  if (!window) {
+    const err = new Error("Attendance window not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // ── 2. Window must belong to the warden's hostel ──────────────────────────
+  if (window.hostelId.toString() !== wardenHostelId.toString()) {
+    const err = new Error("You are not allowed to modify this attendance window.");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  // ── 3. Window must be open ────────────────────────────────────────────────
+  if (window.status !== "open") {
+    const err = new Error("Attendance window has already been completed.");
+    err.statusCode = 422;
+    throw err;
+  }
+
+  // ── 4 & 5. Fetch & validate student ──────────────────────────────────────
+  const student = await Student.findOne({
+    _id: studentId,
+    isActive: true,
+    hostelStatus: "active",
+  })
+    .select("_id hostelId name studentId")
+    .lean();
+
+  if (!student) {
+    const err = new Error("Student is inactive or does not exist.");
+    err.statusCode = 422;
+    throw err;
+  }
+
+  if (student.hostelId.toString() !== wardenHostelId.toString()) {
+    const err = new Error("Student does not belong to this hostel.");
+    err.statusCode = 422;
+    throw err;
+  }
+
+  // ── 6. Validate status value ─────────────────────────────────────────────
+  const ALLOWED_STATUSES = ["present", "absent", "on_leave"];
+  if (!ALLOWED_STATUSES.includes(status)) {
+    const err = new Error(`Invalid status. Must be one of: ${ALLOWED_STATUSES.join(", ")}.`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  // ── Fetch existing record (may not exist) ────────────────────────────────
+  const existingRecord = await AttendanceRecord.findOne({
+    attendanceWindowId: windowId,
+    studentId,
+  });
+
+  const currentStatus = existingRecord ? existingRecord.status : null;
+
+  // ── 7. Reject same-status update ─────────────────────────────────────────
+  if (currentStatus === status) {
+    const label = status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
+    const err = new Error(`Attendance is already marked as ${label}.`);
+    err.statusCode = 409;
+    throw err;
+  }
+
+  // ── 10. No existing record — only allow present or absent ─────────────────
+  if (!existingRecord && !["present", "absent"].includes(status)) {
+    const err = new Error("Cannot create an attendance record with this status. Only 'present' or 'absent' are allowed for new records.");
+    err.statusCode = 422;
+    throw err;
+  }
+
+  // ── 8. Remarks validation ─────────────────────────────────────────────────
+  // Required for: present→absent, on_leave→present, present→on_leave
+  const remarksRequired =
+    (currentStatus === "present" && status === "absent") ||
+    (currentStatus === "on_leave" && status === "present") ||
+    (currentStatus === "present" && status === "on_leave");
+
+  if (remarksRequired) {
+    if (!remarks || remarks.trim().length < 5) {
+      const err = new Error("Remarks are required for this status change (minimum 5 characters).");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (remarks.trim().length > 300) {
+      const err = new Error("Remarks must not exceed 300 characters.");
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
+  // ── 9. present → on_leave: verify active approved Home Pass ──────────────
+  if (currentStatus === "present" && status === "on_leave") {
+    const activePass = await Pass.findOne({
+      studentId,
+      status: "approved",
+      "returnTracking.leftHostelAt": { $ne: null, $exists: true },
+      "returnTracking.returnedAt": null,
+    }).lean();
+
+    if (!activePass) {
+      const err = new Error("Student does not have an active approved leave.");
+      err.statusCode = 422;
+      throw err;
+    }
+  }
+
+  // ── Persist the correction ────────────────────────────────────────────────
+  const historyEntry = {
+    previousStatus: currentStatus,
+    newStatus: status,
+    remarks: remarks ? remarks.trim() : null,
+    wardenId,
+    changedAt: new Date(),
+  };
+
+  let updatedRecord;
+
+  if (existingRecord) {
+    // Update existing record
+    existingRecord.status = status;
+    if (remarks) existingRecord.remarks = remarks.trim();
+    existingRecord.correctionHistory.push(historyEntry);
+    updatedRecord = await existingRecord.save();
+  } else {
+    // Create new record (only present/absent — already validated above)
+    updatedRecord = await AttendanceRecord.create({
+      attendanceWindowId: windowId,
+      studentId,
+      hostelId: wardenHostelId,
+      scannedBy: wardenId,
+      status,
+      remarks: remarks ? remarks.trim() : undefined,
+      correctionHistory: [historyEntry],
+    });
+  }
+
+  // ── Recalculate window stats ──────────────────────────────────────────────
+  const updatedCounts = await recalculateWindowStats(windowId);
+
+  return {
+    record: {
+      _id: updatedRecord._id,
+      status: updatedRecord.status,
+      remarks: updatedRecord.remarks,
+      correctionHistory: updatedRecord.correctionHistory,
+    },
+    student: {
+      _id: student._id,
+      studentId: student.studentId,
+      name: student.name,
+    },
+    windowStats: updatedCounts,
+  };
+};
+
