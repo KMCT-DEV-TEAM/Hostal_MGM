@@ -31,6 +31,8 @@ const INITIAL_ORGS = [
 
 const OrganizationManagement = () => {
     const { t } = useTranslation();
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === ROLES.ADMIN;
     const [orgs, setOrgs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -375,33 +377,39 @@ const OrganizationManagement = () => {
 
                     <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
                         <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { label: 'All Status', value: 'All' },
-                                    { label: 'Active', value: 'Active' },
-                                    { label: 'Inactive', value: 'Inactive' }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => setStatusFilter(val)}
-                                placeholder="All Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
+                            {!isAdmin && (
+                                <Dropdown
+                                    className="flex-1 sm:flex-none"
+                                    options={[
+                                        { label: 'All Status', value: 'All' },
+                                        { label: 'Active', value: 'Active' },
+                                        { label: 'Inactive', value: 'Inactive' }
+                                    ]}
+                                    value={statusFilter}
+                                    onChange={(val) => setStatusFilter(val)}
+                                    placeholder="All Status"
+                                    minWidth="w-32"
+                                    triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
+                                />
+                            )}
 
-                            <button
-                                onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" /> Export
-                            </button>
+                            {!isAdmin && (
+                                <button
+                                    onClick={initiateExport}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                                >
+                                    <Download className="w-4 h-4" /> Export
+                                </button>
+                            )}
                         </div>
-                        <button
-                            onClick={() => openModal('add')}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> Add New
-                        </button>
+                        {!isAdmin && (
+                            <button
+                                onClick={() => openModal('add')}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            >
+                                <Plus className="w-4 h-4" /> Add New
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -416,6 +424,7 @@ const OrganizationManagement = () => {
                     setView={setView}
                     handleStatusChangeClick={handleStatusChangeClick}
                     openModal={openModal}
+                    isAdmin={isAdmin}
                 />
 
                 <OrganizationMobileList
@@ -428,6 +437,7 @@ const OrganizationManagement = () => {
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
+                    isAdmin={isAdmin}
                 />
 
                 {/* PAGINATION BAR FOOTER */}
