@@ -236,15 +236,21 @@ export default function HostelManagement() {
         if (!statusToUpdate) return;
         try {
             setIsConfirming(true);
-            await hostelService.toggleStatus(statusToUpdate.id);
-            setIsStatusConfirmOpen(false);
-            setStatusToUpdate(null);
-            showSuccessToast('Status Updated', 'Hostel status changed successfully');
+            const res = await hostelService.toggleStatus(statusToUpdate.id);
+            if (res && (res.success || res.data)) {
+                const newStatus = !statusToUpdate.currentStatus;
+                setHostels(hostels.map(h => 
+                    h._id === statusToUpdate.id ? { ...h, isActive: newStatus } : h
+                ));
+                showSuccessToast('Status Updated', res?.message || 'Hostel status changed successfully');
+            }
             fetchHostels(); // refresh after update
         } catch (error) {
             console.error("Failed to update status:", error);
             showErrorToast('Action Failed', error?.message || 'Failed to update status.');
         } finally {
+            setIsStatusConfirmOpen(false);
+            setStatusToUpdate(null);
             setIsConfirming(false);
         }
     };
@@ -258,20 +264,26 @@ export default function HostelManagement() {
         if (selectedIds.length === 0 || bulkStatusToUpdate === null) return;
         try {
             setIsConfirming(true);
-            setLoading(true);
-            await hostelService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
-            const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
-            showSuccessToast('Bulk Status Updated', `Successfully ${action.toLowerCase()} ${selectedIds.length} hostels`);
-            setSelectedIds([]); // clear selection
-            setIsBulkStatusConfirmOpen(false);
-            setBulkStatusToUpdate(null);
-            fetchHostels(); // refresh table
+            const res = await hostelService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
+            if (res && (res.success || res.data)) {
+                setHostels(hostels.map(h => {
+                    if (selectedIds.includes(h._id)) {
+                        return { ...h, isActive: bulkStatusToUpdate };
+                    }
+                    return h;
+                }));
+                const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
+                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} hostels`);
+            }
         } catch (error) {
             console.error("Failed to bulk update status:", error);
-            showErrorToast('Action Failed', error?.message || 'Failed to bulk update status. Please try again.');
-            setLoading(false);
+            showErrorToast('Action Failed', error?.message || 'Failed to update bulk status.');
         } finally {
+            setSelectedIds([]); // Clear selection after bulk update
+            setIsBulkStatusConfirmOpen(false);
+            setBulkStatusToUpdate(null);
             setIsConfirming(false);
+            fetchHostels();
         }
     };
 
@@ -624,9 +636,9 @@ export default function HostelManagement() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex items-center justify-center min-w-[100px] px-6 py-2 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                                className="flex items-center justify-center min-w-[100px] px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (editingHostel ? t('save_changes') : t('save'))}
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingHostel ? t('save_changes') : t('save'))}
                             </button>
                             <button
                                 type="button"

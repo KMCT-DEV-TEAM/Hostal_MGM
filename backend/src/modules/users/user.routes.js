@@ -116,7 +116,7 @@ router.post(
 router.post(
   "/wardens",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateCreateWarden,
   createWarden
 );
@@ -139,9 +139,8 @@ router.get(
 router.patch(
   "/wardens/:id", 
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateWardenIdParam,
-  validateUpdateWarden,
   validateUpdateWarden,
   updateWarden
 );
@@ -149,7 +148,7 @@ router.patch(
 router.patch(
   "/wardens/:id/hostel",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateWardenIdParam,
   validateUpdateWardenHostel,
   updateWardenHostel
@@ -158,7 +157,7 @@ router.patch(
 router.patch(
   "/wardens/:id/toggle-status",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   validateWardenIdParam,
   toggleWardenStatus 
 );
@@ -166,7 +165,7 @@ router.patch(
 router.post(
   "/wardens/bulk-toggle-status",
   authMiddleware,
-  roleMiddleware("super_admin"),
+  roleMiddleware("super_admin", "admin"),
   bulkToggleWardenStatus
 );
 

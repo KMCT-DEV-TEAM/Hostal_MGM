@@ -117,9 +117,10 @@ export default function WardenFormModal({
                                             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] disabled:bg-gray-50 disabled:text-gray-500 flex-1"
                                         />
                                         {isEmailVerified ? (
-                                            <span className="flex items-center gap-1.5 text-xs font-medium text-success bg-success-50 px-3 py-2.5 rounded-lg shrink-0">
-                                                <Check size={14} className="stroke-[3]" /> {t('verified')}
-                                            </span>
+                                            <button type="button" className="px-4 py-2 bg-green-50 text-success text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                {t('verified')}
+                                            </button>
                                         ) : (
                                             <button
                                                 type="button"
@@ -168,7 +169,7 @@ export default function WardenFormModal({
                         disabled={(!isEmailVerified && !editingWarden) || isSubmitting}
                         className="flex items-center justify-center min-w-[100px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (editingWarden ? t('save_changes') : t('save'))}
+                        {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingWarden ? t('save_changes') : t('save'))}
                     </button>
                     <button
                         type="button"
