@@ -258,6 +258,15 @@ export const dashboardRoutes = [
         element: Attendance
     },
     {
+        path: 'attendance/:windowId',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: Attendance
+    },
+    {
         path: 'attendance/scan/:windowId',
         roles: [
             ROLES.WARDEN

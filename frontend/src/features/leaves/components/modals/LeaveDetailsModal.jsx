@@ -130,8 +130,8 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
     }
 
     const renderBadge = (label, color) => (
-        <span className="inline-flex items-center gap-1.5 font-bold text-[12px]" style={{ color }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }}></span>
+        <span className="inline-flex items-center gap-2 font-medium" style={{ color }}>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></span>
             {label}
         </span>
     );
@@ -197,20 +197,20 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         className="absolute left-[-24.5px] top-1.5 w-[9px] h-[9px] rounded-full ring-2 ring-white z-10"
                         style={{ backgroundColor: nodeColor }}
                     ></div>
-                    
+
                     <div className="flex-1 space-y-1.5">
                         {/* Badge */}
                         <div className="inline-flex items-center gap-1.5 font-semibold text-[10px] px-2 py-0.5 rounded-sm" style={{ color: badgeColor, backgroundColor: badgeBg }}>
                             <span className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: badgeColor }}></span>
                             {badgeLabel}
                         </div>
-                        
+
                         {/* Title */}
                         <h4 className="text-[13px] font-medium text-gray-700 capitalize">{title}</h4>
-                        
+
                         {/* Actor info */}
                         <div className="flex items-center gap-2 mt-1">
-                            <div 
+                            <div
                                 className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold"
                                 style={{ backgroundColor: avatarBg, color: avatarColor }}
                             >
@@ -220,7 +220,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Date on the right */}
                 <div className="text-[10px] text-gray-400 font-medium whitespace-nowrap self-end mb-1">
                     {formattedDate}
@@ -290,7 +290,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Status</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                <LeaveStatusBadge status={request.status} />
+                                {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
                             </div>
 
                             {isHomePass ? (
@@ -320,7 +320,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Parent approval</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                <LeaveStatusBadge status={isParentApproved ? 'Approved' : 'Pending'} />
+                                {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
                             </div>
                         </div>
                     </div>

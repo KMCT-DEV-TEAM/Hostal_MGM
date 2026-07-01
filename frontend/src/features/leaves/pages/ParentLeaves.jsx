@@ -258,8 +258,8 @@ export default function ParentLeaves() {
                                         options={statusOptions}
                                         value="pending_parent"
                                         onChange={(val) => openActionModal(r, val)}
-                                        minWidth="w-[120px]"
-                                        triggerClassName="px-2.5 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
+                                        minWidth="w-[130px]"
+                                        triggerClassName="px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]"
                                     />
                                 ) : (
                                     <LeaveStatusBadge status={r.status} />

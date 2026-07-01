@@ -155,8 +155,8 @@ export default function LeavesDetailView({
                                     options={statusOptions}
                                     value="Pending"
                                     onChange={(val) => onUpdateStatus(r._id || r.id, val)}
-                                    minWidth="w-28"
-                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20`}
+                                    minWidth="w-[130px]"
+                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]`}
                                 />
                             ) : (
                                 <LeaveStatusBadge status={r.status} />
@@ -171,8 +171,8 @@ export default function LeavesDetailView({
                                     value=""
                                     placeholder={getReturnStatus(r)}
                                     onChange={(val) => onUpdateReturn(r._id || r.id, val)}
-                                    minWidth="w-32"
-                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50`}
+                                    minWidth="w-[160px]"
+                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50 w-[160px]`}
                                 />
                             ) : (
                                 <LeaveReturnBadge returnTracking={r.returnTracking} />
