@@ -42,7 +42,7 @@ wardenAttendanceRouter.patch("/windows/:id/complete", validateWindowIdParam, com
 wardenAttendanceRouter.patch("/windows/:windowId/students/:studentId", validateManualCorrection, correctAttendance);
 wardenAttendanceRouter.get("/student-calendar", validateCalendarQuery, getAttendanceCalendar);
 
-.......
+
 export const adminAttendanceRouter = express.Router();
 adminAttendanceRouter.use(authMiddleware);
 adminAttendanceRouter.use(roleMiddleware("admin", "super_admin"));
