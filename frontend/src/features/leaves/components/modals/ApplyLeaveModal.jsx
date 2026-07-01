@@ -8,12 +8,18 @@ import Dropdown from '@/components/ui/Dropdown';
 import { leaveSchema } from '../../utils/validation';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { createLeave, updateLeave, cancelLeave } from '@/services/leave.service';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass', editData }) {
-    const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm({
+    const { register, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset, watch, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
     });
     const [isWithdrawing, setIsWithdrawing] = React.useState(false);
+    
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = React.useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = React.useState(false);
+    const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = React.useState(false);
+    const [pendingPayload, setPendingPayload] = React.useState(null);
 
     const fromDateVal = watch('fromDate');
     const toDateVal = watch('toDate');
@@ -57,7 +63,30 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
         }
     }, [isOpen, editData, reset]);
 
-    const onSubmit = async (data) => {
+    const closeAndReset = () => {
+        onClose();
+        reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType });
+    };
+
+    const handleCloseModal = () => {
+        if (isDirty || editData) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            closeAndReset();
+        }
+    };
+
+    const handleFormSubmit = (data) => {
+        if (editData) {
+            setPendingPayload(data);
+            setIsEditConfirmOpen(true);
+        } else {
+            executeSubmit(data);
+        }
+    };
+
+    const executeSubmit = async (overrideData) => {
+        const data = overrideData || pendingPayload;
         console.log('data:', data);
         try {
             let payload;
@@ -82,7 +111,6 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
 
             if (editData) {
                 payload.revision = editData.revision ?? editData.__v ?? 0;
-                console.log('editing....')
                 await updateLeave(editData._id, payload);
                 showSuccessToast('Leave updated successfully');
             } else {
@@ -90,8 +118,9 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                 showSuccessToast('Leave applied successfully');
             }
 
-            onClose();
-            reset();
+            setIsEditConfirmOpen(false);
+            setPendingPayload(null);
+            closeAndReset();
             if (onSuccess) onSuccess();
         } catch (err) {
             showErrorToast(err.message || 'Failed to apply leave');
@@ -103,15 +132,18 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
         return <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error.message}</p>;
     };
 
-    const handleWithdraw = async () => {
+    const handleWithdrawClick = () => {
         if (!editData) return;
-        if (!window.confirm("Are you sure you want to withdraw this request?")) return;
+        setIsWithdrawConfirmOpen(true);
+    };
+
+    const confirmWithdraw = async () => {
+        setIsWithdrawConfirmOpen(false);
         try {
             setIsWithdrawing(true);
             await cancelLeave(editData._id);
             showSuccessToast('Request withdrawn successfully');
-            onClose();
-            reset();
+            closeAndReset();
             if (onSuccess) onSuccess();
         } catch (err) {
             showErrorToast(err.message || 'Failed to withdraw request');
@@ -127,20 +159,20 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     return (
         <Modal
             isOpen={isOpen}
-            onClose={() => { onClose(); reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType }); }}
+            onClose={handleCloseModal}
             title={editData ? `Edit ${editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass'}` : `${initialPassType} Request`}
             titleSize="text-lg"
             subtitle={editData ? "Update your leave request" : "Apply for leave"}
             maxWidth="max-w-md"
             asForm
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(handleFormSubmit)}
             footer={
                 <div className="flex items-center justify-between w-full">
                     <div>
                         {editData && (
                             <button
                                 type="button"
-                                onClick={handleWithdraw}
+                                onClick={handleWithdrawClick}
                                 disabled={isSubmitting || isWithdrawing}
                                 className="px-5 py-2 bg-red-50 text-danger border border-danger rounded-md text-xs font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
                             >
@@ -151,7 +183,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                     <div className="flex justify-end gap-3">
                         <button
                             type="button"
-                            onClick={() => { onClose(); reset({ reason: '', fromDate: '', toDate: '', outTime: '', returnTime: '', outPassCategory: '', passType: initialPassType }); }}
+                            onClick={handleCloseModal}
                             disabled={isSubmitting || isWithdrawing}
                             className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
                         >
@@ -246,6 +278,41 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                     <ErrorMessage error={errors.reason} />
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={isEditConfirmOpen}
+                onClose={() => setIsEditConfirmOpen(false)}
+                onConfirm={() => executeSubmit()}
+                title="Confirm Edit"
+                message="Are you sure you want to save these changes?"
+                confirmText="Save Changes"
+                isSubmitting={isSubmitting}
+            />
+
+            <ConfirmationModal
+                isOpen={isDiscardConfirmOpen}
+                onClose={() => setIsDiscardConfirmOpen(false)}
+                onConfirm={() => {
+                    setIsDiscardConfirmOpen(false);
+                    closeAndReset();
+                }}
+                title="Discard Changes"
+                message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+                confirmText="Discard"
+                cancelText="Continue Editing"
+                confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+            />
+
+            <ConfirmationModal
+                isOpen={isWithdrawConfirmOpen}
+                onClose={() => setIsWithdrawConfirmOpen(false)}
+                onConfirm={confirmWithdraw}
+                title="Withdraw Request"
+                message="Are you sure you want to withdraw this request? This action cannot be undone."
+                confirmText="Withdraw"
+                confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+                isSubmitting={isWithdrawing}
+            />
         </Modal>
     );
 }

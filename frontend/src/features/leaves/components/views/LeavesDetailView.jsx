@@ -61,7 +61,7 @@ export default function LeavesDetailView({
         const typeCol = isHomePass ? "Days" : "Type";
 
         const baseCols = ["Student", midCol, dateCol, typeCol];
-        const outPassCols = isHomePass ? [] : ["In", "Out"];
+        const outPassCols = isHomePass ? [] : ["Out", "In"];
         const statusCols = [{ label: "Status", align: "start" }, { label: "Return", align: "start" }];
 
         return [...baseCols, ...outPassCols, ...statusCols];
@@ -133,7 +133,7 @@ export default function LeavesDetailView({
 
                         {/* Days / Type */}
                         <td className="p-4 text-text-secondary capitalize">
-                            {isHomePass ? r.duration : r.type || r.outPassCategory}
+                            {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : r.type || r.outPassCategory}
                         </td>
 
                         {/* Times (Out pass only) */}

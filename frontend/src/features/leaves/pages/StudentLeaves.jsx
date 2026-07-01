@@ -127,6 +127,7 @@ export default function StudentLeaves() {
                                     {formatDate(r.fromDate)} - {formatDate(r.toDate)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
+                                    {console.log('this is new: ', r)}
                                     {r.totalDays ? `${r.totalDays} days` : '-----'}
                                 </td>
                             </>
