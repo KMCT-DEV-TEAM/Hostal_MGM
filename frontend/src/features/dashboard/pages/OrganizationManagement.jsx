@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import {
     Square, Pencil, Trash2, Plus, Search,
     Download, Mail, Phone, MapPin,
@@ -107,7 +108,7 @@ const OrganizationManagement = () => {
 
     useEffect(() => {
         const socket = initSocket();
-        
+
         const handleOrgEvent = () => {
             fetchOrganizations();
         };
@@ -286,7 +287,7 @@ const OrganizationManagement = () => {
 
             // Fetch organizations
             const res = await organizationService.getOrganizations(params);
-            
+
             const responseData = res?.data || res;
             const allOrgs = responseData?.data || responseData || [];
 
@@ -304,7 +305,7 @@ const OrganizationManagement = () => {
                 }));
 
                 const isSuccess = exportToExcel(exportData, "Organizations_Export", "Organizations");
-                
+
                 if (isSuccess) {
                     showSuccessToast('Export Successful', 'The organization list has been downloaded.');
                 } else {
@@ -355,7 +356,7 @@ const OrganizationManagement = () => {
             {/* Filter and Action Bar */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
                         <div className="relative w-full">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
                             <input
@@ -365,17 +366,17 @@ const OrganizationManagement = () => {
                                 placeholder="Search Organization..."
                             />
                         </div>
-                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
+                        {!isAdmin && (
+                            <button
+                                onClick={() => openModal('add')}
+                                className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                             >
-                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                                <Plus className="w-4 h-4" /> Add
                             </button>
-                        </div>
+                        )}
                     </div>
 
-                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="flex gap-3 w-full sm:w-auto">
                             {!isAdmin && (
                                 <Dropdown
@@ -405,7 +406,7 @@ const OrganizationManagement = () => {
                         {!isAdmin && (
                             <button
                                 onClick={() => openModal('add')}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                             >
                                 <Plus className="w-4 h-4" /> Add New
                             </button>
@@ -461,21 +462,36 @@ const OrganizationManagement = () => {
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
-                        {Array.from({ length: totalPages }, (_, index) => {
-                            const pageNum = index + 1;
-                            return (
+                        {(() => {
+                            let startPage = Math.max(1, page - 1);
+                            let endPage = Math.min(totalPages, page + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(totalPages, 3);
+                                } else if (endPage === totalPages) {
+                                    startPage = Math.max(1, totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
                                 <button
                                     key={pageNum}
                                     onClick={() => setPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
                                         ? 'bg-[#0A437A] text-white shadow-sm font-bold'
                                         : 'border border-transparent text-gray-600 hover:bg-gray-50'
                                         }`}
                                 >
                                     {pageNum}
                                 </button>
-                            );
-                        })}
+                            ));
+                        })()}
 
                         <button
                             disabled={page === totalPages || totalPages === 0}
@@ -525,30 +541,18 @@ const OrganizationManagement = () => {
                 </div>
             )}
 
-            {isDiscardConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to discard your changes? Any unsaved edits will be lost.
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsDiscardConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Continue Editing
-                            </button>
-                            <button
-                                onClick={confirmDiscard}
-                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
-                            >
-                                Discard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <ConfirmationModal
+                isOpen={isDiscardConfirmOpen}
+                onClose={() => setIsDiscardConfirmOpen(false)}
+                onConfirm={confirmDiscard}
+                title="Discard Changes"
+                message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+                confirmText="Discard"
+                confirmButtonClass="bg-danger hover:bg-danger/90"
+                cancelText="Continue Editing"
+            />
+
 
             <ExportFilterModal
                 isOpen={isExportConfirmOpen}
@@ -558,94 +562,49 @@ const OrganizationManagement = () => {
                 title="Export Organizations Data"
             />
 
-            {isStatusConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this organization?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => {
-                                    setIsStatusConfirmOpen(false);
-                                    setStatusToUpdate(null);
-                                }}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmStatusChange}
-                                disabled={isStatusUpdating}
-                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
-            {isBulkStatusConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to set the status of {selectedIds.length} organization(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => {
-                                    setIsBulkStatusConfirmOpen(false);
-                                    setBulkStatusToUpdate(null);
-                                }}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmBulkStatusChange}
-                                disabled={isBulkStatusUpdating}
-                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isBulkStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmationModal
+                isOpen={isStatusConfirmOpen}
+                onClose={() => {
+                    setIsStatusConfirmOpen(false);
+                    setStatusToUpdate(null);
+                }}
+                onConfirm={confirmStatusChange}
+                isSubmitting={isStatusUpdating}
+                title="Change Status"
+                message="Are you sure you want to change the status of this organization?"
+            />
+
+
+
+            <ConfirmationModal
+                isOpen={isBulkStatusConfirmOpen}
+                onClose={() => {
+                    setIsBulkStatusConfirmOpen(false);
+                    setBulkStatusToUpdate(null);
+                }}
+                onConfirm={confirmBulkStatusChange}
+                isSubmitting={isBulkStatusUpdating}
+                title="Change Status (Bulk)"
+                message={`Are you sure you want to set the status of ${selectedIds.length} organization(s) to ${bulkStatusToUpdate ? 'Active' : 'Inactive'}?`}
+            />
+
             {view === 'detail' && (
                 <OrganizationDetailView
                     selectedOrganizationDetail={selectedOrganizationDetail}
                     setView={setView}
                 />
             )}
-            {isAddConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Add Organization</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to add this new organization?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsAddConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={saveOrganization}
-                                disabled={isSubmitting}
-                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <ConfirmationModal
+                isOpen={isAddConfirmOpen}
+                onClose={() => setIsAddConfirmOpen(false)}
+                onConfirm={saveOrganization}
+                isSubmitting={isSubmitting}
+                title="Add Organization"
+                message="Are you sure you want to add this new organization?"
+            />
+
         </div>
     );
 };

@@ -32,6 +32,9 @@ import * as XLSX from 'xlsx';
 import HostelHeader from '../components/Hostel/HostelHeader';
 import HostelToolbar from '../components/Hostel/HostelToolbar';
 import HostelTable from '../components/Hostel/HostelTable';
+import HostelMobileList from '../components/Hostel/HostelMobileList';
+import HostelFormModal from '../components/Hostel/HostelFormModal';
+import HostelDetailView from '../components/Hostel/HostelDetailView';
 import HostelPagination from '../components/Hostel/HostelPagination';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -473,6 +476,19 @@ export default function HostelManagement() {
                     tableContainerRef={tableContainerRef}
                 />
 
+                <HostelMobileList
+                    hostels={hostels}
+                    selectedIds={selectedIds}
+                    handleSelectAll={handleSelectAll}
+                    handleSelectRow={handleSelectRow}
+                    setSelectedHostelDetail={setSelectedHostelDetail}
+                    setView={setView}
+                    openEditHostelModal={openEditHostelModal}
+                    handleStatusChangeClick={handleStatusChangeClick}
+                    loading={loading}
+                    error={error}
+                />
+
                 <HostelPagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -485,172 +501,17 @@ export default function HostelManagement() {
             {/* ==========================================
              MODAL 1: HOSTEL (ADD & EDIT WORKFLOWS)
              ========================================== */}
-            {activeModal === 'hostel' && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4 z-50">
-                    <form
-                        onSubmit={handleSaveHostel}
-                        className="bg-white rounded-t-2xl md:rounded-2xl rounded-b-none md:rounded-b-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200"
-                    >
-                        {/* Header */}
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900">{editingHostel ? t('edit_hostel') : t('add_hostel')}</h2>
-                                <p className="text-xs text-gray-400 mt-1">{editingHostel ? t('edit_hostel_desc') : t('add_hostel_desc')}</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
+            
+            <HostelFormModal
+                activeModal={activeModal}
+                handleCancel={handleCancel}
+                editingHostel={editingHostel}
+                handleSaveHostel={handleSaveHostel}
+                hostelForm={hostelForm}
+                setHostelForm={setHostelForm}
+                isSubmitting={isSubmitting}
+            />
 
-                        {/* Form Sections */}
-                        <div className="space-y-6">
-                            <section>
-                                <div className="border-b border-gray-100 mb-4" />
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="col-span-1 sm:col-span-2">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_name')} <span className="text-red-500">*</span></label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                            <input
-                                                type="text"
-                                                required
-                                                value={hostelForm.name}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, name: e.target.value })}
-                                                placeholder="Enter Hostel Name"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_code')} <span className="text-red-500">*</span></label>
-                                        <div className={`flex border border-gray-200 rounded-lg overflow-hidden ${editingHostel ? 'bg-gray-100' : 'bg-gray-50/50 focus-within:border-[#0A437A]'}`}>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={hostelForm.code}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, code: e.target.value })}
-                                                placeholder="KMCT001"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs uppercase disabled:text-gray-500 disabled:cursor-not-allowed"
-                                                disabled={!!editingHostel}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('email')} <span className="text-red-500">*</span></label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                            <input
-                                                name="email"
-                                                value={hostelForm.email}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, email: e.target.value })}
-                                                type="email"
-                                                required
-                                                placeholder="kmctboys@gmail.com"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                            <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
-                                                <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
-                                                +91
-                                            </div>
-                                            <input
-                                                name="phone"
-                                                value={hostelForm.phone}
-                                                onChange={(e) => {
-                                                    const value = e.target.value.replace(/\D/g, '');
-                                                    if (value.length <= 10) {
-                                                        setHostelForm({ ...hostelForm, phone: value });
-                                                    }
-                                                }}
-                                                type="text"
-                                                required
-                                                maxLength="10"
-                                                pattern="[0-9]{10}"
-                                                title="Please enter exactly 10 digits"
-                                                placeholder="9876543210"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="col-span-1 sm:col-span-2">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('location')} <span className="text-red-500">*</span></label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                            <input
-                                                type="text"
-                                                required
-                                                value={hostelForm.location}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, location: e.target.value })}
-                                                placeholder="Kozhikode, Kerala"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Hostel Type Field */}
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_type')} <span className="text-red-500">*</span></label>
-                                        <Dropdown
-                                            options={[
-                                                { label: t('boys'), value: 'boys' },
-                                                { label: t('girls'), value: 'girls' }
-                                            ]}
-                                            value={hostelForm.hosteltype}
-                                            onChange={(val) => setHostelForm({ ...hostelForm, hosteltype: val })}
-                                            placeholder={t('select_type')}
-                                            minWidth="w-full"
-                                            triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer"
-                                        />
-                                    </div>
-
-                                    {/* Capacity Field */}
-                                    <div className="col-span-1">
-                                        <label className="block text-[10px] font-medium text-black mb-1">{t('capacity')} <span className="text-red-500">*</span></label>
-                                        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                            <input
-                                                type="number"
-                                                required
-                                                min="1"
-                                                value={hostelForm.capacity}
-                                                onChange={(e) => setHostelForm({ ...hostelForm, capacity: e.target.value })}
-                                                placeholder="200"
-                                                className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-                        </div>
-
-                        {/* Footer Buttons */}
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="flex items-center justify-center min-w-[100px] px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingHostel ? t('save_changes') : t('save'))}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                className="px-6 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
-                            >
-                                {t('cancel')}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
             
             {/* Confirmation Modal for Edit */}
             <ConfirmationModal
