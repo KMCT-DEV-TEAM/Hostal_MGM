@@ -15,7 +15,8 @@ import {
   updateFurnitureType,
   deleteFurnitureType,
   changeAssetStatus,
-  getFurnitureAssetsByType
+  getFurnitureAssetsByType,
+  getAllHostelFurnitureAssets
 } from "./furniture.controller.js";
 
 import { 
@@ -126,6 +127,12 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   getDashboardSummary
+);
+router.get(
+  "/assets",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getAllHostelFurnitureAssets
 );
 
 export default router;

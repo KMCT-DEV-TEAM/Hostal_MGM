@@ -102,7 +102,6 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
 export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const matchQuery = {};
   const scope = await resolveUserScope(req.user);
-  console.log(scope)
   if (req.user.role === "admin") {
     matchQuery.organizationId = scope.organizationId;
   } else if (req.user.role === "warden") {
@@ -225,14 +224,37 @@ export const getFurnitureAssetsByType = asyncHandler(async (req, res) => {
   const matchQuery = { furnitureTypeId: new mongoose.Types.ObjectId(typeId) };
   if (status) matchQuery.status = status;
 
-  const assets = await FurnitureAsset.find(matchQuery)
-    .populate("studentId", "name enrollmentNo")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
 
   const total = await FurnitureAsset.countDocuments(matchQuery);
 
   return sendSuccess(res, 200, "Assets retrieved.", { assets, total, page, limit });
+});
+
+export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const status = req.query.status;
+
+  const scope = await resolveUserScope(req.user);
+
+  // Find all FurnitureType IDs that belong to the user's scope
+  const typeQuery = {};
+  if (req.user.role === "admin") {
+    typeQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    typeQuery.hostelId = scope.hostelId;
+  }
+
+  const types = await FurnitureType.find(typeQuery).select("_id").lean();
+  const typeIds = types.map(t => t._id);
+
+  const matchQuery = { furnitureTypeId: { $in: typeIds } };
+  if (status) matchQuery.status = status;
+
+  const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
+  const total = await FurnitureAsset.countDocuments(matchQuery);
+
+  return sendSuccess(res, 200, "All Hostel Assets retrieved.", { assets, total, page, limit });
 });

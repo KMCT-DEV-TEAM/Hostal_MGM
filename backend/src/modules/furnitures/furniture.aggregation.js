@@ -88,8 +88,6 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
         prefix: 1,
         description: 1,
         isActive: 1,
-        organizationId: 1,
-        hostelId: 1,
         organization: { _id: "$organization._id", name: "$organization.name" },
         hostel: { _id: "$hostel._id", name: "$hostel.name" },
         createdAt: 1,
@@ -105,5 +103,50 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
     { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: limit },
+  ]);
+};
+
+export const getFurnitureAssetsListAggregation = async (matchQuery, skip, limit) => {
+  return await FurnitureAsset.aggregate([
+    { $match: matchQuery },
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student",
+      },
+    },
+    {
+      $unwind: {
+        path: "$student",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        furnitureId: 1,
+        furnitureTypeId: 1,
+        status: 1,
+        remarks: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        studentId: {
+          $cond: {
+            if: "$student",
+            then: {
+              _id: "$student._id",
+              name: "$student.name",
+              studentId: "$student.studentId"
+            },
+            else: "null"
+          }
+        },
+      }
+    }
   ]);
 };
