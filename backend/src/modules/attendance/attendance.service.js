@@ -738,10 +738,10 @@ const recalculateWindowStats = async (windowId) => {
     {
       $group: {
         _id: null,
-        presentCount:  { $sum: { $cond: [{ $eq: ["$status", "present"] },  1, 0] } },
-        absentCount:   { $sum: { $cond: [{ $eq: ["$status", "absent"] },   1, 0] } },
-        onLeaveCount:  { $sum: { $cond: [{ $eq: ["$status", "on_leave"] }, 1, 0] } },
-        scannedCount:  { $sum: 1 },
+        presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+        absentCount: { $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] } },
+        onLeaveCount: { $sum: { $cond: [{ $eq: ["$status", "on_leave"] }, 1, 0] } },
+        scannedCount: { $sum: 1 },
       },
     },
   ]);
@@ -752,10 +752,10 @@ const recalculateWindowStats = async (windowId) => {
     { _id: windowId },
     {
       $set: {
-        presentCount:  counts.presentCount,
-        absentCount:   counts.absentCount,
-        onLeaveCount:  counts.onLeaveCount,
-        scannedCount:  counts.scannedCount,
+        presentCount: counts.presentCount,
+        absentCount: counts.absentCount,
+        onLeaveCount: counts.onLeaveCount,
+        scannedCount: counts.scannedCount,
       },
     }
   );

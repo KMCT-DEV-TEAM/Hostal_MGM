@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
 import Dropdown from "@/components/ui/Dropdown";
@@ -435,10 +435,10 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         editingStudent?.organization?._id || editingStudent?.organizationId
       );
       if (payload.organizationId && payload.organizationId !== originalOrgId) {
-        if (!courseId)     payload.courseId     = null;
+        if (!courseId) payload.courseId = null;
         if (!departmentId) payload.departmentId = null;
-        if (!batchId)      payload.batchId      = null;
-        if (!hostelId)     payload.hostelId     = null;
+        if (!batchId) payload.batchId = null;
+        if (!hostelId) payload.hostelId = null;
       }
 
       try {

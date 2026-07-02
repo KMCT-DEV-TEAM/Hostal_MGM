@@ -255,7 +255,6 @@ const buildSuperAdminScope = (req) => ({
 // Admin Wrappers
 export const getAdminDashboardStats = asyncHandler(async (req, res) => {
 
-  console.log(req.user)
   const stats = await getManagementDashboardStatsDb(buildAdminScope(req));
   return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
 });

@@ -206,7 +206,6 @@ export const getPassesDb = async (studentId, query) => {
       }
     }
   ]);
-  console.log('passes', stats)
 
   const totalRecords = stats[0].metadata[0]?.totalRecords || 0;
   const totalPages = Math.ceil(totalRecords / limit);
