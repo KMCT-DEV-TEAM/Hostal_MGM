@@ -276,7 +276,7 @@ export default function FurnitureDetails() {
                                 {item.hostelId?.name || '--------'}
                             </td>
                             <td className="p-4 text-sm text-gray-500">
-                                {item.studentId ? (
+                                {item.studentId && item.studentId.name && typeof item.studentId.name === 'string' ? (
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
                                             {item.studentId.name.substring(0, 2).toUpperCase()}

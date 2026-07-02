@@ -311,7 +311,6 @@ export default function AdminFurniture() {
                                     setSelectedType(item);
                                     setIsAddModalOpen(true);
                                 }}
-                                className="text-primary hover:bg-blue-50 !p-1.5"
                                 title="Edit"
                             >
                                 <Edit2 className="w-4 h-4" />
