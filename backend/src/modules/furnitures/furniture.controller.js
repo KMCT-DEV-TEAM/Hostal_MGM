@@ -5,12 +5,29 @@ import * as furnitureAggregation from "./furniture.aggregation.js";
 import mongoose from "mongoose";
 import FurnitureType from "./furnitureType.model.js";
 import FurnitureAsset from "./furnitureAsset.model.js";
+import Organization from "../organizations/organization.model.js";
+import Hostel from "../hostels/hostel.model.js";
+
+const resolveUserScope = async (user) => {
+  let organizationId = null;
+  let hostelId = null;
+
+  if (user.role === "admin" && user.organization) {
+    organizationId = new mongoose.Types.ObjectId(user.organization);
+  } else if (user.role === "warden") {
+    const hostel = await Hostel.findOne({ wardens: user.id }).lean();
+    if (hostel) hostelId = hostel._id;
+  }
+
+  return { organizationId, hostelId };
+};
 
 export const createFurnitureType = asyncHandler(async (req, res) => {
   try {
+    const scope = await resolveUserScope(req.user);
     const data = {
-      organizationId: req.user.organizationId || req.body.organizationId,
-      hostelId: req.user.hostelId || req.body.hostelId,
+      organizationId: scope.organizationId || req.body.organizationId,
+      hostelId: scope.hostelId || req.body.hostelId,
       name: req.body.name,
       prefix: req.body.prefix,
       description: req.body.description,
@@ -67,11 +84,12 @@ export const completeMaintenance = asyncHandler(async (req, res) => {
 
 export const getDashboardSummary = asyncHandler(async (req, res) => {
   const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
 
   if (req.user.role === "admin") {
-    matchQuery["typeInfo.organizationId"] = req.user.organizationId;
+    matchQuery["typeInfo.organizationId"] = scope.organizationId;
   } else if (req.user.role === "warden") {
-    matchQuery["typeInfo.hostelId"] = req.user.hostelId;
+    matchQuery["typeInfo.hostelId"] = scope.hostelId;
   }
 
   const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
@@ -83,13 +101,13 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
 // Added these stubs so they resolve imports properly since earlier the user had placeholder methods
 export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const matchQuery = {};
-
+  const scope = await resolveUserScope(req.user);
+  console.log(scope)
   if (req.user.role === "admin") {
-    matchQuery.organizationId = req.user.organizationId;
+    matchQuery.organizationId = scope.organizationId;
   } else if (req.user.role === "warden") {
-    matchQuery.hostelId = req.user.hostelId;
+    matchQuery.hostelId = scope.hostelId;
   }
-
   const search = req.query.search;
   if (search) {
     matchQuery.$or = [
@@ -116,6 +134,16 @@ export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
 
   if (!type) return sendError(res, 404, "Furniture Type not found");
 
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin" && type.organizationId._id.toString() !== scope.organizationId?.toString()) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
+  }
+
+  if (req.user.role === "warden" && type.hostelId._id.toString() !== scope.hostelId?.toString()) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your hostel.");
+  }
+
   type.organizationId = type.organizationId;
   type.hostelId = type.hostelId;
 
@@ -132,18 +160,36 @@ export const updateFurnitureType = asyncHandler(async (req, res) => {
   const { typeId } = req.params;
   const { name, prefix, description, isActive } = req.body;
 
+  const typeToUpdate = await FurnitureType.findById(typeId).lean();
+  if (!typeToUpdate) return sendError(res, 404, "Furniture Type not found");
+
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin" && typeToUpdate.organizationId.toString() !== scope.organizationId?.toString()) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
+  }
+
   const updatedType = await FurnitureType.findByIdAndUpdate(
     typeId,
     { name, prefix, description, isActive, updatedBy: req.user.id },
     { new: true }
   ).lean();
 
-  if (!updatedType) return sendError(res, 404, "Furniture Type not found");
   return sendSuccess(res, 200, "Furniture Type updated successfully.", { data: updatedType });
 });
 
 export const deleteFurnitureType = asyncHandler(async (req, res) => {
   const { typeId } = req.params;
+
+  const typeToDelete = await FurnitureType.findById(typeId).lean();
+  if (!typeToDelete) return sendError(res, 404, "Furniture Type not found");
+
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin" && typeToDelete.organizationId.toString() !== scope.organizationId?.toString()) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
+  }
+
   try {
     await furnitureService.deleteFurnitureTypeService(typeId, req.user);
     return sendSuccess(res, 200, "Furniture Type deleted successfully.");
