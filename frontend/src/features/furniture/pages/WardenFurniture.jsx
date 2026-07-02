@@ -70,10 +70,11 @@ export default function WardenFurniture() {
     const pageSubtitle = 'View all furnitures';
 
     const tableHeaders = [
+        { key: 'name', label: 'Furniture Id' },
         { key: 'name', label: 'Furniture' },
-        { key: 'total', label: 'Quantity' },
-        { key: 'allocated', label: 'Assigned' },
-        { key: 'available', label: 'Available' }
+        { key: 'total', label: 'Organization' },
+        { key: 'allocated', label: 'Assigned to' },
+        { key: 'available', label: 'Status' }
     ];
 
     const handleRowClick = (item) => {
@@ -81,9 +82,9 @@ export default function WardenFurniture() {
         setIsDetailsModalOpen(true);
     };
 
-    const totalFurnitures = dashboardStats?.totalAssets || '-';
-    const assignedFurnitures = dashboardStats?.allocated || '-';
-    const availableFurnitures = dashboardStats?.available || '-';
+    const totalFurnitures = dashboardStats?.totalAssets || 0;
+    const assignedFurnitures = dashboardStats?.allocated || 0;
+    const availableFurnitures = dashboardStats?.available || 0;
 
     return (
         <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
@@ -94,23 +95,26 @@ export default function WardenFurniture() {
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <StatsCard 
+                <StatsCard
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}
                     icon={<Box className="w-5 h-5" />}
-                    iconBg="bg-blue-50 text-blue-500"
+                    iconBg="bg-secondary/10 text-secondary"
+                    borderColor='border-t-2 border-t-secondary/70'
                 />
-                <StatsCard 
+                <StatsCard
                     label="ASSIGNED FURNITURES"
                     value={assignedFurnitures}
                     icon={<PackageCheck className="w-5 h-5" />}
                     iconBg="bg-success/10 text-success"
+                    borderColor='border-t-2 border-t-success/70'
                 />
-                <StatsCard 
+                <StatsCard
                     label="AVAILABLE FURNITURES"
                     value={availableFurnitures}
                     icon={<PackageOpen className="w-5 h-5" />}
-                    iconBg="bg-cyan-50 text-cyan-500"
+                    iconBg="bg-secondary/10 text-secondary/70"
+                    borderColor='border-t-2 border-t-secondary/70'
                 />
             </div>
 
