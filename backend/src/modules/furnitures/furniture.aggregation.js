@@ -143,7 +143,7 @@ export const getFurnitureAssetsListAggregation = async (matchQuery, skip, limit)
               name: "$student.name",
               studentId: "$student.studentId"
             },
-            else: "null"
+            else: null
           }
         },
       }
