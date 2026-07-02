@@ -218,17 +218,9 @@ const PasswordRequests = () => {
                                 className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
                             />
                         </div>
-                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
-                            >
-                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
                         </div>
-                    </div>
 
-                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="flex gap-3 w-full sm:w-auto">
                             <Dropdown
                                 className="flex-1 sm:flex-none"
@@ -539,21 +531,36 @@ const PasswordRequests = () => {
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
 
-                            {Array.from({ length: pagination.totalPages }, (_, index) => {
-                                const pageNum = index + 1;
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => fetchRequests(pageNum)}
-                                        className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${pagination.page === pageNum
-                                            ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                            : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
+                            {(() => {
+                            let startPage = Math.max(1, pagination.page - 1);
+                            let endPage = Math.min(pagination.totalPages, pagination.page + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(pagination.totalPages, 3);
+                                } else if (endPage === pagination.totalPages) {
+                                    startPage = Math.max(1, pagination.totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => fetchRequests(pageNum)}
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${pagination.page === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            ));
+                        })()}
 
                             <button
                                 disabled={pagination.page >= pagination.totalPages || pagination.totalPages === 0}
@@ -629,3 +636,4 @@ const PasswordRequests = () => {
 };
 
 export default PasswordRequests;
+

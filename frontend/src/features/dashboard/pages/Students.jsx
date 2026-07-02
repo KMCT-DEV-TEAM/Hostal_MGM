@@ -361,21 +361,36 @@ export default function Students() {
           >
             Previous
           </button>
-          {Array.from({ length: pagination.totalPages }, (_, index) => {
-            const pageNum = index + 1;
-            return (
-              <button
-                key={pageNum}
-                onClick={() => setPage(pageNum)}
-                className={`w-8 h-8 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
-                    ? "bg-[#0A437A] text-white shadow-sm font-bold"
-                    : "border border-transparent text-gray-600 hover:bg-gray-50"
-                  }`}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
+          {(() => {
+                            let startPage = Math.max(1, page - 1);
+                            let endPage = Math.min(pagination.totalPages, page + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(pagination.totalPages, 3);
+                                } else if (endPage === pagination.totalPages) {
+                                    startPage = Math.max(1, pagination.totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => setPage(pageNum)}
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                        } cursor-pointer`}
+                                >
+                                    {pageNum}
+                                </button>
+                            ));
+                        })()}
           <button
             disabled={!pagination.hasNextPage}
             onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}

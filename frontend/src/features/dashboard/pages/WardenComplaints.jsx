@@ -341,21 +341,36 @@ return (
                         <ChevronLeft className="w-4 h-4" />
                     </button>
 
-                    {Array.from({ length: totalPages }, (_, index) => {
-                        const pageNum = index + 1;
-                        return (
-                            <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${currentPage === pageNum
-                                    ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                    : 'border border-transparent text-gray-500 hover:bg-gray-50'
-                                    }`}
-                            >
-                                {pageNum}
-                            </button>
-                        );
-                    })}
+                    {(() => {
+                            let startPage = Math.max(1, currentPage - 1);
+                            let endPage = Math.min(totalPages, currentPage + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(totalPages, 3);
+                                } else if (endPage === totalPages) {
+                                    startPage = Math.max(1, totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
+                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                        } cursor-pointer`}
+                                >
+                                    {pageNum}
+                                </button>
+                            ));
+                        })()}
 
                     <button
                         disabled={currentPage === totalPages || totalPages === 0}

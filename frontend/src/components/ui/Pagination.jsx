@@ -28,9 +28,24 @@ export default function Pagination({
                     <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                {Array.from({ length: totalPages }, (_, index) => {
-                    const pageNum = index + 1;
-                    return (
+                {(() => {
+                    let startPage = Math.max(1, page - 1);
+                    let endPage = Math.min(totalPages, page + 1);
+
+                    if (endPage - startPage < 2) {
+                        if (startPage === 1) {
+                            endPage = Math.min(totalPages, 3);
+                        } else if (endPage === totalPages) {
+                            startPage = Math.max(1, totalPages - 2);
+                        }
+                    }
+
+                    const visiblePages = [];
+                    for (let i = startPage; i <= endPage; i++) {
+                        visiblePages.push(i);
+                    }
+
+                    return visiblePages.map(pageNum => (
                         <button
                             key={pageNum}
                             onClick={() => setPage(pageNum)}
@@ -41,8 +56,8 @@ export default function Pagination({
                         >
                             {pageNum}
                         </button>
-                    );
-                })}
+                    ));
+                })()}
 
                 <button
                     disabled={page === totalPages || totalPages === 0}
