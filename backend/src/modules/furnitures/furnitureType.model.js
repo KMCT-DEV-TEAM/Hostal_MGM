@@ -50,12 +50,17 @@ const furnitureTypeSchema = new mongoose.Schema(
 
 furnitureTypeSchema.index({ organizationId: 1 });
 furnitureTypeSchema.index({ hostelId: 1 });
-furnitureTypeSchema.index({ name: 1 });
-furnitureTypeSchema.index({ prefix: 1 });
 furnitureTypeSchema.index({ isActive: 1 });
 
-furnitureTypeSchema.index({ organizationId: 1, hostelId: 1, name: 1 }, { unique: true });
-furnitureTypeSchema.index({ organizationId: 1, hostelId: 1, prefix: 1 }, { unique: true });
+furnitureTypeSchema.index(
+  { organizationId: 1, hostelId: 1, name: 1 },
+  { unique: true }
+);
+
+furnitureTypeSchema.index(
+  { organizationId: 1, hostelId: 1, prefix: 1 },
+  { unique: true }
+);
 
 const FurnitureType = mongoose.model("FurnitureType", furnitureTypeSchema);
 
