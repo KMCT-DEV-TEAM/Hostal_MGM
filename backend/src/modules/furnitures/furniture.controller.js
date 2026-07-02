@@ -258,3 +258,21 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "All Hostel Assets retrieved.", { assets, total, page, limit });
 });
+
+export const getFurnitureAssetDetails = asyncHandler(async (req, res) => {
+  const { assetId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(assetId)) {
+    return sendError(res, 400, "Invalid Asset ID");
+  }
+
+  const assetDetails = await furnitureAggregation.getFurnitureAssetDetailsAggregation(
+    new mongoose.Types.ObjectId(assetId)
+  );
+
+  if (!assetDetails) {
+    return sendError(res, 404, "Asset not found");
+  }
+
+  return sendSuccess(res, 200, "Asset details retrieved.", assetDetails);
+});

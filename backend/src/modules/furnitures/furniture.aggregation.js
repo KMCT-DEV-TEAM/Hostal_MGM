@@ -150,3 +150,93 @@ export const getFurnitureAssetsListAggregation = async (matchQuery, skip, limit)
     }
   ]);
 };
+
+export const getFurnitureAssetDetailsAggregation = async (assetId) => {
+  const result = await FurnitureAsset.aggregate([
+    { $match: { _id: assetId } },
+    {
+      $lookup: {
+        from: "furnituretypes",
+        localField: "furnitureTypeId",
+        foreignField: "_id",
+        as: "typeInfo",
+      },
+    },
+    { $unwind: { path: "$typeInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "student",
+      },
+    },
+    { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "furnitureassethistories",
+        let: { assetId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$furnitureAssetId", "$$assetId"] } } },
+          { $sort: { createdAt: -1 } },
+          {
+            $lookup: {
+              from: "students",
+              localField: "studentId",
+              foreignField: "_id",
+              as: "historyStudent",
+            }
+          },
+          { $unwind: { path: "$historyStudent", preserveNullAndEmptyArrays: true } },
+          {
+            $lookup: {
+              from: "users",
+              localField: "performedBy",
+              foreignField: "_id",
+              as: "user",
+            }
+          },
+          { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+          {
+            $project: {
+              _id: 1,
+              action: 1,
+              previousStatus: 1,
+              currentStatus: 1,
+              remarks: 1,
+              createdAt: 1,
+              "student.name": "$historyStudent.name",
+              "student._id": "$historyStudent._id",
+              "performedBy.name": "$user.name",
+              "performedBy.role": "$performedByRole"
+            }
+          }
+        ],
+        as: "timeline",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        furnitureId: 1,
+        status: 1,
+        createdAt: 1,
+        furnitureName: "$typeInfo.name",
+        prefix: "$typeInfo.prefix",
+        currentAssignment: {
+          $cond: {
+            if: "$student",
+            then: {
+              studentName: "$student.name",
+              studentId: "$student._id",
+              assignedDate: "$updatedAt" // Approximating assigned date from last asset update
+            },
+            else: null
+          }
+        },
+        timeline: 1
+      }
+    }
+  ]);
+  return result[0] || null;
+};
