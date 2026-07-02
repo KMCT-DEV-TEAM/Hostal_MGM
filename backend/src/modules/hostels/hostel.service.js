@@ -44,9 +44,9 @@ const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status =
   const skip = (page - 1) * limit;
   const query = {};
 
-  if (adminId) {
-    query.adminId = adminId;
-  }
+  // if (adminId) {
+  //   query.adminId = adminId;
+  // }
 
   if (status && status !== "All") {
     query.isActive = status === "Active";
