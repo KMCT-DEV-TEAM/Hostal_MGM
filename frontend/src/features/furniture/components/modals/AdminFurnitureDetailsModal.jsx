@@ -1,22 +1,42 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { Bed, Box, PackageCheck, PackageOpen, Edit2, Minus, Plus } from 'lucide-react';
+import { Bed, Box, PackageCheck, PackageOpen, Edit2, Check, X, Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
-import AdjustStockModal from './AdjustStockModal';
 import Button from '@/components/ui/Button';
 
 export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onViewList, onUpdateSuccess }) {
-    const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+    const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+    const [quantityValue, setQuantityValue] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     if (!item) return null;
 
-    const handleAdjustStock = (count) => {
-        // We will call the parent's onUpdateSuccess after the API call in AdjustStockModal, 
-        // wait, AdjustStockModal takes onSave, which expects us to do the API call.
-        // I will let the parent handle the API call by propagating it if needed,
-        // or actually, the parent (AdminFurniture.jsx) already has AdjustStockModal! 
-        // But the user wants it inside the details modal. 
-        // We can just open the AdjustStockModal over this modal, and call the parent's handleAdjustStock.
+    const handleEditQuantityClick = () => {
+        const currentTotal = item.total || item.assets?.total || 0;
+        setQuantityValue(currentTotal.toString());
+        setIsEditingQuantity(true);
+    };
+
+    const handleSaveQuantity = async () => {
+        const currentTotal = item.total || item.assets?.total || 0;
+        const newTotal = parseInt(quantityValue, 10);
+        if (isNaN(newTotal)) return;
+
+        const difference = newTotal - currentTotal;
+        if (difference === 0) {
+            setIsEditingQuantity(false);
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await onUpdateSuccess(item._id, newTotal);
+            setIsEditingQuantity(false);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -62,38 +82,46 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                                 <span className="w-8 text-gray-400">:</span>
                                 <span className="flex-1 font-medium text-gray-900">{formatDate(item.createdAt)}</span>
                             </div>
-                            <div className="flex items-center relative">
+                            <div className="flex items-center relative group">
                                 <span className="w-1/3 text-gray-500">Quantity</span>
                                 <span className="w-8 text-gray-400">:</span>
                                 <div className="flex-1 flex items-center gap-4">
-                                    <div className="inline-flex items-center border border-gray-200 rounded-full px-3 py-1 gap-4">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            fullWidth={false}
-                                            onClick={() => setIsAdjustModalOpen(true)}
-                                        >
-                                            <Minus className="w-3 h-3" />
-                                        </Button>
-                                        <span className="font-semibold text-gray-900 text-xs">{item.total || item.assets?.total || 0}</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            fullWidth={false}
-                                            onClick={() => setIsAdjustModalOpen(true)}
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        fullWidth={false}
-                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-600 !p-1.5"
-                                        onClick={() => setIsAdjustModalOpen(true)}
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </Button>
+                                    {isEditingQuantity ? (
+                                        <div className="flex items-center gap-2 w-full max-w-[150px]">
+                                            <input
+                                                type="number"
+                                                value={quantityValue}
+                                                onChange={(e) => setQuantityValue(e.target.value)}
+                                                className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50"
+                                                autoFocus
+                                                disabled={isSaving}
+                                            />
+                                            <button
+                                                onClick={handleSaveQuantity}
+                                                disabled={isSaving}
+                                                className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 hrink-0"
+                                            >
+                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                            </button>
+                                            <button
+                                                onClick={() => setIsEditingQuantity(false)}
+                                                disabled={isSaving}
+                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 shrink-0"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="font-medium text-gray-900">{item.total || item.assets?.total || 0}</span>
+                                            <button
+                                                className="text-gray-400 hover:text-primary rounded-md opacity-0 group-hover:opacity-100 transition-opacity p-1.5 ml-2"
+                                                onClick={handleEditQuantityClick}
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex">
@@ -162,19 +190,6 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                     </div>
                 </div>
             </Modal>
-
-            {/* Adjust Stock Modal Layer */}
-            {isAdjustModalOpen && (
-                <AdjustStockModal
-                    isOpen={isAdjustModalOpen}
-                    onClose={() => setIsAdjustModalOpen(false)}
-                    onSave={async (count) => {
-                        await onUpdateSuccess(item._id, count);
-                        setIsAdjustModalOpen(false);
-                    }}
-                    furnitureName={item.name}
-                />
-            )}
         </>
     );
 }

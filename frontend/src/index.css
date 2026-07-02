@@ -24,10 +24,15 @@
 
     /* Animations */
     --animate-slide-up: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    
+
     @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
     }
 }
 
@@ -36,15 +41,28 @@ body {
 }
 
 /* Global rule to ensure all naturally clickable elements have a pointer cursor */
-button, 
-[role="button"], 
-input[type="submit"], 
-input[type="button"], 
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
 input[type="reset"],
 select,
 label,
 a {
     cursor: pointer !important;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 @layer utilities {
@@ -64,7 +82,7 @@ a {
 }
 
 .swal-toast-container {
-  z-index: 999999 !important;
+    z-index: 999999 !important;
 }
 
 /* Custom Date Input Styling */
@@ -131,4 +149,4 @@ a {
 /* Reduce stroke width for all lucide icons */
 .lucide {
     stroke-width: 1.5 !important;
-}
+}
