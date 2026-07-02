@@ -6,7 +6,7 @@ import { checkAnyAssetAllocatedForTypeDb } from "./furniture.service.js";
 export const validateCreateFurnitureType = async (req, res, next) => {
   try {
     const { name, prefix, openingStock } = req.body;
-    
+
     if (!name || name.trim().length < 2 || name.trim().length > 100) {
       return res.status(400).json({ success: false, message: "Name must be between 2 and 100 characters." });
     }
@@ -29,9 +29,8 @@ export const validateCreateFurnitureType = async (req, res, next) => {
 
 export const validateUpdateFurnitureType = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { typeId: id } = req.params;
     const { prefix } = req.body;
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "Invalid Furniture Type ID." });
     }
@@ -74,7 +73,7 @@ export const validateAdjustAssetCount = async (req, res, next) => {
 export const validateAllocate = async (req, res, next) => {
   try {
     const { studentId, assetId } = req.params;
-
+    console.log(req.params)
     if (!mongoose.Types.ObjectId.isValid(studentId) || !mongoose.Types.ObjectId.isValid(assetId)) {
       return res.status(400).json({ success: false, message: "Invalid ID parameters." });
     }
@@ -159,9 +158,9 @@ export const validateStatusChange = (allowedCurrentStatuses) => {
       }
 
       if (!allowedCurrentStatuses.includes(asset.status)) {
-        return res.status(409).json({ 
-          success: false, 
-          message: `Action not allowed. Current status is ${asset.status}, expected one of: ${allowedCurrentStatuses.join(", ")}` 
+        return res.status(409).json({
+          success: false,
+          message: `Action not allowed. Current status is ${asset.status}, expected one of: ${allowedCurrentStatuses.join(", ")}`
         });
       }
 
