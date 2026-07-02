@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, ChevronDown, Loader2 } from 'lucide-react';
-import Dropdown from '@/components/ui/Dropdown';
+import { Loader2 } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminFormModal = ({
@@ -18,153 +18,19 @@ const AdminFormModal = ({
     isVerifying
 }) => {
     const { t } = useTranslation();
-    if (activeModal !== 'admin') return null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4 z-50">
-            <form
-                onSubmit={handleSaveAdmin}
-                className="bg-white rounded-t-2xl md:rounded-2xl rounded-b-none max-w-xl w-full p-6 shadow-2xl border border-gray-100 relative animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200"
-            >
-                {/* Modal Header */}
-                <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-900">
-                            {editingAdmin ? t('edit_admin') : t('add_admin')}
-                        </h2>
-                        <p className="text-xs text-[#777777] mt-0.5">
-                            {t('add_admin_desc')}
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-
-
-                {/* Form Sections */}
-                <div className="space-y-6">
-                    <section>
-                        <h3 className="text-xs font-semibold text-primary mb-1">{t('basic_info')}</h3>
-                        <h5 className='text-xs text-[#777777] mb-4'>{t('admin_basic_info_desc')}</h5>
-                        <div className="border-b border-gray-100 mb-4" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder={t('first_name_placeholder')}
-                                    value={adminForm.name ? adminForm.name.split(' ')[0] : ''}
-                                    onChange={(e) => setAdminForm({ ...adminForm, name: `${e.target.value} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() })}
-                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                />
-                            </div>
-                            <div className="col-span-1">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} <span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder={t('last_name_placeholder')}
-                                    value={adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') : ''}
-                                    onChange={(e) => setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${e.target.value}`.trim() })}
-                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                />
-                            </div>
-                            <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
-                                <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-[#0A437A]">
-                                    <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600">
-                                        <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
-                                        +91
-                                    </div>
-                                    <input
-                                        type="tel"
-                                        required
-                                        pattern="[0-9]{10}"
-                                        maxLength="10"
-                                        title="Please enter a valid 10-digit phone number"
-                                        placeholder="0000000000"
-                                        value={adminForm.phone}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/\D/g, '');
-                                            if (val.length <= 10) {
-                                                setAdminForm({ ...adminForm, phone: val });
-                                            }
-                                        }}
-                                        className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Conditionally hide Email if editing */}
-                            {!editingAdmin && (
-                                <div className="col-span-1 sm:col-span-2">
-                                    <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="email"
-                                            required
-                                            value={adminForm.email || ''}
-                                            onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                                            placeholder="email@example.com"
-                                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                                            disabled={isEmailVerified}
-                                        />
-                                        {isEmailVerified ? (
-                                            <button type="button" className="px-4 py-2 bg-green-50 text-success text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                {t('verified')}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')}
-                                                disabled={isVerifying}
-                                                className="flex items-center justify-center min-w-[70px] px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-secondary transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                                            >
-                                                {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('verify')}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* Conditionally hide Organization section if editing */}
-                    {!editingAdmin && (
-                        <section>
-                            <h3 className="text-xs font-semibold text-[#0A437A] mb-2">{t('admin_org_assignment')}</h3>
-                            <div className="border-b border-gray-100 mb-4" />
-                            <label className="block text-[10px] font-medium text-gray-500 mb-1">{t('admin_org_assignment_desc')} <span className="text-red-500">*</span></label>
-                            <div className="relative">
-                                <Dropdown
-                                    options={organizations.map(org => ({ value: org._id, label: org.name }))}
-                                    value={adminForm.organization}
-                                    onChange={(val) => setAdminForm({ ...adminForm, organization: val })}
-                                    placeholder={t('select_organization')}
-                                    minWidth="w-full"
-                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
-                                />
-                            </div>
-                        </section>
-                    )}
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
-                    </button>
+        <Modal
+            isOpen={activeModal === 'admin'}
+            onClose={handleCancel}
+            title={editingAdmin ? t('edit_admin') : t('add_admin')}
+            subtitle={t('add_admin_desc')}
+            asForm={true}
+            onSubmit={handleSaveAdmin}
+            maxWidth="max-w-xl"
+            bottomSheetOnMobile={true}
+            footer={
+                <>
                     <button
                         type="button"
                         onClick={handleCancel}
@@ -172,10 +38,119 @@ const AdminFormModal = ({
                     >
                         {t('cancel')}
                     </button>
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
+                    </button>
+                </>
+            }
+        >
+            <div className="space-y-6">
+                <section>
+                    <h3 className="text-xs font-semibold text-primary mb-1">{t('basic_info')}</h3>
+                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_basic_info_desc')}</h5>
+                    <div className="border-b border-gray-100 mb-4" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                required
+                                placeholder={t('first_name_placeholder')}
+                                value={adminForm.name ? adminForm.name.split(' ')[0] : ''}
+                                onChange={(e) => setAdminForm({ ...adminForm, name: `${e.target.value} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() })}
+                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                            />
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                required
+                                placeholder={t('last_name_placeholder')}
+                                value={adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') : ''}
+                                onChange={(e) => setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${e.target.value}`.trim() })}
+                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                            />
+                        </div>
+                        <div className="col-span-1 sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')}</label>
+                            <input
+                                type="tel"
+                                required
+                                placeholder={t('phone_placeholder')}
+                                value={adminForm.phone}
+                                onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                            />
+                        </div>
+                    </div>
+                </section>
 
-                </div>
-            </form>
-        </div>
+                <section>
+                    <h3 className="text-xs font-semibold text-primary mb-1">{t('role_assignments')}</h3>
+                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_role_desc')}</h5>
+                    <div className="border-b border-gray-100 mb-4" />
+                    <div>
+                        <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
+                        <select
+                            required={!editingAdmin}
+                            value={adminForm.organization}
+                            onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
+                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] appearance-none"
+                            disabled={!!editingAdmin}
+                        >
+                            <option value="">{t('select_organization')}</option>
+                            {organizations.map(org => (
+                                <option key={org._id} value={org._id}>{org.name}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700" style={{ marginTop: 'calc(100% - 2rem)', right: '1.5rem' }}>
+                        </div>
+                    </div>
+                </section>
+
+                {!editingAdmin && (
+                    <section>
+                        <h3 className="text-xs font-semibold text-primary mb-1">{t('account_security')}</h3>
+                        <h5 className='text-xs text-[#777777] mb-4'>{t('admin_security_desc')}</h5>
+                        <div className="border-b border-gray-100 mb-4" />
+                        <div>
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="email"
+                                    required
+                                    placeholder={t('email_placeholder')}
+                                    value={adminForm.email}
+                                    onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                    disabled={isEmailVerified}
+                                />
+                                {isEmailVerified ? (
+                                    <button type="button" className="px-4 py-2 bg-green-50 text-success text-[10px] font-medium rounded-lg flex items-center gap-1 cursor-default whitespace-nowrap">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        {t('verified')}
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVerifyClick(adminForm.email, 'addAdmin')}
+                                        disabled={isVerifying}
+                                        className="flex items-center justify-center min-w-[70px] px-4 py-2 bg-[#0A437A] text-white text-xs font-medium rounded-lg hover:bg-secondary transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                                    >
+                                        {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('verify')}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
+            </div>
+        </Modal>
     );
 };
 

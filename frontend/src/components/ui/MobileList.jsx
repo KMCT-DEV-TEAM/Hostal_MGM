@@ -1,5 +1,5 @@
-import React from 'react';
-import { Square, CheckSquare, Pencil } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pencil, CheckSquare, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 /**
@@ -12,11 +12,12 @@ import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
  * @param {Function} onSelectAll - Callback when the Select All button is clicked
  * @param {Function} onSelect - Callback when an individual item's checkbox is clicked
  * @param {Function} onEdit - Callback when the edit button of an item is clicked
+ * @param {Function} onViewDetails - Callback when the "View Details" button is clicked
  * @param {boolean} canSelect - Show checkbox selection column
  * @param {boolean} canEdit - Show edit button
- * @param {Array} statusLoadingIds - IDs of items whose status update is currently loading
  * @param {string} emptyText - Text to display when there are no items
- * @param {Function} renderItem - Render function for the card content (item, isSelected, isLoading) => ReactNode
+ * @param {Function} titleFn - Function to extract the title from an item: (item) => string
+ * @param {Function} renderBody - Render function for the expanded fields: (item) => ReactNode
  */
 export default function MobileList({
     items = [],
@@ -26,18 +27,24 @@ export default function MobileList({
     onSelectAll,
     onSelect,
     onEdit,
+    onViewDetails,
     canSelect = false,
     canEdit = false,
-    statusLoadingIds = [],
     emptyText = "No items match the selected filter.",
-    renderItem,
-    onRowClick
+    titleFn,
+    renderBody
 }) {
     const isAllSelected = items.length > 0 && selectedIds.length === items.length;
+    const [expandedIds, setExpandedIds] = useState([]);
+
+    const toggleExpand = (e, id) => {
+        e.stopPropagation();
+        setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
 
     return (
         <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none px-2 sm:px-0">
-            {canSelect && !loading && !error && items.length > 0 && (
+            {canSelect && !loading && !error && selectedIds.length > 0 && items.length > 0 && (
                 <div className="flex items-center gap-2 px-1 mb-1">
                     <button
                         type="button"
@@ -45,11 +52,11 @@ export default function MobileList({
                         className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2"
                     >
                         {isAllSelected ? (
-                            <CheckSquare className="w-5 h-5 text-primary" />
+                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                         ) : (
                             <Square className="w-5 h-5" />
                         )}
-                        <span className="text-sm font-medium text-gray-600">Select All</span>
+                        <span className="text-xs font-medium text-gray-600">Select All</span>
                     </button>
                 </div>
             )}
@@ -57,57 +64,81 @@ export default function MobileList({
             {loading ? (
                 <MobileSkeletonLoader rows={3} />
             ) : error ? (
-                <div className="text-center text-red-500 p-8 bg-white rounded-xl">
+                <div className="text-center text-danger p-8 bg-white rounded-xl shadow-sm">
                     {typeof error === 'object' ? error.message || JSON.stringify(error) : error}
                 </div>
             ) : items.length === 0 ? (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl border border-gray-100">
+                <div className="text-center text-gray-400 p-8 bg-white rounded-xl shadow-sm">
                     {emptyText}
                 </div>
             ) : (
                 items.map((item, index) => {
                     const rowId = item._id || item.id;
                     const isSelected = selectedIds.includes(rowId);
-                    const isLoading = statusLoadingIds.includes(rowId);
+                    const isExpanded = expandedIds.includes(rowId);
 
                     return (
-                        <div
-                            key={rowId || index}
-                            onClick={(e) => {
-                                if (onRowClick) onRowClick(item);
-                            }}
-                            className={`bg-white p-4 rounded-xl shadow-sm flex flex-col relative border transition-all ${
-                                isSelected ? 'border-primary bg-blue-50/20' : 'border-gray-100'
-                            } ${isLoading ? 'opacity-50 pointer-events-none' : ''} ${onRowClick ? 'cursor-pointer active:bg-gray-50' : ''}`}
+                        <div 
+                            key={rowId || index} 
+                            className={`bg-white rounded-xl overflow-hidden shrink-0 ${
+                                isExpanded 
+                                    ? (isSelected ? 'border-x border-t border-b-0 border-[#0A437A]' : 'border-x border-t border-b-0 border-gray-200') 
+                                    : (isSelected ? 'border border-[#0A437A]' : 'border border-gray-50')
+                            } ${isExpanded ? 'shadow-md z-10 relative' : 'shadow-sm'}`}
                         >
-                            {(canSelect || (canEdit && onEdit)) && (
-                                <div className="flex justify-between items-start mb-3">
+                            {/* Header */}
+                            <div 
+                                className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
+                                onClick={(e) => toggleExpand(e, rowId)}
+                            >
+                                <div className="flex items-center gap-2">
                                     {canSelect && (
                                         <button
-                                            type="button"
-                                            onClick={() => onSelect && onSelect(rowId)}
-                                            className="focus:outline-none text-gray-300 cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); onSelect && onSelect(rowId); }}
+                                            className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
                                         >
                                             {isSelected ? (
-                                                <CheckSquare className="w-5 h-5 text-primary" />
+                                                <CheckSquare className="w-5 h-5 text-[#0A437A]" />
                                             ) : (
                                                 <Square className="w-5 h-5" />
                                             )}
                                         </button>
                                     )}
+                                    <span className="font-medium text-text-secondary text-[11px]">
+                                        {titleFn ? titleFn(item) : (item.name || `Item ${index + 1}`)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
                                     {canEdit && onEdit && (
                                         <button
-                                            type="button"
-                                            onClick={() => onEdit && onEdit(item)}
-                                            className="text-blue-400 hover:text-primary cursor-pointer ms-auto"
+                                            onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
                                         >
-                                            <Pencil className="w-4 h-4" />
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                    <button className="text-gray-400 hover:text-gray-600 cursor-pointer shrink-0 ml-1">
+                                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Expandable Content */}
+                            {isExpanded && (
+                                <div className="flex flex-col bg-gray-50 animate-in slide-in-from-top-2 duration-200">
+                                    <div className="flex flex-col text-[11px]">
+                                        {renderBody && renderBody(item)}
+                                    </div>
+                                    {onViewDetails && (
+                                        <button
+                                            onClick={() => onViewDetails(item)}
+                                            className="w-full py-3 bg-[#0A437A] text-white font-semibold text-[13px] hover:bg-secondary transition-colors cursor-pointer"
+                                        >
+                                            View Details
                                         </button>
                                     )}
                                 </div>
                             )}
-
-                            {renderItem && renderItem(item, isSelected, isLoading)}
                         </div>
                     );
                 })
@@ -115,3 +146,29 @@ export default function MobileList({
         </div>
     );
 }
+
+export const MobileRow = ({ label, value, valueClass = "text-text-secondary" }) => (
+    <div className="flex border-b border-gray-50/50 bg-white items-center min-h-[40px]">
+        <div className="w-1/3 py-2.5 px-3 text-text-secondary font-medium border-r border-gray-50/50 break-words">{label}</div>
+        <div className={`w-2/3 py-2.5 px-3 ${valueClass} break-words`}>
+            <span className="mr-1">:</span> {value}
+        </div>
+    </div>
+);
+
+export const MobileStatusRow = ({ label = "Status", isActive, onClick }) => (
+    <div className="flex border-b border-gray-50/50 bg-white items-center min-h-[40px]">
+        <div className="w-1/3 py-2.5 px-3 text-text-secondary font-medium border-r border-gray-50/50">{label}</div>
+        <div className="w-2/3 py-2.5 px-3 flex items-center gap-1">
+            <span className="mr-1">:</span>
+            <button 
+                type="button"
+                onClick={onClick}
+                className="flex items-center font-medium cursor-pointer text-text-secondary"
+            >
+                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
+                {isActive ? 'Active' : 'Inactive'}
+            </button>
+        </div>
+    </div>
+);

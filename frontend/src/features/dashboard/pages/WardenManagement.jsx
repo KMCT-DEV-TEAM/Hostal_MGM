@@ -1,13 +1,14 @@
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import React, { useState, useMemo, useEffect } from 'react';
 import WardenHeader from '../components/Warden/WardenHeader';
-import WardenToolbar from '../components/Warden/WardenToolbar';
+import ListToolbar from '@/components/ui/ListToolbar';
 import WardenTable from '../components/Warden/WardenTable';
 import WardenMobileList from '../components/Warden/WardenMobileList';
 import WardenPagination from '../components/Warden/WardenPagination';
 import WardenDetailView from '../components/Warden/WardenDetailView';
 import WardenFormModal from '../components/Warden/WardenFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
-import { Pencil, X, ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { Pencil, X, ArrowLeft, Check, Loader2, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import otpService from '../../../services/otp.service';
 import hostelService from '../../../services/hostel.service';
 import wardenService from '../../../services/warden.service';
@@ -42,6 +43,7 @@ export default function WardenManagement() {
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isHostelConfirmOpen, setIsHostelConfirmOpen] = useState(false);
     const [hostelChangeToConfirm, setHostelChangeToConfirm] = useState(null);
@@ -498,15 +500,56 @@ export default function WardenManagement() {
             />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                <WardenToolbar
-                    statusFilter={statusFilter}
-                    setStatusFilter={setStatusFilter}
-                    setCurrentPage={setCurrentPage}
+                <ListToolbar
                     searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    initiateExport={() => setIsExportConfirmOpen(true)}
-                    openAddWardenModal={openAddWardenModal}
-                />
+                    onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                    searchPlaceholder="Search Wardens..."
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+                    onExport={() => setIsExportConfirmOpen(true)}
+                    onAdd={openAddWardenModal}
+                    addButtonLabel="Add New"
+                >
+                    {selectedIds.length > 0 && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A]/10 text-[#0A437A] border border-[#0A437A]/20 rounded-lg text-sm hover:bg-[#0A437A]/20 transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                                <SlidersHorizontal className="w-4 h-4" />
+                                Bulk Actions ({selectedIds.length})
+                                <ChevronDown className={`w-4 h-4 transition-transform ${isBulkMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isBulkMenuOpen && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                    <button
+                                        onClick={() => {
+                                            setIsBulkStatusConfirmOpen(true);
+                                            setBulkStatusToUpdate('Active');
+                                            setIsBulkMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                        Mark as Active
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsBulkStatusConfirmOpen(true);
+                                            setBulkStatusToUpdate('Inactive');
+                                            setIsBulkMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                                        Mark as Inactive
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </ListToolbar>
 
                 <WardenTable
                     wardens={wardens}

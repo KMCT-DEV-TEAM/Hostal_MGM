@@ -174,7 +174,7 @@ export default function HostelTable({
                         return (
                             <div key={hostel._id} className={`bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border overflow-hidden shrink-0 ${isSelected ? 'border-[#0A437A]' : 'border-gray-50'}`}>
                                 {/* Header */}
-                                <div 
+                                <div
                                     className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
                                     onClick={(e) => toggleExpand(e, hostel._id)}
                                 >
@@ -234,7 +234,7 @@ export default function HostelTable({
                                             <div className="flex border-b border-gray-50/50 bg-gray-50/30 items-center">
                                                 <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Status</div>
                                                 <div className="w-2/3 py-2.5 px-3 flex items-center gap-1">
-                                                    : <button 
+                                                    : <button
                                                         type="button"
                                                         onClick={() => handleStatusChangeClick && handleStatusChangeClick(hostel._id, hostel.isActive)}
                                                         className={`font-semibold cursor-pointer ${hostel.isActive ? 'text-green-500' : 'text-red-500'}`}

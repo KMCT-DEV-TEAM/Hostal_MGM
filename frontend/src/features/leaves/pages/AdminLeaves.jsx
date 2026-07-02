@@ -236,7 +236,7 @@ export default function AdminLeaves() {
             const params = {
                 passType: passTypeFilter,
                 hostelId: selectedHostel,
-                search: debouncedSearch,
+                search: debouncedInput,
                 status: exportFilters.status || statusFilter,
                 outPassCategory: categoryFilter,
                 organization: orgFilter !== 'All' ? orgFilter : undefined,
