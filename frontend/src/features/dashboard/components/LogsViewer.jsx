@@ -330,9 +330,24 @@ const LogsViewer = ({ entityType }) => {
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
-                        {Array.from({ length: pagination.totalPages }, (_, index) => {
-                            const pageNum = index + 1;
-                            return (
+                        {(() => {
+                            let startPage = Math.max(1, pagination.page - 1);
+                            let endPage = Math.min(pagination.totalPages, pagination.page + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(pagination.totalPages, 3);
+                                } else if (endPage === pagination.totalPages) {
+                                    startPage = Math.max(1, pagination.totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
                                 <button
                                     key={pageNum}
                                     onClick={() => fetchLogs(pageNum)}
@@ -343,8 +358,8 @@ const LogsViewer = ({ entityType }) => {
                                 >
                                     {pageNum}
                                 </button>
-                            );
-                        })}
+                            ));
+                        })()}
 
                         <button
                             disabled={pagination.page >= pagination.totalPages || pagination.totalPages === 0}

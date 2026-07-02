@@ -1,4 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import ListToolbar from '@/components/ui/ListToolbar';
+import BulkActionMenu from '@/components/ui/BulkActionMenu';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Square,
     CheckSquare,
@@ -16,7 +19,8 @@ import {
     User,
     ArrowLeft,
     Check,
-    Loader2
+    Loader2,
+    MoreVertical
 } from 'lucide-react';
 
 import AdminTable from '../components/admin/AdminTable';
@@ -76,6 +80,7 @@ export default function Administrator() {
     const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
     const [isOrgUpdating, setIsOrgUpdating] = useState(false);
     const [isEmailUpdating, setIsEmailUpdating] = useState(false);
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false)
 
     // Email Change Flow State
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
@@ -103,7 +108,7 @@ export default function Administrator() {
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
 
     // Form State for Adding / Editing Admin
     const [adminForm, setAdminForm] = useState({
@@ -186,7 +191,7 @@ export default function Administrator() {
 
     useEffect(() => {
         const socket = initSocket();
-        
+
         const handleAdminEvent = (data) => {
             if (data?.role === 'admin' || data?.bulk) {
                 fetchAdmins();
@@ -519,7 +524,7 @@ export default function Administrator() {
             // Construct API parameters
             const params = { limit: 100000 };
             if (searchQuery) params.search = searchQuery;
-            
+
             // Allow export modal filter to override table filter
             if (exportFilters.isActive !== '') {
                 params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
@@ -528,7 +533,7 @@ export default function Administrator() {
             }
 
             const res = await adminService.getAdmins(params);
-            
+
             // Handle different possible response structures
             const responseData = res?.data || res;
             const allAdmins = responseData?.data || responseData || [];
@@ -549,7 +554,7 @@ export default function Administrator() {
             }));
 
             const isSuccess = exportToExcel(exportData, "Admins_Export", "Admins");
-            
+
             if (isSuccess) {
                 showSuccessToast('Export Successful', 'Administrator list downloaded');
             } else {
@@ -577,22 +582,6 @@ export default function Administrator() {
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    {selectedIds.length > 0 && (
-                        <div className="flex items-center gap-2 mr-2">
-                            <button
-                                onClick={() => handleBulkStatusClick(true)}
-                                className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-                            >
-                                Active ({selectedIds.length})
-                            </button>
-                            <button
-                                onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-                            >
-                                Inactive ({selectedIds.length})
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -601,7 +590,7 @@ export default function Administrator() {
              ========================================== */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
                         <div className="relative w-full">
                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
@@ -612,17 +601,15 @@ export default function Administrator() {
                                 className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                             />
                         </div>
-                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
-                            >
-                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                        </div>
+                        <button
+                            onClick={openAddAdminModal}
+                            className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" /> Add
+                        </button>
                     </div>
 
-                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                    <div className={`flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end`}>
                         <div className="flex gap-3 w-full sm:w-auto">
                             <Dropdown
                                 className="flex-1 sm:flex-none"
@@ -647,10 +634,36 @@ export default function Administrator() {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
+                                >
+                                    <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {isBulkMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <button
                             onClick={openAddAdminModal}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Plus className="w-4 h-4" /> Add New
                         </button>
@@ -715,9 +728,24 @@ export default function Administrator() {
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
-                        {Array.from({ length: totalPages }, (_, index) => {
-                            const pageNum = index + 1;
-                            return (
+                        {(() => {
+                            let startPage = Math.max(1, currentPage - 1);
+                            let endPage = Math.min(totalPages, currentPage + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(totalPages, 3);
+                                } else if (endPage === totalPages) {
+                                    startPage = Math.max(1, totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
                                 <button
                                     key={pageNum}
                                     onClick={() => setCurrentPage(pageNum)}
@@ -728,8 +756,8 @@ export default function Administrator() {
                                 >
                                     {pageNum}
                                 </button>
-                            );
-                        })}
+                            ));
+                        })()}
 
                         <button
                             disabled={currentPage === totalPages}
@@ -814,42 +842,27 @@ export default function Administrator() {
                 </div>
             )}
 
-                <ExportFilterModal
-                    isOpen={isExportConfirmOpen}
-                    onClose={() => setIsExportConfirmOpen(false)}
-                    onExport={confirmExport}
-                    isExporting={isExporting}
-                    title="Export Admins Data"
-                />
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Admins Data"
+            />
 
-            {isStatusConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this admin?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => {
-                                    setIsStatusConfirmOpen(false);
-                                    setStatusToUpdate(null);
-                                }}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmStatusChange}
-                                disabled={isStatusUpdating}
-                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isStatusUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <ConfirmationModal
+                isOpen={isStatusConfirmOpen}
+                onClose={() => {
+                    setIsStatusConfirmOpen(false);
+                    setStatusToUpdate(null);
+                }}
+                onConfirm={confirmStatusChange}
+                isSubmitting={isStatusUpdating}
+                title="Change Status"
+                message="Are you sure you want to change the status of this admin?"
+            />
+
 
             {isBulkStatusConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
@@ -939,9 +952,9 @@ export default function Administrator() {
                                         <Check size={16} /> Verified
                                     </button>
                                 ) : (
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleVerifyClick(newEmailForm, 'emailChange')} 
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVerifyClick(newEmailForm, 'emailChange')}
                                         disabled={isVerifying}
                                         className="w-full sm:w-auto flex items-center justify-center min-w-[80px] px-6 py-2.5 bg-[#0A437A] text-white text-sm font-medium rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
@@ -982,12 +995,12 @@ export default function Administrator() {
                         e.preventDefault();
                         const code = otpCode.join('');
                         if (code.length < 6) return;
-                        
+
                         setIsVerifyingOtp(true);
                         try {
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : adminForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
-                            
+
                             setIsOtpModalOpen(false);
                             setIsEmailVerified(true);
                             if (otpSource === 'emailChange') {
@@ -995,7 +1008,7 @@ export default function Administrator() {
                             } else {
                                 showSuccessToast('Success', 'Email verified successfully!');
                             }
-                        } catch(err) {
+                        } catch (err) {
                             showErrorToast('Error', err?.message || 'Invalid OTP');
                         } finally {
                             setIsVerifyingOtp(false);
@@ -1004,10 +1017,10 @@ export default function Administrator() {
                         <div className="flex justify-between items-center mb-6">
                             <button
                                 type="button"
-                                onClick={() => { 
-                                    setIsOtpModalOpen(false); 
+                                onClick={() => {
+                                    setIsOtpModalOpen(false);
                                     if (otpSource === 'emailChange') {
-                                        setIsEmailChangeModalOpen(true); 
+                                        setIsEmailChangeModalOpen(true);
                                     }
                                 }}
                                 className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -1085,7 +1098,7 @@ export default function Administrator() {
                             <h4 className="text-sm font-semibold text-gray-900">Email Updated</h4>
                             <p className="text-xs text-gray-500">The email address has been successfully updated.</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setIsEmailChangeSuccessModalOpen(false)}
                             className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                         >

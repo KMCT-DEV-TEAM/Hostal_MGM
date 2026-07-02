@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import FurnitureAsset from "./furnitureAsset.model.js";
+import FurnitureType from "./furnitureType.model.js";
 import Student from "../students/student.model.js";
 import { checkAnyAssetAllocatedForTypeDb } from "./furniture.service.js";
 
@@ -40,9 +41,16 @@ export const validateUpdateFurnitureType = async (req, res, next) => {
         return res.status(400).json({ success: false, message: "Prefix must be up to 10 characters without spaces." });
       }
 
-      const hasAllocatedAssets = await checkAnyAssetAllocatedForTypeDb(id);
-      if (hasAllocatedAssets) {
-        return res.status(409).json({ success: false, message: "Furniture prefix cannot be updated because allocated assets exist." });
+      const existingType = await FurnitureType.findById(id).lean();
+      if (!existingType) {
+        return res.status(404).json({ success: false, message: "Furniture Type Not Found" });
+      }
+
+      if (existingType.prefix !== prefix) {
+        const hasAllocatedAssets = await checkAnyAssetAllocatedForTypeDb(id);
+        if (hasAllocatedAssets) {
+          return res.status(409).json({ success: false, message: "Furniture prefix cannot be updated because allocated assets exist." });
+        }
       }
     }
     next();

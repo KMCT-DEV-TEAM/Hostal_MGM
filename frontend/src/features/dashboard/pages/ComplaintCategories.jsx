@@ -288,7 +288,7 @@ const ComplaintCategories = () => {
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
                         <div className="relative w-full">
                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
@@ -299,17 +299,11 @@ const ComplaintCategories = () => {
                                 className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                             />
                         </div>
-                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
-                            >
-                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                        </div>
-                    </div>
+                        <button onClick={() => openModal('add')} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
 
-                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                        </div>
+
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="flex gap-3 w-full sm:w-auto">
                             <Dropdown
                                 className="flex-1 sm:flex-none"
@@ -337,9 +331,7 @@ const ComplaintCategories = () => {
                         </div>
                         <button
                             onClick={() => openModal('add')}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> Add New
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">`n<Plus className="w-4 h-4" /> Add New
                         </button>
                     </div>
                 </div>
@@ -388,21 +380,36 @@ const ComplaintCategories = () => {
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
-                        {Array.from({ length: totalPages }, (_, index) => {
-                            const pageNum = index + 1;
-                            return (
+                        {(() => {
+                            let startPage = Math.max(1, page - 1);
+                            let endPage = Math.min(totalPages, page + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(totalPages, 3);
+                                } else if (endPage === totalPages) {
+                                    startPage = Math.max(1, totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
                                 <button
                                     key={pageNum}
                                     onClick={() => setPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
+                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
                                         ? 'bg-[#0A437A] text-white shadow-sm font-bold'
                                         : 'border border-transparent text-gray-600 hover:bg-gray-50'
                                         }`}
                                 >
                                     {pageNum}
                                 </button>
-                            );
-                        })}
+                            ));
+                        })()}
 
                         <button
                             disabled={page === totalPages || totalPages === 0}
@@ -552,3 +559,5 @@ const ComplaintCategories = () => {
 };
 
 export default ComplaintCategories;
+
+

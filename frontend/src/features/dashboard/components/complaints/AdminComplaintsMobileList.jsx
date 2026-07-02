@@ -81,7 +81,7 @@ const AdminComplaintsMobileList = ({
                                     {/* Bottom Button */}
                                     <button
                                         onClick={() => onRowClick && onRowClick(complaint)}
-                                        className="w-full py-3 bg-[#EAF3FF] text-[#0A437A] font-semibold text-[13px] hover:bg-[#D1E4FF] transition-colors cursor-pointer"
+                                        className="w-full py-3 bg-[#0A437A] text-white font-semibold text-[13px] hover:bg-secondary transition-colors cursor-pointer"
                                     >
                                         View Details
                                     </button>
@@ -96,3 +96,6 @@ const AdminComplaintsMobileList = ({
 };
 
 export default AdminComplaintsMobileList;
+
+
+

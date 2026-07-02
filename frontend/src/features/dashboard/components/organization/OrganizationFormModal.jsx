@@ -66,7 +66,7 @@ const OrganizationFormModal = ({
                                     placeholder={t('org_name_placeholder')}
                                 />
                             </div>
-                             <div>
+                            <div>
                                 <label className="block text-xs mb-1.5 font-medium">{t('code')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="code"

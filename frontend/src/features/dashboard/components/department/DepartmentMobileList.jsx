@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Pencil, CheckSquare, Square, ChevronDown, ChevronUp } from 'lucide-react';
-import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
+import React from 'react';
+import MobileList, { MobileRow, MobileStatusRow } from '@/components/ui/MobileList';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const DepartmentMobileList = ({
     Departments,
@@ -14,125 +14,43 @@ const DepartmentMobileList = ({
     handleSelectRow,
     handleStatusChangeClick
 }) => {
-    const isAllSelected = Departments.length > 0 && Departments.every(o => selectedIds.includes(o._id));
-    const [expandedIds, setExpandedIds] = useState([]);
+    const { t } = useTranslation();
 
-    const toggleExpand = (e, id) => {
-        e.stopPropagation();
-        setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-    };
+    const renderBody = (o) => (
+        <>
+            <MobileRow label="Id" value={(o.departmentId || o._id.substring(o._id.length - 6)).toUpperCase()} />
+            <MobileRow label={t('department_code')} value={o.code || 'N/A'} />
+            <MobileRow label={t('course')} value={o.courseId ? o.courseId.name : 'N/A'} />
+            <MobileRow label={t('num_batches')} value={o.batchesCount || 0} />
+            <MobileStatusRow 
+                isActive={o.isActive} 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (handleStatusChangeClick) handleStatusChangeClick(o._id, o.isActive);
+                }} 
+            />
+        </>
+    );
 
     return (
-        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {!error && Departments.length > 0 && (
-                <div className="flex items-center gap-2 px-1 mb-1">
-                    <button onClick={handleSelectAll} className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2">
-                        {isAllSelected ? (
-                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                        ) : (
-                            <Square className="w-5 h-5" />
-                        )}
-                        <span className="text-sm font-medium text-gray-600">Select All</span>
-                    </button>
-                </div>
-            )}
-            {loading ? (
-                <MobileSkeletonLoader />
-            ) : error ? (
-                <div className="text-center text-danger p-8 bg-white rounded-xl shadow-sm border border-gray-100">{error}</div>
-            ) : Departments.length === 0 ? (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl">No Departments match the selected filter.</div>
-            ) : (
-                Departments.map((o) => {
-                    const isSelected = selectedIds.includes(o._id);
-                    const isExpanded = expandedIds.includes(o._id);
-                    return (
-                        <div key={o._id} className={`bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border overflow-hidden shrink-0 ${isSelected ? 'border-[#0A437A]' : 'border-gray-50'}`}>
-                            {/* Header */}
-                            <div 
-                                className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
-                                onClick={(e) => toggleExpand(e, o._id)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleSelectRow(o._id); }}
-                                        className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
-                                    >
-                                        {isSelected ? (
-                                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                        ) : (
-                                            <Square className="w-5 h-5" />
-                                        )}
-                                    </button>
-                                    <span className="font-bold text-gray-900 text-[13px]">{o.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); openModal('edit', o); }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => toggleExpand(e, o._id)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer shrink-0"
-                                    >
-                                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Expandable Content */}
-                            {isExpanded && (
-                                <>
-                                    <div className="flex flex-col text-[13px]">
-                                        <div className="flex border-b border-gray-50/50">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Id</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900 font-semibold">: {(o.departmentId || o._id.substring(o._id.length - 6)).toUpperCase()}</div>
-                                        </div>
-                                        <div className="flex border-b border-gray-50/50 bg-gray-50/30">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Code</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900 truncate">: {o.code || 'N/A'}</div>
-                                        </div>
-                                        <div className="flex border-b border-gray-50/50">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Course</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900">: {o.courseId ? o.courseId.name : 'N/A'}</div>
-                                        </div>
-                                        <div className="flex border-b border-gray-50/50 bg-gray-50/30">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Batches</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900">: {o.batchesCount || 0}</div>
-                                        </div>
-                                        <div className="flex border-b border-gray-50/50 items-center">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Status</div>
-                                            <div className="w-2/3 py-2.5 px-3 flex items-center gap-1">
-                                                : <button 
-                                                    type="button"
-                                                    onClick={() => handleStatusChangeClick && handleStatusChangeClick(o._id, o.isActive)}
-                                                    className={`font-semibold cursor-pointer ${o.isActive ? 'text-green-500' : 'text-red-500'}`}
-                                                >
-                                                    {o.isActive ? 'Active' : 'Inactive'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Bottom Button */}
-                                    <button
-                                        onClick={() => {
-                                            setSelectedDepartmentDetail(o);
-                                            setView('detail');
-                                        }}
-                                        className="w-full py-3 bg-[#EAF3FF] text-[#0A437A] font-semibold text-[13px] hover:bg-[#D1E4FF] transition-colors cursor-pointer"
-                                    >
-                                        View Details
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    )
-                })
-            )}
-        </div>
+        <MobileList
+            items={Departments}
+            loading={loading}
+            error={error}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelect={handleSelectRow}
+            onEdit={(o) => openModal('edit', o)}
+            canSelect={true}
+            canEdit={true}
+            emptyText={t('no_records_found')}
+            titleFn={(o) => o.name}
+            renderBody={renderBody}
+            onViewDetails={(o) => {
+                setSelectedDepartmentDetail(o);
+                setView('detail');
+            }}
+        />
     );
 };
 

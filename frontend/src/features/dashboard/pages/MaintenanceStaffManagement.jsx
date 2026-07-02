@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
@@ -122,7 +123,7 @@ export default function MaintenanceStaffManagement() {
 
     useEffect(() => {
         const socket = initSocket();
-        
+
         const handleStaffEvent = (data) => {
             if (data?.role === 'maintenance_staff' || data?.bulk) {
                 fetchStaff();
@@ -492,7 +493,7 @@ export default function MaintenanceStaffManagement() {
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 </div>
-                
+
                 <div className="flex items-center self-end sm:self-auto mt-4 sm:mt-0">
                     <button
                         onClick={() => setShowKPIs(!showKPIs)}
@@ -505,47 +506,47 @@ export default function MaintenanceStaffManagement() {
 
             {/* KPI CARDS SECTION */}
             {showKPIs && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Staff</p>
-                        <h3 className="text-xl font-bold text-gray-900">{totalStaff}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Staff</p>
+                            <h3 className="text-xl font-bold text-gray-900">{totalStaff}</h3>
+                        </div>
+                        <div className="p-1.5 bg-purple-50 rounded text-purple-400">
+                            <Users className="w-4 h-4" />
+                        </div>
                     </div>
-                    <div className="p-1.5 bg-purple-50 rounded text-purple-400">
-                        <Users className="w-4 h-4" />
-                    </div>
-                </div>
 
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned Tasks</p>
-                        <h3 className="text-xl font-bold text-gray-900">{totalAssignedTasks}</h3>
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned Tasks</p>
+                            <h3 className="text-xl font-bold text-gray-900">{totalAssignedTasks}</h3>
+                        </div>
+                        <div className="p-1.5 bg-blue-50 rounded text-blue-400">
+                            <ClipboardList className="w-4 h-4" />
+                        </div>
                     </div>
-                    <div className="p-1.5 bg-blue-50 rounded text-blue-400">
-                        <ClipboardList className="w-4 h-4" />
-                    </div>
-                </div>
 
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved Tasks</p>
-                        <h3 className="text-xl font-bold text-gray-900">{totalResolvedTasks}</h3>
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved Tasks</p>
+                            <h3 className="text-xl font-bold text-gray-900">{totalResolvedTasks}</h3>
+                        </div>
+                        <div className="p-1.5 bg-green-50 rounded text-green-400">
+                            <CheckCircle className="w-4 h-4" />
+                        </div>
                     </div>
-                    <div className="p-1.5 bg-green-50 rounded text-green-400">
-                        <CheckCircle className="w-4 h-4" />
-                    </div>
-                </div>
 
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending Tasks</p>
-                        <h3 className="text-xl font-bold text-gray-900">{totalPendingTasks}</h3>
-                    </div>
-                    <div className="p-1.5 bg-orange-50 rounded text-orange-400">
-                        <Clock className="w-4 h-4" />
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending Tasks</p>
+                            <h3 className="text-xl font-bold text-gray-900">{totalPendingTasks}</h3>
+                        </div>
+                        <div className="p-1.5 bg-orange-50 rounded text-orange-400">
+                            <Clock className="w-4 h-4" />
+                        </div>
                     </div>
                 </div>
-            </div>
             )}
 
             {/* BULK ACTIONS - Positioned below KPI cards but before toolbar */}
@@ -569,7 +570,7 @@ export default function MaintenanceStaffManagement() {
             {/* TOOLBAR SECTION */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
                         <div className="relative w-full">
                             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
@@ -580,17 +581,11 @@ export default function MaintenanceStaffManagement() {
                                 className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
                             />
                         </div>
-                        <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                            <button
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
-                            >
-                                <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                        </div>
+                        <button onClick={openAddStaffModal} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
+
                     </div>
 
-                    <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="flex gap-3 w-full sm:w-auto">
                             <Dropdown
                                 className="flex-1 sm:flex-none"
@@ -618,9 +613,7 @@ export default function MaintenanceStaffManagement() {
                         </div>
                         <button
                             onClick={openAddStaffModal}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> {t('Add New')}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">`n<Plus className="w-4 h-4" /> {t('Add New')}
                         </button>
                     </div>
                 </div>
@@ -673,9 +666,24 @@ export default function MaintenanceStaffManagement() {
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
-                        {Array.from({ length: totalPages }, (_, index) => {
-                            const pageNum = index + 1;
-                            return (
+                        {(() => {
+                            let startPage = Math.max(1, currentPage - 1);
+                            let endPage = Math.min(totalPages, currentPage + 1);
+
+                            if (endPage - startPage < 2) {
+                                if (startPage === 1) {
+                                    endPage = Math.min(totalPages, 3);
+                                } else if (endPage === totalPages) {
+                                    startPage = Math.max(1, totalPages - 2);
+                                }
+                            }
+
+                            const visiblePages = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                visiblePages.push(i);
+                            }
+
+                            return visiblePages.map(pageNum => (
                                 <button
                                     key={pageNum}
                                     onClick={() => setCurrentPage(pageNum)}
@@ -686,8 +694,8 @@ export default function MaintenanceStaffManagement() {
                                 >
                                     {pageNum}
                                 </button>
-                            );
-                        })}
+                            ));
+                        })()}
 
                         <button
                             disabled={currentPage === totalPages}
@@ -746,30 +754,18 @@ export default function MaintenanceStaffManagement() {
                 </div>
             )}
 
-            {isDiscardConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Discard Changes</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to discard your changes? Any unsaved edits will be lost.
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsDiscardConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Continue Editing
-                            </button>
-                            <button
-                                onClick={confirmDiscard}
-                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
-                            >
-                                Discard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <ConfirmationModal
+                isOpen={isDiscardConfirmOpen}
+                onClose={() => setIsDiscardConfirmOpen(false)}
+                onConfirm={confirmDiscard}
+                title="Discard Changes"
+                message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+                confirmText="Discard"
+                confirmButtonClass="bg-danger hover:bg-danger/90"
+                cancelText="Continue Editing"
+            />
+
 
             <ExportFilterModal
                 isOpen={isExportConfirmOpen}
@@ -1126,32 +1122,16 @@ export default function MaintenanceStaffManagement() {
             )}
 
             {/* Confirm Add Staff Modal */}
-            {isAddConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Add Maintenance Staff</h3>
-                        <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to add this new maintenance staff member?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsAddConfirmOpen(false)}
-                                disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={saveStaff}
-                                disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70"
-                            >
-                                {isSubmitting ? 'Adding...' : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <ConfirmationModal
+                isOpen={isAddConfirmOpen}
+                onClose={() => setIsAddConfirmOpen(false)}
+                onConfirm={saveStaff}
+                isSubmitting={isSubmitting}
+                title="Add Maintenance Staff"
+                message="Are you sure you want to add this new maintenance staff member?"
+            />
+
 
             {view === 'detail' && (
                 <MaintenanceStaffDetailView
@@ -1162,3 +1142,5 @@ export default function MaintenanceStaffManagement() {
         </div>
     );
 }
+
+

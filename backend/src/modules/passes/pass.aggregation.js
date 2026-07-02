@@ -99,7 +99,7 @@ export const buildDashboardStatsFacet = (startOfToday, endOfToday) => ({
     approved: [{ $match: { status: "approved" } }, { $count: "count" }],
     rejected: [{ $match: { status: "rejected" } }, { $count: "count" }],
     cancelled: [{ $match: { status: "cancelled" } }, { $count: "count" }],
-    studentsOutside: [{ $match: { status: "approved", "returnTracking.returnStatus": "left" } }, { $count: "count" }],
+    studentsOutside: [{ $match: { status: "approved", "returnTracking.leftHostelAt": { $exists: true, $ne: null }, "returnTracking.returnedAt": null } }, { $count: "count" }],
     returnedToday: [{ $match: { "returnTracking.returnedAt": { $gte: startOfToday, $lte: endOfToday } } }, { $count: "count" }],
     homePassCount: [{ $match: { passType: "home_pass" } }, { $count: "count" }],
     outPassCount: [{ $match: { passType: "out_pass" } }, { $count: "count" }],
