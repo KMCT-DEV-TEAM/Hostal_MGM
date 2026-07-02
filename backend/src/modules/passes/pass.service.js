@@ -195,8 +195,7 @@ export const getPassesDb = async (studentId, query) => {
               date: 1,
               outTime: 1,
               expectedReturnTime: 1,
-              createdAt: 1,
-              returnTracking: { returnStatus: 1 },
+              returnTracking: 1,
               studentName: "$studentInfo.name",
               admissionNumber: "$studentInfo.studentId",
               parentApprovalStatus: "$parentApproval.status",
@@ -207,6 +206,7 @@ export const getPassesDb = async (studentId, query) => {
       }
     }
   ]);
+  console.log('passes', stats)
 
   const totalRecords = stats[0].metadata[0]?.totalRecords || 0;
   const totalPages = Math.ceil(totalRecords / limit);
@@ -350,7 +350,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     expectedReturnTime: 1,
     createdAt: 1,
     totalDays: 1,
-    returnTracking: { returnStatus: 1 },
+    returnTracking: 1,
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
@@ -528,68 +528,142 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
   };
 };
 
-export const getManagementPassesDb = async (query, scope, specificHostelId = null) => {
-  const page = parseInt(query.page) || 1;
-  const limit = parseInt(query.limit) || 10;
+export const getManagementPassesDb = async (
+  query,
+  scope,
+  specificHostelId = null
+) => {
+  const page = parseInt(query.page, 10) || 1;
+  const limit = parseInt(query.limit, 10) || 10;
   const skip = (page - 1) * limit;
 
-  const filter = { ...buildStatusFilter(query) };
-  if (query.passType) filter.passType = query.passType;
+  const filter = {
+    ...buildStatusFilter(query),
+  };
+
+  if (query.passType) {
+    filter.passType = query.passType;
+  }
 
   if (specificHostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(specificHostelId);
-  } else if (scope.role === "admin" && scope.organizationId) {
-
-    const hostels = await hostelModel.find({ organizations: scope.organizationId }).select("_id").lean();
-    filter.hostelId = { $in: hostels.map(h => h._id) };
   } else if (query.hostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }
 
-  buildDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
+  buildDateRangeFilter(
+    filter,
+    "createdAt",
+    query.startDate,
+    query.endDate
+  );
+
+  const studentLookupPipeline = [
+    {
+      $match: {
+        $expr: {
+          $eq: ["$_id", "$$studentId"],
+        },
+      },
+    },
+  ];
+
+  // Restrict only Admin users to their organization
+  if (scope.role === "admin") {
+    studentLookupPipeline.push({
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(scope.organizationId),
+      },
+    });
+  }
 
   const pipeline = [
-    { $match: filter },
+    {
+      $match: filter,
+    },
+
     {
       $lookup: {
         from: "students",
-        localField: "studentId",
-        foreignField: "_id",
-        as: "studentInfo"
-      }
+        let: {
+          studentId: "$studentId",
+        },
+        pipeline: studentLookupPipeline,
+        as: "studentInfo",
+      },
     },
-    { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } },
+
+    // Removes passes that don't belong to the admin's organization
+    {
+      $unwind: "$studentInfo",
+    },
+
     {
       $lookup: {
         from: "hostels",
         localField: "hostelId",
         foreignField: "_id",
-        as: "hostelInfo"
-      }
+        as: "hostelInfo",
+      },
     },
-    { $unwind: { path: "$hostelInfo", preserveNullAndEmptyArrays: true } }
+
+    {
+      $unwind: {
+        path: "$hostelInfo",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
   ];
 
-  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo.roomNo", "hostelInfo.name"]);
-  if (searchMatch) pipeline.push(searchMatch);
+  const searchMatch = buildSearchMatch(query.search, [
+    "studentInfo.name",
+    "studentInfo.admissionNo",
+    "studentInfo.roomNo",
+    "hostelInfo.name",
+  ]);
+
+  if (searchMatch) {
+    pipeline.push(searchMatch);
+  }
 
   pipeline.push({
     $addFields: {
       sortPriority: {
         $switch: {
           branches: [
-            { case: { $eq: ["$status", "pending_admin"] }, then: 1 },
-            { case: { $eq: ["$status", "pending_parent"] }, then: 2 },
-            { case: { $eq: ["$status", "approved"] }, then: 3 },
-            { case: { $eq: ["$status", "returned"] }, then: 4 },
-            { case: { $eq: ["$status", "completed"] }, then: 5 },
-            { case: { $eq: ["$status", "cancelled"] }, then: 6 },
-            { case: { $eq: ["$status", "rejected"] }, then: 7 }
+            {
+              case: { $eq: ["$status", "pending_admin"] },
+              then: 1,
+            },
+            {
+              case: { $eq: ["$status", "pending_parent"] },
+              then: 2,
+            },
+            {
+              case: { $eq: ["$status", "approved"] },
+              then: 3,
+            },
+            {
+              case: { $eq: ["$status", "returned"] },
+              then: 4,
+            },
+            {
+              case: { $eq: ["$status", "completed"] },
+              then: 5,
+            },
+            {
+              case: { $eq: ["$status", "cancelled"] },
+              then: 6,
+            },
+            {
+              case: { $eq: ["$status", "rejected"] },
+              then: 7,
+            },
           ],
-          default: 8
-        }
-      }
-    }
+          default: 8,
+        },
+      },
+    },
   });
 
   const projectStage = {
@@ -605,26 +679,37 @@ export const getManagementPassesDb = async (query, scope, specificHostelId = nul
     totalDays: 1,
     expectedReturnTime: 1,
     createdAt: 1,
-    returnTracking: { returnStatus: 1 },
+
+    returnTracking: {
+      returnStatus: 1,
+    },
+
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
       admissionNo: "$studentInfo.admissionNo",
-      roomNo: "$studentInfo.roomNo"
+      roomNo: "$studentInfo.roomNo",
     },
+
     hostelInfo: {
       _id: "$hostelInfo._id",
-      name: "$hostelInfo.name"
-    }
+      name: "$hostelInfo.name",
+    },
   };
 
   pipeline.push(
-    { $sort: { sortPriority: 1, createdAt: 1 } },
+    {
+      $sort: {
+        sortPriority: 1,
+        createdAt: 1,
+      },
+    },
     buildPaginationFacet(skip, limit, projectStage)
   );
 
-  const stats = await Pass.aggregate(pipeline);
-  return formatPaginationResponse(stats, page, limit);
+  const result = await Pass.aggregate(pipeline);
+
+  return formatPaginationResponse(result, page, limit);
 };
 
 export const getManagementPassDetailsDb = async (passId) => {

@@ -55,7 +55,7 @@ export const validateHistoryQuery = (req, res, next) => {
     return res.status(400).json({ success: false, message: "Limit must be a valid number." });
   }
 
-  if (status && !["present", "absent", "late", "excused"].includes(status.toLowerCase())) {
+  if (status && !["present", "absent", "late", "on_leave"].includes(status.toLowerCase())) {
     return res.status(400).json({ success: false, message: "Invalid status." });
   }
 
@@ -92,3 +92,36 @@ export const validateDateParam = (req, res, next) => {
 
   next();
 };
+
+export const validateManualCorrection = (req, res, next) => {
+  const { windowId, studentId } = req.params;
+  const { status, remarks } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(windowId)) {
+    return res.status(400).json({ success: false, message: "Invalid attendance window ID." });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(studentId)) {
+    return res.status(400).json({ success: false, message: "Invalid student ID." });
+  }
+
+  const ALLOWED = ["present", "absent", "on_leave"];
+  if (!status || !ALLOWED.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Status is required and must be one of: ${ALLOWED.join(", ")}.`,
+    });
+  }
+
+  if (remarks !== undefined && remarks !== null) {
+    if (typeof remarks !== "string") {
+      return res.status(400).json({ success: false, message: "Remarks must be a string." });
+    }
+    if (remarks.trim().length > 300) {
+      return res.status(400).json({ success: false, message: "Remarks must not exceed 300 characters." });
+    }
+  }
+
+  next();
+};
+

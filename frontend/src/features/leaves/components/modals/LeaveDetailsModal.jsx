@@ -130,49 +130,101 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
     }
 
     const renderBadge = (label, color) => (
-        <span className="inline-flex items-center gap-1.5 font-bold text-[12px]" style={{ color }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }}></span>
+        <span className="inline-flex items-center gap-2 font-medium" style={{ color }}>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></span>
             {label}
         </span>
     );
 
-    const renderProgressStep = ({ title, subtitle, status, date, iconLabel }) => {
-        let nodeColor = '#F3F4F6';
-        let iconColor = '#6B7280';
-        let icon = <span className="text-[10px] font-bold" style={{ color: iconColor }}>{iconLabel}</span>;
-        let badgeColor = 'var(--color-warning)';
-        let badgeLabel = 'Pending';
+    const getInitials = (name) => {
+        if (!name || name === 'user' || name === 'Admin' || name === 'Parent' || name === 'Student') return name[0].toUpperCase();
+        const parts = name.split(' ');
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return name.substring(0, 2).toUpperCase();
+    };
 
-        if (status === 'approved' || status === 'returned' || status === 'submitted' || status === 'on_time') {
-            nodeColor = status === 'submitted' ? '#1E3A8A' : 'var(--color-success)'; // Dark blue for submitted
-            badgeColor = status === 'submitted' ? '#1E3A8A' : 'var(--color-success)';
-            badgeLabel = (status === 'returned' || status === 'on_time') ? 'Returned' : (status === 'submitted' ? 'Submitted' : 'Approved');
-            icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>;
+    const renderProgressStep = ({ title, subtitle, status, date }) => {
+        let nodeColor = '#D1D5DB'; // gray-300 for pending
+        let badgeColor = '#6B7280'; // text-gray-500
+        let badgeBg = '#F3F4F6'; // bg-gray-100
+        let badgeLabel = 'Pending';
+        let avatarBg = '#E5E7EB'; // gray-200 for pending user
+        let avatarColor = '#6B7280';
+
+        if (status === 'approved' || status === 'returned' || status === 'on_time') {
+            nodeColor = 'var(--color-success)';
+            badgeColor = 'var(--color-success)';
+            badgeBg = '#ECFDF5'; // success-50
+            badgeLabel = (status === 'returned' || status === 'on_time') ? 'Returned' : 'Approved';
+            avatarBg = '#1E3A8A'; // Dark blue avatar for actors who acted
+            avatarColor = '#FFFFFF';
         } else if (status === 'rejected' || status === 'cancelled' || status === 'late' || status === 'left') {
-            nodeColor = 'var(--color-danger)';
-            badgeColor = 'var(--color-danger)';
+            nodeColor = '#EF4444'; // text-red-500
+            badgeColor = '#EF4444';
+            badgeBg = '#FEF2F2'; // bg-red-50
             badgeLabel = status === 'cancelled' ? 'Cancelled' : (status === 'late' ? 'Returned (Late)' : (status === 'left' ? 'Left' : 'Rejected'));
-            icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>;
+            avatarBg = '#1E3A8A';
+            avatarColor = '#FFFFFF';
+        } else if (status === 'submitted') {
+            nodeColor = '#3B82F6'; // text-blue-500
+            badgeColor = '#3B82F6';
+            badgeBg = '#EFF6FF'; // bg-blue-50
+            badgeLabel = 'Submitted';
+            avatarBg = '#1E3A8A';
+            avatarColor = '#FFFFFF';
+        }
+
+        // Parse subtitle to get name for avatar (e.g. "Nila Mohan - warden" -> "Nila Mohan")
+        const actorName = (subtitle || '').split('-')[0].trim();
+
+        // Fix date string (e.g. "Jul 1, 2026, 10:27 AM" -> "Jul 1, 2026 | 10:27 AM")
+        let formattedDate = '-----';
+        if (date) {
+            const rawDate = formatDateTime(date);
+            const lastCommaIndex = rawDate.lastIndexOf(',');
+            if (lastCommaIndex !== -1) {
+                formattedDate = rawDate.substring(0, lastCommaIndex) + ' |' + rawDate.substring(lastCommaIndex + 1);
+            } else {
+                formattedDate = rawDate;
+            }
         }
 
         return (
             <div className="relative flex items-center justify-between group">
-                <div className="flex items-start gap-4 w-full">
+                <div className="flex items-start gap-5 w-full">
+                    {/* Node on the timeline */}
                     <div
-                        className="absolute left-[-32px] w-6 h-6 rounded-full border-2 border-white z-10 flex items-center justify-center shadow-sm bg-white"
+                        className="absolute left-[-24.5px] top-1.5 w-[9px] h-[9px] rounded-full ring-2 ring-white z-10"
                         style={{ backgroundColor: nodeColor }}
-                    >
-                        {icon}
-                    </div>
-                    <div className="flex-1">
-                        <div className="mb-1">{renderBadge(badgeLabel, badgeColor)}</div>
-                        <h4 className="text-[14px] font-bold text-gray-800">{title}</h4>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[12px] text-gray-400 font-medium uppercase tracking-wider">{subtitle}</span>
+                    ></div>
+
+                    <div className="flex-1 space-y-1.5">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-1.5 font-semibold text-[10px] px-2 py-0.5 rounded-sm" style={{ color: badgeColor, backgroundColor: badgeBg }}>
+                            <span className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: badgeColor }}></span>
+                            {badgeLabel}
+                        </div>
+
+                        {/* Title */}
+                        <h4 className="text-[13px] font-medium text-gray-700 capitalize">{title}</h4>
+
+                        {/* Actor info */}
+                        <div className="flex items-center gap-2 mt-1">
+                            <div
+                                className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold"
+                                style={{ backgroundColor: avatarBg, color: avatarColor }}
+                            >
+                                {getInitials(actorName)}
+                            </div>
+                            <span className="text-[11px] text-gray-400 font-medium capitalize">{subtitle}</span>
                         </div>
                     </div>
                 </div>
-                {date && <div className="text-[12px] text-gray-500 font-medium bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-md shadow-sm whitespace-nowrap">{formatDateTime(date)}</div>}
+
+                {/* Date on the right */}
+                <div className="text-[10px] text-gray-400 font-medium whitespace-nowrap self-end mb-1">
+                    {formattedDate}
+                </div>
             </div>
         );
     };
@@ -238,7 +290,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Status</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                <LeaveStatusBadge status={request.status} />
+                                {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
                             </div>
 
                             {isHomePass ? (
@@ -268,7 +320,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Parent approval</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                <LeaveStatusBadge status={isParentApproved ? 'Approved' : 'Pending'} />
+                                {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
                             </div>
                         </div>
                     </div>
@@ -291,40 +343,36 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         <p className="text-xs text-gray-400 mb-6">Track the live approval status of this request.</p>
 
                         <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
-
+                            {console.log('modal details response: ', request)}
                             {/* Return Status */}
                             {renderProgressStep({
-                                title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status'),
-                                subtitle: 'Security / User',
+                                title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
+                                subtitle: request.studentId.name,
                                 status: returnStatus,
-                                iconLabel: 'R'
                             })}
 
                             {/* Admin Approval */}
                             {renderProgressStep({
-                                title: isAdminApproved ? 'Approved by Admin' : (isAdminRejected ? 'Rejected by Admin' : 'Admin Approval'),
-                                subtitle: 'Admin',
+                                title: isAdminApproved ? `Approved by ${request.adminApproval?.actorRole || 'admin'}` : (isAdminRejected ? `Rejected by ${request.adminApproval?.actorRole || 'admin'}` : 'Admin Approval'),
+                                subtitle: request.adminApproval?.actorName ? `${request.adminApproval.actorName} - ${request.adminApproval.actorRole || 'admin'}` : 'Admin',
                                 status: adminStatus,
                                 date: request.adminApproval?.actionAt,
-                                iconLabel: 'A'
                             })}
 
                             {/* Parent Approval */}
                             {renderProgressStep({
                                 title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval'),
-                                subtitle: 'Parent',
+                                subtitle: request.parentApproval?.actorName ? `${request.parentApproval.actorName} - Parent` : 'Parent',
                                 status: parentStatus,
                                 date: request.parentApproval?.actionAt,
-                                iconLabel: 'P'
                             })}
 
                             {/* Submitted */}
                             {renderProgressStep({
-                                title: 'Request Submitted',
-                                subtitle: 'Student',
+                                title: 'Request submitted',
+                                subtitle: request.studentId?.name || request.studentInfo?.name || request.studentName || 'Student',
                                 status: 'submitted',
                                 date: request.createdAt,
-                                iconLabel: 'S'
                             })}
 
                         </div>

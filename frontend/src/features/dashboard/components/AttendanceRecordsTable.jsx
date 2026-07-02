@@ -76,7 +76,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                         {item.student?.profileImage ? (
                             <img src={item.student.profileImage} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-medium">
+                            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">
                                 {item.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
                             </div>
                         )}
@@ -87,7 +87,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                     {item.student?.room || 'N/A'}
                 </td>
                 <td className="p-4 align-middle">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${item.status === 'present' ? 'bg-green-50 text-green-700' :
+                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-medium w-[130px] ${item.status === 'present' ? 'bg-green-50 text-green-700' :
                         item.status === 'absent' ? 'bg-red-50 text-red-700' :
                             'bg-orange-50 text-orange-700'
                         }`}>
@@ -113,7 +113,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                         )}
                         <span className="font-semibold text-gray-900">{item.student?.name || 'Unknown'}</span>
                     </div>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${item.status === 'present' ? 'bg-green-50 text-green-700' :
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-medium w-[130px] ${item.status === 'present' ? 'bg-green-50 text-green-700' :
                         item.status === 'absent' ? 'bg-red-50 text-red-700' :
                             'bg-orange-50 text-orange-700'
                         }`}>

@@ -137,6 +137,11 @@ export async function getLeaveByIdWarden(id) {
   return response.data;
 }
 
+export async function getWardenDashboardStats(params) {
+  const response = await leaveApi.getWardenDashboardStats(params);
+  return response.data;
+}
+
 // Set up Role Resolvers (matching the structure of other services)
 const LEAVE_FETCHERS = {
   [ROLES.ADMIN]: getLeavesByAdmin,

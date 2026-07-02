@@ -35,7 +35,7 @@ export default function LeavesDetailView({
     const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
     const getReturnStatus = (r) => {
-        console.log('return status', r.returnTracking);
+        console.log('return status', r);
         if (r.returnTracking?.returnedAt) {
             return r.returnTracking.returnStatus === 'late' ? 'Returned (Late)' : 'Returned (On Time)';
         }
@@ -61,7 +61,7 @@ export default function LeavesDetailView({
         const typeCol = isHomePass ? "Days" : "Type";
 
         const baseCols = ["Student", midCol, dateCol, typeCol];
-        const outPassCols = isHomePass ? [] : ["In", "Out"];
+        const outPassCols = isHomePass ? [] : ["Out", "In"];
         const statusCols = [{ label: "Status", align: "start" }, { label: "Return", align: "start" }];
 
         return [...baseCols, ...outPassCols, ...statusCols];
@@ -80,7 +80,7 @@ export default function LeavesDetailView({
                     <button
                         type="button"
                         onClick={onFilterClick}
-                        className={`p-3 bg-white border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'border-[#0A437A] text-[#0A437A] bg-[#0A437A]/5' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                        className={`p-3 border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                         title="Filter leaves"
                     >
                         <Filter className="w-4 h-4" />
@@ -133,7 +133,7 @@ export default function LeavesDetailView({
 
                         {/* Days / Type */}
                         <td className="p-4 text-text-secondary capitalize">
-                            {isHomePass ? r.duration : r.type || r.outPassCategory}
+                            {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : r.type || r.outPassCategory}
                         </td>
 
                         {/* Times (Out pass only) */}
@@ -155,8 +155,8 @@ export default function LeavesDetailView({
                                     options={statusOptions}
                                     value="Pending"
                                     onChange={(val) => onUpdateStatus(r._id || r.id, val)}
-                                    minWidth="w-28"
-                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20`}
+                                    minWidth="w-[130px]"
+                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]`}
                                 />
                             ) : (
                                 <LeaveStatusBadge status={r.status} />
@@ -171,8 +171,8 @@ export default function LeavesDetailView({
                                     value=""
                                     placeholder={getReturnStatus(r)}
                                     onChange={(val) => onUpdateReturn(r._id || r.id, val)}
-                                    minWidth="w-32"
-                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50`}
+                                    minWidth="w-[160px]"
+                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50 w-[160px]`}
                                 />
                             ) : (
                                 <LeaveReturnBadge returnTracking={r.returnTracking} />

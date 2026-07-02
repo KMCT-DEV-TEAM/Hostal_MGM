@@ -151,15 +151,11 @@ export default function ParentLeaves() {
             <LeaveStatsCards stats={statsData} />
 
             <DataTable
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
-                searchPlaceholder="Search"
                 toolbarActions={
                     <button
                         type="button"
                         onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2.5 bg-white border rounded-xl hover:bg-gray-50 transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.values(filters).some(Boolean) ? 'border-primary text-primary bg-primary/5' : 'border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                            }`}
+                        className={`p-2.5 border rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.values(filters).some(Boolean) ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
                     >
                         <Filter className="w-4 h-4" />
                     </button>
@@ -262,8 +258,8 @@ export default function ParentLeaves() {
                                         options={statusOptions}
                                         value="pending_parent"
                                         onChange={(val) => openActionModal(r, val)}
-                                        minWidth="w-[120px]"
-                                        triggerClassName="px-2.5 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
+                                        minWidth="w-[130px]"
+                                        triggerClassName="px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]"
                                     />
                                 ) : (
                                     <LeaveStatusBadge status={r.status} />

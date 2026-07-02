@@ -15,6 +15,7 @@ import {
   getStudentAttendanceHistoryDb,
   getStudentAttendanceCalendarDb,
   getStudentAttendanceDetailsDb,
+  correctAttendanceDb,
 } from "./attendance.service.js";
 
 const getScope = async (req) => {
@@ -148,6 +149,30 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
 
   const window = await completeAttendanceWindowDb(id, scope.userId);
   return sendSuccess(res, 200, "Attendance window completed successfully", window);
+});
+
+export const correctAttendance = asyncHandler(async (req, res) => {
+  const { windowId, studentId } = req.params;
+  const { status, remarks } = req.body;
+  const scope = await getScope(req);
+
+  if (!scope.hostelId) {
+    return sendError(res, 403, "No active hostel assignment found for this warden.");
+  }
+
+  try {
+    const result = await correctAttendanceDb(
+      windowId,
+      studentId,
+      scope.userId,
+      scope.hostelId,
+      { status, remarks }
+    );
+    return sendSuccess(res, 200, "Attendance corrected successfully.", result);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return sendError(res, code, error.message);
+  }
 });
 
 // --- Shared Student & Parent Controllers ---
