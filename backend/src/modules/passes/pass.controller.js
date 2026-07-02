@@ -824,7 +824,8 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
   const updateQuery = {
     $set: {
       "returnTracking.leftHostelAt": new Date(),
-      "returnTracking.markedBy": wardenId
+      "returnTracking.markedBy": wardenId,
+      "returnTracking.returnStatus": "pending"
     },
     $push: {
       timeline: {
@@ -858,6 +859,10 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
 
   const pass = await Pass.findOne({ _id: id, hostelId: hostel._id });
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+
+  if (pass.status !== "approved") {
+    return sendError(res, 422, "The pass is not in approved status.");
+  }
 
   if (!pass.returnTracking || !pass.returnTracking.leftHostelAt) {
     return sendError(res, 422, "The student hasn't left the hostel yet.");
