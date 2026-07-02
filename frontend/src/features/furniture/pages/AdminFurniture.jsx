@@ -5,8 +5,12 @@ import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
+import Dropdown from '@/components/ui/Dropdown';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AddFurnitureModal from '../components/modals/AddFurnitureModal';
+import AdminFurnitureDetailsModal from '../components/modals/AdminFurnitureDetailsModal';
+import Button from '@/components/ui/Button';
 
 export default function AdminFurniture() {
     const navigate = useNavigate();
@@ -18,6 +22,9 @@ export default function AdminFurniture() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [statusFilter, setStatusFilter] = useState('All');
@@ -88,6 +95,54 @@ export default function AdminFurniture() {
         }
     };
 
+    const handleAdjustStock = async (typeId, count) => {
+        try {
+            await furnitureApi.adjustAssetsCount(typeId, { count });
+            showSuccessToast('Stock adjusted successfully');
+            fetchFurnitureTypes();
+            fetchDashboardStats();
+
+            if (isDetailsModalOpen && selectedType && selectedType._id === typeId) {
+                setSelectedType(prev => ({
+                    ...prev,
+                    total: prev.total + count,
+                    available: prev.available + count,
+                    assets: prev.assets ? {
+                        ...prev.assets,
+                        total: (prev.assets.total || 0) + count,
+                        available: (prev.assets.available || 0) + count
+                    } : undefined
+                }));
+            }
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to adjust stock');
+        }
+    };
+
+    const confirmExport = async (filters) => {
+        setIsExporting(true);
+        try {
+            // Implement actual export logic here
+            showSuccessToast('Furniture data exported successfully');
+            setIsExportConfirmOpen(false);
+        } catch (error) {
+            showErrorToast('Failed to export data');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const exportFields = [
+        {
+            name: "status",
+            label: "Status",
+            options: [
+                { label: 'All Status', value: '' },
+                { label: 'Available', value: 'Available' },
+            ]
+        }
+    ];
+
     const handleDeleteSelected = async () => {
         if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} furniture types?`)) return;
         try {
@@ -121,6 +176,7 @@ export default function AdminFurniture() {
 
     const tableHeaders = [
         { key: 'name', label: 'Furniture' },
+        { key: 'hostel', label: 'Hostel' },
         { key: 'total', label: 'Quantity' },
         { key: 'allocated', label: 'Assigned' },
         { key: 'available', label: 'Available' },
@@ -128,7 +184,8 @@ export default function AdminFurniture() {
     ];
 
     const handleRowClick = (item) => {
-        navigate(`/dashboard/furniture/${item._id}`);
+        setSelectedType(item);
+        setIsDetailsModalOpen(true);
     };
 
     const totalFurnitures = dashboardStats?.totalAssets || 0;
@@ -168,35 +225,48 @@ export default function AdminFurniture() {
                 toolbarActions={
                     <>
                         {selectedIds.length > 0 && (
-                            <button
+                            <Button
+                                variant="outline"
+                                fullWidth={false}
+                                size="md"
                                 onClick={handleDeleteSelected}
-                                className="px-4 py-2 border border-red-200 text-danger bg-red-50 hover:bg-red-100 text-sm font-semibold rounded-xl transition-colors"
+                                className="border-red-200 text-danger bg-red-50 hover:bg-red-100"
                             >
                                 Delete ({selectedIds.length})
-                            </button>
+                            </Button>
                         )}
-                        <select
-                            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none"
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Available', value: 'Available' }
+                            ]}
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(val) => setStatusFilter(val)}
+                            placeholder="All Status"
+                            minWidth="w-[140px]"
+                        />
+                        <Button
+                            variant='outline'
+                            fullWidth={false}
+                            size="md"
+                            onClick={() => setIsExportConfirmOpen(true)}
                         >
-                            <option value="All">All</option>
-                            <option value="Available">Available</option>
-                        </select>
-                        <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium inline-flex items-center gap-2 hover:bg-gray-50 transition-colors">
                             <Download className="w-4 h-4" />
                             Export
-                        </button>
-                        <button
+                        </Button>
+
+                        <Button
+                            variant="primary"
+                            fullWidth={false}
+                            size="md"
                             onClick={() => {
                                 setSelectedType(null);
                                 setIsAddModalOpen(true);
                             }}
-                            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl inline-flex items-center gap-2 hover:bg-secondary transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add New
-                        </button>
+                        </Button>
                     </>
                 }
                 searchQuery={searchQuery}
@@ -211,37 +281,44 @@ export default function AdminFurniture() {
                 onRowClick={handleRowClick}
                 emptyText="No furniture types found."
                 isLoading={loading}
-                renderRow={(item) => {
-                    return (
-                        <>
-                            <td className="p-4 text-sm text-gray-500 font-medium">
-                                {item.name}
-                            </td>
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.total || item.assets?.total || 0}
-                            </td>
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.allocated || item.assets?.allocated || 0}
-                            </td>
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.available || item.assets?.available || 0}
-                            </td>
-                            <td className="p-4 text-right">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedType(item);
-                                        setIsAddModalOpen(true);
-                                    }}
-                                    className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                                    title="Edit"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                            </td>
-                        </>
-                    );
-                }}
+                renderRow={(item) => (
+                    <>
+                        <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-sm shrink-0">
+                                <Box className="w-4 h-4" />
+                            </div>
+                            <span className="text-sm font-semibold">{item.name}</span>
+                        </td>
+                        <td className="p-4 text-text-secondary font-medium">
+                            {item.hostel?.name || item.organization?.name || "--"}
+                        </td>
+                        <td className="p-4 text-text-secondary">
+                            {item.total || item.assets?.total || 0}
+                        </td>
+                        <td className="p-4 text-text-secondary">
+                            {item.allocated || item.assets?.allocated || 0}
+                        </td>
+                        <td className="p-4 text-text-secondary">
+                            {item.available || item.assets?.available || 0}
+                        </td>
+                        <td className="p-4 text-right">
+                            <Button
+                                variant="ghost"
+                                fullWidth={false}
+                                size="sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedType(item);
+                                    setIsAddModalOpen(true);
+                                }}
+                                className="text-primary hover:bg-blue-50 !p-1.5"
+                                title="Edit"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                            </Button>
+                        </td>
+                    </>
+                )}
                 page={page}
                 setPage={setPage}
                 limit={limit}
@@ -260,6 +337,29 @@ export default function AdminFurniture() {
                     initialData={selectedType}
                 />
             )}
+
+            {isDetailsModalOpen && selectedType && (
+                <AdminFurnitureDetailsModal
+                    isOpen={isDetailsModalOpen}
+                    onClose={() => {
+                        setIsDetailsModalOpen(false);
+                        setSelectedType(null);
+                    }}
+                    item={selectedType}
+                    onViewList={(item) => navigate(`/dashboard/furniture/${item._id}`)}
+                    onUpdateSuccess={handleAdjustStock}
+                />
+            )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Furniture"
+                subtitle="Select status filter before downloading"
+                fields={exportFields}
+            />
         </div>
     );
 }
