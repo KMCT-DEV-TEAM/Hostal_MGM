@@ -3,6 +3,7 @@ import { Download, Box, PackageCheck, PackageOpen } from 'lucide-react';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
+import StatsCard from '@/components/ui/StatsCard';
 import { showErrorToast } from '@/utils/toast';
 import WardenFurnitureDetailsModal from '../components/modals/WardenFurnitureDetailsModal';
 
@@ -93,33 +94,24 @@ export default function WardenFurniture() {
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TOTAL FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{totalFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
-                        <Box className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">ASSIGNED FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{assignedFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
-                        <PackageCheck className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">AVAILABLE FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{availableFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-500 flex items-center justify-center">
-                        <PackageOpen className="w-5 h-5" />
-                    </div>
-                </div>
+                <StatsCard 
+                    label="TOTAL FURNITURES"
+                    value={totalFurnitures}
+                    icon={<Box className="w-5 h-5" />}
+                    iconBg="bg-blue-50 text-blue-500"
+                />
+                <StatsCard 
+                    label="ASSIGNED FURNITURES"
+                    value={assignedFurnitures}
+                    icon={<PackageCheck className="w-5 h-5" />}
+                    iconBg="bg-success/10 text-success"
+                />
+                <StatsCard 
+                    label="AVAILABLE FURNITURES"
+                    value={availableFurnitures}
+                    icon={<PackageOpen className="w-5 h-5" />}
+                    iconBg="bg-cyan-50 text-cyan-500"
+                />
             </div>
 
             <DataTable
