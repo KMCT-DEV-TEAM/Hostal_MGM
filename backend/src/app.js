@@ -20,9 +20,9 @@ import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter,
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
-import { 
-  wardenAttendanceRouter, 
-  adminAttendanceRouter, 
+import {
+  wardenAttendanceRouter,
+  adminAttendanceRouter,
   superAdminAttendanceRouter,
   studentAttendanceRouter,
   parentAttendanceRouter

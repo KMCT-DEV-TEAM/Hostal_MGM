@@ -13,13 +13,13 @@ import {
   getDashboardSummary
 } from "./furniture.controller.js";
 
-import { 
+import {
   validateCreateFurnitureType,
   validateAdjustAssetCount,
-  validateAllocate, 
+  validateAllocate,
   validateReturn,
-  validateStartMaintenance, 
-  validateCompleteMaintenance 
+  validateStartMaintenance,
+  validateCompleteMaintenance
 } from "./furniture.validation.js";
 
 const router = express.Router();

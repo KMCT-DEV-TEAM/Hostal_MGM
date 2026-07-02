@@ -186,7 +186,7 @@ export default function LeavesDetailView({
                 return (
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <span className="text-sm font-bold text-[#0A437A]">
+                            <span className="text-sm font-bold text-primary">
                                 {studentName}
                             </span>
                             <LeaveStatusBadge status={r.status} />

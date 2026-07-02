@@ -20,6 +20,7 @@ export default function AdminFurniture() {
     const [selectedType, setSelectedType] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [statusFilter, setStatusFilter] = useState('All');
+    const [dashboardStats, setDashboardStats] = useState(null);
     const limit = 10;
 
     useEffect(() => {
@@ -31,8 +32,21 @@ export default function AdminFurniture() {
     }, [searchQuery]);
 
     useEffect(() => {
+        fetchDashboardStats();
+    }, []);
+
+    useEffect(() => {
         fetchFurnitureTypes();
     }, [page, debouncedSearch, statusFilter]);
+
+    const fetchDashboardStats = async () => {
+        try {
+            const res = await furnitureApi.getDashboardStats();
+            setDashboardStats(res.data?.summary || res.summary || null);
+        } catch (error) {
+            console.error("Failed to fetch dashboard stats:", error);
+        }
+    };
 
     const fetchFurnitureTypes = async () => {
         try {
@@ -116,10 +130,9 @@ export default function AdminFurniture() {
         navigate(`/dashboard/furniture/${item._id}`);
     };
 
-    // Calculate stats from current page for mockup representation
-    const totalFurnitures = types.reduce((acc, t) => acc + (t.total || t.assets?.total || 0), 0);
-    const assignedFurnitures = types.reduce((acc, t) => acc + (t.allocated || t.assets?.allocated || 0), 0);
-    const availableFurnitures = types.reduce((acc, t) => acc + (t.available || t.assets?.available || 0), 0);
+    const totalFurnitures = dashboardStats?.totalAssets || 0;
+    const assignedFurnitures = dashboardStats?.allocated || 0;
+    const availableFurnitures = dashboardStats?.available || 0;
 
     return (
         <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">

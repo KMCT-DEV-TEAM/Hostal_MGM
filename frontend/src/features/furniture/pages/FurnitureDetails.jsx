@@ -9,6 +9,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import AdjustStockModal from '../components/modals/AdjustStockModal';
 import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
+import AllocateAssetModal from '../components/modals/AllocateAssetModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function FurnitureDetails() {
     const { id } = useParams();
@@ -23,6 +25,9 @@ export default function FurnitureDetails() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, asset: null });
+    const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const limit = 10;
@@ -36,29 +41,50 @@ export default function FurnitureDetails() {
     }, [searchQuery]);
 
     useEffect(() => {
-        if (id) fetchDetails();
-    }, [id, page, debouncedSearch]);
+        if (id) {
+            fetchTypeDetails();
+            fetchAssets();
+        }
+    }, [id]);
 
-    const fetchDetails = async () => {
+    useEffect(() => {
+        if (id) fetchAssets();
+    }, [page, debouncedSearch]);
+
+    const fetchTypeDetails = async () => {
+        try {
+            const res = await furnitureApi.getFurnitureTypeDetails(id);
+            setDetails(res.data?.type || res.data || res.type || res.summary || null);
+        } catch (error) {
+            console.error("Failed to fetch type details:", error);
+            showErrorToast(error.message || 'Failed to fetch details');
+            navigate('/dashboard/furniture');
+        }
+    };
+
+    const fetchAssets = async () => {
         try {
             setLoading(true);
-            const res = await furnitureApi.getFurnitureTypeDetails(id, {
+            const res = await furnitureApi.getFurnitureTypeAssets(id, {
                 page,
                 limit,
                 search: debouncedSearch
             });
-            setDetails(res.summary || res.type);
-            setAssets(res.assets?.data || res.assets || []);
+            setAssets(res.data?.data || res.data?.assets || res.assets || []);
             setPagination({
-                totalPages: res.assets?.totalPages || res.pagination?.totalPages || 1,
-                totalRecords: res.assets?.totalCount || res.pagination?.totalRecords || 0
+                totalPages: res.data?.totalPages || res.pagination?.totalPages || 1,
+                totalRecords: res.data?.totalCount || res.pagination?.totalRecords || 0
             });
         } catch (error) {
-            showErrorToast(error.message || 'Failed to fetch details');
-            navigate('/dashboard/furniture');
+            showErrorToast(error.message || 'Failed to fetch assets');
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchDetails = () => {
+        fetchTypeDetails();
+        fetchAssets();
     };
 
     const handleSelectAll = () => {
@@ -96,14 +122,55 @@ export default function FurnitureDetails() {
 
     const handleStatusChange = async (assetId, status) => {
         try {
-            await furnitureApi.changeAssetStatus(assetId, status);
+            await furnitureApi.changeAssetStatus(assetId, { status });
             showSuccessToast('Asset status updated successfully');
             setIsStatusModalOpen(false);
-            fetchDetails();
+            fetchAssets();
         } catch (error) {
             showErrorToast(error.message || 'Failed to update asset status');
             throw error;
         }
+    };
+
+    const handleAllocate = async (studentId, assetId) => {
+        try {
+            await furnitureApi.allocateAsset(studentId, assetId);
+            showSuccessToast('Asset allocated successfully');
+            setIsAllocateModalOpen(false);
+            fetchDetails(); // refresh everything as total counts might change
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to allocate asset');
+            throw error;
+        }
+    };
+
+    const handleConfirmAction = async () => {
+        if (!confirmModal.asset) return;
+        const assetId = confirmModal.asset._id;
+        setIsConfirmSubmitting(true);
+        try {
+            if (confirmModal.type === 'return') {
+                const studentId = confirmModal.asset.studentId?._id;
+                await furnitureApi.returnAsset(studentId, assetId);
+                showSuccessToast('Asset returned successfully');
+            } else if (confirmModal.type === 'startMaintenance') {
+                await furnitureApi.startMaintenance(assetId);
+                showSuccessToast('Maintenance started');
+            } else if (confirmModal.type === 'completeMaintenance') {
+                await furnitureApi.completeMaintenance(assetId);
+                showSuccessToast('Maintenance completed');
+            }
+            setConfirmModal({ isOpen: false, type: null, asset: null });
+            fetchDetails();
+        } catch (error) {
+            showErrorToast(error.message || `Failed to ${confirmModal.type}`);
+        } finally {
+            setIsConfirmSubmitting(false);
+        }
+    };
+
+    const openConfirmModal = (type, asset) => {
+        setConfirmModal({ isOpen: true, type, asset });
     };
 
     const tableHeaders = [
@@ -243,17 +310,68 @@ export default function FurnitureDetails() {
                                 </span>
                             </td>
                             <td className="p-4 text-right">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedAsset(item);
-                                        setIsStatusModalOpen(true);
-                                    }}
-                                    className="p-1 text-[var(--color-danger)] hover:bg-red-50 rounded transition-colors"
-                                    title="Delete/Update"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center justify-end gap-2">
+                                    {item.status === 'Available' && (
+                                        <>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedAsset(item);
+                                                    setIsAllocateModalOpen(true);
+                                                }}
+                                                className="px-2 py-1 text-xs font-semibold text-primary bg-primary/10 rounded hover:bg-primary/20 transition-colors"
+                                                title="Allocate to Student"
+                                            >
+                                                Allocate
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openConfirmModal('startMaintenance', item);
+                                                }}
+                                                className="px-2 py-1 text-xs font-semibold text-warning bg-warning/10 rounded hover:bg-warning/20 transition-colors"
+                                                title="Start Maintenance"
+                                            >
+                                                Start Maint.
+                                            </button>
+                                        </>
+                                    )}
+                                    {item.status === 'Allocated' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openConfirmModal('return', item);
+                                            }}
+                                            className="px-2 py-1 text-xs font-semibold text-success bg-success/10 rounded hover:bg-success/20 transition-colors"
+                                            title="Return Asset"
+                                        >
+                                            Return
+                                        </button>
+                                    )}
+                                    {item.status === 'Maintenance' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openConfirmModal('completeMaintenance', item);
+                                            }}
+                                            className="px-2 py-1 text-xs font-semibold text-success bg-success/10 rounded hover:bg-success/20 transition-colors"
+                                            title="Complete Maintenance"
+                                        >
+                                            Complete Maint.
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedAsset(item);
+                                            setIsStatusModalOpen(true);
+                                        }}
+                                        className="p-1 text-gray-500 hover:bg-gray-100 rounded transition-colors ml-2"
+                                        title="Change Status"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </td>
                         </>
                     );
@@ -285,6 +403,34 @@ export default function FurnitureDetails() {
                     asset={selectedAsset}
                 />
             )}
+            {isAllocateModalOpen && (
+                <AllocateAssetModal
+                    isOpen={isAllocateModalOpen}
+                    onClose={() => {
+                        setIsAllocateModalOpen(false);
+                        setSelectedAsset(null);
+                    }}
+                    onAllocate={handleAllocate}
+                    asset={selectedAsset}
+                />
+            )}
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null, asset: null })}
+                onConfirm={handleConfirmAction}
+                isSubmitting={isConfirmSubmitting}
+                title={
+                    confirmModal.type === 'return' ? 'Return Asset' :
+                    confirmModal.type === 'startMaintenance' ? 'Start Maintenance' : 'Complete Maintenance'
+                }
+                message={
+                    confirmModal.type === 'return' ? `Are you sure you want to mark ${confirmModal.asset?.furnitureId} as returned from ${confirmModal.asset?.studentId?.name}?` :
+                    confirmModal.type === 'startMaintenance' ? `Are you sure you want to send ${confirmModal.asset?.furnitureId} for maintenance?` : 
+                    `Are you sure you want to complete maintenance for ${confirmModal.asset?.furnitureId}?`
+                }
+                confirmText={confirmModal.type === 'return' ? 'Return Asset' : 'Confirm'}
+            />
         </div>
     );
 }
