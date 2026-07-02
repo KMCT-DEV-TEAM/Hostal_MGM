@@ -472,7 +472,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
   }
 };
 
-export const completeAttendanceWindowDb = async (windowId, wardenId) => {
+export const closeAttendanceWindow = async (windowId, completedBy) => {
   const window = await AttendanceWindow.findOne({ _id: windowId, status: "open" });
   if (!window) {
     throw new Error("Window is already completed or does not exist.");
@@ -524,7 +524,7 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
       attendanceWindowId: windowId,
       studentId: student._id,
       hostelId: window.hostelId,
-      scannedBy: wardenId,
+      scannedBy: completedBy,
       status: onLeaveSet.has(student._id.toString()) ? "on_leave" : "absent",
       remarks: onLeaveSet.has(student._id.toString())
         ? "Marked as on leave automatically upon window completion."
@@ -535,7 +535,7 @@ export const completeAttendanceWindowDb = async (windowId, wardenId) => {
 
   window.status = "completed";
   window.completedAt = new Date();
-  window.completedBy = wardenId;
+  window.completedBy = completedBy;
   window.absentCount = absentStudents.length;
   await window.save();
 

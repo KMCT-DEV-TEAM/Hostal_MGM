@@ -104,16 +104,26 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
 
   const types = await furnitureAggregation.getFurnitureTypesListAggregation(matchQuery, skip, limit);
 
-  return sendSuccess(res, 200, "Furniture Types retrieved.", types);
+  return sendSuccess(res, 200, "Furniture Types retrieved.", { data: types });
 });
 
 export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
   const { typeId } = req.params;
-  const type = await FurnitureType.findById(typeId).lean();
+  const type = await FurnitureType.findById(typeId)
+    .populate("organizationId", "name")
+    .populate("hostelId", "name")
+    .lean();
+
   if (!type) return sendError(res, 404, "Furniture Type not found");
 
-  // also fetch assets statistics manually here or from aggregation
-  const currentCount = await FurnitureAsset.countDocuments({ furnitureTypeId: typeId });
+  type.organizationId = type.organizationId;
+  type.hostelId = type.hostelId;
+
+  // Total Active inventory (matches the dashboard logic)
+  const currentCount = await FurnitureAsset.countDocuments({
+    furnitureTypeId: typeId,
+    status: { $in: ["Available", "Allocated", "Maintenance"] }
+  });
 
   return sendSuccess(res, 200, "Furniture Type details retrieved.", { ...type, totalAssets: currentCount });
 });
@@ -129,7 +139,7 @@ export const updateFurnitureType = asyncHandler(async (req, res) => {
   ).lean();
 
   if (!updatedType) return sendError(res, 404, "Furniture Type not found");
-  return sendSuccess(res, 200, "Furniture Type updated successfully.", updatedType);
+  return sendSuccess(res, 200, "Furniture Type updated successfully.", { data: updatedType });
 });
 
 export const deleteFurnitureType = asyncHandler(async (req, res) => {

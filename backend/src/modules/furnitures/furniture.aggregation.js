@@ -65,6 +65,24 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
       },
     },
     {
+      $lookup: {
+        from: "organizations",
+        localField: "organizationId",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+    { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "hostelId",
+        foreignField: "_id",
+        as: "hostel",
+      },
+    },
+    { $unwind: { path: "$hostel", preserveNullAndEmptyArrays: true } },
+    {
       $project: {
         name: 1,
         prefix: 1,
@@ -72,6 +90,8 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
         isActive: 1,
         organizationId: 1,
         hostelId: 1,
+        organization: { _id: "$organization._id", name: "$organization.name" },
+        hostel: { _id: "$hostel._id", name: "$hostel.name" },
         createdAt: 1,
         total: { $size: { $filter: { input: "$assets", as: "asset", cond: { $in: ["$$asset.status", ["Available", "Allocated", "Maintenance"]] } } } },
         available: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Available"] } } } },
