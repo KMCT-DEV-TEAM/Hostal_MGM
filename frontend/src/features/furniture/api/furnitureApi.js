@@ -6,6 +6,7 @@ const getFurnitureTypes = (params) => apiClient.get(`${API_BASE_URL}/types`, { p
 const getFurnitureTypeDetails = (typeId, params) => apiClient.get(`${API_BASE_URL}/types/${typeId}`, { params });
 const getFurnitureTypeAssets = (typeId, params) => apiClient.get(`${API_BASE_URL}/types/${typeId}/assets`, { params });
 const getAllFurnitureAssets = (params) => apiClient.get(`${API_BASE_URL}/assets`, { params });
+const getFurnitureAssetDetails = (assetId) => apiClient.get(`${API_BASE_URL}/assets/${assetId}`);
 const createFurnitureType = (data) => apiClient.post(`${API_BASE_URL}/types`, data);
 const updateFurnitureType = (typeId, data) => apiClient.put(`${API_BASE_URL}/types/${typeId}`, data);
 const deleteFurnitureType = (typeId) => apiClient.delete(`${API_BASE_URL}/types/${typeId}`);
@@ -25,6 +26,7 @@ const furnitureApi = {
     getFurnitureTypeDetails,
     getFurnitureTypeAssets,
     getAllFurnitureAssets,
+    getFurnitureAssetDetails,
     createFurnitureType,
     updateFurnitureType,
     deleteFurnitureType,

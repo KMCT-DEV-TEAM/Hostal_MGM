@@ -15,12 +15,18 @@ import Dropdown from '@/components/ui/Dropdown';
 import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
 import AllocateAssetModal from '../components/modals/AllocateAssetModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import AssetDetailsModal from '../components/modals/AssetDetailsModal';
+import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
+import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
 
 export default function FurnitureDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const role = useAuthStore((s) => s.user?.role);
+    const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
+    
     const urlSearchQuery = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const statusFilter = searchParams.get('status') || 'All';
@@ -29,16 +35,21 @@ export default function FurnitureDetails() {
     const debouncedSearch = useDebounce(searchInput, 500);
 
     const [details, setDetails] = useState(null);
-    const [assets, setAssets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+    const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, asset: null });
     const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const limit = 10;
+
+    const { data: assets, pagination, loading, refetch: fetchAssets } = useFurnitureAssets(id, {
+        page,
+        limit,
+        search: debouncedSearch,
+        status: statusFilter === 'All' ? '' : statusFilter
+    });
 
     const updateSearchParams = (updates) => {
         const newParams = new URLSearchParams(searchParams);
@@ -65,13 +76,8 @@ export default function FurnitureDetails() {
     useEffect(() => {
         if (id) {
             fetchTypeDetails();
-            fetchAssets();
         }
     }, [id]);
-
-    useEffect(() => {
-        if (id) fetchAssets();
-    }, [page, debouncedSearch]);
 
     const fetchTypeDetails = async () => {
         try {
@@ -84,30 +90,9 @@ export default function FurnitureDetails() {
         }
     };
 
-    const fetchAssets = async () => {
-        try {
-            setLoading(true);
-            const res = await furnitureApi.getFurnitureTypeAssets(id, {
-                page,
-                limit,
-                search: debouncedSearch,
-                status: statusFilter === 'All' ? '' : statusFilter
-            });
-            setAssets(res.data?.data || res.data?.assets || res.assets || []);
-            setPagination({
-                totalPages: res.data?.totalPages || res.pagination?.totalPages || 1,
-                totalRecords: res.data?.totalCount || res.pagination?.totalRecords || 0
-            });
-        } catch (error) {
-            showErrorToast(error.message || 'Failed to fetch assets');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchDetails = () => {
-        fetchTypeDetails();
-        fetchAssets();
+    const handleRowClick = (item) => {
+        setSelectedAsset(item);
+        setIsAssetDetailsModalOpen(true);
     };
 
     const handleSelectAll = () => {
@@ -194,14 +179,6 @@ export default function FurnitureDetails() {
         { key: 'actions', label: 'Action' }
     ];
 
-    const getStatusStyle = (status) => {
-        if (status === 'Available') return 'text-[var(--color-success)] bg-[var(--color-success)]/10 border border-[var(--color-success)]/20';
-        if (status === 'Allocated') return 'text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20';
-        if (status === 'Maintenance') return 'text-[var(--color-warning)] bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20';
-        if (status === 'Lost') return 'text-[var(--color-danger)] bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20';
-        return 'text-gray-700 bg-gray-100 border border-gray-200';
-    };
-
     const titleName = details?.name || 'Furniture';
     const pageTitle = titleName;
     const pageSubtitle = `Manage all furnitures of ${titleName}`;
@@ -284,6 +261,7 @@ export default function FurnitureDetails() {
                 selectedIds={selectedIds}
                 onSelectAll={handleSelectAll}
                 onSelect={handleSelect}
+                onRowClick={handleRowClick}
                 emptyText="No assets found."
                 isLoading={loading}
                 renderRow={(item) => {
@@ -311,9 +289,7 @@ export default function FurnitureDetails() {
                                 )}
                             </td>
                             <td className="p-4">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusStyle(item.status)}`}>
-                                    {item.status}
-                                </span>
+                                <FurnitureStatusBadge status={item.status} />
                             </td>
                             <td className="p-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
@@ -442,6 +418,18 @@ export default function FurnitureDetails() {
                 }
                 confirmText={confirmModal.type === 'return' ? 'Return Asset' : 'Confirm'}
             />
+            {isAssetDetailsModalOpen && selectedAsset && (
+                <AssetDetailsModal
+                    isOpen={isAssetDetailsModalOpen}
+                    onClose={() => {
+                        setIsAssetDetailsModalOpen(false);
+                        setSelectedAsset(null);
+                    }}
+                    assetId={selectedAsset._id || selectedAsset.id}
+                    organizationName={details?.organization?.name}
+                    hostelName={details?.hostel?.name}
+                />
+            )}
         </div>
     );
 }
