@@ -16,6 +16,23 @@ export class EmailProvider {
     }
 }
 
+export class InAppProvider {
+    /**
+     * Sends an in-app notification.
+     */
+    async send(payload, recipientDetails) {
+        if (!recipientDetails.id && !recipientDetails.userId) {
+            throw new Error('user id is required for in-app notifications');
+        }
+
+        // The Orchestrator already saved the notification to the DB via bulkCreate.
+        // InAppProvider is only responsible for Realtime dispatching (WebSockets),
+        // which can be implemented here later.
+
+        return { status: 'DELIVERED', channel: 'in-app', timestamp: new Date() };
+    }
+}
+
 export class PushProvider {
     /**
      * Sends a push notification to a device.
