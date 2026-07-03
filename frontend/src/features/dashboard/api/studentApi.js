@@ -26,6 +26,9 @@ const studentApi = {
   getStudentFilterOptionsByAdmin: (params) =>
     api.get("/admin/students/filters", { params }),
 
+  getStudentFurnituresByAdmin: (id) =>
+    api.get(`/admin/students/${id}/furnitures`),
+
   toggleStatusByAdmin: (id) =>
     api.patch(`/admin/students/${id}/toggle-status`),
 
@@ -39,6 +42,9 @@ const studentApi = {
   getStudentFilterOptionsBySuperAdmin: (params) =>
     api.get("/super-admin/students/filters", { params }),
 
+  getStudentFurnituresBySuperAdmin: (id) =>
+    api.get(`/super-admin/students/${id}/furnitures`),
+
   toggleStatusBySuperAdmin: (id) =>
     api.patch(`/super-admin/students/${id}/toggle-status`),
 
@@ -50,6 +56,9 @@ const studentApi = {
 
   getStudentFilterOptionsByWarden: (params) =>
     api.get("/warden/students/filters", { params }),
+
+  getStudentFurnituresByWarden: (id) =>
+    api.get(`/warden/students/${id}/furnitures`),
 
 };
 

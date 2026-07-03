@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import {
   User,
@@ -16,17 +16,24 @@ import {
   FileText,
   Pencil,
   Plus,
+  Box,
+  Hash
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
+import AssignFurnitureModal from "./AssignFurnitureModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
-import {  changeStudentEmail } from "@/services/student.service";
-import {  changeParentEmail } from "@/services/parent.service";
+import { changeStudentEmail } from "@/services/student.service";
+import { changeParentEmail } from "@/services/parent.service";
 import { formatDate } from "@/utils/dateFormatter";
+import { getStudentFurnitures } from "@/services/student.service";
+import furnitureApi from "@/features/furniture/api/furnitureApi";
+import { getHostels } from "@/services/hostel.service";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -63,10 +70,88 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
     useState(false);
   const [isAddParentModalOpen, setIsAddParentModalOpen] = useState(false);
   const [emailChangeTarget, setEmailChangeTarget] = useState(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+  const [assignedFurnitures, setAssignedFurnitures] = useState([]);
+  const [loadingFurnitures, setLoadingFurnitures] = useState(false);
+
+  useEffect(() => {
+    const fetchFurnitures = async () => {
+      try {
+        setLoadingFurnitures(true);
+        const studentId = student?._id || student?.id;
+        console.log('Student Id:', student._id)
+        const data = await getStudentFurnitures(role, studentId);
+        setAssignedFurnitures(data?.assets || []);
+      } catch (err) {
+        console.error('Failed to fetch assigned furnitures', err);
+      } finally {
+        setLoadingFurnitures(false);
+      }
+    };
+    if (student?._id || student?.id) {
+      fetchFurnitures();
+    }
+  }, [student?._id, student?.id, role]);
+
+  const [availableFurnitures, setAvailableFurnitures] = useState([]);
+
+  useEffect(() => {
+    if (isAssignModalOpen) {
+      const fetchModalData = async () => {
+        try {
+          const furnituresRes = await furnitureApi.getAllFurnitureAssets({ status: "Available", limit: 1000 });
+          setAvailableFurnitures(furnituresRes.data?.data?.assets || furnituresRes.data?.assets || []);
+        } catch (error) {
+          console.error("Failed to fetch data for modal", error);
+        }
+      };
+      fetchModalData();
+    }
+  }, [isAssignModalOpen]);
+
+  const handleAssignSave = async (data) => {
+    try {
+      const studentId = student?._id || student?.id;
+      if (!studentId) {
+        showErrorToast("Error: Student ID is missing. Cannot save.");
+        console.error("Student ID is missing. Student object:", student);
+        return;
+      }
+
+      const { furnitures } = data; // hostelId and roomNo are ignored for now if not implemented on backend
+      const currentAssetIds = assignedFurnitures.map((f) => String(f._id));
+      const newAssetIds = furnitures.map(String);
+
+      const toAllocate = newAssetIds.filter((id) => !currentAssetIds.includes(id));
+      const toReturn = currentAssetIds.filter((id) => !newAssetIds.includes(id));
+
+      const promises = [];
+
+      toAllocate.forEach((assetId) => {
+        promises.push(furnitureApi.allocateAsset(studentId, assetId));
+      });
+      toReturn.forEach((assetId) => {
+        promises.push(furnitureApi.returnAsset(studentId, assetId));
+      });
+
+      await Promise.all(promises);
+
+      // Re-fetch assigned furnitures
+      const furnData = await getStudentFurnitures(role, studentId);
+      setAssignedFurnitures(furnData?.assets || []);
+
+      setIsAssignModalOpen(false);
+      showSuccessToast("Furniture assignment updated successfully.");
+    } catch (error) {
+      console.log('error assignment:', error)
+      showErrorToast(error.message || "Failed to update assignment.");
+    }
+  };
 
   const { handleCreateParent } = useCreateParent((result, payload) => {
     const createdParent = normalizeParent(result?.data, payload);
-    const studentId = createdParent.studentId ?? student._id;
+    const studentId = createdParent.studentId ?? student._id ?? student.id;
     onStudentChange?.(studentId, (current) => ({
       ...current,
       parents: [...(current.parents || []), createdParent],
@@ -329,8 +414,9 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
               </div>
               <div className="flex items-center gap-2">
                 <Button
+                  variant="primary"
+                  size="sm"
                   onClick={() => setIsAddParentModalOpen(true)}
-                  className="flex items-center gap-2 cursor-pointer bg-primary hover:bg-secondary text-white px-4 py-2 rounded-md text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Add Parent
@@ -395,6 +481,89 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Assign Information */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-primary">
+                  Assign Information
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Details of Assigned Hostel and Furniture
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {assignedFurnitures.length > 0 || student.hostel ? (
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => setIsAssignModalOpen(true)}
+                  >
+                    Edit
+                  </Button>
+                ) : (
+                  <Button
+                    className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
+                    onClick={() => setIsAssignModalOpen(true)}
+                  >
+                    Add
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {(assignedFurnitures.length > 0 || student.hostel) && (
+              <div className="space-y-4">
+                <InfoRow
+                  icon={<Home className="w-4 h-4 text-gray-400" />}
+                  label="Assigned Hostel"
+                >
+                  {hostelName}
+                </InfoRow>
+                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                  <span className="text-gray-500 flex items-center gap-1.5">
+                    <Box className="w-4 h-4 text-gray-400" />
+                    Furnitures
+                  </span>
+                  <div className="sm:col-span-2 font-medium text-gray-900 flex flex-wrap gap-2 items-center">
+                    <span className="hidden sm:inline">: </span>
+                    {assignedFurnitures.length > 0 ? (
+                      assignedFurnitures.map((f, i) => (
+                        <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium">
+                          {f.furnitureTypeId?.name || "Unknown"}
+                        </span>
+                      ))
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
+                </div>
+                <InfoRow
+                  icon={<Hash className="w-4 h-4 text-gray-400" />}
+                  label="Furniture Id"
+                >
+                  {assignedFurnitures.length > 0
+                    ? assignedFurnitures.map((f) => f.furnitureId).join(", ")
+                    : "N/A"}
+                </InfoRow>
+                <InfoRow
+                  icon={<Calendar className="w-4 h-4 text-gray-400" />}
+                  label="Assigned On"
+                >
+                  {assignedFurnitures.length > 0 && assignedFurnitures[0].createdAt
+                    ? formatDate(assignedFurnitures[0].createdAt)
+                    : "N/A"}
+                </InfoRow>
+                <InfoRow
+                  icon={<User className="w-4 h-4 text-gray-400" />}
+                  label="Assigned By"
+                >
+                  Warden
+                </InfoRow>
+              </div>
+            )}
           </div>
         </div>
         {/* Right Summary Sidebar */}
@@ -503,6 +672,15 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         currentEmail={emailChangeTarget?.currentEmail}
         onClose={closeEmailChangeModal}
         onConfirmChange={handleEmailChange}
+      />
+
+      <AssignFurnitureModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        isEdit={assignedFurnitures.length > 0}
+        student={student}
+        assignedFurnitures={assignedFurnitures}
+        onSave={handleAssignSave}
       />
     </Modal>
   );
