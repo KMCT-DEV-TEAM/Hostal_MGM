@@ -467,7 +467,19 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
                 $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] }
               },
               outsideCount: {
-                $sum: { $cond: [{ $and: [{ $eq: ["$status", "approved"] }, { $eq: ["$returnTracking.returnStatus", "left"] }] }, 1, 0] }
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ["$status", "approved"] },
+                        { $eq: [{ $type: "$returnTracking.leftHostelAt" }, "date"] },
+                        { $in: [{ $type: "$returnTracking.returnedAt" }, ["missing", "null"]] }
+                      ]
+                    },
+                    1,
+                    0
+                  ]
+                }
               }
             }
           }

@@ -3,6 +3,7 @@ import { Download, Box, PackageCheck, PackageOpen } from 'lucide-react';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
+import StatsCard from '@/components/ui/StatsCard';
 import { showErrorToast } from '@/utils/toast';
 import WardenFurnitureDetailsModal from '../components/modals/WardenFurnitureDetailsModal';
 
@@ -16,6 +17,7 @@ export default function WardenFurniture() {
     const [selectedType, setSelectedType] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState('All');
+    const [dashboardStats, setDashboardStats] = useState(null);
     const limit = 10;
 
     useEffect(() => {
@@ -27,8 +29,21 @@ export default function WardenFurniture() {
     }, [searchQuery]);
 
     useEffect(() => {
+        fetchDashboardStats();
+    }, []);
+
+    useEffect(() => {
         fetchFurnitureTypes();
     }, [page, debouncedSearch, statusFilter]);
+
+    const fetchDashboardStats = async () => {
+        try {
+            const res = await furnitureApi.getDashboardStats();
+            setDashboardStats(res.data?.summary || res.summary || null);
+        } catch (error) {
+            console.error("Failed to fetch dashboard stats:", error);
+        }
+    };
 
     const fetchFurnitureTypes = async () => {
         try {
@@ -55,10 +70,11 @@ export default function WardenFurniture() {
     const pageSubtitle = 'View all furnitures';
 
     const tableHeaders = [
+        { key: 'name', label: 'Furniture Id' },
         { key: 'name', label: 'Furniture' },
-        { key: 'total', label: 'Quantity' },
-        { key: 'allocated', label: 'Assigned' },
-        { key: 'available', label: 'Available' }
+        { key: 'total', label: 'Organization' },
+        { key: 'allocated', label: 'Assigned to' },
+        { key: 'available', label: 'Status' }
     ];
 
     const handleRowClick = (item) => {
@@ -66,10 +82,9 @@ export default function WardenFurniture() {
         setIsDetailsModalOpen(true);
     };
 
-    // Calculate stats from current page for mockup representation
-    const totalFurnitures = types.reduce((acc, t) => acc + (t.total || t.assets?.total || 0), 0);
-    const assignedFurnitures = types.reduce((acc, t) => acc + (t.allocated || t.assets?.allocated || 0), 0);
-    const availableFurnitures = types.reduce((acc, t) => acc + (t.available || t.assets?.available || 0), 0);
+    const totalFurnitures = dashboardStats?.totalAssets || 0;
+    const assignedFurnitures = dashboardStats?.allocated || 0;
+    const availableFurnitures = dashboardStats?.available || 0;
 
     return (
         <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
@@ -80,39 +95,33 @@ export default function WardenFurniture() {
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TOTAL FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{totalFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
-                        <Box className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">ASSIGNED FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{assignedFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-success)]/10 text-[var(--color-success)] flex items-center justify-center">
-                        <PackageCheck className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">AVAILABLE FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{availableFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-500 flex items-center justify-center">
-                        <PackageOpen className="w-5 h-5" />
-                    </div>
-                </div>
+                <StatsCard
+                    label="TOTAL FURNITURES"
+                    value={totalFurnitures}
+                    icon={<Box className="w-5 h-5" />}
+                    iconBg="bg-secondary/10 text-secondary"
+                    borderColor='border-t-2 border-t-secondary/70'
+                />
+                <StatsCard
+                    label="ASSIGNED FURNITURES"
+                    value={assignedFurnitures}
+                    icon={<PackageCheck className="w-5 h-5" />}
+                    iconBg="bg-success/10 text-success"
+                    borderColor='border-t-2 border-t-success/70'
+                />
+                <StatsCard
+                    label="AVAILABLE FURNITURES"
+                    value={availableFurnitures}
+                    icon={<PackageOpen className="w-5 h-5" />}
+                    iconBg="bg-secondary/10 text-secondary/70"
+                    borderColor='border-t-2 border-t-secondary/70'
+                />
             </div>
 
             <DataTable
                 toolbarActions={
                     <>
-                        <select 
+                        <select
                             className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}

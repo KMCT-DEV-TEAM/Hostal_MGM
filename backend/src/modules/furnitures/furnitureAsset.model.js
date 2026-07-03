@@ -41,7 +41,6 @@ const furnitureAssetSchema = new mongoose.Schema(
   }
 );
 
-furnitureAssetSchema.index({ furnitureId: 1 });
 furnitureAssetSchema.index({ status: 1 });
 furnitureAssetSchema.index({ studentId: 1 });
 furnitureAssetSchema.index({ furnitureTypeId: 1 });

@@ -20,12 +20,12 @@ export default function WardenFurnitureDetailsModal({ isOpen, onClose, furniture
     const fetchAssets = async () => {
         try {
             setLoading(true);
-            const res = await furnitureApi.getFurnitureTypeDetails(furnitureType._id, {
+            const res = await furnitureApi.getFurnitureTypeAssets(furnitureType._id, {
                 page,
                 limit
             });
-            setAssets(res.assets?.data || res.assets || []);
-            setTotalPages(res.assets?.totalPages || res.pagination?.totalPages || 1);
+            setAssets(res.data?.data || res.data?.assets || res.assets || []);
+            setTotalPages(res.data?.totalPages || res.pagination?.totalPages || 1);
         } catch (error) {
             showErrorToast(error.message || 'Failed to fetch assets');
         } finally {

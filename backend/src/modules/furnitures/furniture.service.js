@@ -154,7 +154,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
     if (!type) throw new Error("Furniture Type Not Found");
 
     // Total Active inventory (matches the dashboard logic)
-    const currentCount = await FurnitureAsset.countDocuments({ 
+    const currentCount = await FurnitureAsset.countDocuments({
       furnitureTypeId: typeId,
       status: { $in: ["Available", "Allocated", "Maintenance"] }
     }).session(session);
@@ -167,7 +167,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
 
     if (newCount > currentCount) {
       let difference = newCount - currentCount;
-      
+
       // 1. Find Inactive Assets
       const inactiveAssets = await FurnitureAsset.find({
         furnitureTypeId: typeId,
@@ -181,7 +181,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
 
       if (inactiveAssets.length > 0) {
         const inactiveIds = inactiveAssets.map(a => a._id);
-        
+
         await FurnitureAsset.updateMany(
           { _id: { $in: inactiveIds } },
           { $set: { status: "Available", updatedBy: actor._id } },

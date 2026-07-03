@@ -10,7 +10,7 @@ import {
   getAttendanceWindowDetailsDb,
   getAttendanceRecordsDb,
   scanStudentDb,
-  completeAttendanceWindowDb,
+  closeAttendanceWindow,
   getStudentDashboardStatsDb,
   getStudentAttendanceHistoryDb,
   getStudentAttendanceCalendarDb,
@@ -147,7 +147,7 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
     return sendError(res, 403, "Only wardens can complete an attendance window.");
   }
 
-  const window = await completeAttendanceWindowDb(id, scope.userId);
+  const window = await closeAttendanceWindow(id, scope.userId);
   return sendSuccess(res, 200, "Attendance window completed successfully", window);
 });
 

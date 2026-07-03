@@ -127,7 +127,7 @@ const passSchema = new mongoose.Schema(
       leftHostelAt: { type: Date },
       returnedAt: { type: Date },
       markedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      returnStatus: { type: String, enum: ["pending", "on_time", "late"], default: "pending" },
+      returnStatus: { type: String, enum: ["pending", "on_time", "late"] },
     },
 
     // --- Embedded Timeline ---

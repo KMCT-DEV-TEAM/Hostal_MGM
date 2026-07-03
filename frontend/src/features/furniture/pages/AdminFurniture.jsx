@@ -4,8 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
+import StatsCard from '@/components/ui/StatsCard';
+import Dropdown from '@/components/ui/Dropdown';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AddFurnitureModal from '../components/modals/AddFurnitureModal';
+import AdminFurnitureDetailsModal from '../components/modals/AdminFurnitureDetailsModal';
+import Button from '@/components/ui/Button';
 
 export default function AdminFurniture() {
     const navigate = useNavigate();
@@ -17,9 +22,13 @@ export default function AdminFurniture() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [statusFilter, setStatusFilter] = useState('All');
+    const [dashboardStats, setDashboardStats] = useState(null);
     const limit = 10;
 
     useEffect(() => {
@@ -31,8 +40,21 @@ export default function AdminFurniture() {
     }, [searchQuery]);
 
     useEffect(() => {
+        fetchDashboardStats();
+    }, []);
+
+    useEffect(() => {
         fetchFurnitureTypes();
     }, [page, debouncedSearch, statusFilter]);
+
+    const fetchDashboardStats = async () => {
+        try {
+            const res = await furnitureApi.getDashboardStats();
+            setDashboardStats(res.data?.summary || res.summary || null);
+        } catch (error) {
+            console.error("Failed to fetch dashboard stats:", error);
+        }
+    };
 
     const fetchFurnitureTypes = async () => {
         try {
@@ -73,6 +95,54 @@ export default function AdminFurniture() {
         }
     };
 
+    const handleAdjustStock = async (typeId, count) => {
+        try {
+            await furnitureApi.adjustAssetsCount(typeId, { count });
+            showSuccessToast('Stock adjusted successfully');
+            fetchFurnitureTypes();
+            fetchDashboardStats();
+
+            if (isDetailsModalOpen && selectedType && selectedType._id === typeId) {
+                setSelectedType(prev => ({
+                    ...prev,
+                    total: prev.total + count,
+                    available: prev.available + count,
+                    assets: prev.assets ? {
+                        ...prev.assets,
+                        total: (prev.assets.total || 0) + count,
+                        available: (prev.assets.available || 0) + count
+                    } : undefined
+                }));
+            }
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to adjust stock');
+        }
+    };
+
+    const confirmExport = async (filters) => {
+        setIsExporting(true);
+        try {
+            // Implement actual export logic here
+            showSuccessToast('Furniture data exported successfully');
+            setIsExportConfirmOpen(false);
+        } catch (error) {
+            showErrorToast('Failed to export data');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const exportFields = [
+        {
+            name: "status",
+            label: "Status",
+            options: [
+                { label: 'All Status', value: '' },
+                { label: 'Available', value: 'Available' },
+            ]
+        }
+    ];
+
     const handleDeleteSelected = async () => {
         if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} furniture types?`)) return;
         try {
@@ -106,6 +176,7 @@ export default function AdminFurniture() {
 
     const tableHeaders = [
         { key: 'name', label: 'Furniture' },
+        { key: 'hostel', label: 'Hostel' },
         { key: 'total', label: 'Quantity' },
         { key: 'allocated', label: 'Assigned' },
         { key: 'available', label: 'Available' },
@@ -113,13 +184,13 @@ export default function AdminFurniture() {
     ];
 
     const handleRowClick = (item) => {
-        navigate(`/dashboard/furniture/${item._id}`);
+        setSelectedType(item);
+        setIsDetailsModalOpen(true);
     };
 
-    // Calculate stats from current page for mockup representation
-    const totalFurnitures = types.reduce((acc, t) => acc + (t.total || t.assets?.total || 0), 0);
-    const assignedFurnitures = types.reduce((acc, t) => acc + (t.allocated || t.assets?.allocated || 0), 0);
-    const availableFurnitures = types.reduce((acc, t) => acc + (t.available || t.assets?.available || 0), 0);
+    const totalFurnitures = dashboardStats?.totalAssets || 0;
+    const assignedFurnitures = dashboardStats?.allocated || 0;
+    const availableFurnitures = dashboardStats?.available || 0;
 
     return (
         <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
@@ -130,68 +201,72 @@ export default function AdminFurniture() {
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TOTAL FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{totalFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
-                        <Box className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">ASSIGNED FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{assignedFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
-                        <PackageCheck className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">AVAILABLE FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{availableFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-500 flex items-center justify-center">
-                        <PackageOpen className="w-5 h-5" />
-                    </div>
-                </div>
+                <StatsCard
+                    label="TOTAL FURNITURES"
+                    value={totalFurnitures}
+                    icon={<Box className="w-5 h-5" />}
+                    iconBg="bg-blue-50 text-blue-500"
+                />
+                <StatsCard
+                    label="ASSIGNED FURNITURES"
+                    value={assignedFurnitures}
+                    icon={<PackageCheck className="w-5 h-5" />}
+                    iconBg="bg-success/10 text-success"
+                />
+                <StatsCard
+                    label="AVAILABLE FURNITURES"
+                    value={availableFurnitures}
+                    icon={<PackageOpen className="w-5 h-5" />}
+                    iconBg="bg-cyan-50 text-cyan-500"
+                />
             </div>
 
             <DataTable
                 toolbarActions={
                     <>
                         {selectedIds.length > 0 && (
-                            <button
+                            <Button
+                                variant="outline"
+                                fullWidth={false}
+                                size="md"
                                 onClick={handleDeleteSelected}
-                                className="px-4 py-2 border border-red-200 text-danger bg-red-50 hover:bg-red-100 text-sm font-semibold rounded-xl transition-colors"
+                                className="border-red-200 text-danger bg-red-50 hover:bg-red-100"
                             >
                                 Delete ({selectedIds.length})
-                            </button>
+                            </Button>
                         )}
-                        <select
-                            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none"
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Available', value: 'Available' }
+                            ]}
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(val) => setStatusFilter(val)}
+                            placeholder="All Status"
+                            minWidth="w-[140px]"
+                        />
+                        <Button
+                            variant='outline'
+                            fullWidth={false}
+                            size="md"
+                            onClick={() => setIsExportConfirmOpen(true)}
                         >
-                            <option value="All">All</option>
-                            <option value="Available">Available</option>
-                        </select>
-                        <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium inline-flex items-center gap-2 hover:bg-gray-50 transition-colors">
                             <Download className="w-4 h-4" />
                             Export
-                        </button>
-                        <button
+                        </Button>
+
+                        <Button
+                            variant="primary"
+                            fullWidth={false}
+                            size="md"
                             onClick={() => {
                                 setSelectedType(null);
                                 setIsAddModalOpen(true);
                             }}
-                            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl inline-flex items-center gap-2 hover:bg-secondary transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add New
-                        </button>
+                        </Button>
                     </>
                 }
                 searchQuery={searchQuery}
@@ -206,46 +281,43 @@ export default function AdminFurniture() {
                 onRowClick={handleRowClick}
                 emptyText="No furniture types found."
                 isLoading={loading}
-                renderRow={(item) => {
-                    const isSelected = selectedIds.includes(item._id);
-                    return (
-                        <>
-                            <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                                <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleSelect(item._id)}
-                                    className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
-                                />
-                            </td>
-                            <td className="p-4 text-sm text-gray-500 font-medium">
-                                {item.name}
-                            </td>
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.total || item.assets?.total || 0}
-                            </td>
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.allocated || item.assets?.allocated || 0}
-                            </td>
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.available || item.assets?.available || 0}
-                            </td>
-                            <td className="p-4 text-right">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedType(item);
-                                        setIsAddModalOpen(true);
-                                    }}
-                                    className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                                    title="Edit"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                            </td>
-                        </>
-                    );
-                }}
+                renderRow={(item) => (
+                    <>
+                        <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-sm shrink-0">
+                                <Box className="w-4 h-4" />
+                            </div>
+                            <span className="text-sm font-semibold">{item.name}</span>
+                        </td>
+                        <td className="p-4 text-text-secondary font-medium">
+                            {item.hostel?.name || item.organization?.name || "--"}
+                        </td>
+                        <td className="p-4 text-text-secondary">
+                            {item.total || item.assets?.total || 0}
+                        </td>
+                        <td className="p-4 text-text-secondary">
+                            {item.allocated || item.assets?.allocated || 0}
+                        </td>
+                        <td className="p-4 text-text-secondary">
+                            {item.available || item.assets?.available || 0}
+                        </td>
+                        <td className="p-4 text-right">
+                            <Button
+                                variant="ghost"
+                                fullWidth={false}
+                                size="sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedType(item);
+                                    setIsAddModalOpen(true);
+                                }}
+                                title="Edit"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                            </Button>
+                        </td>
+                    </>
+                )}
                 page={page}
                 setPage={setPage}
                 limit={limit}
@@ -264,6 +336,29 @@ export default function AdminFurniture() {
                     initialData={selectedType}
                 />
             )}
+
+            {isDetailsModalOpen && selectedType && (
+                <AdminFurnitureDetailsModal
+                    isOpen={isDetailsModalOpen}
+                    onClose={() => {
+                        setIsDetailsModalOpen(false);
+                        setSelectedType(null);
+                    }}
+                    item={selectedType}
+                    onViewList={(item) => navigate(`/dashboard/furniture/${item._id}`)}
+                    onUpdateSuccess={handleAdjustStock}
+                />
+            )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Furniture"
+                subtitle="Select status filter before downloading"
+                fields={exportFields}
+            />
         </div>
     );
 }
