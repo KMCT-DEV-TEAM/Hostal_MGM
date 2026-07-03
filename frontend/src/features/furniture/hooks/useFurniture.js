@@ -36,14 +36,19 @@ export function useFurniture(filters, options = {}) {
     );
 
     Promise.resolve()
-      .then(() => furnitureApi.getFurnitureTypes(params))
+      .then(() => {
+          if (role === 'warden') {
+              return furnitureApi.getAllFurnitureAssets(params);
+          }
+          return furnitureApi.getFurnitureTypes(params);
+      })
       .then((res) => {
-        const list = res?.data?.data || res?.data || res || [];
+        const list = res?.data?.data || res?.data?.assets || res?.data || res || [];
         setData(Array.isArray(list) ? list : []);
         
         const responsePagination = res?.data?.pagination || res?.pagination || {
-            totalPages: res?.data?.totalPages || res?.totalPages || 1,
-            totalRecords: res?.data?.totalCount || res?.totalCount || 0,
+            totalPages: res?.data?.totalPages || res?.totalPages || Math.ceil((res?.data?.total || res?.total || res?.data?.totalCount || res?.totalCount || 0) / (params.limit || 10)) || 1,
+            totalRecords: res?.data?.total || res?.total || res?.data?.totalCount || res?.totalCount || 0,
             page: params.page || 1,
             limit: params.limit || 10
         };

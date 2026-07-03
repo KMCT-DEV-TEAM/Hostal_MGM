@@ -10,6 +10,8 @@ import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AddFurnitureModal from '../components/modals/AddFurnitureModal';
 import AdminFurnitureDetailsModal from '../components/modals/AdminFurnitureDetailsModal';
+import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
+import AllocateAssetModal from '../components/modals/AllocateAssetModal';
 import Button from '@/components/ui/Button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
@@ -21,6 +23,7 @@ export default function AdminFurniture() {
     const [searchParams, setSearchParams] = useSearchParams();
     const role = useAuthStore((s) => s.user?.role);
     const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
+    const isWarden = role === 'warden';
 
     const urlSearchQuery = searchParams.get('search') || '';
     const statusFilter = searchParams.get('status') || 'All';
@@ -37,6 +40,9 @@ export default function AdminFurniture() {
     const [selectedType, setSelectedType] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [dashboardStats, setDashboardStats] = useState(null);
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+    const [selectedAsset, setSelectedAsset] = useState(null);
 
     const updateSearchParams = (updates) => {
         const newParams = new URLSearchParams(searchParams);
@@ -130,6 +136,40 @@ export default function AdminFurniture() {
         }
     };
 
+    const handleStatusChange = async (assetId, status) => {
+        try {
+            await furnitureApi.changeAssetStatus(assetId, { status });
+            showSuccessToast('Asset status updated successfully');
+            setIsStatusModalOpen(false);
+            fetchFurnitureTypes();
+            fetchDashboardStats();
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to update asset status');
+            throw error;
+        }
+    };
+
+    const handleAllocate = async (studentId, assetId) => {
+        try {
+            await furnitureApi.allocateAsset(studentId, assetId);
+            showSuccessToast('Asset allocated successfully');
+            setIsAllocateModalOpen(false);
+            fetchFurnitureTypes();
+            fetchDashboardStats();
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to allocate asset');
+            throw error;
+        }
+    };
+
+    const getStatusStyle = (status) => {
+        if (status === 'Available') return 'text-[var(--color-success)] bg-[var(--color-success)]/10 border border-[var(--color-success)]/20';
+        if (status === 'Allocated') return 'text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20';
+        if (status === 'Maintenance') return 'text-[var(--color-warning)] bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20';
+        if (status === 'Lost') return 'text-[var(--color-danger)] bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20';
+        return 'text-gray-700 bg-gray-100 border border-gray-200';
+    };
+
     const confirmExport = async (filters) => {
         setIsExporting(true);
         try {
@@ -186,18 +226,25 @@ export default function AdminFurniture() {
     const pageTitle = 'Manage Furniture';
     const pageSubtitle = 'Manage all furnitures';
 
-    const tableHeaders = [
+    const tableHeaders = isWarden ? [
+        { key: 'furnitureId', label: 'Furniture Id' },
+        { key: 'furniture', label: 'Furniture' },
+        { key: 'organization', label: 'Organization' },
+        { key: 'assignedTo', label: 'Assigned To' },
+        { key: 'status', label: 'Status' }
+    ] : [
         { key: 'name', label: 'Furniture' },
         { key: 'hostel', label: 'Hostel' },
         { key: 'total', label: 'Quantity' },
         { key: 'allocated', label: 'Assigned' },
         { key: 'available', label: 'Available' },
     ];
-    if (isAdmin) {
+    if (isAdmin && !isWarden) {
         tableHeaders.push({ key: 'actions', label: 'Action' });
     }
 
     const handleRowClick = (item) => {
+        if (isWarden) return; // Wardens manage items inline
         setSelectedType(item);
         setIsDetailsModalOpen(true);
     };
@@ -300,7 +347,28 @@ export default function AdminFurniture() {
                 onRowClick={handleRowClick}
                 emptyText="No furniture types found."
                 isLoading={loading}
-                renderRow={(item) => (
+                renderRow={(item) => isWarden ? (
+                    <>
+                        <td className="p-4 text-sm text-gray-900 font-medium">{item.furnitureId}</td>
+                        <td className="p-4 text-sm text-gray-500 font-medium">{item.furnitureTypeId?.name || '--'}</td>
+                        <td className="p-4 text-sm text-gray-500">{item.hostelId?.name || '--'}</td>
+                        <td className="p-4 text-sm text-gray-500">
+                            {item.studentId?.name ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                                        {item.studentId.name.substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <span className="text-gray-900 font-medium">{item.studentId.name}</span>
+                                </div>
+                            ) : '-'}
+                        </td>
+                        <td className="p-4">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusStyle(item.status)}`}>
+                                {item.status}
+                            </span>
+                        </td>
+                    </>
+                ) : (
                     <>
                         <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
                             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-sm shrink-0">
@@ -376,10 +444,32 @@ export default function AdminFurniture() {
                 onClose={() => setIsExportConfirmOpen(false)}
                 onExport={confirmExport}
                 isExporting={isExporting}
-                title="Export Furniture"
-                subtitle="Select status filter before downloading"
                 fields={exportFields}
+                title="Export Furniture Options"
             />
+
+            {isStatusModalOpen && (
+                <ChangeAssetStatusModal
+                    isOpen={isStatusModalOpen}
+                    onClose={() => {
+                        setIsStatusModalOpen(false);
+                        setSelectedAsset(null);
+                    }}
+                    onSave={handleStatusChange}
+                    asset={selectedAsset}
+                />
+            )}
+            {isAllocateModalOpen && (
+                <AllocateAssetModal
+                    isOpen={isAllocateModalOpen}
+                    onClose={() => {
+                        setIsAllocateModalOpen(false);
+                        setSelectedAsset(null);
+                    }}
+                    onAllocate={handleAllocate}
+                    asset={selectedAsset}
+                />
+            )}
         </div>
     );
 }
