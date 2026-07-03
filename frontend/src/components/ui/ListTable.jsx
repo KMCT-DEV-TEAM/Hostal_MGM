@@ -35,7 +35,7 @@ export default function ListTable({
 
     return (
         <div className="hidden md:block flex-1 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
-            <table className="w-full text-start relative whitespace-nowrap">
+            <table className="w-full text-start relative">
                 <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
                     <tr className="text-text-primary text-sm font-semibold border-b border-gray-50">
                         {canSelect && (
