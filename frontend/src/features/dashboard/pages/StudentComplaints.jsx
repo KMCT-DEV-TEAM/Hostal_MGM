@@ -269,7 +269,7 @@ export default function StudentComplaints() {
             
             {/* Stat Cards Section */}
             {showKPIs && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
+                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>

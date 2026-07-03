@@ -11,6 +11,7 @@ const ConfirmationModal = ({
     cancelText = 'Cancel',
     isSubmitting = false,
     variant = 'primary', // 'primary', 'danger'
+    confirmButtonClass = '',
 }) => {
     if (!isOpen) return null;
 
@@ -45,7 +46,7 @@ const ConfirmationModal = ({
                             type="button"
                             onClick={onConfirm}
                             disabled={isSubmitting}
-                            className={`flex items-center justify-center min-w-[80px] px-4 py-2 text-xs font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${variantStyles[variant].button}`}
+                            className={`flex items-center justify-center min-w-[80px] px-4 py-2 text-xs font-medium text-white rounded-lg transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${confirmButtonClass || variantStyles[variant].button}`}
                         >
                             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmText}
                         </button>

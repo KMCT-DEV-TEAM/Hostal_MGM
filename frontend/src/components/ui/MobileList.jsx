@@ -113,13 +113,19 @@ export default function MobileList({
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {canEdit && onEdit && (
+                                    {((typeof canEdit === 'function' ? canEdit(item) : canEdit) && onEdit) ? (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
                                         </button>
+                                    ) : (
+                                        (canEdit === true || (typeof canEdit === 'function')) && onEdit ? (
+                                            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                                                <Pencil className="w-3.5 h-3.5 text-gray-300 cursor-not-allowed" />
+                                            </div>
+                                        ) : null
                                     )}
                                     <button className="text-gray-400 hover:text-gray-600 cursor-pointer shrink-0 ml-1">
                                         {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}

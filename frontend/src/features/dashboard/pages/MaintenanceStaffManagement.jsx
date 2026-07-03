@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2 } from 'lucide-react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
 import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
@@ -44,6 +44,7 @@ export default function MaintenanceStaffManagement() {
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
     // Email verification state
     const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -494,7 +495,7 @@ export default function MaintenanceStaffManagement() {
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 </div>
 
-                <div className="flex items-center self-end sm:self-auto mt-4 sm:mt-0">
+                <div className="hidden md:flex items-center self-end sm:self-auto mt-4 sm:mt-0">
                     <button
                         onClick={() => setShowKPIs(!showKPIs)}
                         className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
@@ -506,7 +507,7 @@ export default function MaintenanceStaffManagement() {
 
             {/* KPI CARDS SECTION */}
             {showKPIs && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
+                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
                     <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                         <div>
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Staff</p>
@@ -549,23 +550,7 @@ export default function MaintenanceStaffManagement() {
                 </div>
             )}
 
-            {/* BULK ACTIONS - Positioned below KPI cards but before toolbar */}
-            {selectedIds.length > 0 && (
-                <div className="flex items-center justify-end gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
-                    <button
-                        onClick={() => handleBulkStatusClick(true)}
-                        className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                        Active ({selectedIds.length})
-                    </button>
-                    <button
-                        onClick={() => handleBulkStatusClick(false)}
-                        className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                        Inactive ({selectedIds.length})
-                    </button>
-                </div>
-            )}
+
 
             {/* TOOLBAR SECTION */}
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
@@ -610,10 +595,36 @@ export default function MaintenanceStaffManagement() {
                             >
                                 <Download className="w-4 h-4" /> {t('export')}
                             </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
+                                >
+                                    <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {isBulkMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Set Active
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Set Inactive
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <button
                             onClick={openAddStaffModal}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">`n<Plus className="w-4 h-4" /> {t('Add New')}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> {t('Add New')}
                         </button>
                     </div>
                 </div>

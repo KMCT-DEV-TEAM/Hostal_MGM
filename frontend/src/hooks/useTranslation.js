@@ -171,8 +171,8 @@ const dictionary = {
 
         course_name: "Course Name",
         course_code: "Course Code",
-        num_departments: "Number of Departments",
-        num_batches: "Number of Batches",
+        num_departments: "Departments",
+        num_batches: "Batches",
         edit_course: "Edit Course",
         add_course: "Add New Course",
         edit_course_desc: "Update the details for this Course",
@@ -188,7 +188,7 @@ const dictionary = {
         basic_department_desc: "Basic details of the Department",
 
         batch_code: "Batch Code",
-        num_students: "Number of Students",
+        num_students: "Students",
         edit_batch: "Edit Batch",
         add_batch: "Add New Batch",
         edit_batch_desc: "Update the details for this Batch",
@@ -385,8 +385,8 @@ const dictionary = {
 
         course_name: "കോഴ്സിന്റെ പേര്",
         course_code: "കോഴ്സ് കോഡ്",
-        num_departments: "ഡിപ്പാർട്ട്മെന്റുകളുടെ എണ്ണം",
-        num_batches: "ബാച്ചുകളുടെ എണ്ണം",
+        num_departments: "ഡിപ്പാർട്ട്മെന്റുകൾ",
+        num_batches: "ബാച്ചുകൾ",
         edit_course: "കോഴ്സ് തിരുത്തുക",
         add_course: "പുതിയ കോഴ്സ് ചേർക്കുക",
         edit_course_desc: "ഈ കോഴ്സിന്റെ വിശദാംശങ്ങൾ പുതുക്കുക",
@@ -402,7 +402,7 @@ const dictionary = {
         basic_department_desc: "ഡിപ്പാർട്ട്മെന്റിന്റെ അടിസ്ഥാന വിവരങ്ങൾ",
 
         batch_code: "ബാച്ച് കോഡ്",
-        num_students: "വിദ്യാർത്ഥികളുടെ എണ്ണം",
+        num_students: "വിദ്യാർത്ഥികൾ",
         edit_batch: "ബാച്ച് തിരുത്തുക",
         add_batch: "പുതിയ ബാച്ച് ചേർക്കുക",
         edit_batch_desc: "ഈ ബാച്ചിന്റെ വിശദാംശങ്ങൾ പുതുക്കുക",
