@@ -23,10 +23,9 @@ export default function WardenComplaintsToolbar({
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                 <button
                     onClick={openFilterModal}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-text-secondary rounded-lg text-sm hover:bg-gray-50 transition-colors cursor-pointer shadow-sm md:shadow-none"
+                    className="flex items-center justify-center p-2 bg-white border border-gray-200 text-text-secondary rounded-lg hover:bg-gray-50 transition-colors cursor-pointer shadow-sm md:shadow-none"
                 >
-                    <SlidersHorizontal className="w-4 h-4" /> 
-                    <span className="sm:hidden">Filter</span>
+                    <SlidersHorizontal className="w-5 h-5" /> 
                 </button>
 
                 <button
