@@ -98,7 +98,7 @@ const getCourses = asyncHandler(async (req, res) => {
   const skip = (pageNum - 1) * limitNum;
 
   const courses = await getPaginatedCoursesDb(query, skip, limitNum, sort);
-  const totalCount = await courseModel.then((m) => m.default.countDocuments(query));
+  const totalCount = await courseModel.countDocuments(query);
 
   return sendSuccess(res, 200, "Courses retrieved successfully", {
     data: courses,

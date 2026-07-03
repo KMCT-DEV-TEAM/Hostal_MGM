@@ -54,10 +54,10 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                             <p className="text-[11px] text-text-secondary mb-4">Address information of the Organization</p>
                             <div className="p-3 rounded-lg border border-gray-100 flex items-start gap-3">
                                 <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                                <div className="text-xs font-medium text-black leading-relaxed">
+                                <div className="text-xs font-medium text-black leading-relaxed flex-1 min-w-0 break-words">
                                     {selectedOrganizationDetail.address ? (
                                         selectedOrganizationDetail.address.split(',').map((line, index) => (
-                                            <div key={index}>{line.trim()}</div>
+                                            <div key={index} className="break-words whitespace-pre-wrap">{line.trim()}</div>
                                         ))
                                     ) : (
                                         <span className="text-gray-500 italic">No address provided</span>

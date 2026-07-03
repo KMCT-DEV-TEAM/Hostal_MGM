@@ -91,8 +91,8 @@ const AdminFormModal = ({
                 </section>
 
                 <section>
-                    <h3 className="text-xs font-semibold text-primary mb-1">{t('role_assignments')}</h3>
-                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_role_desc')}</h5>
+                    <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
+                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
                     <div className="border-b border-gray-100 mb-4" />
                     <div>
                         <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
@@ -115,8 +115,8 @@ const AdminFormModal = ({
 
                 {!editingAdmin && (
                     <section>
-                        <h3 className="text-xs font-semibold text-primary mb-1">{t('account_security')}</h3>
-                        <h5 className='text-xs text-[#777777] mb-4'>{t('admin_security_desc')}</h5>
+                        <h3 className="text-xs font-semibold text-primary mb-1">{t('security')}</h3>
+                        <h5 className='text-xs text-[#777777] mb-4'>{t('verify_email_desc')}</h5>
                         <div className="border-b border-gray-100 mb-4" />
                         <div>
                             <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
