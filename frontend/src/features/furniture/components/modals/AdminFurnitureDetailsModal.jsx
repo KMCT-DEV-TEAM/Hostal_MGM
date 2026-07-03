@@ -3,8 +3,12 @@ import Modal from '@/components/ui/Modal';
 import { Bed, Box, PackageCheck, PackageOpen, Edit2, Check, X, Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 import Button from '@/components/ui/Button';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onViewList, onUpdateSuccess }) {
+    const role = useAuthStore((s) => s.user?.role);
+    const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
     const [isEditingQuantity, setIsEditingQuantity] = useState(false);
     const [quantityValue, setQuantityValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -40,21 +44,21 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
     };
 
     return (
-        <>
-            <Modal
-                isOpen={isOpen}
-                onClose={onClose}
-                title="Furniture Details"
-                subtitle="view the details of furniture"
-                maxWidth="max-w-4xl"
-            >
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Card: Furniture Information */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 relative">
-                        <div className="flex items-start justify-between mb-8">
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Furniture Details"
+            subtitle="view the details of furniture"
+            maxWidth="max-w-5xl"
+        >
+            <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
+                {/* Left Card: Furniture Information */}
+                <div className="space-y-6">
+                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm relative">
+                        <div className="flex items-start justify-between mb-6">
                             <div>
-                                <h3 className="text-primary font-semibold text-lg">Furniture Information</h3>
-                                <p className="text-xs text-gray-400 mt-0.5">Basic Details about the Furniture</p>
+                                <h3 className="text-primary font-semibold text-sm mb-1">Furniture Information</h3>
+                                <p className="text-xs text-gray-400 mb-6">Basic Details about the Furniture</p>
                             </div>
                             <Button
                                 variant="primary"
@@ -66,25 +70,28 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                             </Button>
                         </div>
 
-                        <div className="space-y-5 text-sm">
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Furniture Id</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{item.prefix || item._id.substring(0, 6).toUpperCase()}</span>
+                        <div className="grid grid-cols-[140px_1fr] gap-y-4 text-sm">
+                            <div className="text-gray-500">Furniture Id</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{item.prefix || item._id.substring(0, 6).toUpperCase()}</span>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Furniture</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{item.name}</span>
+
+                            <div className="text-gray-500">Furniture</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{item.name}</span>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Added on</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{formatDate(item.createdAt)}</span>
+
+                            <div className="text-gray-500">Added on</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{formatDate(item.createdAt)}</span>
                             </div>
-                            <div className="flex items-center relative group">
-                                <span className="w-1/3 text-gray-500">Quantity</span>
-                                <span className="w-8 text-gray-400">:</span>
+
+                            <div className="text-gray-500 self-center">Quantity</div>
+                            <div className="flex items-center gap-3 group relative">
+                                <span className="text-gray-400">:</span>
                                 <div className="flex-1 flex items-center gap-4">
                                     {isEditingQuantity ? (
                                         <div className="flex items-center gap-2 w-full max-w-[150px]">
@@ -99,7 +106,7 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                                             <button
                                                 onClick={handleSaveQuantity}
                                                 disabled={isSaving}
-                                                className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 hrink-0"
+                                                className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 shrink-0"
                                             >
                                                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                             </button>
@@ -114,52 +121,59 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                                     ) : (
                                         <>
                                             <span className="font-medium text-gray-900">{item.total || item.assets?.total || 0}</span>
-                                            <button
-                                                className="text-gray-400 hover:text-primary rounded-md opacity-0 group-hover:opacity-100 transition-opacity p-1.5 ml-2"
-                                                onClick={handleEditQuantityClick}
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
+                                            {isAdmin && (
+                                                <button
+                                                    className="text-gray-400 hover:text-primary rounded-md opacity-0 group-hover:opacity-100 transition-opacity p-1.5 ml-2"
+                                                    onClick={handleEditQuantityClick}
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </>
                                     )}
                                 </div>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Assigned</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{item.allocated || item.assets?.allocated || 0}</span>
+
+                            <div className="text-gray-500">Assigned</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{item.allocated || item.assets?.allocated || 0}</span>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Available</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{item.available || item.assets?.available || 0}</span>
+
+                            <div className="text-gray-500">Available</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{item.available || item.assets?.available || 0}</span>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Prefix</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{item.prefix || '--'}</span>
+
+                            <div className="text-gray-500">Prefix</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{item.prefix || '--'}</span>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Description</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">{item.description || '--'}</span>
+
+                            <div className="text-gray-500">Description</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">{item.description || '--'}</span>
                             </div>
-                            <div className="flex">
-                                <span className="w-1/3 text-gray-500">Hostel / Organization</span>
-                                <span className="w-8 text-gray-400">:</span>
-                                <span className="flex-1 font-medium text-gray-900">
+
+                            <div className="text-gray-500">Hostel / Organization</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-gray-400">:</span>
+                                <span className="font-medium text-gray-900">
                                     {item.hostel?.name || item.organization?.name || '--'}
                                 </span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Right Card: Quick Summary */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                        <div className="mb-6">
-                            <h3 className="text-primary font-semibold text-lg">Quick Summary</h3>
-                            <p className="text-xs text-gray-400 mt-0.5">Quick summary of the furniture</p>
-                        </div>
+                {/* Right Card: Quick Summary */}
+                <div className="space-y-6">
+                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
+                        <h3 className="text-primary font-semibold text-sm mb-1">Quick Summary</h3>
+                        <p className="text-xs text-gray-400 mb-6">Quick summary of the furniture</p>
 
                         <div className="pt-4 border-t border-gray-50 space-y-5 text-sm">
                             <div className="flex items-center">
@@ -189,7 +203,7 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                         </div>
                     </div>
                 </div>
-            </Modal>
-        </>
+            </div>
+        </Modal>
     );
 }

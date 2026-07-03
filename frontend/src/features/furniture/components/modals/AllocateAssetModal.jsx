@@ -3,6 +3,8 @@ import Modal from '@/components/ui/Modal';
 import { Loader2 } from 'lucide-react';
 import { getStudents } from '@/services/student.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import Dropdown from '@/components/ui/Dropdown';
+import Button from '@/components/ui/Button';
 
 export default function AllocateAssetModal({ isOpen, onClose, onAllocate, asset }) {
     const [students, setStudents] = useState([]);
@@ -55,39 +57,38 @@ export default function AllocateAssetModal({ isOpen, onClose, onAllocate, asset 
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Student <span className="text-red-500">*</span></label>
-                    <select
+                    <Dropdown
+                        options={students.map(s => ({ label: `${s.name} (${s.admissionNo})`, value: s._id }))}
                         value={selectedStudentId}
-                        onChange={(e) => setSelectedStudentId(e.target.value)}
-                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        disabled={loadingStudents}
-                        required
-                    >
-                        <option value="">{loadingStudents ? "Loading students..." : "Select Student"}</option>
-                        {students.map(s => (
-                            <option key={s._id} value={s._id}>
-                                {s.name} ({s.admissionNo})
-                            </option>
-                        ))}
-                    </select>
+                        onChange={(val) => setSelectedStudentId(val)}
+                        placeholder={loadingStudents ? "Loading students..." : "Select Student"}
+                        searchable
+                        triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
+                    />
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-6 mt-6 border-t border-gray-100">
-                <button
-                    type="button"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
-                >
-                    Cancel
-                </button>
-                <button
+            <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
+                <Button
+                    variant="primary"
+                    fullWidth={false}
+                    size="md"
                     type="submit"
                     disabled={isSubmitting || !selectedStudentId}
-                    className="flex-1 inline-flex justify-center items-center px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="min-w-[120px] order-2 bg-[#0a3a6a] hover:bg-[#0a3a6a]/90 capitalize"
                 >
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Allocate'}
-                </button>
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'allocate'}
+                </Button>
+                <Button
+                    variant="outline"
+                    fullWidth={false}
+                    size="md"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                    className="min-w-[120px] order-1 text-[#0a3a6a] border-[#0a3a6a] hover:bg-gray-50"
+                >
+                    Cancel
+                </Button>
             </div>
         </Modal>
     );

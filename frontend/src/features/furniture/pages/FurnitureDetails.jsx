@@ -8,7 +8,10 @@ import StatsCard from '@/components/ui/StatsCard';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
-import AdjustStockModal from '../components/modals/AdjustStockModal';
+import { useSearchParams } from 'react-router-dom';
+import { useDebounce } from '@/hooks/useDebounce';
+import Button from '@/components/ui/Button';
+import Dropdown from '@/components/ui/Dropdown';
 import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
 import AllocateAssetModal from '../components/modals/AllocateAssetModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -17,14 +20,18 @@ export default function FurnitureDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
 
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlSearchQuery = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const statusFilter = searchParams.get('status') || 'All';
+
+    const [searchInput, setSearchInput] = useState(urlSearchQuery);
+    const debouncedSearch = useDebounce(searchInput, 500);
+
     const [details, setDetails] = useState(null);
     const [assets, setAssets] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, asset: null });
@@ -33,13 +40,27 @@ export default function FurnitureDetails() {
     const [selectedIds, setSelectedIds] = useState([]);
     const limit = 10;
 
+    const updateSearchParams = (updates) => {
+        const newParams = new URLSearchParams(searchParams);
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '' || value === 'All') {
+                newParams.delete(key);
+            } else {
+                newParams.set(key, value);
+            }
+        });
+        setSearchParams(newParams);
+    };
+
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-            setPage(1);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+        if (debouncedSearch !== urlSearchQuery) {
+            updateSearchParams({ search: debouncedSearch, page: 1 });
+        }
+    }, [debouncedSearch]);
+
+    useEffect(() => {
+        setSearchInput(urlSearchQuery);
+    }, [urlSearchQuery]);
 
     useEffect(() => {
         if (id) {
@@ -69,7 +90,8 @@ export default function FurnitureDetails() {
             const res = await furnitureApi.getFurnitureTypeAssets(id, {
                 page,
                 limit,
-                search: debouncedSearch
+                search: debouncedSearch,
+                status: statusFilter === 'All' ? '' : statusFilter
             });
             setAssets(res.data?.data || res.data?.assets || res.assets || []);
             setPagination({
@@ -109,17 +131,7 @@ export default function FurnitureDetails() {
         fetchDetails();
     };
 
-    const handleAdjustStock = async (count) => {
-        try {
-            await furnitureApi.adjustAssetsCount(id, count);
-            showSuccessToast('Stock adjusted successfully');
-            setIsAdjustModalOpen(false);
-            fetchDetails();
-        } catch (error) {
-            showErrorToast(error.message || 'Failed to adjust stock');
-            throw error;
-        }
-    };
+
 
     const handleStatusChange = async (assetId, status) => {
         try {
@@ -195,18 +207,18 @@ export default function FurnitureDetails() {
     const pageSubtitle = `Manage all furnitures of ${titleName}`;
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
             {/* Header */}
-            <div className="mb-6 shrink-0 flex items-center gap-4">
+            <div className="mb-6 shrink-0 flex items-center gap-3">
                 <button
+                    type="button"
                     onClick={() => navigate('/dashboard/furniture')}
-                    className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors self-start mt-1"
+                    className="p-2 border border-gray-200 rounded-xl bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                    title="Back to List"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="flex-1">
-                    <PageHeader title={pageTitle} subtitle={pageSubtitle} />
-                </div>
+                <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
 
             {/* Stat Cards */}
@@ -237,23 +249,34 @@ export default function FurnitureDetails() {
                         {selectedIds.length > 0 && (
                             <button
                                 onClick={handleDeleteSelected}
-                                className="px-4 py-2 border border-red-200 text-danger bg-red-50 hover:bg-red-100 text-sm font-semibold rounded-xl transition-colors"
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-xl text-sm font-semibold text-danger hover:bg-red-100 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                             >
                                 Delete ( {selectedIds.length} )
                             </button>
                         )}
-                        <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium inline-flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                            <Filter className="w-4 h-4" />
-                            Filter
-                        </button>
-                        <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium inline-flex items-center gap-2 hover:bg-gray-50 transition-colors">
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Available', value: 'Available' },
+                                { label: 'Allocated', value: 'Allocated' },
+                                { label: 'Maintenance', value: 'Maintenance' },
+                                { label: 'Lost', value: 'Lost' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                            placeholder="All Status"
+                            minWidth="w-[140px]"
+                        />
+                        <button
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
                             <Download className="w-4 h-4" />
                             Export
                         </button>
                     </>
                 }
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
+                searchQuery={searchInput}
+                onSearchChange={(e) => setSearchInput(e.target.value)}
                 searchPlaceholder="Search assets..."
                 headers={tableHeaders}
                 items={assets}
@@ -296,84 +319,89 @@ export default function FurnitureDetails() {
                                 <div className="flex items-center justify-end gap-2">
                                     {item.status === 'Available' && (
                                         <>
-                                            <button
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                fullWidth={false}
+                                                className="text-primary hover:bg-primary/5"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setSelectedAsset(item);
                                                     setIsAllocateModalOpen(true);
                                                 }}
-                                                className="px-2 py-1 text-xs font-semibold text-primary bg-primary/10 rounded hover:bg-primary/20 transition-colors"
-                                                title="Allocate to Student"
                                             >
-                                                Allocate
-                                            </button>
-                                            <button
+                                                <PackageCheck className="w-4 h-4 mr-1.5" />
+                                                Assign
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                fullWidth={false}
+                                                className="text-warning hover:bg-warning/5"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     openConfirmModal('startMaintenance', item);
                                                 }}
-                                                className="px-2 py-1 text-xs font-semibold text-warning bg-warning/10 rounded hover:bg-warning/20 transition-colors"
-                                                title="Start Maintenance"
                                             >
-                                                Start Maint.
-                                            </button>
+                                                <Hammer className="w-4 h-4 mr-1.5" />
+                                                Maintenance
+                                            </Button>
                                         </>
                                     )}
                                     {item.status === 'Allocated' && (
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            fullWidth={false}
+                                            className="text-success hover:bg-success/5"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 openConfirmModal('return', item);
                                             }}
-                                            className="px-2 py-1 text-xs font-semibold text-success bg-success/10 rounded hover:bg-success/20 transition-colors"
-                                            title="Return Asset"
                                         >
+                                            <CheckCircle2 className="w-4 h-4 mr-1.5" />
                                             Return
-                                        </button>
+                                        </Button>
                                     )}
                                     {item.status === 'Maintenance' && (
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            fullWidth={false}
+                                            className="text-success hover:bg-success/5"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 openConfirmModal('completeMaintenance', item);
                                             }}
-                                            className="px-2 py-1 text-xs font-semibold text-success bg-success/10 rounded hover:bg-success/20 transition-colors"
-                                            title="Complete Maintenance"
                                         >
-                                            Complete Maint.
-                                        </button>
+                                            <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                                            Complete
+                                        </Button>
                                     )}
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        fullWidth={false}
+                                        className="text-gray-400 hover:text-gray-900"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setSelectedAsset(item);
                                             setIsStatusModalOpen(true);
                                         }}
-                                        className="p-1 text-gray-500 hover:bg-gray-100 rounded transition-colors ml-2"
-                                        title="Change Status"
                                     >
                                         <Edit2 className="w-4 h-4" />
-                                    </button>
+                                    </Button>
                                 </div>
                             </td>
                         </>
                     );
                 }}
                 page={page}
-                setPage={setPage}
+                setPage={(p) => updateSearchParams({ page: p })}
                 limit={limit}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
             />
-
-            {isAdjustModalOpen && (
-                <AdjustStockModal
-                    isOpen={isAdjustModalOpen}
-                    onClose={() => setIsAdjustModalOpen(false)}
-                    onSave={handleAdjustStock}
-                    furnitureName={titleName}
-                />
-            )}
 
             {isStatusModalOpen && (
                 <ChangeAssetStatusModal
