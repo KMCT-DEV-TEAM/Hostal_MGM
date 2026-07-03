@@ -11,6 +11,24 @@ class TemplateService {
     }
 
     /**
+     * Checks if a domain event is registered in the templates registry.
+     * @param {String} eventName 
+     * @returns {Boolean}
+     */
+    hasEvent(eventName) {
+        return !!this.templates[eventName];
+    }
+
+    /**
+     * Retrieves all channels explicitly registered for an event.
+     * @param {String} eventName 
+     * @returns {Array<String>}
+     */
+    getAllowedChannels(eventName) {
+        return this.templates[eventName] ? Object.keys(this.templates[eventName]) : [];
+    }
+
+    /**
      * Registers templates for a specific module/domain.
      * @param {Object} templatesObject - An object mapping EVENT_NAME to channels (e.g. { LEAVE_APPROVED: { email: {...}, push: {...} } })
      */

@@ -10,24 +10,38 @@ class PreferenceService {
     /**
      * Filters out channels that the user has opted out of for a given event.
      * @param {String} userId - The ID of the recipient
+     * @param {String} recipientType - 'USER', 'STUDENT', or 'PARENT'
      * @param {String} eventName - The type of notification event (e.g., 'LEAVE_APPROVED')
      * @param {Array} proposedChannels - The list of intended channels (e.g., ['email', 'push'])
      * @returns {Array} The allowed channels for this user
      */
-    async filterAllowedChannels(userId, eventName, proposedChannels) {
+    async filterAllowedChannels(userId, recipientType, eventName, proposedChannels) {
         if (!proposedChannels || proposedChannels.length === 0) return [];
 
-        // In a production system with user-configurable preferences, you would:
-        // 1. Fetch user preferences from the DB: const prefs = await PreferenceModel.findOne({ userId });
-        // 2. Check if prefs specify opt-outs for this specific `eventName`.
-        // 3. Filter `proposedChannels` based on the opt-outs.
-
-        // Example DB mock check:
-        // const optOuts = prefs?.events?.[eventName]?.optOuts || []; 
-        // return proposedChannels.filter(channel => !optOuts.includes(channel));
-
-        // For now, we assume users are opted-in to all channels proposed by the template
+        // Note: DB-based Preference checking is skipped for now. 
+        // We assume all users are opted-in to all proposed channels.
+        
         return proposedChannels;
+    }
+
+    /**
+     * Batch loads preferences for multiple users to avoid N+1 queries.
+     * @returns {Map<String, Array>} A map of userId -> allowed channels
+     */
+    async loadBatchPreferences(userIds, recipientType, eventName, proposedChannels) {
+        if (!proposedChannels || proposedChannels.length === 0) return new Map();
+
+        // Note: DB-based Preference checking is skipped for now.
+        // If we restored NotificationPreference, we would do:
+        // const prefs = await NotificationPreference.find({ recipientId: { $in: userIds }, recipientType }).lean();
+        
+        // Mocking full opt-in for all users in the batch
+        const preferenceMap = new Map();
+        for (const id of userIds) {
+            preferenceMap.set(id.toString(), proposedChannels);
+        }
+
+        return preferenceMap;
     }
 }
 

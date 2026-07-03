@@ -12,9 +12,21 @@ router
     .route('/')
     .get(notificationController.getMyNotifications)
     .post(
-        roleMiddleware('super_admin', 'org_admin'),
+        roleMiddleware('super_admin', 'admin'),
         notificationController.createNotification
     );
+
+router.post(
+    '/broadcast',
+    roleMiddleware('super_admin', 'admin'),
+    notificationController.testBroadcast
+);
+
+router.post(
+    '/test',
+    roleMiddleware('super_admin', 'admin'),
+    notificationController.testNotification
+);
 
 router.patch('/read-all', notificationController.markAllAsRead);
 

@@ -16,6 +16,17 @@ class NotificationRepository {
         return await Notification.create(data);
     }
 
+    /**
+     * Bulk inserts notifications for optimal performance.
+     * @param {Array} dataArray - Array of notification payloads
+     * @param {Object} session - Mongoose transaction session
+     */
+    async insertMany(dataArray, session = null) {
+        if (!dataArray || dataArray.length === 0) return [];
+        return await Notification.insertMany(dataArray, { session });
+    }
+
+
     // Future repository methods (find, update, markAsRead) can go here
 }
 

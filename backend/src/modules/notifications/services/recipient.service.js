@@ -1,71 +1,50 @@
-import User from '../../users/user.model.js';
-import mongoose from 'mongoose';
+import { userResolver, studentResolver, parentResolver } from './resolvers.js';
 
 /**
  * Recipient Service
  * 
- * Handles fetching user data, contact information, and resolving
- * abstract recipient targets (e.g., 'all-wardens', 'parents-of-batch')
- * into lightweight Data Transfer Objects (DTOs).
+ * Orchestrates recipient resolution by parsing the targeting payload 
+ * and delegating to specialized database resolvers.
+ * Never directly queries the database or handles Mongoose documents.
  */
 class RecipientService {
-    constructor() { }
+    constructor() {}
 
     /**
-     * Resolves an abstract recipient identifier into concrete user DTOs.
-     * @param {Array|String} target - User ID, array of IDs, or target group alias
-     * @returns {Array} List of lightweight recipient DTOs
+     * Resolves target queries into a MongoDB Cursor yielding standard DTOs.
+     * @param {Object} target - e.g. { type: 'STUDENT', filter: { courseId: '123' } }
+     * @returns {AsyncIterable} A MongoDB Cursor yielding Recipient DTOs
      */
     async getRecipients(target) {
-        if (!target) return [];
-
-        let matchQuery = {};
-
-        if (Array.isArray(target)) {
-            // Cast to ObjectId if they are strings
-            const objectIds = target.map(id => new mongoose.Types.ObjectId(id));
-            matchQuery = { _id: { $in: objectIds } };
-        } else if (typeof target === 'string') {
-            switch (target.toLowerCase()) {
-                case 'all-wardens':
-                    matchQuery = { role: 'warden' };
-                    break;
-                case 'all-students':
-                    matchQuery = { role: 'student' };
-                    break;
-                case 'all-parents':
-                    matchQuery = { role: 'parent' };
-                    break;
-                case 'all-admins':
-                    matchQuery = { role: 'admin' };
-                    break;
-                default:
-                    // Treat as a single User ID
-                    matchQuery = { _id: new mongoose.Types.ObjectId(target) };
-            }
-        } else {
-            throw new Error(`Invalid recipient target format: ${typeof target}`);
+        if (!target || !target.type) {
+            throw new Error('Target must be an object with a valid "type" property.');
         }
 
-        // Use aggregation pipeline to strictly return a lightweight DTO
-        // Never pass raw Mongoose documents between services.
-        const pipeline = [
-            { $match: matchQuery },
-            {
-                $project: {
-                    _id: 0,
-                    id: '$_id',
-                    type: '$role',
-                    name: '$name',
-                    email: '$email',
-                    pushToken: '$pushToken',
-                    //     language: '$language',
-                    //     preferences: '$preferences'
-                }
-            }
-        ];
+        const filter = target.filter || {};
 
-        return await User.aggregate(pipeline);
+        switch (target.type.toUpperCase()) {
+            case 'USER':
+                return await userResolver.resolve(filter);
+            case 'STUDENT':
+                return await studentResolver.resolve(filter);
+            case 'PARENT':
+                return await parentResolver.resolve(filter);
+            
+            // Abstract target mappings
+            case 'HOSTEL':
+            case 'ROOM':
+            case 'COURSE':
+            case 'DEPARTMENT':
+            case 'BATCH':
+            case 'ORGANIZATION':
+                // Targeting these entities implies targeting the Students associated with them
+                return await studentResolver.resolve(filter);
+            case 'ROLE':
+                // Targeting a Role implies targeting Users
+                return await userResolver.resolve(filter);
+            default:
+                throw new Error(`Unsupported recipient type: ${target.type}`);
+        }
     }
 }
 

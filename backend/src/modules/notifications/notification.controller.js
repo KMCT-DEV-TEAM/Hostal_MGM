@@ -1,7 +1,7 @@
 import Notification from './notification.model.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
-
+import { orchestratorService } from './services/orchestrator.service.js';
 /**
  * @desc    Get all notifications for the current user
  * @route   GET /api/v1/notifications
@@ -132,3 +132,64 @@ export const createNotification = asyncHandler(async (req, res, next) => {
         }
     });
 });
+
+/**
+ * @desc    Test trigger a notification broadcast
+ * @route   POST /api/notifications/broadcast
+ * @access  Private/Admin
+ */
+export const testBroadcast = asyncHandler(async (req, res, next) => {
+    const { eventName, target, data, channels } = req.body;
+
+    if (!eventName || !target) {
+        return sendError(res, 400, 'Please provide eventName and target');
+    }
+
+    const result = await orchestratorService.triggerNotification({
+        eventName,
+        target,
+        data: data || {},
+        channels
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Broadcast triggered successfully',
+        data: result
+    });
+});
+
+/**
+ * @desc    Test endpoint matching specific payload structure
+ * @route   POST /api/notifications/test
+ * @access  Private/Admin
+ */
+export const testNotification = asyncHandler(async (req, res, next) => {
+    const { event, recipients, data } = req.body;
+
+    if (!event || !recipients || !Array.isArray(recipients)) {
+        return sendError(res, 400, 'Please provide event and a recipients array');
+    }
+
+    const results = [];
+    for (const target of recipients) {
+        try {
+            const result = await orchestratorService.triggerNotification({
+                eventName: event,
+                target,
+                data: data || {},
+                channels: ['in-app', 'push', 'email'] // Request all; orchestrator will discard unsupported
+            });
+            results.push({ target, status: 'success', result });
+        } catch (error) {
+            results.push({ target, status: 'error', error: error.message });
+        }
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Test notification triggered',
+        data: results
+    });
+});
+
