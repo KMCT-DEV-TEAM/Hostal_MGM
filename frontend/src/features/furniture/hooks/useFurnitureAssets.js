@@ -38,12 +38,15 @@ export function useFurnitureAssets(typeId, filters, options = {}) {
 
         apiCall
             .then((res) => {
-                const list = res?.data?.data || res?.data?.assets || res?.data || res || [];
+                const responseData = res?.data?.data || {};
+                const list = responseData.assets || res?.data?.assets || (Array.isArray(responseData) ? responseData : []) || [];
                 setData(Array.isArray(list) ? list : []);
 
+                const total = responseData.total || res?.data?.total || responseData.totalCount || res?.data?.totalCount || 0;
+                
                 const responsePagination = res?.data?.pagination || res?.pagination || {
-                    totalPages: res?.data?.totalPages || res?.totalPages || Math.ceil((res?.data?.total || res?.total || res?.data?.totalCount || res?.totalCount || 0) / (params.limit || 10)) || 1,
-                    totalRecords: res?.data?.total || res?.total || res?.data?.totalCount || res?.totalCount || 0,
+                    totalPages: responseData.totalPages || res?.data?.totalPages || res?.totalPages || Math.ceil(total / (params.limit || 10)) || 1,
+                    totalRecords: total,
                     page: params.page || 1,
                     limit: params.limit || 10
                 };

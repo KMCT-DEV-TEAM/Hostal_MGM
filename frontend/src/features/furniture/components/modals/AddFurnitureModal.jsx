@@ -24,7 +24,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         customName: '',
         prefix: '',
         description: '',
-        openingStock: 0,
+        openingStock: '',
         hostelId: '',
         isActive: true
     });
@@ -50,7 +50,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 customName: !FURNITURE_OPTIONS.find(o => o.value === initialData.name) ? initialData.name : '',
                 prefix: initialData.prefix || '',
                 description: initialData.description || '',
-                openingStock: initialData.openingStock || 0,
+                openingStock: initialData.openingStock || '',
                 hostelId: initialData.hostel?._id || initialData.hostelId || '',
                 isActive: initialData.isActive !== undefined ? initialData.isActive : true
             });
@@ -60,7 +60,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 customName: '',
                 prefix: '',
                 description: '',
-                openingStock: 0,
+                openingStock: '',
                 hostelId: '',
                 isActive: true
             });
@@ -71,7 +71,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: name === 'prefix' ? value.toUpperCase() : (type === 'checkbox' ? checked : value)
         }));
     };
 
@@ -155,22 +155,20 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 </div>
 
                 <Input
+                    label="Prefix"
+                    name="prefix"
+                    value={formData.prefix}
+                    onChange={handleChange}
+                    placeholder="e.g. BD"
+                />
+
+                <Input
                     label="Description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
                     placeholder="Enter description"
                 />
-
-                {initialData && (
-                    <Input
-                        label="Prefix"
-                        name="prefix"
-                        value={formData.prefix}
-                        onChange={handleChange}
-                        placeholder="e.g. BD"
-                    />
-                )}
 
                 <div className="flex items-center gap-2">
                     <input

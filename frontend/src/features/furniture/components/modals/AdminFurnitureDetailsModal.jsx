@@ -123,7 +123,7 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                                             <span className="font-medium text-gray-900">{item.total || item.assets?.total || 0}</span>
                                             {isAdmin && (
                                                 <button
-                                                    className="text-gray-400 hover:text-primary rounded-md opacity-0 group-hover:opacity-100 transition-opacity p-1.5 ml-2"
+                                                    className="text-gray-400 hover:text-primary rounded-md transition-colors p-1.5 ml-2"
                                                     onClick={handleEditQuantityClick}
                                                 >
                                                     <Edit2 className="w-4 h-4" />

@@ -12,6 +12,8 @@ import AssetDetailsModal from '../components/modals/AssetDetailsModal';
 import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
 import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
 import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/utils/exportUtils';
+import { formatDate } from '@/utils/formatters';
 
 export default function WardenFurniture() {
     const navigate = useNavigate();
@@ -83,11 +85,44 @@ export default function WardenFurniture() {
     const confirmExport = async (filters) => {
         setIsExporting(true);
         try {
-            // Placeholder for real export
-            showSuccessToast('Furniture data exported successfully');
+            const params = {
+                status: filters.status || statusFilter,
+                limit: 5000, 
+                search: debouncedSearch
+            };
+            
+            const res = await furnitureApi.getAllFurnitureAssets(params);
+            const dataToExport = res?.data?.data?.assets || res?.data?.assets || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No furniture records match the selected filters');
+                setIsExportConfirmOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((r, index) => {
+                return {
+                    'Sl No': index + 1,
+                    'Furniture ID': r.furnitureId || '--',
+                    'Furniture Type': r.furnitureTypeId?.name || '--',
+                    'Hostel': r.hostelId?.name || '--',
+                    'Assigned To': r.studentId?.name || 'Unassigned',
+                    'Status': r.status || '--',
+                    'Added On': formatDate(r.createdAt)
+                };
+            });
+
+            const isSuccess = exportToExcel(exportData, `Furniture_Assets_Export`, "Assets");
+            
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
             setIsExportConfirmOpen(false);
         } catch (error) {
-            showErrorToast('Failed to export data');
+            showErrorToast('Failed to export data', error.message);
         } finally {
             setIsExporting(false);
         }
@@ -132,7 +167,7 @@ export default function WardenFurniture() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <StatsCard
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}

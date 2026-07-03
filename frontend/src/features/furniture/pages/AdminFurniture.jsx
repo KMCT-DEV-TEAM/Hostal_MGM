@@ -7,6 +7,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AddFurnitureModal from '../components/modals/AddFurnitureModal';
 import AdminFurnitureDetailsModal from '../components/modals/AdminFurnitureDetailsModal';
@@ -36,6 +37,9 @@ export default function AdminFurniture() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
+    const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [dashboardStats, setDashboardStats] = useState(null);
@@ -111,22 +115,23 @@ export default function AdminFurniture() {
         }
     };
 
-    const handleAdjustStock = async (typeId, count) => {
+    const handleAdjustStock = async (typeId, newTotal) => {
         try {
-            await furnitureApi.adjustAssetsCount(typeId, { count });
+            await furnitureApi.adjustAssetsCount(typeId, { count: newTotal });
             showSuccessToast('Stock adjusted successfully');
             fetchFurnitureTypes();
             fetchDashboardStats();
 
             if (isDetailsModalOpen && selectedType && selectedType._id === typeId) {
+                const diff = newTotal - (selectedType.total || selectedType.assets?.total || 0);
                 setSelectedType(prev => ({
                     ...prev,
-                    total: prev.total + count,
-                    available: prev.available + count,
+                    total: newTotal,
+                    available: prev.available + diff,
                     assets: prev.assets ? {
                         ...prev.assets,
-                        total: (prev.assets.total || 0) + count,
-                        available: (prev.assets.available || 0) + count
+                        total: newTotal,
+                        available: (prev.assets.available || 0) + diff
                     } : undefined
                 }));
             }
@@ -186,7 +191,7 @@ export default function AdminFurniture() {
     ];
 
     const handleDeleteSelected = async () => {
-        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} furniture types?`)) return;
+        setIsConfirmSubmitting(true);
         try {
             for (const id of selectedIds) {
                 await furnitureApi.deleteFurnitureType(id);
@@ -197,6 +202,9 @@ export default function AdminFurniture() {
             fetchDashboardStats();
         } catch (error) {
             showErrorToast(error.message || 'Failed to delete some furniture types');
+        } finally {
+            setIsConfirmSubmitting(false);
+            setConfirmModal({ isOpen: false, type: null });
         }
     };
 
@@ -225,7 +233,7 @@ export default function AdminFurniture() {
         { key: 'available', label: 'Available' },
     ];
     if (isAdmin) {
-        tableHeaders.push({ key: 'actions', label: 'Action' });
+        tableHeaders.push({ key: 'actions', label: 'Action', align: 'center' });
     }
 
     const handleRowClick = (item) => {
@@ -277,7 +285,7 @@ export default function AdminFurniture() {
                                 variant="outline"
                                 fullWidth={false}
                                 size="md"
-                                onClick={handleDeleteSelected}
+                                onClick={() => setConfirmModal({ isOpen: true, type: 'deleteSelected' })}
                                 className="border-red-200 text-danger bg-red-50 hover:bg-red-100"
                             >
                                 Delete ({selectedIds.length})
@@ -352,7 +360,7 @@ export default function AdminFurniture() {
                             {item.available || item.assets?.available || 0}
                         </td>
                         {isAdmin && (
-                            <td className="p-4 text-right">
+                            <td className="p-4 text-center">
                                 <Button
                                     variant="ghost"
                                     fullWidth={false}
@@ -433,6 +441,16 @@ export default function AdminFurniture() {
                     asset={selectedAsset}
                 />
             )}
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null })}
+                onConfirm={handleDeleteSelected}
+                isSubmitting={isConfirmSubmitting}
+                title="Delete Furniture Types"
+                message={`Are you sure you want to delete ${selectedIds.length} selected furniture types? This action cannot be undone.`}
+                confirmText="Delete"
+                confirmButtonVariant="danger"
+            />
         </div>
     );
 }

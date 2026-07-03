@@ -13,7 +13,6 @@ import { useDebounce } from '@/hooks/useDebounce';
 import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
 import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
-import AllocateAssetModal from '../components/modals/AllocateAssetModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import AssetDetailsModal from '../components/modals/AssetDetailsModal';
 import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
@@ -36,7 +35,6 @@ export default function FurnitureDetails() {
 
     const [details, setDetails] = useState(null);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-    const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
     const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, asset: null });
     const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
@@ -126,18 +124,6 @@ export default function FurnitureDetails() {
             fetchAssets();
         } catch (error) {
             showErrorToast(error.message || 'Failed to update asset status');
-            throw error;
-        }
-    };
-
-    const handleAllocate = async (studentId, assetId) => {
-        try {
-            await furnitureApi.allocateAsset(studentId, assetId);
-            showSuccessToast('Asset allocated successfully');
-            setIsAllocateModalOpen(false);
-            fetchDetails(); // refresh everything as total counts might change
-        } catch (error) {
-            showErrorToast(error.message || 'Failed to allocate asset');
             throw error;
         }
     };
@@ -295,20 +281,7 @@ export default function FurnitureDetails() {
                                 <div className="flex items-center justify-end gap-2">
                                     {item.status === 'Available' && (
                                         <>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                fullWidth={false}
-                                                className="text-primary hover:bg-primary/5"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedAsset(item);
-                                                    setIsAllocateModalOpen(true);
-                                                }}
-                                            >
-                                                <PackageCheck className="w-4 h-4 mr-1.5" />
-                                                Assign
-                                            </Button>
+
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -387,17 +360,6 @@ export default function FurnitureDetails() {
                         setSelectedAsset(null);
                     }}
                     onSave={handleStatusChange}
-                    asset={selectedAsset}
-                />
-            )}
-            {isAllocateModalOpen && (
-                <AllocateAssetModal
-                    isOpen={isAllocateModalOpen}
-                    onClose={() => {
-                        setIsAllocateModalOpen(false);
-                        setSelectedAsset(null);
-                    }}
-                    onAllocate={handleAllocate}
                     asset={selectedAsset}
                 />
             )}
