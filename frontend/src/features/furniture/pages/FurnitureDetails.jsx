@@ -12,11 +12,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import AssetDetailsModal from '../components/modals/AssetDetailsModal';
 import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
 import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
+import { exportToExcel } from '@/utils/exportUtils';
+import { formatDate } from '@/utils/formatters';
 
 export default function FurnitureDetails() {
     const { id } = useParams();
@@ -38,6 +41,8 @@ export default function FurnitureDetails() {
     const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, asset: null });
     const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const limit = 10;
@@ -157,6 +162,70 @@ export default function FurnitureDetails() {
         setConfirmModal({ isOpen: true, type, asset });
     };
 
+    const handleExport = async () => {
+        setIsExportConfirmOpen(true);
+    };
+
+    const confirmExport = async (filters) => {
+        setIsExporting(true);
+        try {
+            const exportParams = {
+                status: statusFilter === 'All' ? '' : statusFilter,
+                limit: 5000,
+                search: debouncedSearch
+            };
+            
+            const res = await furnitureApi.getFurnitureTypeAssets(id, exportParams);
+            const dataToExport = res?.data?.data?.assets || res?.data?.assets || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No furniture records match the selected filters');
+                setIsExportConfirmOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((r, index) => {
+                return {
+                    'Sl No': index + 1,
+                    'Furniture ID': r.furnitureId || '--',
+                    'Furniture Type': r.furnitureTypeId?.name || '--',
+                    'Hostel': r.hostelId?.name || '--',
+                    'Assigned To': r.studentId?.name || 'Unassigned',
+                    'Status': r.status || '--',
+                    'Added On': formatDate(r.createdAt)
+                };
+            });
+
+            const isSuccess = exportToExcel(exportData, `Furniture_Type_${titleName}_Assets`, "Assets");
+            
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+            setIsExportConfirmOpen(false);
+        } catch (error) {
+            showErrorToast('Failed to export data', error.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const exportFields = [
+        {
+            name: "status",
+            label: "Status",
+            options: [
+                { label: 'All Status', value: '' },
+                { label: 'Available', value: 'Available' },
+                { label: 'Allocated', value: 'Allocated' },
+                { label: 'Maintenance', value: 'Maintenance' },
+                { label: 'Lost', value: 'Lost' }
+            ]
+        }
+    ];
+
     const tableHeaders = [
         { key: 'code', label: 'Furniture' },
         { key: 'hostel', label: 'Hostel' },
@@ -191,18 +260,21 @@ export default function FurnitureDetails() {
                     value={details?.total || details?.assets?.total || 0}
                     icon={<Box className="w-5 h-5" />}
                     iconBg="bg-blue-50 text-blue-500"
+                    borderColor='border-t-2 border-t-blue-500'
                 />
                 <StatsCard
                     label="ASSIGNED FURNITURES"
                     value={details?.allocated || details?.assets?.allocated || 0}
                     icon={<PackageCheck className="w-5 h-5" />}
                     iconBg="bg-success/10 text-success"
+                    borderColor='border-t-2 border-t-success/70'
                 />
                 <StatsCard
                     label="AVAILABLE FURNITURES"
                     value={details?.available || details?.assets?.available || 0}
                     icon={<PackageOpen className="w-5 h-5" />}
                     iconBg="bg-cyan-50 text-cyan-500"
+                    borderColor='border-t-2 border-t-cyan-500'
                 />
             </div>
 
@@ -231,6 +303,7 @@ export default function FurnitureDetails() {
                             minWidth="w-[140px]"
                         />
                         <button
+                            onClick={handleExport}
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Download className="w-4 h-4" />
@@ -392,6 +465,15 @@ export default function FurnitureDetails() {
                     hostelName={details?.hostel?.name}
                 />
             )}
+            
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Furniture Assets"
+                fields={exportFields}
+            />
         </div>
     );
 }
