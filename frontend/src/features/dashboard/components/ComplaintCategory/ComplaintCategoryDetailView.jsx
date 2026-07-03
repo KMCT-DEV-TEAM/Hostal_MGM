@@ -28,7 +28,7 @@ export default function ComplaintCategoryDetailView({ selectedCategoryDetail, se
                             <InfoRow label={<><AlignLeft className="w-4 h-4 text-gray-400" /> Description</>}>{selectedCategoryDetail?.description || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
-                                    <span className={"w-2 h-2 rounded-full  mr-2"}></span>
+                                    <span className={`w-2 h-2 rounded-full mr-2 ${selectedCategoryDetail?.isActive ? 'bg-green-500' : 'bg-danger'}`}></span>
                                     {selectedCategoryDetail?.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </InfoRow>
@@ -44,7 +44,7 @@ export default function ComplaintCategoryDetailView({ selectedCategoryDetail, se
                         <InfoRow label={<><Tag className="w-4 h-4 text-gray-400" /> Name</>}>{selectedCategoryDetail?.name}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                             <span className="flex items-center">
-                                <span className={"w-2 h-2 rounded-full mr-2"}></span>
+                                <span className={`w-2 h-2 rounded-full mr-2 ${selectedCategoryDetail?.isActive ? 'bg-green-500' : 'bg-danger'}`}></span>
                                 {selectedCategoryDetail?.isActive ? 'Active' : 'Inactive'}
                             </span>
                         </InfoRow>

@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 
-export default function HostelHeader({ selectedIds, handleBulkStatusClick }) {
+export default function HostelHeader() {
     const { t } = useTranslation();
+
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-6 flex-shrink-0">
             <div>

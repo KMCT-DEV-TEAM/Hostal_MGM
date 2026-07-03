@@ -100,19 +100,19 @@ export default function HostelTable({
     );
 
     return (
-        <div ref={tableContainerRef} className="flex-1 min-h-0 flex flex-col">
-            <ListTable
-                headers={headers}
-                items={hostels}
-                loading={loading}
-                error={error}
-                selectedIds={selectedIds}
-                onSelectAll={handleSelectAll}
-                onSelect={handleSelectRow}
-                canSelect={true}
-                emptyText={t('no_records_found')}
-                renderRow={renderRow}
-            />
-        </div>
+
+        <ListTable
+            headers={headers}
+            items={hostels}
+            loading={loading}
+            error={error}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelect={handleSelectRow}
+            canSelect={true}
+            emptyText={t('no_records_found')}
+            renderRow={renderRow}
+        />
+
     );
 }

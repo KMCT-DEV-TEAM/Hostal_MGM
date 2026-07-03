@@ -443,7 +443,10 @@ export default function HostelManagement() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
-            <HostelHeader />
+            <HostelHeader 
+                selectedIds={selectedIds}
+                handleBulkStatusClick={handleBulkStatusClick}
+            />
 
             {/* ==========================================
              FILTER & UTILITY TOOLBAR
