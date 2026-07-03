@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow, MobileStatusRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import Dropdown from '@/components/ui/Dropdown';
 
 const WardenMobileList = ({
     paginatedWardens,
@@ -21,27 +22,38 @@ const WardenMobileList = ({
             <MobileRow label="Id" value={(warden.wardenId || warden.id.substring(warden.id.length - 6)).toUpperCase()} />
             <MobileRow label="Email" value={warden.email || 'N/A'} />
             <MobileRow label="Phone" value={warden.phone || 'N/A'} />
-            <MobileStatusRow 
-                isActive={warden.status === 'Active'} 
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (handleStatusChangeClick) handleStatusChangeClick(warden.id, warden.status);
-                }} 
-            />
             <MobileRow 
                 label="Hostel" 
                 value={
-                    <select
-                        value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
-                        onChange={(e) => handleHostelChange(warden.id, e.target.value)}
-                        className="bg-transparent text-text-secondary outline-none w-full cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <option value="Not Assigned">Not Assigned</option>
-                        {availableHostels.map(h => (
-                            <option key={h._id || h} value={h._id || h}>{h.name || h}</option>
-                        ))}
-                    </select>
+                    <div onClick={(e) => e.stopPropagation()} className="w-full">
+                        <Dropdown
+                            minWidth=""
+                            options={[
+                                { value: "Not Assigned", label: "Not Assigned" },
+                                ...availableHostels.map(h => ({ value: h._id || h, label: h.name || h }))
+                            ]}
+                            value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
+                            onChange={(val) => handleHostelChange(warden.id, val)}
+                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-gray-300 transition-colors w-full"
+                        />
+                    </div>
+                } 
+            />
+            <MobileRow 
+                label="Status" 
+                value={
+                    <div onClick={(e) => e.stopPropagation()} className="w-full">
+                        <Dropdown
+                            minWidth=""
+                            options={[
+                                { value: "Active", label: "Active" },
+                                { value: "Inactive", label: "Inactive" }
+                            ]}
+                            value={warden.status}
+                            onChange={() => handleStatusChangeClick(warden.id, warden.status)}
+                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors w-full ${warden.status === 'Active' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
+                        />
+                    </div>
                 } 
             />
         </>

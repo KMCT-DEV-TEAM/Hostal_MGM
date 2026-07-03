@@ -21,7 +21,16 @@ const OrganizationMobileList = ({
         <>
             <MobileRow label={t('email')} value={o.email || 'N/A'} />
             <MobileRow label={t('phone')} value={o.phone || 'N/A'} />
-            <MobileRow label={t('address')} value={o.address || 'N/A'} />
+            <MobileRow 
+                label={t('address')} 
+                value={o.address ? (
+                    <div className="flex flex-col w-full min-w-0 break-words">
+                        {o.address.split(',').map((line, idx) => (
+                            <span key={idx} className="break-words whitespace-pre-wrap">{line.trim()}</span>
+                        ))}
+                    </div>
+                ) : 'N/A'} 
+            />
             <MobileRow label="Students" value={o.studentsCount || 0} />
             <MobileStatusRow 
                 isActive={o.isActive} 

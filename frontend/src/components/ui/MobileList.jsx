@@ -80,15 +80,19 @@ export default function MobileList({
                     return (
                         <div 
                             key={rowId || index} 
-                            className={`bg-white rounded-xl overflow-hidden shrink-0 ${
+                            className={`bg-white rounded-xl shrink-0 ${
+                                isExpanded 
+                                    ? 'overflow-visible shadow-md z-10 relative' 
+                                    : 'overflow-hidden shadow-sm'
+                            } ${
                                 isExpanded 
                                     ? (isSelected ? 'border-x border-t border-b-0 border-[#0A437A]' : 'border-x border-t border-b-0 border-gray-200') 
                                     : (isSelected ? 'border border-[#0A437A]' : 'border border-gray-50')
-                            } ${isExpanded ? 'shadow-md z-10 relative' : 'shadow-sm'}`}
+                            }`}
                         >
                             {/* Header */}
                             <div 
-                                className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
+                                className={`flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer ${isExpanded ? 'rounded-t-xl' : ''}`}
                                 onClick={(e) => toggleExpand(e, rowId)}
                             >
                                 <div className="flex items-center gap-2">
@@ -125,14 +129,14 @@ export default function MobileList({
 
                             {/* Expandable Content */}
                             {isExpanded && (
-                                <div className="flex flex-col bg-gray-50 animate-in slide-in-from-top-2 duration-200">
-                                    <div className="flex flex-col text-[11px]">
+                                <div className="flex flex-col bg-gray-50 animate-in slide-in-from-top-2 duration-200 rounded-b-xl">
+                                    <div className="flex flex-col text-[11px] rounded-b-xl">
                                         {renderBody && renderBody(item)}
                                     </div>
                                     {onViewDetails && (
                                         <button
                                             onClick={() => onViewDetails(item)}
-                                            className="w-full py-3 bg-[#0A437A] text-white font-semibold text-[13px] hover:bg-secondary transition-colors cursor-pointer"
+                                            className="w-full py-3 bg-[#0A437A] text-white font-semibold text-[13px] hover:bg-secondary transition-colors cursor-pointer rounded-b-xl"
                                         >
                                             View Details
                                         </button>
@@ -150,8 +154,9 @@ export default function MobileList({
 export const MobileRow = ({ label, value, valueClass = "text-text-secondary" }) => (
     <div className="flex border-b border-gray-50/50 bg-white items-center min-h-[40px]">
         <div className="w-1/3 py-2.5 px-3 text-text-secondary font-medium border-r border-gray-50/50 break-words">{label}</div>
-        <div className={`w-2/3 py-2.5 px-3 ${valueClass} break-words`}>
-            <span className="mr-1">:</span> {value}
+        <div className={`w-2/3 py-2.5 px-3 flex items-center gap-1 ${valueClass}`}>
+            <span className="shrink-0">:</span> 
+            <div className="flex-1 min-w-0 break-words">{value}</div>
         </div>
     </div>
 );

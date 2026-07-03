@@ -7,7 +7,8 @@ import {
     CheckSquare,
     Building2,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    MoreVertical
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -61,7 +62,7 @@ const OrganizationManagement = () => {
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
     const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -328,28 +329,10 @@ const OrganizationManagement = () => {
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-black">{t('org_management')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('org_management')}</h1>
                     <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all organizations</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-
-                    {selectedIds.length > 0 && (
-                        <div className="flex items-center gap-2 mr-2">
-                            <button
-                                onClick={() => handleBulkStatusClick(true)}
-                                className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Active ({selectedIds.length})
-                            </button>
-                            <button
-                                onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Inactive ({selectedIds.length})
-                            </button>
-                        </div>
-                    )}
-
                 </div>
             </div>
 
@@ -401,6 +384,35 @@ const OrganizationManagement = () => {
                                 >
                                     <Download className="w-4 h-4" /> Export
                                 </button>
+                            )}
+                            
+                            {!isAdmin && (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                                        className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
+                                    >
+                                        <MoreVertical className="w-4 h-4" />
+                                    </button>
+                                    {isBulkMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                            <button
+                                                onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
+                                                disabled={selectedIds.length === 0}
+                                                className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                            >
+                                                Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                            </button>
+                                            <button
+                                                onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
+                                                disabled={selectedIds.length === 0}
+                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                            >
+                                                Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                         {!isAdmin && (
