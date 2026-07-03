@@ -3,6 +3,7 @@ import Modal from '@/components/ui/Modal';
 import { Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import { getHostels } from '@/services/hostel.service';
 
 const FURNITURE_OPTIONS = [
@@ -23,7 +24,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         customName: '',
         prefix: '',
         description: '',
-        openingStock: 0,
+        openingStock: '',
         hostelId: '',
         isActive: true
     });
@@ -49,7 +50,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 customName: !FURNITURE_OPTIONS.find(o => o.value === initialData.name) ? initialData.name : '',
                 prefix: initialData.prefix || '',
                 description: initialData.description || '',
-                openingStock: initialData.openingStock || 0,
+                openingStock: initialData.openingStock || '',
                 hostelId: initialData.hostel?._id || initialData.hostelId || '',
                 isActive: initialData.isActive !== undefined ? initialData.isActive : true
             });
@@ -59,7 +60,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 customName: '',
                 prefix: '',
                 description: '',
-                openingStock: 0,
+                openingStock: '',
                 hostelId: '',
                 isActive: true
             });
@@ -70,7 +71,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: name === 'prefix' ? value.toUpperCase() : (type === 'checkbox' ? checked : value)
         }));
     };
 
@@ -112,34 +113,30 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                             value={formData.name}
                             onChange={(val) => setFormData(prev => ({ ...prev, name: val }))}
                             placeholder="Select"
-                            triggerClassName="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none flex items-center justify-between min-h-[42px]"
+                            triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
                         />
                         {formData.name === 'Other' && (
-                            <input
-                                type="text"
+                            <Input
                                 name="customName"
                                 value={formData.customName}
                                 onChange={handleChange}
                                 required
-                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
                                 placeholder="Enter custom name"
+                                containerClassName="mt-3"
                             />
                         )}
                     </div>
 
                     {!initialData ? (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                            <input
-                                type="number"
-                                name="openingStock"
-                                value={formData.openingStock}
-                                onChange={handleChange}
-                                min="0"
-                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[42px]"
-                                placeholder="enter the quantity"
-                            />
-                        </div>
+                        <Input
+                            label="Quantity"
+                            type="number"
+                            name="openingStock"
+                            value={formData.openingStock}
+                            onChange={handleChange}
+                            min="0"
+                            placeholder="enter the quantity"
+                        />
                     ) : (
                         <div></div>
                     )}
@@ -151,35 +148,27 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                         options={hostels.map(h => ({ label: h.name, value: h._id }))}
                         value={formData.hostelId}
                         onChange={(val) => setFormData(prev => ({ ...prev, hostelId: val }))}
-                        placeholder="Select"
-                        triggerClassName="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none flex items-center justify-between min-h-[42px]"
+                        placeholder="Select Hostel / Organization"
+                        searchable
+                        triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
                     />
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Prefix <span className="text-red-500">*</span></label>
-                    <input
-                        type="text"
-                        name="prefix"
-                        value={formData.prefix}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 uppercase"
-                        placeholder="Enter"
-                    />
-                </div>
+                <Input
+                    label="Prefix"
+                    name="prefix"
+                    value={formData.prefix}
+                    onChange={handleChange}
+                    placeholder="e.g. BD"
+                />
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        rows={3}
-                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                        placeholder="Enter"
-                    />
-                </div>
+                <Input
+                    label="Description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Enter description"
+                />
 
                 <div className="flex items-center gap-2">
                     <input

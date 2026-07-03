@@ -1,51 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Download, Edit2, Box, PackageCheck, PackageOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AddFurnitureModal from '../components/modals/AddFurnitureModal';
 import AdminFurnitureDetailsModal from '../components/modals/AdminFurnitureDetailsModal';
+import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
+import AllocateAssetModal from '../components/modals/AllocateAssetModal';
 import Button from '@/components/ui/Button';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { useFurnitureTypes } from '../hooks/useFurnitureTypes';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function AdminFurniture() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const role = useAuthStore((s) => s.user?.role);
+    const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
 
-    const [types, setTypes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const urlSearchQuery = searchParams.get('search') || '';
+    const statusFilter = searchParams.get('status') || 'All';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = 10;
+
+    const [searchInput, setSearchInput] = useState(urlSearchQuery);
+    const debouncedSearch = useDebounce(searchInput, 500);
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
+    const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
-    const [statusFilter, setStatusFilter] = useState('All');
     const [dashboardStats, setDashboardStats] = useState(null);
-    const limit = 10;
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+    const [selectedAsset, setSelectedAsset] = useState(null);
+
+    const updateSearchParams = (updates) => {
+        const newParams = new URLSearchParams(searchParams);
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '' || value === 'All') {
+                newParams.delete(key);
+            } else {
+                newParams.set(key, value);
+            }
+        });
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-            setPage(1);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+        if (debouncedSearch !== urlSearchQuery) {
+            const newParams = new URLSearchParams(searchParams);
+            if (!debouncedSearch) {
+                newParams.delete('search');
+            } else {
+                newParams.set('search', debouncedSearch);
+            }
+            newParams.set('page', 1);
+            setSearchParams(newParams);
+        }
+    }, [debouncedSearch, urlSearchQuery, searchParams, setSearchParams]);
+
+    useEffect(() => {
+        setSearchInput(urlSearchQuery);
+    }, [urlSearchQuery]);
 
     useEffect(() => {
         fetchDashboardStats();
     }, []);
-
-    useEffect(() => {
-        fetchFurnitureTypes();
-    }, [page, debouncedSearch, statusFilter]);
 
     const fetchDashboardStats = async () => {
         try {
@@ -56,26 +89,12 @@ export default function AdminFurniture() {
         }
     };
 
-    const fetchFurnitureTypes = async () => {
-        try {
-            setLoading(true);
-            const res = await furnitureApi.getFurnitureTypes({
-                page,
-                limit,
-                search: debouncedSearch,
-                status: statusFilter
-            });
-            setTypes(res.data?.data || res.data || []);
-            setPagination({
-                totalPages: res.data?.totalPages || res.totalPages || 1,
-                totalRecords: res.data?.totalCount || res.totalCount || 0
-            });
-        } catch (error) {
-            showErrorToast(error.message || 'Failed to fetch furniture types');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: types, pagination, loading, refetch: fetchFurnitureTypes } = useFurnitureTypes({
+        page,
+        limit,
+        search: debouncedSearch,
+        status: statusFilter === 'All' ? '' : statusFilter
+    });
 
     const handleSaveType = async (data) => {
         try {
@@ -89,28 +108,30 @@ export default function AdminFurniture() {
             setIsAddModalOpen(false);
             setSelectedType(null);
             fetchFurnitureTypes();
+            fetchDashboardStats();
         } catch (error) {
             showErrorToast(error.message || 'Failed to save furniture type');
             throw error;
         }
     };
 
-    const handleAdjustStock = async (typeId, count) => {
+    const handleAdjustStock = async (typeId, newTotal) => {
         try {
-            await furnitureApi.adjustAssetsCount(typeId, { count });
+            await furnitureApi.adjustAssetsCount(typeId, { count: newTotal });
             showSuccessToast('Stock adjusted successfully');
             fetchFurnitureTypes();
             fetchDashboardStats();
 
             if (isDetailsModalOpen && selectedType && selectedType._id === typeId) {
+                const diff = newTotal - (selectedType.total || selectedType.assets?.total || 0);
                 setSelectedType(prev => ({
                     ...prev,
-                    total: prev.total + count,
-                    available: prev.available + count,
+                    total: newTotal,
+                    available: prev.available + diff,
                     assets: prev.assets ? {
                         ...prev.assets,
-                        total: (prev.assets.total || 0) + count,
-                        available: (prev.assets.available || 0) + count
+                        total: newTotal,
+                        available: (prev.assets.available || 0) + diff
                     } : undefined
                 }));
             }
@@ -119,10 +140,36 @@ export default function AdminFurniture() {
         }
     };
 
+    const handleStatusChange = async (assetId, status) => {
+        try {
+            await furnitureApi.changeAssetStatus(assetId, { status });
+            showSuccessToast('Asset status updated successfully');
+            setIsStatusModalOpen(false);
+            fetchFurnitureTypes();
+            fetchDashboardStats();
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to update asset status');
+            throw error;
+        }
+    };
+
+    const handleAllocate = async (studentId, assetId) => {
+        try {
+            await furnitureApi.allocateAsset(studentId, assetId);
+            showSuccessToast('Asset allocated successfully');
+            setIsAllocateModalOpen(false);
+            fetchFurnitureTypes();
+            fetchDashboardStats();
+        } catch (error) {
+            showErrorToast(error.message || 'Failed to allocate asset');
+            throw error;
+        }
+    };
+
     const confirmExport = async (filters) => {
         setIsExporting(true);
         try {
-            // Implement actual export logic here
+            // Placeholder for real export
             showSuccessToast('Furniture data exported successfully');
             setIsExportConfirmOpen(false);
         } catch (error) {
@@ -144,7 +191,7 @@ export default function AdminFurniture() {
     ];
 
     const handleDeleteSelected = async () => {
-        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} furniture types?`)) return;
+        setIsConfirmSubmitting(true);
         try {
             for (const id of selectedIds) {
                 await furnitureApi.deleteFurnitureType(id);
@@ -152,13 +199,17 @@ export default function AdminFurniture() {
             showSuccessToast('Selected furniture types deleted');
             setSelectedIds([]);
             fetchFurnitureTypes();
+            fetchDashboardStats();
         } catch (error) {
             showErrorToast(error.message || 'Failed to delete some furniture types');
+        } finally {
+            setIsConfirmSubmitting(false);
+            setConfirmModal({ isOpen: false, type: null });
         }
     };
 
     const handleSelectAll = () => {
-        if (selectedIds.length === types.length) {
+        if (selectedIds.length === types.length && types.length > 0) {
             setSelectedIds([]);
         } else {
             setSelectedIds(types.map(t => t._id));
@@ -180,8 +231,10 @@ export default function AdminFurniture() {
         { key: 'total', label: 'Quantity' },
         { key: 'allocated', label: 'Assigned' },
         { key: 'available', label: 'Available' },
-        { key: 'actions', label: 'Action' },
     ];
+    if (isAdmin) {
+        tableHeaders.push({ key: 'actions', label: 'Action', align: 'center' });
+    }
 
     const handleRowClick = (item) => {
         setSelectedType(item);
@@ -205,31 +258,34 @@ export default function AdminFurniture() {
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}
                     icon={<Box className="w-5 h-5" />}
-                    iconBg="bg-blue-50 text-blue-500"
+                    iconBg="bg-secondary/10 text-secondary"
+                    borderColor='border-t-2 border-t-secondary/70'
                 />
                 <StatsCard
                     label="ASSIGNED FURNITURES"
                     value={assignedFurnitures}
                     icon={<PackageCheck className="w-5 h-5" />}
                     iconBg="bg-success/10 text-success"
+                    borderColor='border-t-2 border-t-success/70'
                 />
                 <StatsCard
                     label="AVAILABLE FURNITURES"
                     value={availableFurnitures}
                     icon={<PackageOpen className="w-5 h-5" />}
-                    iconBg="bg-cyan-50 text-cyan-500"
+                    iconBg="bg-secondary/10 text-secondary/70"
+                    borderColor='border-t-2 border-t-secondary/70'
                 />
             </div>
 
             <DataTable
                 toolbarActions={
                     <>
-                        {selectedIds.length > 0 && (
+                        {isAdmin && selectedIds.length > 0 && (
                             <Button
                                 variant="outline"
                                 fullWidth={false}
                                 size="md"
-                                onClick={handleDeleteSelected}
+                                onClick={() => setConfirmModal({ isOpen: true, type: 'deleteSelected' })}
                                 className="border-red-200 text-danger bg-red-50 hover:bg-red-100"
                             >
                                 Delete ({selectedIds.length})
@@ -241,7 +297,7 @@ export default function AdminFurniture() {
                                 { label: 'Available', value: 'Available' }
                             ]}
                             value={statusFilter}
-                            onChange={(val) => setStatusFilter(val)}
+                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
                             placeholder="All Status"
                             minWidth="w-[140px]"
                         />
@@ -255,26 +311,28 @@ export default function AdminFurniture() {
                             Export
                         </Button>
 
-                        <Button
-                            variant="primary"
-                            fullWidth={false}
-                            size="md"
-                            onClick={() => {
-                                setSelectedType(null);
-                                setIsAddModalOpen(true);
-                            }}
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add New
-                        </Button>
+                        {isAdmin && (
+                            <Button
+                                variant="primary"
+                                fullWidth={false}
+                                size="md"
+                                onClick={() => {
+                                    setSelectedType(null);
+                                    setIsAddModalOpen(true);
+                                }}
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add New
+                            </Button>
+                        )}
                     </>
                 }
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
+                searchQuery={searchInput}
+                onSearchChange={(e) => setSearchInput(e.target.value)}
                 searchPlaceholder="Search furniture types..."
                 headers={tableHeaders}
                 items={types}
-                canSelect={true}
+                canSelect={isAdmin}
                 selectedIds={selectedIds}
                 onSelectAll={handleSelectAll}
                 onSelect={handleSelect}
@@ -301,31 +359,33 @@ export default function AdminFurniture() {
                         <td className="p-4 text-text-secondary">
                             {item.available || item.assets?.available || 0}
                         </td>
-                        <td className="p-4 text-right">
-                            <Button
-                                variant="ghost"
-                                fullWidth={false}
-                                size="sm"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedType(item);
-                                    setIsAddModalOpen(true);
-                                }}
-                                title="Edit"
-                            >
-                                <Edit2 className="w-4 h-4" />
-                            </Button>
-                        </td>
+                        {isAdmin && (
+                            <td className="p-4 text-center">
+                                <Button
+                                    variant="ghost"
+                                    fullWidth={false}
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedType(item);
+                                        setIsAddModalOpen(true);
+                                    }}
+                                    title="Edit"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                </Button>
+                            </td>
+                        )}
                     </>
                 )}
                 page={page}
-                setPage={setPage}
+                setPage={(p) => updateSearchParams({ page: p })}
                 limit={limit}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
             />
 
-            {isAddModalOpen && (
+            {isAddModalOpen && isAdmin && (
                 <AddFurnitureModal
                     isOpen={isAddModalOpen}
                     onClose={() => {
@@ -355,9 +415,41 @@ export default function AdminFurniture() {
                 onClose={() => setIsExportConfirmOpen(false)}
                 onExport={confirmExport}
                 isExporting={isExporting}
-                title="Export Furniture"
-                subtitle="Select status filter before downloading"
                 fields={exportFields}
+                title="Export Furniture Options"
+            />
+
+            {isStatusModalOpen && (
+                <ChangeAssetStatusModal
+                    isOpen={isStatusModalOpen}
+                    onClose={() => {
+                        setIsStatusModalOpen(false);
+                        setSelectedAsset(null);
+                    }}
+                    onSave={handleStatusChange}
+                    asset={selectedAsset}
+                />
+            )}
+            {isAllocateModalOpen && (
+                <AllocateAssetModal
+                    isOpen={isAllocateModalOpen}
+                    onClose={() => {
+                        setIsAllocateModalOpen(false);
+                        setSelectedAsset(null);
+                    }}
+                    onAllocate={handleAllocate}
+                    asset={selectedAsset}
+                />
+            )}
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null })}
+                onConfirm={handleDeleteSelected}
+                isSubmitting={isConfirmSubmitting}
+                title="Delete Furniture Types"
+                message={`Are you sure you want to delete ${selectedIds.length} selected furniture types? This action cannot be undone.`}
+                confirmText="Delete"
+                confirmButtonVariant="danger"
             />
         </div>
     );
