@@ -32,6 +32,7 @@ export default function MobileList({
     canEdit = false,
     emptyText = "No items match the selected filter.",
     titleFn,
+    isSelectableFn,
     renderBody
 }) {
     const isAllSelected = items.length > 0 && selectedIds.length === items.length;
@@ -97,16 +98,35 @@ export default function MobileList({
                             >
                                 <div className="flex items-center gap-2">
                                     {canSelect && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onSelect && onSelect(rowId); }}
-                                            className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
-                                        >
-                                            {isSelected ? (
-                                                <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                        <div className="flex items-center justify-center shrink-0">
+                                            {isSelectableFn ? isSelectableFn(item) ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onSelect && onSelect(rowId); }}
+                                                    className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
+                                                >
+                                                    {isSelected ? (
+                                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                                    ) : (
+                                                        <Square className="w-5 h-5" />
+                                                    )}
+                                                </button>
                                             ) : (
-                                                <Square className="w-5 h-5" />
+                                                <button disabled className="focus:outline-none text-gray-300 opacity-50 cursor-not-allowed flex items-center justify-center shrink-0">
+                                                    <Square className="w-5 h-5" />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onSelect && onSelect(rowId); }}
+                                                    className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
+                                                >
+                                                    {isSelected ? (
+                                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                                    ) : (
+                                                        <Square className="w-5 h-5" />
+                                                    )}
+                                                </button>
                                             )}
-                                        </button>
+                                        </div>
                                     )}
                                     <span className="font-medium text-text-secondary text-[11px]">
                                         {titleFn ? titleFn(item) : (item.name || `Item ${index + 1}`)}
