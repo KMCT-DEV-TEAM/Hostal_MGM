@@ -121,7 +121,7 @@ export const validateAllocate = async (req, res, next) => {
         return res.status(400).json({ success: false, message: `Invalid assetId: ${id}` });
       }
 
-      const asset = await FurnitureAsset.findById(id).lean();
+      const asset = await FurnitureAsset.findById(id).populate("furnitureTypeId").lean();
       if (!asset) {
         return res.status(404).json({ success: false, message: `Furniture Asset Not Found: ${id}` });
       }
@@ -137,7 +137,7 @@ export const validateAllocate = async (req, res, next) => {
       if (asset.studentId) {
         return res.status(409).json({ success: false, message: `Asset ${asset.code || id} is already allocated.` });
       }
-
+      console.log(String(asset.furnitureTypeId.hostelId), String(student.hostelId))
       if (String(asset.furnitureTypeId.hostelId) !== String(student.hostelId)) {
         return res.status(403).json({ success: false, message: `Student ${student.name} belongs to another hostel than asset ${asset.code || id}.` });
       }

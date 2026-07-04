@@ -122,12 +122,11 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const scope = await resolveUserScope(req.user);
   if (req.user.role === "admin") {
     matchQuery.organizationId = scope.organizationId;
-    if (req.query.hostelId) {
-      matchQuery.hostelId = new mongoose.Types.ObjectId(req.query.hostelId);
-    }
+
   } else if (req.user.role === "warden") {
     matchQuery.hostelId = scope.hostelId;
   }
+
   const search = req.query.search;
   const isActive = req.query.isActive;
 
@@ -284,13 +283,9 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
 
   // Find all FurnitureType IDs that belong to the user's scope
   const typeQuery = {};
-  if (req.query.hostelId) {
-    typeQuery.hostelId = req.query.hostelId;
-  }
-  
   if (req.user.role === "admin") {
     typeQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden" && !typeQuery.hostelId) {
+  } else if (req.user.role === "warden") {
     typeQuery.hostelId = scope.hostelId;
   }
 
@@ -342,6 +337,10 @@ export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
     query.organizationId = scope.organizationId;
   } else if (req.user.role === "warden") {
     query.hostelId = scope.hostelId;
+  }
+  if (req.query.hostelId) {
+    console.log(req.query, "fsdf")
+    query.hostelId = new mongoose.Types.ObjectId(req.query.hostelId);
   }
 
   if (search) {

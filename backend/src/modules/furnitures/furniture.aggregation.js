@@ -138,10 +138,58 @@ export const getFurnitureAssetsListAggregation = async (matchQuery, skip, limit)
       },
     },
     {
+      $lookup: {
+        from: "furnituretypes",
+        localField: "furnitureTypeId",
+        foreignField: "_id",
+        as: "typeInfo"
+      }
+    },
+    { $unwind: { path: "$typeInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "organizations",
+        localField: "typeInfo.organizationId",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+    { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "typeInfo.hostelId",
+        foreignField: "_id",
+        as: "hostel",
+      },
+    },
+    { $unwind: { path: "$hostel", preserveNullAndEmptyArrays: true } },
+    {
       $project: {
         _id: 1,
         furnitureId: 1,
         furnitureTypeId: 1,
+        typeInfo: {
+          $cond: {
+            if: "$typeInfo",
+            then: { _id: "$typeInfo._id", name: "$typeInfo.name", prefix: "$typeInfo.prefix" },
+            else: null
+          }
+        },
+        organization: {
+          $cond: {
+            if: "$organization",
+            then: { _id: "$organization._id", name: "$organization.name" },
+            else: null
+          }
+        },
+        hostel: {
+          $cond: {
+            if: "$hostel",
+            then: { _id: "$hostel._id", name: "$hostel.name" },
+            else: null
+          }
+        },
         status: 1,
         remarks: 1,
         createdAt: 1,
