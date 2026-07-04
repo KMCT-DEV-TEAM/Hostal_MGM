@@ -23,6 +23,7 @@ const startMaintenance = (assetId) => apiClient.post(`${API_BASE_URL}/assets/${a
 const completeMaintenance = (assetId) => apiClient.post(`${API_BASE_URL}/assets/${assetId}/maintenance/complete`);
 
 const getDashboardStats = () => apiClient.get(`${API_BASE_URL}/dashboard`);
+const getAssetsDashboardSummary = (typeId) => apiClient.get(`${API_BASE_URL}/assets-dashboard`, { params: { typeId } });
 
 const furnitureApi = {
     getFurnitureTypes,
@@ -42,7 +43,8 @@ const furnitureApi = {
     getDashboardStats,
     getActiveFurnitureTypesList,
     getAvailableFurnitureAssetsList,
-    assignFurnitures
+    assignFurnitures,
+    getAssetsDashboardSummary
 };
 
 export default furnitureApi;

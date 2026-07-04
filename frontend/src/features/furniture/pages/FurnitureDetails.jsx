@@ -37,6 +37,7 @@ export default function FurnitureDetails() {
     const debouncedSearch = useDebounce(searchInput, 500);
 
     const [details, setDetails] = useState(null);
+    const [stats, setStats] = useState(null);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
@@ -83,10 +84,12 @@ export default function FurnitureDetails() {
     const fetchTypeDetails = async () => {
         try {
             const res = await furnitureApi.getFurnitureTypeDetails(id);
-            console.log('Dashboard res:', res.data)
             setDetails(res.data?.type || res.data || res.type || res.summary || null);
+
+            const statsRes = await furnitureApi.getAssetsDashboardSummary(id);
+            setStats(statsRes.data?.summary || statsRes.data?.data || statsRes.data || null);
         } catch (error) {
-            console.error("Failed to fetch type details:", error);
+            console.error("Failed to fetch type details or stats:", error);
             showErrorToast(error.message || 'Failed to fetch details');
             navigate('/dashboard/furniture');
         }
@@ -227,21 +230,21 @@ export default function FurnitureDetails() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 <StatsCard
                     label="TOTAL FURNITURES"
-                    value={details?.total || details?.assets?.total || 0}
+                    value={stats?.totalAssets || 0}
                     icon={<Box className="w-5 h-5" />}
                     iconBg="bg-blue-50 text-blue-500"
                     borderColor='border-t-2 border-t-blue-500'
                 />
                 <StatsCard
                     label="ASSIGNED FURNITURES"
-                    value={details?.allocated || details?.assets?.allocated || 0}
+                    value={stats?.allocated || 0}
                     icon={<PackageCheck className="w-5 h-5" />}
                     iconBg="bg-success/10 text-success"
                     borderColor='border-t-2 border-t-success/70'
                 />
                 <StatsCard
                     label="AVAILABLE FURNITURES"
-                    value={details?.available || details?.assets?.available || 0}
+                    value={stats?.available || 0}
                     icon={<PackageOpen className="w-5 h-5" />}
                     iconBg="bg-cyan-50 text-cyan-500"
                     borderColor='border-t-2 border-t-cyan-500'
