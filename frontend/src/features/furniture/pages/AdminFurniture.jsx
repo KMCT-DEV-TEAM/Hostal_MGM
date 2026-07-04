@@ -26,7 +26,7 @@ export default function AdminFurniture() {
     const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
 
     const urlSearchQuery = searchParams.get('search') || '';
-    const statusFilter = searchParams.get('status') || 'All';
+    const statusFilter = searchParams.get('isActive') || 'All';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = 10;
 
@@ -93,7 +93,7 @@ export default function AdminFurniture() {
         page,
         limit,
         search: debouncedSearch,
-        status: statusFilter === 'All' ? '' : statusFilter
+        isActive: statusFilter === 'All' ? '' : statusFilter
     });
 
     const handleSaveType = async (data) => {
@@ -294,10 +294,11 @@ export default function AdminFurniture() {
                         <Dropdown
                             options={[
                                 { label: 'All Status', value: 'All' },
-                                { label: 'Available', value: 'Available' }
+                                { label: 'Active', value: 'true' },
+                                { label: 'Inactive', value: 'false' }
                             ]}
                             value={statusFilter}
-                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                            onChange={(val) => updateSearchParams({ isActive: val, page: 1 })}
                             placeholder="All Status"
                             minWidth="w-[140px]"
                         />
