@@ -173,7 +173,11 @@ const LogsViewer = ({ entityType }) => {
                             type="text"
                             placeholder="Search logs..."
                             value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
+                            onChange={(e) => { 
+                                setSearchQuery(e.target.value); 
+                                setIsLoading(true);
+                                setPagination(p => ({ ...p, page: 1 })); 
+                            }}
                             className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
                         />
                     </div>
@@ -186,7 +190,7 @@ const LogsViewer = ({ entityType }) => {
                             <MoreVertical className="w-5 h-5" />
                         </button>
                         {isMobileMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
                                 <button
                                     onClick={() => {
                                         setIsMobileMenuOpen(false);
@@ -212,12 +216,13 @@ const LogsViewer = ({ entityType }) => {
 
                 <div className="hidden sm:flex items-center gap-3 w-full sm:w-auto justify-end">
                     {/* Desktop Buttons */}
-                    <button
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                    >
-                        <SlidersHorizontal size={16} /> Filter
-                    </button>
+                        <button
+                            onClick={() => setIsFilterModalOpen(true)}
+                            className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px] w-[38px]"
+                            title="Filter"
+                        >
+                            <SlidersHorizontal className="w-5 h-5" />
+                        </button>
                     <button
                         onClick={() => setIsExportFilterModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"

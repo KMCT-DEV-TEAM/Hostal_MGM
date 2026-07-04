@@ -29,7 +29,7 @@ export default function BulkActionMenu({ selectedCount, onMarkActive, onMarkInac
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-[100] animate-in fade-in zoom-in-95 duration-200">
                     {onMarkActive && (
                         <button
                             onClick={() => {
