@@ -5,7 +5,7 @@ import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
 
 export default function ChangeAssetStatusModal({ isOpen, onClose, onSave, asset }) {
-    const [status, setStatus] = useState(asset?.status || 'Available');
+    const [status, setStatus] = useState(asset?.status || 'available');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -18,7 +18,7 @@ export default function ChangeAssetStatusModal({ isOpen, onClose, onSave, asset 
         }
     };
 
-    const statuses = ["Available", "Maintenance", "Lost", "Scrap"];
+    const statuses = ["available", "maintenance", "lost", "scrap"];
 
     return (
         <Modal
@@ -33,23 +33,23 @@ export default function ChangeAssetStatusModal({ isOpen, onClose, onSave, asset 
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
-                    {asset?.status === 'Allocated' ? (
+                    {asset?.status === 'allocated' ? (
                         <Dropdown
-                            options={[{ label: 'Allocated', value: 'Allocated' }]}
-                            value="Allocated"
+                            options={[{ label: 'Allocated', value: 'allocated' }]}
+                            value="allocated"
                             onChange={() => {}}
                             disabled={true}
                             triggerClassName="w-full px-4 py-3 bg-gray-50 border border-slate-300 rounded-lg text-sm focus:outline-none flex items-center justify-between opacity-75 cursor-not-allowed"
                         />
                     ) : (
                         <Dropdown
-                            options={statuses.map(s => ({ label: s, value: s }))}
+                            options={statuses.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))}
                             value={status}
                             onChange={(val) => setStatus(val)}
                             triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
                         />
                     )}
-                    {asset?.status === 'Allocated' && (
+                    {asset?.status === 'allocated' && (
                         <p className="text-xs text-amber-600 mt-1">This asset is allocated to a student. Status cannot be changed manually until unallocated.</p>
                     )}
                 </div>
@@ -61,7 +61,7 @@ export default function ChangeAssetStatusModal({ isOpen, onClose, onSave, asset 
                     fullWidth={false}
                     size="md"
                     type="submit"
-                    disabled={isSubmitting || asset?.status === 'Allocated' || status === asset?.status}
+                    disabled={isSubmitting || asset?.status === 'allocated' || status === asset?.status}
                     className="min-w-[120px] order-2 bg-[#0a3a6a] hover:bg-[#0a3a6a]/90 capitalize"
                 >
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'update status'}

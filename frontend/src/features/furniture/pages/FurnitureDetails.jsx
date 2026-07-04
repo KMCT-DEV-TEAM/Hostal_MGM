@@ -28,7 +28,7 @@ export default function FurnitureDetails() {
     const [searchParams, setSearchParams] = useSearchParams();
     const role = useAuthStore((s) => s.user?.role);
     const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
-    
+
     const urlSearchQuery = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const statusFilter = searchParams.get('status') || 'All';
@@ -174,7 +174,7 @@ export default function FurnitureDetails() {
                 limit: 5000,
                 search: debouncedSearch
             };
-            
+
             const res = await furnitureApi.getFurnitureTypeAssets(id, exportParams);
             const dataToExport = res?.data?.data?.assets || res?.data?.assets || [];
 
@@ -198,7 +198,7 @@ export default function FurnitureDetails() {
             });
 
             const isSuccess = exportToExcel(exportData, `Furniture_Type_${titleName}_Assets`, "Assets");
-            
+
             if (isSuccess) {
                 showSuccessToast('Exported successfully');
             } else {
@@ -217,18 +217,18 @@ export default function FurnitureDetails() {
             name: "status",
             label: "Status",
             options: [
-                { label: 'All Status', value: 'All' },
-                { label: 'Available', value: 'Available' },
-                { label: 'Allocated', value: 'Allocated' },
-                { label: 'Maintenance', value: 'Maintenance' },
-                { label: 'Lost', value: 'Lost' }
+                { label: 'All Status', value: '' },
+                { label: 'Available', value: 'available' },
+                { label: 'Allocated', value: 'allocated' },
+                { label: 'Maintenance', value: 'maintenance' },
+                { label: 'Lost', value: 'lost' },
+                { label: 'Scrap', value: 'scrap' }
             ]
         }
     ];
 
     const tableHeaders = [
         { key: 'code', label: 'Furniture' },
-        { key: 'hostel', label: 'Hostel' },
         { key: 'allocatedTo', label: 'Assigned To' },
         { key: 'status', label: 'Status' },
         { key: 'actions', label: 'Action' }
@@ -292,10 +292,11 @@ export default function FurnitureDetails() {
                         <Dropdown
                             options={[
                                 { label: 'All Status', value: 'All' },
-                                { label: 'Available', value: 'Available' },
-                                { label: 'Allocated', value: 'Allocated' },
-                                { label: 'Maintenance', value: 'Maintenance' },
-                                { label: 'Lost', value: 'Lost' }
+                                { label: 'Available', value: 'available' },
+                                { label: 'Allocated', value: 'allocated' },
+                                { label: 'Maintenance', value: 'maintenance' },
+                                { label: 'Lost', value: 'lost' },
+                                { label: 'Scrap', value: 'scrap' }
                             ]}
                             value={statusFilter}
                             onChange={(val) => updateSearchParams({ status: val, page: 1 })}
@@ -332,9 +333,7 @@ export default function FurnitureDetails() {
                                     <span className="text-xs">{titleName}</span>
                                 </div>
                             </td>
-                            <td className="p-4 text-sm text-gray-900 font-medium">
-                                {item.hostelId?.name || '--------'}
-                            </td>
+
                             <td className="p-4 text-sm text-gray-500">
                                 {item.studentId && item.studentId.name && typeof item.studentId.name === 'string' ? (
                                     <div className="flex items-center gap-2">
@@ -352,7 +351,7 @@ export default function FurnitureDetails() {
                             </td>
                             <td className="p-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                    {item.status === 'Available' && (
+                                    {item.status === 'available' && (
                                         <>
 
                                             <Button
@@ -370,7 +369,7 @@ export default function FurnitureDetails() {
                                             </Button>
                                         </>
                                     )}
-                                    {item.status === 'Allocated' && (
+                                    {item.status === 'allocated' && (
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -385,7 +384,7 @@ export default function FurnitureDetails() {
                                             Return
                                         </Button>
                                     )}
-                                    {item.status === 'Maintenance' && (
+                                    {item.status === 'maintenance' && (
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -465,7 +464,7 @@ export default function FurnitureDetails() {
                     hostelName={details?.hostel?.name}
                 />
             )}
-            
+
             <ExportFilterModal
                 isOpen={isExportConfirmOpen}
                 onClose={() => setIsExportConfirmOpen(false)}

@@ -133,11 +133,12 @@ export default function WardenFurniture() {
             name: "status",
             label: "Status",
             options: [
-                { label: 'All Status', value: 'All' },
-                { label: 'Available', value: 'Available' },
-                { label: 'Allocated', value: 'Allocated' },
-                { label: 'Maintenance', value: 'Maintenance' },
-                { label: 'Lost', value: 'Lost' }
+                { label: 'All Status', value: '' },
+                { label: 'Available', value: 'available' },
+                { label: 'Allocated', value: 'allocated' },
+                { label: 'Maintenance', value: 'maintenance' },
+                { label: 'Lost', value: 'lost' },
+                { label: 'Scrap', value: 'scrap' }
             ]
         }
     ];
