@@ -40,6 +40,31 @@ const getHostelsDb = async (organizationId, adminId = null) => {
   return hostelsWithCounts;
 };
 
+const getSelectionHostelsDb = async (page = 1, limit = 10, search = "") => {
+  const query = { isActive: true };
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { code: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [hostels, totalCount] = await Promise.all([
+    Hostel.find(query)
+      .select("_id name code capacity location")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean(),
+    Hostel.countDocuments(query),
+  ]);
+
+  return { hostels, totalCount };
+};
+
 const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status = "", adminId = null) => {
   const skip = (page - 1) * limit;
   const query = {};
@@ -187,6 +212,7 @@ export {
   checkExistingHostelEmailDb,
   createHostelDb,
   getHostelsDb,
+  getSelectionHostelsDb,
   getPaginatedHostelsDb,
   getHostelByIdDb,
   updateHostelDb,
