@@ -217,7 +217,7 @@ export default function FurnitureDetails() {
             name: "status",
             label: "Status",
             options: [
-                { label: 'All Status', value: '' },
+                { label: 'All Status', value: 'All' },
                 { label: 'Available', value: 'Available' },
                 { label: 'Allocated', value: 'Allocated' },
                 { label: 'Maintenance', value: 'Maintenance' },
@@ -322,7 +322,7 @@ export default function FurnitureDetails() {
                 onSelect={handleSelect}
                 onRowClick={handleRowClick}
                 emptyText="No assets found."
-                isLoading={loading}
+                loading={loading}
                 renderRow={(item) => {
                     return (
                         <>

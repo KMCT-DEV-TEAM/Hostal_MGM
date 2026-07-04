@@ -120,22 +120,9 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       }
 
       const { furnitures } = data; // hostelId and roomNo are ignored for now if not implemented on backend
-      const currentAssetIds = assignedFurnitures.map((f) => String(f._id));
       const newAssetIds = furnitures.map(String);
 
-      const toAllocate = newAssetIds.filter((id) => !currentAssetIds.includes(id));
-      const toReturn = currentAssetIds.filter((id) => !newAssetIds.includes(id));
-
-      const promises = [];
-
-      toAllocate.forEach((assetId) => {
-        promises.push(furnitureApi.allocateAsset(studentId, assetId));
-      });
-      toReturn.forEach((assetId) => {
-        promises.push(furnitureApi.returnAsset(studentId, assetId));
-      });
-
-      await Promise.all(promises);
+      await furnitureApi.assignFurnitures(studentId, { furnitures: newAssetIds });
 
       // Re-fetch assigned furnitures
       const furnData = await getStudentFurnitures(role, studentId);

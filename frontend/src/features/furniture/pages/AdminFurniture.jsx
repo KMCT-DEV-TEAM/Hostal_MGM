@@ -37,7 +37,7 @@ export default function AdminFurniture() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    
+
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
     const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
@@ -181,11 +181,12 @@ export default function AdminFurniture() {
 
     const exportFields = [
         {
-            name: "status",
+            name: "isActive",
             label: "Status",
             options: [
-                { label: 'All Status', value: '' },
-                { label: 'Available', value: 'Available' },
+                { label: 'All Status', value: 'All' },
+                { label: 'Active', value: 'true' },
+                { label: 'Inactive', value: 'false' },
             ]
         }
     ];
@@ -227,6 +228,7 @@ export default function AdminFurniture() {
 
     const tableHeaders = [
         { key: 'name', label: 'Furniture' },
+        { key: 'organization', label: 'Organization' },
         { key: 'hostel', label: 'Hostel' },
         { key: 'total', label: 'Quantity' },
         { key: 'allocated', label: 'Assigned' },
@@ -339,7 +341,7 @@ export default function AdminFurniture() {
                 onSelect={handleSelect}
                 onRowClick={handleRowClick}
                 emptyText="No furniture types found."
-                isLoading={loading}
+                loading={loading}
                 renderRow={(item) => (
                     <>
                         <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
@@ -349,7 +351,10 @@ export default function AdminFurniture() {
                             <span className="text-sm font-semibold">{item.name}</span>
                         </td>
                         <td className="p-4 text-text-secondary font-medium">
-                            {item.hostel?.name || item.organization?.name || "--"}
+                            {item.organization?.name || "--"}
+                        </td>
+                        <td className="p-4 text-text-secondary font-medium">
+                            {item.hostel?.name || "--"}
                         </td>
                         <td className="p-4 text-text-secondary">
                             {item.total || item.assets?.total || 0}
