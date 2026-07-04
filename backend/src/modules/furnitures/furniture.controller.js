@@ -59,12 +59,12 @@ export const adjustAssetCount = asyncHandler(async (req, res) => {
 });
 
 export const allocateFurniture = asyncHandler(async (req, res) => {
-  const allocations = req.validatedAllocations;
+  const { student, assets } = req.validatedData;
 
   // Call the bulk service
-  await furnitureService.bulkAllocateAssetsService(allocations, req.user);
+  await furnitureService.bulkAllocateAssetsToStudentService(student, assets, req.user);
 
-  return sendSuccess(res, 200, `Successfully allocated ${allocations.length} furniture asset(s).`);
+  return sendSuccess(res, 200, `Successfully allocated ${assets.length} furniture asset(s).`);
 });
 
 export const returnFurniture = asyncHandler(async (req, res) => {
@@ -339,7 +339,6 @@ export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
     query.hostelId = scope.hostelId;
   }
   if (req.query.hostelId) {
-    console.log(req.query, "fsdf")
     query.hostelId = new mongoose.Types.ObjectId(req.query.hostelId);
   }
 
