@@ -28,6 +28,7 @@ export default function ExportFilterModal({
     const [filters, setFilters] = useState({});
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (isOpen) {
@@ -43,6 +44,17 @@ export default function ExportFilterModal({
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setErrors({});
+        
+        if (filters.startDate && filters.endDate) {
+            const start = new Date(filters.startDate).setHours(0,0,0,0);
+            const end = new Date(filters.endDate).setHours(0,0,0,0);
+            if (start > end) {
+                setErrors({ endDate: 'End date must be after start date' });
+                return;
+            }
+        }
+
         setIsPasswordModalOpen(true);
     };
 
@@ -64,7 +76,10 @@ export default function ExportFilterModal({
         <Modal
             isOpen={isOpen}
             bottomSheetOnMobile={true}
-            onClose={onClose}
+            onClose={() => {
+                setErrors({});
+                onClose();
+            }}
             title={title}
             subtitle={subtitle}
             maxWidth="max-w-md"
@@ -75,7 +90,10 @@ export default function ExportFilterModal({
                 <div className="flex justify-end gap-3">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={() => {
+                            setErrors({});
+                            onClose();
+                        }}
                         className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                         disabled={isExporting}
                     >
@@ -98,17 +116,26 @@ export default function ExportFilterModal({
                     <div key={field.name} className="relative" style={{ zIndex: 20 - index }}>
                         <label className="block mb-1.5 text-xs font-medium text-gray-700">{field.label}</label>
                         {field.type === 'date' ? (
-                            <DateInput
-                                value={filters[field.name] || ''}
-                                onChange={(e) => setFilters(prev => ({ ...prev, [field.name]: e.target.value }))}
-                                placeholder="Select Date"
-                                className="w-full"
-                            />
+                            <>
+                                <DateInput
+                                    value={filters[field.name] || ''}
+                                    onChange={(e) => {
+                                        setFilters(prev => ({ ...prev, [field.name]: e.target.value }));
+                                        setErrors(prev => ({ ...prev, [field.name]: null }));
+                                    }}
+                                    placeholder="Select Date"
+                                    className="w-full"
+                                />
+                                {errors[field.name] && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors[field.name]}</p>}
+                            </>
                         ) : (
                             <Dropdown
                                 options={field.options}
                                 value={filters[field.name] || ''}
-                                onChange={(val) => setFilters(prev => ({ ...prev, [field.name]: val }))}
+                                onChange={(val) => {
+                                    setFilters(prev => ({ ...prev, [field.name]: val }));
+                                    setErrors(prev => ({ ...prev, [field.name]: null }));
+                                }}
                                 className="w-full"
                             />
                         )}

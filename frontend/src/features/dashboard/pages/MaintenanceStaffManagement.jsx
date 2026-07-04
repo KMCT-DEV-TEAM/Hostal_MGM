@@ -26,7 +26,7 @@ export default function MaintenanceStaffManagement() {
     const [activeModal, setActiveModal] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("All");
+    const [statusFilter, setStatusFilter] = useState("All Status");
     const [editingStaff, setEditingStaff] = useState(null);
     const [view, setView] = useState('list');
     const [selectedStaffDetail, setSelectedStaffDetail] = useState(null);
@@ -86,12 +86,15 @@ export default function MaintenanceStaffManagement() {
     const fetchStaff = async () => {
         setLoading(true);
         try {
-            const res = await maintenanceStaffService.getMaintenanceStaff({
+            const params = {
                 page: currentPage,
                 limit: itemsPerPage,
                 search: debouncedSearch,
-                status: statusFilter
-            });
+            };
+            if (statusFilter !== 'All Status' && statusFilter !== 'All') {
+                params.status = statusFilter;
+            }
+            const res = await maintenanceStaffService.getMaintenanceStaff(params);
             if (res && res.data) {
                 const dataPayload = res.data;
                 const staffList = dataPayload.data || dataPayload;
@@ -438,7 +441,7 @@ export default function MaintenanceStaffManagement() {
 
             if (exportFilters.isActive !== '') {
                 params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
-            } else if (statusFilter !== 'All') {
+            } else if (statusFilter !== 'All' && statusFilter !== 'All Status') {
                 params.status = statusFilter;
             }
 
@@ -603,20 +606,20 @@ export default function MaintenanceStaffManagement() {
                                     <MoreVertical className="w-4 h-4" />
                                 </button>
                                 {isBulkMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
                                         <button
                                             onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
                                             disabled={selectedIds.length === 0}
                                             className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                         >
-                                            Set Active
+                                            Active
                                         </button>
                                         <button
                                             onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
                                             disabled={selectedIds.length === 0}
                                             className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                         >
-                                            Set Inactive
+                                            Inactive
                                         </button>
                                     </div>
                                 )}

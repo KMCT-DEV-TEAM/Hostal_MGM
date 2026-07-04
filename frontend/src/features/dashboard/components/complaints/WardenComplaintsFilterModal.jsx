@@ -8,7 +8,8 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 export default function WardenComplaintsFilterModal({
     initialRoomNo,
     initialCategory,
-    initialDate,
+    initialStartDate,
+    initialEndDate,
     initialPriority,
     initialStatus,
     categories = [],
@@ -17,7 +18,8 @@ export default function WardenComplaintsFilterModal({
 }) {
     const [roomNo, setRoomNo] = useState(initialRoomNo || '');
     const [category, setCategory] = useState(initialCategory || 'All');
-    const [date, setDate] = useState(initialDate || '');
+    const [startDate, setStartDate] = useState(initialStartDate || '');
+    const [endDate, setEndDate] = useState(initialEndDate || '');
     const [priority, setPriority] = useState(initialPriority || 'All');
     const [status, setStatus] = useState(initialStatus || 'All');
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -27,22 +29,33 @@ export default function WardenComplaintsFilterModal({
     const resetFilters = () => {
         setRoomNo('');
         setCategory('All');
-        setDate('');
+        setStartDate('');
+        setEndDate('');
         setPriority('All');
         setStatus('All');
         setShowConfirmReset(false);
         setErrors({});
-        onApply({ roomNo: '', category: 'All', date: '', priority: 'All', status: 'All' });
+        onApply({ roomNo: '', category: 'All', startDate: '', endDate: '', priority: 'All', status: 'All' });
     };
 
     const handleFilterClick = () => {
         setErrors({});
+        
+        if (startDate && endDate) {
+            const start = new Date(startDate).setHours(0,0,0,0);
+            const end = new Date(endDate).setHours(0,0,0,0);
+            if (start > end) {
+                setErrors({ endDate: "End date must be after start date" });
+                return;
+            }
+        }
+
         setIsConfirmOpen(true);
     };
 
     const handleApply = () => {
         setIsConfirmOpen(false);
-        onApply({ roomNo, category, date, priority, status });
+        onApply({ roomNo, category, startDate, endDate, priority, status });
     };
 
     const priorityOptions = [
@@ -122,15 +135,28 @@ export default function WardenComplaintsFilterModal({
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm mb-1.5 font-medium text-gray-700">Date</label>
-                        <DateInput
-                            value={date}
-                            onChange={(e) => { setDate(e.target.value); setErrors(prev => ({ ...prev, date: null })); }}
-                            placeholder="Select date"
-                            className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#0A437A] transition-colors"
-                        />
-                        {errors.date && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.date}</p>}
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="block text-sm mb-1.5 font-medium text-gray-700">Start Date</label>
+                            <DateInput
+                                value={startDate}
+                                onChange={(e) => { setStartDate(e.target.value); setErrors(prev => ({ ...prev, startDate: null })); }}
+                                placeholder="Select start date"
+                                className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#0A437A] transition-colors"
+                            />
+                            {errors.startDate && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.startDate}</p>}
+                        </div>
+
+                        <div className="flex-1">
+                            <label className="block text-sm mb-1.5 font-medium text-gray-700">End Date</label>
+                            <DateInput
+                                value={endDate}
+                                onChange={(e) => { setEndDate(e.target.value); setErrors(prev => ({ ...prev, endDate: null })); }}
+                                placeholder="Select end date"
+                                className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#0A437A] transition-colors"
+                            />
+                            {errors.endDate && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.endDate}</p>}
+                        </div>
                     </div>
 
                     <div className="flex gap-4">

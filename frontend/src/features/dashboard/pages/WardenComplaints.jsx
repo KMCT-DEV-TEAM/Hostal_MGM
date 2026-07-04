@@ -95,7 +95,8 @@ export default function WardenComplaints({ hostel, onBack }) {
     const [priorityFilter, setPriorityFilter] = useState('All');
     const [roomNoFilter, setRoomNoFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
-    const [dateFilter, setDateFilter] = useState('');
+    const [startDateFilter, setStartDateFilter] = useState('');
+    const [endDateFilter, setEndDateFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [viewingComplaint, setViewingComplaint] = useState(null);
@@ -150,7 +151,19 @@ const filteredComplaints = complaints.filter(complaint => {
     const matchesPriority = priorityFilter === 'All' || complaint.priority === priorityFilter;
     const matchesCategory = categoryFilter === 'All' || complaint.category === categoryFilter;
     const matchesRoomNo = roomNoFilter === '' || complaint.roomNo.toLowerCase().includes(roomNoFilter.toLowerCase());
-    const matchesDate = dateFilter === '' || complaint.date === dateFilter;
+    
+    let matchesDate = true;
+    if (startDateFilter || endDateFilter) {
+        const complaintDate = new Date(complaint.createdAt).setHours(0,0,0,0);
+        if (startDateFilter) {
+            const start = new Date(startDateFilter).setHours(0,0,0,0);
+            if (complaintDate < start) matchesDate = false;
+        }
+        if (endDateFilter && matchesDate) {
+            const end = new Date(endDateFilter).setHours(23,59,59,999);
+            if (complaintDate > end) matchesDate = false;
+        }
+    }
 
     return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesRoomNo && matchesDate;
 });
@@ -387,7 +400,8 @@ return (
             <WardenComplaintsFilterModal
                 initialRoomNo={roomNoFilter}
                 initialCategory={categoryFilter}
-                initialDate={dateFilter}
+                initialStartDate={startDateFilter}
+                initialEndDate={endDateFilter}
                 initialPriority={priorityFilter}
                 initialStatus={statusFilter}
                 categories={categories}
@@ -395,7 +409,8 @@ return (
                 onApply={(filters) => {
                     setRoomNoFilter(filters.roomNo);
                     setCategoryFilter(filters.category);
-                    setDateFilter(filters.date);
+                    setStartDateFilter(filters.startDate);
+                    setEndDateFilter(filters.endDate);
                     setPriorityFilter(filters.priority);
                     setStatusFilter(filters.status);
                     setCurrentPage(1); // Reset to first page on filter
