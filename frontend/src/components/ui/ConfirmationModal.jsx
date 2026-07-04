@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 
 const ConfirmationModal = ({
@@ -13,7 +14,7 @@ const ConfirmationModal = ({
     variant = 'primary', // 'primary', 'danger'
     confirmButtonClass = '',
 }) => {
-    if (!isOpen) return null;
+    if (!isOpen || typeof document === "undefined") return null;
 
     const variantStyles = {
         primary: {
@@ -24,7 +25,7 @@ const ConfirmationModal = ({
         }
     };
 
-    return (
+    const modalContent = (
         <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-t-2xl md:rounded-2xl rounded-b-none shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up md:animate-in md:zoom-in-95 mt-auto md:mt-0">
                 <div className="p-6">
@@ -55,6 +56,8 @@ const ConfirmationModal = ({
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };
 
 export default ConfirmationModal;

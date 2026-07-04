@@ -17,13 +17,15 @@ import {
   Pencil,
   Plus,
   Box,
-  Hash
+  Hash,
+  X
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
 import AssignFurnitureModal from "./AssignFurnitureModal";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
@@ -74,6 +76,8 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
   const [assignedFurnitures, setAssignedFurnitures] = useState([]);
   const [loadingFurnitures, setLoadingFurnitures] = useState(false);
+  const [returnConfirmModal, setReturnConfirmModal] = useState({ isOpen: false, asset: null });
+  const [isReturning, setIsReturning] = useState(false);
 
   useEffect(() => {
     const fetchFurnitures = async () => {
@@ -138,6 +142,31 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
     } catch (error) {
       console.log('error assignment:', error)
       showErrorToast(error.message || "Failed to update assignment.");
+    }
+  };
+
+  const handleReturnClick = (asset) => {
+    setReturnConfirmModal({ isOpen: true, asset });
+  };
+
+  const handleReturnConfirm = async () => {
+    if (!returnConfirmModal.asset) return;
+    setIsReturning(true);
+    try {
+      const studentId = student?._id || student?.id;
+      const assetId = returnConfirmModal.asset._id || returnConfirmModal.asset.id;
+      await furnitureApi.returnAsset(studentId, assetId);
+      
+      // Re-fetch assigned furnitures
+      const data = await getStudentFurnitures(role, studentId);
+      setAssignedFurnitures(data?.assets || []);
+      
+      showSuccessToast("Furniture returned successfully");
+      setReturnConfirmModal({ isOpen: false, asset: null });
+    } catch (error) {
+      showErrorToast(error.message || "Failed to return furniture");
+    } finally {
+      setIsReturning(false);
     }
   };
 
@@ -514,8 +543,15 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                     <span className="hidden sm:inline">: </span>
                     {assignedFurnitures.length > 0 ? (
                       assignedFurnitures.map((f, i) => (
-                        <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium">
+                        <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
                           {f.furnitureTypeId?.name || "Unknown"}
+                          <button 
+                            type="button"
+                            className="hover:text-red-500 transition-colors ml-1 cursor-pointer"
+                            onClick={() => handleReturnClick(f)}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </span>
                       ))
                     ) : (
@@ -664,6 +700,17 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         student={student}
         assignedFurnitures={assignedFurnitures}
         onSave={handleAssignSave}
+      />
+
+      <ConfirmationModal
+        isOpen={returnConfirmModal.isOpen}
+        onClose={() => setReturnConfirmModal({ isOpen: false, asset: null })}
+        onConfirm={handleReturnConfirm}
+        title="Return Furniture"
+        message={`Are you sure you want to return ${returnConfirmModal.asset?.furnitureTypeId?.name || "this furniture"} (${returnConfirmModal.asset?.furnitureId || "Unknown ID"})?`}
+        confirmText="Return"
+        isSubmitting={isReturning}
+        confirmButtonVariant="danger"
       />
     </Modal>
   );
