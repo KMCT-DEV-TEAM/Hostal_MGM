@@ -1,7 +1,7 @@
-import Notification from './notification.model.js';
+import { notificationRepository } from './notification.repository.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
-
+import { orchestratorService } from './services/orchestrator.service.js';
 /**
  * @desc    Get all notifications for the current user
  * @route   GET /api/v1/notifications
@@ -12,19 +12,17 @@ export const getMyNotifications = asyncHandler(async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
-    const query = { recipient: req.user.id };
-
+    let isRead = undefined;
     if (req.query.isRead !== undefined) {
-        query.isRead = req.query.isRead === 'true';
+        isRead = req.query.isRead === 'true';
     }
 
-    const notifications = await Notification.find(query)
-        .sort('-createdAt')
-        .skip(skip)
-        .limit(limit);
-
-    const total = await Notification.countDocuments(query);
-    const unreadCount = await Notification.countDocuments({ recipient: req.user.id, isRead: false });
+    // Assuming the authenticated user is always of model 'User' for these endpoints
+    const { notifications, total, unreadCount } = await notificationRepository.findUserNotifications(
+        req.user.id, 
+        'User', 
+        { skip, limit, isRead }
+    );
 
     res.status(200).json({
         status: 'success',
@@ -48,11 +46,7 @@ export const getMyNotifications = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 export const markAsRead = asyncHandler(async (req, res, next) => {
-    const notification = await Notification.findOneAndUpdate(
-        { _id: req.params.id, recipient: req.user.id },
-        { isRead: true },
-        { new: true, runValidators: true }
-    );
+    const notification = await notificationRepository.markAsRead(req.params.id, req.user.id);
 
     if (!notification) {
         return sendError(res, 404, 'No notification found with that ID or unauthorized');
@@ -72,10 +66,7 @@ export const markAsRead = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 export const markAllAsRead = asyncHandler(async (req, res, next) => {
-    await Notification.updateMany(
-        { recipient: req.user.id, isRead: false },
-        { isRead: true }
-    );
+    await notificationRepository.markAllAsRead(req.user.id, 'User');
 
     res.status(200).json({
         status: 'success',
@@ -89,10 +80,7 @@ export const markAllAsRead = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 export const deleteNotification = asyncHandler(async (req, res, next) => {
-    const notification = await Notification.findOneAndDelete({
-        _id: req.params.id,
-        recipient: req.user.id
-    });
+    const notification = await notificationRepository.archiveNotification(req.params.id, req.user.id);
 
     if (!notification) {
         return sendError(res, 404, 'No notification found with that ID or unauthorized');
@@ -116,11 +104,19 @@ export const createNotification = asyncHandler(async (req, res, next) => {
         return sendError(res, 400, 'Please provide recipient, title, and message');
     }
 
-    const notification = await Notification.create({
-        recipient,
+    const notification = await notificationRepository.createNotification({
+        recipient: {
+            id: recipient,
+            model: 'User' // Defaulting to User for legacy support
+        },
+        event: {
+            event: 'SYSTEM_ALERT',
+            category: 'SYSTEM',
+            priority: 'NORMAL',
+            type: type || 'info'
+        },
         title,
         message,
-        type,
         link,
         metadata
     });
@@ -132,3 +128,66 @@ export const createNotification = asyncHandler(async (req, res, next) => {
         }
     });
 });
+
+/**
+ * @desc    Test trigger a notification broadcast
+ * @route   POST /api/notifications/broadcast
+ * @access  Private/Admin
+ */
+export const testBroadcast = asyncHandler(async (req, res, next) => {
+    const { eventName, target, data, channels, sender } = req.body;
+
+    if (!eventName || !target) {
+        return sendError(res, 400, 'Please provide eventName and target');
+    }
+
+    const result = await orchestratorService.triggerNotification({
+        eventName,
+        target,
+        data: data || {},
+        channels,
+        sender
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Broadcast triggered successfully',
+        data: result
+    });
+});
+
+/**
+ * @desc    Test endpoint matching specific payload structure
+ * @route   POST /api/notifications/test
+ * @access  Private/Admin
+ */
+export const testNotification = asyncHandler(async (req, res, next) => {
+    const { event, recipients, data, sender } = req.body;
+
+    if (!event || !recipients || !Array.isArray(recipients)) {
+        return sendError(res, 400, 'Please provide event and a recipients array');
+    }
+
+    const results = [];
+    for (const target of recipients) {
+        try {
+            const result = await orchestratorService.triggerNotification({
+                eventName: event,
+                target,
+                data: data || {},
+                channels: ['in-app', 'push', 'email'], // Request all; orchestrator will discard unsupported
+                sender
+            });
+            results.push({ target, status: 'success', result });
+        } catch (error) {
+            results.push({ target, status: 'error', error: error.message });
+        }
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Test notification triggered',
+        data: results
+    });
+});
+

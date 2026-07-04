@@ -24,7 +24,32 @@ import {
 } from "./pass.service.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
-import Notification from "../notifications/notification.model.js";
+import { notificationRepository } from "../notifications/notification.repository.js";
+
+const Notification = {
+    async create(data) {
+        return notificationRepository.createNotification({
+            recipient: { id: data.recipient, model: 'User' }, // Approximated
+            event: { event: 'PASS_EVENT', category: 'PASS', priority: 'NORMAL', type: data.type || 'info' },
+            title: data.title,
+            message: data.message,
+            link: data.link,
+            metadata: data.metadata,
+        });
+    },
+    async insertMany(dataArray) {
+        if (!dataArray || !dataArray.length) return;
+        const mapped = dataArray.map(data => ({
+            recipient: { id: data.recipient, model: 'User' }, // Approximated
+            event: { event: 'PASS_EVENT', category: 'PASS', priority: 'NORMAL', type: data.type || 'info' },
+            title: data.title,
+            message: data.message,
+            link: data.link,
+            metadata: data.metadata,
+        }));
+        return notificationRepository.bulkCreate(mapped);
+    }
+};
 import Pass from "./pass.model.js";
 import Hostel from "../hostels/hostel.model.js";
 

@@ -1,11 +1,46 @@
 import mongoose from 'mongoose';
 
+const deliveryChannelSchema = new mongoose.Schema({
+    enabled: { type: Boolean, default: false },
+    status: { 
+        type: String, 
+        enum: ['PENDING', 'QUEUED', 'PROCESSING', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'RETRYING'],
+        default: 'PENDING'
+    },
+    attempts: { type: Number, default: 0 },
+    provider: { type: String },
+    providerMessageId: { type: String },
+    queuedAt: { type: Date },
+    sentAt: { type: Date },
+    deliveredAt: { type: Date },
+    readAt: { type: Date },
+    lastAttemptAt: { type: Date },
+    error: { type: String }
+}, { _id: false });
+
 const notificationSchema = new mongoose.Schema(
     {
         recipient: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
+            id: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: 'recipient.model' },
+            model: { type: String, required: true, enum: ['User', 'Student', 'Parent'] },
+            snapshot: {
+                name: String,
+                role: String
+            }
+        },
+        sender: {
+            id: { type: mongoose.Schema.Types.ObjectId, refPath: 'sender.model' },
+            model: { type: String, enum: ['User', 'Student', 'Parent', 'System'] },
+            snapshot: {
+                name: String,
+                role: String
+            }
+        },
+        event: {
+            event: { type: String, required: true },
+            category: { type: String, required: true },
+            priority: { type: String, required: true, enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'], default: 'NORMAL' },
+            type: { type: String, required: true }
         },
         title: {
             type: String,
@@ -15,15 +50,6 @@ const notificationSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        type: {
-            type: String,
-            enum: ['info', 'success', 'warning', 'error', 'system', 'alert'],
-            default: 'info',
-        },
-        isRead: {
-            type: Boolean,
-            default: false,
-        },
         link: {
             type: String,
             default: null,
@@ -31,6 +57,15 @@ const notificationSchema = new mongoose.Schema(
         metadata: {
             type: mongoose.Schema.Types.Mixed,
             default: {},
+        },
+        deliveries: {
+            inApp: { type: deliveryChannelSchema, default: () => ({ enabled: true, status: 'PENDING' }) },
+            email: { type: deliveryChannelSchema, default: () => ({}) },
+            push: { type: deliveryChannelSchema, default: () => ({}) }
+        },
+        isRead: { // Kept for quick queries or backwards compatibility, though inApp.status == 'READ' could replace it. User asked to index it.
+            type: Boolean,
+            default: false
         }
     },
     {
@@ -38,8 +73,15 @@ const notificationSchema = new mongoose.Schema(
     }
 );
 
-// Index for efficient querying of user's unread notifications
-notificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
+// Indexes specified in the requirements
+notificationSchema.index({ 'recipient.id': 1, 'recipient.model': 1 });
+notificationSchema.index({ 'event.event': 1 });
+notificationSchema.index({ isRead: 1 });
+notificationSchema.index({ createdAt: -1 });
+notificationSchema.index({ 'deliveries.email.status': 1 });
+notificationSchema.index({ 'deliveries.push.status': 1 });
+notificationSchema.index({ 'event.priority': 1 });
+notificationSchema.index({ 'event.category': 1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 
