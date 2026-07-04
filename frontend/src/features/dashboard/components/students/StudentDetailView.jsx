@@ -65,7 +65,6 @@ const InfoRow = ({ icon, label, children }) => (
 );
 
 const StudentDetailView = ({ student, onClose, onStudentChange }) => {
-  console.log('I am student:', student.hostel._id)
   const role = useAuthStore((state) => state.user?.role);
   const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] =
     useState(false);
@@ -81,8 +80,8 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       try {
         setLoadingFurnitures(true);
         const studentId = student?._id || student?.id;
-        console.log('Student Id:', student._id)
         const data = await getStudentFurnitures(role, studentId);
+        console.log('Assigned furnitures:', data)
         setAssignedFurnitures(data?.assets || []);
       } catch (err) {
         console.error('Failed to fetch assigned furnitures', err);
@@ -505,6 +504,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 >
                   {hostelName}
                 </InfoRow>
+                {/* {console.log('Assigned furnitures: ', assignedFurnitures)} */}
                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
                   <span className="text-gray-500 flex items-center gap-1.5">
                     <Box className="w-4 h-4 text-gray-400" />
