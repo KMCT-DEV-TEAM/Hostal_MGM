@@ -90,15 +90,30 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
   const scope = await resolveUserScope(req.user);
 
   if (req.user.role === "admin") {
-    matchQuery["typeInfo.organizationId"] = scope.organizationId;
+    matchQuery["typeInfo.organizationId"] = new mongoose.Types.ObjectId(scope.organizationId);
   } else if (req.user.role === "warden") {
-    matchQuery["typeInfo.hostelId"] = scope.hostelId;
+    matchQuery["typeInfo.hostelId"] = new mongoose.Types.ObjectId(scope.hostelId);
   }
 
   const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
   const distribution = await furnitureAggregation.getFurnitureTypeDistributionAggregation(matchQuery);
 
   return sendSuccess(res, 200, "Dashboard data retrieved.", { summary, distribution });
+});
+
+export const getAssetsDashboardSummary = asyncHandler(async (req, res) => {
+  const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin") {
+    matchQuery["typeInfo.organizationId"] = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    matchQuery["typeInfo.hostelId"] = scope.hostelId;
+  }
+
+  const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
+
+  return sendSuccess(res, 200, "Assets Dashboard data retrieved.", { summary });
 });
 
 // Added these stubs so they resolve imports properly since earlier the user had placeholder methods
@@ -241,7 +256,11 @@ export const getFurnitureAssetsByType = asyncHandler(async (req, res) => {
   const search = req.query.search;
 
   const matchQuery = { furnitureTypeId: new mongoose.Types.ObjectId(typeId) };
-  if (status) matchQuery.status = status;
+  if (status && status !== "all") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { $ne: "inactive" };
+  }
   if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
@@ -272,7 +291,11 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
   const typeIds = types.map(t => t._id);
 
   const matchQuery = { furnitureTypeId: { $in: typeIds } };
-  if (status) matchQuery.status = status;
+  if (status && status !== "all") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { $ne: "inactive" };
+  }
   if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);

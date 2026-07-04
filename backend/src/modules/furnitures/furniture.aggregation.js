@@ -13,6 +13,7 @@ export const getDashboardSummaryAggregation = async (matchQuery) => {
     },
     { $unwind: "$typeInfo" },
     { $match: matchQuery },
+    { $match: { status: { $ne: "inactive" } } },
     {
       $group: {
         _id: null,
@@ -20,14 +21,13 @@ export const getDashboardSummaryAggregation = async (matchQuery) => {
         available: { $sum: { $cond: [{ $eq: ["$status", "available"] }, 1, 0] } },
         allocated: { $sum: { $cond: [{ $eq: ["$status", "allocated"] }, 1, 0] } },
         maintenance: { $sum: { $cond: [{ $eq: ["$status", "maintenance"] }, 1, 0] } },
-        inactive: { $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] } },
         lost: { $sum: { $cond: [{ $eq: ["$status", "lost"] }, 1, 0] } },
         scrap: { $sum: { $cond: [{ $eq: ["$status", "scrap"] }, 1, 0] } },
       },
     },
   ]);
 
-  return result.length > 0 ? result[0] : { totalAssets: 0, available: 0, allocated: 0, maintenance: 0, inactive: 0, lost: 0, scrap: 0 };
+  return result.length > 0 ? result[0] : { totalAssets: 0, available: 0, allocated: 0, maintenance: 0, lost: 0, scrap: 0 };
 };
 
 export const getFurnitureTypeDistributionAggregation = async (matchQuery) => {
@@ -107,7 +107,6 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
         available: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "available"] } } } },
         allocated: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "allocated"] } } } },
         maintenance: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "maintenance"] } } } },
-        inactive: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "inactive"] } } } },
         lost: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "lost"] } } } },
         scrap: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "scrap"] } } } },
       },
