@@ -112,7 +112,7 @@ export default function DataTable({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-sm text-text-secondary relative">
-                        {loading && items.length === 0 ? (
+                        {loading ? (
                             <TableSkeletonLoader columns={totalCols} />
                         ) : error ? (
                             <tr>
@@ -128,15 +128,7 @@ export default function DataTable({
                             </tr>
                         ) : (
                             <>
-                                {loading && (
-                                    <tr>
-                                        <td colSpan={totalCols} className="p-0">
-                                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10 min-h-[100px]">
-                                                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
+
                                 {items.map((item, index) => {
                                     const rowId = item._id || item.id;
                                     const isSelected = selectedIds.includes(rowId);

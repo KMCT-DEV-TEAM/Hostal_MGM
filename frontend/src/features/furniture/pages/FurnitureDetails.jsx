@@ -83,6 +83,7 @@ export default function FurnitureDetails() {
     const fetchTypeDetails = async () => {
         try {
             const res = await furnitureApi.getFurnitureTypeDetails(id);
+            console.log('Dashboard res:', res.data)
             setDetails(res.data?.type || res.data || res.type || res.summary || null);
         } catch (error) {
             console.error("Failed to fetch type details:", error);

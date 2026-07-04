@@ -18,6 +18,11 @@ export async function getHostels(params) {
   return response.data;
 }
 
+export async function getSelectionHostels(params) {
+  const response = await hostelApi.getSelectionHostels(params);
+  return response.data;
+}
+
 /**
  * Fetch a single Hostel by ID
  * @param {string} id 
