@@ -4,15 +4,15 @@ import { formatDate, formatDateTime } from '@/utils/formatters';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 
 const getStatusColor = (status) => {
-    switch (status) {
-        case 'Available':
+    switch (status?.toLowerCase()) {
+        case 'available':
             return 'var(--color-success)';
-        case 'Allocated':
+        case 'allocated':
             return 'var(--color-primary)';
-        case 'Maintenance':
+        case 'maintenance':
             return 'var(--color-warning)';
-        case 'Lost':
-        case 'Scrap':
+        case 'lost':
+        case 'scrap':
             return 'var(--color-danger)';
         default:
             return 'var(--color-gray-500)';

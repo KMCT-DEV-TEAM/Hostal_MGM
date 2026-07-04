@@ -65,6 +65,7 @@ const InfoRow = ({ icon, label, children }) => (
 );
 
 const StudentDetailView = ({ student, onClose, onStudentChange }) => {
+  console.log('I am student:', student.hostel._id)
   const role = useAuthStore((state) => state.user?.role);
   const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] =
     useState(false);
@@ -100,7 +101,12 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
     if (isAssignModalOpen) {
       const fetchModalData = async () => {
         try {
-          const furnituresRes = await furnitureApi.getAllFurnitureAssets({ status: "Available", limit: 1000 });
+          const params = { status: "Available", limit: 1000 };
+          const hostelId = student?.hostel?._id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
+          if (hostelId) {
+            params.hostelId = hostelId;
+          }
+          const furnituresRes = await furnitureApi.getAllFurnitureAssets(params);
           setAvailableFurnitures(furnituresRes.data?.data?.assets || furnituresRes.data?.assets || []);
         } catch (error) {
           console.error("Failed to fetch data for modal", error);
@@ -120,22 +126,9 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       }
 
       const { furnitures } = data; // hostelId and roomNo are ignored for now if not implemented on backend
-      const currentAssetIds = assignedFurnitures.map((f) => String(f._id));
       const newAssetIds = furnitures.map(String);
 
-      const toAllocate = newAssetIds.filter((id) => !currentAssetIds.includes(id));
-      const toReturn = currentAssetIds.filter((id) => !newAssetIds.includes(id));
-
-      const promises = [];
-
-      toAllocate.forEach((assetId) => {
-        promises.push(furnitureApi.allocateAsset(studentId, assetId));
-      });
-      toReturn.forEach((assetId) => {
-        promises.push(furnitureApi.returnAsset(studentId, assetId));
-      });
-
-      await Promise.all(promises);
+      await furnitureApi.allocateAssetsBulk({ studentId, assetIds: newAssetIds });
 
       // Re-fetch assigned furnitures
       const furnData = await getStudentFurnitures(role, studentId);
@@ -495,22 +488,12 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {assignedFurnitures.length > 0 || student.hostel ? (
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => setIsAssignModalOpen(true)}
-                  >
-                    Edit
-                  </Button>
-                ) : (
-                  <Button
-                    className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
-                    onClick={() => setIsAssignModalOpen(true)}
-                  >
-                    Add
-                  </Button>
-                )}
+                <Button
+                  className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
+                  onClick={() => setIsAssignModalOpen(true)}
+                >
+                  Add
+                </Button>
               </div>
             </div>
 

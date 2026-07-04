@@ -134,7 +134,11 @@ export default function WardenFurniture() {
             label: "Status",
             options: [
                 { label: 'All Status', value: '' },
-                { label: 'Available', value: 'Available' },
+                { label: 'Available', value: 'available' },
+                { label: 'Allocated', value: 'allocated' },
+                { label: 'Maintenance', value: 'maintenance' },
+                { label: 'Lost', value: 'lost' },
+                { label: 'Scrap', value: 'scrap' }
             ]
         }
     ];
@@ -222,7 +226,7 @@ export default function WardenFurniture() {
                 canSelect={false}
                 onRowClick={handleRowClick}
                 emptyText="No furniture assets found."
-                isLoading={loading}
+                loading={loading}
                 renderRow={(item) => (
                     <>
                         <td className="p-4 text-sm text-gray-900 font-medium">{item.furnitureId}</td>
