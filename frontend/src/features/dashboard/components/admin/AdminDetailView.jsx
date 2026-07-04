@@ -12,7 +12,6 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
             title={selectedAdminDetail?.name || 'Admin'}
             subtitle="Administrator Details"
             icon={<User size={24} />}
-            bottomSheetOnMobile={true}
         >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
                 {/* Main Content Area */}
