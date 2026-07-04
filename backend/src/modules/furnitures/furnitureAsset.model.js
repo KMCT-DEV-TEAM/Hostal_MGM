@@ -19,8 +19,8 @@ const furnitureAssetSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Available", "Allocated", "Maintenance", "Inactive", "Lost", "Scrap"],
-      default: "Available",
+      enum: ["available", "allocated", "maintenance", "inactive", "lost", "scrap"],
+      default: "available",
       required: true,
     },
     remarks: {
