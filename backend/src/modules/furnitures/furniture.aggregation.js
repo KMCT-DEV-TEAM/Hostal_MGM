@@ -88,8 +88,20 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
         prefix: 1,
         description: 1,
         isActive: 1,
-        organization: { _id: "$organization._id", name: "$organization.name" },
-        hostel: { _id: "$hostel._id", name: "$hostel.name" },
+        organization: {
+          $cond: {
+            if: "$organization",
+            then: { _id: "$organization._id", name: "$organization.name" },
+            else: null
+          }
+        },
+        hostel: {
+          $cond: {
+            if: "$hostel",
+            then: { _id: "$hostel._id", name: "$hostel.name" },
+            else: null
+          }
+        },
         createdAt: 1,
         total: { $size: { $filter: { input: "$assets", as: "asset", cond: { $in: ["$$asset.status", ["Available", "Allocated", "Maintenance"]] } } } },
         available: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Available"] } } } },

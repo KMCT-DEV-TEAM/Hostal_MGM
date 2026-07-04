@@ -277,3 +277,82 @@ export const getFurnitureAssetDetails = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Asset details retrieved.", assetDetails);
 });
+
+export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
+  const scope = await resolveUserScope(req.user);
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const search = req.query.search;
+
+  const query = { isActive: true };
+  if (req.user.role === "admin") {
+    query.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    query.hostelId = scope.hostelId;
+  }
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { prefix: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const types = await FurnitureType.find(query)
+    .select("_id name prefix")
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await FurnitureType.countDocuments(query);
+
+  return sendSuccess(res, 200, "Active furniture types retrieved.", { types, total, page, limit });
+});
+
+export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(typeId)) {
+    return sendError(res, 400, "Invalid Furniture Type ID");
+  }
+
+  const scope = await resolveUserScope(req.user);
+
+  const typeQuery = { _id: typeId, isActive: true };
+  if (req.user.role === "admin") {
+    typeQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    typeQuery.hostelId = scope.hostelId;
+  }
+
+  const typeExists = await FurnitureType.exists(typeQuery);
+  if (!typeExists) {
+    return sendError(res, 403, "Access denied or Furniture Type not found.");
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const search = req.query.search;
+
+  const assetQuery = {
+    furnitureTypeId: typeId,
+    status: "Available"
+  };
+
+  if (search) {
+    assetQuery.furnitureId = { $regex: search, $options: "i" };
+  }
+
+  const assets = await FurnitureAsset.find(assetQuery)
+    .select("_id furnitureId")
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await FurnitureAsset.countDocuments(assetQuery);
+
+  return sendSuccess(res, 200, "Available furniture assets retrieved.", { assets, total, page, limit });
+});
