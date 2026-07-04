@@ -235,7 +235,7 @@ export default function WardenFurniture() {
                 renderRow={(item) => (
                     <>
                         <td className="p-4 text-sm text-gray-900 font-medium">{item.furnitureId}</td>
-                        <td className="p-4 text-sm text-gray-500 font-medium">{item.furnitureTypeInfo?.name || '--'}</td>
+                        <td className="p-4 text-sm text-gray-500 font-medium">{item.typeInfo?.name || '--'}</td>
                         <td className="p-4 text-sm text-gray-500">{item.organization?.name || '--'}</td>
                         <td className="p-4 text-sm text-gray-500">
                             {console.log('this is item: ', item)}
