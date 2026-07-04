@@ -560,10 +560,11 @@ const getStudentFurnitures = asyncHandler(async (req, res) => {
   }
   const assets = await FurnitureAsset.find({
     studentId: id,
-    status: "Allocated",
+    status: "allocated",
   })
     .populate("furnitureTypeId", "name prefix")
     .lean();
+
   return sendSuccess(res, 200, "Furniture assets fetched successfully", {
     studentId: id,
     assets,
