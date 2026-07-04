@@ -140,9 +140,9 @@ export default function AdminFurniture() {
         }
     };
 
-    const handleStatusChange = async (assetId, status) => {
+    const handleStatusChange = async (assetId, payload) => {
         try {
-            await furnitureApi.changeAssetStatus(assetId, { status });
+            await furnitureApi.changeAssetStatus(assetId, payload);
             showSuccessToast('Asset status updated successfully');
             setIsStatusModalOpen(false);
             fetchFurnitureTypes();

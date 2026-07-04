@@ -39,8 +39,6 @@ export default function FurnitureDetails() {
     const [details, setDetails] = useState(null);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, asset: null });
-    const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState(null);
@@ -116,50 +114,21 @@ export default function FurnitureDetails() {
         if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} assets?`)) return;
         showSuccessToast('Selected assets deleted successfully');
         setSelectedIds([]);
-        fetchDetails();
+        // fetchDetails();
     };
 
 
 
-    const handleStatusChange = async (assetId, status) => {
+    const handleStatusChange = async (assetId, payload) => {
         try {
-            await furnitureApi.changeAssetStatus(assetId, { status });
-            showSuccessToast('Asset status updated successfully');
-            setIsStatusModalOpen(false);
+            await furnitureApi.changeAssetStatus(assetId, payload);
+            showSuccessToast('Status updated successfully');
             fetchAssets();
+            setIsStatusModalOpen(false);
         } catch (error) {
-            showErrorToast(error.message || 'Failed to update asset status');
-            throw error;
+            console.error(error);
+            showErrorToast('Failed to update status');
         }
-    };
-
-    const handleConfirmAction = async () => {
-        if (!confirmModal.asset) return;
-        const assetId = confirmModal.asset._id;
-        setIsConfirmSubmitting(true);
-        try {
-            if (confirmModal.type === 'return') {
-                const studentId = confirmModal.asset.studentId?._id;
-                await furnitureApi.returnAsset(studentId, assetId);
-                showSuccessToast('Asset returned successfully');
-            } else if (confirmModal.type === 'startMaintenance') {
-                await furnitureApi.startMaintenance(assetId);
-                showSuccessToast('Maintenance started');
-            } else if (confirmModal.type === 'completeMaintenance') {
-                await furnitureApi.completeMaintenance(assetId);
-                showSuccessToast('Maintenance completed');
-            }
-            setConfirmModal({ isOpen: false, type: null, asset: null });
-            fetchDetails();
-        } catch (error) {
-            showErrorToast(error.message || `Failed to ${confirmModal.type}`);
-        } finally {
-            setIsConfirmSubmitting(false);
-        }
-    };
-
-    const openConfirmModal = (type, asset) => {
-        setConfirmModal({ isOpen: true, type, asset });
     };
 
     const handleExport = async () => {
@@ -351,54 +320,6 @@ export default function FurnitureDetails() {
                             </td>
                             <td className="p-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                    {item.status === 'available' && (
-                                        <>
-
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                fullWidth={false}
-                                                className="text-warning hover:bg-warning/5"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    openConfirmModal('startMaintenance', item);
-                                                }}
-                                            >
-                                                <Hammer className="w-4 h-4 mr-1.5" />
-                                                Maintenance
-                                            </Button>
-                                        </>
-                                    )}
-                                    {item.status === 'allocated' && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            fullWidth={false}
-                                            className="text-success hover:bg-success/5"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                openConfirmModal('return', item);
-                                            }}
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                                            Return
-                                        </Button>
-                                    )}
-                                    {item.status === 'maintenance' && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            fullWidth={false}
-                                            className="text-success hover:bg-success/5"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                openConfirmModal('completeMaintenance', item);
-                                            }}
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                                            Complete
-                                        </Button>
-                                    )}
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -436,22 +357,7 @@ export default function FurnitureDetails() {
                 />
             )}
 
-            <ConfirmationModal
-                isOpen={confirmModal.isOpen}
-                onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null, asset: null })}
-                onConfirm={handleConfirmAction}
-                isSubmitting={isConfirmSubmitting}
-                title={
-                    confirmModal.type === 'return' ? 'Return Asset' :
-                        confirmModal.type === 'startMaintenance' ? 'Start Maintenance' : 'Complete Maintenance'
-                }
-                message={
-                    confirmModal.type === 'return' ? `Are you sure you want to mark ${confirmModal.asset?.furnitureId} as returned from ${confirmModal.asset?.studentId?.name}?` :
-                        confirmModal.type === 'startMaintenance' ? `Are you sure you want to send ${confirmModal.asset?.furnitureId} for maintenance?` :
-                            `Are you sure you want to complete maintenance for ${confirmModal.asset?.furnitureId}?`
-                }
-                confirmText={confirmModal.type === 'return' ? 'Return Asset' : 'Confirm'}
-            />
+
             {isAssetDetailsModalOpen && selectedAsset && (
                 <AssetDetailsModal
                     isOpen={isAssetDetailsModalOpen}
