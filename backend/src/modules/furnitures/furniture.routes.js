@@ -29,7 +29,8 @@ import {
   validateReturn,
   validateStartMaintenance,
   validateCompleteMaintenance,
-  validateUpdateFurnitureType
+  validateUpdateFurnitureType,
+  validateManualStatusChange
 } from "./furniture.validation.js";
 
 const router = express.Router();
@@ -104,11 +105,12 @@ router.patch(
   "/assets/:assetId/status",
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
+  validateManualStatusChange,
   changeAssetStatus
 );
 
 router.post(
-  "/students/:studentId/assets/:assetId/allocate",
+  "/assets/allocate",
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   validateAllocate,

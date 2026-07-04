@@ -78,29 +78,31 @@ export const validateAdjustAssetCount = async (req, res, next) => {
   }
 };
 
+
+
 export const validateAllocate = async (req, res, next) => {
   try {
-    const { studentId, assetId } = req.params;
-    console.log(req.params)
-    if (!mongoose.Types.ObjectId.isValid(studentId) || !mongoose.Types.ObjectId.isValid(assetId)) {
-      return res.status(400).json({ success: false, message: "Invalid ID parameters." });
+    const { studentId, assetId, assetIds } = req.body;
+
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: "studentId is required." });
     }
 
-    const asset = await FurnitureAsset.findById(assetId).populate("furnitureTypeId").lean();
-    if (!asset) {
-      return res.status(404).json({ success: false, message: "Furniture Asset Not Found" });
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ success: false, message: "Invalid studentId." });
     }
 
-    if (asset.status === "Inactive") {
-      return res.status(409).json({ success: false, message: "Furniture asset is inactive and must be restored before allocation." });
+    let assetsToAllocate = [];
+    if (assetIds && Array.isArray(assetIds)) {
+      assetsToAllocate = assetIds;
+    } else if (assetId) {
+      assetsToAllocate = [assetId];
+    } else {
+      return res.status(400).json({ success: false, message: "assetId or assetIds array is required." });
     }
 
-    if (asset.status !== "Available") {
-      return res.status(409).json({ success: false, message: `Furniture is not available. Current status: ${asset.status}` });
-    }
-
-    if (asset.studentId) {
-      return res.status(409).json({ success: false, message: "Asset is already allocated." });
+    if (assetsToAllocate.length === 0) {
+      return res.status(400).json({ success: false, message: "No assets provided." });
     }
 
     const student = await Student.findById(studentId).lean();
@@ -112,11 +114,38 @@ export const validateAllocate = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Student is inactive." });
     }
 
-    if (String(asset.furnitureTypeId.hostelId) !== String(student.hostelId)) {
-      return res.status(403).json({ success: false, message: "Student belongs to another hostel." });
+    const validatedAssets = [];
+
+    for (const id of assetsToAllocate) {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: `Invalid assetId: ${id}` });
+      }
+
+      const asset = await FurnitureAsset.findById(id).lean();
+      if (!asset) {
+        return res.status(404).json({ success: false, message: `Furniture Asset Not Found: ${id}` });
+      }
+
+      if (asset.status === "inactive") {
+        return res.status(409).json({ success: false, message: `Furniture asset ${asset.code || id} is inactive.` });
+      }
+
+      if (asset.status !== "available") {
+        return res.status(409).json({ success: false, message: `Furniture ${asset.code || id} is not available.` });
+      }
+
+      if (asset.studentId) {
+        return res.status(409).json({ success: false, message: `Asset ${asset.code || id} is already allocated.` });
+      }
+
+      if (String(asset.furnitureTypeId.hostelId) !== String(student.hostelId)) {
+        return res.status(403).json({ success: false, message: `Student ${student.name} belongs to another hostel than asset ${asset.code || id}.` });
+      }
+
+      validatedAssets.push(asset);
     }
 
-    req.validatedData = { asset, student };
+    req.validatedData = { student, assets: validatedAssets };
     next();
   } catch (error) {
     return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
@@ -136,7 +165,7 @@ export const validateReturn = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Furniture Asset Not Found" });
     }
 
-    if (asset.status !== "Allocated") {
+    if (asset.status !== "allocated") {
       return res.status(409).json({ success: false, message: "Asset is not currently allocated." });
     }
 
@@ -180,7 +209,41 @@ export const validateStatusChange = (allowedCurrentStatuses) => {
   };
 };
 
-export const validateStartMaintenance = validateStatusChange(["Available"]);
-export const validateCompleteMaintenance = validateStatusChange(["Maintenance"]);
-export const validateMarkLost = validateStatusChange(["Available", "Allocated"]);
-export const validateMarkScrap = validateStatusChange(["Available", "Maintenance"]);
+export const validateManualStatusChange = async (req, res, next) => {
+  try {
+    const { assetId } = req.params;
+    const { status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(assetId)) {
+      return res.status(400).json({ success: false, message: "Invalid Asset ID." });
+    }
+
+    const allowedStatuses = ["available", "inactive", "lost", "scrap"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid status. Status can only be manually changed to one of: ${allowedStatuses.join(", ")}` 
+      });
+    }
+
+    const asset = await FurnitureAsset.findById(assetId).lean();
+    if (!asset) {
+      return res.status(404).json({ success: false, message: "Furniture Asset Not Found" });
+    }
+
+    // Optionally prevent changing status if currently allocated
+    if (asset.status === "allocated") {
+      return res.status(409).json({ success: false, message: "Cannot change status of an allocated asset. Return it first." });
+    }
+
+    req.validatedData = { asset, newStatus: status, remarks: req.body.remarks };
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};
+
+export const validateStartMaintenance = validateStatusChange(["available"]);
+export const validateCompleteMaintenance = validateStatusChange(["maintenance"]);
+export const validateMarkLost = validateStatusChange(["available", "allocated"]);
+export const validateMarkScrap = validateStatusChange(["available", "maintenance"]);

@@ -15,7 +15,7 @@ export const getLatestAssetIdByPrefixDb = async (prefix, session) => {
 export const checkAnyAssetAllocatedForTypeDb = async (typeId, session) => {
   const asset = await FurnitureAsset.findOne({
     furnitureTypeId: typeId,
-    $or: [{ studentId: { $ne: null } }, { status: { $ne: "Available" } }],
+    $or: [{ studentId: { $ne: null } }, { status: { $ne: "available" } }],
   }).session(session).select("_id").lean();
   return !!asset;
 };
@@ -63,7 +63,7 @@ export const createFurnitureTypeService = async (data, openingStock, actor) => {
       const assetsToInsert = generatedIds.map((id) => ({
         furnitureId: id,
         furnitureTypeId: newType._id,
-        status: "Available",
+        status: "available",
         studentId: null,
         createdBy: actor._id,
         updatedBy: actor._id,
@@ -73,8 +73,8 @@ export const createFurnitureTypeService = async (data, openingStock, actor) => {
 
       const timelinesToInsert = createdAssets.map((asset) => ({
         furnitureAssetId: asset._id,
-        action: "Created",
-        currentStatus: "Available",
+        action: "created",
+        currentStatus: "available",
         performedBy: actor._id,
         performedByRole: actor.role,
         remarks: "Opening Stock",
@@ -105,14 +105,14 @@ export const deleteFurnitureTypeService = async (typeId, actor) => {
       throw error;
     }
 
-    const hasInactive = await FurnitureAsset.findOne({ furnitureTypeId: typeId, status: "Inactive" }).session(session).lean();
+    const hasInactive = await FurnitureAsset.findOne({ furnitureTypeId: typeId, status: "inactive" }).session(session).lean();
     if (hasInactive) {
       const error = new Error("Cannot delete furniture type while it contains Inactive assets. Please restore them to active inventory first.");
       error.code = "FT005";
       throw error;
     }
 
-    const eligibleAssets = await FurnitureAsset.find({ furnitureTypeId: typeId, status: "Available", studentId: null })
+    const eligibleAssets = await FurnitureAsset.find({ furnitureTypeId: typeId, status: "available", studentId: null })
       .session(session)
       .select("_id")
       .lean();
@@ -122,9 +122,9 @@ export const deleteFurnitureTypeService = async (typeId, actor) => {
     if (assetIds.length > 0) {
       const timelines = assetIds.map(id => ({
         furnitureAssetId: id,
-        action: "Deleted",
-        previousStatus: "Available",
-        currentStatus: "Deleted",
+        action: "deleted",
+        previousStatus: "available",
+        currentStatus: "deleted",
         performedBy: actor._id,
         performedByRole: actor.role,
         remarks: "Deleted Type cascade",
@@ -156,7 +156,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
     // Total Active inventory (matches the dashboard logic)
     const currentCount = await FurnitureAsset.countDocuments({
       furnitureTypeId: typeId,
-      status: { $in: ["Available", "Allocated", "Maintenance"] }
+      status: { $in: ["available", "allocated", "maintenance"] }
     }).session(session);
 
     if (newCount === currentCount) {
@@ -171,7 +171,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
       // 1. Find Inactive Assets
       const inactiveAssets = await FurnitureAsset.find({
         furnitureTypeId: typeId,
-        status: "Inactive"
+        status: "inactive"
       })
         .sort({ createdAt: 1 }) // oldest first to restore
         .limit(difference)
@@ -184,15 +184,15 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
 
         await FurnitureAsset.updateMany(
           { _id: { $in: inactiveIds } },
-          { $set: { status: "Available", updatedBy: actor._id } },
+          { $set: { status: "available", updatedBy: actor._id } },
           { session }
         );
 
         const timelines = inactiveIds.map(id => ({
           furnitureAssetId: id,
-          action: "Inventory Increased",
-          previousStatus: "Inactive",
-          currentStatus: "Available",
+          action: "inventory increased",
+          previousStatus: "inactive",
+          currentStatus: "available",
           performedBy: actor._id,
           performedByRole: actor.role,
           remarks: "Inventory Count Increased",
@@ -215,7 +215,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
         const assetsToInsert = generatedIds.map((id) => ({
           furnitureId: id,
           furnitureTypeId: type._id,
-          status: "Available",
+          status: "available",
           studentId: null,
           createdBy: actor._id,
           updatedBy: actor._id,
@@ -225,8 +225,8 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
 
         const timelines = createdAssets.map((asset) => ({
           furnitureAssetId: asset._id,
-          action: "Created",
-          currentStatus: "Available",
+          action: "created",
+          currentStatus: "available",
           performedBy: actor._id,
           performedByRole: actor.role,
           remarks: "Count Increased",
@@ -236,7 +236,7 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
 
     } else {
       const difference = currentCount - newCount;
-      const eligibleAssets = await FurnitureAsset.find({ furnitureTypeId: typeId, status: "Available", studentId: null })
+      const eligibleAssets = await FurnitureAsset.find({ furnitureTypeId: typeId, status: "available", studentId: null })
         .sort({ createdAt: -1 })
         .limit(difference)
         .session(session)
@@ -251,15 +251,15 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
 
       await FurnitureAsset.updateMany(
         { _id: { $in: assetIds } },
-        { $set: { status: "Inactive", updatedBy: actor._id } },
+        { $set: { status: "inactive", updatedBy: actor._id } },
         { session }
       );
 
       const timelines = assetIds.map(id => ({
         furnitureAssetId: id,
-        action: "Inventory Reduced",
-        previousStatus: "Available",
-        currentStatus: "Inactive",
+        action: "inventory reduced",
+        previousStatus: "available",
+        currentStatus: "inactive",
         performedBy: actor._id,
         performedByRole: actor.role,
         remarks: "Inventory Count Reduced",
@@ -278,31 +278,38 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
   }
 };
 
-export const allocateAssetService = async (asset, student, actor) => {
+export const bulkAllocateAssetsToStudentService = async (student, assets, actor) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    await FurnitureAsset.findByIdAndUpdate(
-      asset._id,
-      { status: "Allocated", studentId: student._id, updatedBy: actor._id },
-      { new: true, session }
-    );
+    const historyDocs = [];
 
-    const history = new FurnitureAssetHistory({
-      furnitureAssetId: asset._id,
-      action: "Allocated",
-      previousStatus: "Available",
-      currentStatus: "Allocated",
-      studentId: student._id,
-      performedBy: actor._id,
-      performedByRole: actor.role,
-      metadata: { studentName: student.name, enrollmentNo: student.enrollmentNo }
-    });
-    await history.save({ session });
+    for (const asset of assets) {
+      await FurnitureAsset.findByIdAndUpdate(
+        asset._id,
+        { status: "allocated", studentId: student._id, updatedBy: actor._id },
+        { new: true, session }
+      );
+
+      historyDocs.push({
+        furnitureAssetId: asset._id,
+        action: "allocated",
+        previousStatus: "available",
+        currentStatus: "allocated",
+        studentId: student._id,
+        performedBy: actor._id,
+        performedByRole: actor.role,
+        metadata: { studentName: student.name, enrollmentNo: student.enrollmentNo }
+      });
+    }
+
+    if (historyDocs.length > 0) {
+      await FurnitureAssetHistory.insertMany(historyDocs, { session });
+    }
 
     await session.commitTransaction();
-    return true;
+    return { status: "success", count: assets.length };
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -320,15 +327,15 @@ export const returnAssetService = async (asset, actor) => {
 
     await FurnitureAsset.findByIdAndUpdate(
       asset._id,
-      { status: "Available", studentId: null, updatedBy: actor._id },
+      { status: "available", studentId: null, updatedBy: actor._id },
       { new: true, session }
     );
 
     const history = new FurnitureAssetHistory({
       furnitureAssetId: asset._id,
-      action: "Returned",
-      previousStatus: "Allocated",
-      currentStatus: "Available",
+      action: "returned",
+      previousStatus: "allocated",
+      currentStatus: "available",
       studentId: previousStudent,
       performedBy: actor._id,
       performedByRole: actor.role,
@@ -351,9 +358,10 @@ export const changeLifecycleStatusService = async (asset, newStatus, actionName,
 
   try {
     const updateData = { status: newStatus, updatedBy: actor._id };
-    if (["Available", "Maintenance", "Scrap"].includes(newStatus)) {
+    if (["available", "maintenance", "scrap",].includes(newStatus)) {
       updateData.studentId = null;
     }
+
 
     await FurnitureAsset.findByIdAndUpdate(asset._id, updateData, { new: true, session });
 

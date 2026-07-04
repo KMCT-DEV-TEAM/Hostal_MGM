@@ -59,9 +59,12 @@ export const adjustAssetCount = asyncHandler(async (req, res) => {
 });
 
 export const allocateFurniture = asyncHandler(async (req, res) => {
-  const { asset, student } = req.validatedData;
-  await furnitureService.allocateAssetService(asset, student, req.user);
-  return sendSuccess(res, 200, "Furniture allocated successfully.");
+  const allocations = req.validatedAllocations;
+
+  // Call the bulk service
+  await furnitureService.bulkAllocateAssetsService(allocations, req.user);
+
+  return sendSuccess(res, 200, `Successfully allocated ${allocations.length} furniture asset(s).`);
 });
 
 export const returnFurniture = asyncHandler(async (req, res) => {
@@ -72,13 +75,13 @@ export const returnFurniture = asyncHandler(async (req, res) => {
 
 export const startMaintenance = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
-  await furnitureService.changeLifecycleStatusService(asset, "Maintenance", "Maintenance Started", req.user, req.body.remarks);
+  await furnitureService.changeLifecycleStatusService(asset, "maintenance", "maintenance started", req.user, req.body.remarks);
   return sendSuccess(res, 200, "Furniture moved to maintenance.");
 });
 
 export const completeMaintenance = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
-  await furnitureService.changeLifecycleStatusService(asset, "Available", "Maintenance Completed", req.user, req.body.remarks);
+  await furnitureService.changeLifecycleStatusService(asset, "available", "maintenance completed", req.user, req.body.remarks);
   return sendSuccess(res, 200, "Maintenance completed.");
 });
 
@@ -156,7 +159,7 @@ export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
   // Total Active inventory (matches the dashboard logic)
   const currentCount = await FurnitureAsset.countDocuments({
     furnitureTypeId: typeId,
-    status: { $in: ["Available", "Allocated", "Maintenance"] }
+    status: { $in: ["available", "allocated", "maintenance"] }
   });
 
   return sendSuccess(res, 200, "Furniture Type details retrieved.", { ...type, totalAssets: currentCount });
@@ -216,7 +219,15 @@ export const changeAssetStatus = asyncHandler(async (req, res) => {
   const asset = await FurnitureAsset.findById(assetId).lean();
   if (!asset) return sendError(res, 404, "Asset not found");
 
-  const actionName = status === "Maintenance" ? "Maintenance Started" : (status === "Available" ? "Status Updated" : status);
+  const actionMap = {
+    maintenance: "maintenance started",
+    available: "updated",
+    allocated: "allocated",
+    lost: "lost",
+    scrap: "scrapped",
+    inactive: "updated"
+  };
+  const actionName = actionMap[status] || "updated";
   await furnitureService.changeLifecycleStatusService(asset, status, actionName, req.user, remarks);
   return sendSuccess(res, 200, "Asset status updated successfully.");
 });
@@ -345,7 +356,7 @@ export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => 
 
   const assetQuery = {
     furnitureTypeId: typeId,
-    status: "Available"
+    status: "available"
   };
 
   if (search) {

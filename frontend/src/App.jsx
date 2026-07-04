@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import router from '@/routes';
 import { initSocket, getSocket } from '@/services/socket.service';
+import NotificationPermissionCard from '@/modules/notification/components/NotificationPermissionCard';
 
 function App() {
   const { user, logout } = useAuthStore();
@@ -48,6 +49,7 @@ function App() {
   return (
     <>
       <RouterProvider router={router} />
+      {user && <NotificationPermissionCard />}
     </>
   );
 }
