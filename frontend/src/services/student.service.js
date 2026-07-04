@@ -101,6 +101,16 @@ export async function getStudentsByWarden(params) {
   return response.data;
 }
 
+export async function getStudentFurnitures(role, id) {
+  const resolver = createRoleResolver({
+    super_admin: studentApi.getStudentFurnituresBySuperAdmin,
+    admin: studentApi.getStudentFurnituresByAdmin,
+    warden: studentApi.getStudentFurnituresByWarden,
+  });
+  const response = await resolver(role, id);
+  return response.data;
+}
+
 const STUDENT_FETCHERS = {
   [ROLES.ADMIN]: getStudentsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentsBySuperAdmin,
