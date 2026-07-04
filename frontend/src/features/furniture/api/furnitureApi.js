@@ -15,6 +15,7 @@ const getActiveFurnitureTypesList = (params) => apiClient.get(`${API_BASE_URL}/t
 const getAvailableFurnitureAssetsList = (typeId, params) => apiClient.get(`${API_BASE_URL}/types/${typeId}/assets/active`, { params });
 
 const allocateAsset = (studentId, assetId) => apiClient.post(`${API_BASE_URL}/students/${studentId}/assets/${assetId}/allocate`);
+const allocateAssetsBulk = (data) => apiClient.post(`${API_BASE_URL}/assets/allocate`, data);
 const returnAsset = (studentId, assetId) => apiClient.post(`${API_BASE_URL}/students/${studentId}/assets/${assetId}/return`);
 const assignFurnitures = (studentId, data) => apiClient.post(`${API_BASE_URL}/students/${studentId}/assets/assign`, data); // No backend
 
@@ -44,6 +45,7 @@ const furnitureApi = {
     getActiveFurnitureTypesList,
     getAvailableFurnitureAssetsList,
     assignFurnitures,
+    allocateAssetsBulk,
     getAssetsDashboardSummary
 };
 

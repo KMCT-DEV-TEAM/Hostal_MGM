@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { X, ChevronDown } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -30,12 +30,17 @@ export default function AssignFurnitureModal({
     }
   }, [isOpen, isEdit, assignedFurnitures]);
 
-  const fetchFurnitureTypesOptions = async ({ page, search }) => {
+  const fetchFurnitureTypesOptions = useCallback(async ({ page, search }) => {
     try {
-      const res = await furnitureApi.getActiveFurnitureTypesList({ page, search, limit: 10 });
+      const params = { page, search, limit: 10 };
+      const hostelId = student?.hostel?._id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
+      if (hostelId) {
+        params.hostelId = hostelId;
+      }
+      const res = await furnitureApi.getActiveFurnitureTypesList(params);
       const types = res.data?.data?.types || res.data?.types || res.data?.data || [];
       const pagination = res.data?.data?.pagination || res.data?.pagination || {};
-      
+
       return {
         options: types.map(t => ({ label: t.name, value: t._id })),
         hasMore: page < (pagination.totalPages || 1)
@@ -44,15 +49,15 @@ export default function AssignFurnitureModal({
       console.error(error);
       return { options: [], hasMore: false };
     }
-  };
+  }, [student]);
 
-  const fetchFurnitureAssetsOptions = async ({ page, search }) => {
+  const fetchFurnitureAssetsOptions = useCallback(async ({ page, search }) => {
     if (!selectedTypeId) return { options: [], hasMore: false };
     try {
       const res = await furnitureApi.getAvailableFurnitureAssetsList(selectedTypeId, { page, search, limit: 10 });
       const assets = res.data?.data?.assets || res.data?.assets || res.data?.data || [];
       const pagination = res.data?.data?.pagination || res.data?.pagination || {};
-      
+
       return {
         options: assets.map(a => ({
           label: `${a.furnitureTypeId?.name || "Asset"} (${a.furnitureId || a.code})`,
@@ -64,7 +69,7 @@ export default function AssignFurnitureModal({
       console.error(error);
       return { options: [], hasMore: false };
     }
-  };
+  }, [selectedTypeId]);
 
   const lookup = useMemo(() => {
     const map = {};

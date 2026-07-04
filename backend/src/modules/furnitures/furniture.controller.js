@@ -281,9 +281,13 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
 
   // Find all FurnitureType IDs that belong to the user's scope
   const typeQuery = {};
+  if (req.query.hostelId) {
+    typeQuery.hostelId = req.query.hostelId;
+  }
+  
   if (req.user.role === "admin") {
     typeQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === "warden" && !typeQuery.hostelId) {
     typeQuery.hostelId = scope.hostelId;
   }
 
