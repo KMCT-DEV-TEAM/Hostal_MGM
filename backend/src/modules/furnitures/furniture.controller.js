@@ -237,10 +237,12 @@ export const getFurnitureAssetsByType = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
-  const status = req.query.status;
+  const status = req.query.status ? req.query.status.toLowerCase() : undefined;
+  const search = req.query.search;
 
   const matchQuery = { furnitureTypeId: new mongoose.Types.ObjectId(typeId) };
   if (status) matchQuery.status = status;
+  if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
 
@@ -253,7 +255,8 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
-  const status = req.query.status;
+  const status = req.query.status ? req.query.status.toLowerCase() : undefined;
+  const search = req.query.search;
 
   const scope = await resolveUserScope(req.user);
 
@@ -270,6 +273,7 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
 
   const matchQuery = { furnitureTypeId: { $in: typeIds } };
   if (status) matchQuery.status = status;
+  if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
   const total = await FurnitureAsset.countDocuments(matchQuery);
