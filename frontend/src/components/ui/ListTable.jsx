@@ -28,6 +28,7 @@ export default function ListTable({
     canSelect = false,
     statusLoadingIds = [],
     emptyText = "No items match the selected filter.",
+    isSelectableFn,
     renderRow
 }) {
     const isAllSelected = items.length > 0 && selectedIds.length === items.length;
@@ -35,7 +36,7 @@ export default function ListTable({
 
     return (
         <div className="hidden md:block flex-1 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
-            <table className="w-full text-start relative whitespace-nowrap">
+            <table className="w-full text-start relative">
                 <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-sm">
                     <tr className="text-text-primary text-sm font-semibold border-b border-gray-50">
                         {canSelect && (
@@ -96,17 +97,35 @@ export default function ListTable({
                                 >
                                     {canSelect && (
                                         <td className="p-4 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => onSelect && onSelect(rowId)}
-                                                className="focus:outline-none flex items-center justify-center cursor-pointer mx-auto"
-                                            >
-                                                {isSelected ? (
-                                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                                ) : (
-                                                    <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                                                )}
-                                            </button>
+                                            {isSelectableFn ? isSelectableFn(item) ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onSelect && onSelect(rowId)}
+                                                    className="focus:outline-none flex items-center justify-center cursor-pointer mx-auto"
+                                                >
+                                                    {isSelected ? (
+                                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                                    ) : (
+                                                        <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <button disabled className="focus:outline-none flex items-center justify-center mx-auto text-gray-300 opacity-50 cursor-not-allowed">
+                                                    <Square className="w-5 h-5" />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onSelect && onSelect(rowId)}
+                                                    className="focus:outline-none flex items-center justify-center cursor-pointer mx-auto"
+                                                >
+                                                    {isSelected ? (
+                                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                                    ) : (
+                                                        <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                                                    )}
+                                                </button>
+                                            )}
                                         </td>
                                     )}
                                     {renderRow && renderRow(item, index, isSelected, isLoading)}

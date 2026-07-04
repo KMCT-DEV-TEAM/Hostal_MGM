@@ -29,7 +29,7 @@ const CourseDetailView = ({ selectedCourseDetail, setView }) => {
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Organization</>}>{selectedCourseDetail?.organizationId?.name || selectedCourseDetail?.organization?.name || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
-                                    <span className="w-2 h-2 rounded-full mr-2"></span>
+                                    <span className={`w-2 h-2 rounded-full ${selectedCourseDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                     {selectedCourseDetail.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </InfoRow>
@@ -68,7 +68,7 @@ const CourseDetailView = ({ selectedCourseDetail, setView }) => {
                         <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedCourseDetail?.organizationId?.name || selectedCourseDetail?.organization?.name || 'N/A'}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                             <span className="flex items-center">
-                                <span className="w-2 h-2 rounded-full mr-2"></span>
+                                <span className={`w-2 h-2 rounded-full ${selectedCourseDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                 {selectedCourseDetail.isActive ? 'Active' : 'Inactive'}
                             </span>
                         </InfoRow>

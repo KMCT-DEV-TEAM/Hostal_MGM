@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal, Eye, MoreVertical } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
+import ListTable from "@/components/ui/ListTable";
+import MobileList, { MobileRow } from "@/components/ui/MobileList";
 import DateInput from "@/components/ui/DateInput";
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import LogsFilterModal from "./LogsFilterModal";
+import LogDetailView from "./LogDetailView";
 import authApi from "@/features/auth/api/authApi";
 import { exportToExcel } from "@/utils/exportUtils";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
@@ -14,6 +17,7 @@ import { initSocket } from '@/services/socket.service';
 
 const LogsViewer = ({ entityType }) => {
     const [logs, setLogs] = useState([]);
+    const [selectedLog, setSelectedLog] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState("");
@@ -158,158 +162,141 @@ const LogsViewer = ({ entityType }) => {
     };
 
     return (
-        <div className="bg-transparent md:bg-white md:rounded-lg md:border md:border-gray-200 md:overflow-hidden flex flex-col min-h-0 h-full">
+        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm md:overflow-hidden flex flex-col min-h-0 flex-1">
 
             {/* Toolbar */}
             <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
+                <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
                     <div className="relative w-full">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#777777]" />
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search logs..."
+                            value={searchQuery}
+                            onChange={(e) => { setSearchQuery(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
                             className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
                         />
                     </div>
-                    <div className="flex justify-center sm:hidden -mt-1 -mb-2">
+                    {/* Mobile More Options Button */}
+                    <div className="sm:hidden relative">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
+                            className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px]"
                         >
-                            <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                            <MoreVertical className="w-5 h-5" />
                         </button>
-                    </div>
-                </div>
-
-                <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
-                    <div className="flex gap-3 w-full sm:w-auto items-center">
-                        <button
-                            onClick={() => setIsFilterModalOpen(true)}
-                            className="flex items-center justify-center gap-2 px-4 py-2 h-9 bg-white border border-gray-200 text-text-secondary rounded-lg text-sm hover:bg-gray-50 transition-colors cursor-pointer shadow-sm md:shadow-none"
-                        >
-                            <SlidersHorizontal className="w-4 h-4" /> 
-                            <span className="sm:hidden">Filter</span>
-                        </button>
-
-                        <button
-                            onClick={() => setIsExportFilterModalOpen(true)}
-                            className="flex items-center justify-center gap-2 h-9 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" /> Export
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Desktop View */}
-            <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                        <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
-                            <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Timestamp</th>
-                            <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Action</th>
-                            <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">User</th>
-                            <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Details</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50 text-sm">
-                        {isLoading ? (
-                            <TableSkeletonLoader columns={4} />
-                        ) : logs.length === 0 ? (
-                            <tr>
-                                <td colSpan="4" className="p-8 text-center text-gray-400">
-                                    No logs found matching your criteria.
-                                </td>
-                            </tr>
-                        ) : (
-                            logs.map((log) => (
-                                <tr key={log._id} className="hover:bg-gray-50/40 transition-colors">
-                                    <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                                        <div className="flex items-center justify-start gap-1.5">
-                                            <Clock size={14} className="text-gray-400" />
-                                            <span>{new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-start font-medium text-[#444444] whitespace-nowrap">
-                                        {log.action}
-                                    </td>
-                                    <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                                        <div className="flex items-center justify-start gap-1.5">
-                                            <User size={14} className="text-gray-400" />
-                                            <span>{log.user?.name || log.user?.email || 'Unknown'} <span className="text-[10px] text-gray-400 ml-1">({log.userRole})</span></span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-start text-gray-500 max-w-md truncate">
-                                        {log.details}
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Mobile View */}
-            <div className="md:hidden flex flex-col gap-4 mt-4 flex-1 overflow-y-auto pb-4 px-2 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {isLoading ? (
-                    <MobileSkeletonLoader />
-                ) : logs.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500 bg-white rounded-xl border border-gray-200">
-                        No logs found matching your criteria.
-                    </div>
-                ) : (
-                    logs.map((log) => {
-                        const isExpanded = expandedIds.includes(log._id);
-                        return (
-                            <div key={log._id} className="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-50 overflow-hidden shrink-0">
-                                {/* Header */}
-                                <div 
-                                    className="flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer"
-                                    onClick={(e) => toggleExpand(e, log._id)}
+                        {isMobileMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                <button
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        setIsFilterModalOpen(true);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-gray-900 text-[13px] truncate max-w-[220px]">{log.action}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
-                                            {log.status}
-                                        </span>
-                                        <button
-                                            onClick={(e) => toggleExpand(e, log._id)}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer shrink-0"
-                                        >
-                                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Expandable Content */}
-                                {isExpanded && (
-                                    <div className="flex flex-col text-[13px]">
-                                        <div className="flex border-b border-gray-50/50">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">User</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900 truncate">: {log.user?.name || log.user?.email || 'Unknown'}</div>
-                                        </div>
-                                        <div className="flex border-b border-gray-50/50 bg-gray-50/30">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium">Time</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900">: {new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                        </div>
-                                        <div className="flex border-b border-gray-50/50">
-                                            <div className="w-1/3 py-2.5 px-3 text-gray-500 font-medium h-full">Details</div>
-                                            <div className="w-2/3 py-2.5 px-3 text-gray-900 flex items-start gap-1">
-                                                <span className="mr-1">:</span>
-                                                <span className="break-words">{log.details}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                                    <SlidersHorizontal className="w-4 h-4" /> Filter
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        setIsExportFilterModalOpen(true);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" /> Export
+                                </button>
                             </div>
-                        );
-                    })
-                )}
+                        )}
+                    </div>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-3 w-full sm:w-auto justify-end">
+                    {/* Desktop Buttons */}
+                    <button
+                        onClick={() => setIsFilterModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                    >
+                        <SlidersHorizontal size={16} /> Filter
+                    </button>
+                    <button
+                        onClick={() => setIsExportFilterModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                    >
+                        <Download size={16} /> Export
+                    </button>
+                </div>
             </div>
+
+            <ListTable
+    headers={['Action', 'Timestamp', 'User', 'Details', { label: 'Action', align: 'center' }]}
+    items={logs}
+    loading={isLoading}
+    canSelect={false}
+    emptyText="No logs found matching your criteria."
+    renderRow={(log, index) => (
+        <>
+            <td className="p-4 font-medium text-[#777777]">
+                <div
+                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
+                    onClick={() => setSelectedLog(log)}
+                >
+                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                        {log.action ? log.action.substring(0, 2) : 'NA'}
+                    </div>
+                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{log.action}</span>
+                </div>
+            </td>
+            <td className="p-4 text-start text-gray-500 whitespace-nowrap">
+                <div className="flex items-center justify-start gap-1.5">
+                    <Clock size={14} className="text-gray-400" />
+                    <span>{new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+            </td>
+            <td className="p-4 text-start text-gray-500 whitespace-nowrap">
+                <div className="flex items-center justify-start gap-1.5">
+                    <User size={14} className="text-gray-400" />
+                    <span>{log.user?.name || log.user?.email || 'Unknown'} <span className="text-[10px] text-gray-400 ml-1">({log.userRole})</span></span>
+                </div>
+            </td>
+            <td className="p-4 text-start text-gray-500 max-w-md truncate">
+                {log.details}
+            </td>
+            <td className="p-4">
+                <div className="flex gap-3 items-center justify-center">
+                    <button
+                        onClick={() => setSelectedLog(log)}
+                        className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                    >
+                        <Eye className="w-4 h-4 text-secondary" />
+                    </button>
+                </div>
+            </td>
+        </>
+    )}
+/>
+
+<MobileList
+    items={logs}
+    loading={isLoading}
+    canSelect={false}
+    emptyText="No logs found matching your criteria."
+    titleFn={(log) => log.action}
+    onViewDetails={(log) => setSelectedLog(log)}
+    renderBody={(log) => (
+        <>
+            <MobileRow label="Status" value={
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
+                    {log.status}
+                </span>
+            } />
+            <MobileRow label="User" value={log.user?.name || log.user?.email || 'Unknown'} />
+            <MobileRow label="Time" value={`${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
+            <MobileRow label="Details" value={
+                <span className="break-words">{log.details}</span>
+            } />
+        </>
+    )}
+/>
 
             {!isLoading && pagination.totalPages > 0 && (
                 <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
@@ -398,6 +385,8 @@ const LogsViewer = ({ entityType }) => {
                     }}
                 />
             )}
+            
+            <LogDetailView log={selectedLog} onClose={() => setSelectedLog(null)} />
         </div>
     );
 };

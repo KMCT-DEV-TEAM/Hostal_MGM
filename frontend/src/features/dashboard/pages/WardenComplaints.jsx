@@ -235,7 +235,7 @@ return (
                 </p>
             </div>
 
-            <div className="flex items-center self-end sm:self-auto">
+            <div className="hidden md:flex items-center self-end sm:self-auto">
                 <button
                     onClick={() => setShowKPIs(!showKPIs)}
                     className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
@@ -247,7 +247,7 @@ return (
 
         {/* Stat Cards Section */}
         {showKPIs && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
             <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                 <div>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>

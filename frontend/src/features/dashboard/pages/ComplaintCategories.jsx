@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight, Loader2
+    Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight, Loader2, MoreVertical
 } from 'lucide-react';
 import ComplaintCategoryService from '../../../services/complaintCategory.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -38,6 +38,7 @@ const ComplaintCategories = () => {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -261,28 +262,12 @@ const ComplaintCategories = () => {
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-black">Complaint Categories</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all complaint categories</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Complaint Categories</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all complaint categories</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    {selectedIds.length > 0 && (
-                        <div className="flex items-center gap-2 mr-2">
-                            <button
-                                onClick={() => handleBulkStatusClick(true)}
-                                className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Active ({selectedIds.length})
-                            </button>
-                            <button
-                                onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Inactive ({selectedIds.length})
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -328,10 +313,38 @@ const ComplaintCategories = () => {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
+                                >
+                                    <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {isBulkMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <button
                             onClick={() => openModal('add')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">`n<Plus className="w-4 h-4" /> Add New
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" /> Add New
                         </button>
                     </div>
                 </div>

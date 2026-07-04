@@ -443,7 +443,7 @@ export default function HostelManagement() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
-            <HostelHeader
+            <HostelHeader 
                 selectedIds={selectedIds}
                 handleBulkStatusClick={handleBulkStatusClick}
             />
@@ -460,6 +460,8 @@ export default function HostelManagement() {
                     setSearchQuery={setSearchQuery}
                     initiateExport={initiateExport}
                     openAddHostelModal={openAddHostelModal}
+                    selectedIds={selectedIds}
+                    handleBulkStatusClick={handleBulkStatusClick}
                 />
 
                 <HostelTable

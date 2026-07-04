@@ -52,7 +52,7 @@ export default function LeaveStatusBadge({ status, className = '' }) {
     }
 
     return (
-        <span className={`px-3 py-1.5 rounded-md text-xs border inline-flex items-center justify-center gap-1.5 w-[130px] ${bgClass} ${textClass} ${borderClass} ${className}`}>
+        <span className={`px-3 py-1.5 rounded-md text-xs border inline-flex items-center justify-center gap-1.5 w-[160px] ${bgClass} ${textClass} ${borderClass} ${className}`}>
             {icon} {displayStatus}
         </span>
     );

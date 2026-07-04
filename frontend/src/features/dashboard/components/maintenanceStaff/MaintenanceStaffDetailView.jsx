@@ -51,8 +51,8 @@ const MaintenanceStaffDetailView = ({ selectedStaffDetail, setView }) => {
                         <InfoRow label={<><Wrench className="w-4 h-4 text-gray-400" /> Name</>}>{selectedStaffDetail.name}</InfoRow>
                         <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Spec.</>}>{selectedStaffDetail.specialization || 'N/A'}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
-                            <span className="flex items-center">
-                                <span className={"w-2 h-2 rounded-full  mr-2"}></span>
+                            <span className="flex items-center font-medium">
+                                <span className={`w-2.5 h-2.5 rounded-full mr-2 ${selectedStaffDetail.isActive ? 'bg-green-500' : 'bg-danger'}`}></span>
                                 {selectedStaffDetail.isActive ? "Active" : "Inactive"}
                             </span>
                         </InfoRow>

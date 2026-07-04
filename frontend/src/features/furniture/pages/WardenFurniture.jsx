@@ -1,75 +1,163 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Box, PackageCheck, PackageOpen } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
 import PageHeader from '@/components/ui/PageHeader';
-import { showErrorToast } from '@/utils/toast';
-import WardenFurnitureDetailsModal from '../components/modals/WardenFurnitureDetailsModal';
+import StatsCard from '@/components/ui/StatsCard';
+import Dropdown from '@/components/ui/Dropdown';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import AssetDetailsModal from '../components/modals/AssetDetailsModal';
+import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
+import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/utils/exportUtils';
+import { formatDate } from '@/utils/formatters';
 
 export default function WardenFurniture() {
-    const [types, setTypes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [selectedType, setSelectedType] = useState(null);
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [statusFilter, setStatusFilter] = useState('All');
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const urlSearchQuery = searchParams.get('search') || '';
+    const statusFilter = searchParams.get('status') || 'All';
+    const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = 10;
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-            setPage(1);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+    const [searchInput, setSearchInput] = useState(urlSearchQuery);
+    const debouncedSearch = useDebounce(searchInput, 500);
+
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [dashboardStats, setDashboardStats] = useState(null);
+    const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
+    const [selectedAsset, setSelectedAsset] = useState(null);
+
+    const updateSearchParams = (updates) => {
+        const newParams = new URLSearchParams(searchParams);
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '' || value === 'All') {
+                newParams.delete(key);
+            } else {
+                newParams.set(key, value);
+            }
+        });
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
-        fetchFurnitureTypes();
-    }, [page, debouncedSearch, statusFilter]);
+        if (debouncedSearch !== urlSearchQuery) {
+            const newParams = new URLSearchParams(searchParams);
+            if (!debouncedSearch) {
+                newParams.delete('search');
+            } else {
+                newParams.set('search', debouncedSearch);
+            }
+            newParams.set('page', 1);
+            setSearchParams(newParams);
+        }
+    }, [debouncedSearch, urlSearchQuery, searchParams, setSearchParams]);
 
-    const fetchFurnitureTypes = async () => {
+    useEffect(() => {
+        setSearchInput(urlSearchQuery);
+    }, [urlSearchQuery]);
+
+    useEffect(() => {
+        fetchDashboardStats();
+    }, []);
+
+    const fetchDashboardStats = async () => {
         try {
-            setLoading(true);
-            const res = await furnitureApi.getFurnitureTypes({
-                page,
-                limit,
-                search: debouncedSearch,
-                status: statusFilter
-            });
-            setTypes(res.data?.data || res.data || []);
-            setPagination({
-                totalPages: res.data?.totalPages || res.totalPages || 1,
-                totalRecords: res.data?.totalCount || res.totalCount || 0
-            });
+            const res = await furnitureApi.getDashboardStats();
+            setDashboardStats(res.data?.summary || res.summary || null);
         } catch (error) {
-            showErrorToast(error.message || 'Failed to fetch furniture types');
-        } finally {
-            setLoading(false);
+            console.error("Failed to fetch dashboard stats:", error);
         }
     };
 
-    const pageTitle = 'Furniture';
-    const pageSubtitle = 'View all furnitures';
+    const { data: assets, pagination, loading, refetch: fetchFurnitureAssets } = useFurnitureAssets(null, {
+        page,
+        limit,
+        search: debouncedSearch,
+        status: statusFilter === 'All' ? '' : statusFilter
+    });
+
+    const confirmExport = async (filters) => {
+        setIsExporting(true);
+        try {
+            const params = {
+                status: filters.status || statusFilter,
+                limit: 5000, 
+                search: debouncedSearch
+            };
+            
+            const res = await furnitureApi.getAllFurnitureAssets(params);
+            const dataToExport = res?.data?.data?.assets || res?.data?.assets || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No furniture records match the selected filters');
+                setIsExportConfirmOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((r, index) => {
+                return {
+                    'Sl No': index + 1,
+                    'Furniture ID': r.furnitureId || '--',
+                    'Furniture Type': r.furnitureTypeId?.name || '--',
+                    'Hostel': r.hostelId?.name || '--',
+                    'Assigned To': r.studentId?.name || 'Unassigned',
+                    'Status': r.status || '--',
+                    'Added On': formatDate(r.createdAt)
+                };
+            });
+
+            const isSuccess = exportToExcel(exportData, `Furniture_Assets_Export`, "Assets");
+            
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+            setIsExportConfirmOpen(false);
+        } catch (error) {
+            showErrorToast('Failed to export data', error.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const exportFields = [
+        {
+            name: "status",
+            label: "Status",
+            options: [
+                { label: 'All Status', value: '' },
+                { label: 'Available', value: 'Available' },
+            ]
+        }
+    ];
+
+    const pageTitle = 'Manage Furniture';
+    const pageSubtitle = 'Manage all furnitures';
 
     const tableHeaders = [
-        { key: 'name', label: 'Furniture' },
-        { key: 'total', label: 'Quantity' },
-        { key: 'allocated', label: 'Assigned' },
-        { key: 'available', label: 'Available' }
+        { key: 'furnitureId', label: 'Furniture Id' },
+        { key: 'furniture', label: 'Furniture' },
+        { key: 'organization', label: 'Organization' },
+        { key: 'assignedTo', label: 'Assigned To' },
+        { key: 'status', label: 'Status' }
     ];
 
     const handleRowClick = (item) => {
-        setSelectedType(item);
-        setIsDetailsModalOpen(true);
+        setSelectedAsset(item);
+        setIsAssetDetailsModalOpen(true);
     };
 
-    // Calculate stats from current page for mockup representation
-    const totalFurnitures = types.reduce((acc, t) => acc + (t.total || t.assets?.total || 0), 0);
-    const assignedFurnitures = types.reduce((acc, t) => acc + (t.allocated || t.assets?.allocated || 0), 0);
-    const availableFurnitures = types.reduce((acc, t) => acc + (t.available || t.assets?.available || 0), 0);
+    const totalFurnitures = dashboardStats?.totalAssets || 0;
+    const assignedFurnitures = dashboardStats?.allocated || 0;
+    const availableFurnitures = dashboardStats?.available || 0;
 
     return (
         <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
@@ -79,93 +167,108 @@ export default function WardenFurniture() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TOTAL FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{totalFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
-                        <Box className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">ASSIGNED FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{assignedFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-success)]/10 text-[var(--color-success)] flex items-center justify-center">
-                        <PackageCheck className="w-5 h-5" />
-                    </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">AVAILABLE FURNITURES</p>
-                        <p className="text-2xl font-bold text-gray-900">{availableFurnitures}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-500 flex items-center justify-center">
-                        <PackageOpen className="w-5 h-5" />
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <StatsCard
+                    label="TOTAL FURNITURES"
+                    value={totalFurnitures}
+                    icon={<Box className="w-5 h-5" />}
+                    iconBg="bg-secondary/10 text-secondary"
+                    borderColor='border-t-2 border-t-secondary/70'
+                />
+                <StatsCard
+                    label="ASSIGNED FURNITURES"
+                    value={assignedFurnitures}
+                    icon={<PackageCheck className="w-5 h-5" />}
+                    iconBg="bg-success/10 text-success"
+                    borderColor='border-t-2 border-t-success/70'
+                />
+                <StatsCard
+                    label="AVAILABLE FURNITURES"
+                    value={availableFurnitures}
+                    icon={<PackageOpen className="w-5 h-5" />}
+                    iconBg="bg-secondary/10 text-secondary/70"
+                    borderColor='border-t-2 border-t-secondary/70'
+                />
             </div>
 
             <DataTable
                 toolbarActions={
                     <>
-                        <select 
-                            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none"
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Available', value: 'Available' }
+                            ]}
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                            placeholder="All Status"
+                            minWidth="w-[140px]"
+                        />
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                            onClick={() => setIsExportConfirmOpen(true)}
                         >
-                            <option value="All">All</option>
-                            <option value="Available">Available</option>
-                        </select>
-                        <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium inline-flex items-center gap-2 hover:bg-gray-50 transition-colors">
                             <Download className="w-4 h-4" />
                             Export
                         </button>
                     </>
                 }
-                searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
-                searchPlaceholder="Search furniture types..."
+                searchQuery={searchInput}
+                onSearchChange={(e) => setSearchInput(e.target.value)}
+                searchPlaceholder="Search furniture assets..."
                 headers={tableHeaders}
-                items={types}
+                items={assets}
                 canSelect={false}
                 onRowClick={handleRowClick}
-                emptyText="No furniture types found."
+                emptyText="No furniture assets found."
                 isLoading={loading}
                 renderRow={(item) => (
                     <>
-                        <td className="p-4 text-sm text-gray-500 font-medium">
-                            {item.name}
-                        </td>
+                        <td className="p-4 text-sm text-gray-900 font-medium">{item.furnitureId}</td>
+                        <td className="p-4 text-sm text-gray-500 font-medium">{item.furnitureTypeId?.name || '--'}</td>
+                        <td className="p-4 text-sm text-gray-500">{item.hostelId?.name || '--'}</td>
                         <td className="p-4 text-sm text-gray-500">
-                            {item.total || item.assets?.total || 0}
+                            {item.studentId?.name ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                                        {item.studentId.name.substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <span className="text-gray-900 font-medium">{item.studentId.name}</span>
+                                </div>
+                            ) : '-'}
                         </td>
-                        <td className="p-4 text-sm text-gray-500">
-                            {item.allocated || item.assets?.allocated || 0}
-                        </td>
-                        <td className="p-4 text-sm text-gray-500">
-                            {item.available || item.assets?.available || 0}
+                        <td className="p-4">
+                            <FurnitureStatusBadge status={item.status} />
                         </td>
                     </>
                 )}
                 page={page}
-                setPage={setPage}
+                setPage={(p) => updateSearchParams({ page: p })}
                 limit={limit}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
             />
 
-            {isDetailsModalOpen && selectedType && (
-                <WardenFurnitureDetailsModal
-                    isOpen={isDetailsModalOpen}
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                fields={exportFields}
+                title="Export Furniture Options"
+            />
+
+            {isAssetDetailsModalOpen && selectedAsset && (
+                <AssetDetailsModal
+                    isOpen={isAssetDetailsModalOpen}
                     onClose={() => {
-                        setIsDetailsModalOpen(false);
-                        setSelectedType(null);
+                        setIsAssetDetailsModalOpen(false);
+                        setSelectedAsset(null);
                     }}
-                    furnitureType={selectedType}
+                    assetId={selectedAsset._id || selectedAsset.id}
+                    organizationName={selectedAsset.furnitureTypeId?.organization?.name}
+                    hostelName={selectedAsset.hostelId?.name}
                 />
             )}
         </div>

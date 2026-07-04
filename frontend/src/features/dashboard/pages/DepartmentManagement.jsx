@@ -7,7 +7,8 @@ import {
     CheckSquare,
     Building2,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    MoreVertical
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -52,7 +53,7 @@ const DepartmentManagement = () => {
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isAddConfirmOpen, setIsAddConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
@@ -347,24 +348,6 @@ const DepartmentManagement = () => {
                     <p className="text-xs text-[#777777] mt-1">Manage all Departments</p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-
-                    {selectedIds.length > 0 && (
-                        <div className="flex items-center gap-2 mr-2">
-                            <button
-                                onClick={() => handleBulkStatusClick(true)}
-                                className="px-3 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Active ({selectedIds.length})
-                            </button>
-                            <button
-                                onClick={() => handleBulkStatusClick(false)}
-                                className="px-3 py-2 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Inactive ({selectedIds.length})
-                            </button>
-                        </div>
-                    )}
-
                 </div>
             </div>
 
@@ -411,10 +394,38 @@ const DepartmentManagement = () => {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
+                            
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
+                                >
+                                    <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {isBulkMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
+                                            disabled={selectedIds.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <button
                             onClick={() => openModal('add')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">`n<Plus className="w-4 h-4" /> Add New
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">
+                            <Plus className="w-4 h-4" /> Add New
                         </button>
                     </div>
                 </div>

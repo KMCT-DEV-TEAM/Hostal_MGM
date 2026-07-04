@@ -120,8 +120,9 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const types = await furnitureAggregation.getFurnitureTypesListAggregation(matchQuery, skip, limit);
+  const total = await FurnitureType.countDocuments(matchQuery);
 
-  return sendSuccess(res, 200, "Furniture Types retrieved.", { data: types });
+  return sendSuccess(res, 200, "Furniture Types retrieved.", { data: types, total, page, limit });
 });
 
 export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {

@@ -155,11 +155,14 @@ export default function DataTable({
                                                 <td className="p-4 text-center">
                                                     <button
                                                         type="button"
-                                                        onClick={() => onSelect && onSelect(rowId)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSelect && onSelect(rowId);
+                                                        }}
                                                         className="focus:outline-none flex items-center justify-center cursor-pointer mx-auto"
                                                     >
                                                         {isSelected ? (
-                                                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                                            <CheckSquare className="w-5 h-5 text-primary" />
                                                         ) : (
                                                             <Square className="w-5 h-5 text-gray-300 hover:text-gray-400" />
                                                         )}

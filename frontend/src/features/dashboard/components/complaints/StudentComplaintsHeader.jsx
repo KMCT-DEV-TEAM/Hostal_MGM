@@ -9,7 +9,7 @@ export default function StudentComplaintsHeader({ showKPIs, setShowKPIs }) {
                 <p className="text-[10px] sm:text-xs text-text-secondary mt-0.5">Raise hostel-related issues and track their status until resolution.</p>
             </div>
             
-            <div className="flex items-center self-end sm:self-auto">
+            <div className="hidden md:flex items-center self-end sm:self-auto">
                 <button
                     onClick={() => setShowKPIs(!showKPIs)}
                     className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"

@@ -20,12 +20,12 @@ import {
   getFurnitureAssetDetails
 } from "./furniture.controller.js";
 
-import { 
+import {
   validateCreateFurnitureType,
   validateAdjustAssetCount,
-  validateAllocate, 
+  validateAllocate,
   validateReturn,
-  validateStartMaintenance, 
+  validateStartMaintenance,
   validateCompleteMaintenance,
   validateUpdateFurnitureType
 } from "./furniture.validation.js";
