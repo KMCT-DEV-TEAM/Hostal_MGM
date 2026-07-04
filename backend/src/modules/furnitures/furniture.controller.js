@@ -108,6 +108,12 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
     matchQuery.hostelId = scope.hostelId;
   }
   const search = req.query.search;
+  const isActive = req.query.isActive;
+
+  if (isActive !== undefined) {
+    matchQuery.isActive = isActive === "true";
+  }
+
   if (search) {
     matchQuery.$or = [
       { name: { $regex: search, $options: "i" } },
