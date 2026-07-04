@@ -218,11 +218,11 @@ export const validateManualStatusChange = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Invalid Asset ID." });
     }
 
-    const allowedStatuses = ["available", "inactive", "lost", "scrap"];
+    const allowedStatuses = ["available", "maintenance", "inactive", "lost", "scrap"];
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Invalid status. Status can only be manually changed to one of: ${allowedStatuses.join(", ")}` 
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Status can only be manually changed to one of: ${allowedStatuses.join(", ")}`
       });
     }
 
