@@ -241,7 +241,11 @@ export const getFurnitureAssetsByType = asyncHandler(async (req, res) => {
   const search = req.query.search;
 
   const matchQuery = { furnitureTypeId: new mongoose.Types.ObjectId(typeId) };
-  if (status) matchQuery.status = status;
+  if (status && status !== "all") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { $ne: "inactive" };
+  }
   if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
@@ -272,7 +276,11 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
   const typeIds = types.map(t => t._id);
 
   const matchQuery = { furnitureTypeId: { $in: typeIds } };
-  if (status) matchQuery.status = status;
+  if (status && status !== "all") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { $ne: "inactive" };
+  }
   if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
