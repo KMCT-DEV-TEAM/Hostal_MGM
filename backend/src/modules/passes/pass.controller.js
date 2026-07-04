@@ -24,32 +24,7 @@ import {
 } from "./pass.service.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
-import { notificationRepository } from "../notifications/notification.repository.js";
-
-const Notification = {
-    async create(data) {
-        return notificationRepository.createNotification({
-            recipient: { id: data.recipient, model: 'User' }, // Approximated
-            event: { event: 'PASS_EVENT', category: 'PASS', priority: 'NORMAL', type: data.type || 'info' },
-            title: data.title,
-            message: data.message,
-            link: data.link,
-            metadata: data.metadata,
-        });
-    },
-    async insertMany(dataArray) {
-        if (!dataArray || !dataArray.length) return;
-        const mapped = dataArray.map(data => ({
-            recipient: { id: data.recipient, model: 'User' }, // Approximated
-            event: { event: 'PASS_EVENT', category: 'PASS', priority: 'NORMAL', type: data.type || 'info' },
-            title: data.title,
-            message: data.message,
-            link: data.link,
-            metadata: data.metadata,
-        }));
-        return notificationRepository.bulkCreate(mapped);
-    }
-};
+import { NotificationCompat as Notification } from "../notifications/notification.compat.js";
 import Pass from "./pass.model.js";
 import Hostel from "../hostels/hostel.model.js";
 
@@ -118,6 +93,21 @@ export const createPass = asyncHandler(async (req, res) => {
   }
 
   const newPass = await createPassDb(passData);
+
+  const passTypeLabel = passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  await Notification.create({
+    recipient: parent._id,
+    event: 'PASS_CREATED',
+    category: 'PASS',
+    title: "Pass Request Submitted",
+    message: `Your ${passTypeLabel} request has been submitted successfully and is awaiting approval.`,
+    type: "info",
+    metadata: {
+      passTypeLabel,
+      studentName: student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim(),
+      reason
+    }
+  });
 
   return sendSuccess(res, 201, "Your pass request has been submitted successfully.", newPass);
 });
@@ -367,20 +357,31 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   const updatedPass = await Pass.findByIdAndUpdate(id, updateQuery, { new: true }).populate("studentId");
 
   // Notify student
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const approvedBy = "Admin";
+  const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
+  const remarksText = remarks || "Approved";
+
   await Notification.create({
     recipient: updatedPass.studentId._id,
-    title: isCancellation ? "Cancellation Approved" : "Pass Approved",
-    message: isCancellation ? "Your pass cancellation request has been approved." : `Your pass has been approved by the admin.`,
-    type: "success"
+    event: 'PASS_ADMIN_APPROVED',
+    category: 'PASS',
+    title: "Pass Approved",
+    message: `Your ${passTypeLabel} request has been approved by ${approvedBy}.`,
+    type: "info",
+    metadata: { passTypeLabel, studentName, approvedBy, remarks: remarksText }
   });
 
   // Notify parent
   if (updatedPass.parentId) {
     await Notification.create({
       recipient: updatedPass.parentId,
-      title: isCancellation ? "Cancellation Approved" : "Pass Approved",
-      message: isCancellation ? "Your ward's pass cancellation request has been approved." : `Your ward's pass has been approved by the admin.`,
-      type: "success"
+      event: 'PASS_ADMIN_APPROVED',
+      category: 'PASS',
+      title: "Pass Approved",
+      message: `Your ${passTypeLabel} request has been approved by ${approvedBy}.`,
+      type: "info",
+      metadata: { passTypeLabel, studentName, approvedBy, remarks: remarksText }
     });
   }
 
@@ -390,9 +391,12 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   if (hostel && hostel.wardens && hostel.wardens.length > 0) {
     await Notification.insertMany(hostel.wardens.map(wardenId => ({
       recipient: wardenId,
-      title: isCancellation ? "Cancellation Approved" : "Pass Approved",
-      message: `A pass request for a student in your hostel was approved by the admin.`,
-      type: "info"
+      event: 'PASS_ADMIN_APPROVED',
+      category: 'PASS',
+      title: "Pass Approved",
+      message: `Your ${passTypeLabel} request has been approved by ${approvedBy}.`,
+      type: "info",
+      metadata: { passTypeLabel, studentName, approvedBy, remarks: remarksText }
     })));
   }
 
@@ -437,19 +441,29 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
 
   const updatedPass = await Pass.findByIdAndUpdate(id, updateQuery, { new: true }).populate("studentId");
 
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
+  const remarksText = remarks || "Rejected";
+
   await Notification.create({
     recipient: updatedPass.studentId._id,
+    event: 'PASS_ADMIN_REJECTED',
+    category: 'PASS',
     title: "Pass Rejected",
-    message: `Your pass request was rejected by administration. Reason: ${remarks}`,
-    type: "error"
+    message: `Your ${passTypeLabel} request was rejected.`,
+    type: "error",
+    metadata: { passTypeLabel, studentName, remarks: remarksText }
   });
 
   if (updatedPass.parentId) {
     await Notification.create({
       recipient: updatedPass.parentId,
+      event: 'PASS_ADMIN_REJECTED',
+      category: 'PASS',
       title: "Pass Rejected",
-      message: `Your ward's pass request was rejected by administration. Reason: ${remarks}`,
-      type: "error"
+      message: `Your ${passTypeLabel} request was rejected.`,
+      type: "error",
+      metadata: { passTypeLabel, studentName, remarks: remarksText }
     });
   }
 
@@ -458,9 +472,12 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
   if (hostel && hostel.wardens && hostel.wardens.length > 0) {
     await Notification.insertMany(hostel.wardens.map(wId => ({
       recipient: wId,
+      event: 'PASS_ADMIN_REJECTED',
+      category: 'PASS',
       title: "Pass Rejected",
-      message: `A pass request for a student in your hostel was rejected by the admin.`,
-      type: "info"
+      message: `Your ${passTypeLabel} request was rejected.`,
+      type: "error",
+      metadata: { passTypeLabel, studentName, remarks: remarksText }
     })));
   }
 
@@ -736,6 +753,20 @@ export const approvePass = asyncHandler(async (req, res) => {
     { new: true }
   ).populate("studentId", "name admissionNo roomNo");
 
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
+  const parentName = parent.name || `${parent.firstName || ''} ${parent.lastName || ''}`.trim();
+
+  await Notification.create({
+    recipient: updatedPass.studentId._id,
+    event: 'PASS_PARENT_APPROVED',
+    category: 'PASS',
+    title: "Parent Approved",
+    message: `${parentName} approved your ${passTypeLabel} request.`,
+    type: "info",
+    metadata: { passTypeLabel, studentName, parentName }
+  });
+
   const Hostel = (await import("../hostels/hostel.model.js")).default;
   const hostel = await Hostel.findById(updatedPass.hostelId);
   if (hostel) {
@@ -744,9 +775,12 @@ export const approvePass = asyncHandler(async (req, res) => {
     if (admins && admins.length > 0) {
       await Notification.insertMany(admins.map(admin => ({
         recipient: admin._id,
-        title: isCancellation ? "Cancellation Approved by Parent" : "Pass Approved by Parent",
-        message: `A parent approved a ${isCancellation ? "cancellation " : ""}request. Awaiting admin approval.`,
-        type: "info"
+        event: 'PASS_PARENT_APPROVED',
+        category: 'PASS',
+        title: "Parent Approved",
+        message: `${parentName} approved your ${passTypeLabel} request.`,
+        type: "info",
+        metadata: { passTypeLabel, studentName, parentName }
       })));
     }
   }
