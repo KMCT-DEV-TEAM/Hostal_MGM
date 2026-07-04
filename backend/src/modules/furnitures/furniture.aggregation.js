@@ -218,10 +218,10 @@ export const getFurnitureAssetDetailsAggregation = async (assetId) => {
         from: "furnituretypes",
         localField: "furnitureTypeId",
         foreignField: "_id",
-        as: "typeInfo",
+        as: "furnituretypeInfo",
       },
     },
-    { $unwind: { path: "$typeInfo", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$furnituretypeInfo", preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: "students",
@@ -280,8 +280,8 @@ export const getFurnitureAssetDetailsAggregation = async (assetId) => {
         furnitureId: 1,
         status: 1,
         createdAt: 1,
-        furnitureName: "$typeInfo.name",
-        prefix: "$typeInfo.prefix",
+        furnitureName: "$furnituretypeInfo.name",
+        prefix: "$furnituretypeInfo.prefix",
         currentAssignment: {
           $cond: {
             if: "$student",
