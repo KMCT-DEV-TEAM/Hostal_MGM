@@ -90,15 +90,30 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
   const scope = await resolveUserScope(req.user);
 
   if (req.user.role === "admin") {
-    matchQuery["typeInfo.organizationId"] = scope.organizationId;
+    matchQuery["typeInfo.organizationId"] = new mongoose.Types.ObjectId(scope.organizationId);
   } else if (req.user.role === "warden") {
-    matchQuery["typeInfo.hostelId"] = scope.hostelId;
+    matchQuery["typeInfo.hostelId"] = new mongoose.Types.ObjectId(scope.hostelId);
   }
 
   const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
   const distribution = await furnitureAggregation.getFurnitureTypeDistributionAggregation(matchQuery);
 
   return sendSuccess(res, 200, "Dashboard data retrieved.", { summary, distribution });
+});
+
+export const getAssetsDashboardSummary = asyncHandler(async (req, res) => {
+  const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin") {
+    matchQuery["typeInfo.organizationId"] = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    matchQuery["typeInfo.hostelId"] = scope.hostelId;
+  }
+
+  const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
+
+  return sendSuccess(res, 200, "Assets Dashboard data retrieved.", { summary });
 });
 
 // Added these stubs so they resolve imports properly since earlier the user had placeholder methods

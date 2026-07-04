@@ -19,7 +19,8 @@ import {
   getAllHostelFurnitureAssets,
   getFurnitureAssetDetails,
   getActiveFurnitureTypesList,
-  getAvailableFurnitureAssetsList
+  getAvailableFurnitureAssetsList,
+  getAssetsDashboardSummary
 } from "./furniture.controller.js";
 
 import {
@@ -146,6 +147,12 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   getDashboardSummary
+);
+router.get(
+  "/assets-dashboard",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getAssetsDashboardSummary
 );
 router.get(
   "/assets",
