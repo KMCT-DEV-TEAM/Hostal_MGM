@@ -122,6 +122,9 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const scope = await resolveUserScope(req.user);
   if (req.user.role === "admin") {
     matchQuery.organizationId = scope.organizationId;
+    if (req.query.hostelId) {
+      matchQuery.hostelId = new mongoose.Types.ObjectId(req.query.hostelId);
+    }
   } else if (req.user.role === "warden") {
     matchQuery.hostelId = scope.hostelId;
   }
