@@ -12,6 +12,7 @@ import {
 import {
   createHostel,
   getHostels,
+  getSelectionHostels,
   getHostelById,
   updateHostel,
   toggleHostelStatus,
@@ -33,6 +34,13 @@ router.get(
   authMiddleware,
   roleMiddleware("admin", "super_admin"),
   getHostels
+);
+
+router.get(
+  "/selection",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  getSelectionHostels
 );
 
 router.get(
