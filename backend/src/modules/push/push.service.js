@@ -1,5 +1,6 @@
 import PushSubscription from './push.model.js';
 import mongoose from 'mongoose';
+import webpush from '../../config/push.config.js';
 
 /**
  * Registers a new web push subscription or updates an existing one for the user.
@@ -60,15 +61,20 @@ export const removeSubscriptionService = async (endpoint) => {
 /**
  * Retrieves all active subscriptions for a specific recipient using aggregation.
  * @param {String} recipientId - The ID of the recipient
+ * @param {String} recipientModel - The Model of the recipient
  * @returns {Promise<Array>} Array of active subscriptions
  */
-export const getActiveSubscriptionsService = async (recipientId) => {
+export const getActiveSubscriptionsService = async (recipientId, recipientModel) => {
+  const matchQuery = {
+    'recipient.id': new mongoose.Types.ObjectId(recipientId)
+  };
+  
+  if (recipientModel) {
+    matchQuery['recipient.model'] = recipientModel;
+  }
+
   const result = await PushSubscription.aggregate([
-    {
-      $match: {
-        'recipient.id': new mongoose.Types.ObjectId(recipientId)
-      }
-    },
+    { $match: matchQuery },
     { $unwind: '$subscriptions' },
     {
       $match: {
@@ -85,4 +91,58 @@ export const getActiveSubscriptionsService = async (recipientId) => {
   ]);
   
   return result;
+};
+
+/**
+ * Sends a push notification to all active subscriptions of a recipient.
+ * @param {Object} recipient - { id, model }
+ * @param {Object} payload - { title, body, icon, badge, data }
+ * @returns {Promise<Object>} Summary of delivery
+ */
+export const sendPushNotification = async (recipient, payload) => {
+  const activeSubscriptions = await getActiveSubscriptionsService(recipient.id, recipient.model);
+
+  if (!activeSubscriptions || activeSubscriptions.length === 0) {
+    return {
+      success: false,
+      totalSubscriptions: 0,
+      successCount: 0,
+      failedCount: 0,
+      failures: []
+    };
+  }
+
+  const payloadString = JSON.stringify(payload);
+  let successCount = 0;
+  let failedCount = 0;
+  const failures = [];
+
+  const promises = activeSubscriptions.map(async (sub) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: sub.keys },
+        payloadString
+      );
+      successCount++;
+    } catch (error) {
+      failedCount++;
+      const statusCode = error.statusCode;
+      failures.push({ endpoint: sub.endpoint, error: error.message, statusCode });
+
+      if (statusCode === 404 || statusCode === 410) {
+        // Deactivate subscription as per requirements
+        await removeSubscriptionService(sub.endpoint);
+      }
+    }
+  });
+
+  await Promise.allSettled(promises); // Use Promise.allSettled to ensure all finish even if one crashes
+
+  return {
+    success: true,
+    totalSubscriptions: activeSubscriptions.length,
+    successCount,
+    failedCount,
+    failures
+  };
 };

@@ -3,7 +3,8 @@ import { sendError, sendSuccess } from '../../utils/response.js';
 import {
   registerSubscriptionService,
   removeSubscriptionService,
-  getActiveSubscriptionsService
+  getActiveSubscriptionsService,
+  sendPushNotification
 } from './push.service.js';
 
 /**
@@ -56,8 +57,12 @@ export const unregisterPushSubscription = asyncHandler(async (req, res) => {
  */
 export const getUserSubscriptions = asyncHandler(async (req, res) => {
   const userId = req.user.id || req.user._id;
+  let recipientModel = 'User';
+  if (req.user.role === 'student') recipientModel = 'Student';
+  if (req.user.role === 'parent') recipientModel = 'Parent';
 
-  const subscriptions = await getActiveSubscriptionsService(userId);
+  const subscriptions = await getActiveSubscriptionsService(userId, recipientModel);
 
   return sendSuccess(res, 200, 'Active subscriptions retrieved', subscriptions);
 });
+

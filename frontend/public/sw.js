@@ -6,20 +6,30 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+const DEFAULT_NOTIFICATION_OPTIONS = {
+  icon: "/vite.svg",
+  badge: "/vite.svg",
+  requireInteraction: false,
+  silent: false
+};
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
   try {
-    const data = event.data.json();
-    const title = data.title || 'New Notification';
+    const payload = event.data.json();
+    const title = payload.title || 'New Notification';
+
+    // Merge DEFAULT_NOTIFICATION_OPTIONS with incoming payload
     const options = {
-      body: data.body || 'You have a new message.',
-      icon: data.icon || '/vite.svg', // Assuming vite.svg as default, swap with logo if available
-      badge: data.badge || '/vite.svg',
-      data: {
-        url: data.url || '/',
-      },
+      ...DEFAULT_NOTIFICATION_OPTIONS,
+      body: payload.body || 'You have a new message.',
+      data: payload.data || { url: '/' }
     };
+
+    if (payload.image) {
+      options.image = payload.image;
+    }
 
     event.waitUntil(self.registration.showNotification(title, options));
   } catch (error) {
@@ -30,19 +40,31 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  const targetUrl = event.notification.data?.url || '/';
+  const urlToOpen = new URL(targetUrl, self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Check if there is already a window/tab open with the target URL
+      // Find an existing application window
+      let matchingClient = null;
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        // If so, just focus it.
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          matchingClient = client;
+          break;
         }
       }
-      // If not, then open the target URL in a new window/tab.
+
+      if (matchingClient) {
+        // Focus the existing window and navigate if needed
+        matchingClient.focus();
+        if (matchingClient.url !== urlToOpen) {
+          matchingClient.navigate(urlToOpen);
+        }
+        return matchingClient;
+      }
+
+      // Otherwise, open a new browser tab.
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }
