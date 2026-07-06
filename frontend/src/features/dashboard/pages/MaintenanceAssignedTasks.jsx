@@ -8,6 +8,7 @@ import RejectAssignedTaskModal from '../components/complaints/RejectAssignedTask
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
 import { useDebounce } from '@/hooks/useDebounce';
+import MaintenanceAssignedTasksMobileList from '../components/complaints/MaintenanceAssignedTasksMobileList';
 
 export default function MaintenanceAssignedTasks() {
     const { user } = useAuthStore();
@@ -84,26 +85,27 @@ export default function MaintenanceAssignedTasks() {
     const resolvedAll = tasks.filter(t => t.status === 'Resolved').length;
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6 w-full text-left">
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{user?.name}</h1>
-                    <p className="text-xs text-gray-500 mt-0.5">Manage your assigned maintenance tasks here.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Assigned Tasks</h1>
+                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage your assigned maintenance tasks here.</p>
                 </div>
                 
-                <div className="flex items-center self-end sm:self-auto">
+                <div className="hidden md:flex items-center self-end sm:self-auto">
                     <button
                         onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-2 p-2 sm:px-4 sm:py-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
                     >
-                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+                        {showKPIs ? <List className="w-5 h-5 sm:w-4 sm:h-4" /> : <LayoutGrid className="w-5 h-5 sm:w-4 sm:h-4" />}
+                        <span className="hidden sm:inline">{showKPIs ? "Hide KPIs" : "Show KPIs"}</span>
                     </button>
                 </div>
             </div>
 
             {/* Stat Cards Section */}
             {showKPIs && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full shrink-0">
+            <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full shrink-0">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Tasks</p>
@@ -146,41 +148,46 @@ export default function MaintenanceAssignedTasks() {
             </div>
             )}
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-visible md:shadow-sm flex-1 flex flex-col min-h-0">
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
                 {/* Toolbar */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-gray-100 gap-4 bg-white">
-                    <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search tasks..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
-                        />
+                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0 mb-3 md:mb-0">
+                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
+                        <div className="relative w-full">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                placeholder="Search tasks..."
+                                value={searchQuery}
+                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
+                            />
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: 'All' },
-                                { label: 'Pending', value: 'Pending' },
-                                { label: 'Awaiting', value: 'Awaiting' },
-                                { label: 'In progress', value: 'In progress' },
-                                { label: 'Rejected', value: 'Rejected' },
-                                { label: 'Incomplete', value: 'Incomplete' },
-                                { label: 'Resolved', value: 'Resolved' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => setStatusFilter(val)}
-                            placeholder="All Status"
-                            triggerClassName="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-700 flex justify-between items-center shadow-sm md:shadow-none min-w-[130px]"
-                            minWidth="w-[140px]"
-                        />
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
+                        <div className="flex gap-3 w-full sm:w-auto">
+                            <Dropdown
+                                className="flex-1 sm:flex-none"
+                                options={[
+                                    { label: 'All Status', value: 'All' },
+                                    { label: 'Pending', value: 'Pending' },
+                                    { label: 'Awaiting', value: 'Awaiting' },
+                                    { label: 'In progress', value: 'In progress' },
+                                    { label: 'Rejected', value: 'Rejected' },
+                                    { label: 'Incomplete', value: 'Incomplete' },
+                                    { label: 'Resolved', value: 'Resolved' }
+                                ]}
+                                value={statusFilter}
+                                onChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+                                placeholder="All Status"
+                                minWidth="w-32"
+                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Table */}
-                <div className="block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <table className="w-full text-left border-collapse bg-white">
                         <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
                             <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-700 text-sm font-semibold">
@@ -236,8 +243,16 @@ export default function MaintenanceAssignedTasks() {
                     </table>
                 </div>
 
+                <MaintenanceAssignedTasksMobileList
+                    tasks={paginatedTasks}
+                    loading={loading}
+                    handleResolveClick={handleResolveClick}
+                    handleRejectClick={handleRejectClick}
+                    getStatusStyle={getStatusStyle}
+                />
+
                 {/* Pagination */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
                         {totalTasks === 0 ? 0 : (currentPage - 1) * limit + 1}
@@ -251,7 +266,7 @@ export default function MaintenanceAssignedTasks() {
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -290,7 +305,7 @@ export default function MaintenanceAssignedTasks() {
                         <button
                             disabled={currentPage === totalPages || totalPages === 0}
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>

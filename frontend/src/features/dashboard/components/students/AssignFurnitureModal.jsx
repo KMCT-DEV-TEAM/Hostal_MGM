@@ -6,6 +6,94 @@ import AsyncDropdown from "@/components/ui/AsyncDropdown";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 
 
+// A custom multi-select for the furnitures
+function MultiSelectDropdown({ options = [], value = [], onChange, placeholder, lookup = {} }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleToggle = (optValue) => {
+    if (value.includes(optValue)) {
+      onChange(value.filter((v) => v !== optValue));
+    } else {
+      onChange([...value, optValue]);
+    }
+  };
+
+  const removeChip = (e, optValue) => {
+    e.stopPropagation();
+    onChange(value.filter((v) => v !== optValue));
+  };
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <div
+        className="min-h-[42px] border border-gray-200 rounded-lg px-3 py-1.5 flex flex-wrap items-center gap-1.5 cursor-pointer bg-white transition-colors focus-within:border-secondary"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {value.length === 0 && (
+          <span className="text-sm text-gray-400 py-1">{placeholder}</span>
+        )}
+        {value.map((v) => {
+          const opt = options.find((o) => o.value === v) || lookup[v] || { label: v };
+          return (
+            <span
+              key={v}
+              className="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-medium"
+            >
+              {opt.label}
+              <X
+                className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-pointer"
+                onClick={(e) => removeChip(e, v)}
+              />
+            </span>
+          );
+        })}
+        <div className="flex-1 min-w-[20px]" />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""
+            }`}
+        />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-[100] w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {options.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-400 text-center">
+              No options available for this type
+            </div>
+          ) : (
+            options.map((opt) => {
+              const isSelected = value.includes(opt.value);
+              return (
+                <div
+                  key={opt.value}
+                  className={`px-3 py-2 text-sm cursor-pointer transition-colors ${isSelected
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  onClick={() => handleToggle(opt.value)}
+                >
+                  {opt.label}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AssignFurnitureModal({
   isOpen,
   onClose,
