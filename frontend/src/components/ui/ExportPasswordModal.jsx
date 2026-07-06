@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DateInput from "@/components/ui/DateInput";
+import { showErrorToast } from "@/utils/toast";
 
 export default function ExportPasswordModal({
   isOpen,
@@ -15,6 +16,7 @@ export default function ExportPasswordModal({
   const [password, setPassword] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [errors, setErrors] = useState({});
 
   // Reset states when closed
   React.useEffect(() => {
@@ -22,6 +24,7 @@ export default function ExportPasswordModal({
       setPassword("");
       setStartDate("");
       setEndDate("");
+      setErrors({});
     }
   }, [isOpen]);
 
@@ -30,7 +33,17 @@ export default function ExportPasswordModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!password) return;
+    setErrors({});
+
     if (showDateFilters) {
+      if (startDate && endDate) {
+        const start = new Date(startDate).setHours(0,0,0,0);
+        const end = new Date(endDate).setHours(0,0,0,0);
+        if (start > end) {
+          setErrors({ endDate: 'To date must be after from date' });
+          return;
+        }
+      }
       onConfirm({ password, startDate, endDate });
     } else {
       onConfirm(password);
@@ -77,19 +90,27 @@ export default function ExportPasswordModal({
               <label className="block mb-1.5 text-xs font-medium text-gray-700">From Date</label>
               <DateInput
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setErrors(prev => ({ ...prev, startDate: null }));
+                }}
                 placeholder="Select from date"
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-secondary"
               />
+              {errors.startDate && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.startDate}</p>}
             </div>
             <div className="flex-1">
               <label className="block mb-1.5 text-xs font-medium text-gray-700">To Date</label>
               <DateInput
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setErrors(prev => ({ ...prev, endDate: null }));
+                }}
                 placeholder="Select to date"
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-secondary"
               />
+              {errors.endDate && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.endDate}</p>}
             </div>
           </div>
         )}

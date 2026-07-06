@@ -395,7 +395,7 @@ const OrganizationManagement = () => {
                                         <MoreVertical className="w-4 h-4" />
                                     </button>
                                     {isBulkMenuOpen && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+                                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
                                             <button
                                                 onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
                                                 disabled={selectedIds.length === 0}

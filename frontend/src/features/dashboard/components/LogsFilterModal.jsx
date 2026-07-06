@@ -40,6 +40,14 @@ export default function LogsFilterModal({
         if (!endDate) newErrors.endDate = 'To date is required';
         if (status === 'All') newErrors.status = 'Status is required';
 
+        if (startDate && endDate) {
+            const start = new Date(startDate).setHours(0,0,0,0);
+            const end = new Date(endDate).setHours(0,0,0,0);
+            if (start > end) {
+                newErrors.endDate = 'To date must be after from date';
+            }
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;

@@ -10,6 +10,7 @@ export default function PasswordRequestsFilterModal({
 }) {
     const [status, setStatus] = useState(initialStatus || 'All');
     const [showConfirmReset, setShowConfirmReset] = useState(false);
+    const [showConfirmApply, setShowConfirmApply] = useState(false);
 
     const resetFilters = () => {
         setStatus('All');
@@ -18,6 +19,7 @@ export default function PasswordRequestsFilterModal({
     };
 
     const handleApply = () => {
+        setShowConfirmApply(false);
         onApply({ statusFilter: status });
     };
 
@@ -36,6 +38,7 @@ export default function PasswordRequestsFilterModal({
                 title="Filter Requests"
                 subtitle="Filter password requests by status"
                 maxWidth="max-w-md"
+                overflowClass="overflow-visible"
                 footer={
                     <div className="flex gap-3 w-full">
                         <button
@@ -47,10 +50,10 @@ export default function PasswordRequestsFilterModal({
                         </button>
                         <button
                             type="button"
-                            onClick={handleApply}
+                            onClick={() => setShowConfirmApply(true)}
                             className="flex-1 py-2.5 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#0A437A]/90 transition-colors cursor-pointer"
                         >
-                            Apply Filters
+                            Filter
                         </button>
                     </div>
                 }
@@ -76,6 +79,15 @@ export default function PasswordRequestsFilterModal({
                 title="Reset Filters"
                 message="Are you sure you want to reset all filters?"
                 confirmText="Confirm Reset"
+            />
+
+            <ConfirmationModal
+                isOpen={showConfirmApply}
+                onClose={() => setShowConfirmApply(false)}
+                onConfirm={handleApply}
+                title="Apply Filters"
+                message="Are you sure you want to apply these filters?"
+                confirmText="Apply Filters"
             />
         </>
     );
