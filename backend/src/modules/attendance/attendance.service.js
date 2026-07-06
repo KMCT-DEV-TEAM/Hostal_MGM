@@ -4,6 +4,7 @@ import Student from "../students/student.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Pass from "../passes/pass.model.js";
 import { formatTime, formatDate, capitalize } from "../../utils/formatters.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 
 const getStartOfDay = (date) => {
   const d = new Date(date);
@@ -47,6 +48,17 @@ export const createAttendanceWindowDb = async (hostelId, wardenId) => {
     totalStudents,
     startedBy: wardenId,
   });
+
+  // Trigger Notification asynchronously
+  orchestratorService.triggerNotification({
+    eventName: 'ATTENDANCE_OPENED',
+    target: { type: 'HOSTEL', filter: { hostelId: newWindow.hostelId } },
+    data: {
+      category: 'ATTENDANCE',
+      priority: 'HIGH'
+    },
+    channels: ['in-app', 'push']
+  }).catch(err => console.error("[Notification] Failed to trigger ATTENDANCE_OPENED:", err));
 
   return {
     _id: newWindow._id,
@@ -538,6 +550,17 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
   window.completedBy = completedBy;
   window.absentCount = absentStudents.length;
   await window.save();
+
+  // Trigger Notification asynchronously
+  orchestratorService.triggerNotification({
+    eventName: 'ATTENDANCE_CLOSED',
+    target: { type: 'HOSTEL', filter: { hostelId: window.hostelId } },
+    data: {
+      category: 'ATTENDANCE',
+      priority: 'NORMAL'
+    },
+    channels: ['in-app', 'push']
+  }).catch(err => console.error("[Notification] Failed to trigger ATTENDANCE_CLOSED:", err));
 
   return {
     _id: window._id,
