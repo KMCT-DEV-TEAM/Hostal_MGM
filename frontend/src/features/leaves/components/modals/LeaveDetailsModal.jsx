@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { formatDate, formatDateTime } from '../../utils/formatters';
+import { formatDateReadable, formatDateTimeReadable } from '@/utils/formatters';
 import leaveService from '@/services/leave.service';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -180,7 +180,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         // Fix date string (e.g. "Jul 1, 2026, 10:27 AM" -> "Jul 1, 2026 | 10:27 AM")
         let formattedDate = '-----';
         if (date) {
-            const rawDate = formatDateTime(date);
+            const rawDate = formatDateTimeReadable(date);
             const lastCommaIndex = rawDate.lastIndexOf(',');
             if (lastCommaIndex !== -1) {
                 formattedDate = rawDate.substring(0, lastCommaIndex) + ' |' + rawDate.substring(lastCommaIndex + 1);
@@ -296,15 +296,15 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             {isHomePass ? (
                                 <>
                                     <div className="text-gray-500">From Date</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDate(request.fromDate)}</span></div>
+                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.fromDate)}</span></div>
 
                                     <div className="text-gray-500">To Date</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDate(request.toDate)}</span></div>
+                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.toDate)}</span></div>
                                 </>
                             ) : (
                                 <>
                                     <div className="text-gray-500">Date</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDate(request.date)}</span></div>
+                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.date)}</span></div>
 
                                     <div className="text-gray-500">Outing Time</div>
                                     <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.outTime || '--'} to {request.expectedReturnTime || '--'}</span></div>
@@ -315,7 +315,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{duration}</span></div>
 
                             <div className="text-gray-500">Applied Date</div>
-                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDate(request.createdAt)}</span></div>
+                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.createdAt)}</span></div>
 
                             <div className="text-gray-500">Parent approval</div>
                             <div className="flex items-center gap-3">
@@ -416,7 +416,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className="text-gray-400">:</span>
-                                    <span className="text-gray-700 font-medium">{formatDate(isHomePass ? request.fromDate : request.date)}</span>
+                                    <span className="text-gray-700 font-medium">{formatDateReadable(isHomePass ? request.fromDate : request.date)}</span>
                                 </div>
                             </div>
                             {isHomePass && (
@@ -427,7 +427,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span className="text-gray-400">:</span>
-                                        <span className="text-gray-700 font-medium">{formatDate(request.toDate)}</span>
+                                        <span className="text-gray-700 font-medium">{formatDateReadable(request.toDate)}</span>
                                     </div>
                                 </div>
                             )}
@@ -445,7 +445,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                     <div key={idx} className="border border-gray-100 rounded-lg p-3">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className="text-xs font-medium text-gray-700 capitalize">{t.remarks || t.action.replace('_', ' ')}</span>
-                                            <span className="text-[10px] text-gray-400">{formatDate(t.timestamp)}</span>
+                                            <span className="text-[10px] text-gray-400">{formatDateReadable(t.timestamp)}</span>
                                         </div>
                                         <div className="text-[10px] text-gray-500 capitalize">by {t.actorRole}</div>
                                     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import notificationApi from '../api/notificationApi';
-import { formatTimeAgo } from '../utils/formatDate';
+import { formatTimeAgo } from '@/utils/formatters';
 
 export const useNotifications = () => {
     const [notifications, setNotifications] = useState([]);

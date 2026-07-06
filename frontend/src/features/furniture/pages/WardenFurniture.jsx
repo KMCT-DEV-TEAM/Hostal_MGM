@@ -13,7 +13,7 @@ import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
 import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/utils/exportUtils';
-import { formatDate } from '@/utils/formatters';
+import { formatDateISO } from '@/utils/formatters';
 
 export default function WardenFurniture() {
     const navigate = useNavigate();
@@ -109,7 +109,7 @@ export default function WardenFurniture() {
                     'Hostel': r.hostelId?.name || '--',
                     'Assigned To': r.studentId?.name || 'Unassigned',
                     'Status': r.status || '--',
-                    'Added On': formatDate(r.createdAt)
+                    'Added On': formatDateISO(r.createdAt)
                 };
             });
 
