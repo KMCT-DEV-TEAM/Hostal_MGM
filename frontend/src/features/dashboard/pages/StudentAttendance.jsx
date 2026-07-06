@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 
-import { formatDate, formatDay } from '@/features/leaves/utils/formatters';
+import { formatDateReadable, formatDay } from '@/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
 import AttendanceQRModal from '../components/AttendanceQRModal';
 
@@ -100,7 +100,7 @@ const StudentAttendance = () => {
                 renderRow={(r) => (
                     <>
                         <td className="p-4 text-text-secondary text-sm font-medium">
-                            {formatDate(r.date)}
+                            {formatDateReadable(r.date)}
                         </td>
                         <td className="p-4 text-text-secondary text-sm">
                             {formatDay(r.date)}
@@ -117,7 +117,7 @@ const StudentAttendance = () => {
                     <div className="space-y-2.5">
                         <div className="flex justify-between items-center">
                             <span className="font-bold text-gray-700 text-sm">
-                                {formatDate(r.scannedAt || r.createdAt)}
+                                {formatDateReadable(r.scannedAt || r.createdAt)}
                             </span>
                             <span className="text-xs text-gray-400 font-medium">
                                 {formatDay(r.scannedAt || r.createdAt)}

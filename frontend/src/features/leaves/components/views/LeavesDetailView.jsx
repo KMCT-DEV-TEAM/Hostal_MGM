@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Filter, Download } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Dropdown from '@/components/ui/Dropdown';
-import { formatDate } from '../../utils/formatters';
+import { formatDateReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../badges/LeaveReturnBadge';
 
@@ -128,7 +128,7 @@ export default function LeavesDetailView({
 
                         {/* Period / Date */}
                         <td className="p-4 text-text-secondary lowercase">
-                            {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
+                            {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
                         </td>
 
                         {/* Days / Type */}
@@ -192,7 +192,7 @@ export default function LeavesDetailView({
                             <LeaveStatusBadge status={r.status} />
                         </div>
                         <div className="text-xs text-text-secondary">
-                            {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
+                            {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
                         </div>
                     </div>
                 );

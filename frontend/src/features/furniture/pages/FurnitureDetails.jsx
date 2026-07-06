@@ -19,7 +19,7 @@ import AssetDetailsModal from '../components/modals/AssetDetailsModal';
 import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
 import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
 import { exportToExcel } from '@/utils/exportUtils';
-import { formatDate } from '@/utils/formatters';
+import { formatDateISO } from '@/utils/formatters';
 
 export default function FurnitureDetails() {
     const { id } = useParams();
@@ -166,7 +166,7 @@ export default function FurnitureDetails() {
                     'Hostel': r.hostelId?.name || '--',
                     'Assigned To': r.studentId?.name || 'Unassigned',
                     'Status': r.status || '--',
-                    'Added On': formatDate(r.createdAt)
+                    'Added On': formatDateISO(r.createdAt)
                 };
             });
 

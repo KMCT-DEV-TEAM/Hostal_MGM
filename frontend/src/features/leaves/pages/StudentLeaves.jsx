@@ -8,7 +8,7 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import leaveService from '@/services/leave.service';
 
 // Modular imports
-import { formatDate } from '../utils/formatters';
+import { formatDateReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
@@ -124,7 +124,7 @@ export default function StudentLeaves() {
                         {isHomePass ? (
                             <>
                                 <td className="p-4 text-text-secondary text-sm font-medium">
-                                    {formatDate(r.fromDate)} - {formatDate(r.toDate)}
+                                    {formatDateReadable(r.fromDate)} - {formatDateReadable(r.toDate)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {console.log('this is new: ', r)}
@@ -134,7 +134,7 @@ export default function StudentLeaves() {
                         ) : (
                             <>
                                 <td className="p-4 text-text-secondary text-sm font-medium">
-                                    {formatDate(r.date)}
+                                    {formatDateReadable(r.date)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')}
@@ -170,7 +170,7 @@ export default function StudentLeaves() {
                     <div className="space-y-2.5">
                         <div className="flex justify-between items-center">
                             <span className="font-bold text-gray-700 text-sm">
-                                {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.date)}
+                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.date)}
                             </span>
                             <span className="text-xs text-gray-400 font-medium">
                                 {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}

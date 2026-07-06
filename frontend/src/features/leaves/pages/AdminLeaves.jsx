@@ -16,7 +16,7 @@ import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 import LeaveActionModal from '../components/modals/LeaveActionModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
-import { formatDate } from '@/utils/dateFormatter';
+import { formatDateStandard } from '@/utils/formatters';
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams();
@@ -270,10 +270,10 @@ export default function AdminLeaves() {
                 };
 
                 if (passTypeFilter === 'home_pass') {
-                    base["Leave Period"] = `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}`;
+                    base["Leave Period"] = `${formatDateStandard(r.fromDate)} - ${formatDateStandard(r.toDate)}`;
                     base["Days"] = r.duration || r.totalDays || '--';
                 } else {
-                    base["Date"] = formatDate(r.fromDate || r.date);
+                    base["Date"] = formatDateStandard(r.fromDate || r.date);
                     base["Type"] = r.type || r.outPassCategory || '--';
                     base["Out Time"] = r.outTime || '--';
                     base["Expected Return"] = r.expectedReturnTime || '--';
@@ -283,10 +283,10 @@ export default function AdminLeaves() {
 
                 if (r.returnTracking?.returnedAt) {
                     base["Return Status"] = 'Returned';
-                    base["Actual Return"] = formatDate(r.returnTracking.returnedAt);
+                    base["Actual Return"] = formatDateStandard(r.returnTracking.returnedAt);
                 } else if (r.returnTracking?.leftHostelAt) {
                     base["Return Status"] = 'Left Hostel';
-                    base["Left At"] = formatDate(r.returnTracking.leftHostelAt);
+                    base["Left At"] = formatDateStandard(r.returnTracking.leftHostelAt);
                 } else {
                     base["Return Status"] = '--';
                 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { formatDate, formatDateTime } from '@/utils/formatters';
+import { formatDateISO, formatDateTimeStandard } from '@/utils/formatters';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 
 const getStatusColor = (status) => {
@@ -111,7 +111,7 @@ export default function AssetDetailsModal({ isOpen, onClose, assetId, organizati
                             </div>
                             <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                                 <span className="text-xs font-medium text-gray-500">Added on</span>
-                                <span className="text-sm font-medium text-gray-900">: &nbsp; {formatDate(assetData.createdAt)}</span>
+                                <span className="text-sm font-medium text-gray-900">: &nbsp; {formatDateISO(assetData.createdAt)}</span>
                             </div>
                             <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                                 <span className="text-xs font-medium text-gray-500">Status</span>
@@ -142,7 +142,7 @@ export default function AssetDetailsModal({ isOpen, onClose, assetId, organizati
                             </div>
                             <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                                 <span className="text-xs font-medium text-gray-500">Assigned Date</span>
-                                <span className="text-sm font-medium text-gray-900">: &nbsp; {assetData.currentAssignment?.assignedDate ? formatDate(assetData.currentAssignment.assignedDate) : '--'}</span>
+                                <span className="text-sm font-medium text-gray-900">: &nbsp; {assetData.currentAssignment?.assignedDate ? formatDateISO(assetData.currentAssignment.assignedDate) : '--'}</span>
                             </div>
                         </div>
                     </div>
@@ -171,7 +171,7 @@ export default function AssetDetailsModal({ isOpen, onClose, assetId, organizati
                                                 </p>
                                             </div>
                                             <span className="text-[10px] text-gray-400 mt-1 whitespace-nowrap ml-4">
-                                                {formatDateTime(t.createdAt)}
+                                                {formatDateTimeStandard(t.createdAt)}
                                             </span>
                                         </div>
                                         {t.performedBy?.name && (
