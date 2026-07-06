@@ -39,7 +39,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
     };
 
     return (
-        <div 
+        <div
             onClick={handleClick}
             className="flex gap-4 py-4 px-2 hover:bg-gray-50/80 transition-colors rounded-xl cursor-pointer group"
         >
@@ -52,21 +52,20 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
                 <div className="text-[11px] text-text-secondary mb-2 leading-none">
                     {notification.sender?.name} ( {notification.sender?.role} )
                 </div>
-                
+
                 <div className="flex justify-between items-start gap-4">
                     <div className="flex flex-col flex-1 min-w-0">
-                        <div 
-                            className={`relative text-[12px] text-gray-500 leading-tight overflow-hidden transition-all duration-300 ease-in-out ${
-                                isExpanded ? 'max-h-60' : 'max-h-4'
-                            }`}
+                        <div
+                            className={`relative text-[12px] text-gray-500 leading-tight overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-60' : 'max-h-4'
+                                }`}
                         >
-                            <p ref={textRef} className={isExpanded ? "whitespace-normal break-words" : "truncate"}>
+                            <p ref={textRef} className={isExpanded ? "whitespace-normal wrap-break-word" : "truncate"}>
                                 {notification.description}
                             </p>
                         </div>
-                        
+
                         {showToggle && (
-                            <button 
+                            <button
                                 onClick={toggleExpand}
                                 className="text-[10px] text-primary hover:text-primary/80 hover:underline text-left mt-1 font-medium z-10 transition-colors"
                             >
