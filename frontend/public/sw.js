@@ -20,7 +20,7 @@ self.addEventListener('push', (event) => {
     const payload = event.data.json();
     const title = payload.title || 'New Notification';
 
-    // Merge DEFAULT_NOTIFICATION_OPTIONS with incoming payload
+
     const options = {
       ...DEFAULT_NOTIFICATION_OPTIONS,
       body: payload.body || 'You have a new message.',

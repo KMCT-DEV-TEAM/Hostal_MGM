@@ -19,8 +19,8 @@ export const getMyNotifications = asyncHandler(async (req, res, next) => {
 
     // Assuming the authenticated user is always of model 'User' for these endpoints
     const { notifications, total, unreadCount } = await notificationRepository.findUserNotifications(
-        req.user.id, 
-        'User', 
+        req.user.id,
+        'User',
         { skip, limit, isRead }
     );
 
@@ -156,38 +156,4 @@ export const testBroadcast = asyncHandler(async (req, res, next) => {
     });
 });
 
-/**
- * @desc    Test endpoint matching specific payload structure
- * @route   POST /api/notifications/test
- * @access  Private/Admin
- */
-export const testNotification = asyncHandler(async (req, res, next) => {
-    const { event, recipients, data, sender } = req.body;
-
-    if (!event || !recipients || !Array.isArray(recipients)) {
-        return sendError(res, 400, 'Please provide event and a recipients array');
-    }
-
-    const results = [];
-    for (const target of recipients) {
-        try {
-            const result = await orchestratorService.triggerNotification({
-                eventName: event,
-                target,
-                data: data || {},
-                channels: ['in-app', 'push', 'email'], // Request all; orchestrator will discard unsupported
-                sender
-            });
-            results.push({ target, status: 'success', result });
-        } catch (error) {
-            results.push({ target, status: 'error', error: error.message });
-        }
-    }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Test notification triggered',
-        data: results
-    });
-});
 
