@@ -63,7 +63,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
             <div className="p-4 border-t border-gray-50 text-center bg-white">
                 <button
                     onClick={() => {
-                        navigate('/notifications');
+                        navigate('/dashboard/notifications');
                         if (onClose) onClose();
                     }}
                     className="text-[12px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1 w-full"

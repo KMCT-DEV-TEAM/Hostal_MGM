@@ -4,7 +4,7 @@ import NotificationItem from '../components/NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
 
 const NotificationsPage = () => {
-    const { notifications, loading, markAllAsRead, markAsRead } = useNotifications();
+    const { notifications, loading, markAsRead } = useNotifications();
 
     return (
         <div className="w-full h-full p-4 md:p-6 bg-background-secondary overflow-y-auto">
