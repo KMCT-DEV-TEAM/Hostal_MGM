@@ -15,7 +15,6 @@ export const buildSender = (user) => {
     } else if (normalizedRole === 'parent') {
         model = 'Parent';
     }
-    console.log(user, "user")
 
     return {
         id: user.id || user._id,
