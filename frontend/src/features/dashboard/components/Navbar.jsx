@@ -81,7 +81,7 @@ function Navbar({ onMenuClick }) {
                             className="w-4 h-5"
                         />
                         {/* Example of unread badge indicator if needed */}
-                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#F59E0B] rounded-full border border-white"></span>
+                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-warning rounded-full border border-white"></span>
                     </button>
                     <NotificationPanel
                         isOpen={isNotificationOpen}
@@ -120,7 +120,7 @@ function Navbar({ onMenuClick }) {
 
                     {/* Dropdown Menu */}
                     {isProfileOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-lg border border-gray-100 py-1.5 z-50 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-lg border border-gray-100 py-1.5 z-50 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 md:mt-0 duration-200">
 
 
                             <button

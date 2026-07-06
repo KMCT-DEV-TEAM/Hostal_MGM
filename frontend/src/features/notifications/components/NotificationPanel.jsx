@@ -5,7 +5,7 @@ import NotificationItem from './NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
 
 const NotificationPanel = ({ isOpen, onClose }) => {
-    const { groupedNotifications, loading, markAllAsRead, markAsRead } = useNotifications();
+    const { notifications, loading, markAllAsRead, markAsRead } = useNotifications();
     const navigate = useNavigate();
 
     if (!isOpen) return null;
@@ -40,29 +40,22 @@ const NotificationPanel = ({ isOpen, onClose }) => {
             <div className="max-h-[450px] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-track]:bg-transparent pb-2">
                 {loading ? (
                     <div className="p-8 text-center text-sm text-gray-500">Loading notifications...</div>
-                ) : Object.keys(groupedNotifications).length === 0 ? (
+                ) : notifications.length === 0 ? (
                     <div className="p-8 text-center text-sm text-gray-500">No new notifications</div>
                 ) : (
-                    Object.entries(groupedNotifications).map(([groupName, items]) => (
-                        <div key={groupName} className="mb-2">
-                            <div className="px-5 py-3 text-[11px] font-bold text-gray-400 tracking-wider">
-                                {groupName}
-                            </div>
-                            <div className="px-3 flex flex-col gap-1">
-                                {items.map((item, index) => (
-                                    <React.Fragment key={item.id}>
-                                        <div onClick={() => markAsRead(item.id)}>
-                                            <NotificationItem {...item} />
-                                        </div>
-                                        {/* Divider between items, except the last one in the group */}
-                                        {index < items.length - 1 && (
-                                            <div className="h-px bg-gray-50 mx-2" />
-                                        )}
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        </div>
-                    ))
+                    <div className="px-3 py-2 flex flex-col gap-1">
+                        {notifications.map((item, index) => (
+                            <React.Fragment key={item.id}>
+                                <div onClick={() => markAsRead(item.id)}>
+                                    <NotificationItem {...item} />
+                                </div>
+                                {/* Divider between items, except the last one */}
+                                {index < notifications.length - 1 && (
+                                    <div className="h-px bg-gray-50 mx-2" />
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </div>
                 )}
             </div>
 

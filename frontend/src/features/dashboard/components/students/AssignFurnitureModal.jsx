@@ -102,9 +102,7 @@ export default function AssignFurnitureModal({
   onSave
 }) {
   const [furnitures, setFurnitures] = useState([]);
-  const [furnitureTypes, setFurnitureTypes] = useState([]);
   const [selectedTypeId, setSelectedTypeId] = useState("");
-  const [availableAssets, setAvailableAssets] = useState([]);
 
   useEffect(() => {
     if (isOpen) {

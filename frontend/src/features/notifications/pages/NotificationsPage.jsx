@@ -1,14 +1,10 @@
 import React from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import NotificationItem from '../components/NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
 
 const NotificationsPage = () => {
-    const { groupedNotifications, loading, markAllAsRead, markAsRead } = useNotifications();
-
-    // Tab state (visual only for now as requested)
-    const [activeTab, setActiveTab] = React.useState('All');
+    const { notifications, loading, markAllAsRead, markAsRead } = useNotifications();
 
     return (
         <div className="w-full h-full p-4 md:p-6 bg-background-secondary overflow-y-auto">
@@ -34,29 +30,22 @@ const NotificationsPage = () => {
                 <div className="p-6">
                     {loading ? (
                         <div className="py-10 text-center text-sm text-gray-500">Loading notifications...</div>
-                    ) : Object.keys(groupedNotifications).length === 0 ? (
+                    ) : notifications.length === 0 ? (
                         <div className="py-10 text-center text-sm text-gray-500">No new notifications</div>
                     ) : (
-                        Object.entries(groupedNotifications).map(([groupName, items]) => (
-                            <div key={groupName} className="mb-6 last:mb-0">
-                                <div className="text-xs font-bold text-gray-400 tracking-wider mb-4 uppercase">
-                                    {groupName}
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    {items.map((item, index) => (
-                                        <React.Fragment key={item.id}>
-                                            <div onClick={() => markAsRead(item.id)}>
-                                                <NotificationItem {...item} />
-                                            </div>
-                                            {/* Subtle Divider */}
-                                            {index < items.length - 1 && (
-                                                <div className="h-px bg-gray-50 mx-4" />
-                                            )}
-                                        </React.Fragment>
-                                    ))}
-                                </div>
-                            </div>
-                        ))
+                        <div className="flex flex-col gap-2">
+                            {notifications.map((item, index) => (
+                                <React.Fragment key={item.id}>
+                                    <div onClick={() => markAsRead(item.id)}>
+                                        <NotificationItem {...item} />
+                                    </div>
+                                    {/* Subtle Divider */}
+                                    {index < notifications.length - 1 && (
+                                        <div className="h-px bg-gray-50 mx-4" />
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>
