@@ -92,7 +92,7 @@ export class ParentResolver {
     async resolve(filter = {}) {
         let matchQuery = {};
 
-        if (filter.studentId) matchQuery.linkedStudents = new mongoose.Types.ObjectId(filter.studentId);
+        if (filter.studentId) matchQuery.studentId = new mongoose.Types.ObjectId(filter.studentId);
         if (filter.organizationId) matchQuery.organization = new mongoose.Types.ObjectId(filter.organizationId);
         if (filter.defaultGuardian !== undefined) matchQuery.defaultGuardian = filter.defaultGuardian;
         if (filter.relationship) matchQuery.relationship = filter.relationship;
@@ -104,14 +104,14 @@ export class ParentResolver {
             pipeline.push({
                 $lookup: {
                     from: 'students',
-                    localField: 'linkedStudents',
+                    localField: 'studentId',
                     foreignField: '_id',
                     as: 'studentsData'
                 }
             });
             pipeline.push({
                 $match: {
-                    'studentsData.hostel': new mongoose.Types.ObjectId(filter.hostelId)
+                    'studentsData.hostelId': new mongoose.Types.ObjectId(filter.hostelId)
                 }
             });
         }
@@ -123,12 +123,12 @@ export class ParentResolver {
                 _id: 0,
                 id: '$_id',
                 recipientType: { $literal: 'PARENT' },
-                name: '$name',
+                name: '$parentName',
                 email: '$email',
                 phone: '$phone',
                 pushToken: '$pushToken',
                 metadata: {
-                    linkedStudents: '$linkedStudents'
+                    studentId: '$studentId'
                 }
             }
         });

@@ -25,8 +25,11 @@ import {
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
 import { NotificationCompat as Notification } from "../notifications/notification.compat.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import Pass from "./pass.model.js";
 import Hostel from "../hostels/hostel.model.js";
+import hostelModel from "../hostels/hostel.model.js";
+import User from "../users/user.model.js";
 
 export const createPass = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
@@ -95,19 +98,19 @@ export const createPass = asyncHandler(async (req, res) => {
   const newPass = await createPassDb(passData);
 
   const passTypeLabel = passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
-  await Notification.create({
-    recipient: parent._id,
-    event: 'PASS_CREATED',
-    category: 'PASS',
-    title: "Pass Request Submitted",
-    message: `Your ${passTypeLabel} request has been submitted successfully and is awaiting approval.`,
-    type: "info",
-    metadata: {
+  const passTypeSlug = passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+
+  await orchestratorService.triggerNotification({
+    eventName: 'PASS_CREATED',
+    target: { type: 'PARENT', filter: { studentId: student._id } },
+    data: {
       passTypeLabel,
       studentName: student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim(),
-      reason
+      reason,
+      link
     }
-  });
+  }).catch(err => console.error("Notification Error:", err));
 
   return sendSuccess(res, 201, "Your pass request has been submitted successfully.", newPass);
 });
@@ -233,10 +236,8 @@ export const updatePass = asyncHandler(async (req, res) => {
       type: "info"
     });
   } else if (userRole === "parent") {
-    const Hostel = (await import("../hostels/hostel.model.js")).default;
-    const hostel = await Hostel.findById(updatedPass.hostelId);
+    const hostel = await hostelModel.findById(updatedPass.hostelId);
     if (hostel) {
-      const User = (await import("../users/user.model.js")).default;
       const admins = await User.find({ role: "admin", organization: { $in: hostel.organizations } }).select("_id").lean();
       if (admins && admins.length > 0) {
         await Notification.insertMany(admins.map(admin => ({
@@ -358,46 +359,36 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
 
   // Notify student
   const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
-  const approvedBy = "Admin";
+  const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+  
+  const approvedBy = req.user.name || `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Admin';
   const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
   const remarksText = remarks || "Approved";
 
-  await Notification.create({
-    recipient: updatedPass.studentId._id,
-    event: 'PASS_ADMIN_APPROVED',
-    category: 'PASS',
-    title: "Pass Approved",
-    message: `Your ${passTypeLabel} request has been approved by ${approvedBy}.`,
-    type: "info",
-    metadata: { passTypeLabel, studentName, approvedBy, remarks: remarksText }
-  });
+  await orchestratorService.triggerNotification({
+    eventName: 'PASS_ADMIN_APPROVED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+    data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+  }).catch(err => console.error("Notification Error:", err));
 
   // Notify parent
   if (updatedPass.parentId) {
-    await Notification.create({
-      recipient: updatedPass.parentId,
-      event: 'PASS_ADMIN_APPROVED',
-      category: 'PASS',
-      title: "Pass Approved",
-      message: `Your ${passTypeLabel} request has been approved by ${approvedBy}.`,
-      type: "info",
-      metadata: { passTypeLabel, studentName, approvedBy, remarks: remarksText }
-    });
+    await orchestratorService.triggerNotification({
+      eventName: 'PASS_ADMIN_APPROVED',
+      target: { type: 'PARENT', filter: { studentId: updatedPass.studentId._id } },
+      data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+    }).catch(err => console.error("Notification Error:", err));
   }
 
   // Notify assigned warden
-  const Hostel = (await import("../hostels/hostel.model.js")).default;
-  const hostel = await Hostel.findById(updatedPass.hostelId);
+  const hostel = await hostelModel.findById(updatedPass.hostelId);
   if (hostel && hostel.wardens && hostel.wardens.length > 0) {
-    await Notification.insertMany(hostel.wardens.map(wardenId => ({
-      recipient: wardenId,
-      event: 'PASS_ADMIN_APPROVED',
-      category: 'PASS',
-      title: "Pass Approved",
-      message: `Your ${passTypeLabel} request has been approved by ${approvedBy}.`,
-      type: "info",
-      metadata: { passTypeLabel, studentName, approvedBy, remarks: remarksText }
-    })));
+    await orchestratorService.triggerNotification({
+      eventName: 'PASS_ADMIN_APPROVED',
+      target: { type: 'USER', filter: { userIds: hostel.wardens } },
+      data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+    }).catch(err => console.error("Notification Error:", err));
   }
 
   return sendSuccess(res, 200, "The pass has been approved.", updatedPass);
@@ -442,43 +433,34 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
   const updatedPass = await Pass.findByIdAndUpdate(id, updateQuery, { new: true }).populate("studentId");
 
   const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+
+  const approvedBy = req.user.name || `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Admin';
   const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
   const remarksText = remarks || "Rejected";
 
-  await Notification.create({
-    recipient: updatedPass.studentId._id,
-    event: 'PASS_ADMIN_REJECTED',
-    category: 'PASS',
-    title: "Pass Rejected",
-    message: `Your ${passTypeLabel} request was rejected.`,
-    type: "error",
-    metadata: { passTypeLabel, studentName, remarks: remarksText }
-  });
+  await orchestratorService.triggerNotification({
+    eventName: 'PASS_ADMIN_REJECTED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+    data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+  }).catch(err => console.error("Notification Error:", err));
 
   if (updatedPass.parentId) {
-    await Notification.create({
-      recipient: updatedPass.parentId,
-      event: 'PASS_ADMIN_REJECTED',
-      category: 'PASS',
-      title: "Pass Rejected",
-      message: `Your ${passTypeLabel} request was rejected.`,
-      type: "error",
-      metadata: { passTypeLabel, studentName, remarks: remarksText }
-    });
+    await orchestratorService.triggerNotification({
+      eventName: 'PASS_ADMIN_REJECTED',
+      target: { type: 'PARENT', filter: { studentId: updatedPass.studentId._id } },
+      data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+    }).catch(err => console.error("Notification Error:", err));
   }
 
-  const Hostel = (await import("../hostels/hostel.model.js")).default;
-  const hostel = await Hostel.findById(updatedPass.hostelId);
+  const hostel = await hostelModel.findById(updatedPass.hostelId);
   if (hostel && hostel.wardens && hostel.wardens.length > 0) {
-    await Notification.insertMany(hostel.wardens.map(wId => ({
-      recipient: wId,
-      event: 'PASS_ADMIN_REJECTED',
-      category: 'PASS',
-      title: "Pass Rejected",
-      message: `Your ${passTypeLabel} request was rejected.`,
-      type: "error",
-      metadata: { passTypeLabel, studentName, remarks: remarksText }
-    })));
+    await orchestratorService.triggerNotification({
+      eventName: 'PASS_ADMIN_REJECTED',
+      target: { type: 'USER', filter: { userIds: hostel.wardens } },
+      data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+    }).catch(err => console.error("Notification Error:", err));
   }
 
   return sendSuccess(res, 200, "The pass has been rejected.", updatedPass);
@@ -754,34 +736,29 @@ export const approvePass = asyncHandler(async (req, res) => {
   ).populate("studentId", "name admissionNo roomNo");
 
   const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+
   const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
   const parentName = parent.name || `${parent.firstName || ''} ${parent.lastName || ''}`.trim();
 
-  await Notification.create({
-    recipient: updatedPass.studentId._id,
-    event: 'PASS_PARENT_APPROVED',
-    category: 'PASS',
-    title: "Parent Approved",
-    message: `${parentName} approved your ${passTypeLabel} request.`,
-    type: "info",
-    metadata: { passTypeLabel, studentName, parentName }
-  });
+  await orchestratorService.triggerNotification({
+    eventName: 'PASS_PARENT_APPROVED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+    data: { passTypeLabel, studentName, parentName, link }
+  }).catch(err => console.error("Notification Error:", err));
 
-  const Hostel = (await import("../hostels/hostel.model.js")).default;
-  const hostel = await Hostel.findById(updatedPass.hostelId);
+
+  const hostel = await hostelModel.findById(updatedPass.hostelId);
   if (hostel) {
-    const User = (await import("../users/user.model.js")).default;
+
     const admins = await User.find({ role: "admin", organizationId: hostel.organizationId }).select("_id").lean();
     if (admins && admins.length > 0) {
-      await Notification.insertMany(admins.map(admin => ({
-        recipient: admin._id,
-        event: 'PASS_PARENT_APPROVED',
-        category: 'PASS',
-        title: "Parent Approved",
-        message: `${parentName} approved your ${passTypeLabel} request.`,
-        type: "info",
-        metadata: { passTypeLabel, studentName, parentName }
-      })));
+      await orchestratorService.triggerNotification({
+        eventName: 'PASS_PARENT_APPROVED',
+        target: { type: 'USER', filter: { userIds: admins.map(a => a._id) } },
+        data: { passTypeLabel, studentName, parentName, link }
+      }).catch(err => console.error("Notification Error:", err));
     }
   }
 
@@ -814,6 +791,23 @@ export const rejectPass = asyncHandler(async (req, res) => {
   }
 
   const updatedPass = await updatePassApprovalDb(id, parentId, "reject", remarks);
+
+  await updatedPass.populate("studentId", "name firstName lastName");
+
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+
+  const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
+  const parentName = req.user.parentName || req.user.name || "Parent";
+  const remarksText = remarks || "Parent rejected the pass request.";
+
+  await orchestratorService.triggerNotification({
+    eventName: 'PASS_PARENT_REJECTED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+    data: { passTypeLabel, studentName, parentName, remarks: remarksText, link }
+  }).catch(err => console.error("Notification Error:", err));
+
   return sendSuccess(res, 200, "The pass has been successfully rejected.", updatedPass);
 });
 

@@ -30,7 +30,7 @@ export default {
         push: {
             title: "Parent Approved",
             body:
-                "Your request is now waiting for administration approval."
+                "{{parentName}} approved your {{passTypeLabel}} request."
         },
         email: {
             subject: "Parent Approved Your Pass",
@@ -51,7 +51,7 @@ export default {
         push: {
             title: "Pass Approved",
             body:
-                "Your pass has been approved."
+                "Your {{passTypeLabel}} request has been approved by {{approvedBy}}."
         },
         email: {
             subject: "Pass Approved",
@@ -72,7 +72,7 @@ export default {
         push: {
             title: "Pass Rejected",
             body:
-                "Reason: {{remarks}}"
+                "Your {{passTypeLabel}} request was rejected by {{approvedBy}}"
         },
         email: {
             subject: "Pass Rejected",
@@ -80,6 +80,27 @@ export default {
                 <p>Hello {{studentName}},</p>
                 <p>Your pass request was rejected.</p>
                 <p>Reason: {{remarks}}</p>
+            `
+        }
+    },
+
+    PASS_PARENT_REJECTED: {
+        "in-app": {
+            title: "Parent Rejected",
+            message:
+                "Your {{passTypeLabel}} request was rejected by {{parentName}}."
+        },
+        push: {
+            title: "Parent Rejected",
+            body:
+                "Your {{passTypeLabel}} request was rejected by {{parentName}}."
+        },
+        email: {
+            subject: "Pass Rejected by Parent",
+            html: `
+                <p>Hello {{studentName}},</p>
+                <p>Your pass request was rejected by your parent/guardian ({{parentName}}).</p>
+                <p>Remarks: {{remarks}}</p>
             `
         }
     }

@@ -5,6 +5,7 @@ import http from "http";
 import { initSocket } from "./config/socket.js";
 import { initCron } from "./cron/index.js";
 import { registerAllTemplates } from "./modules/notifications/template.js";
+import { registerNotificationProviders } from "./modules/notifications/provider.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -18,4 +19,5 @@ server.listen(PORT, () => {
 
   initCron();
   registerAllTemplates();
+  registerNotificationProviders();
 });
