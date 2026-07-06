@@ -25,7 +25,14 @@ class TemplateService {
      * @returns {Array<String>}
      */
     getAllowedChannels(eventName) {
-        return this.templates[eventName] ? Object.keys(this.templates[eventName]) : [];
+        if (!this.templates[eventName]) return [];
+        const channels = new Set();
+        for (const audienceTemplates of Object.values(this.templates[eventName])) {
+            for (const channel of Object.keys(audienceTemplates)) {
+                channels.add(channel);
+            }
+        }
+        return Array.from(channels);
     }
 
     /**
@@ -51,20 +58,19 @@ class TemplateService {
      * @param {String} channel - 'email', 'push', 'in-app'
      * @returns {Object} The raw template structure
      */
-    async getTemplate(eventName, channel) {
+    async getTemplate(eventName, audience, channel) {
         const eventTemplates = this.templates[eventName];
         
         if (!eventTemplates) {
             throw new Error(`No templates registered for event: ${eventName}`);
         }
 
-        const channelTemplate = eventTemplates[channel];
-        
-        if (!channelTemplate) {
-            throw new Error(`No template defined for event '${eventName}' on channel '${channel}'`);
+        const audienceTemplates = eventTemplates[audience];
+        if (!audienceTemplates) {
+            return null; // Gracefully return null if no template exists for this audience
         }
 
-        return channelTemplate;
+        return audienceTemplates[channel] || null;
     }
 }
 

@@ -361,7 +361,7 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
   const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
   const link = `/dashboard/leaves/${passTypeSlug}`;
-  
+
   const approvedBy = req.user.name || `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Admin';
   const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
   const remarksText = remarks || "Approved";
@@ -739,8 +739,8 @@ export const approvePass = asyncHandler(async (req, res) => {
   const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
   const link = `/dashboard/leaves/${passTypeSlug}`;
 
-  const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
-  const parentName = parent.name || `${parent.firstName || ''} ${parent.lastName || ''}`.trim();
+  const studentName = updatedPass.studentId.name;
+  const parentName = parent.parentName;
 
   await orchestratorService.triggerNotification({
     eventName: 'PASS_PARENT_APPROVED',
@@ -798,8 +798,8 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
   const link = `/dashboard/leaves/${passTypeSlug}`;
 
-  const studentName = updatedPass.studentId.name || `${updatedPass.studentId.firstName || ''} ${updatedPass.studentId.lastName || ''}`.trim();
-  const parentName = req.user.parentName || req.user.name || "Parent";
+  const studentName = updatedPass.studentId.name;
+  const parentName = parent.parentName || "Parent";
   const remarksText = remarks || "Parent rejected the pass request.";
 
   await orchestratorService.triggerNotification({
