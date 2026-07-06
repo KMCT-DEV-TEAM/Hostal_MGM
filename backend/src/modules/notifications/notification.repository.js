@@ -31,13 +31,13 @@ class NotificationRepository {
         };
 
         if (isRead !== undefined) {
-            query.isRead = isRead;
+            query['deliveries.inApp.status'] = isRead ? 'READ' : { $ne: 'READ' };
         }
 
         const [notifications, total, unreadCount] = await Promise.all([
             Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
             Notification.countDocuments(query),
-            Notification.countDocuments({ ...query, isRead: false, 'deliveries.inApp.status': { $ne: 'READ' } })
+            Notification.countDocuments({ ...query, 'deliveries.inApp.status': { $ne: 'READ' } })
         ]);
 
         return { notifications, total, unreadCount };
@@ -51,7 +51,6 @@ class NotificationRepository {
             { _id: notificationId, 'recipient.id': new mongoose.Types.ObjectId(userId) },
             { 
                 $set: { 
-                    isRead: true, 
                     'deliveries.inApp.status': 'READ', 
                     'deliveries.inApp.readAt': new Date() 
                 } 
@@ -65,10 +64,9 @@ class NotificationRepository {
      */
     async markAllAsRead(userId, userModel) {
         return await Notification.updateMany(
-            { 'recipient.id': new mongoose.Types.ObjectId(userId), 'recipient.model': userModel, isRead: false },
+            { 'recipient.id': new mongoose.Types.ObjectId(userId), 'recipient.model': userModel, 'deliveries.inApp.status': { $ne: 'READ' } },
             { 
                 $set: { 
-                    isRead: true, 
                     'deliveries.inApp.status': 'READ', 
                     'deliveries.inApp.readAt': new Date() 
                 } 
