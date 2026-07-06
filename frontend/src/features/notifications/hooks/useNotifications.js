@@ -13,16 +13,18 @@ export const useNotifications = () => {
             const res = await notificationApi.getMyNotifications({ limit: 50 });
             // Adapt the backend response if necessary, assuming res.data.data.notifications
             const fetchedNotifications = res?.data?.data?.notifications || [];
-            
+            console.log('fetched notification: ', res.data.data.notifications)
+
             // Basic mapping to ensure frontend components get the expected props
             const formattedNotifications = fetchedNotifications.map(n => ({
                 id: n._id || n.id,
                 event: n.event?.event || 'SYSTEM_ALERT',
                 title: n.title,
-                sender: n.recipient?.snapshot || { name: 'System', role: 'System' },
+                sender: n.sender?.snapshot || { name: 'System', role: 'System' },
                 description: n.message || n.description,
                 timeAgo: formatTimeAgo(n.createdAt),
-                isRead: n.isRead
+                isRead: n.isRead,
+                link: n.link
             }));
 
             setNotifications(formattedNotifications);
@@ -43,7 +45,7 @@ export const useNotifications = () => {
             // Optimistic update
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
-            
+
             await notificationApi.markAllAsRead();
         } catch (error) {
             console.error("Failed to mark all as read", error);
@@ -56,7 +58,7 @@ export const useNotifications = () => {
         try {
             // Optimistic update
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-            
+
             await notificationApi.markAsRead(id);
         } catch (error) {
             console.error("Failed to mark as read", error);
