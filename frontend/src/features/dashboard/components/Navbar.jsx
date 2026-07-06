@@ -12,18 +12,24 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LogoutModal from '@/components/ui/LogoutModal';
+import NotificationPanel from '../../notifications/components/NotificationPanel';
 
 function Navbar({ onMenuClick }) {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
     const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
     const dropdownRef = React.useRef(null);
+    const notificationRef = React.useRef(null);
     const role = user?.role.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
     React.useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsProfileOpen(false);
+            }
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setIsNotificationOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -64,14 +70,24 @@ function Navbar({ onMenuClick }) {
 
 
                 {/* Notification */}
-                <button className="relative">
-                    <img
-                        src={bellIcon}
-                        alt="Notifications"
-                        className="w-4 h-5"
+                <div className="relative" ref={notificationRef}>
+                    <button
+                        className="relative p-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                        onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                    >
+                        <img
+                            src={bellIcon}
+                            alt="Notifications"
+                            className="w-4 h-5"
+                        />
+                        {/* Example of unread badge indicator if needed */}
+                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#F59E0B] rounded-full border border-white"></span>
+                    </button>
+                    <NotificationPanel
+                        isOpen={isNotificationOpen}
+                        onClose={() => setIsNotificationOpen(false)}
                     />
-
-                </button>
+                </div>
 
                 {/* Profile */}
                 <div className="relative" ref={dropdownRef}>

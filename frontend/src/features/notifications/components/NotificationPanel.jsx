@@ -1,17 +1,19 @@
 import React from 'react';
 import { X, CheckCheck, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import NotificationItem from './NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
 
 const NotificationPanel = ({ isOpen, onClose }) => {
     const { groupedNotifications, loading, markAllAsRead, markAsRead } = useNotifications();
+    const navigate = useNavigate();
 
     if (!isOpen) return null;
 
     return (
-        <div className="absolute right-0 mt-2 w-[400px] bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="absolute -right-20 mt-10 w-sm bg-white rounded-2xl border border-gray-100 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center p-5 pb-3 border-b border-gray-50 relative">
+            <div className="flex justify-between items-center p-5 pb-3 mt-2 border-b border-gray-50 relative">
                 <div className="flex items-center gap-2 text-primary">
                     <Bell className="w-4 h-4" />
                     <h3 className="text-[15px] font-semibold">Notifications</h3>
@@ -27,7 +29,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                     </button>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors absolute top-4 right-4"
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                         <X className="w-4 h-4" />
                     </button>
@@ -66,7 +68,13 @@ const NotificationPanel = ({ isOpen, onClose }) => {
 
             {/* Footer */}
             <div className="p-4 border-t border-gray-50 text-center bg-white">
-                <button className="text-[12px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1 w-full">
+                <button
+                    onClick={() => {
+                        navigate('/notifications');
+                        if (onClose) onClose();
+                    }}
+                    className="text-[12px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1 w-full"
+                >
                     View All <span className="text-lg leading-none">&rarr;</span>
                 </button>
             </div>
