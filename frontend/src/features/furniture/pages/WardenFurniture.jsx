@@ -87,10 +87,10 @@ export default function WardenFurniture() {
         try {
             const params = {
                 status: filters.status || statusFilter,
-                limit: 5000, 
+                limit: 5000,
                 search: debouncedSearch
             };
-            
+
             const res = await furnitureApi.getAllFurnitureAssets(params);
             const dataToExport = res?.data?.data?.assets || res?.data?.assets || [];
 
@@ -114,7 +114,7 @@ export default function WardenFurniture() {
             });
 
             const isSuccess = exportToExcel(exportData, `Furniture_Assets_Export`, "Assets");
-            
+
             if (isSuccess) {
                 showSuccessToast('Exported successfully');
             } else {
@@ -201,7 +201,12 @@ export default function WardenFurniture() {
                         <Dropdown
                             options={[
                                 { label: 'All Status', value: 'All' },
-                                { label: 'Available', value: 'Available' }
+                                { label: 'Available', value: 'available' },
+                                { label: 'Allocated', value: 'allocated' },
+                                { label: 'Maintenance', value: 'maintenance' },
+                                { label: 'Inactive', value: 'inactive' },
+                                { label: 'Lost', value: 'lost' },
+                                { label: 'Scrap', value: 'scrap' }
                             ]}
                             value={statusFilter}
                             onChange={(val) => updateSearchParams({ status: val, page: 1 })}
@@ -230,9 +235,10 @@ export default function WardenFurniture() {
                 renderRow={(item) => (
                     <>
                         <td className="p-4 text-sm text-gray-900 font-medium">{item.furnitureId}</td>
-                        <td className="p-4 text-sm text-gray-500 font-medium">{item.furnitureTypeId?.name || '--'}</td>
-                        <td className="p-4 text-sm text-gray-500">{item.hostelId?.name || '--'}</td>
+                        <td className="p-4 text-sm text-gray-500 font-medium">{item.typeInfo?.name || '--'}</td>
+                        <td className="p-4 text-sm text-gray-500">{item.organization?.name || '--'}</td>
                         <td className="p-4 text-sm text-gray-500">
+                            {console.log('this is item: ', item)}
                             {item.studentId?.name ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">

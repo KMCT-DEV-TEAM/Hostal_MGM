@@ -27,6 +27,7 @@ import Attendance from '@/features/dashboard/pages/Attendance';
 import OrganizationManagement from '@/features/dashboard/pages/OrganizationManagement';
 import Furniture from '@/features/furniture/pages/Furniture';
 import FurnitureDetails from '@/features/furniture/pages/FurnitureDetails';
+import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 
 export const dashboardRoutes = [
 
@@ -40,6 +41,17 @@ export const dashboardRoutes = [
             ROLES.MAINTENANCE_STAFF
         ],
         element: DashboardOverview
+    },
+    {
+        path: 'notifications',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
+        ],
+        element: NotificationsPage
     },
 
     {
