@@ -29,7 +29,6 @@ class OrchestratorService {
      * @param {Object} [eventPayload.sender] - Optional sender info
      */
     async triggerNotification({ eventName, target, data = {}, channels = ['in-app', 'push'], sender = null }) {
-        console.log(eventName, target, data, channels, sender);
         if (!eventName || !target) {
             throw new Error('eventName and target are required to trigger a notification.');
         }
@@ -163,7 +162,7 @@ class OrchestratorService {
                 if (!templates[channel]) continue;
 
                 const channelPayload = await builderService.buildPayload(templates[channel], data);
-                
+
                 // Pass the frontend link into the external Push Payload so the SW can route clicks
                 if (data.link) {
                     channelPayload.data = { url: data.link };
