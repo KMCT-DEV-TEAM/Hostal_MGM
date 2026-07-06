@@ -2,6 +2,16 @@ import { notificationRepository } from './notification.repository.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { orchestratorService } from './services/orchestrator.service.js';
+
+/**
+ * Helper to determine the Mongoose model for a given user role
+ */
+const getModelForRole = (role) => {
+    const normalizedRole = (role || '').toLowerCase();
+    if (normalizedRole === 'student') return 'Student';
+    if (normalizedRole === 'parent') return 'Parent';
+    return 'User';
+};
 /**
  * @desc    Get all notifications for the current user
  * @route   GET /api/v1/notifications
@@ -17,10 +27,11 @@ export const getMyNotifications = asyncHandler(async (req, res, next) => {
         isRead = req.query.isRead === 'true';
     }
 
-    // Assuming the authenticated user is always of model 'User' for these endpoints
+    const userModel = getModelForRole(req.user.role);
+
     const { notifications, total, unreadCount } = await notificationRepository.findUserNotifications(
         req.user.id,
-        'User',
+        userModel,
         { skip, limit, isRead }
     );
 
@@ -66,7 +77,8 @@ export const markAsRead = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 export const markAllAsRead = asyncHandler(async (req, res, next) => {
-    await notificationRepository.markAllAsRead(req.user.id, 'User');
+    const userModel = getModelForRole(req.user.role);
+    await notificationRepository.markAllAsRead(req.user.id, userModel);
 
     res.status(200).json({
         status: 'success',

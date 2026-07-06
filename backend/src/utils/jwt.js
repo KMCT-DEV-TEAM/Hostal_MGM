@@ -10,6 +10,7 @@ const getSecondsUntilMidnight = () => {
 export const generateAccessToken = (user) => {
   return jwt.sign(
     {
+      name: user.name || user.parentName || user.firstName || "unknown",
       id: user._id,
       role: user.role,
       organization: user.organization ? (user.organization._id || user.organization) : undefined,

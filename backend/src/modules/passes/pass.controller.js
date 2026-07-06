@@ -30,6 +30,7 @@ import Pass from "./pass.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import hostelModel from "../hostels/hostel.model.js";
 import User from "../users/user.model.js";
+import { buildSender } from "../notifications/utils/sender.util.js";
 
 export const createPass = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
@@ -102,6 +103,7 @@ export const createPass = asyncHandler(async (req, res) => {
   const link = `/dashboard/leaves/${passTypeSlug}`;
 
   await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
     eventName: 'PASS_CREATED',
     target: { type: 'PARENT', filter: { studentId: student._id } },
     data: {
@@ -367,6 +369,7 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   const remarksText = remarks || "Approved";
 
   await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
     eventName: 'PASS_ADMIN_APPROVED',
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
     data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
@@ -375,6 +378,7 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   // Notify parent
   if (updatedPass.parentId) {
     await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
       eventName: 'PASS_ADMIN_APPROVED',
       target: { type: 'PARENT', filter: { studentId: updatedPass.studentId._id } },
       data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
@@ -385,6 +389,7 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
   const hostel = await hostelModel.findById(updatedPass.hostelId);
   if (hostel && hostel.wardens && hostel.wardens.length > 0) {
     await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
       eventName: 'PASS_ADMIN_APPROVED',
       target: { type: 'USER', filter: { userIds: hostel.wardens } },
       data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
@@ -441,6 +446,7 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
   const remarksText = remarks || "Rejected";
 
   await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
     eventName: 'PASS_ADMIN_REJECTED',
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
     data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
@@ -448,6 +454,7 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
 
   if (updatedPass.parentId) {
     await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
       eventName: 'PASS_ADMIN_REJECTED',
       target: { type: 'PARENT', filter: { studentId: updatedPass.studentId._id } },
       data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
@@ -457,6 +464,7 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
   const hostel = await hostelModel.findById(updatedPass.hostelId);
   if (hostel && hostel.wardens && hostel.wardens.length > 0) {
     await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
       eventName: 'PASS_ADMIN_REJECTED',
       target: { type: 'USER', filter: { userIds: hostel.wardens } },
       data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
@@ -743,6 +751,7 @@ export const approvePass = asyncHandler(async (req, res) => {
   const parentName = parent.parentName;
 
   await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
     eventName: 'PASS_PARENT_APPROVED',
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
     data: { passTypeLabel, studentName, parentName, link }
@@ -755,6 +764,7 @@ export const approvePass = asyncHandler(async (req, res) => {
     const admins = await User.find({ role: "admin", organizationId: hostel.organizationId }).select("_id").lean();
     if (admins && admins.length > 0) {
       await orchestratorService.triggerNotification({
+        sender: buildSender(req.user),
         eventName: 'PASS_PARENT_APPROVED',
         target: { type: 'USER', filter: { userIds: admins.map(a => a._id) } },
         data: { passTypeLabel, studentName, parentName, link }
@@ -803,6 +813,7 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const remarksText = remarks || "Parent rejected the pass request.";
 
   await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
     eventName: 'PASS_PARENT_REJECTED',
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
     data: { passTypeLabel, studentName, parentName, remarks: remarksText, link }
