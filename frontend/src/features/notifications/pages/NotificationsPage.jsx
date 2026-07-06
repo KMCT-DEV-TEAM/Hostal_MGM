@@ -36,9 +36,7 @@ const NotificationsPage = () => {
                         <div className="flex flex-col gap-2">
                             {notifications.map((item, index) => (
                                 <React.Fragment key={item.id}>
-                                    <div onClick={() => markAsRead(item.id)}>
-                                        <NotificationItem {...item} />
-                                    </div>
+                                        <NotificationItem notification={item} onMarkAsRead={markAsRead} />
                                     {/* Subtle Divider */}
                                     {index < notifications.length - 1 && (
                                         <div className="h-px bg-gray-50 mx-4" />

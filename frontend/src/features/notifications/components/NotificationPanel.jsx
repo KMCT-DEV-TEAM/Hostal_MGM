@@ -44,9 +44,7 @@ const NotificationPanel = ({ isOpen, onClose, notifications, loading, markAllAsR
                     <div className="px-3 py-2 flex flex-col gap-1">
                         {notifications.map((item, index) => (
                             <React.Fragment key={item.id}>
-                                <div onClick={() => markAsRead(item.id)}>
-                                    <NotificationItem {...item} />
-                                </div>
+                                    <NotificationItem notification={item} onMarkAsRead={markAsRead} />
                                 {/* Divider between items, except the last one */}
                                 {index < notifications.length - 1 && (
                                     <div className="h-px bg-gray-50 mx-2" />
