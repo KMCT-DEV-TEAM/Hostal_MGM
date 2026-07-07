@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
+import Visitor from './visitor.model.js';
 import * as visitorRepository from './visitor.repository.js';
 import { VISITOR_STATUS, VISITOR_APPROVAL_ACTIONS } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
@@ -300,6 +301,134 @@ export const listStudentVisitors = async (query, user) => {
 };
 
 /**
+ * Gets a visitor details with strict role-based authorization and data masking
+ * @param {String} visitorId 
+ * @param {Object} user 
+ */
+export const getVisitorDetails = async (visitorId, user) => {
+    const visitor = await visitorRepository.getVisitorDetails(visitorId);
+    
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 1. Role-Based Authorization
+    const visitorStudentIds = visitor.students.map(s => s._id.toString());
+    const visitorHostelId = visitor.students.length > 0 ? visitor.students[0].hostelId.toString() : null;
+
+    if (user.role === 'admin') {
+        if (visitor.organizationId._id.toString() !== user.organization.toString()) {
+            throw Object.assign(new Error('Unauthorized: Organization mismatch.'), { status: 403 });
+        }
+    } else if (user.role === 'warden') {
+        if (visitorHostelId !== user.hostelId.toString()) {
+            throw Object.assign(new Error('Unauthorized: Hostel mismatch.'), { status: 403 });
+        }
+    } else if (user.role === 'student') {
+        if (!visitorStudentIds.includes(user.id)) {
+            throw Object.assign(new Error('Unauthorized: Visitor not assigned to this student.'), { status: 403 });
+        }
+    } else if (user.role === 'parent') {
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
+        if (!hasOverlap) {
+            throw Object.assign(new Error('Unauthorized: Visitor not linked to your students.'), { status: 403 });
+        }
+    }
+
+    // 2. Field-Level Security (ID Proof Masking)
+    let maskedIdProofNumber = visitor.idProofNumber;
+    if (visitor.idProofNumber) {
+        const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
+        
+        let isCreator = false;
+        if (user.role === 'parent' && visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
+            // Find creation event
+            const creationEvent = visitor.approvalTimeline.find(t => t.action === VISITOR_APPROVAL_ACTIONS.CREATED);
+            if (creationEvent && creationEvent.performedBy && creationEvent.performedBy._id.toString() === user.id) {
+                isCreator = true;
+            }
+        }
+
+        if (!isSuperAdminOrAdmin && !isCreator) {
+            // Mask all but last 4 characters
+            const num = visitor.idProofNumber;
+            if (num.length > 4) {
+                maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
+            } else {
+                maskedIdProofNumber = '****'; // Fallback for very short numbers
+            }
+        }
+    }
+
+    // 3. Process Timeline & DTO Transformation
+    let approvedBy = null;
+    let approvedAt = null;
+    let rejectedBy = null;
+    let rejectedAt = null;
+    let rejectionReason = null;
+
+    // Sort timeline newest first
+    const sortedTimeline = (visitor.approvalTimeline || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const formattedTimeline = sortedTimeline.map(t => {
+        if (t.action === VISITOR_APPROVAL_ACTIONS.APPROVED) {
+            approvedBy = t.performedBy ? { id: t.performedBy._id, name: t.performedBy.name } : null;
+            approvedAt = t.createdAt;
+        } else if (t.action === VISITOR_APPROVAL_ACTIONS.REJECTED) {
+            rejectedBy = t.performedBy ? { id: t.performedBy._id, name: t.performedBy.name } : null;
+            rejectedAt = t.createdAt;
+            rejectionReason = t.remarks;
+        }
+
+        return {
+            action: t.action,
+            performedBy: t.performedBy ? t.performedBy.name : 'System',
+            role: t.performedBy ? t.performedBy.role : 'System',
+            remarks: t.remarks,
+            createdAt: t.createdAt
+        };
+    });
+
+    const formattedStudents = visitor.students.map(s => ({
+        id: s._id,
+        name: s.name
+    }));
+
+    return {
+        visitorId: visitor._id,
+        visitorName: visitor.name,
+        phone: visitor.phone,
+        email: visitor.email,
+        relationship: visitor.relationship,
+        address: visitor.address,
+        idProofType: visitor.idProofType,
+        idProofNumber: maskedIdProofNumber,
+        students: formattedStudents,
+        organization: visitor.organizationId ? {
+            id: visitor.organizationId._id,
+            name: visitor.organizationId.name
+        } : null,
+        status: visitor.approvalStatus,
+        approvedBy,
+        approvedAt,
+        rejectedBy,
+        rejectedAt,
+        rejectionReason,
+        createdAt: visitor.createdAt,
+        updatedAt: visitor.updatedAt,
+        timeline: formattedTimeline
+    };
+};
+
+/**
  * Approve a pending visitor
  * @param {String} visitorId 
  * @param {Object} adminUser 
@@ -491,4 +620,102 @@ export const rejectVisitor = async (visitorId, reason, adminUser) => {
         rejectedAt: new Date(),
         rejectionReason: updatedVisitor.rejectionReason
     };
+};
+
+/**
+ * Returns role-based dashboard summary cards for Visitor management
+ * @param {Object} user 
+ */
+export const getDashboardSummary = async (user) => {
+    let context = {};
+    let role = user.role;
+    
+    // Resolve scope based on role
+    switch (role) {
+        case 'super_admin':
+            break;
+        case 'admin':
+            context.organizationId = new mongoose.Types.ObjectId(user.organization);
+            break;
+        case 'warden':
+            context.hostelId = new mongoose.Types.ObjectId(user.hostelId);
+            break;
+        case 'parent':
+            const currentParent = await Parent.findById(user.id);
+            if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+            
+            const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+            context.studentIds = parentDocs.map(p => new mongoose.Types.ObjectId(p.studentId));
+            
+            if (context.studentIds.length === 0) {
+                // If parent has no active students, return early with 0 counts
+                return {
+                    cards: [
+                        { key: "my_visitors", title: "My Visitors", value: 0 },
+                        { key: "pending", title: "Pending Approval", value: 0 },
+                        { key: "approved", title: "Approved Visitors", value: 0 },
+                        { key: "rejected", title: "Rejected Visitors", value: 0 }
+                    ]
+                };
+            }
+            break;
+        case 'student':
+            context.studentId = new mongoose.Types.ObjectId(user.id);
+            // Pre-fetch assigned visitor IDs for VisitorVisit counts
+            const visitorsAssigned = await Visitor.find({ students: context.studentId }, '_id').lean();
+            context.visitorIds = visitorsAssigned.map(v => v._id);
+            break;
+        default:
+            throw Object.assign(new Error('Unauthorized role.'), { status: 403 });
+    }
+
+    const stats = await visitorRepository.getDashboardStats(role, context);
+    
+    // Build the DTO array based on role
+    const cards = [];
+
+    switch (role) {
+        case 'super_admin':
+            cards.push(
+                { key: "total_visitors", title: "Total Visitors", value: stats.totalVisitors },
+                { key: "pending", title: "Pending Approval", value: stats.pendingApproval },
+                { key: "visitors_inside", title: "Visitors Inside", value: stats.visitorsInside },
+                { key: "todays_visits", title: "Today's Visits", value: stats.todaysVisits }
+            );
+            break;
+        case 'admin':
+            cards.push(
+                { key: "pending", title: "Pending Approval", value: stats.pendingApproval },
+                { key: "approved", title: "Approved Visitors", value: stats.approvedVisitors },
+                { key: "visitors_inside", title: "Visitors Inside", value: stats.visitorsInside },
+                { key: "todays_visits", title: "Today's Visits", value: stats.todaysVisits }
+            );
+            break;
+        case 'warden':
+            cards.push(
+                { key: "visitors_inside", title: "Visitors Inside", value: stats.visitorsInside },
+                { key: "todays_check_ins", title: "Today's Check-Ins", value: stats.todaysCheckIns },
+                { key: "todays_check_outs", title: "Today's Check-Outs", value: stats.todaysCheckOuts },
+                { key: "overstayed", title: "Overstayed Visitors", value: stats.overstayedVisitors }
+            );
+            break;
+        case 'parent':
+            cards.push(
+                { key: "my_visitors", title: "My Visitors", value: stats.myVisitors },
+                { key: "pending", title: "Pending Approval", value: stats.pendingApproval },
+                { key: "approved", title: "Approved Visitors", value: stats.approvedVisitors },
+                { key: "rejected", title: "Rejected Visitors", value: stats.rejectedVisitors }
+            );
+            break;
+        case 'student':
+            cards.push(
+                { key: "my_approved_visitors", title: "My Approved Visitors", value: stats.myApprovedVisitors },
+                { key: "pending", title: "Pending Visitors", value: stats.pendingVisitors },
+                { key: "todays_visits", title: "Today's Visits", value: stats.todaysVisits },
+                { key: "total_visitors", title: "Total Visitors", value: stats.totalVisitors }
+            );
+            break;
+    }
+
+    return { cards };
 };

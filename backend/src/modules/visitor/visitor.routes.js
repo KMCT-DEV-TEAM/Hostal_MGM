@@ -5,12 +5,23 @@ import {
     validateCreateVisitor, 
     validateListVisitors, 
     validateEndUserListVisitors, 
+    validateGetVisitorDetails,
     validateApproveVisitor, 
     validateRejectVisitor 
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
 const router = express.Router();
+
+// ---------------------------------------------------------
+// Dashboard Routes
+// ---------------------------------------------------------
+router.get(
+    '/dashboard-summary',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    visitorController.getVisitorDashboardSummary
+);
 
 // ---------------------------------------------------------
 // End-User Routes (Parent & Student)
@@ -50,6 +61,20 @@ router.get(
     visitorController.listVisitors
 );
 
+// ---------------------------------------------------------
+// Common Shared Routes (All Roles)
+// ---------------------------------------------------------
+router.get(
+    '/:visitorId',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    validateGetVisitorDetails,
+    visitorController.getVisitorDetails
+);
+
+// ---------------------------------------------------------
+// Action Routes
+// ---------------------------------------------------------
 router.patch(
     '/:visitorId/approve',
     authMiddleware,
