@@ -158,7 +158,11 @@ export const DASHBOARD_NAV = {
                 {
                     icon: Users,
                     label: 'Visitors',
-                    path: '/dashboard/visitors'
+                    path: '/dashboard/visitors',
+                    subItems: [
+                        { label: 'Visitors', path: '/dashboard/visitors' },
+                        { label: 'Visitors History', path: '/dashboard/visitors/history' }
+                    ]
                 },
                 {
                     icon: UtensilsCrossed,
@@ -314,7 +318,11 @@ export const DASHBOARD_NAV = {
                 {
                     icon: Users,
                     label: 'Visitors',
-                    path: '/dashboard/visitors'
+                    path: '/dashboard/visitors',
+                    subItems: [
+                        { label: 'Visitors', path: '/dashboard/visitors' },
+                        { label: 'Visitors History', path: '/dashboard/visitors/history' }
+                    ]
                 },
                 {
                     icon: UtensilsCrossed,
@@ -412,7 +420,11 @@ export const DASHBOARD_NAV = {
                 {
                     icon: Users,
                     label: 'Visitors',
-                    path: '/dashboard/visitors'
+                    path: '/dashboard/visitors',
+                    subItems: [
+                        { label: 'Visitors', path: '/dashboard/visitors' },
+                        { label: 'Visitors History', path: '/dashboard/visitors/history' }
+                    ]
                 },
                 {
                     icon: CalendarX,
@@ -483,6 +495,15 @@ export const DASHBOARD_NAV = {
                     badge: { count: 7, variant: 'warning' }
                 },
                 {
+                    icon: Users,
+                    label: 'Visitors',
+                    path: '/dashboard/visitors',
+                    subItems: [
+                        { label: 'Visitors', path: '/dashboard/visitors' },
+                        { label: 'Visitors History', path: '/dashboard/visitors/history' }
+                    ]
+                },
+                {
                     icon: UtensilsCrossed,
                     label: 'Mess Management',
                     path: '/dashboard/mess-management'
@@ -522,6 +543,15 @@ export const DASHBOARD_NAV = {
                     subItems: [
                         { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
                         { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ]
+                },
+                {
+                    icon: Users,
+                    label: 'Visitors',
+                    path: '/dashboard/visitors',
+                    subItems: [
+                        { label: 'Visitors', path: '/dashboard/visitors' },
+                        { label: 'Visitors History', path: '/dashboard/visitors/history' }
                     ]
                 }
             ]

@@ -114,8 +114,8 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
                 page={1}
                 setPage={() => { }}
                 limit={10}
-                totalItems={visitors.length}
-                totalPages={Math.max(1, Math.ceil(visitors.length / 10))}
+                totalItems={visitors?.length}
+                totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
             />
 
             <CheckInModal

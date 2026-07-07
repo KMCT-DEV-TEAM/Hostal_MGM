@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
 
 const VisitorAggregatedView = ({ visitors, loading, onSearch, onHostelFilter, onRowClick }) => {
-    
+
     const headers = [
         { key: 'date', label: 'Date' },
         { key: 'hostel', label: 'Hostel' },
@@ -43,7 +43,7 @@ const VisitorAggregatedView = ({ visitors, loading, onSearch, onHostelFilter, on
 
     const toolbarActions = (
         <div className="flex items-center gap-2">
-            <Dropdown 
+            <Dropdown
                 options={[
                     { value: '', label: 'All' },
                     { value: 'Hostel A', label: 'Hostel A' },
@@ -53,7 +53,7 @@ const VisitorAggregatedView = ({ visitors, loading, onSearch, onHostelFilter, on
                 placeholder="All Hostels"
                 triggerClassName="px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg outline-none min-w-[120px]"
             />
-            
+
             <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex">
                 <Download className="w-4 h-4" /> Export
             </Button>
@@ -73,10 +73,10 @@ const VisitorAggregatedView = ({ visitors, loading, onSearch, onHostelFilter, on
                 renderMobileItem={renderMobileItem}
                 onRowClick={(item) => onRowClick && onRowClick(item.hostel)}
                 page={1}
-                setPage={() => {}}
+                setPage={() => { }}
                 limit={10}
-                totalItems={visitors.length}
-                totalPages={Math.max(1, Math.ceil(visitors.length / 10))}
+                totalItems={visitors?.length}
+                totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
             />
         </div>
     );
