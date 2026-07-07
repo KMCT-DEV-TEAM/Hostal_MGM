@@ -20,6 +20,7 @@ import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter,
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
+import pushRoutes from "./modules/push/push.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -91,6 +92,7 @@ app.use("/api/warden/students", studentRoutes);
 app.use("/api/warden/parents", parentRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/push", pushRoutes);
 // ---studenbts routes ---
 app.use("/api/student/passes", studentPassRouter);
 app.use("/api/student/attendance", studentAttendanceRouter);

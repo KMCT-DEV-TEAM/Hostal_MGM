@@ -4,6 +4,7 @@ import { recipientService } from './recipient.service.js';
 import { preferenceService } from './preference.service.js';
 import { templateService } from './template.service.js';
 import { builderService } from './builder.service.js';
+import { audienceResolver } from './audience.resolver.js';
 import mongoose from 'mongoose';
 
 /**
@@ -28,7 +29,7 @@ class OrchestratorService {
      * @param {Array} [eventPayload.channels] - Intended external channels (defaults to ['email', 'push'])
      * @param {Object} [eventPayload.sender] - Optional sender info
      */
-    async triggerNotification({ eventName, target, data = {}, channels = ['email', 'push'], sender = null }) {
+    async triggerNotification({ eventName, target, data = {}, channels = ['in-app', 'push'], sender = null }) {
         if (!eventName || !target) {
             throw new Error('eventName and target are required to trigger a notification.');
         }
@@ -44,17 +45,6 @@ class OrchestratorService {
 
         if (channels.length === 0) {
             console.warn(`[Orchestrator] All requested external channels were discarded because they are not supported by event '${eventName}'. Only in-app will be processed.`);
-        }
-
-        const templates = {
-            'in-app': await templateService.getTemplate(eventName, 'in-app')
-        };
-        for (const channel of channels) {
-            try {
-                templates[channel] = await templateService.getTemplate(eventName, channel);
-            } catch (err) {
-                console.warn(`[Orchestrator] Missing template for channel '${channel}', skipping.`);
-            }
         }
 
         const recipientCursor = await recipientService.getRecipients(target);
@@ -73,14 +63,14 @@ class OrchestratorService {
                 batch.push(user);
 
                 if (batch.length >= BATCH_SIZE) {
-                    await this.processBatch(batch, eventName, data, channels, templates, session, sender);
+                    await this.processBatch(batch, eventName, data, channels, session, sender);
                     processedCount += batch.length;
                     batch = [];
                 }
             }
 
             if (batch.length > 0) {
-                await this.processBatch(batch, eventName, data, channels, templates, session, sender);
+                await this.processBatch(batch, eventName, data, channels, session, sender);
                 processedCount += batch.length;
             }
 
@@ -101,14 +91,21 @@ class OrchestratorService {
     /**
      * Processes a batch of up to 500 users at once
      */
-    async processBatch(batch, eventName, data, channels, templates, session, sender = null) {
+    async processBatch(batch, eventName, data, channels, session, sender = null) {
         const userIds = batch.map(u => u.id);
         const recipientType = batch[0]?.recipientType || 'USER';
         const preferenceMap = await preferenceService.loadBatchPreferences(userIds, recipientType, eventName, channels);
 
         const inAppDocs = [];
         for (const user of batch) {
-            const inAppPayload = await builderService.buildPayload(templates['in-app'], data);
+            const audience = audienceResolver.resolve(user);
+            const inAppTemplate = await templateService.getTemplate(eventName, audience, 'in-app');
+            
+            if (!inAppTemplate) {
+                continue; // No in-app template for this audience, skip them
+            }
+
+            const inAppPayload = await builderService.buildPayload(inAppTemplate, data);
 
             const modelMap = { 'STUDENT': 'Student', 'PARENT': 'Parent', 'USER': 'User' };
             const recipientModel = modelMap[user.recipientType] || 'User';
@@ -157,11 +154,18 @@ class OrchestratorService {
 
         for (const user of batch) {
             const allowedChannels = preferenceMap.get(user.id.toString()) || [];
+            const audience = audienceResolver.resolve(user);
 
             for (const channel of allowedChannels) {
-                if (!templates[channel]) continue;
+                const channelTemplate = await templateService.getTemplate(eventName, audience, channel);
+                if (!channelTemplate) continue;
 
-                const channelPayload = await builderService.buildPayload(templates[channel], data);
+                const channelPayload = await builderService.buildPayload(channelTemplate, data);
+
+                // Pass the frontend link into the external Push Payload so the SW can route clicks
+                if (data.link) {
+                    channelPayload.data = { url: data.link };
+                }
 
                 dispatchPromises.push(
                     dispatcherService.dispatch(channel, channelPayload, user).catch(err => {

@@ -12,7 +12,7 @@ import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import leaveService from '@/services/leave.service';
-import { formatDate } from '../utils/formatters';
+import { formatDateReadable } from '@/utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import LeaveActionModal from '../components/modals/LeaveActionModal';
@@ -174,7 +174,7 @@ export default function ParentLeaves() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-gray-700 whitespace-nowrap">{getStudentName(r)}</span>
-                                    {isHomePass && <span className="text-xs text-text-secondary">Applied: {formatDate(r.createdAt)}</span>}
+                                    {isHomePass && <span className="text-xs text-text-secondary">Applied: {formatDateReadable(r.createdAt)}</span>}
                                 </div>
                             </div>
                         </td>
@@ -182,7 +182,7 @@ export default function ParentLeaves() {
                         {isHomePass ? (
                             <>
                                 <td className="p-4 text-text-secondary text-sm font-medium">
-                                    {formatDate(r.fromDate)} - {formatDate(r.toDate)}
+                                    {formatDateReadable(r.fromDate)} - {formatDateReadable(r.toDate)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {getDurationDays(r)} Days
@@ -191,7 +191,7 @@ export default function ParentLeaves() {
                         ) : (
                             <>
                                 <td className="p-4 text-text-secondary text-sm font-medium">
-                                    {formatDate(r.fromDate || r.date)}
+                                    {formatDateReadable(r.fromDate || r.date)}
                                 </td>
                                 <td className="p-4 text-text-secondary text-sm">
                                     {r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')}
@@ -230,13 +230,13 @@ export default function ParentLeaves() {
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-gray-800">{getStudentName(r)}</h4>
-                                <span className="text-xs text-text-secondary">Applied: {formatDate(r.createdAt)}</span>
+                                <span className="text-xs text-text-secondary">Applied: {formatDateReadable(r.createdAt)}</span>
                             </div>
                         </div>
 
                         <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg">
                             <span className="font-bold text-gray-700 text-sm">
-                                {isHomePass ? `${formatDate(r.fromDate)} - ${formatDate(r.toDate)}` : formatDate(r.fromDate || r.date)}
+                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
                             </span>
                             <span className="text-xs text-text-secondary font-medium bg-white px-2 py-1 rounded shadow-sm border border-gray-100">
                                 {isHomePass ? `${getDurationDays(r)} Days` : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}

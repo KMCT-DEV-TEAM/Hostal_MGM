@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { formatDate, formatTime, capitalize } from '@/utils/formatters';
+import { formatDateISO, formatTime, capitalize } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
@@ -103,7 +103,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
         return (
             <div className="flex flex-col gap-2 w-full text-sm">
                 <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">{formatDate(item.attendanceDate)}</span>
+                    <span className="font-semibold text-gray-900">{formatDateISO(item.attendanceDate)}</span>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.status === 'open' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
                         }`}>
                         {capitalize(item.status)}

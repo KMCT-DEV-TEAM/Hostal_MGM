@@ -7,6 +7,9 @@ const hostelApi = {
   getHostels: (params) =>
     api.get("/super-admin/hostels", { params }),
 
+  getSelectionHostels: (params) =>
+    api.get("/super-admin/hostels/selection", { params }),
+
   getHostelById: (id) =>
     api.get(`/super-admin/hostels/${id}`),
 

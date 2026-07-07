@@ -22,12 +22,6 @@ router.post(
     notificationController.testBroadcast
 );
 
-router.post(
-    '/test',
-    roleMiddleware('super_admin', 'admin'),
-    notificationController.testNotification
-);
-
 router.patch('/read-all', notificationController.markAllAsRead);
 
 router

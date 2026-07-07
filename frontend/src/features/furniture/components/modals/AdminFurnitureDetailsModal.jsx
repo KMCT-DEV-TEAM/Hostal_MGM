@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { Bed, Box, PackageCheck, PackageOpen, Edit2, Check, X, Loader2 } from 'lucide-react';
-import { formatDate } from '@/utils/formatters';
+import { formatDateISO } from '@/utils/formatters';
 import Button from '@/components/ui/Button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
@@ -86,7 +86,7 @@ export default function AdminFurnitureDetailsModal({ isOpen, onClose, item, onVi
                             <div className="text-gray-500">Added on</div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-400">:</span>
-                                <span className="font-medium text-gray-900">{formatDate(item.createdAt)}</span>
+                                <span className="font-medium text-gray-900">{formatDateISO(item.createdAt)}</span>
                             </div>
 
                             <div className="text-gray-500 self-center">Quantity</div>

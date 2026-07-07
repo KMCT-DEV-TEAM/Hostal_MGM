@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '@/components/ui/Modal';
 import { Loader2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { getHostels } from '@/services/hostel.service';
+import AsyncDropdown from '@/components/ui/AsyncDropdown';
+import { getSelectionHostels } from '@/services/hostel.service';
+import { getOrganizations } from '@/services/organization.service';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const FURNITURE_OPTIONS = [
     { label: 'Bed', value: 'Bed' },
@@ -26,21 +29,55 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         description: '',
         openingStock: '',
         hostelId: '',
+        organizationId: '',
         isActive: true
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [hostels, setHostels] = useState([]);
 
-    useEffect(() => {
-        const fetchHostels = async () => {
-            try {
-                const data = await getHostels({ limit: 100 });
-                setHostels(data?.data || data?.hostels || data || []);
-            } catch (error) {
-                console.error("Failed to fetch hostels:", error);
-            }
-        };
-        fetchHostels();
+    const role = useAuthStore(s => s.user?.role);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [hostelMap, setHostelMap] = useState({});
+
+    const fetchHostelOptions = useCallback(async ({ page, search }) => {
+        try {
+            const response = await getSelectionHostels({ page, limit: 10, search });
+            const data = response?.data?.hostels || response?.hostels || response?.data || [];
+            const totalPages = response?.data?.pagination?.totalPages || response?.pagination?.totalPages || 1;
+
+            const options = data.map(h => ({
+                label: h.name,
+                value: h._id,
+                organizationId: h.organizations?.[0]?._id || h.organizations?.[0]
+            }));
+
+            setHostelMap(prev => {
+                const newMap = { ...prev };
+                options.forEach(opt => newMap[opt.value] = opt);
+                return newMap;
+            });
+
+            return { options, hasMore: page < totalPages };
+        } catch (error) {
+            console.error("Failed to fetch hostels:", error);
+            return { options: [], hasMore: false };
+        }
+    }, []);
+
+    const fetchOrganizationOptions = useCallback(async ({ page, search }) => {
+        try {
+            const response = await getOrganizations({ page, limit: 10, search });
+            const data = response?.data?.organizations || response?.organizations || response?.data || [];
+            const totalPages = response?.data?.pagination?.totalPages || response?.pagination?.totalPages || 1;
+
+            const options = data.map(o => ({
+                label: o.name,
+                value: o._id,
+            }));
+
+            return { options, hasMore: page < totalPages };
+        } catch (error) {
+            console.error("Failed to fetch organizations:", error);
+            return { options: [], hasMore: false };
+        }
     }, []);
 
     useEffect(() => {
@@ -52,6 +89,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 description: initialData.description || '',
                 openingStock: initialData.openingStock || '',
                 hostelId: initialData.hostel?._id || initialData.hostelId || '',
+                organizationId: initialData.organization?._id || initialData.organizationId || '',
                 isActive: initialData.isActive !== undefined ? initialData.isActive : true
             });
         } else {
@@ -62,6 +100,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                 description: '',
                 openingStock: '',
                 hostelId: '',
+                organizationId: '',
                 isActive: true
             });
         }
@@ -80,8 +119,11 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         setIsSubmitting(true);
         try {
             const finalName = formData.name === 'Other' ? formData.customName : formData.name;
-            const selectedHostel = hostels.find(h => h._id === formData.hostelId);
-            const organizationId = selectedHostel?.organizations?.[0]?._id || selectedHostel?.organizations?.[0];
+
+            let organizationId = undefined;
+            if (role === 'super_admin') {
+                organizationId = formData.organizationId;
+            }
 
             await onSave({
                 ...formData,
@@ -142,15 +184,33 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     )}
                 </div>
 
+                {role === 'super_admin' && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Organization <span className="text-red-500">*</span></label>
+                        <AsyncDropdown
+                            fetchOptions={fetchOrganizationOptions}
+                            value={formData.organizationId}
+                            onChange={(val) => setFormData(prev => ({ ...prev, organizationId: val }))}
+                            placeholder="Select Organization"
+                            triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
+                            lookup={initialData && initialData.organization ? {
+                                [initialData.organization._id || initialData.organizationId]: { label: initialData.organization.name }
+                            } : {}}
+                        />
+                    </div>
+                )}
+
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Hostel <span className="text-red-500">*</span></label>
-                    <Dropdown
-                        options={hostels.map(h => ({ label: h.name, value: h._id }))}
+                    <AsyncDropdown
+                        fetchOptions={fetchHostelOptions}
                         value={formData.hostelId}
                         onChange={(val) => setFormData(prev => ({ ...prev, hostelId: val }))}
-                        placeholder="Select Hostel / Organization"
-                        searchable
+                        placeholder="Select Hostel"
                         triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
+                        lookup={initialData && initialData.hostel ? {
+                            [initialData.hostel._id || initialData.hostelId]: { label: initialData.hostel.name }
+                        } : {}}
                     />
                 </div>
 
@@ -191,7 +251,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     fullWidth={false}
                     size="md"
                     type="submit"
-                    disabled={isSubmitting || !formData.name || !formData.prefix || !formData.hostelId}
+                    disabled={isSubmitting || !formData.name || !formData.prefix || !formData.hostelId || (role === 'super_admin' && !formData.organizationId)}
                     className="min-w-[120px] order-2 bg-[#0a3a6a] hover:bg-[#0a3a6a]/90 capitalize"
                 >
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'save'}

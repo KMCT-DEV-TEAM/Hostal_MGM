@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { formatDate } from '@/utils/formatters';
+import { formatDateISO } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
@@ -69,7 +69,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                     {dayOfWeek}
                 </td>
                 <td className="p-4 align-middle text-gray-500">
-                    {formatDate(item.scannedAt)}
+                    {formatDateISO(item.scannedAt)}
                 </td>
                 <td className="p-4 align-middle">
                     <div className="flex items-center gap-3">

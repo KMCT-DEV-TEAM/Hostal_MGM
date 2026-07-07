@@ -5,6 +5,7 @@ import {
   checkExistingHostelEmailDb,
   createHostelDb,
   getHostelsDb,
+  getSelectionHostelsDb,
   getPaginatedHostelsDb,
   getHostelByIdDb,
   updateHostelDb,
@@ -73,6 +74,22 @@ const getHostels = asyncHandler(async (req, res) => {
   const { hostels, totalCount } = await getPaginatedHostelsDb(page, limit, search, status, adminId);
 
   return sendSuccess(res, 200, "Hostels fetched successfully", {
+    count: hostels.length,
+    totalCount,
+    currentPage: page,
+    totalPages: limit === 0 ? 1 : Math.ceil(totalCount / limit),
+    data: hostels,
+  });
+});
+
+const getSelectionHostels = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 10;
+  const search = req.query.search || "";
+
+  const { hostels, totalCount } = await getSelectionHostelsDb(page, limit, search);
+
+  return sendSuccess(res, 200, "Hostels for selection fetched successfully", {
     count: hostels.length,
     totalCount,
     currentPage: page,
@@ -219,6 +236,7 @@ const bulkUpdateHostelStatus = asyncHandler(async (req, res) => {
 export {
   createHostel,
   getHostels,
+  getSelectionHostels,
   getHostelById,
   updateHostel,
   toggleHostelStatus,

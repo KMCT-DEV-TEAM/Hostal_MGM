@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const deliveryChannelSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: false },
-    status: { 
-        type: String, 
+    status: {
+        type: String,
         enum: ['PENDING', 'QUEUED', 'PROCESSING', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'RETRYING'],
         default: 'PENDING'
     },
@@ -15,7 +15,10 @@ const deliveryChannelSchema = new mongoose.Schema({
     deliveredAt: { type: Date },
     readAt: { type: Date },
     lastAttemptAt: { type: Date },
-    error: { type: String }
+    error: {
+        code: { type: String },
+        message: { type: String }
+    }
 }, { _id: false });
 
 const notificationSchema = new mongoose.Schema(
@@ -62,10 +65,6 @@ const notificationSchema = new mongoose.Schema(
             inApp: { type: deliveryChannelSchema, default: () => ({ enabled: true, status: 'PENDING' }) },
             email: { type: deliveryChannelSchema, default: () => ({}) },
             push: { type: deliveryChannelSchema, default: () => ({}) }
-        },
-        isRead: { // Kept for quick queries or backwards compatibility, though inApp.status == 'READ' could replace it. User asked to index it.
-            type: Boolean,
-            default: false
         }
     },
     {
@@ -74,10 +73,10 @@ const notificationSchema = new mongoose.Schema(
 );
 
 // Indexes specified in the requirements
+notificationSchema.index({ 'recipient.id': 1, createdAt: -1 }); // Primary query pattern
 notificationSchema.index({ 'recipient.id': 1, 'recipient.model': 1 });
 notificationSchema.index({ 'event.event': 1 });
-notificationSchema.index({ isRead: 1 });
-notificationSchema.index({ createdAt: -1 });
+notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 15552000 });
 notificationSchema.index({ 'deliveries.email.status': 1 });
 notificationSchema.index({ 'deliveries.push.status': 1 });
 notificationSchema.index({ 'event.priority': 1 });

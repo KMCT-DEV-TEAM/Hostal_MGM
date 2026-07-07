@@ -13,21 +13,21 @@ export const getDashboardSummaryAggregation = async (matchQuery) => {
     },
     { $unwind: "$typeInfo" },
     { $match: matchQuery },
+    { $match: { status: { $ne: "inactive" } } },
     {
       $group: {
         _id: null,
-        totalAssets: { $sum: { $cond: [{ $in: ["$status", ["Available", "Allocated", "Maintenance"]] }, 1, 0] } },
-        available: { $sum: { $cond: [{ $eq: ["$status", "Available"] }, 1, 0] } },
-        allocated: { $sum: { $cond: [{ $eq: ["$status", "Allocated"] }, 1, 0] } },
-        maintenance: { $sum: { $cond: [{ $eq: ["$status", "Maintenance"] }, 1, 0] } },
-        inactive: { $sum: { $cond: [{ $eq: ["$status", "Inactive"] }, 1, 0] } },
-        lost: { $sum: { $cond: [{ $eq: ["$status", "Lost"] }, 1, 0] } },
-        scrap: { $sum: { $cond: [{ $eq: ["$status", "Scrap"] }, 1, 0] } },
+        totalAssets: { $sum: { $cond: [{ $in: ["$status", ["available", "allocated", "maintenance"]] }, 1, 0] } },
+        available: { $sum: { $cond: [{ $eq: ["$status", "available"] }, 1, 0] } },
+        allocated: { $sum: { $cond: [{ $eq: ["$status", "allocated"] }, 1, 0] } },
+        maintenance: { $sum: { $cond: [{ $eq: ["$status", "maintenance"] }, 1, 0] } },
+        lost: { $sum: { $cond: [{ $eq: ["$status", "lost"] }, 1, 0] } },
+        scrap: { $sum: { $cond: [{ $eq: ["$status", "scrap"] }, 1, 0] } },
       },
     },
   ]);
 
-  return result.length > 0 ? result[0] : { totalAssets: 0, available: 0, allocated: 0, maintenance: 0, inactive: 0, lost: 0, scrap: 0 };
+  return result.length > 0 ? result[0] : { totalAssets: 0, available: 0, allocated: 0, maintenance: 0, lost: 0, scrap: 0 };
 };
 
 export const getFurnitureTypeDistributionAggregation = async (matchQuery) => {
@@ -42,7 +42,7 @@ export const getFurnitureTypeDistributionAggregation = async (matchQuery) => {
     },
     { $unwind: "$typeInfo" },
     { $match: matchQuery },
-    { $match: { status: { $in: ["Available", "Allocated", "Maintenance"] } } },
+    { $match: { status: { $in: ["available", "allocated", "maintenance"] } } },
     {
       $group: {
         _id: "$typeInfo.name",
@@ -88,16 +88,27 @@ export const getFurnitureTypesListAggregation = async (matchQuery, skip, limit) 
         prefix: 1,
         description: 1,
         isActive: 1,
-        organization: { _id: "$organization._id", name: "$organization.name" },
-        hostel: { _id: "$hostel._id", name: "$hostel.name" },
+        organization: {
+          $cond: {
+            if: "$organization",
+            then: { _id: "$organization._id", name: "$organization.name" },
+            else: null
+          }
+        },
+        hostel: {
+          $cond: {
+            if: "$hostel",
+            then: { _id: "$hostel._id", name: "$hostel.name" },
+            else: null
+          }
+        },
         createdAt: 1,
-        total: { $size: { $filter: { input: "$assets", as: "asset", cond: { $in: ["$$asset.status", ["Available", "Allocated", "Maintenance"]] } } } },
-        available: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Available"] } } } },
-        allocated: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Allocated"] } } } },
-        maintenance: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Maintenance"] } } } },
-        inactive: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Inactive"] } } } },
-        lost: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Lost"] } } } },
-        scrap: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "Scrap"] } } } },
+        total: { $size: { $filter: { input: "$assets", as: "asset", cond: { $in: ["$$asset.status", ["available", "allocated", "maintenance"]] } } } },
+        available: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "available"] } } } },
+        allocated: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "allocated"] } } } },
+        maintenance: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "maintenance"] } } } },
+        lost: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "lost"] } } } },
+        scrap: { $size: { $filter: { input: "$assets", as: "asset", cond: { $eq: ["$$asset.status", "scrap"] } } } },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -127,10 +138,58 @@ export const getFurnitureAssetsListAggregation = async (matchQuery, skip, limit)
       },
     },
     {
+      $lookup: {
+        from: "furnituretypes",
+        localField: "furnitureTypeId",
+        foreignField: "_id",
+        as: "typeInfo"
+      }
+    },
+    { $unwind: { path: "$typeInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "organizations",
+        localField: "typeInfo.organizationId",
+        foreignField: "_id",
+        as: "organization",
+      },
+    },
+    { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "typeInfo.hostelId",
+        foreignField: "_id",
+        as: "hostel",
+      },
+    },
+    { $unwind: { path: "$hostel", preserveNullAndEmptyArrays: true } },
+    {
       $project: {
         _id: 1,
         furnitureId: 1,
         furnitureTypeId: 1,
+        typeInfo: {
+          $cond: {
+            if: "$typeInfo",
+            then: { _id: "$typeInfo._id", name: "$typeInfo.name", prefix: "$typeInfo.prefix" },
+            else: null
+          }
+        },
+        organization: {
+          $cond: {
+            if: "$organization",
+            then: { _id: "$organization._id", name: "$organization.name" },
+            else: null
+          }
+        },
+        hostel: {
+          $cond: {
+            if: "$hostel",
+            then: { _id: "$hostel._id", name: "$hostel.name" },
+            else: null
+          }
+        },
         status: 1,
         remarks: 1,
         createdAt: 1,
@@ -159,10 +218,10 @@ export const getFurnitureAssetDetailsAggregation = async (assetId) => {
         from: "furnituretypes",
         localField: "furnitureTypeId",
         foreignField: "_id",
-        as: "typeInfo",
+        as: "furnituretypeInfo",
       },
     },
-    { $unwind: { path: "$typeInfo", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$furnituretypeInfo", preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: "students",
@@ -221,8 +280,8 @@ export const getFurnitureAssetDetailsAggregation = async (assetId) => {
         furnitureId: 1,
         status: 1,
         createdAt: 1,
-        furnitureName: "$typeInfo.name",
-        prefix: "$typeInfo.prefix",
+        furnitureName: "$furnituretypeInfo.name",
+        prefix: "$furnituretypeInfo.prefix",
         currentAssignment: {
           $cond: {
             if: "$student",

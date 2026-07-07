@@ -26,7 +26,7 @@ export default function AdminFurniture() {
     const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
 
     const urlSearchQuery = searchParams.get('search') || '';
-    const statusFilter = searchParams.get('status') || 'All';
+    const statusFilter = searchParams.get('isActive') || 'All';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = 10;
 
@@ -37,7 +37,7 @@ export default function AdminFurniture() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    
+
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
     const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
@@ -93,7 +93,7 @@ export default function AdminFurniture() {
         page,
         limit,
         search: debouncedSearch,
-        status: statusFilter === 'All' ? '' : statusFilter
+        isActive: statusFilter === 'All' ? '' : statusFilter
     });
 
     const handleSaveType = async (data) => {
@@ -140,9 +140,9 @@ export default function AdminFurniture() {
         }
     };
 
-    const handleStatusChange = async (assetId, status) => {
+    const handleStatusChange = async (assetId, payload) => {
         try {
-            await furnitureApi.changeAssetStatus(assetId, { status });
+            await furnitureApi.changeAssetStatus(assetId, payload);
             showSuccessToast('Asset status updated successfully');
             setIsStatusModalOpen(false);
             fetchFurnitureTypes();
@@ -181,11 +181,12 @@ export default function AdminFurniture() {
 
     const exportFields = [
         {
-            name: "status",
+            name: "isActive",
             label: "Status",
             options: [
-                { label: 'All Status', value: '' },
-                { label: 'Available', value: 'Available' },
+                { label: 'All Status', value: 'All' },
+                { label: 'Active', value: 'true' },
+                { label: 'Inactive', value: 'false' },
             ]
         }
     ];
@@ -227,6 +228,7 @@ export default function AdminFurniture() {
 
     const tableHeaders = [
         { key: 'name', label: 'Furniture' },
+        { key: 'organization', label: 'Organization' },
         { key: 'hostel', label: 'Hostel' },
         { key: 'total', label: 'Quantity' },
         { key: 'allocated', label: 'Assigned' },
@@ -294,10 +296,11 @@ export default function AdminFurniture() {
                         <Dropdown
                             options={[
                                 { label: 'All Status', value: 'All' },
-                                { label: 'Available', value: 'Available' }
+                                { label: 'Active', value: 'true' },
+                                { label: 'Inactive', value: 'false' }
                             ]}
                             value={statusFilter}
-                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                            onChange={(val) => updateSearchParams({ isActive: val, page: 1 })}
                             placeholder="All Status"
                             minWidth="w-[140px]"
                         />
@@ -338,7 +341,7 @@ export default function AdminFurniture() {
                 onSelect={handleSelect}
                 onRowClick={handleRowClick}
                 emptyText="No furniture types found."
-                isLoading={loading}
+                loading={loading}
                 renderRow={(item) => (
                     <>
                         <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
@@ -348,7 +351,10 @@ export default function AdminFurniture() {
                             <span className="text-sm font-semibold">{item.name}</span>
                         </td>
                         <td className="p-4 text-text-secondary font-medium">
-                            {item.hostel?.name || item.organization?.name || "--"}
+                            {item.organization?.name || "--"}
+                        </td>
+                        <td className="p-4 text-text-secondary font-medium">
+                            {item.hostel?.name || "--"}
                         </td>
                         <td className="p-4 text-text-secondary">
                             {item.total || item.assets?.total || 0}

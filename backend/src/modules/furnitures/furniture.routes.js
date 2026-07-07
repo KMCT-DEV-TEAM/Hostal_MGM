@@ -17,7 +17,10 @@ import {
   changeAssetStatus,
   getFurnitureAssetsByType,
   getAllHostelFurnitureAssets,
-  getFurnitureAssetDetails
+  getFurnitureAssetDetails,
+  getActiveFurnitureTypesList,
+  getAvailableFurnitureAssetsList,
+  getAssetsDashboardSummary
 } from "./furniture.controller.js";
 
 import {
@@ -27,7 +30,8 @@ import {
   validateReturn,
   validateStartMaintenance,
   validateCompleteMaintenance,
-  validateUpdateFurnitureType
+  validateUpdateFurnitureType,
+  validateManualStatusChange
 } from "./furniture.validation.js";
 
 const router = express.Router();
@@ -37,6 +41,13 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   getFurnitureTypes
+);
+
+router.get(
+  "/types/active",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getActiveFurnitureTypesList
 );
 
 router.post(
@@ -78,6 +89,13 @@ router.delete(
 );
 
 router.get(
+  "/types/:typeId/assets/active",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getAvailableFurnitureAssetsList
+);
+
+router.get(
   "/types/:typeId/assets",
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
@@ -88,11 +106,12 @@ router.patch(
   "/assets/:assetId/status",
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
+  validateManualStatusChange,
   changeAssetStatus
 );
 
 router.post(
-  "/students/:studentId/assets/:assetId/allocate",
+  "/assets/allocate",
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   validateAllocate,
@@ -128,6 +147,12 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   getDashboardSummary
+);
+router.get(
+  "/assets-dashboard",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getAssetsDashboardSummary
 );
 router.get(
   "/assets",

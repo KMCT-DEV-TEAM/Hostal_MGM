@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { X, ChevronDown } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import Dropdown from "@/components/ui/Dropdown";
+import AsyncDropdown from "@/components/ui/AsyncDropdown";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
+
 
 // A custom multi-select for the furnitures
 function MultiSelectDropdown({ options = [], value = [], onChange, placeholder, lookup = {} }) {
@@ -102,40 +103,57 @@ export default function AssignFurnitureModal({
   onSave
 }) {
   const [furnitures, setFurnitures] = useState([]);
-  const [furnitureTypes, setFurnitureTypes] = useState([]);
   const [selectedTypeId, setSelectedTypeId] = useState("");
-  const [availableAssets, setAvailableAssets] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
-      furnitureApi.getFurnitureTypes({ limit: 1000 }).then(res => {
-        const types = res.data.data || [];
-        console.log('type', res.data.data);
-        setFurnitureTypes(types.map(t => ({ label: t.name, value: t._id })));
-      }).catch(console.error);
-
       if (isEdit && assignedFurnitures.length > 0) {
         setFurnitures(assignedFurnitures.map(f => f._id));
       } else {
         setFurnitures([]);
       }
       setSelectedTypeId("");
-      setAvailableAssets([]);
     }
   }, [isOpen, isEdit, assignedFurnitures]);
 
-  useEffect(() => {
-    if (selectedTypeId) {
-      furnitureApi.getAllFurnitureAssets({ status: "Available", furnitureTypeId: selectedTypeId, limit: 1000 })
-        .then(res => {
-          const assets = res.data?.data?.assets || res.data?.assets || res.data || [];
-          setAvailableAssets(assets.map(a => ({
-            label: `${a.furnitureTypeId?.name || "Asset"} (${a.furnitureId || a.code})`,
-            value: a._id
-          })));
-        }).catch(console.error);
-    } else {
-      setAvailableAssets([]);
+  const fetchFurnitureTypesOptions = useCallback(async ({ page, search }) => {
+    try {
+      const params = { page, search, limit: 10 };
+      const hostelId = student?.hostel?._id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
+      if (hostelId) {
+        params.hostelId = hostelId;
+      }
+      const res = await furnitureApi.getActiveFurnitureTypesList(params);
+      const types = res.data?.data?.types || res.data?.types || res.data?.data || [];
+      const pagination = res.data?.data?.pagination || res.data?.pagination || {};
+
+      return {
+        options: types.map(t => ({ label: t.name, value: t._id })),
+        hasMore: page < (pagination.totalPages || 1)
+      };
+    } catch (error) {
+      console.error(error);
+      return { options: [], hasMore: false };
+    }
+  }, [student]);
+
+  const fetchFurnitureAssetsOptions = useCallback(async ({ page, search }) => {
+    if (!selectedTypeId) return { options: [], hasMore: false };
+    try {
+      const res = await furnitureApi.getAvailableFurnitureAssetsList(selectedTypeId, { page, search, limit: 10 });
+      const assets = res.data?.data?.assets || res.data?.assets || res.data?.data || [];
+      const pagination = res.data?.data?.pagination || res.data?.pagination || {};
+
+      return {
+        options: assets.map(a => ({
+          label: `${a.furnitureTypeId?.name || "Asset"} (${a.furnitureId || a.code})`,
+          value: a._id
+        })),
+        hasMore: page < (pagination.totalPages || 1)
+      };
+    } catch (error) {
+      console.error(error);
+      return { options: [], hasMore: false };
     }
   }, [selectedTypeId]);
 
@@ -167,14 +185,17 @@ export default function AssignFurnitureModal({
           : "Fill the details to assign furniture to student"
       }
       maxWidth="max-w-lg"
+      overflowClass="overflow-visible"
     >
       <form onSubmit={handleSubmit} className="p-1 space-y-6">
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">Furniture Type</label>
-          <Dropdown
-            options={furnitureTypes}
+          <AsyncDropdown
+            fetchOptions={fetchFurnitureTypesOptions}
             value={selectedTypeId}
-            onChange={setSelectedTypeId}
+            onChange={(val) => {
+              setSelectedTypeId(val);
+            }}
             placeholder="Select type"
             className="w-full"
             triggerClassName="px-3 py-2 text-sm bg-white border-gray-200 focus:border-primary h-[42px]"
@@ -183,12 +204,15 @@ export default function AssignFurnitureModal({
 
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">Furniture Assets</label>
-          <MultiSelectDropdown
-            options={availableAssets}
+          <AsyncDropdown
+            key={selectedTypeId} // Re-mount when type changes to reset options
+            isMulti={true}
+            fetchOptions={fetchFurnitureAssetsOptions}
             value={furnitures}
             onChange={setFurnitures}
             placeholder={selectedTypeId ? "Select Furnitures" : "Select a type first"}
             lookup={lookup}
+            triggerClassName="px-3 py-2 text-sm bg-white border-gray-200 focus:border-primary min-h-[42px]"
           />
         </div>
 

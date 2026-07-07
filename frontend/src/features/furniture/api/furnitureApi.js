@@ -11,15 +11,20 @@ const createFurnitureType = (data) => apiClient.post(`${API_BASE_URL}/types`, da
 const updateFurnitureType = (typeId, data) => apiClient.put(`${API_BASE_URL}/types/${typeId}`, data);
 const deleteFurnitureType = (typeId) => apiClient.delete(`${API_BASE_URL}/types/${typeId}`);
 const adjustAssetsCount = (typeId, data) => apiClient.patch(`${API_BASE_URL}/types/${typeId}/assets-count`, data);
+const getActiveFurnitureTypesList = (params) => apiClient.get(`${API_BASE_URL}/types/active`, { params });
+const getAvailableFurnitureAssetsList = (typeId, params) => apiClient.get(`${API_BASE_URL}/types/${typeId}/assets/active`, { params });
 
 const allocateAsset = (studentId, assetId) => apiClient.post(`${API_BASE_URL}/students/${studentId}/assets/${assetId}/allocate`);
+const allocateAssetsBulk = (data) => apiClient.post(`${API_BASE_URL}/assets/allocate`, data);
 const returnAsset = (studentId, assetId) => apiClient.post(`${API_BASE_URL}/students/${studentId}/assets/${assetId}/return`);
+const assignFurnitures = (studentId, data) => apiClient.post(`${API_BASE_URL}/students/${studentId}/assets/assign`, data); // No backend
 
 const changeAssetStatus = (assetId, data) => apiClient.patch(`${API_BASE_URL}/assets/${assetId}/status`, data);
 const startMaintenance = (assetId) => apiClient.post(`${API_BASE_URL}/assets/${assetId}/maintenance/start`);
 const completeMaintenance = (assetId) => apiClient.post(`${API_BASE_URL}/assets/${assetId}/maintenance/complete`);
 
 const getDashboardStats = () => apiClient.get(`${API_BASE_URL}/dashboard`);
+const getAssetsDashboardSummary = (typeId) => apiClient.get(`${API_BASE_URL}/assets-dashboard`, { params: { typeId } });
 
 const furnitureApi = {
     getFurnitureTypes,
@@ -36,7 +41,12 @@ const furnitureApi = {
     changeAssetStatus,
     startMaintenance,
     completeMaintenance,
-    getDashboardStats
+    getDashboardStats,
+    getActiveFurnitureTypesList,
+    getAvailableFurnitureAssetsList,
+    assignFurnitures,
+    allocateAssetsBulk,
+    getAssetsDashboardSummary
 };
 
 export default furnitureApi;

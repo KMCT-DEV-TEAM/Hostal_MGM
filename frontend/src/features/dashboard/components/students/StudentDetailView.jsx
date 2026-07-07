@@ -17,19 +17,21 @@ import {
   Pencil,
   Plus,
   Box,
-  Hash
+  Hash,
+  X
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
 import AssignFurnitureModal from "./AssignFurnitureModal";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { changeStudentEmail } from "@/services/student.service";
 import { changeParentEmail } from "@/services/parent.service";
-import { formatDate } from "@/utils/dateFormatter";
+import { formatDateStandard } from "@/utils/formatters";
 import { getStudentFurnitures } from "@/services/student.service";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 import { getHostels } from "@/services/hostel.service";
@@ -74,14 +76,16 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
 
   const [assignedFurnitures, setAssignedFurnitures] = useState([]);
   const [loadingFurnitures, setLoadingFurnitures] = useState(false);
+  const [returnConfirmModal, setReturnConfirmModal] = useState({ isOpen: false, asset: null });
+  const [isReturning, setIsReturning] = useState(false);
 
   useEffect(() => {
     const fetchFurnitures = async () => {
       try {
         setLoadingFurnitures(true);
         const studentId = student?._id || student?.id;
-        console.log('Student Id:', student._id)
         const data = await getStudentFurnitures(role, studentId);
+        console.log('Assigned furnitures:', data)
         setAssignedFurnitures(data?.assets || []);
       } catch (err) {
         console.error('Failed to fetch assigned furnitures', err);
@@ -100,7 +104,12 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
     if (isAssignModalOpen) {
       const fetchModalData = async () => {
         try {
-          const furnituresRes = await furnitureApi.getAllFurnitureAssets({ status: "Available", limit: 1000 });
+          const params = { status: "Available", limit: 1000 };
+          const hostelId = student?.hostel?._id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
+          if (hostelId) {
+            params.hostelId = hostelId;
+          }
+          const furnituresRes = await furnitureApi.getAllFurnitureAssets(params);
           setAvailableFurnitures(furnituresRes.data?.data?.assets || furnituresRes.data?.assets || []);
         } catch (error) {
           console.error("Failed to fetch data for modal", error);
@@ -120,22 +129,9 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       }
 
       const { furnitures } = data; // hostelId and roomNo are ignored for now if not implemented on backend
-      const currentAssetIds = assignedFurnitures.map((f) => String(f._id));
       const newAssetIds = furnitures.map(String);
 
-      const toAllocate = newAssetIds.filter((id) => !currentAssetIds.includes(id));
-      const toReturn = currentAssetIds.filter((id) => !newAssetIds.includes(id));
-
-      const promises = [];
-
-      toAllocate.forEach((assetId) => {
-        promises.push(furnitureApi.allocateAsset(studentId, assetId));
-      });
-      toReturn.forEach((assetId) => {
-        promises.push(furnitureApi.returnAsset(studentId, assetId));
-      });
-
-      await Promise.all(promises);
+      await furnitureApi.allocateAssetsBulk({ studentId, assetIds: newAssetIds });
 
       // Re-fetch assigned furnitures
       const furnData = await getStudentFurnitures(role, studentId);
@@ -146,6 +142,31 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
     } catch (error) {
       console.log('error assignment:', error)
       showErrorToast(error.message || "Failed to update assignment.");
+    }
+  };
+
+  const handleReturnClick = (asset) => {
+    setReturnConfirmModal({ isOpen: true, asset });
+  };
+
+  const handleReturnConfirm = async () => {
+    if (!returnConfirmModal.asset) return;
+    setIsReturning(true);
+    try {
+      const studentId = student?._id || student?.id;
+      const assetId = returnConfirmModal.asset._id || returnConfirmModal.asset.id;
+      await furnitureApi.returnAsset(studentId, assetId);
+      
+      // Re-fetch assigned furnitures
+      const data = await getStudentFurnitures(role, studentId);
+      setAssignedFurnitures(data?.assets || []);
+      
+      showSuccessToast("Furniture returned successfully");
+      setReturnConfirmModal({ isOpen: false, asset: null });
+    } catch (error) {
+      showErrorToast(error.message || "Failed to return furniture");
+    } finally {
+      setIsReturning(false);
     }
   };
 
@@ -262,7 +283,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 label="Date Of Birth"
               >
                 {student.dob
-                  ? formatDate(student.dob)
+                  ? formatDateStandard(student.dob)
                   : "N/A"}
               </InfoRow>
               {/* Status row needs custom layout for the dot */}
@@ -495,22 +516,12 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {assignedFurnitures.length > 0 || student.hostel ? (
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => setIsAssignModalOpen(true)}
-                  >
-                    Edit
-                  </Button>
-                ) : (
-                  <Button
-                    className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
-                    onClick={() => setIsAssignModalOpen(true)}
-                  >
-                    Add
-                  </Button>
-                )}
+                <Button
+                  className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
+                  onClick={() => setIsAssignModalOpen(true)}
+                >
+                  Add
+                </Button>
               </div>
             </div>
 
@@ -522,6 +533,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                 >
                   {hostelName}
                 </InfoRow>
+                {/* {console.log('Assigned furnitures: ', assignedFurnitures)} */}
                 <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
                   <span className="text-gray-500 flex items-center gap-1.5">
                     <Box className="w-4 h-4 text-gray-400" />
@@ -531,8 +543,15 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                     <span className="hidden sm:inline">: </span>
                     {assignedFurnitures.length > 0 ? (
                       assignedFurnitures.map((f, i) => (
-                        <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium">
+                        <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
                           {f.furnitureTypeId?.name || "Unknown"}
+                          <button 
+                            type="button"
+                            className="hover:text-red-500 transition-colors ml-1 cursor-pointer"
+                            onClick={() => handleReturnClick(f)}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </span>
                       ))
                     ) : (
@@ -681,6 +700,17 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         student={student}
         assignedFurnitures={assignedFurnitures}
         onSave={handleAssignSave}
+      />
+
+      <ConfirmationModal
+        isOpen={returnConfirmModal.isOpen}
+        onClose={() => setReturnConfirmModal({ isOpen: false, asset: null })}
+        onConfirm={handleReturnConfirm}
+        title="Return Furniture"
+        message={`Are you sure you want to return ${returnConfirmModal.asset?.furnitureTypeId?.name || "this furniture"} (${returnConfirmModal.asset?.furnitureId || "Unknown ID"})?`}
+        confirmText="Return"
+        isSubmitting={isReturning}
+        confirmButtonVariant="danger"
       />
     </Modal>
   );

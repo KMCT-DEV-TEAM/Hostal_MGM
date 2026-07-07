@@ -59,9 +59,12 @@ export const adjustAssetCount = asyncHandler(async (req, res) => {
 });
 
 export const allocateFurniture = asyncHandler(async (req, res) => {
-  const { asset, student } = req.validatedData;
-  await furnitureService.allocateAssetService(asset, student, req.user);
-  return sendSuccess(res, 200, "Furniture allocated successfully.");
+  const { student, assets } = req.validatedData;
+
+  // Call the bulk service
+  await furnitureService.bulkAllocateAssetsToStudentService(student, assets, req.user);
+
+  return sendSuccess(res, 200, `Successfully allocated ${assets.length} furniture asset(s).`);
 });
 
 export const returnFurniture = asyncHandler(async (req, res) => {
@@ -72,17 +75,33 @@ export const returnFurniture = asyncHandler(async (req, res) => {
 
 export const startMaintenance = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
-  await furnitureService.changeLifecycleStatusService(asset, "Maintenance", "Maintenance Started", req.user, req.body.remarks);
+  await furnitureService.changeLifecycleStatusService(asset, "maintenance", "maintenance started", req.user, req.body.remarks);
   return sendSuccess(res, 200, "Furniture moved to maintenance.");
 });
 
 export const completeMaintenance = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
-  await furnitureService.changeLifecycleStatusService(asset, "Available", "Maintenance Completed", req.user, req.body.remarks);
+  await furnitureService.changeLifecycleStatusService(asset, "available", "maintenance completed", req.user, req.body.remarks);
   return sendSuccess(res, 200, "Maintenance completed.");
 });
 
 export const getDashboardSummary = asyncHandler(async (req, res) => {
+  const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin") {
+    matchQuery["typeInfo.organizationId"] = new mongoose.Types.ObjectId(scope.organizationId);
+  } else if (req.user.role === "warden") {
+    matchQuery["typeInfo.hostelId"] = new mongoose.Types.ObjectId(scope.hostelId);
+  }
+
+  const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
+  const distribution = await furnitureAggregation.getFurnitureTypeDistributionAggregation(matchQuery);
+
+  return sendSuccess(res, 200, "Dashboard data retrieved.", { summary, distribution });
+});
+
+export const getAssetsDashboardSummary = asyncHandler(async (req, res) => {
   const matchQuery = {};
   const scope = await resolveUserScope(req.user);
 
@@ -93,9 +112,8 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
   }
 
   const summary = await furnitureAggregation.getDashboardSummaryAggregation(matchQuery);
-  const distribution = await furnitureAggregation.getFurnitureTypeDistributionAggregation(matchQuery);
 
-  return sendSuccess(res, 200, "Dashboard data retrieved.", { summary, distribution });
+  return sendSuccess(res, 200, "Assets Dashboard data retrieved.", { summary });
 });
 
 // Added these stubs so they resolve imports properly since earlier the user had placeholder methods
@@ -104,10 +122,18 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const scope = await resolveUserScope(req.user);
   if (req.user.role === "admin") {
     matchQuery.organizationId = scope.organizationId;
+
   } else if (req.user.role === "warden") {
     matchQuery.hostelId = scope.hostelId;
   }
+
   const search = req.query.search;
+  const isActive = req.query.isActive;
+
+  if (isActive !== undefined) {
+    matchQuery.isActive = isActive === "true";
+  }
+
   if (search) {
     matchQuery.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -150,7 +176,7 @@ export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
   // Total Active inventory (matches the dashboard logic)
   const currentCount = await FurnitureAsset.countDocuments({
     furnitureTypeId: typeId,
-    status: { $in: ["Available", "Allocated", "Maintenance"] }
+    status: { $in: ["available", "allocated", "maintenance"] }
   });
 
   return sendSuccess(res, 200, "Furniture Type details retrieved.", { ...type, totalAssets: currentCount });
@@ -210,7 +236,15 @@ export const changeAssetStatus = asyncHandler(async (req, res) => {
   const asset = await FurnitureAsset.findById(assetId).lean();
   if (!asset) return sendError(res, 404, "Asset not found");
 
-  const actionName = status === "Maintenance" ? "Maintenance Started" : (status === "Available" ? "Status Updated" : status);
+  const actionMap = {
+    maintenance: "maintenance started",
+    available: "updated",
+    allocated: "allocated",
+    lost: "lost",
+    scrap: "scrapped",
+    inactive: "updated"
+  };
+  const actionName = actionMap[status] || "updated";
   await furnitureService.changeLifecycleStatusService(asset, status, actionName, req.user, remarks);
   return sendSuccess(res, 200, "Asset status updated successfully.");
 });
@@ -220,10 +254,16 @@ export const getFurnitureAssetsByType = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
-  const status = req.query.status;
+  const status = req.query.status ? req.query.status.toLowerCase() : undefined;
+  const search = req.query.search;
 
   const matchQuery = { furnitureTypeId: new mongoose.Types.ObjectId(typeId) };
-  if (status) matchQuery.status = status;
+  if (status && status !== "all") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { $ne: "inactive" };
+  }
+  if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
 
@@ -236,7 +276,8 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
-  const status = req.query.status;
+  const status = req.query.status ? req.query.status.toLowerCase() : undefined;
+  const search = req.query.search;
 
   const scope = await resolveUserScope(req.user);
 
@@ -252,7 +293,12 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
   const typeIds = types.map(t => t._id);
 
   const matchQuery = { furnitureTypeId: { $in: typeIds } };
-  if (status) matchQuery.status = status;
+  if (status && status !== "all") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { $ne: "inactive" };
+  }
+  if (search) matchQuery.furnitureId = { $regex: search, $options: "i" };
 
   const assets = await furnitureAggregation.getFurnitureAssetsListAggregation(matchQuery, skip, limit);
   const total = await FurnitureAsset.countDocuments(matchQuery);
@@ -276,4 +322,86 @@ export const getFurnitureAssetDetails = asyncHandler(async (req, res) => {
   }
 
   return sendSuccess(res, 200, "Asset details retrieved.", assetDetails);
+});
+
+export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
+  const scope = await resolveUserScope(req.user);
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const search = req.query.search;
+
+  const query = { isActive: true };
+  if (req.user.role === "admin") {
+    query.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    query.hostelId = scope.hostelId;
+  }
+  if (req.query.hostelId) {
+    query.hostelId = new mongoose.Types.ObjectId(req.query.hostelId);
+  }
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { prefix: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const types = await FurnitureType.find(query)
+    .select("_id name prefix")
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await FurnitureType.countDocuments(query);
+
+  return sendSuccess(res, 200, "Active furniture types retrieved.", { types, total, page, limit });
+});
+
+export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(typeId)) {
+    return sendError(res, 400, "Invalid Furniture Type ID");
+  }
+
+  const scope = await resolveUserScope(req.user);
+
+  const typeQuery = { _id: typeId, isActive: true };
+  if (req.user.role === "admin") {
+    typeQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    typeQuery.hostelId = scope.hostelId;
+  }
+
+  const typeExists = await FurnitureType.exists(typeQuery);
+  if (!typeExists) {
+    return sendError(res, 403, "Access denied or Furniture Type not found.");
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const search = req.query.search;
+
+  const assetQuery = {
+    furnitureTypeId: typeId,
+    status: "available"
+  };
+
+  if (search) {
+    assetQuery.furnitureId = { $regex: search, $options: "i" };
+  }
+
+  const assets = await FurnitureAsset.find(assetQuery)
+    .select("_id furnitureId")
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await FurnitureAsset.countDocuments(assetQuery);
+
+  return sendSuccess(res, 200, "Available furniture assets retrieved.", { assets, total, page, limit });
 });
