@@ -156,6 +156,11 @@ export const DASHBOARD_NAV = {
                     path: '/dashboard/furniture'
                 },
                 {
+                    icon: Users,
+                    label: 'Visitors',
+                    path: '/dashboard/visitors'
+                },
+                {
                     icon: UtensilsCrossed,
                     label: 'Mess Management',
                     path: '/dashboard/mess-management'
@@ -307,6 +312,11 @@ export const DASHBOARD_NAV = {
                     path: '/dashboard/furniture'
                 },
                 {
+                    icon: Users,
+                    label: 'Visitors',
+                    path: '/dashboard/visitors'
+                },
+                {
                     icon: UtensilsCrossed,
                     label: 'Mess Management',
                     path: '/dashboard/mess-management'
@@ -398,6 +408,11 @@ export const DASHBOARD_NAV = {
                     icon: Armchair,
                     label: 'Furniture',
                     path: '/dashboard/furniture'
+                },
+                {
+                    icon: Users,
+                    label: 'Visitors',
+                    path: '/dashboard/visitors'
                 },
                 {
                     icon: CalendarX,
