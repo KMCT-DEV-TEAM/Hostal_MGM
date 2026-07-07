@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { NOTIFICATION_STATUS } from '../constants/notification.constants';
+import { NOTIFICATION_STATUS } from '../../../features/notifications/constants/notification.constants';
 import {
   registerServiceWorker,
   subscribeToPush,
@@ -50,13 +50,13 @@ export const usePushNotification = () => {
 
       const registration = await registerServiceWorker();
       const newSubscription = await subscribeToPush(registration);
-      
+
       setSubscription(newSubscription);
-      
+
       // Send to backend
       await registerPushSubscription(newSubscription);
       logger.info('Successfully registered push subscription');
-      
+
     } catch (err) {
       logger.error('Failed to register subscription', err);
       setError(err.message || 'Failed to register subscription');
@@ -74,7 +74,7 @@ export const usePushNotification = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // We only request permission if it's default
       if (Notification.permission === NOTIFICATION_STATUS.DEFAULT) {
         const newPermission = await Notification.requestPermission();
@@ -100,7 +100,7 @@ export const usePushNotification = () => {
 
   const refreshSubscription = async () => {
     if (permission !== NOTIFICATION_STATUS.GRANTED) return;
-    
+
     // In a real app, this might unsubscribe and resubscribe
     // or just forcefully sync the existing sub to the backend
     await registerSubscription();

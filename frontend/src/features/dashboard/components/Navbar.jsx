@@ -13,12 +13,26 @@ import {
 import { useNavigate } from "react-router-dom";
 import LogoutModal from '@/components/ui/LogoutModal';
 import NotificationPanel from '../../notifications/components/NotificationPanel';
+import LatestNotificationPopup from '../../notifications/components/LatestNotificationPopup';
+import { useNotifications } from '../../notifications/hooks/useNotifications';
 
 function Navbar({ onMenuClick }) {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
     const [isProfileOpen, setIsProfileOpen] = React.useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
+    
+    // Lifted notification state
+    const { 
+        notifications, 
+        loading, 
+        unreadCount, 
+        latestNotification, 
+        clearLatestNotification, 
+        markAllAsRead, 
+        markAsRead 
+    } = useNotifications();
+
     const dropdownRef = React.useRef(null);
     const notificationRef = React.useRef(null);
     const role = user?.role.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -80,12 +94,29 @@ function Navbar({ onMenuClick }) {
                             alt="Notifications"
                             className="w-4 h-5"
                         />
-                        {/* Example of unread badge indicator if needed */}
-                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-warning rounded-full border border-white"></span>
+                        {/* Unread badge indicator */}
+                        {unreadCount > 0 && (
+                            <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border border-white flex items-center justify-center text-[9px] text-white font-bold">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
                     </button>
+                    
+                    {/* Latest Notification Popover */}
+                    {!isNotificationOpen && latestNotification && (
+                        <LatestNotificationPopup 
+                            notification={latestNotification} 
+                            onClose={clearLatestNotification} 
+                        />
+                    )}
+
                     <NotificationPanel
                         isOpen={isNotificationOpen}
                         onClose={() => setIsNotificationOpen(false)}
+                        notifications={notifications}
+                        loading={loading}
+                        markAllAsRead={markAllAsRead}
+                        markAsRead={markAsRead}
                     />
                 </div>
 

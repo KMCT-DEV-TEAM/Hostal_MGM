@@ -1,6 +1,6 @@
 import React from 'react';
-import { usePushNotification } from '../hooks/usePushNotification';
 import { NOTIFICATION_STATUS } from '../constants/notification.constants';
+import { usePushNotification } from '../hooks/usePushNotification';
 
 const NotificationPermissionCard = () => {
   const { permission, isSupported, enableNotifications, loading } = usePushNotification();

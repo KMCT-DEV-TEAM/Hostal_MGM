@@ -2,10 +2,8 @@ import React from 'react';
 import { X, CheckCheck, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NotificationItem from './NotificationItem';
-import { useNotifications } from '../hooks/useNotifications';
 
-const NotificationPanel = ({ isOpen, onClose }) => {
-    const { notifications, loading, markAllAsRead, markAsRead } = useNotifications();
+const NotificationPanel = ({ isOpen, onClose, notifications, loading, markAllAsRead, markAsRead }) => {
     const navigate = useNavigate();
 
     if (!isOpen) return null;

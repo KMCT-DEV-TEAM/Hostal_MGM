@@ -167,6 +167,17 @@ class OrchestratorService {
                     channelPayload.data = { url: data.link };
                 }
 
+                // For in-app, we need the frontend to know the event and sender for the UI
+                if (channel === 'in-app') {
+                    channelPayload.event = eventName;
+                    if (sender) {
+                        channelPayload.sender = {
+                            name: sender.snapshot?.name || 'Unknown',
+                            role: sender.snapshot?.role || 'Admin'
+                        };
+                    }
+                }
+
                 dispatchPromises.push(
                     dispatcherService.dispatch(channel, channelPayload, user).catch(err => {
                         console.warn(`[Orchestrator] Dispatch failed for user ${user.id} on ${channel}:`, err.message);

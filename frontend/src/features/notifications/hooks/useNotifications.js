@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import notificationApi from '../api/notificationApi';
 import { formatTimeAgo } from '@/utils/formatters';
+import { getSocket } from '@/services/socket.service';
 
 export const useNotifications = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [latestNotification, setLatestNotification] = useState(null);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             setLoading(true);
             const res = await notificationApi.getMyNotifications({ limit: 50 });
@@ -34,11 +36,38 @@ export const useNotifications = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchNotifications();
-    }, []);
+
+        const socket = getSocket();
+        
+        const handleNewNotification = (newNotification) => {
+            console.log("New realtime notification received:", newNotification);
+            
+            // Format the incoming socket notification to match the UI expectations
+            const formatted = {
+                id: newNotification._id || newNotification.id || Date.now().toString(),
+                event: newNotification.event?.event || newNotification.event || 'SYSTEM_ALERT',
+                title: newNotification.title,
+                sender: newNotification.sender || newNotification.recipient?.snapshot || { name: 'System', role: 'System' },
+                description: newNotification.message || newNotification.description,
+                timeAgo: 'Just now',
+                isRead: false
+            };
+
+            setNotifications(prev => [formatted, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            setLatestNotification(formatted);
+        };
+
+        socket.on("notification", handleNewNotification);
+
+        return () => {
+            socket.off("notification", handleNewNotification);
+        };
+    }, [fetchNotifications]);
 
     const markAllAsRead = async () => {
         try {
@@ -70,6 +99,8 @@ export const useNotifications = () => {
         notifications,
         loading,
         unreadCount,
+        latestNotification,
+        clearLatestNotification: () => setLatestNotification(null),
         markAllAsRead,
         markAsRead,
         refresh: fetchNotifications

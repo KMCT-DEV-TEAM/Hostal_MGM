@@ -3,7 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import router from '@/routes';
 import { initSocket, getSocket } from '@/services/socket.service';
-import NotificationPermissionCard from '@/modules/notification/components/NotificationPermissionCard';
+import NotificationPermissionCard from '@/features/notifications/components/NotificationPermissionCard';
 
 function App() {
   const { user, logout } = useAuthStore();
@@ -15,7 +15,7 @@ function App() {
 
     if (user) {
       const socket = initSocket();
-      
+
       const joinUserRoom = () => {
         const userId = user.id || user._id;
         if (userId) {
