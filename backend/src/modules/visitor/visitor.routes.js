@@ -13,6 +13,16 @@ import * as visitorController from './visitor.controller.js';
 const router = express.Router();
 
 // ---------------------------------------------------------
+// Dashboard Routes
+// ---------------------------------------------------------
+router.get(
+    '/dashboard-summary',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    visitorController.getVisitorDashboardSummary
+);
+
+// ---------------------------------------------------------
 // End-User Routes (Parent & Student)
 // ---------------------------------------------------------
 router.post(

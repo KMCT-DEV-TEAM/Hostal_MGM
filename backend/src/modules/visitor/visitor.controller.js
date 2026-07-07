@@ -205,3 +205,40 @@ export const rejectVisitor = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get dashboard summary cards based on role
+ * @route GET /dashboard-summary
+ */
+export const getVisitorDashboardSummary = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User context missing."
+            });
+        }
+
+        const result = await visitorService.getDashboardSummary(req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Dashboard summary fetched successfully.",
+            ...result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching dashboard summary." 
+            : error.message;
+
+        console.error('[VisitorController] getVisitorDashboardSummary error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};

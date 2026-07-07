@@ -1,4 +1,6 @@
 import Visitor from './visitor.model.js';
+import VisitorVisit from './visitorVisit.model.js';
+import { VISITOR_STATUS, VISITOR_VISIT_STATUS } from './visitor.constant.js';
 
 /**
  * Checks if a visitor with the same phone exists in the organization
@@ -150,4 +152,97 @@ export const updateVisitorStatus = async (visitorId, updateData, timelineEntry) 
         },
         { new: true }
     );
+};
+
+/**
+ * Returns dashboard statistics based on role and resolved context filters.
+ * @param {String} role 
+ * @param {Object} context 
+ * @returns {Promise<Object>}
+ */
+export const getDashboardStats = async (role, context) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const now = new Date();
+
+    const stats = {};
+
+    switch (role) {
+        case 'super_admin': {
+            const [total, pending, inside, todaysVisits] = await Promise.all([
+                Visitor.countDocuments(),
+                Visitor.countDocuments({ approvalStatus: VISITOR_STATUS.PENDING }),
+                VisitorVisit.countDocuments({ status: VISITOR_VISIT_STATUS.CHECKED_IN }),
+                VisitorVisit.countDocuments({ checkInTime: { $gte: today, $lte: endOfToday } })
+            ]);
+            stats.totalVisitors = total;
+            stats.pendingApproval = pending;
+            stats.visitorsInside = inside;
+            stats.todaysVisits = todaysVisits;
+            break;
+        }
+        case 'admin': {
+            const orgFilter = { organizationId: context.organizationId };
+            const [pending, approved, inside, todaysVisits] = await Promise.all([
+                Visitor.countDocuments({ ...orgFilter, approvalStatus: VISITOR_STATUS.PENDING }),
+                Visitor.countDocuments({ ...orgFilter, approvalStatus: VISITOR_STATUS.APPROVED }),
+                VisitorVisit.countDocuments({ ...orgFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN }),
+                VisitorVisit.countDocuments({ ...orgFilter, checkInTime: { $gte: today, $lte: endOfToday } })
+            ]);
+            stats.pendingApproval = pending;
+            stats.approvedVisitors = approved;
+            stats.visitorsInside = inside;
+            stats.todaysVisits = todaysVisits;
+            break;
+        }
+        case 'warden': {
+            const hostelFilter = { hostelId: context.hostelId };
+            const [inside, todaysCheckIns, todaysCheckOuts, overstayed] = await Promise.all([
+                VisitorVisit.countDocuments({ ...hostelFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN }),
+                VisitorVisit.countDocuments({ ...hostelFilter, checkInTime: { $gte: today, $lte: endOfToday } }),
+                VisitorVisit.countDocuments({ ...hostelFilter, checkOutTime: { $gte: today, $lte: endOfToday } }),
+                VisitorVisit.countDocuments({ ...hostelFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN, expectedExitTime: { $lt: now } })
+            ]);
+            stats.visitorsInside = inside;
+            stats.todaysCheckIns = todaysCheckIns;
+            stats.todaysCheckOuts = todaysCheckOuts;
+            stats.overstayedVisitors = overstayed;
+            break;
+        }
+        case 'parent': {
+            const studentFilter = { students: { $in: context.studentIds } };
+            const [myVisitors, pending, approved, rejected] = await Promise.all([
+                Visitor.countDocuments(studentFilter),
+                Visitor.countDocuments({ ...studentFilter, approvalStatus: VISITOR_STATUS.PENDING }),
+                Visitor.countDocuments({ ...studentFilter, approvalStatus: VISITOR_STATUS.APPROVED }),
+                Visitor.countDocuments({ ...studentFilter, approvalStatus: VISITOR_STATUS.REJECTED })
+            ]);
+            stats.myVisitors = myVisitors;
+            stats.pendingApproval = pending;
+            stats.approvedVisitors = approved;
+            stats.rejectedVisitors = rejected;
+            break;
+        }
+        case 'student': {
+            const studentFilter = { students: context.studentId };
+            const visitFilter = { visitorId: { $in: context.visitorIds } }; // visitorIds of visitors assigned to this student
+            const [approved, pending, todaysVisits, total] = await Promise.all([
+                Visitor.countDocuments({ ...studentFilter, approvalStatus: VISITOR_STATUS.APPROVED }),
+                Visitor.countDocuments({ ...studentFilter, approvalStatus: VISITOR_STATUS.PENDING }),
+                VisitorVisit.countDocuments({ ...visitFilter, checkInTime: { $gte: today, $lte: endOfToday } }),
+                Visitor.countDocuments(studentFilter)
+            ]);
+            stats.myApprovedVisitors = approved;
+            stats.pendingVisitors = pending;
+            stats.todaysVisits = todaysVisits;
+            stats.totalVisitors = total;
+            break;
+        }
+    }
+
+    return stats;
 };

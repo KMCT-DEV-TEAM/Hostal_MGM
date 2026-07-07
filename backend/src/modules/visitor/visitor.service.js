@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
+import Visitor from './visitor.model.js';
 import * as visitorRepository from './visitor.repository.js';
 import { VISITOR_STATUS, VISITOR_APPROVAL_ACTIONS } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
@@ -491,4 +492,102 @@ export const rejectVisitor = async (visitorId, reason, adminUser) => {
         rejectedAt: new Date(),
         rejectionReason: updatedVisitor.rejectionReason
     };
+};
+
+/**
+ * Returns role-based dashboard summary cards for Visitor management
+ * @param {Object} user 
+ */
+export const getDashboardSummary = async (user) => {
+    let context = {};
+    let role = user.role;
+    
+    // Resolve scope based on role
+    switch (role) {
+        case 'super_admin':
+            break;
+        case 'admin':
+            context.organizationId = new mongoose.Types.ObjectId(user.organization);
+            break;
+        case 'warden':
+            context.hostelId = new mongoose.Types.ObjectId(user.hostelId);
+            break;
+        case 'parent':
+            const currentParent = await Parent.findById(user.id);
+            if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+            
+            const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+            context.studentIds = parentDocs.map(p => new mongoose.Types.ObjectId(p.studentId));
+            
+            if (context.studentIds.length === 0) {
+                // If parent has no active students, return early with 0 counts
+                return {
+                    cards: [
+                        { key: "my_visitors", title: "My Visitors", value: 0 },
+                        { key: "pending", title: "Pending Approval", value: 0 },
+                        { key: "approved", title: "Approved Visitors", value: 0 },
+                        { key: "rejected", title: "Rejected Visitors", value: 0 }
+                    ]
+                };
+            }
+            break;
+        case 'student':
+            context.studentId = new mongoose.Types.ObjectId(user.id);
+            // Pre-fetch assigned visitor IDs for VisitorVisit counts
+            const visitorsAssigned = await Visitor.find({ students: context.studentId }, '_id').lean();
+            context.visitorIds = visitorsAssigned.map(v => v._id);
+            break;
+        default:
+            throw Object.assign(new Error('Unauthorized role.'), { status: 403 });
+    }
+
+    const stats = await visitorRepository.getDashboardStats(role, context);
+    
+    // Build the DTO array based on role
+    const cards = [];
+
+    switch (role) {
+        case 'super_admin':
+            cards.push(
+                { key: "total_visitors", title: "Total Visitors", value: stats.totalVisitors },
+                { key: "pending", title: "Pending Approval", value: stats.pendingApproval },
+                { key: "visitors_inside", title: "Visitors Inside", value: stats.visitorsInside },
+                { key: "todays_visits", title: "Today's Visits", value: stats.todaysVisits }
+            );
+            break;
+        case 'admin':
+            cards.push(
+                { key: "pending", title: "Pending Approval", value: stats.pendingApproval },
+                { key: "approved", title: "Approved Visitors", value: stats.approvedVisitors },
+                { key: "visitors_inside", title: "Visitors Inside", value: stats.visitorsInside },
+                { key: "todays_visits", title: "Today's Visits", value: stats.todaysVisits }
+            );
+            break;
+        case 'warden':
+            cards.push(
+                { key: "visitors_inside", title: "Visitors Inside", value: stats.visitorsInside },
+                { key: "todays_check_ins", title: "Today's Check-Ins", value: stats.todaysCheckIns },
+                { key: "todays_check_outs", title: "Today's Check-Outs", value: stats.todaysCheckOuts },
+                { key: "overstayed", title: "Overstayed Visitors", value: stats.overstayedVisitors }
+            );
+            break;
+        case 'parent':
+            cards.push(
+                { key: "my_visitors", title: "My Visitors", value: stats.myVisitors },
+                { key: "pending", title: "Pending Approval", value: stats.pendingApproval },
+                { key: "approved", title: "Approved Visitors", value: stats.approvedVisitors },
+                { key: "rejected", title: "Rejected Visitors", value: stats.rejectedVisitors }
+            );
+            break;
+        case 'student':
+            cards.push(
+                { key: "my_approved_visitors", title: "My Approved Visitors", value: stats.myApprovedVisitors },
+                { key: "pending", title: "Pending Visitors", value: stats.pendingVisitors },
+                { key: "todays_visits", title: "Today's Visits", value: stats.todaysVisits },
+                { key: "total_visitors", title: "Total Visitors", value: stats.totalVisitors }
+            );
+            break;
+    }
+
+    return { cards };
 };
