@@ -100,7 +100,7 @@ class OrchestratorService {
         for (const user of batch) {
             const audience = audienceResolver.resolve(user);
             const inAppTemplate = await templateService.getTemplate(eventName, audience, 'in-app');
-            
+
             if (!inAppTemplate) {
                 continue; // No in-app template for this audience, skip them
             }

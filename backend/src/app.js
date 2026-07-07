@@ -21,6 +21,7 @@ import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
 import pushRoutes from "./modules/push/push.routes.js";
+import visitorRoutes from "./modules/visitor/visitor.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -106,6 +107,9 @@ app.use("/api/parent/attendance", parentAttendanceRouter);
 app.use("/api/warden/passes", wardenPassRouter);
 app.use("/api/warden/attendance", wardenAttendanceRouter);
 app.use("/api/logs", logRoutes);
+app.use("/api/visitor", visitorRoutes);
+
+// ---visitor routes -------
 app.use(errorMiddleware);
 
 export default app;
