@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { VISITOR_STATUS_VALUES } from "./visitor.constant.js";
+import { VISITOR_STATUS_VALUES, VISITOR_VISIT_STATUS } from "./visitor.constant.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const isValidPhone = (phone) => /^\+?[\d\s-]{10,15}$/.test(phone);
@@ -209,6 +209,69 @@ export const validateCheckInVisitor = (req, res, next) => {
         return res.status(400).json({
             success: false,
             message: "A valid visitorId is required."
+        });
+    }
+
+    next();
+};
+
+export const validateSuperAdminHostelVisits = (req, res, next) => {
+    let { page, limit } = req.query;
+
+    if (page && (isNaN(Number(page)) || Number(page) < 1)) {
+        return res.status(400).json({ success: false, message: "Invalid page parameter." });
+    }
+    if (limit && (isNaN(Number(limit)) || Number(limit) < 1 || Number(limit) > 100)) {
+        return res.status(400).json({ success: false, message: "Invalid limit parameter (must be 1-100)." });
+    }
+    
+    // search is string, no validation needed
+
+    next();
+};
+
+export const validateListVisits = (req, res, next) => {
+    let { page, limit, status, hostel, date, sortBy, sortOrder } = req.query;
+
+    if (page && (isNaN(Number(page)) || Number(page) < 1)) {
+        return res.status(400).json({ success: false, message: "Invalid page parameter." });
+    }
+    if (limit && (isNaN(Number(limit)) || Number(limit) < 1 || Number(limit) > 100)) {
+        return res.status(400).json({ success: false, message: "Invalid limit parameter (must be 1-100)." });
+    }
+
+    const allowedStatuses = Object.values(VISITOR_VISIT_STATUS);
+    if (status && !allowedStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status parameter." });
+    }
+
+    if (hostel && !isValidObjectId(hostel)) {
+        return res.status(400).json({ success: false, message: "Invalid hostel ID format." });
+    }
+
+    if (date && isNaN(Date.parse(date))) {
+        return res.status(400).json({ success: false, message: "Invalid date format." });
+    }
+
+    const allowedSortFields = ['checkInTime', 'visitorName', 'status'];
+    if (sortBy && !allowedSortFields.includes(sortBy)) {
+        return res.status(400).json({ success: false, message: "Invalid sortBy parameter." });
+    }
+
+    if (sortOrder && !['asc', 'desc'].includes(sortOrder.toLowerCase())) {
+        return res.status(400).json({ success: false, message: "Invalid sortOrder parameter (must be asc or desc)." });
+    }
+
+    next();
+};
+
+export const validateGetVisitDetails = (req, res, next) => {
+    const { visitId } = req.params;
+
+    if (!isValidObjectId(visitId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid visit ID."
         });
     }
 

@@ -8,7 +8,10 @@ import {
     validateGetVisitorDetails,
     validateApproveVisitor, 
     validateRejectVisitor,
-    validateCheckInVisitor
+    validateCheckInVisitor,
+    validateSuperAdminHostelVisits,
+    validateListVisits,
+    validateGetVisitDetails
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -22,6 +25,33 @@ router.get(
     authMiddleware,
     roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
     visitorController.getVisitorDashboardSummary
+);
+
+// ---------------------------------------------------------
+// Visitor Visit Listing Routes
+// ---------------------------------------------------------
+router.get(
+    '/super-admin/visitor-visits/hostels',
+    authMiddleware,
+    roleMiddleware('super_admin'),
+    validateSuperAdminHostelVisits,
+    visitorController.getSuperAdminHostelVisits
+);
+
+router.get(
+    '/visitor-visits',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'warden'),
+    validateListVisits,
+    visitorController.listVisitorVisits
+);
+
+router.get(
+    '/visitor-visits/:visitId',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    validateGetVisitDetails,
+    visitorController.getVisitDetails
 );
 
 // ---------------------------------------------------------

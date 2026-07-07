@@ -120,7 +120,7 @@ export const getVisitors = async (matchStage, sortStage, skip, limit) => {
     ];
 
     const result = await Visitor.aggregate(pipeline);
-    
+
     const data = result[0].data;
     const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
 
@@ -289,4 +289,322 @@ export const findActiveVisit = async (visitorId) => {
 export const createVisit = async (visitData) => {
     const visit = new VisitorVisit(visitData);
     return await visit.save();
+};
+
+/**
+ * Groups VisitorVisits by hostel for Super Admin
+ * @param {Object} matchStage 
+ * @param {Number} skip 
+ * @param {Number} limit 
+ * @param {Object} sortStage 
+ */
+export const getSuperAdminHostelVisitSummary = async (matchStage, skip, limit, sortStage) => {
+    const pipeline = [
+        { $match: matchStage },
+        {
+            $group: {
+                _id: "$hostelId",
+                totalVisits: { $sum: 1 },
+                inside: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", VISITOR_VISIT_STATUS.CHECKED_IN] }, 1, 0]
+                    }
+                },
+                completed: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", VISITOR_VISIT_STATUS.COMPLETED] }, 1, 0]
+                    }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: 'hostels',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'hostelInfo'
+            }
+        },
+        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'hostelInfo.wardens',
+                foreignField: '_id',
+                as: 'wardenDocs'
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                hostelId: '$_id',
+                hostelName: '$hostelInfo.name',
+                totalVisits: 1,
+                inside: 1,
+                completed: 1,
+                wardenName: {
+                    $reduce: {
+                        input: "$wardenDocs.name",
+                        initialValue: "",
+                        in: {
+                            $cond: {
+                                if: { $eq: ["$$value", ""] },
+                                then: "$$this",
+                                else: { $concat: ["$$value", ", ", "$$this"] }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        // In case hostel search is applied via matchStage on hostelName, we need to sort after project.
+        // Actually matchStage runs before lookup, so search on hostelName won't work in matchStage!
+        // We'll move search to a separate match after lookup in the service layer if needed, or do it here.
+        // Wait, the specification said "search hostel". We'll do it post-lookup if needed.
+    ];
+
+    // If there is a search filter for hostelName, it should be passed separately or injected after lookup
+    // For simplicity, we can inject a match on hostelName if provided in sortStage/matchStage.
+    // The service layer will just pass the pipeline stages if we want to be flexible.
+
+    // Instead of raw pipeline, let's allow the service to pass the full pipeline or we build it here.
+    return []; // We will rewrite this method to be cleaner below.
+};
+
+// Rewritten optimized version:
+export const getSuperAdminHostelVisitSummaryAggregated = async (matchStage, searchMatchStage, skip, limit, sortStage) => {
+    const pipeline = [
+        { $match: matchStage }, // usually empty or organization-wide if we support it, but for SuperAdmin it's {}
+        {
+            $group: {
+                _id: "$hostelId",
+                totalVisits: { $sum: 1 },
+                inside: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", VISITOR_VISIT_STATUS.CHECKED_IN] }, 1, 0]
+                    }
+                },
+                completed: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", VISITOR_VISIT_STATUS.COMPLETED] }, 1, 0]
+                    }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: 'hostels',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'hostelInfo'
+            }
+        },
+        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'hostelInfo.wardens',
+                foreignField: '_id',
+                as: 'wardenDocs'
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                hostelId: '$_id',
+                hostelName: { $ifNull: ['$hostelInfo.name', 'Unknown'] },
+                totalVisits: 1,
+                inside: 1,
+                completed: 1,
+                wardenName: {
+                    $cond: {
+                        if: { $gt: [{ $size: "$wardenDocs" }, 0] },
+                        then: {
+                            $reduce: {
+                                input: "$wardenDocs.name",
+                                initialValue: "",
+                                in: {
+                                    $cond: {
+                                        if: { $eq: ["$$value", ""] },
+                                        then: "$$this",
+                                        else: { $concat: ["$$value", ", ", "$$this"] }
+                                    }
+                                }
+                            }
+                        },
+                        else: "Unassigned"
+                    }
+                }
+            }
+        }
+    ];
+
+    if (Object.keys(searchMatchStage).length > 0) {
+        pipeline.push({ $match: searchMatchStage });
+    }
+
+    pipeline.push({ $sort: sortStage });
+
+    pipeline.push({
+        $facet: {
+            metadata: [{ $count: 'total' }],
+            data: [{ $skip: skip }, { $limit: limit }]
+        }
+    });
+
+    const result = await VisitorVisit.aggregate(pipeline);
+
+    const data = result[0].data;
+    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+
+    return { data, total };
+};
+
+
+/**
+ * Fetches visitor visits with role-based filtering, pagination, and projection for tables.
+ * @param {Object} matchStage 
+ * @param {Object} searchMatchStage 
+ * @param {Object} sortStage 
+ * @param {Number} skip 
+ * @param {Number} limit 
+ * @returns {Promise<Object>} { data: Array, total: Number }
+ */
+export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, skip, limit) => {
+    const pipeline = [
+        { $match: matchStage },
+        // Lookup Visitor
+        {
+            $lookup: {
+                from: 'visitors',
+                localField: 'visitorId',
+                foreignField: '_id',
+                as: 'visitorInfo'
+            }
+        },
+        { $unwind: { path: '$visitorInfo', preserveNullAndEmptyArrays: true } },
+        // Lookup Students
+        {
+            $lookup: {
+                from: 'students',
+                localField: 'students',
+                foreignField: '_id',
+                as: 'studentDocs'
+            }
+        },
+        // Lookup Hostel
+        {
+            $lookup: {
+                from: 'hostels',
+                localField: 'hostelId',
+                foreignField: '_id',
+                as: 'hostelInfo'
+            }
+        },
+        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
+        // Add Room Number logic based on the first student
+        {
+            $lookup: {
+                from: 'rooms',
+                localField: 'studentDocs.roomId', // array of room IDs
+                foreignField: '_id',
+                as: 'roomDocs'
+            }
+        },
+        // Calculate fields and project
+        {
+            $project: {
+                _id: 0,
+                visitId: '$_id',
+                visitorName: '$visitorInfo.name',
+                visitorPhone: '$visitorInfo.phone', // included temporarily for search, removed later if needed
+                studentNames: {
+                    $reduce: {
+                        input: "$studentDocs.name",
+                        initialValue: "",
+                        in: {
+                            $cond: {
+                                if: { $eq: ["$$value", ""] },
+                                then: "$$this",
+                                else: { $concat: ["$$value", ", ", "$$this"] }
+                            }
+                        }
+                    }
+                },
+                roomNumber: {
+                    $cond: {
+                        if: { $gt: [{ $size: "$roomDocs" }, 0] },
+                        then: { $arrayElemAt: ["$roomDocs.roomNumber", 0] },
+                        else: "N/A"
+                    }
+                },
+                checkInTime: 1,
+                checkOutTime: 1,
+                status: 1,
+                hostelName: '$hostelInfo.name'
+            }
+        }
+    ];
+
+    if (Object.keys(searchMatchStage).length > 0) {
+        pipeline.push({ $match: searchMatchStage });
+    }
+
+    pipeline.push({ $sort: sortStage });
+
+    pipeline.push({
+        $facet: {
+            metadata: [{ $count: 'total' }],
+            data: [
+                { $skip: skip },
+                { $limit: limit },
+                { $project: { visitorPhone: 0 } } // Remove phone from final output as per requirements
+            ]
+        }
+    });
+
+    const result = await VisitorVisit.aggregate(pipeline);
+
+    const data = result[0].data;
+    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+
+    return { data, total };
+};
+
+/**
+ * Fetches complete details of a single visit using lean populate
+ * @param {String} visitId 
+ * @returns {Promise<Object>}
+ */
+export const getVisitDetailsById = async (visitId) => {
+    return await VisitorVisit.findById(visitId)
+        .populate({
+            path: 'visitorId',
+            select: 'name phone relationship address idProofType idProofNumber'
+        })
+        .populate({
+            path: 'students',
+            select: 'name studentId roomId department course',
+        })
+        .populate({
+            path: 'hostelId',
+            select: 'name'
+        })
+        .populate({
+            path: 'organizationId',
+            select: 'name'
+        })
+        .populate({
+            path: 'checkedInBy',
+            select: 'name role'
+        })
+        .populate({
+            path: 'checkedOutBy',
+            select: 'name role'
+        })
+        .populate({
+            path: 'visitTimeline.performedBy',
+            select: 'name role'
+        })
+        .lean();
 };
