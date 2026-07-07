@@ -93,6 +93,9 @@ export class ParentResolver {
         let matchQuery = {};
 
         if (filter.studentId) matchQuery.studentId = new mongoose.Types.ObjectId(filter.studentId);
+        if (filter.studentIds && Array.isArray(filter.studentIds)) {
+            matchQuery.studentId = { $in: filter.studentIds.map(id => new mongoose.Types.ObjectId(id)) };
+        }
         if (filter.organizationId) matchQuery.organization = new mongoose.Types.ObjectId(filter.organizationId);
         if (filter.defaultGuardian !== undefined) matchQuery.defaultGuardian = filter.defaultGuardian;
         if (filter.relationship) matchQuery.relationship = filter.relationship;
