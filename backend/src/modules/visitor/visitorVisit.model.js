@@ -46,6 +46,13 @@ const visitorVisitSchema = new mongoose.Schema(
             ref: 'Organization',
             required: true
         },
+        students: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Student',
+                required: true
+            }
+        ],
         status: {
             type: String,
             enum: VISITOR_VISIT_STATUS_VALUES,

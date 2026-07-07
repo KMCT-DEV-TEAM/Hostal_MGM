@@ -7,7 +7,8 @@ import {
     validateEndUserListVisitors, 
     validateGetVisitorDetails,
     validateApproveVisitor, 
-    validateRejectVisitor 
+    validateRejectVisitor,
+    validateCheckInVisitor
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -59,6 +60,17 @@ router.get(
     roleMiddleware('super_admin', 'admin', 'warden'),
     validateListVisitors,
     visitorController.listVisitors
+);
+
+// ---------------------------------------------------------
+// Visit Management (Warden)
+// ---------------------------------------------------------
+router.post(
+    '/warden/visits/check-in',
+    authMiddleware,
+    roleMiddleware('warden'),
+    validateCheckInVisitor,
+    visitorController.checkInVisitor
 );
 
 // ---------------------------------------------------------

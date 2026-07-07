@@ -268,3 +268,25 @@ export const getDashboardStats = async (role, context) => {
 
     return stats;
 };
+
+/**
+ * Finds an active visit for a specific visitor
+ * @param {String} visitorId 
+ * @returns {Promise<Object>}
+ */
+export const findActiveVisit = async (visitorId) => {
+    return await VisitorVisit.findOne({
+        visitorId,
+        status: VISITOR_VISIT_STATUS.CHECKED_IN
+    });
+};
+
+/**
+ * Creates a new visit record
+ * @param {Object} visitData 
+ * @returns {Promise<Object>}
+ */
+export const createVisit = async (visitData) => {
+    const visit = new VisitorVisit(visitData);
+    return await visit.save();
+};

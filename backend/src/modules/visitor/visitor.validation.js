@@ -201,3 +201,16 @@ export const validateRejectVisitor = (req, res, next) => {
     req.body.reason = reason.trim();
     next();
 };
+
+export const validateCheckInVisitor = (req, res, next) => {
+    const { visitorId } = req.body;
+
+    if (!visitorId || !isValidObjectId(visitorId)) {
+        return res.status(400).json({
+            success: false,
+            message: "A valid visitorId is required."
+        });
+    }
+
+    next();
+};

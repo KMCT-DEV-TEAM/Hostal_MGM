@@ -274,3 +274,40 @@ export const getVisitorDashboardSummary = async (req, res) => {
         });
     }
 };
+
+/**
+ * Warden checks in an approved visitor
+ * @route POST /warden/visits/check-in
+ */
+export const checkInVisitor = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing warden authentication."
+            });
+        }
+
+        const result = await visitorService.checkInVisitor(req.body, req.user);
+
+        return res.status(201).json({
+            success: true,
+            message: "Visitor checked in successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while checking in the visitor." 
+            : error.message;
+
+        console.error('[VisitorController] checkInVisitor error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
