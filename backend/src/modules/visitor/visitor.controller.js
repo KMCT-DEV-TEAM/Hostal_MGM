@@ -274,3 +274,152 @@ export const getVisitorDashboardSummary = async (req, res) => {
         });
     }
 };
+
+/**
+ * Warden checks in an approved visitor
+ * @route POST /warden/visits/check-in
+ */
+export const checkInVisitor = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing warden authentication."
+            });
+        }
+
+        const result = await visitorService.checkInVisitor(req.body, req.user);
+
+        return res.status(201).json({
+            success: true,
+            message: "Visitor checked in successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while checking in the visitor." 
+            : error.message;
+
+        console.error('[VisitorController] checkInVisitor error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
+ * Super Admin gets hostel-wise visit summary
+ * @route GET /super-admin/visitor-visits/hostels
+ */
+export const getSuperAdminHostelVisits = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User context missing."
+            });
+        }
+
+        const result = await visitorService.getSuperAdminHostelVisits(req.query, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Hostel visits summary fetched successfully.",
+            ...result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching hostel visits." 
+            : error.message;
+
+        console.error('[VisitorController] getSuperAdminHostelVisits error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
+ * Super Admin, Admin, and Warden list visits
+ * @route GET /visitor-visits
+ */
+export const listVisitorVisits = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User context missing."
+            });
+        }
+
+        const result = await visitorService.listVisitorVisits(req.query, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visits fetched successfully.",
+            ...result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching visits." 
+            : error.message;
+
+        console.error('[VisitorController] listVisitorVisits error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
+ * Gets complete visit details based on role authorization
+ * @route GET /visitor-visits/:visitId
+ */
+export const getVisitDetails = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User context missing."
+            });
+        }
+
+        const { visitId } = req.params;
+        const result = await visitorService.getVisitDetails(visitId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visit details fetched successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching visit details." 
+            : error.message;
+
+        console.error('[VisitorController] getVisitDetails error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};

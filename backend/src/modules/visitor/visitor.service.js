@@ -3,7 +3,12 @@ import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
 import Visitor from './visitor.model.js';
 import * as visitorRepository from './visitor.repository.js';
-import { VISITOR_STATUS, VISITOR_APPROVAL_ACTIONS } from './visitor.constant.js';
+import {
+    VISITOR_STATUS,
+    VISITOR_APPROVAL_ACTIONS,
+    VISITOR_VISIT_STATUS,
+    VISITOR_VISIT_TIMELINE_ACTIONS
+} from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
 
 /**
@@ -197,7 +202,6 @@ export const listVisitors = async (query, user) => {
 
     // 1. Role-Based Filters
     let targetHostelId = null;
-
     if (user.role === 'super_admin') {
         if (organization) matchStage.organizationId = new mongoose.Types.ObjectId(organization);
         if (hostel) targetHostelId = hostel;
@@ -205,8 +209,14 @@ export const listVisitors = async (query, user) => {
         matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
         if (hostel) targetHostelId = hostel;
     } else if (user.role === 'warden') {
-        matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
-        targetHostelId = user.hostelId; // Force warden to their hostel
+        const Hostel = mongoose.model('Hostel');
+        const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
+        if (!wardenHostel) {
+            const error = new Error('Unauthorized: You are not assigned to any hostel.');
+            error.status = 403;
+            throw error;
+        }
+        targetHostelId = wardenHostel._id; // Force warden to their hostel
     } else {
         const error = new Error('Unauthorized role to list visitors.');
         error.status = 403;
@@ -307,7 +317,7 @@ export const listStudentVisitors = async (query, user) => {
  */
 export const getVisitorDetails = async (visitorId, user) => {
     const visitor = await visitorRepository.getVisitorDetails(visitorId);
-    
+
     if (!visitor) {
         const error = new Error('Visitor not found.');
         error.status = 404;
@@ -323,7 +333,12 @@ export const getVisitorDetails = async (visitorId, user) => {
             throw Object.assign(new Error('Unauthorized: Organization mismatch.'), { status: 403 });
         }
     } else if (user.role === 'warden') {
-        if (visitorHostelId !== user.hostelId.toString()) {
+        const Hostel = mongoose.model('Hostel');
+        const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
+        if (!wardenHostel) {
+            throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
+        }
+        if (visitorHostelId !== wardenHostel._id.toString()) {
             throw Object.assign(new Error('Unauthorized: Hostel mismatch.'), { status: 403 });
         }
     } else if (user.role === 'student') {
@@ -347,7 +362,7 @@ export const getVisitorDetails = async (visitorId, user) => {
     let maskedIdProofNumber = visitor.idProofNumber;
     if (visitor.idProofNumber) {
         const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
-        
+
         let isCreator = false;
         if (user.role === 'parent' && visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
             // Find creation event
@@ -629,7 +644,7 @@ export const rejectVisitor = async (visitorId, reason, adminUser) => {
 export const getDashboardSummary = async (user) => {
     let context = {};
     let role = user.role;
-    
+
     // Resolve scope based on role
     switch (role) {
         case 'super_admin':
@@ -638,15 +653,18 @@ export const getDashboardSummary = async (user) => {
             context.organizationId = new mongoose.Types.ObjectId(user.organization);
             break;
         case 'warden':
-            context.hostelId = new mongoose.Types.ObjectId(user.hostelId);
+            const HostelModel = mongoose.model('Hostel');
+            const wardenHostelDoc = await HostelModel.findOne({ wardens: user.id }, '_id');
+            if (!wardenHostelDoc) throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
+            context.hostelId = wardenHostelDoc._id;
             break;
         case 'parent':
             const currentParent = await Parent.findById(user.id);
             if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
-            
+
             const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
             context.studentIds = parentDocs.map(p => new mongoose.Types.ObjectId(p.studentId));
-            
+
             if (context.studentIds.length === 0) {
                 // If parent has no active students, return early with 0 counts
                 return {
@@ -670,7 +688,7 @@ export const getDashboardSummary = async (user) => {
     }
 
     const stats = await visitorRepository.getDashboardStats(role, context);
-    
+
     // Build the DTO array based on role
     const cards = [];
 
@@ -718,4 +736,455 @@ export const getDashboardSummary = async (user) => {
     }
 
     return { cards };
+};
+
+/**
+ * Check-in an approved visitor
+ * @param {Object} payload 
+ * @param {Object} wardenUser 
+ */
+export const checkInVisitor = async (payload, wardenUser) => {
+    const { visitorId } = payload;
+    const DEFAULT_VISIT_DURATION_MINUTES = 120; // Default to 2 hours if no settings exist
+    // 1. Role Verification (Redundant safety check)
+    if (wardenUser.role !== 'warden') {
+        const error = new Error('Unauthorized: Only wardens can check-in visitors.');
+        error.status = 403;
+        throw error;
+    }
+
+    // 2. Visitor Validation
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+    if (visitor.approvalStatus === VISITOR_STATUS.PENDING) {
+        const error = new Error('Visitor is pending approval.');
+        error.status = 400;
+        throw error;
+    }
+    if (visitor.approvalStatus === VISITOR_STATUS.REJECTED) {
+        const error = new Error('Visitor is rejected.');
+        error.status = 400;
+        throw error;
+    }
+    if (visitor.approvalStatus === VISITOR_STATUS.INACTIVE) {
+        const error = new Error('Visitor profile is inactive.');
+        error.status = 400;
+        throw error;
+    }
+
+    // 3. Student & Hostel Validation
+    const students = await Student.find({ _id: { $in: visitor.students } });
+    if (students.length === 0) {
+        const error = new Error('No students linked to this visitor.');
+        error.status = 400;
+        throw error;
+    }
+
+    const targetHostelId = students[0].hostelId;
+    if (!targetHostelId) {
+        const error = new Error('Student does not have an active hostel.');
+        error.status = 400;
+        throw error;
+    }
+
+    // Dynamic import to avoid circular dependencies or simply use mongoose.model
+    const Hostel = mongoose.model('Hostel');
+    const targetHostel = await Hostel.findById(targetHostelId);
+    if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
+        const error = new Error('Unauthorized: You are not assigned to the hostel for these students.');
+        error.status = 403;
+        throw error;
+    }
+
+    for (const student of students) {
+        if (!student.isActive) {
+            const error = new Error(`Student ${student.name} is inactive.`);
+            error.status = 400;
+            throw error;
+        }
+        if (student.hostelStatus !== 'active' || !student.hostelId) {
+            const error = new Error(`Student ${student.name} does not have an active hostel status.`);
+            error.status = 400;
+            throw error;
+        }
+        if (student.hostelId.toString() !== targetHostelId.toString()) {
+            const error = new Error(`Student ${student.name} does not belong to the same hostel.`);
+            error.status = 400;
+            throw error;
+        }
+    }
+
+    // 4. Duplicate Visit Check
+    const activeVisit = await visitorRepository.findActiveVisit(visitorId);
+    if (activeVisit) {
+        const error = new Error('Visitor is already checked in.');
+        error.status = 409;
+        throw error;
+    }
+
+    // 5. Construct Visit Data
+    const now = new Date();
+    const expectedExitTime = new Date(now.getTime() + DEFAULT_VISIT_DURATION_MINUTES * 60000);
+
+    const visitData = {
+        organizationId: visitor.organizationId,
+        hostelId: targetHostelId,
+        visitorId: visitor._id,
+        students: visitor.students, // Saving students snapshot as requested
+        status: VISITOR_VISIT_STATUS.CHECKED_IN,
+        checkInTime: now,
+        expectedExitTime: expectedExitTime,
+        checkedInBy: wardenUser.id,
+        visitTimeline: [{
+            action: VISITOR_VISIT_TIMELINE_ACTIONS.CHECKED_IN,
+            performedBy: wardenUser.id,
+            remarks: 'Checked in by Warden'
+        }]
+    };
+
+    // 6. Create Visit
+    const newVisit = await visitorRepository.createVisit(visitData);
+
+    // 7. Fire Notification
+    try {
+        const studentNames = students.map(s => s.name).join(', ');
+
+        await orchestratorService.triggerNotification({
+            eventName: 'VISIT_CHECKED_IN',
+            target: {
+                type: 'PARENT',
+                filter: {
+                    studentIds: visitor.students.map(id => id.toString())
+                }
+            },
+            data: {
+                visitorName: visitor.name,
+                studentNames: studentNames
+            },
+            sender: {
+                id: wardenUser.id,
+                model: 'User',
+                snapshot: {
+                    name: wardenUser.name,
+                    role: wardenUser.role
+                }
+            }
+        });
+
+        // Also notify students
+        await orchestratorService.triggerNotification({
+            eventName: 'VISIT_CHECKED_IN',
+            target: {
+                type: 'USER',
+                filter: {
+                    role: 'student',
+                    userIds: visitor.students.map(id => id.toString())
+                }
+            },
+            data: {
+                visitorName: visitor.name,
+                studentNames: studentNames
+            },
+            sender: {
+                id: wardenUser.id,
+                model: 'User',
+                snapshot: {
+                    name: wardenUser.name,
+                    role: wardenUser.role
+                }
+            }
+        });
+    } catch (notificationError) {
+        console.error('[VisitorService] Failed to publish VISIT_CHECKED_IN event:', notificationError);
+    }
+
+    // 8. Return Response DTO
+    return {
+        visitId: newVisit._id,
+        visitorName: visitor.name,
+        studentNames: students.map(s => s.name).join(', '),
+        checkInAt: newVisit.checkInTime,
+        expectedCheckOutAt: newVisit.expectedExitTime,
+        status: newVisit.status
+    };
+};
+
+/**
+ * Gets hostel-wise visit summary for Super Admin
+ * @param {Object} query 
+ * @param {Object} user 
+ */
+export const getSuperAdminHostelVisits = async (query, user) => {
+    if (user.role !== 'super_admin') {
+        const error = new Error('Unauthorized role.');
+        error.status = 403;
+        throw error;
+    }
+
+    const { page = 1, limit = 10, search } = query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const sortStage = { hostelName: 1 };
+
+    const matchStage = {}; // Super Admin sees all
+
+    const searchMatchStage = {};
+    if (search) {
+        searchMatchStage['hostelName'] = { $regex: search, $options: 'i' };
+    }
+
+    const { data, total } = await visitorRepository.getSuperAdminHostelVisitSummaryAggregated(
+        matchStage,
+        searchMatchStage,
+        skip,
+        Number(limit),
+        sortStage
+    );
+
+    const totalPages = Math.ceil(total / Number(limit));
+
+    return { total, page: Number(page), limit: Number(limit), totalPages, data };
+};
+
+/**
+ * Lists visits for Super Admin, Admin, and Warden
+ * @param {Object} query 
+ * @param {Object} user 
+ */
+export const listVisitorVisits = async (query, user) => {
+    const { page = 1, limit = 10, search, status, date, hostel, sortBy = 'checkInTime', sortOrder = 'desc' } = query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const matchStage = {};
+    let targetHostelId = null;
+
+    // 1. Role-Based Filters
+    if (user.role === 'super_admin') {
+        if (!hostel) {
+            const error = new Error('hostelId is required for Super Admin.');
+            error.status = 400;
+            throw error;
+        }
+        targetHostelId = hostel;
+    } else if (user.role === 'admin') {
+        matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
+        if (hostel) targetHostelId = hostel;
+    } else if (user.role === 'warden') {
+        matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
+        const Hostel = mongoose.model('Hostel');
+        const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
+        if (!wardenHostel) {
+            const error = new Error('Unauthorized: You are not assigned to any hostel.');
+            error.status = 403;
+            throw error;
+        }
+        targetHostelId = wardenHostel._id.toString(); // Force warden to their hostel
+    } else {
+        const error = new Error('Unauthorized role to list visitor visits.');
+        error.status = 403;
+        throw error;
+    }
+
+    if (targetHostelId) {
+        matchStage.hostelId = new mongoose.Types.ObjectId(targetHostelId);
+    }
+
+    if (status) {
+        matchStage.status = status;
+    }
+
+    if (date) {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+        matchStage.checkInTime = { $gte: startDate, $lte: endDate };
+    }
+
+    const searchMatchStage = {};
+    if (search) {
+        searchMatchStage.$or = [
+            { visitorName: { $regex: search, $options: 'i' } },
+            { studentNames: { $regex: search, $options: 'i' } },
+            { visitorPhone: { $regex: search, $options: 'i' } } // phone is included in intermediate project specifically for search
+        ];
+    }
+
+    let sortField = sortBy;
+    if (sortBy === 'visitorName') sortField = 'visitorName';
+
+    const sortStage = { [sortField]: sortOrder === 'asc' ? 1 : -1 };
+
+    const { data, total } = await visitorRepository.getVisitorVisits(
+        matchStage,
+        searchMatchStage,
+        sortStage,
+        skip,
+        Number(limit)
+    );
+
+    const totalPages = Math.ceil(total / Number(limit));
+
+    return { total, page: Number(page), limit: Number(limit), totalPages, data };
+};
+
+/**
+ * Gets complete visit details with strict role-based authorization and data masking
+ * @param {String} visitId 
+ * @param {Object} user 
+ */
+export const getVisitDetails = async (visitId, user) => {
+    const visit = await visitorRepository.getVisitDetailsById(visitId);
+
+    if (!visit) {
+        const error = new Error('Visit not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 1. Role-Based Authorization
+    const visitStudentIds = visit.students.map(s => s._id.toString());
+    const visitHostelId = visit.hostelId ? visit.hostelId._id.toString() : null;
+    const visitOrganizationId = visit.organizationId ? visit.organizationId._id.toString() : null;
+
+    if (user.role === 'admin') {
+        if (visitOrganizationId !== user.organization.toString()) {
+            throw Object.assign(new Error('Unauthorized: Organization mismatch.'), { status: 403 });
+        }
+    } else if (user.role === 'warden') {
+        const Hostel = mongoose.model('Hostel');
+        const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
+        if (!wardenHostel) {
+            throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
+        }
+        if (visitHostelId !== wardenHostel._id.toString()) {
+            throw Object.assign(new Error('Unauthorized: Hostel mismatch.'), { status: 403 });
+        }
+    } else if (user.role === 'student') {
+        if (!visitStudentIds.includes(user.id)) {
+            throw Object.assign(new Error('Unauthorized: Visit not assigned to this student.'), { status: 403 });
+        }
+    } else if (user.role === 'parent') {
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+
+        const hasOverlap = visitStudentIds.some(id => authorizedStudentIds.includes(id));
+        if (!hasOverlap) {
+            throw Object.assign(new Error('Unauthorized: Visit not linked to your students.'), { status: 403 });
+        }
+    }
+
+    // 2. Field-Level Security (ID Proof Masking)
+    let maskedIdProofNumber = null;
+    if (visit.visitorId && visit.visitorId.idProofNumber) {
+        const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
+
+        if (isSuperAdminOrAdmin) {
+            maskedIdProofNumber = visit.visitorId.idProofNumber;
+        } else {
+            // Mask all but last 4 characters
+            const num = visit.visitorId.idProofNumber;
+            if (num.length > 4) {
+                maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
+            } else {
+                maskedIdProofNumber = '****';
+            }
+        }
+    }
+
+    // 3. Process Timeline & DTO Transformation
+    const sortedTimeline = (visit.visitTimeline || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const formattedTimeline = sortedTimeline.map(t => ({
+        action: t.action,
+        performedBy: t.performedBy ? t.performedBy.name : 'System',
+        role: t.performedBy ? t.performedBy.role : 'System',
+        remarks: t.remarks,
+        createdAt: t.createdAt
+    }));
+
+    const formattedStudents = visit.students.map(s => ({
+        studentId: s._id,
+        studentName: s.name,
+        studentIdNumber: s.studentIdNumber,
+        roomNumber: s.roomId ? s.roomId.roomNumber : null,
+        department: s.department,
+        course: s.course
+    }));
+
+    // Calculate Visit Duration if checked out
+    let visitDuration = null;
+    if (visit.checkOutTime && visit.checkInTime) {
+        const diffMs = new Date(visit.checkOutTime) - new Date(visit.checkInTime);
+        const hours = Math.floor(diffMs / 3600000);
+        const minutes = Math.floor((diffMs % 3600000) / 60000);
+        visitDuration = `${hours}h ${minutes}m`;
+    } else if (visit.checkInTime) {
+        const diffMs = new Date() - new Date(visit.checkInTime);
+        const hours = Math.floor(diffMs / 3600000);
+        const minutes = Math.floor((diffMs % 3600000) / 60000);
+        visitDuration = `${hours}h ${minutes}m (Ongoing)`;
+    }
+
+    const studentNames = formattedStudents.map(s => s.studentName).join(', ');
+    const visitorName = visit.visitorId ? visit.visitorId.name : 'Unknown';
+
+    return {
+        // Quick Summary
+        quickSummary: {
+            visitorName,
+            studentNames,
+            currentStatus: visit.status,
+            visitDuration,
+            checkIn: visit.checkInTime,
+            checkOut: visit.checkOutTime
+        },
+
+        // Visitor Information
+        visitorInformation: visit.visitorId ? {
+            visitorId: visit.visitorId._id,
+            visitorName: visit.visitorId.name,
+            phone: visit.visitorId.phone,
+            relationship: visit.visitorId.relationship,
+            address: visit.visitorId.address,
+            idProofType: visit.visitorId.idProofType,
+            idProofNumber: maskedIdProofNumber
+        } : null,
+
+        // Visit Information
+        visitInformation: {
+            visitId: visit._id,
+            purpose: visit.purpose, // If added later in schema
+            status: visit.status,
+            checkInTime: visit.checkInTime,
+            expectedExitTime: visit.expectedExitTime,
+            checkOutTime: visit.checkOutTime,
+            visitDuration
+        },
+
+        // Student Information
+        studentInformation: formattedStudents,
+
+        // Hostel Information
+        hostelInformation: {
+            hostelId: visit.hostelId ? visit.hostelId._id : null,
+            hostelName: visit.hostelId ? visit.hostelId.name : null,
+            organizationName: visit.organizationId ? visit.organizationId.name : null
+        },
+
+        // Warden Information
+        wardenInformation: {
+            checkedInBy: visit.checkedInBy ? { name: visit.checkedInBy.name, role: visit.checkedInBy.role } : null,
+            checkedOutBy: visit.checkedOutBy ? { name: visit.checkedOutBy.name, role: visit.checkedOutBy.role } : null
+        },
+
+        // Timeline
+        timeline: formattedTimeline
+    };
 };
