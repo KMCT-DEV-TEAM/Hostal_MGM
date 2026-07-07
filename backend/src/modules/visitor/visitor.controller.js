@@ -68,6 +68,80 @@ export const listVisitors = async (req, res) => {
 };
 
 /**
+ * Lists Visitors for Parent
+ * @route GET /parent/visitors
+ */
+export const listParentVisitors = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const result = await visitorService.listParentVisitors(req.query, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Parent visitors fetched successfully.",
+            ...result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching parent visitors." 
+            : error.message;
+
+        console.error('[VisitorController] listParentVisitors error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
+ * Lists Visitors for Student
+ * @route GET /student/visitors
+ */
+export const listStudentVisitors = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing student authentication."
+            });
+        }
+
+        const result = await visitorService.listStudentVisitors(req.query, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Student visitors fetched successfully.",
+            ...result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching student visitors." 
+            : error.message;
+
+        console.error('[VisitorController] listStudentVisitors error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
  * Admin / Super Admin approves a visitor
  * @route PATCH /visitors/:visitorId/approve
  */

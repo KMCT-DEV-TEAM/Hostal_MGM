@@ -155,24 +155,44 @@ export const createVisitorProfile = async (payload, user) => {
 };
 
 /**
+ * Builds standard filter and sort stages for Visitor listings
+ * @param {Object} query 
+ * @returns {Object} { matchStage, sortStage, skip, limit }
+ */
+const buildListingStages = (query) => {
+    const { page = 1, limit = 10, search, status, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+    const matchStage = {};
+
+    if (status) {
+        matchStage.approvalStatus = status;
+    }
+
+    if (search) {
+        matchStage.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    let actualSortField = sortBy;
+    if (sortBy === 'visitorName') actualSortField = 'name';
+    if (sortBy === 'status') actualSortField = 'approvalStatus';
+
+    const sortStage = { [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
+    const skip = (Number(page) - 1) * Number(limit);
+
+    return { matchStage, sortStage, skip, limit: Number(limit), page: Number(page) };
+};
+
+/**
  * Lists visitors for Admin, Super Admin, and Warden
  * @param {Object} query 
  * @param {Object} user 
  */
 export const listVisitors = async (query, user) => {
-    const {
-        page = 1,
-        limit = 10,
-        status,
-        hostel,
-        organization,
-        search,
-        date,
-        sortBy = 'createdAt',
-        sortOrder = 'desc'
-    } = query;
-
-    const matchStage = {};
+    const { hostel, organization, date } = query;
+    const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
 
     // 1. Role-Based Filters
     let targetHostelId = null;
@@ -199,18 +219,13 @@ export const listVisitors = async (query, user) => {
         if (studentIds.length === 0) {
             return {
                 total: 0,
-                page: Number(page),
-                limit: Number(limit),
+                page,
+                limit,
                 totalPages: 0,
                 data: []
             };
         }
         matchStage.students = { $in: studentIds };
-    }
-
-    // 3. General Filters
-    if (status) {
-        matchStage.approvalStatus = status;
     }
 
     if (date) {
@@ -221,36 +236,67 @@ export const listVisitors = async (query, user) => {
         matchStage.createdAt = { $gte: startDate, $lte: endDate };
     }
 
-    if (search) {
-        matchStage.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { phone: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } }
-        ];
+    // 3. Repository Call
+    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
+    const totalPages = Math.ceil(total / limit);
+
+    return { total, page, limit, totalPages, data };
+};
+
+/**
+ * Lists visitors specifically for the authenticated Parent
+ * @param {Object} query 
+ * @param {Object} user (Authenticated Parent)
+ */
+export const listParentVisitors = async (query, user) => {
+    // 1. Resolve Parent context
+    const currentParent = await Parent.findById(user.id);
+    if (!currentParent) {
+        const error = new Error('Parent not found.');
+        error.status = 404;
+        throw error;
     }
 
-    // 4. Sort Stage
-    let actualSortField = sortBy;
-    if (sortBy === 'visitorName') actualSortField = 'name';
-    if (sortBy === 'status') actualSortField = 'approvalStatus';
+    // A parent might have multiple students associated under the same phone number
+    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+    const authorizedStudentIds = parentDocs.map(p => p.studentId);
 
-    const sortStage = { [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
+    if (authorizedStudentIds.length === 0) {
+        return {
+            total: 0,
+            page: Number(query.page || 1),
+            limit: Number(query.limit || 10),
+            totalPages: 0,
+            data: []
+        };
+    }
 
-    // 5. Pagination
-    const skip = (Number(page) - 1) * Number(limit);
+    // 2. Build Query
+    const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
+    matchStage.students = { $in: authorizedStudentIds };
 
-    // 6. Repository Call
-    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, Number(limit));
+    // 3. Repository Call
+    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
+    const totalPages = Math.ceil(total / limit);
 
-    const totalPages = Math.ceil(total / Number(limit));
+    return { total, page, limit, totalPages, data };
+};
 
-    return {
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        totalPages,
-        data
-    };
+/**
+ * Lists visitors specifically for the authenticated Student
+ * @param {Object} query 
+ * @param {Object} user (Authenticated Student)
+ */
+export const listStudentVisitors = async (query, user) => {
+    // 1. Build Query
+    const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
+    matchStage.students = new mongoose.Types.ObjectId(user.id);
+
+    // 2. Repository Call
+    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
+    const totalPages = Math.ceil(total / limit);
+
+    return { total, page, limit, totalPages, data };
 };
 
 /**

@@ -1,11 +1,20 @@
 import express from 'express';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
-import { validateCreateVisitor, validateListVisitors, validateApproveVisitor, validateRejectVisitor } from './visitor.validation.js';
+import { 
+    validateCreateVisitor, 
+    validateListVisitors, 
+    validateEndUserListVisitors, 
+    validateApproveVisitor, 
+    validateRejectVisitor 
+} from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
 const router = express.Router();
 
+// ---------------------------------------------------------
+// End-User Routes (Parent & Student)
+// ---------------------------------------------------------
 router.post(
     '/parent/visitors',
     authMiddleware,
@@ -14,6 +23,25 @@ router.post(
     visitorController.createVisitor
 );
 
+router.get(
+    '/parent/visitors',
+    authMiddleware,
+    roleMiddleware('parent'),
+    validateEndUserListVisitors,
+    visitorController.listParentVisitors
+);
+
+router.get(
+    '/student/visitors',
+    authMiddleware,
+    roleMiddleware('student'),
+    validateEndUserListVisitors,
+    visitorController.listStudentVisitors
+);
+
+// ---------------------------------------------------------
+// Management Routes (Admin, Super Admin, Warden)
+// ---------------------------------------------------------
 router.get(
     '/',
     authMiddleware,

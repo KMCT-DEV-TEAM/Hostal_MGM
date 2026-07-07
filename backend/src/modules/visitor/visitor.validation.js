@@ -128,6 +128,32 @@ export const validateListVisitors = (req, res, next) => {
     next();
 };
 
+export const validateEndUserListVisitors = (req, res, next) => {
+    let { page, limit, status, sortBy, sortOrder } = req.query;
+
+    if (page && (isNaN(Number(page)) || Number(page) < 1)) {
+        return res.status(400).json({ success: false, message: "Invalid page parameter." });
+    }
+    if (limit && (isNaN(Number(limit)) || Number(limit) < 1 || Number(limit) > 100)) {
+        return res.status(400).json({ success: false, message: "Invalid limit parameter (must be 1-100)." });
+    }
+
+    if (status && !VISITOR_STATUS_VALUES.includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status parameter." });
+    }
+
+    const allowedSortFields = ['createdAt', 'visitorName', 'status'];
+    if (sortBy && !allowedSortFields.includes(sortBy)) {
+        return res.status(400).json({ success: false, message: "Invalid sortBy parameter." });
+    }
+
+    if (sortOrder && !['asc', 'desc'].includes(sortOrder.toLowerCase())) {
+        return res.status(400).json({ success: false, message: "Invalid sortOrder parameter (must be asc or desc)." });
+    }
+
+    next();
+};
+
 export const validateApproveVisitor = (req, res, next) => {
     const { visitorId } = req.params;
 
