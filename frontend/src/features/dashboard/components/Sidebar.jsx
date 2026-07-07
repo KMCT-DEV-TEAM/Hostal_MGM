@@ -63,7 +63,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose, sub
                 <div className="flex items-center gap-3">
                     <Icon className="w-5 h-5 text-red-500" strokeWidth={1.5} />
 
-                    <span>{t(label.toLowerCase())}</span>
+                    <span className="capitalize">{t(label.toLowerCase())}</span>
                 </div>
             </button>
         );
@@ -81,7 +81,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose, sub
                 >
                     <div className="flex items-center gap-3">
                         <Icon className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
-                        <span>{t(label.toLowerCase())}</span>
+                        <span className="capitalize">{t(label.toLowerCase())}</span>
                     </div>
                     <ChevronDown
                         className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''
@@ -107,7 +107,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose, sub
                                         : "text-gray-500 hover:text-gray-900 hover:bg-blue-50/50 border-transparent rounded-r-lg rounded-l-none")
                                 }
                             >
-                                {t(subItem.label.toLowerCase())}
+                                <span className="capitalize">{t(subItem.label.toLowerCase())}</span>
                             </NavLink>
                         ))}
                     </div>
@@ -138,7 +138,7 @@ const NavItem = ({ icon: Icon, label, to, isDanger, onClick, badge, onClose, sub
                                 }`}
                             strokeWidth={1.5}
                         />
-                        <span>{t(label.toLowerCase())}</span>
+                        <span className="capitalize">{t(label.toLowerCase())}</span>
                     </div>
 
                     {/* Render Badge notification pill if present */}

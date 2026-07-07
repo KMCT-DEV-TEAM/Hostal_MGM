@@ -3,7 +3,10 @@ import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
+import Button from '@/components/ui/Button';
+import { Plus } from 'lucide-react';
 import VisitorListTableView from '../components/VisitorListTableView';
+import CheckInModal from '../components/modals/CheckInModal';
 import {
     getAllVisitors,
     getParentVisitors,
@@ -26,6 +29,9 @@ const VisitorsPage = () => {
     const isStudent = role === ROLES.STUDENT;
 
     const canApproveReject = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
+    const canExport = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
+
+    const [showCheckInModal, setShowCheckInModal] = useState(false);
 
     const fetchVisitors = useCallback(async () => {
         try {
@@ -119,8 +125,20 @@ const VisitorsPage = () => {
                 onExportClick={() => { }} // Export logic
                 hasActiveFilters={!!statusFilter}
                 canApproveReject={canApproveReject}
+                canExport={canExport}
+                canRegister={isParent}
+                onRegisterClick={() => setShowCheckInModal(true)}
                 onApprove={handleApprove}
                 onReject={handleReject}
+            />
+
+            <CheckInModal
+                isOpen={showCheckInModal}
+                onClose={() => setShowCheckInModal(false)}
+                onSuccess={() => {
+                    setShowCheckInModal(false);
+                    fetchVisitors();
+                }}
             />
         </div>
     );

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { Filter, Download, Check, X } from 'lucide-react';
+import { Filter, Download, Check, X, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 const StatusBadge = ({ status }) => {
@@ -54,6 +54,9 @@ const VisitorListTableView = ({
     onExportClick,
     hasActiveFilters,
     canApproveReject,
+    canExport,
+    canRegister,
+    onRegisterClick,
     onApprove,
     onReject
 }) => {
@@ -146,16 +149,29 @@ const VisitorListTableView = ({
                         >
                             <Filter className="w-4 h-4" />
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="md"
-                            fullWidth={false}
-                            onClick={onExportClick}
-                            className="flex-1 sm:flex-none whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" />
-                            Export
-                        </Button>
+                        {canExport && (
+                            <Button
+                                variant="outline"
+                                size="md"
+                                fullWidth={false}
+                                onClick={onExportClick}
+                                className="flex-1 sm:flex-none whitespace-nowrap"
+                            >
+                                <Download className="w-4 h-4" />
+                                Export
+                            </Button>
+                        )}
+                        {canRegister && (
+                            <Button
+                                size="md"
+                                fullWidth={false}
+                                onClick={onRegisterClick}
+                                className="flex-1 sm:flex-none whitespace-nowrap"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Register Visitor
+                            </Button>
+                        )}
                     </>
                 }
                 renderRow={renderRow}

@@ -157,7 +157,7 @@ export const DASHBOARD_NAV = {
                 },
                 {
                     icon: Users,
-                    label: 'Visitors',
+                    label: 'Visitors Management',
                     path: '/dashboard/visitors',
                     subItems: [
                         { label: 'Visitors', path: '/dashboard/visitors' },
@@ -317,7 +317,7 @@ export const DASHBOARD_NAV = {
                 },
                 {
                     icon: Users,
-                    label: 'Visitors',
+                    label: 'Visitors Management',
                     path: '/dashboard/visitors',
                     subItems: [
                         { label: 'Visitors', path: '/dashboard/visitors' },
@@ -419,7 +419,7 @@ export const DASHBOARD_NAV = {
                 },
                 {
                     icon: Users,
-                    label: 'Visitors',
+                    label: 'Visitors Management',
                     path: '/dashboard/visitors',
                     subItems: [
                         { label: 'Visitors', path: '/dashboard/visitors' },
@@ -496,7 +496,7 @@ export const DASHBOARD_NAV = {
                 },
                 {
                     icon: Users,
-                    label: 'Visitors',
+                    label: 'Visitors Management',
                     path: '/dashboard/visitors',
                     subItems: [
                         { label: 'Visitors', path: '/dashboard/visitors' },
@@ -547,7 +547,7 @@ export const DASHBOARD_NAV = {
                 },
                 {
                     icon: Users,
-                    label: 'Visitors',
+                    label: 'Visitors Management',
                     path: '/dashboard/visitors',
                     subItems: [
                         { label: 'Visitors', path: '/dashboard/visitors' },
