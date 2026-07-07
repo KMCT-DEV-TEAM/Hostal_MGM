@@ -202,7 +202,6 @@ export const listVisitors = async (query, user) => {
 
     // 1. Role-Based Filters
     let targetHostelId = null;
-    console.log(user);
     if (user.role === 'super_admin') {
         if (organization) matchStage.organizationId = new mongoose.Types.ObjectId(organization);
         if (hostel) targetHostelId = hostel;
