@@ -49,11 +49,11 @@ export class StudentResolver {
     async resolve(filter = {}) {
         let matchQuery = {};
 
-        if (filter.hostelId) matchQuery.hostel = new mongoose.Types.ObjectId(filter.hostelId);
-        if (filter.courseId) matchQuery.course = new mongoose.Types.ObjectId(filter.courseId);
-        if (filter.departmentId) matchQuery.department = new mongoose.Types.ObjectId(filter.departmentId);
-        if (filter.batchId) matchQuery.batch = new mongoose.Types.ObjectId(filter.batchId);
-        if (filter.organizationId) matchQuery.organization = new mongoose.Types.ObjectId(filter.organizationId);
+        if (filter.hostelId) matchQuery.hostelId = new mongoose.Types.ObjectId(filter.hostelId);
+        if (filter.courseId) matchQuery.courseId = new mongoose.Types.ObjectId(filter.courseId);
+        if (filter.departmentId) matchQuery.departmentId = new mongoose.Types.ObjectId(filter.departmentId);
+        if (filter.batchId) matchQuery.batchId = new mongoose.Types.ObjectId(filter.batchId);
+        if (filter.organizationId) matchQuery.organizationId = new mongoose.Types.ObjectId(filter.organizationId);
         if (filter.hostelStatus) matchQuery.hostelStatus = filter.hostelStatus;
         if (filter.isActive !== undefined) matchQuery.isActive = filter.isActive;
         if (filter.studentId) matchQuery._id = new mongoose.Types.ObjectId(filter.studentId);
@@ -73,9 +73,9 @@ export class StudentResolver {
                     phone: '$phone',
                     pushToken: '$pushToken',
                     metadata: {
-                        hostel: '$hostel',
-                        course: '$course',
-                        batch: '$batch'
+                        hostel: '$hostelId',
+                        course: '$courseId',
+                        batch: '$batchId'
                     }
                 }
             }
