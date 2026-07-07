@@ -5,6 +5,7 @@ import {
     validateCreateVisitor, 
     validateListVisitors, 
     validateEndUserListVisitors, 
+    validateGetVisitorDetails,
     validateApproveVisitor, 
     validateRejectVisitor 
 } from './visitor.validation.js';
@@ -60,6 +61,20 @@ router.get(
     visitorController.listVisitors
 );
 
+// ---------------------------------------------------------
+// Common Shared Routes (All Roles)
+// ---------------------------------------------------------
+router.get(
+    '/:visitorId',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    validateGetVisitorDetails,
+    visitorController.getVisitorDetails
+);
+
+// ---------------------------------------------------------
+// Action Routes
+// ---------------------------------------------------------
 router.patch(
     '/:visitorId/approve',
     authMiddleware,

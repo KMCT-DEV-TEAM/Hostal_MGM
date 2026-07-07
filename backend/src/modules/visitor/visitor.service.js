@@ -301,6 +301,134 @@ export const listStudentVisitors = async (query, user) => {
 };
 
 /**
+ * Gets a visitor details with strict role-based authorization and data masking
+ * @param {String} visitorId 
+ * @param {Object} user 
+ */
+export const getVisitorDetails = async (visitorId, user) => {
+    const visitor = await visitorRepository.getVisitorDetails(visitorId);
+    
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 1. Role-Based Authorization
+    const visitorStudentIds = visitor.students.map(s => s._id.toString());
+    const visitorHostelId = visitor.students.length > 0 ? visitor.students[0].hostelId.toString() : null;
+
+    if (user.role === 'admin') {
+        if (visitor.organizationId._id.toString() !== user.organization.toString()) {
+            throw Object.assign(new Error('Unauthorized: Organization mismatch.'), { status: 403 });
+        }
+    } else if (user.role === 'warden') {
+        if (visitorHostelId !== user.hostelId.toString()) {
+            throw Object.assign(new Error('Unauthorized: Hostel mismatch.'), { status: 403 });
+        }
+    } else if (user.role === 'student') {
+        if (!visitorStudentIds.includes(user.id)) {
+            throw Object.assign(new Error('Unauthorized: Visitor not assigned to this student.'), { status: 403 });
+        }
+    } else if (user.role === 'parent') {
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
+        if (!hasOverlap) {
+            throw Object.assign(new Error('Unauthorized: Visitor not linked to your students.'), { status: 403 });
+        }
+    }
+
+    // 2. Field-Level Security (ID Proof Masking)
+    let maskedIdProofNumber = visitor.idProofNumber;
+    if (visitor.idProofNumber) {
+        const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
+        
+        let isCreator = false;
+        if (user.role === 'parent' && visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
+            // Find creation event
+            const creationEvent = visitor.approvalTimeline.find(t => t.action === VISITOR_APPROVAL_ACTIONS.CREATED);
+            if (creationEvent && creationEvent.performedBy && creationEvent.performedBy._id.toString() === user.id) {
+                isCreator = true;
+            }
+        }
+
+        if (!isSuperAdminOrAdmin && !isCreator) {
+            // Mask all but last 4 characters
+            const num = visitor.idProofNumber;
+            if (num.length > 4) {
+                maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
+            } else {
+                maskedIdProofNumber = '****'; // Fallback for very short numbers
+            }
+        }
+    }
+
+    // 3. Process Timeline & DTO Transformation
+    let approvedBy = null;
+    let approvedAt = null;
+    let rejectedBy = null;
+    let rejectedAt = null;
+    let rejectionReason = null;
+
+    // Sort timeline newest first
+    const sortedTimeline = (visitor.approvalTimeline || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const formattedTimeline = sortedTimeline.map(t => {
+        if (t.action === VISITOR_APPROVAL_ACTIONS.APPROVED) {
+            approvedBy = t.performedBy ? { id: t.performedBy._id, name: t.performedBy.name } : null;
+            approvedAt = t.createdAt;
+        } else if (t.action === VISITOR_APPROVAL_ACTIONS.REJECTED) {
+            rejectedBy = t.performedBy ? { id: t.performedBy._id, name: t.performedBy.name } : null;
+            rejectedAt = t.createdAt;
+            rejectionReason = t.remarks;
+        }
+
+        return {
+            action: t.action,
+            performedBy: t.performedBy ? t.performedBy.name : 'System',
+            role: t.performedBy ? t.performedBy.role : 'System',
+            remarks: t.remarks,
+            createdAt: t.createdAt
+        };
+    });
+
+    const formattedStudents = visitor.students.map(s => ({
+        id: s._id,
+        name: s.name
+    }));
+
+    return {
+        visitorId: visitor._id,
+        visitorName: visitor.name,
+        phone: visitor.phone,
+        email: visitor.email,
+        relationship: visitor.relationship,
+        address: visitor.address,
+        idProofType: visitor.idProofType,
+        idProofNumber: maskedIdProofNumber,
+        students: formattedStudents,
+        organization: visitor.organizationId ? {
+            id: visitor.organizationId._id,
+            name: visitor.organizationId.name
+        } : null,
+        status: visitor.approvalStatus,
+        approvedBy,
+        approvedAt,
+        rejectedBy,
+        rejectedAt,
+        rejectionReason,
+        createdAt: visitor.createdAt,
+        updatedAt: visitor.updatedAt,
+        timeline: formattedTimeline
+    };
+};
+
+/**
  * Approve a pending visitor
  * @param {String} visitorId 
  * @param {Object} adminUser 

@@ -154,6 +154,19 @@ export const validateEndUserListVisitors = (req, res, next) => {
     next();
 };
 
+export const validateGetVisitorDetails = (req, res, next) => {
+    const { visitorId } = req.params;
+
+    if (!isValidObjectId(visitorId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid visitor ID."
+        });
+    }
+
+    next();
+};
+
 export const validateApproveVisitor = (req, res, next) => {
     const { visitorId } = req.params;
 

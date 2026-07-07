@@ -142,6 +142,38 @@ export const listStudentVisitors = async (req, res) => {
 };
 
 /**
+ * Get visitor details by ID
+ * @route GET /visitors/:visitorId
+ */
+export const getVisitorDetails = async (req, res) => {
+    try {
+        const { visitorId } = req.params;
+
+        const result = await visitorService.getVisitorDetails(visitorId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor details fetched successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status 
+            ? "An internal server error occurred while fetching visitor details." 
+            : error.message;
+
+        console.error('[VisitorController] getVisitorDetails error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
  * Admin / Super Admin approves a visitor
  * @route PATCH /visitors/:visitorId/approve
  */

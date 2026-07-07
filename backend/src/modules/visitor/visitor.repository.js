@@ -137,6 +137,28 @@ export const findVisitorById = async (visitorId) => {
 };
 
 /**
+ * Fetches complete visitor details with necessary populations using lean queries
+ * @param {String} visitorId 
+ * @returns {Promise<Object>} Populated lean visitor object
+ */
+export const getVisitorDetails = async (visitorId) => {
+    return await Visitor.findById(visitorId)
+        .populate({
+            path: 'students',
+            select: 'name hostelId'
+        })
+        .populate({
+            path: 'organizationId',
+            select: 'name'
+        })
+        .populate({
+            path: 'approvalTimeline.performedBy',
+            select: 'name role'
+        })
+        .lean();
+};
+
+/**
  * Updates a visitor document and pushes to timeline
  * @param {String} visitorId 
  * @param {Object} updateData 
