@@ -9,16 +9,7 @@ import Input from '@/components/ui/Input';
 import Dropdown from '@/components/ui/Dropdown';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-
-const registerSchema = z.object({
-    name: z.string().min(1, 'Name is required'),
-    relationship: z.string().min(1, 'Relationship is required'),
-    phone: z.string().min(10, 'Valid phone number is required'),
-    email: z.string().email('Valid email is required'),
-    address: z.string().min(1, 'Address is required'),
-    idProofType: z.string().min(1, 'ID Proof Type is required'),
-    idProofNumber: z.string().min(1, 'ID Proof Number is required'),
-});
+import { registerSchema } from '@/features/visitors/validation/visitorSchema';
 
 const idProofOptions = [
     { value: 'Aadhaar', label: 'Aadhaar Card' },
