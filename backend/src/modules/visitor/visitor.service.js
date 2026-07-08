@@ -1336,3 +1336,114 @@ export const autoCompleteExpiredVisits = async () => {
 
     return { processedCount, failedCount };
 };
+
+/**
+ * Parent updates a visitor profile
+ * @param {String} visitorId 
+ * @param {Object} payload 
+ * @param {Object} user 
+ */
+export const updateVisitorProfile = async (visitorId, payload, user) => {
+    // 1. Fetch Visitor
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        throw Object.assign(new Error('Visitor not found.'), { status: 404 });
+    }
+
+    // 2. Validate Ownership
+    const currentParent = await Parent.findById(user.id);
+    if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+    if (!currentParent.isActive) throw Object.assign(new Error('Parent is inactive.'), { status: 403 });
+
+    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+    const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+    const visitorStudentIds = visitor.students.map(id => id.toString());
+
+    let isCreator = false;
+    if (visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
+        const creationEvent = visitor.approvalTimeline.find(t => t.action === VISITOR_APPROVAL_ACTIONS.CREATED);
+        if (creationEvent && creationEvent.performedBy && creationEvent.performedBy.toString() === user.id) {
+            isCreator = true;
+        }
+    }
+
+    const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
+    if (!hasOverlap && !isCreator) {
+        throw Object.assign(new Error('Unauthorized: You can only update your own visitors.'), { status: 403 });
+    }
+
+    // 3. Filter allowed fields and check for changes
+    const allowedFields = [
+        'name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'
+    ];
+    
+    const updateData = {};
+    const updatedFieldsList = [];
+    for (const key of Object.keys(payload)) {
+        if (allowedFields.includes(key) && payload[key] !== undefined) {
+            if (visitor[key] !== payload[key]) {
+                updateData[key] = payload[key];
+                updatedFieldsList.push(key);
+            }
+        }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+        return {
+            visitorId: visitor._id,
+            name: visitor.name,
+            phone: visitor.phone,
+            email: visitor.email,
+            address: visitor.address,
+            photoUrl: visitor.photoUrl,
+            updatedAt: visitor.updatedAt
+        };
+    }
+
+    // 4. Update
+    const updatedVisitor = await visitorRepository.updateVisitor(visitorId, updateData);
+
+    // 5. Notify
+    try {
+        const students = await Student.find({ _id: { $in: visitor.students } }, 'name hostelId');
+        const studentNames = students.map(s => s.name).join(', ');
+        const hostelId = students.length > 0 ? students[0].hostelId : null;
+
+        await orchestratorService.triggerNotification({
+            eventName: 'VISITOR_UPDATED',
+            target: {
+                type: 'USER',
+                filter: {
+                    hostelId: hostelId,
+                    organizationId: visitor.organizationId.toString()
+                }
+            },
+            data: {
+                visitorName: visitor.name,
+                updatedFields: updatedFieldsList.join(', '),
+                studentNames: studentNames
+            },
+            sender: {
+                id: currentParent._id,
+                model: 'Parent',
+                snapshot: {
+                    name: currentParent.parentName,
+                    role: 'Parent'
+                }
+            }
+        });
+    } catch (notificationError) {
+        console.error('[VisitorService] Failed to publish VISITOR_UPDATED event:', notificationError);
+    }
+
+    return {
+        visitorId: updatedVisitor._id,
+        name: updatedVisitor.name,
+        phone: updatedVisitor.phone,
+        email: updatedVisitor.email,
+        address: updatedVisitor.address,
+        photoUrl: updatedVisitor.photoUrl,
+        updatedAt: updatedVisitor.updatedAt
+    };
+};
+

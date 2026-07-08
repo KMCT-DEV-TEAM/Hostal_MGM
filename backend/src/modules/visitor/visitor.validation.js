@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { VISITOR_STATUS_VALUES, VISITOR_VISIT_STATUS } from "./visitor.constant.js";
+import { VISITOR_STATUS_VALUES, VISITOR_VISIT_STATUS, ID_PROOF_TYPE_VALUES } from "./visitor.constant.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const isValidPhone = (phone) => /^\+?[\d\s-]{10,15}$/.test(phone);
@@ -93,6 +93,7 @@ export const validateCreateVisitor = (req, res, next) => {
 
     next();
 };
+
 
 export const validateListVisitors = (req, res, next) => {
     let { page, limit, status, hostel, organization, sortBy, sortOrder } = req.query;
@@ -302,6 +303,60 @@ export const validateGetVisitDetails = (req, res, next) => {
             success: false,
             message: "Invalid visit ID."
         });
+    }
+
+    next();
+};
+
+export const validateUpdateVisitor = (req, res, next) => {
+    const { visitorId } = req.params;
+
+    if (!isValidObjectId(visitorId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid visitor ID."
+        });
+    }
+
+    const allowedFields = ['name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'];
+    const updateKeys = Object.keys(req.body);
+
+    if (updateKeys.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "At least one field is required to update."
+        });
+    }
+
+    const invalidFields = updateKeys.filter(key => !allowedFields.includes(key));
+    if (invalidFields.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: `Only the following fields can be updated: ${allowedFields.join(', ')}. Invalid fields provided: ${invalidFields.join(', ')}`
+        });
+    }
+
+    const { name, relationship, email, phone } = req.body;
+
+    if (name && (typeof name !== 'string' || name.trim().length < 3)) {
+        return res.status(400).json({ success: false, message: "name must be at least 3 characters long." });
+    }
+
+    if (relationship && (typeof relationship !== 'string' || relationship.trim().length === 0)) {
+        return res.status(400).json({ success: false, message: "relationship cannot be empty." });
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ success: false, message: "Invalid email format." });
+    }
+
+    if (phone && !/^\+?[\d\s-]{10,15}$/.test(phone)) {
+        return res.status(400).json({ success: false, message: "Invalid phone number format." });
+    }
+
+    const { idProofType } = req.body;
+    if (idProofType && !ID_PROOF_TYPE_VALUES.includes(idProofType)) {
+        return res.status(400).json({ success: false, message: "Invalid idProofType." });
     }
 
     next();

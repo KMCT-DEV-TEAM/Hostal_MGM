@@ -422,3 +422,41 @@ export const getVisitDetails = async (req, res) => {
         });
     }
 };
+
+/**
+ * Parent updates a Visitor Profile
+ * @route PATCH /parent/visitors/:visitorId
+ */
+export const updateVisitor = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const { visitorId } = req.params;
+        const updatedVisitor = await visitorService.updateVisitorProfile(visitorId, req.body, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor updated successfully.",
+            data: updatedVisitor
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while updating the visitor."
+            : error.message;
+
+        console.error('[VisitorController] updateVisitor error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};

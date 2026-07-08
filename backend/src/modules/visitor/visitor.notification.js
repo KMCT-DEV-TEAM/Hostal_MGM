@@ -22,6 +22,29 @@ export default {
         }
     },
 
+    VISITOR_UPDATED: {
+        admin: {
+            "in-app": {
+                title: 'Visitor Updated',
+                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            },
+            push: {
+                title: 'Visitor Updated',
+                body: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            },
+            email: {
+                subject: 'Visitor Information Updated',
+                html: '<h1>Visitor Updated</h1><p><strong>{{visitorName}}</strong> information has been updated by the Parent.</p><p><strong>Updated Fields:</strong> {{updatedFields}}</p>'
+            }
+        },
+        warden: {
+            "in-app": {
+                title: 'Visitor Updated',
+                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            }
+        }
+    },
+
     VISITOR_APPROVED: {
         parent: {
             "in-app": {

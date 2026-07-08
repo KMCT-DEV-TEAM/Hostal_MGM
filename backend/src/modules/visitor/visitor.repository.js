@@ -688,3 +688,17 @@ export const autoCompleteVisit = async (visitId, completionTime = new Date()) =>
         { new: true, runValidators: true }
     );
 };
+
+/**
+ * Updates allowed fields of a visitor
+ * @param {String} visitorId
+ * @param {Object} updateData
+ * @returns {Promise<Object>}
+ */
+export const updateVisitor = async (visitorId, updateData) => {
+    return await Visitor.findByIdAndUpdate(
+        visitorId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    ).select('name phone email address photoUrl updatedAt');
+};
