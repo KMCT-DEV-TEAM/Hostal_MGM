@@ -213,6 +213,33 @@ export const getComplaintSummaryDb = async (query = {}) => {
         }
     ]);
     
+    const statusSummary = await Complaint.aggregate([
+        { $match: filter },
+        {
+            $group: {
+                _id: "$status",
+                count: { $sum: 1 }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                name: { $ifNull: ["$_id", "Unknown"] },
+                count: 1
+            }
+        },
+        { $sort: { count: -1 } }
+    ]);
+    
+    // Calculate total count
+    const totalCount = summary.reduce((acc, curr) => acc + curr.count, 0);
+    
+    return {
+        total: totalCount,
+        categories: summary,
+        statuses: statusSummary
+          };
+};
     const categories = result[0].byCategory || [];
     let statuses = result[0].byStatus || [];
     const totalCount = result[0].totalCount.length > 0 ? result[0].totalCount[0].total : 0;

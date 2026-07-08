@@ -177,8 +177,11 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const organizationId = admin.organization;
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
+  const lastYearStart = new Date(new Date().getFullYear() - 1, 0, 1);
+  const lastYearEnd = new Date(new Date().getFullYear() - 1, 11, 31, 23, 59, 59);
 
-    const [
+  const [
     wardens,
     students,
     parents,
@@ -186,7 +189,13 @@ const getAdminStats = asyncHandler(async (req, res) => {
     studentLastMonthCount,
     parentLastMonthCount,
     pendingComplaintsCount,
-    leaveRequestsCount
+    leaveRequestsCount,
+    inactiveWardensCount,
+    totalComplaintsCount,
+    unresolvedComplaintsCount,
+    approvedLeaveRequestsCount,
+    thisYearAttendanceStats,
+    lastYearAttendanceStats
   ] = await Promise.all([
     User.countDocuments({
       role: "warden",
@@ -284,8 +293,78 @@ const getAdminStats = asyncHandler(async (req, res) => {
         $count: "total",
       },
     ]),
+
+    User.countDocuments({
+      role: "warden",
+      organization: organizationId,
+      isActive: false
+    }),
+
+    Complaint.countDocuments({
+      organizationId
+    }),
+
+    Complaint.countDocuments({
+      organizationId,
+      status: { $ne: "Resolved" }
+    }),
+
+    Pass.aggregate([
+      { $match: { status: "approved" } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": organizationId } },
+      { $count: "total" }
+    ]),
+
+    AttendanceRecord.aggregate([
+      { $match: { createdAt: { $gte: currentYearStart } } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": organizationId } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      }
+    ]),
+
+    AttendanceRecord.aggregate([
+      { $match: { createdAt: { $gte: lastYearStart, $lte: lastYearEnd } } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": organizationId } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      }
+    ])
   ]);
 
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const thisYearAttendance = monthNames.map((month, index) => {
+    const stat = thisYearAttendanceStats.find(s => s._id === index + 1);
+    let value = 0;
+    if (stat && stat.totalCount > 0) {
+      value = Math.round((stat.presentCount / stat.totalCount) * 100);
+    }
+    return { month, value };
+  });
+
+  const lastYearAttendance = monthNames.map((month, index) => {
+    const stat = lastYearAttendanceStats.find(s => s._id === index + 1);
+    let value = 0;
+    if (stat && stat.totalCount > 0) {
+      value = Math.round((stat.presentCount / stat.totalCount) * 100);
+    }
+    return { month, value };
+  });
 
   return sendSuccess(
     res,
@@ -301,6 +380,15 @@ const getAdminStats = asyncHandler(async (req, res) => {
         parentLastMonthCount: parentLastMonthCount[0]?.total || 0,
         pendingComplaints: pendingComplaintsCount || 0,
         leaveRequests: leaveRequestsCount[0]?.total || 0,
+        
+        inactiveWardens: inactiveWardensCount,
+        parentsMessages: 0,
+        complaintsOverview: { total: totalComplaintsCount, unresolved: unresolvedComplaintsCount },
+        leaveApproved: approvedLeaveRequestsCount[0]?.total || 0,
+        attendance: {
+            thisYear: thisYearAttendance,
+            lastYear: lastYearAttendance
+        }
       },
     }
   );
