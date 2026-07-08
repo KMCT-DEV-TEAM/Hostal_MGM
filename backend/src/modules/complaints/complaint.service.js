@@ -186,12 +186,31 @@ export const getComplaintSummaryDb = async (query = {}) => {
         { $sort: { count: -1 } }
     ]);
     
+    const statusSummary = await Complaint.aggregate([
+        { $match: filter },
+        {
+            $group: {
+                _id: "$status",
+                count: { $sum: 1 }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                name: { $ifNull: ["$_id", "Unknown"] },
+                count: 1
+            }
+        },
+        { $sort: { count: -1 } }
+    ]);
+    
     // Calculate total count
     const totalCount = summary.reduce((acc, curr) => acc + curr.count, 0);
     
     return {
         total: totalCount,
-        categories: summary
+        categories: summary,
+        statuses: statusSummary
     };
 };
 
