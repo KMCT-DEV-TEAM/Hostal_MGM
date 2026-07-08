@@ -95,6 +95,17 @@ const getWardenDashboardSummary = asyncHandler(async (req, res) => {
     }
   ]);
 
+  const allStatuses = ['Incomplete', 'Resolved', 'Pending', 'In progress', 'Awaiting', 'Rejected'];
+  const existingStatuses = new Set(complaintStats.map(s => s.name));
+  
+  allStatuses.forEach(status => {
+    if (!existingStatuses.has(status)) {
+      complaintStats.push({ name: status, count: 0 });
+    }
+  });
+
+  complaintStats.sort((a, b) => b.count - a.count);
+
   const complaintSummary = complaintStats.map(stat => ({
     name: stat.name,
     count: stat.count,

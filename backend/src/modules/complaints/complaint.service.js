@@ -159,39 +159,79 @@ export const getComplaintSummaryDb = async (query = {}) => {
     if (query.organizationId) filter.organizationId = query.organizationId;
     if (query.hostelId) filter.hostelId = query.hostelId;
 
-    const summary = await Complaint.aggregate([
+    const result = await Complaint.aggregate([
         { $match: filter },
         {
-            $group: {
-                _id: "$category",
-                count: { $sum: 1 }
+            $facet: {
+                byCategory: [
+                    {
+                        $group: {
+                            _id: "$category",
+                            count: { $sum: 1 }
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "complaintcategories",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "categoryDetails"
+                        }
+                    },
+                    { $unwind: { path: "$categoryDetails", preserveNullAndEmptyArrays: true } },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: { $ifNull: ["$categoryDetails.name", "Unknown"] },
+                            count: 1
+                        }
+                    },
+                    { $sort: { count: -1 } }
+                ],
+                byStatus: [
+                    {
+                        $group: {
+                            _id: "$status",
+                            count: { $sum: 1 }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: { $ifNull: ["$_id", "Unknown"] },
+                            count: 1
+                        }
+                    },
+                    { $sort: { count: -1 } }
+                ],
+                totalCount: [
+                    {
+                        $count: "total"
+                    }
+                ]
             }
-        },
-        {
-            $lookup: {
-                from: "complaintcategories",
-                localField: "_id",
-                foreignField: "_id",
-                as: "categoryDetails"
-            }
-        },
-        { $unwind: { path: "$categoryDetails", preserveNullAndEmptyArrays: true } },
-        {
-            $project: {
-                _id: 0,
-                name: { $ifNull: ["$categoryDetails.name", "Unknown"] },
-                count: 1
-            }
-        },
-        { $sort: { count: -1 } }
+        }
     ]);
     
-    // Calculate total count
-    const totalCount = summary.reduce((acc, curr) => acc + curr.count, 0);
+    const categories = result[0].byCategory || [];
+    let statuses = result[0].byStatus || [];
+    const totalCount = result[0].totalCount.length > 0 ? result[0].totalCount[0].total : 0;
+    
+    const allStatuses = ['Pending', 'In progress', 'Awaiting', 'Resolved', 'Rejected', 'Incomplete'];
+    const existingStatuses = new Set(statuses.map(s => s.name));
+    
+    allStatuses.forEach(status => {
+        if (!existingStatuses.has(status)) {
+            statuses.push({ name: status, count: 0 });
+        }
+    });
+    
+    statuses.sort((a, b) => b.count - a.count);
     
     return {
         total: totalCount,
-        categories: summary
+        categories: categories,
+        statuses: statuses
     };
 };
 
