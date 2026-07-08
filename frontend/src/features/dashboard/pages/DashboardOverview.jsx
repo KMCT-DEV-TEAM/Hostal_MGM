@@ -3,16 +3,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import adminService from "@/services/admin.service";
 import wardenService from "@/services/warden.service";
-import organizationService from "@/services/organization.service";
-import hostelService from "@/services/hostel.service";
 import complaintService from "@/services/complaint.service";
 import { logApi } from "@/features/dashboard/api/logApi";
 import Dropdown from '@/components/ui/Dropdown';
-
-import newStudentIcon from "../../../assets/images/dashboard/Frame.png";
-import complaintIcon from "../../../assets/images/dashboard/Vector (1).png";
-import passwordIcon from "../../../assets/images/dashboard/Group 719.png";
-import organizationIcon from "../../../assets/images/dashboard/Frame1.png";
 
 import {
     BarChart,
@@ -52,7 +45,7 @@ import {
 import { useTranslation } from "@/hooks/useTranslation";
 import MaintenanceStaffDashboardOverview from "../components/MaintenanceStaffDashboardOverview";
 import WardenDashboardOverview from "../components/WardenDashboardOverview";
-import Dropdown from '@/components/ui/Dropdown';
+
 const COMPLAINT_COLORS = ["#0A467F", "#9D77CE", "#F8BA52", "#55CDA6", "#A6A6A6", "#FF6B6B", "#4DABF7", "#FF922B", "#20C997", "#339AF0"];
 import ParentDashboard from './ParentDashboard';
 import StudentDashboard from './StudentDashboard';
@@ -61,14 +54,6 @@ import AdminDashboard from './AdminDashboard';
 function DashboardOverview() {
     const { t } = useTranslation();
     const { user } = useAuthStore();
-
-    if (user?.role === ROLES.PARENT) {
-        return <ParentDashboard />;
-    }
-
-    if (user?.role === ROLES.STUDENT) {
-        return <StudentDashboard />;
-    }
 
     const [period, setPeriod] = useState("This Year");
     const [attendancePeriod, setAttendancePeriod] = useState("This Year");
@@ -406,6 +391,14 @@ function DashboardOverview() {
             descClass: "text-primary",
         },
     ];
+
+    if (user?.role === ROLES.PARENT) {
+        return <ParentDashboard />;
+    }
+
+    if (user?.role === ROLES.STUDENT) {
+        return <StudentDashboard />;
+    }
 
     if (user?.role === 'maintenance_staff') {
         return <MaintenanceStaffDashboardOverview />;
@@ -769,65 +762,6 @@ function DashboardOverview() {
         </div>
     );
 
-    const renderStudentOrgPieChart = () => (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col items-center h-full">
-            <h2 className="text-sm font-bold text-[#000000] self-start w-full">
-                Student Organizations
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5 self-start w-full mb-6">
-                Breakdown of students by organization.
-            </p>
-            {studentChartData.length > 0 ? (
-                <div className="flex flex-col items-center w-full">
-                    <div className="relative w-48 h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={studentChartData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={55}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {studentChartData.map((entry, index) => (
-                                        <Cell key={"cell-" + index} fill={COMPLAINT_COLORS[index % COMPLAINT_COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    formatter={(value, name) => [value, name]}
-                                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-[28px] font-bold text-gray-900 leading-none">
-                                {dashboardStats.students}
-                            </span>
-                            <span className="text-[10px] text-gray-500 font-medium">Total</span>
-                        </div>
-                    </div>
-                    <div className="w-full mt-6 grid grid-cols-2 gap-x-4 gap-y-3">
-                        {studentChartData.map((item, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: COMPLAINT_COLORS[index % COMPLAINT_COLORS.length] }} />
-                                <span className="text-xs font-medium text-gray-700 truncate" title={item.name}>
-                                    {item.name}
-                                </span>
-                                <span className="text-xs text-gray-400 ml-auto">{item.value}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400 flex-1">
-                    <Users size={32} className="mb-2 text-gray-200" />
-                    <p className="text-sm">No organization data found</p>
-                </div>
-            )}
-        </div>
-    );
 
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
@@ -898,63 +832,11 @@ function DashboardOverview() {
                 </div>
 
 
-                {/* Hostel Overview + Quick Summary */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-                    {/* Organization Bar Chart */}
-                    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                            <div>
-                                <h2 className="text-sm font-bold text-primary">
-                                    Organization Overview
-                                </h2>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                    View student distribution across organizations.
-                                </p>
-                            </div>
-                            <Dropdown
-                                options={[
-                                    { value: "This Year", label: "This Year" },
-                                    { value: "Last Year", label: "Last Year" }
-                                ]}
-                                value={period}
-                                onChange={(val) => setPeriod(val)}
-                                minWidth="w-32"
-                                triggerClassName="px-3 py-1.5 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-xs text-[#777777] font-medium shadow-sm focus:border-[#0A437A] cursor-pointer"
-                            />
-                        </div>
-                        {studentChartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={240}>
-                                <BarChart
-                                    data={studentChartData}
-                                    barSize={18}
-                                    margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
-                                >
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                        stroke="#F0F1F3"
-                                        vertical={false}
-                                    />
-                                    <XAxis
-                                        dataKey="name"
-                                        tick={{ fontSize: 10, fill: "#8898AA" }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                    />
-                                    <YAxis
-                                        tick={{ fontSize: 10, fill: "#8898AA" }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                    />
-                                    <Tooltip cursor={{ fill: "#F0F4FF" }} />
-                                    <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-[240px] text-gray-400">
-                                <p className="text-sm">No data found in this date period</p>
-                            </div>
-                        )}
-                    </div>
+                {user?.role === ROLES.SUPER_ADMIN && (
+                    <div className="flex flex-col gap-4">
+                        {/* Hostel Overview + Quick Summary */}
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+                            {renderOrganizationOverview()}
 
                     {/* Quick Summary */}
                     <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
@@ -1086,76 +968,13 @@ function DashboardOverview() {
                         )}
                     </div>
 
-                    {/* Complaint Pie Chart */}
-                    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                        <h2 className="text-sm font-bold text-[#000000] mb-5">
-                            Complaint Summary
-                        </h2>
-                        {complaintData.length > 0 ? (
-                            <div className="flex flex-col items-center justify-center gap-6">
-                                <PieChart width={190} height={190}>
-                                    <Pie
-                                        data={complaintData}
-                                        cx={90}
-                                        cy={90}
-                                        innerRadius={58}
-                                        outerRadius={88}
-                                        dataKey="value"
-                                        startAngle={90}
-                                        endAngle={-270}
-                                        labelLine={false}
-                                    >
-                                        {complaintData.map((e, i) => (
-                                            <Cell key={i} fill={e.color} />
-                                        ))}
-                                    </Pie>
-                                    <text
-                                        x={90}
-                                        y={84}
-                                        textAnchor="middle"
-                                        fontSize={22}
-                                        fontWeight={700}
-                                        fill="#1A1F36"
-                                    >
-                                        {complaintTotal}
-                                    </text>
-                                    <text
-                                        x={90}
-                                        y={104}
-                                        textAnchor="middle"
-                                        fontSize={10}
-                                        fill="#000000"
-                                    >
-                                        Total Complaints
-                                    </text>
-                                </PieChart>
-
-                                <div className="flex flex-col gap-3 w-full max-w-[220px]">
-                                    {complaintData.map((item) => (
-                                        <div
-                                            key={item.name}
-                                            className="flex items-center gap-2.5 text-xs"
-                                        >
-                                            <div
-                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                                style={{ background: item.color }}
-                                            />
-                                            <span className="text-gray-600 w-24">{item.name}</span>
-                                            <span className="font-bold text-gray-900 w-8 text-right">
-                                                {item.value}%
-                                            </span>
-                                            <span className="text-gray-300">({item.count})</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                                <MessageSquare size={32} className="mb-2 text-gray-200" />
-                                <p className="text-sm">No data found in this date period</p>
-                            </div>
-                        )}
+                        {renderComplaintPieChart()}
                         </div>
+
+                        <div className="mt-4">
+                            {renderRecentActivities()}
+                        </div>
+                    </div>
                 )}
 
                 {user?.role === ROLES.ADMIN && (
