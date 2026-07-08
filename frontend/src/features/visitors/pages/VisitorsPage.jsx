@@ -14,6 +14,7 @@ import {
     approveVisitor,
     rejectVisitor
 } from '@/services/visitor.service';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const VisitorsPage = () => {
     const { user } = useAuthStore();
@@ -21,6 +22,10 @@ const VisitorsPage = () => {
     const [visitors, setVisitors] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
+
+    const debouncedSearch = useDebounce(searchQuery, 500);
 
     const role = user?.role || ROLES.SUPER_ADMIN;
 
@@ -37,9 +42,9 @@ const VisitorsPage = () => {
         try {
             setLoading(true);
             const params = {
-                search: searchQuery || undefined,
+                search: debouncedSearch || undefined,
                 status: statusFilter || undefined,
-                page: 1, // Add proper pagination state if needed
+                page,
                 limit: 10
             };
 
@@ -52,16 +57,20 @@ const VisitorsPage = () => {
                 res = await getAllVisitors(params);
             }
 
-            // Extract data array from the paginated response format expected
-            const visitorsData = res?.data || res?.visitors || [];
+            const visitorsData = res?.data || [];
+            
+            const totalItems = res?.total || visitorsData.length || 0;
+            const totalPages = res?.totalPages || Math.ceil(visitorsData.length / 10) || 1;
+            
             setVisitors(visitorsData);
+            setPagination({ totalPages, totalItems });
         } catch (error) {
             console.error("Failed to fetch visitors", error);
             showErrorToast('Failed to load visitors');
         } finally {
             setLoading(false);
         }
-    }, [isParent, isStudent, searchQuery, statusFilter]);
+    }, [isParent, isStudent, debouncedSearch, statusFilter, page]);
 
     useEffect(() => {
         fetchVisitors();
@@ -96,40 +105,27 @@ const VisitorsPage = () => {
                 />
             </div>
 
-            {/* Toggle Buttons for Status Filter */}
-            <div className="shrink-0 flex bg-gray-200/50 rounded-xl p-1 mb-6 w-fit border border-gray-200">
-                {['All', 'Pending', 'Approved', 'Rejected'].map(status => {
-                    const isActive = (statusFilter === status || (status === 'All' && !statusFilter));
-                    return (
-                        <button
-                            key={status}
-                            onClick={() => setStatusFilter(status === 'All' ? '' : status)}
-                            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${isActive
-                                    ? 'bg-white text-primary shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            {status}
-                        </button>
-                    );
-                })}
-            </div>
-
             {/* Table View */}
             <VisitorListTableView
                 visitors={visitors}
                 loading={loading}
                 searchQuery={searchQuery}
                 onSearch={setSearchQuery}
-                onFilterClick={() => { }} // Additional filters if needed
+                statusFilter={statusFilter}
+                onStatusFilterChange={(val) => {
+                    setStatusFilter(val);
+                    setPage(1);
+                }}
                 onExportClick={() => { }} // Export logic
-                hasActiveFilters={!!statusFilter}
                 canApproveReject={canApproveReject}
                 canExport={canExport}
                 canRegister={isParent}
                 onRegisterClick={() => setShowCheckInModal(true)}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                page={page}
+                setPage={setPage}
+                pagination={pagination}
             />
 
             <RegisterVisitorModal

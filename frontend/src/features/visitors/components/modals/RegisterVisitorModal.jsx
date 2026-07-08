@@ -29,7 +29,7 @@ const idProofOptions = [
 
 const RegisterVisitorModal = ({ isOpen, onClose, onSuccess }) => {
     const { user } = useAuthStore()
-    const { register, handleSubmit, control, formState: { errors }, reset } = useForm({
+    const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset } = useForm({
         resolver: zodResolver(registerSchema),
         defaultValues: {
             idProofType: 'Aadhaar'
@@ -69,7 +69,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess }) => {
                     <Button variant="outline" onClick={onClose} fullWidth={false} size='sm'>
                         Cancel
                     </Button>
-                    <Button type="submit" fullWidth={false} size='sm'>
+                    <Button type="submit" fullWidth={false} size='sm' isLoading={isSubmitting} disabled={isSubmitting}>
                         Register
                     </Button>
                 </>

@@ -3,21 +3,25 @@ import DataTable from '@/components/ui/DataTable';
 import { Filter, Download, Check, X, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
+import Dropdown from '@/components/ui/Dropdown';
 
 const VisitorListTableView = ({
     visitors,
     loading,
     searchQuery,
     onSearch,
-    onFilterClick,
-    onExportClick,
-    hasActiveFilters,
+    statusFilter,
+    onStatusFilterChange,
     canApproveReject,
     canExport,
-    canRegister,
+    onExportClick,
+    canRegister = false,
     onRegisterClick,
     onApprove,
-    onReject
+    onReject,
+    page,
+    setPage,
+    pagination
 }) => {
 
     const headers = useMemo(() => {
@@ -98,16 +102,19 @@ const VisitorListTableView = ({
                 searchPlaceholder="Search visitors..."
                 toolbarActions={
                     <>
-                        <Button
-                            variant={hasActiveFilters ? "primary" : "outline"}
-                            size="icon"
-                            fullWidth={false}
-                            onClick={onFilterClick}
-                            className="!p-3 shrink-0"
-                            title="Filter visitors"
-                        >
-                            <Filter className="w-4 h-4" />
-                        </Button>
+                        <Dropdown
+                            options={[
+                                { value: '', label: 'All Status' },
+                                { value: 'Pending', label: 'Pending' },
+                                { value: 'Approved', label: 'Approved' },
+                                { value: 'Rejected', label: 'Rejected' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => onStatusFilterChange(val)}
+                            placeholder="Filter Status"
+                            minWidth="min-w-[140px]"
+                            triggerClassName="px-3 py-2 text-sm bg-white border-gray-200 focus:border-secondary h-10"
+                        />
                         {canExport && (
                             <Button
                                 variant="outline"
@@ -135,6 +142,11 @@ const VisitorListTableView = ({
                 }
                 renderRow={renderRow}
                 emptyText="No visitors found."
+                page={page}
+                setPage={setPage}
+                limit={10}
+                totalPages={pagination?.totalPages || 1}
+                totalItems={pagination?.totalItems || 0}
             />
         </div>
     );
