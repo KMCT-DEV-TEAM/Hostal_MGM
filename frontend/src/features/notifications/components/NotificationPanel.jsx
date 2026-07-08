@@ -9,7 +9,7 @@ const NotificationPanel = ({ isOpen, onClose, notifications, loading, markAllAsR
     if (!isOpen) return null;
 
     return (
-        <div className="absolute -right-20 mt-10 w-sm bg-white rounded-2xl border border-gray-100 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="absolute -right-20 mt-10 w-sm bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center p-5 pb-3 mt-2 border-b border-gray-50 relative">
                 <div className="flex items-center gap-2 text-primary">
@@ -42,11 +42,11 @@ const NotificationPanel = ({ isOpen, onClose, notifications, loading, markAllAsR
                     <div className="p-8 text-center text-sm text-gray-500">No new notifications</div>
                 ) : (
                     <div className="px-3 py-2 flex flex-col gap-1">
-                        {notifications.map((item, index) => (
+                        {notifications.slice(0, 10).map((item, index, arr) => (
                             <React.Fragment key={item.id}>
-                                    <NotificationItem notification={item} onMarkAsRead={markAsRead} />
+                                <NotificationItem notification={item} onMarkAsRead={markAsRead} />
                                 {/* Divider between items, except the last one */}
-                                {index < notifications.length - 1 && (
+                                {index < arr.length - 1 && (
                                     <div className="h-px bg-gray-50 mx-2" />
                                 )}
                             </React.Fragment>

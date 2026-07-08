@@ -28,6 +28,8 @@ import OrganizationManagement from '@/features/dashboard/pages/OrganizationManag
 import Furniture from '@/features/furniture/pages/Furniture';
 import FurnitureDetails from '@/features/furniture/pages/FurnitureDetails';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
+import VisitorsPage from '@/features/visitors/pages/VisitorsPage';
+import VisitorHistoryPage from '@/features/visitors/pages/VisitorHistoryPage';
 
 export const dashboardRoutes = [
 
@@ -52,6 +54,28 @@ export const dashboardRoutes = [
             ROLES.PARENT
         ],
         element: NotificationsPage
+    },
+    {
+        path: 'visitors',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.PARENT,
+            ROLES.STUDENT
+        ],
+        element: VisitorsPage
+    },
+    {
+        path: 'visitors/history',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.PARENT,
+            ROLES.STUDENT
+        ],
+        element: VisitorHistoryPage
     },
 
     {

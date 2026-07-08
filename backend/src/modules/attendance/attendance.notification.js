@@ -7,7 +7,7 @@ export default {
                 type: "warning"
             },
             'push': {
-                title: "Daily Attendance Open 📍",
+                title: "Daily Attendance Open ",
                 body: "Don't forget! The attendance window is now open. Please mark yourself present."
             }
         },

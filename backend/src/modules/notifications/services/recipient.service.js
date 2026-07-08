@@ -8,7 +8,7 @@ import { userResolver, studentResolver, parentResolver } from './resolvers.js';
  * Never directly queries the database or handles Mongoose documents.
  */
 class RecipientService {
-    constructor() {}
+    constructor() { }
 
     /**
      * Resolves target queries into a MongoDB Cursor yielding standard DTOs.
@@ -29,18 +29,15 @@ class RecipientService {
                 return await studentResolver.resolve(filter);
             case 'PARENT':
                 return await parentResolver.resolve(filter);
-            
-            // Abstract target mappings
+
             case 'HOSTEL':
             case 'ROOM':
             case 'COURSE':
             case 'DEPARTMENT':
             case 'BATCH':
             case 'ORGANIZATION':
-                // Targeting these entities implies targeting the Students associated with them
                 return await studentResolver.resolve(filter);
             case 'ROLE':
-                // Targeting a Role implies targeting Users
                 return await userResolver.resolve(filter);
             default:
                 throw new Error(`Unsupported recipient type: ${target.type}`);
