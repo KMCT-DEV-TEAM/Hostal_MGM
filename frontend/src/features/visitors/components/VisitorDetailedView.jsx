@@ -3,26 +3,11 @@ import { Download, Filter } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import FilterModal from './modals/FilterModal';
-import CheckInModal from './modals/CheckInModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
 
-// const StatusBadge = ({ status }) => {
-//     const isInside = status.toLowerCase() === 'inside';
-//     const bgClass = isInside ? 'bg-success/10' : 'bg-primary/10';
-//     const textClass = isInside ? 'text-success' : 'text-primary';
-//     const borderClass = isInside ? 'border-success/30' : 'border-primary/30';
-
-//     return (
-//         <span className={`px-3 py-1.5 rounded-md text-xs border inline-flex items-center justify-center gap-1.5 min-w-[100px] ${bgClass} ${textClass} ${borderClass}`}>
-//             {status}
-//         </span>
-//     );
-// };
-
 const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [isCheckInOpen, setIsCheckInOpen] = useState(false);
     console.log('visitors from page;', visitors)
 
     const headers = [
@@ -92,10 +77,6 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
             <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex">
                 <Download className="w-4 h-4" /> Export
             </Button>
-
-            <Button size="sm" fullWidth={false} onClick={() => setIsCheckInOpen(true)}>
-                Check In
-            </Button>
         </div>
     );
 
@@ -115,12 +96,6 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
                 limit={10}
                 totalItems={visitors?.length}
                 totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
-            />
-
-            <CheckInModal
-                isOpen={isCheckInOpen}
-                onClose={() => setIsCheckInOpen(false)}
-                onSuccess={onRefresh}
             />
         </div>
     );

@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { getVisitorDetails } from '@/services/visitor.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import Button from '@/components/ui/Button';
+import CheckInModal from './CheckInModal';
 
 export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
     const [visitor, setVisitor] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isCheckInOpen, setIsCheckInOpen] = useState(false);
     const { user } = useAuthStore();
 
     useEffect(() => {
@@ -76,11 +79,22 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
         >
             <div className="mt-6 border-t border-gray-100 pt-6">
                 <div className="border border-gray-200/60 rounded-2xl p-6 md:p-8 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                    <div className="mb-4">
-                        <h3 className="text-[#0A437A] font-semibold text-sm mb-1.5">Visitor information</h3>
-                        <p className="text-[11px] text-gray-400">Basic Details about the Visitor</p>
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-primary font-semibold text-sm mb-1.5">Visitor information</h3>
+                            <p className="text-[11px] text-gray-400">Basic Details about the Visitor</p>
+                        </div>
+                        {visitor.status === 'Approved' && user?.role === 'warden' && (
+                            <Button
+                                size="sm"
+                                fullWidth={false}
+                                onClick={() => setIsCheckInOpen(true)}
+                            >
+                                Check In
+                            </Button>
+                        )}
                     </div>
-                    
+
                     <hr className="border-gray-100 mb-8" />
 
                     <div className="space-y-1">
@@ -93,6 +107,16 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
                     </div>
                 </div>
             </div>
+
+            <CheckInModal
+                isOpen={isCheckInOpen}
+                onClose={() => setIsCheckInOpen(false)}
+                onSuccess={() => {
+                    setIsCheckInOpen(false);
+                    onClose();
+                }}
+                prefilledVisitor={visitor}
+            />
         </Modal>
     );
 }
