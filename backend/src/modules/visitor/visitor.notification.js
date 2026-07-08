@@ -59,30 +59,30 @@ export default {
     VISIT_CHECKED_IN: {
         parent: {
             "in-app": {
-                title: 'Visitor Checked In',
-                message: '{{visitorName}} checked in to visit {{studentNames}}.'
+                title: '{{personType}} Checked In',
+                message: '{{personName}} checked in to visit {{studentName}}.\nPurpose: {{purpose}}'
             },
             push: {
-                title: 'Visitor Checked In',
-                body: '{{visitorName}} checked in to visit {{studentNames}}.'
+                title: '{{personType}} Checked In',
+                body: '{{personName}} checked in to visit {{studentName}}.\nPurpose: {{purpose}}'
             },
             email: {
-                subject: 'Visitor Checked In',
-                html: '<h1>Visitor Checked In</h1><p><strong>{{visitorName}}</strong> has checked into the hostel to visit <strong>{{studentNames}}</strong>.</p>'
+                subject: '{{personType}} Checked In',
+                html: '<h1>{{personType}} Checked In</h1><p><strong>{{personName}}</strong> has checked into the hostel to visit <strong>{{studentName}}</strong>.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Expected Exit:</strong> {{expectedExitTime}}</p>'
             }
         },
         student: {
             "in-app": {
-                title: 'Visitor Checked In',
-                message: '{{visitorName}} checked in to visit you.'
+                title: '{{personType}} Checked In',
+                message: '{{personName}} checked in to visit you.\nPurpose: {{purpose}}'
             },
             push: {
-                title: 'Visitor Checked In',
-                body: '{{visitorName}} checked in to visit you.'
+                title: '{{personType}} Checked In',
+                body: '{{personName}} checked in to visit you.\nPurpose: {{purpose}}'
             },
             email: {
-                subject: 'Visitor Checked In',
-                html: '<h1>Visitor Checked In</h1><p><strong>{{visitorName}}</strong> has checked into the hostel to visit you.</p>'
+                subject: '{{personType}} Checked In',
+                html: '<h1>{{personType}} Checked In</h1><p><strong>{{personName}}</strong> has checked into the hostel to visit you.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Expected Exit:</strong> {{expectedExitTime}}</p>'
             }
         }
     }

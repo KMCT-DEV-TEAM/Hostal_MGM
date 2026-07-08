@@ -270,13 +270,15 @@ export const getDashboardStats = async (role, context) => {
 };
 
 /**
- * Finds an active visit for a specific visitor
- * @param {String} visitorId 
+ * Finds an active visit for a specific visitor or parent
+ * @param {String} refId 
+ * @param {String} refType 
  * @returns {Promise<Object>}
  */
-export const findActiveVisit = async (visitorId) => {
+export const findActiveVisit = async (refId, refType) => {
     return await VisitorVisit.findOne({
-        visitorId,
+        'visitor.refId': refId,
+        'visitor.refType': refType,
         status: VISITOR_VISIT_STATUS.CHECKED_IN
     });
 };
@@ -357,18 +359,9 @@ export const getSuperAdminHostelVisitSummary = async (matchStage, skip, limit, s
                 }
             }
         },
-        // In case hostel search is applied via matchStage on hostelName, we need to sort after project.
-        // Actually matchStage runs before lookup, so search on hostelName won't work in matchStage!
-        // We'll move search to a separate match after lookup in the service layer if needed, or do it here.
-        // Wait, the specification said "search hostel". We'll do it post-lookup if needed.
     ];
 
-    // If there is a search filter for hostelName, it should be passed separately or injected after lookup
-    // For simplicity, we can inject a match on hostelName if provided in sortStage/matchStage.
-    // The service layer will just pass the pipeline stages if we want to be flexible.
-
-    // Instead of raw pipeline, let's allow the service to pass the full pipeline or we build it here.
-    return []; // We will rewrite this method to be cleaner below.
+    return [];
 };
 
 // Rewritten optimized version:
@@ -473,16 +466,52 @@ export const getSuperAdminHostelVisitSummaryAggregated = async (matchStage, sear
 export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, skip, limit) => {
     const pipeline = [
         { $match: matchStage },
-        // Lookup Visitor
+        // Extract refId safely to ensure $lookup can resolve it reliably
+        {
+            $addFields: {
+                tempVisitorRefId: "$visitor.refId",
+                tempVisitorRefType: "$visitor.refType"
+            }
+        },
+        // Lookup Visitor or Parent (Polymorphic)
         {
             $lookup: {
                 from: 'visitors',
-                localField: 'visitorId',
+                localField: 'tempVisitorRefId',
                 foreignField: '_id',
-                as: 'visitorInfo'
+                as: 'visitorDocs'
             }
         },
-        { $unwind: { path: '$visitorInfo', preserveNullAndEmptyArrays: true } },
+        {
+            $lookup: {
+                from: 'parents',
+                localField: 'tempVisitorRefId',
+                foreignField: '_id',
+                as: 'parentDocs'
+            }
+        },
+        { $unwind: { path: '$visitorDocs', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$parentDocs', preserveNullAndEmptyArrays: true } },
+        {
+            $addFields: {
+                visitorInfo: {
+                    name: {
+                        $cond: {
+                            if: { $eq: ['$tempVisitorRefType', 'Visitor'] },
+                            then: '$visitorDocs.name',
+                            else: '$parentDocs.parentName'
+                        }
+                    },
+                    phone: {
+                        $cond: {
+                            if: { $eq: ['$tempVisitorRefType', 'Visitor'] },
+                            then: '$visitorDocs.phone',
+                            else: '$parentDocs.phone'
+                        }
+                    }
+                }
+            }
+        },
         // Lookup Students
         {
             $lookup: {
@@ -558,7 +587,7 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
             data: [
                 { $skip: skip },
                 { $limit: limit },
-                { $project: { visitorPhone: 0 } } // Remove phone from final output as per requirements
+                { $project: { visitorPhone: 0 } }
             ]
         }
     });
@@ -579,8 +608,8 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
 export const getVisitDetailsById = async (visitId) => {
     return await VisitorVisit.findById(visitId)
         .populate({
-            path: 'visitorId',
-            select: 'name phone relationship address idProofType idProofNumber'
+            path: 'visitor.refId',
+            select: 'name parentName phone relationship address idProofType idProofNumber email'
         })
         .populate({
             path: 'students',

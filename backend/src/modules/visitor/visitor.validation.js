@@ -203,15 +203,44 @@ export const validateRejectVisitor = (req, res, next) => {
 };
 
 export const validateCheckInVisitor = (req, res, next) => {
-    const { visitorId } = req.body;
+    const { visitor, purpose, durationMinutes, studentId, students, hostelId, organizationId } = req.body;
 
-    if (!visitorId || !isValidObjectId(visitorId)) {
+    if (studentId || students || hostelId || organizationId) {
         return res.status(400).json({
             success: false,
-            message: "A valid visitorId is required."
+            message: "studentId, students, hostelId, and organizationId are not allowed in the request body."
         });
     }
 
+    if (!visitor || !visitor.refId || !isValidObjectId(visitor.refId)) {
+        return res.status(400).json({
+            success: false,
+            message: "A valid visitor.refId is required."
+        });
+    }
+
+    if (!visitor.refType || !['Parent', 'Visitor'].includes(visitor.refType)) {
+        return res.status(400).json({
+            success: false,
+            message: "visitor.refType must be 'Parent' or 'Visitor'."
+        });
+    }
+
+    if (!purpose || typeof purpose !== 'string' || purpose.trim().length < 3 || purpose.trim().length > 255) {
+        return res.status(400).json({
+            success: false,
+            message: "Visiting purpose is required and must be between 3 and 255 characters."
+        });
+    }
+
+    if (!durationMinutes || typeof durationMinutes !== 'number' || durationMinutes <= 0) {
+        return res.status(400).json({
+            success: false,
+            message: "A valid durationMinutes is required and must be greater than 0."
+        });
+    }
+
+    req.body.purpose = purpose.trim();
     next();
 };
 
@@ -224,7 +253,7 @@ export const validateSuperAdminHostelVisits = (req, res, next) => {
     if (limit && (isNaN(Number(limit)) || Number(limit) < 1 || Number(limit) > 100)) {
         return res.status(400).json({ success: false, message: "Invalid limit parameter (must be 1-100)." });
     }
-    
+
     // search is string, no validation needed
 
     next();

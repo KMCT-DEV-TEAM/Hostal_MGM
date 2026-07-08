@@ -24,8 +24,8 @@ export const createVisitor = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while registering the visitor." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while registering the visitor."
             : error.message;
 
         console.error('[VisitorController] createVisitor error:', error);
@@ -54,8 +54,8 @@ export const listVisitors = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching visitors." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching visitors."
             : error.message;
 
         console.error('[VisitorController] listVisitors error:', error);
@@ -91,8 +91,8 @@ export const listParentVisitors = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching parent visitors." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching parent visitors."
             : error.message;
 
         console.error('[VisitorController] listParentVisitors error:', error);
@@ -128,8 +128,8 @@ export const listStudentVisitors = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching student visitors." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching student visitors."
             : error.message;
 
         console.error('[VisitorController] listStudentVisitors error:', error);
@@ -160,8 +160,8 @@ export const getVisitorDetails = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching visitor details." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching visitor details."
             : error.message;
 
         console.error('[VisitorController] getVisitorDetails error:', error);
@@ -192,8 +192,8 @@ export const approveVisitor = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while approving the visitor." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while approving the visitor."
             : error.message;
 
         console.error('[VisitorController] approveVisitor error:', error);
@@ -225,8 +225,8 @@ export const rejectVisitor = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while rejecting the visitor." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while rejecting the visitor."
             : error.message;
 
         console.error('[VisitorController] rejectVisitor error:', error);
@@ -262,8 +262,8 @@ export const getVisitorDashboardSummary = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching dashboard summary." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching dashboard summary."
             : error.message;
 
         console.error('[VisitorController] getVisitorDashboardSummary error:', error);
@@ -299,8 +299,8 @@ export const checkInVisitor = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while checking in the visitor." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while checking in the visitor."
             : error.message;
 
         console.error('[VisitorController] checkInVisitor error:', error);
@@ -336,8 +336,8 @@ export const getSuperAdminHostelVisits = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching hostel visits." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching hostel visits."
             : error.message;
 
         console.error('[VisitorController] getSuperAdminHostelVisits error:', error);
@@ -363,7 +363,7 @@ export const listVisitorVisits = async (req, res) => {
         }
 
         const result = await visitorService.listVisitorVisits(req.query, req.user);
-
+        console.log(req.user)
         return res.status(200).json({
             success: true,
             message: "Visits fetched successfully.",
@@ -373,8 +373,8 @@ export const listVisitorVisits = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching visits." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching visits."
             : error.message;
 
         console.error('[VisitorController] listVisitorVisits error:', error);
@@ -411,8 +411,8 @@ export const getVisitDetails = async (req, res) => {
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status 
-            ? "An internal server error occurred while fetching visit details." 
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching visit details."
             : error.message;
 
         console.error('[VisitorController] getVisitDetails error:', error);
