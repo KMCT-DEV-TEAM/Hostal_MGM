@@ -8,7 +8,8 @@ import {
   getStudentCountByOrganization, 
   getAdminStats,
   getStudentDashboardStats,
-  getParentDashboardStats
+  getParentDashboardStats,
+  getAttendanceOverview
 } from "./dashboard.controller.js";
 import { getDashboardStats } from "./dashboard.services.js";
 
@@ -25,6 +26,13 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin"),
   getStudentCountByOrganization
+);
+
+router.get(
+  "/attendance-overview",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  getAttendanceOverview
 );
 
 router.get(

@@ -113,23 +113,29 @@ export default function MaintenanceStaffDashboardOverview() {
                         <h2 className="text-base font-bold text-gray-900 mb-4">Task Overview</h2>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-10 flex-1">
                             <div className="relative w-[220px] h-[220px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={activePieData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={75}
-                                            outerRadius={105}
-                                            dataKey="value"
-                                            stroke="none"
-                                        >
-                                            {activePieData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                {activePieData.length > 0 && activePieData[0].name !== 'No Tasks' ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={activePieData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={75}
+                                                outerRadius={105}
+                                                dataKey="value"
+                                                stroke="none"
+                                            >
+                                                {activePieData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 rounded-full">
+                                        <p className="text-sm text-gray-400 text-center px-4">No data found in this date period</p>
+                                    </div>
+                                )}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                     <span className="text-3xl font-bold text-gray-900">{total}</span>
                                     <span className="text-xs text-gray-500 font-medium">Total Tasks</span>
