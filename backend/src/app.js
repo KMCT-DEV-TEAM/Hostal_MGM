@@ -95,11 +95,13 @@ app.use("/api/warden/parents", parentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/push", pushRoutes);
 // ---studenbts routes ---
+app.use("/api/student/dashboard", dashboardRoutes);
 app.use("/api/student/passes", studentPassRouter);
 app.use("/api/student/attendance", studentAttendanceRouter);
 
 
 // ---parents routes -------
+app.use("/api/parent/dashboard", dashboardRoutes);
 app.use("/api/parent/passes", parentPassRouter);
 app.use("/api/parent/attendance", parentAttendanceRouter);
 

@@ -101,9 +101,25 @@ const quickSummary = [
     },
 ];
 
+import ParentDashboard from './ParentDashboard';
+import StudentDashboard from './StudentDashboard';
+import AdminDashboard from './AdminDashboard';
+
 function DashboardOverview() {
     const { t } = useTranslation();
     const { user } = useAuthStore();
+
+    if (user?.role === ROLES.PARENT) {
+        return <ParentDashboard />;
+    }
+    
+    if (user?.role === ROLES.STUDENT) {
+        return <StudentDashboard />;
+    }
+
+    if (user?.role === ROLES.ADMIN) {
+        return <AdminDashboard />;
+    }
     const [period, setPeriod] = useState("This Year");
     const [recentActivities, setRecentActivities] = useState([]);
     const [complaintData, setComplaintData] = useState([]);
@@ -150,7 +166,10 @@ function DashboardOverview() {
                         students: stats?.students || 0,
                         parents: stats?.parents || 0,
                         pendingComplaints: stats?.pendingComplaints || 0,
-                        leaveRequests: stats?.leaveRequests || 0
+                        leaveRequests: stats?.leaveRequests || 0,
+                        wardenLastMonthCount: stats?.wardenLastMonthCount || 0,
+                        studentLastMonthCount: stats?.studentLastMonthCount || 0,
+                        parentLastMonthCount: stats?.parentLastMonthCount || 0
                     }));
                 } else if (user?.role === ROLES.WARDEN) {
                     const { data: stats } = await wardenService.getWardenDashboardStats();
@@ -252,23 +271,23 @@ function DashboardOverview() {
         if (user?.role === ROLES.ADMIN) {
             return [
                 {
-                    label: "Total Students", value: dashboardStats.students, sub: "+45 This month",
+                    label: "Total Students", value: dashboardStats.students, sub: `+${dashboardStats.studentLastMonthCount || 0} This month`,
                     icon: <GraduationCap size={18} className="text-[#446015]" />, iconBg: "bg-green-50"
                 },
                 {
-                    label: "Total Wardens", value: dashboardStats.wardens, sub: "+4 Added this month",
+                    label: "Total Wardens", value: dashboardStats.wardens, sub: `+${dashboardStats.wardenLastMonthCount || 0} Added this month`,
                     icon: <Users size={18} className="text-[#9747FF]" />, iconBg: "bg-violet-50"
                 },
                 {
-                    label: "Total Parents", value: dashboardStats.parents, sub: "+10 Added this month",
+                    label: "Total Parents", value: dashboardStats.parents, sub: `+${dashboardStats.parentLastMonthCount || 0} Added this month`,
                     icon: <Users size={18} className="text-[#2D7CC3]" />, iconBg: "bg-blue-50"
                 },
                 {
-                    label: "Pending Complaints", value: dashboardStats.pendingComplaints, sub: "5 High Priority",
+                    label: "Pending Complaints", value: dashboardStats.pendingComplaints, sub: "Requires attention",
                     icon: <AlertTriangle size={18} className="text-[#F59E0B]" />, iconBg: "bg-[#FFF4E5]"
                 },
                 {
-                    label: "Total Leave Requests", value: dashboardStats.leaveRequests, sub: "12 Pending",
+                    label: "Total Leave Requests", value: dashboardStats.leaveRequests, sub: "Awaiting approval",
                     icon: <MessageSquare size={18} className="text-[#2D7CC3]" />, iconBg: "bg-[#EAF3FF]"
                 }
             ];
