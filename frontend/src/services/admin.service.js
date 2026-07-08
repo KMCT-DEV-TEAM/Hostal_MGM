@@ -81,8 +81,13 @@ export async function getSuperAdminDashboardStats() {
 /**
  * Fetch Student count by Organization for Super Admin chart
  */
-export async function getStudentCountByOrganization() {
-  const response = await adminApi.getStudentCountByOrganization();
+export async function getStudentCountByOrganization(params) {
+  const response = await adminApi.getStudentCountByOrganization(params);
+  return response.data;
+}
+
+export async function getAttendanceOverview(params) {
+  const response = await adminApi.getAttendanceOverview(params);
   return response.data;
 }
 
@@ -97,6 +102,7 @@ const adminService = {
   getDashboardStats,
   getSuperAdminDashboardStats,
   getStudentCountByOrganization,
+  getAttendanceOverview,
 };
 
 export default adminService;

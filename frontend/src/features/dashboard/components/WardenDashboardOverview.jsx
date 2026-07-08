@@ -156,7 +156,7 @@ export default function WardenDashboardOverview({ user }) {
     const peakDay = validValues.length > 0 ? Math.max(...validValues) : 0;
     const lowest = validValues.length > 0 ? Math.min(...validValues) : 0;
 
-    const COMPLAINT_COLORS = ["#0A467F", "#9D77CE", "#F8BA52", "#55CDA6", "#A6A6A6"];
+    const COMPLAINT_COLORS = ["#0A467F", "#9D77CE", "#F8BA52", "#55CDA6", "#A6A6A6", "#FF6B6B"];
     const defaultComplaintSummary = [
         { name: 'Maintainance', count: 499, value: 40, color: COMPLAINT_COLORS[0] },
         { name: 'Mess / Food', count: 312, value: 25, color: COMPLAINT_COLORS[1] },
@@ -246,7 +246,7 @@ export default function WardenDashboardOverview({ user }) {
                         return (
                             <div
                                 key={c.label}
-                                className={`bg-white rounded-xl p-5 border border-gray-100 border-t-2 ${borderColors[index]}`}
+                                className={`bg-white rounded-xl p-5 border border-gray-100 border-t-2 ${borderColors[index]} ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`}
                             >
                                 <div className="flex justify-between items-start">
                                     <span className="text-xs text-gray-500 font-medium leading-tight uppercase tracking-wider">
@@ -273,8 +273,8 @@ export default function WardenDashboardOverview({ user }) {
                 {/* Middle Row (Attendance Area Chart + Quick Summary) */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
                     {/* Attendance Area Chart */}
-                    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                        <div className="flex justify-between items-start mb-6">
+                    <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
                                 <h2 className="text-[20px] font-bold text-black">
                                     Attendance Overview
@@ -296,71 +296,77 @@ export default function WardenDashboardOverview({ user }) {
                             </div>
                         </div>
                         
-                        <div className="flex gap-3 mb-8">
-                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                        <div className="flex flex-wrap gap-3 mb-8">
+                            <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
                                 <div className="text-[#2D7CC3] font-bold text-sm">{avgRate}%</div>
                                 <div className="text-xs text-[#8F8F8F] mt-1">Avg Rate</div>
                             </div>
-                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                            <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
                                 <div className="text-[#0F6E56] font-bold text-sm">{peakDay}%</div>
                                 <div className="text-xs text-[#8F8F8F] mt-1">Peak Day</div>
                             </div>
-                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                            <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
                                 <div className="text-[#EF4444] font-bold text-sm">{lowest}%</div>
                                 <div className="text-xs text-[#8F8F8F] mt-1">Lowest</div>
                             </div>
                         </div>
 
-                        <div className="h-[220px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart
-                                    data={currentChartData}
-                                    margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-                                >
-                                    <defs>
-                                        <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#0A467F" stopOpacity={0.15} />
-                                            <stop offset="95%" stopColor="#0A467F" stopOpacity={0.02} />
-                                        </linearGradient>
-                                    </defs>
+                        <div className="h-[220px] w-full min-w-0">
+                            {currentChartData.some(d => d.value > 0) ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart
+                                        data={currentChartData}
+                                        margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                                    >
+                                        <defs>
+                                            <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#0A467F" stopOpacity={0.15} />
+                                                <stop offset="95%" stopColor="#0A467F" stopOpacity={0.02} />
+                                            </linearGradient>
+                                        </defs>
 
-                                    <CartesianGrid
-                                        vertical={false}
-                                        stroke="#EEF1F4"
-                                    />
+                                        <CartesianGrid
+                                            vertical={false}
+                                            stroke="#EEF1F4"
+                                        />
 
-                                    <XAxis
-                                        dataKey="name"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                                    />
+                                        <XAxis
+                                            dataKey="name"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                                        />
 
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        domain={[0, 100]}
-                                        ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
-                                        tickFormatter={(v) => `${v}%`}
-                                        tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                                    />
+                                        <YAxis
+                                            axisLine={false}
+                                            tickLine={false}
+                                            domain={[0, 100]}
+                                            ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                                            tickFormatter={(v) => `${v}%`}
+                                            tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                                        />
 
-                                    <RechartsTooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+                                        <RechartsTooltip formatter={(value) => [`${value}%`, "Attendance"]} />
 
-                                    <Area
-                                        type="monotone"
-                                        dataKey="value"
-                                        stroke="#0A467F"
-                                        strokeWidth={3}
-                                        fill="url(#attendanceGradient)"
-                                        dot={false}
-                                        activeDot={{
-                                            r: 5,
-                                            fill: "#0A467F",
-                                        }}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                                        <Area
+                                            type="monotone"
+                                            dataKey="value"
+                                            stroke="#0A467F"
+                                            strokeWidth={3}
+                                            fill="url(#attendanceGradient)"
+                                            dot={false}
+                                            activeDot={{
+                                                r: 5,
+                                                fill: "#0A467F",
+                                            }}
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                    <p className="text-sm">No data found in this date period</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -457,7 +463,7 @@ export default function WardenDashboardOverview({ user }) {
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                                 <MessageSquare size={32} className="mb-2 text-gray-200" />
-                                <p className="text-sm">No complaints found</p>
+                                <p className="text-sm">No data found in this date period</p>
                             </div>
                         )}
                     </div>
