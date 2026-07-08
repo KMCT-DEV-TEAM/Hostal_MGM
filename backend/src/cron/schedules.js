@@ -4,5 +4,5 @@ export const CRON = {
   // Run every 15 minutes to check for unreturned passes
   PASS_RETURN_CHECK: "*/5 * * * *",
   // Run every 15 minutes to check for expired visitor visits
-  VISIT_AUTO_COMPLETE: "* * * * *"
+  VISIT_AUTO_COMPLETE: "*/15 * * * *"
 };

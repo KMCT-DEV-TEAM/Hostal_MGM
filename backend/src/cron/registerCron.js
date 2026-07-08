@@ -9,14 +9,14 @@ import cron from "node-cron";
  */
 export const registerCron = (jobName, schedule, handler) => {
   cron.schedule(schedule, async () => {
-    console.log(`[CRON] ${jobName} - Started`);
+    // console.log(`[CRON] ${jobName} - Started`);
     const startTime = process.hrtime();
-    
+
     try {
       await handler();
       const endTime = process.hrtime(startTime);
       const durationInSeconds = (endTime[0] + endTime[1] / 1e9).toFixed(3);
-      console.log(`[CRON] ${jobName} - Completed`);
+      // console.log(`[CRON] ${jobName} - Completed`);
       console.log(`[CRON] ${jobName} - Execution Time: ${durationInSeconds} sec`);
     } catch (error) {
       const endTime = process.hrtime(startTime);
