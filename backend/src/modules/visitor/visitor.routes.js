@@ -11,7 +11,8 @@ import {
     validateCheckInVisitor,
     validateSuperAdminHostelVisits,
     validateListVisits,
-    validateGetVisitDetails
+    validateGetVisitDetails,
+    validateUpdateVisitor
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -72,6 +73,15 @@ router.get(
     validateEndUserListVisitors,
     visitorController.listParentVisitors
 );
+
+router.patch(
+    '/parent/visitors/:visitorId',
+    authMiddleware,
+    roleMiddleware('parent'),
+    validateUpdateVisitor,
+    visitorController.updateVisitor
+);
+
 
 router.get(
     '/student/visitors',

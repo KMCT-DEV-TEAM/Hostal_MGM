@@ -200,6 +200,7 @@ export const listVisitors = async (query, user) => {
     const { hostel, organization, date } = query;
     const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
 
+
     // 1. Role-Based Filters
     let targetHostelId = null;
     if (user.role === 'super_admin') {
@@ -744,8 +745,8 @@ export const getDashboardSummary = async (user) => {
  * @param {Object} wardenUser 
  */
 export const checkInVisitor = async (payload, wardenUser) => {
-    const { visitorId } = payload;
-    const DEFAULT_VISIT_DURATION_MINUTES = 120; // Default to 2 hours if no settings exist
+    const { visitor, purpose, durationMinutes } = payload;
+
     // 1. Role Verification (Redundant safety check)
     if (wardenUser.role !== 'warden') {
         const error = new Error('Unauthorized: Only wardens can check-in visitors.');
@@ -753,35 +754,75 @@ export const checkInVisitor = async (payload, wardenUser) => {
         throw error;
     }
 
-    // 2. Visitor Validation
-    const visitor = await visitorRepository.findVisitorById(visitorId);
-    if (!visitor) {
-        const error = new Error('Visitor not found.');
-        error.status = 404;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.PENDING) {
-        const error = new Error('Visitor is pending approval.');
-        error.status = 400;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.REJECTED) {
-        const error = new Error('Visitor is rejected.');
-        error.status = 400;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.INACTIVE) {
-        const error = new Error('Visitor profile is inactive.');
+    // 2. Resolve Person (Parent or Visitor)
+    let resolvedPerson = null;
+    let studentIds = [];
+    let organizationId = null;
+    let personName = '';
+
+    if (visitor.refType === 'Parent') {
+        const Parent = mongoose.model('Parent');
+        resolvedPerson = await Parent.findById(visitor.refId);
+        if (!resolvedPerson) {
+            const error = new Error('Parent not found.');
+            error.status = 404;
+            throw error;
+        }
+        if (!resolvedPerson.isActive) {
+            const error = new Error('Parent profile is inactive.');
+            error.status = 400;
+            throw error;
+        }
+        if (!resolvedPerson.isVerified) {
+            const error = new Error('Parent profile is not verified.');
+            error.status = 400;
+            throw error;
+        }
+        studentIds = [resolvedPerson.studentId];
+        personName = resolvedPerson.parentName;
+    } else if (visitor.refType === 'Visitor') {
+        const Visitor = mongoose.model('Visitor');
+        resolvedPerson = await Visitor.findById(visitor.refId);
+        if (!resolvedPerson) {
+            const error = new Error('Visitor not found.');
+            error.status = 404;
+            throw error;
+        }
+        if (resolvedPerson.approvalStatus === VISITOR_STATUS.PENDING) {
+            const error = new Error('Visitor is pending approval.');
+            error.status = 400;
+            throw error;
+        }
+        if (resolvedPerson.approvalStatus === VISITOR_STATUS.REJECTED) {
+            const error = new Error('Visitor is rejected.');
+            error.status = 400;
+            throw error;
+        }
+        if (resolvedPerson.approvalStatus === VISITOR_STATUS.INACTIVE) {
+            const error = new Error('Visitor profile is inactive.');
+            error.status = 400;
+            throw error;
+        }
+        studentIds = resolvedPerson.students;
+        organizationId = resolvedPerson.organizationId;
+        personName = resolvedPerson.name;
+    } else {
+        const error = new Error('Invalid visitor refType.');
         error.status = 400;
         throw error;
     }
 
     // 3. Student & Hostel Validation
-    const students = await Student.find({ _id: { $in: visitor.students } });
+    const Student = mongoose.model('Student');
+    const students = await Student.find({ _id: { $in: studentIds } });
     if (students.length === 0) {
-        const error = new Error('No students linked to this visitor.');
+        const error = new Error('No students linked to this person.');
         error.status = 400;
         throw error;
+    }
+
+    if (!organizationId) {
+        organizationId = students[0].organization; // Wait, Student model organization field is 'organization'
     }
 
     const targetHostelId = students[0].hostelId;
@@ -791,7 +832,6 @@ export const checkInVisitor = async (payload, wardenUser) => {
         throw error;
     }
 
-    // Dynamic import to avoid circular dependencies or simply use mongoose.model
     const Hostel = mongoose.model('Hostel');
     const targetHostel = await Hostel.findById(targetHostelId);
     if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
@@ -819,22 +859,26 @@ export const checkInVisitor = async (payload, wardenUser) => {
     }
 
     // 4. Duplicate Visit Check
-    const activeVisit = await visitorRepository.findActiveVisit(visitorId);
+    const activeVisit = await visitorRepository.findActiveVisit(visitor.refId, visitor.refType);
     if (activeVisit) {
-        const error = new Error('Visitor is already checked in.');
+        const error = new Error(`${visitor.refType} is already checked in.`);
         error.status = 409;
         throw error;
     }
 
     // 5. Construct Visit Data
     const now = new Date();
-    const expectedExitTime = new Date(now.getTime() + DEFAULT_VISIT_DURATION_MINUTES * 60000);
+    const expectedExitTime = new Date(now.getTime() + durationMinutes * 60000);
 
     const visitData = {
-        organizationId: visitor.organizationId,
+        organizationId: organizationId,
         hostelId: targetHostelId,
-        visitorId: visitor._id,
-        students: visitor.students, // Saving students snapshot as requested
+        visitor: {
+            refId: visitor.refId,
+            refType: visitor.refType
+        },
+        students: studentIds, // array of ObjectIds
+        purpose: purpose,
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         checkInTime: now,
         expectedExitTime: expectedExitTime,
@@ -853,26 +897,38 @@ export const checkInVisitor = async (payload, wardenUser) => {
     try {
         const studentNames = students.map(s => s.name).join(', ');
 
+        const notificationData = {
+            personName: personName,
+            personType: visitor.refType,
+            studentName: studentNames,
+            purpose: purpose,
+            checkInTime: now.toISOString(),
+            expectedExitTime: expectedExitTime.toISOString()
+        };
+
+        const notificationSender = {
+            id: wardenUser.id,
+            model: 'User',
+            snapshot: {
+                name: wardenUser.name,
+                role: wardenUser.role
+            }
+        };
+
+        // Notify parents linked to the student
+        const parentExcludeIds = visitor.refType === 'Parent' ? [visitor.refId.toString()] : [];
+
         await orchestratorService.triggerNotification({
             eventName: 'VISIT_CHECKED_IN',
             target: {
                 type: 'PARENT',
                 filter: {
-                    studentIds: visitor.students.map(id => id.toString())
+                    studentIds: studentIds.map(id => id.toString()),
+                    excludeIds: parentExcludeIds
                 }
             },
-            data: {
-                visitorName: visitor.name,
-                studentNames: studentNames
-            },
-            sender: {
-                id: wardenUser.id,
-                model: 'User',
-                snapshot: {
-                    name: wardenUser.name,
-                    role: wardenUser.role
-                }
-            }
+            data: notificationData,
+            sender: notificationSender
         });
 
         // Also notify students
@@ -882,21 +938,11 @@ export const checkInVisitor = async (payload, wardenUser) => {
                 type: 'USER',
                 filter: {
                     role: 'student',
-                    userIds: visitor.students.map(id => id.toString())
+                    userIds: studentIds.map(id => id.toString())
                 }
             },
-            data: {
-                visitorName: visitor.name,
-                studentNames: studentNames
-            },
-            sender: {
-                id: wardenUser.id,
-                model: 'User',
-                snapshot: {
-                    name: wardenUser.name,
-                    role: wardenUser.role
-                }
-            }
+            data: notificationData,
+            sender: notificationSender
         });
     } catch (notificationError) {
         console.error('[VisitorService] Failed to publish VISIT_CHECKED_IN event:', notificationError);
@@ -905,10 +951,12 @@ export const checkInVisitor = async (payload, wardenUser) => {
     // 8. Return Response DTO
     return {
         visitId: newVisit._id,
-        visitorName: visitor.name,
-        studentNames: students.map(s => s.name).join(', '),
-        checkInAt: newVisit.checkInTime,
-        expectedCheckOutAt: newVisit.expectedExitTime,
+        personName: personName,
+        personType: visitor.refType,
+        studentName: students.map(s => s.name).join(', '),
+        purpose: newVisit.purpose,
+        checkInTime: newVisit.checkInTime,
+        expectedExitTime: newVisit.expectedExitTime,
         status: newVisit.status
     };
 };
@@ -973,7 +1021,6 @@ export const listVisitorVisits = async (query, user) => {
         matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
         if (hostel) targetHostelId = hostel;
     } else if (user.role === 'warden') {
-        matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
         const Hostel = mongoose.model('Hostel');
         const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
         if (!wardenHostel) {
@@ -991,6 +1038,7 @@ export const listVisitorVisits = async (query, user) => {
     if (targetHostelId) {
         matchStage.hostelId = new mongoose.Types.ObjectId(targetHostelId);
     }
+
 
     if (status) {
         matchStage.status = status;
@@ -1188,3 +1236,214 @@ export const getVisitDetails = async (visitId, user) => {
         timeline: formattedTimeline
     };
 };
+
+/**
+ * Automatically completes expired visits.
+ * Meant to be called by a background cron job.
+ * @returns {Promise<{processedCount: number, failedCount: number}>}
+ */
+export const autoCompleteExpiredVisits = async () => {
+    let processedCount = 0;
+    let failedCount = 0;
+    const BATCH_SIZE = 50;
+
+    try {
+        const expiredVisits = await visitorRepository.getExpiredVisits(BATCH_SIZE);
+        
+        if (expiredVisits.length === 0) {
+            return { processedCount, failedCount };
+        }
+
+        console.log(`[VisitorService] Found ${expiredVisits.length} expired visits. Processing...`);
+
+        for (const visit of expiredVisits) {
+            try {
+                // Ensure idempotent processing by re-verifying status before updating if needed,
+                // but repository query already ensures they are 'Checked In'.
+                
+                const completionTime = new Date();
+                const updatedVisit = await visitorRepository.autoCompleteVisit(visit._id, completionTime);
+
+                if (!updatedVisit) {
+                    console.warn(`[VisitorService] Visit ${visit._id} could not be updated.`);
+                    failedCount++;
+                    continue;
+                }
+
+                // Gather data for notifications
+                const personName = visit.visitor?.refId?.name || visit.visitor?.refId?.parentName || 'Visitor';
+                const studentNames = visit.students?.map(s => s.name).join(', ') || 'Student';
+                const studentIds = visit.students?.map(s => s._id.toString()) || [];
+
+                const notificationData = {
+                    personName,
+                    studentName: studentNames,
+                    purpose: updatedVisit.purpose || 'Visit',
+                    checkInTime: updatedVisit.checkInTime,
+                    checkOutTime: updatedVisit.checkOutTime
+                };
+
+                const notificationSender = {
+                    id: visit.organizationId,
+                    type: 'organization'
+                };
+
+                // Notify parent/visitor
+                if (visit.visitor?.refType === 'Parent') {
+                    await orchestratorService.triggerNotification({
+                        eventName: 'VISIT_AUTO_CHECKED_OUT',
+                        target: {
+                            type: 'USER',
+                            filter: { role: 'parent', userIds: [visit.visitor.refId._id.toString()] }
+                        },
+                        data: notificationData,
+                        sender: notificationSender
+                    });
+                } else if (visit.visitor?.refType === 'Visitor') {
+                    // Assuming we notify linked parents if it's a general visitor
+                    await orchestratorService.triggerNotification({
+                        eventName: 'VISIT_AUTO_CHECKED_OUT',
+                        target: {
+                            type: 'USER',
+                            filter: { role: 'parent', studentIds: studentIds }
+                        },
+                        data: notificationData,
+                        sender: notificationSender
+                    });
+                }
+
+                // Notify students
+                await orchestratorService.triggerNotification({
+                    eventName: 'VISIT_AUTO_CHECKED_OUT',
+                    target: {
+                        type: 'USER',
+                        filter: { role: 'student', userIds: studentIds }
+                    },
+                    data: notificationData,
+                    sender: notificationSender
+                });
+
+                processedCount++;
+            } catch (err) {
+                console.error(`[VisitorService] Failed to auto-complete visit ${visit._id}:`, err);
+                failedCount++;
+            }
+        }
+    } catch (error) {
+        console.error(`[VisitorService] Error in autoCompleteExpiredVisits:`, error);
+        throw error;
+    }
+
+    return { processedCount, failedCount };
+};
+
+/**
+ * Parent updates a visitor profile
+ * @param {String} visitorId 
+ * @param {Object} payload 
+ * @param {Object} user 
+ */
+export const updateVisitorProfile = async (visitorId, payload, user) => {
+    // 1. Fetch Visitor
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        throw Object.assign(new Error('Visitor not found.'), { status: 404 });
+    }
+
+    // 2. Validate Ownership
+    const currentParent = await Parent.findById(user.id);
+    if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+    if (!currentParent.isActive) throw Object.assign(new Error('Parent is inactive.'), { status: 403 });
+
+    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+    const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+    const visitorStudentIds = visitor.students.map(id => id.toString());
+
+    let isCreator = false;
+    if (visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
+        const creationEvent = visitor.approvalTimeline.find(t => t.action === VISITOR_APPROVAL_ACTIONS.CREATED);
+        if (creationEvent && creationEvent.performedBy && creationEvent.performedBy.toString() === user.id) {
+            isCreator = true;
+        }
+    }
+
+    const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
+    if (!hasOverlap && !isCreator) {
+        throw Object.assign(new Error('Unauthorized: You can only update your own visitors.'), { status: 403 });
+    }
+
+    // 3. Filter allowed fields and check for changes
+    const allowedFields = [
+        'name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'
+    ];
+    
+    const updateData = {};
+    const updatedFieldsList = [];
+    for (const key of Object.keys(payload)) {
+        if (allowedFields.includes(key) && payload[key] !== undefined) {
+            if (visitor[key] !== payload[key]) {
+                updateData[key] = payload[key];
+                updatedFieldsList.push(key);
+            }
+        }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+        return {
+            visitorId: visitor._id,
+            name: visitor.name,
+            phone: visitor.phone,
+            email: visitor.email,
+            address: visitor.address,
+            photoUrl: visitor.photoUrl,
+            updatedAt: visitor.updatedAt
+        };
+    }
+
+    // 4. Update
+    const updatedVisitor = await visitorRepository.updateVisitor(visitorId, updateData);
+
+    // 5. Notify
+    try {
+        const students = await Student.find({ _id: { $in: visitor.students } }, 'name hostelId');
+        const studentNames = students.map(s => s.name).join(', ');
+        const hostelId = students.length > 0 ? students[0].hostelId : null;
+
+        await orchestratorService.triggerNotification({
+            eventName: 'VISITOR_UPDATED',
+            target: {
+                type: 'USER',
+                filter: {
+                    hostelId: hostelId,
+                    organizationId: visitor.organizationId.toString()
+                }
+            },
+            data: {
+                visitorName: visitor.name,
+                updatedFields: updatedFieldsList.join(', '),
+                studentNames: studentNames
+            },
+            sender: {
+                id: currentParent._id,
+                model: 'Parent',
+                snapshot: {
+                    name: currentParent.parentName,
+                    role: 'Parent'
+                }
+            }
+        });
+    } catch (notificationError) {
+        console.error('[VisitorService] Failed to publish VISITOR_UPDATED event:', notificationError);
+    }
+
+    return {
+        visitorId: updatedVisitor._id,
+        name: updatedVisitor.name,
+        phone: updatedVisitor.phone,
+        email: updatedVisitor.email,
+        address: updatedVisitor.address,
+        photoUrl: updatedVisitor.photoUrl,
+        updatedAt: updatedVisitor.updatedAt
+    };
+};
+

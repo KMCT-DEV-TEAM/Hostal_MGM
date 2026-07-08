@@ -25,7 +25,7 @@ class NotificationRepository {
      * Retrieves notifications for a specific user with pagination and filters
      */
     async findUserNotifications(userId, userModel, { skip = 0, limit = 20, isRead } = {}) {
-        const query = { 
+        const query = {
             'recipient.id': new mongoose.Types.ObjectId(userId),
             'recipient.model': userModel
         };
@@ -49,11 +49,12 @@ class NotificationRepository {
     async markAsRead(notificationId, userId) {
         return await Notification.findOneAndUpdate(
             { _id: notificationId, 'recipient.id': new mongoose.Types.ObjectId(userId) },
-            { 
-                $set: { 
-                    'deliveries.inApp.status': 'READ', 
-                    'deliveries.inApp.readAt': new Date() 
-                } 
+            {
+                $set: {
+                    'deliveries.inApp.status': 'READ',
+                    'deliveries.inApp.readAt': new Date(),
+                    'isRead': true
+                }
             },
             { new: true, runValidators: true }
         );
@@ -64,12 +65,13 @@ class NotificationRepository {
      */
     async markAllAsRead(userId, userModel) {
         return await Notification.updateMany(
-            { 'recipient.id': new mongoose.Types.ObjectId(userId), 'recipient.model': userModel, 'deliveries.inApp.status': { $ne: 'READ' } },
-            { 
-                $set: { 
-                    'deliveries.inApp.status': 'READ', 
-                    'deliveries.inApp.readAt': new Date() 
-                } 
+            { 'recipient.id': new mongoose.Types.ObjectId(userId), 'recipient.model': userModel, isRead: false },
+            {
+                $set: {
+                    'deliveries.inApp.status': 'READ',
+                    'deliveries.inApp.readAt': new Date(),
+                    'isRead': true
+                }
             }
         );
     }
@@ -98,7 +100,7 @@ class NotificationRepository {
         if (result.provider) update.$set[`${prefix}.provider`] = result.provider;
         if (result.providerMessageId) update.$set[`${prefix}.providerMessageId`] = result.providerMessageId;
         if (result.error !== undefined) update.$set[`${prefix}.error`] = result.error;
-        
+
         // Auto-set timestamps based on status
         if (result.status === 'QUEUED') update.$set[`${prefix}.queuedAt`] = new Date();
         if (result.status === 'SENT') update.$set[`${prefix}.sentAt`] = new Date();
@@ -113,11 +115,11 @@ class NotificationRepository {
     async updateDeliveryAttempts(notificationId, channel, attempts) {
         return await Notification.findByIdAndUpdate(
             notificationId,
-            { 
-                $set: { 
+            {
+                $set: {
                     [`deliveries.${channel}.attempts`]: attempts,
                     [`deliveries.${channel}.lastAttemptAt`]: new Date()
-                } 
+                }
             },
             { new: true }
         );

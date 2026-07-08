@@ -1,6 +1,6 @@
 import Visitor from './visitor.model.js';
 import VisitorVisit from './visitorVisit.model.js';
-import { VISITOR_STATUS, VISITOR_VISIT_STATUS } from './visitor.constant.js';
+import { VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
 
 /**
  * Checks if a visitor with the same phone exists in the organization
@@ -270,13 +270,15 @@ export const getDashboardStats = async (role, context) => {
 };
 
 /**
- * Finds an active visit for a specific visitor
- * @param {String} visitorId 
+ * Finds an active visit for a specific visitor or parent
+ * @param {String} refId 
+ * @param {String} refType 
  * @returns {Promise<Object>}
  */
-export const findActiveVisit = async (visitorId) => {
+export const findActiveVisit = async (refId, refType) => {
     return await VisitorVisit.findOne({
-        visitorId,
+        'visitor.refId': refId,
+        'visitor.refType': refType,
         status: VISITOR_VISIT_STATUS.CHECKED_IN
     });
 };
@@ -357,18 +359,9 @@ export const getSuperAdminHostelVisitSummary = async (matchStage, skip, limit, s
                 }
             }
         },
-        // In case hostel search is applied via matchStage on hostelName, we need to sort after project.
-        // Actually matchStage runs before lookup, so search on hostelName won't work in matchStage!
-        // We'll move search to a separate match after lookup in the service layer if needed, or do it here.
-        // Wait, the specification said "search hostel". We'll do it post-lookup if needed.
     ];
 
-    // If there is a search filter for hostelName, it should be passed separately or injected after lookup
-    // For simplicity, we can inject a match on hostelName if provided in sortStage/matchStage.
-    // The service layer will just pass the pipeline stages if we want to be flexible.
-
-    // Instead of raw pipeline, let's allow the service to pass the full pipeline or we build it here.
-    return []; // We will rewrite this method to be cleaner below.
+    return [];
 };
 
 // Rewritten optimized version:
@@ -473,16 +466,52 @@ export const getSuperAdminHostelVisitSummaryAggregated = async (matchStage, sear
 export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, skip, limit) => {
     const pipeline = [
         { $match: matchStage },
-        // Lookup Visitor
+        // Extract refId safely to ensure $lookup can resolve it reliably
+        {
+            $addFields: {
+                tempVisitorRefId: "$visitor.refId",
+                tempVisitorRefType: "$visitor.refType"
+            }
+        },
+        // Lookup Visitor or Parent (Polymorphic)
         {
             $lookup: {
                 from: 'visitors',
-                localField: 'visitorId',
+                localField: 'tempVisitorRefId',
                 foreignField: '_id',
-                as: 'visitorInfo'
+                as: 'visitorDocs'
             }
         },
-        { $unwind: { path: '$visitorInfo', preserveNullAndEmptyArrays: true } },
+        {
+            $lookup: {
+                from: 'parents',
+                localField: 'tempVisitorRefId',
+                foreignField: '_id',
+                as: 'parentDocs'
+            }
+        },
+        { $unwind: { path: '$visitorDocs', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$parentDocs', preserveNullAndEmptyArrays: true } },
+        {
+            $addFields: {
+                visitorInfo: {
+                    name: {
+                        $cond: {
+                            if: { $eq: ['$tempVisitorRefType', 'Visitor'] },
+                            then: '$visitorDocs.name',
+                            else: '$parentDocs.parentName'
+                        }
+                    },
+                    phone: {
+                        $cond: {
+                            if: { $eq: ['$tempVisitorRefType', 'Visitor'] },
+                            then: '$visitorDocs.phone',
+                            else: '$parentDocs.phone'
+                        }
+                    }
+                }
+            }
+        },
         // Lookup Students
         {
             $lookup: {
@@ -558,7 +587,7 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
             data: [
                 { $skip: skip },
                 { $limit: limit },
-                { $project: { visitorPhone: 0 } } // Remove phone from final output as per requirements
+                { $project: { visitorPhone: 0 } }
             ]
         }
     });
@@ -579,8 +608,8 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
 export const getVisitDetailsById = async (visitId) => {
     return await VisitorVisit.findById(visitId)
         .populate({
-            path: 'visitorId',
-            select: 'name phone relationship address idProofType idProofNumber'
+            path: 'visitor.refId',
+            select: 'name parentName phone relationship address idProofType idProofNumber email'
         })
         .populate({
             path: 'students',
@@ -607,4 +636,69 @@ export const getVisitDetailsById = async (visitId) => {
             select: 'name role'
         })
         .lean();
+};
+
+/**
+ * Fetches expired visits that need to be auto-completed.
+ * @param {Number} batchSize Limit the number of documents to process in one go
+ * @returns {Promise<Array>}
+ */
+export const getExpiredVisits = async (batchSize = 50) => {
+    return await VisitorVisit.find({
+        status: VISITOR_VISIT_STATUS.CHECKED_IN,
+        expectedExitTime: { $lte: new Date() }
+    })
+        .select('_id checkInTime expectedExitTime visitor students hostelId organizationId')
+        .populate({
+            path: 'visitor.refId',
+            select: 'name parentName phone'
+        })
+        .populate({
+            path: 'students',
+            select: 'name studentId'
+        })
+        .limit(batchSize)
+        .lean();
+};
+
+/**
+ * Atomically updates a visit status to Completed and pushes to the timeline.
+ * @param {String} visitId 
+ * @param {Date} completionTime 
+ * @returns {Promise<Object>}
+ */
+export const autoCompleteVisit = async (visitId, completionTime = new Date()) => {
+    return await VisitorVisit.findByIdAndUpdate(
+        visitId,
+        {
+            $set: {
+                status: VISITOR_VISIT_STATUS.COMPLETED,
+                checkOutTime: completionTime,
+                checkedOutBy: null
+            },
+            $push: {
+                visitTimeline: {
+                    action: VISITOR_VISIT_TIMELINE_ACTIONS.AUTO_CHECKED_OUT,
+                    performedBy: null, // System action
+                    remarks: 'Visit automatically completed after scheduled duration.',
+                    createdAt: completionTime
+                }
+            }
+        },
+        { new: true, runValidators: true }
+    );
+};
+
+/**
+ * Updates allowed fields of a visitor
+ * @param {String} visitorId
+ * @param {Object} updateData
+ * @returns {Promise<Object>}
+ */
+export const updateVisitor = async (visitorId, updateData) => {
+    return await Visitor.findByIdAndUpdate(
+        visitorId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    ).select('name phone email address photoUrl updatedAt');
 };

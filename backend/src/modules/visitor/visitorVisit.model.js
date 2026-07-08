@@ -14,8 +14,7 @@ const visitTimelineSchema = new mongoose.Schema(
         },
         performedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true
+            ref: 'User'
         },
         remarks: {
             type: String,
@@ -31,10 +30,17 @@ const visitTimelineSchema = new mongoose.Schema(
 
 const visitorVisitSchema = new mongoose.Schema(
     {
-        visitorId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Visitor',
-            required: true
+        visitor: {
+            refId: {
+                type: mongoose.Schema.Types.ObjectId,
+                required: true,
+                refPath: 'visitor.refType'
+            },
+            refType: {
+                type: String,
+                required: true,
+                enum: ['Parent', 'Visitor']
+            }
         },
         hostelId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -53,6 +59,13 @@ const visitorVisitSchema = new mongoose.Schema(
                 required: true
             }
         ],
+        purpose: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength: 3,
+            maxlength: 255
+        },
         status: {
             type: String,
             enum: VISITOR_VISIT_STATUS_VALUES,
@@ -84,10 +97,10 @@ const visitorVisitSchema = new mongoose.Schema(
     }
 );
 
-// Indexes matching user requirements (organizationId, hostelId, status, visitor reference)
 visitorVisitSchema.index({ organizationId: 1 });
 visitorVisitSchema.index({ hostelId: 1 });
-visitorVisitSchema.index({ visitorId: 1 });
+visitorVisitSchema.index({ students: 1 });
+visitorVisitSchema.index({ 'visitor.refId': 1, 'visitor.refType': 1 });
 visitorVisitSchema.index({ status: 1 });
 
 export default mongoose.model('VisitorVisit', visitorVisitSchema);
