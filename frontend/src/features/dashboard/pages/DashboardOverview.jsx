@@ -47,8 +47,8 @@ import {
     XCircle
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-
-
+import MaintenanceStaffDashboardOverview from "../components/MaintenanceStaffDashboardOverview";
+import WardenDashboardOverview from "../components/WardenDashboardOverview";
 const attendanceData = [
     { month: "Jan", value: 70 },
     { month: "Feb", value: 72 },
@@ -344,6 +344,14 @@ function DashboardOverview() {
         setAddress("");
         setIsOrgModalOpen(false);
     };
+
+    if (user?.role === ROLES.MAINTENANCE_STAFF) {
+        return <MaintenanceStaffDashboardOverview />;
+    }
+
+    if (user?.role === ROLES.WARDEN) {
+        return <WardenDashboardOverview user={user} />;
+    }
 
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
