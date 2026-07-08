@@ -275,7 +275,7 @@ export default function Profile() {
                                                 <Mail className="w-4 h-4 text-gray-400" />
                                                 {user?.email || t('not_provided')}
                                             </div>
-                                            {user?.role !== 'super_admin' && (
+                                            {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
                                                 <button onClick={() => handleEditClick('email', user?.email)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
@@ -346,6 +346,27 @@ export default function Profile() {
                                         ) : (
                                             <span className="text-gray-400 text-sm italic">Not assigned to any hostel</span>
                                         )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {user?.role === 'parent' && typeof user?.studentId === 'object' && user?.studentId && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
+                                    <div className="text-gray-500 font-medium">Linked Student</div>
+                                    <div className="sm:col-span-2">
+                                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm max-w-sm">
+                                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+                                                {user.studentId.profileImage ? (
+                                                    <img src={user.studentId.profileImage} alt="student" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <User className="w-5 h-5 text-gray-400" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold text-sm text-gray-900">{user.studentId.name || 'Not Available'}</div>
+                                                <div className="text-[11px] font-medium text-gray-500 mt-0.5 uppercase tracking-wide">ID: {user.studentId.studentId || 'N/A'}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}

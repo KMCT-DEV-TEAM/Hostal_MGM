@@ -1,6 +1,8 @@
 import api from '@/services/axios';
 
 const studentApi = {
+  getStudentDashboardStats: () => api.get("/student/dashboard/student/stats"),
+
   createStudent: (payload) =>
     api.post("/admin/students", payload),
 
