@@ -19,6 +19,7 @@ const VisitorListTableView = ({
     onRegisterClick,
     onApprove,
     onReject,
+    onRowClick,
     page,
     setPage,
     pagination
@@ -147,6 +148,7 @@ const VisitorListTableView = ({
                 limit={10}
                 totalPages={pagination?.totalPages || 1}
                 totalItems={pagination?.totalItems || 0}
+                onRowClick={onRowClick}
             />
         </div>
     );

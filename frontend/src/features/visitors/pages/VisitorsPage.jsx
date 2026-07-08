@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
 import VisitorListTableView from '../components/VisitorListTableView';
 import RegisterVisitorModal from '../components/modals/RegisterVisitorModal';
+import VisitorDetailsModal from '../components/modals/VisitorDetailsModal';
 import {
     getAllVisitors,
     getParentVisitors,
@@ -43,6 +44,14 @@ const VisitorsPage = () => {
     const [showCheckInModal, setShowCheckInModal] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedVisitorId, setSelectedVisitorId] = useState(null);
+
+    const handleRowClick = (visitor) => {
+        setSelectedVisitorId(visitor._id || visitor.id || visitor.visitorId);
+        setIsDetailsModalOpen(true);
+    };
 
     const exportFields = useMemo(() => [
         {
@@ -215,6 +224,7 @@ const VisitorsPage = () => {
                 page={page}
                 setPage={setPage}
                 pagination={pagination}
+                onRowClick={handleRowClick}
             />
 
             <RegisterVisitorModal
@@ -234,6 +244,15 @@ const VisitorsPage = () => {
                 title="Export Visitors"
                 subtitle="Select filters to apply before downloading visitor records"
                 fields={exportFields}
+            />
+
+            <VisitorDetailsModal
+                isOpen={isDetailsModalOpen}
+                onClose={() => {
+                    setIsDetailsModalOpen(false);
+                    setSelectedVisitorId(null);
+                }}
+                visitorId={selectedVisitorId}
             />
         </div>
     );

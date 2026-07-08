@@ -30,6 +30,9 @@ export const visitorApi = {
     getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
     listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),
     getVisitDetails: (visitId) => api.get(`${BASE_URL}/visitor-visits/${visitId}`),
+    
+    // Get Visitor Profile Details
+    getVisitorDetails: (visitorId) => api.get(`${BASE_URL}/${visitorId}`),
 };
 
 export default visitorApi;

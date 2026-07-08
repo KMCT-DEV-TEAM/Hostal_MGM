@@ -61,3 +61,8 @@ export async function getVisitDetails(visitId) {
     const response = await visitorApi.getVisitDetails(visitId);
     return response.data;
 }
+
+export async function getVisitorDetails(visitorId) {
+    const response = await visitorApi.getVisitorDetails(visitorId);
+    return response.data;
+}
