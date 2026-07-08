@@ -199,12 +199,7 @@ const buildListingStages = (query) => {
 export const listVisitors = async (query, user) => {
     const { hostel, organization, date } = query;
     const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
-    console.log("MATCH STAGE:", matchStage)
-    console.log("SORT STAGE:", sortStage)
-    console.log("SKIP:", skip)
-    console.log("LIMIT:", limit)
-    console.log("PAGE:", page)
-    console.log('user', user)
+
 
     // 1. Role-Based Filters
     let targetHostelId = null;
@@ -1011,8 +1006,6 @@ export const listVisitorVisits = async (query, user) => {
     const { page = 1, limit = 10, search, status, date, hostel, sortBy = 'checkInTime', sortOrder = 'desc' } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    console.log('user', user)
-    console.log(query, 'query')
     const matchStage = {};
     let targetHostelId = null;
 
@@ -1030,7 +1023,6 @@ export const listVisitorVisits = async (query, user) => {
     } else if (user.role === 'warden') {
         const Hostel = mongoose.model('Hostel');
         const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
-        console.log(wardenHostel, 'wardenHostel')
         if (!wardenHostel) {
             const error = new Error('Unauthorized: You are not assigned to any hostel.');
             error.status = 403;
@@ -1047,7 +1039,6 @@ export const listVisitorVisits = async (query, user) => {
         matchStage.hostelId = new mongoose.Types.ObjectId(targetHostelId);
     }
 
-    console.log("MATCH STAGE:", matchStage);
 
     if (status) {
         matchStage.status = status;
@@ -1244,4 +1235,104 @@ export const getVisitDetails = async (visitId, user) => {
         // Timeline
         timeline: formattedTimeline
     };
+};
+
+/**
+ * Automatically completes expired visits.
+ * Meant to be called by a background cron job.
+ * @returns {Promise<{processedCount: number, failedCount: number}>}
+ */
+export const autoCompleteExpiredVisits = async () => {
+    let processedCount = 0;
+    let failedCount = 0;
+    const BATCH_SIZE = 50;
+
+    try {
+        const expiredVisits = await visitorRepository.getExpiredVisits(BATCH_SIZE);
+        
+        if (expiredVisits.length === 0) {
+            return { processedCount, failedCount };
+        }
+
+        console.log(`[VisitorService] Found ${expiredVisits.length} expired visits. Processing...`);
+
+        for (const visit of expiredVisits) {
+            try {
+                // Ensure idempotent processing by re-verifying status before updating if needed,
+                // but repository query already ensures they are 'Checked In'.
+                
+                const completionTime = new Date();
+                const updatedVisit = await visitorRepository.autoCompleteVisit(visit._id, completionTime);
+
+                if (!updatedVisit) {
+                    console.warn(`[VisitorService] Visit ${visit._id} could not be updated.`);
+                    failedCount++;
+                    continue;
+                }
+
+                // Gather data for notifications
+                const personName = visit.visitor?.refId?.name || visit.visitor?.refId?.parentName || 'Visitor';
+                const studentNames = visit.students?.map(s => s.name).join(', ') || 'Student';
+                const studentIds = visit.students?.map(s => s._id.toString()) || [];
+
+                const notificationData = {
+                    personName,
+                    studentName: studentNames,
+                    purpose: updatedVisit.purpose || 'Visit',
+                    checkInTime: updatedVisit.checkInTime,
+                    checkOutTime: updatedVisit.checkOutTime
+                };
+
+                const notificationSender = {
+                    id: visit.organizationId,
+                    type: 'organization'
+                };
+
+                // Notify parent/visitor
+                if (visit.visitor?.refType === 'Parent') {
+                    await orchestratorService.triggerNotification({
+                        eventName: 'VISIT_AUTO_CHECKED_OUT',
+                        target: {
+                            type: 'USER',
+                            filter: { role: 'parent', userIds: [visit.visitor.refId._id.toString()] }
+                        },
+                        data: notificationData,
+                        sender: notificationSender
+                    });
+                } else if (visit.visitor?.refType === 'Visitor') {
+                    // Assuming we notify linked parents if it's a general visitor
+                    await orchestratorService.triggerNotification({
+                        eventName: 'VISIT_AUTO_CHECKED_OUT',
+                        target: {
+                            type: 'USER',
+                            filter: { role: 'parent', studentIds: studentIds }
+                        },
+                        data: notificationData,
+                        sender: notificationSender
+                    });
+                }
+
+                // Notify students
+                await orchestratorService.triggerNotification({
+                    eventName: 'VISIT_AUTO_CHECKED_OUT',
+                    target: {
+                        type: 'USER',
+                        filter: { role: 'student', userIds: studentIds }
+                    },
+                    data: notificationData,
+                    sender: notificationSender
+                });
+
+                processedCount++;
+            } catch (err) {
+                console.error(`[VisitorService] Failed to auto-complete visit ${visit._id}:`, err);
+                failedCount++;
+            }
+        }
+    } catch (error) {
+        console.error(`[VisitorService] Error in autoCompleteExpiredVisits:`, error);
+        throw error;
+    }
+
+    return { processedCount, failedCount };
 };

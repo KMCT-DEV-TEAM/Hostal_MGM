@@ -85,5 +85,36 @@ export default {
                 html: '<h1>{{personType}} Checked In</h1><p><strong>{{personName}}</strong> has checked into the hostel to visit you.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Expected Exit:</strong> {{expectedExitTime}}</p>'
             }
         }
+    },
+
+    VISIT_AUTO_CHECKED_OUT: {
+        parent: {
+            "in-app": {
+                title: 'Visit Completed',
+                message: 'The visit by {{personName}} to {{studentName}} for {{purpose}} has been automatically completed.'
+            },
+            push: {
+                title: 'Visit Completed',
+                body: 'The visit by {{personName}} to {{studentName}} for {{purpose}} has been automatically completed.'
+            },
+            email: {
+                subject: 'Visit Automatically Completed',
+                html: '<h1>Visit Completed</h1><p>The visit by <strong>{{personName}}</strong> to <strong>{{studentName}}</strong> has been automatically completed as the expected duration has passed.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Check In:</strong> {{checkInTime}}</p><p><strong>Check Out:</strong> {{checkOutTime}}</p>'
+            }
+        },
+        student: {
+            "in-app": {
+                title: 'Visit Completed',
+                message: 'The visit by {{personName}} for {{purpose}} has been automatically completed.'
+            },
+            push: {
+                title: 'Visit Completed',
+                body: 'The visit by {{personName}} for {{purpose}} has been automatically completed.'
+            },
+            email: {
+                subject: 'Visit Automatically Completed',
+                html: '<h1>Visit Completed</h1><p>The visit by <strong>{{personName}}</strong> has been automatically completed as the expected duration has passed.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Check In:</strong> {{checkInTime}}</p><p><strong>Check Out:</strong> {{checkOutTime}}</p>'
+            }
+        }
     }
 };

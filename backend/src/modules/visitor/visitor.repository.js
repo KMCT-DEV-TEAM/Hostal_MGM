@@ -1,6 +1,6 @@
 import Visitor from './visitor.model.js';
 import VisitorVisit from './visitorVisit.model.js';
-import { VISITOR_STATUS, VISITOR_VISIT_STATUS } from './visitor.constant.js';
+import { VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
 
 /**
  * Checks if a visitor with the same phone exists in the organization
@@ -636,4 +636,55 @@ export const getVisitDetailsById = async (visitId) => {
             select: 'name role'
         })
         .lean();
+};
+
+/**
+ * Fetches expired visits that need to be auto-completed.
+ * @param {Number} batchSize Limit the number of documents to process in one go
+ * @returns {Promise<Array>}
+ */
+export const getExpiredVisits = async (batchSize = 50) => {
+    return await VisitorVisit.find({
+        status: VISITOR_VISIT_STATUS.CHECKED_IN,
+        expectedExitTime: { $lte: new Date() }
+    })
+        .select('_id checkInTime expectedExitTime visitor students hostelId organizationId')
+        .populate({
+            path: 'visitor.refId',
+            select: 'name parentName phone'
+        })
+        .populate({
+            path: 'students',
+            select: 'name studentId'
+        })
+        .limit(batchSize)
+        .lean();
+};
+
+/**
+ * Atomically updates a visit status to Completed and pushes to the timeline.
+ * @param {String} visitId 
+ * @param {Date} completionTime 
+ * @returns {Promise<Object>}
+ */
+export const autoCompleteVisit = async (visitId, completionTime = new Date()) => {
+    return await VisitorVisit.findByIdAndUpdate(
+        visitId,
+        {
+            $set: {
+                status: VISITOR_VISIT_STATUS.COMPLETED,
+                checkOutTime: completionTime,
+                checkedOutBy: null
+            },
+            $push: {
+                visitTimeline: {
+                    action: VISITOR_VISIT_TIMELINE_ACTIONS.AUTO_CHECKED_OUT,
+                    performedBy: null, // System action
+                    remarks: 'Visit automatically completed after scheduled duration.',
+                    createdAt: completionTime
+                }
+            }
+        },
+        { new: true, runValidators: true }
+    );
 };

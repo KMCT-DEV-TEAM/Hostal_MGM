@@ -363,7 +363,6 @@ export const listVisitorVisits = async (req, res) => {
         }
 
         const result = await visitorService.listVisitorVisits(req.query, req.user);
-        console.log(req.user)
         return res.status(200).json({
             success: true,
             message: "Visits fetched successfully.",
