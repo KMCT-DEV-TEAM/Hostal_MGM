@@ -26,7 +26,7 @@ const wardenApi = {
     api.post("/super-admin/wardens/bulk-toggle-status", payload),
 
   getWardenDashboardStats: () =>
-    api.get("/warden/dashboard/stats"),
+    api.get("/warden/dashboard-summary"),
 };
 
 export default wardenApi;
