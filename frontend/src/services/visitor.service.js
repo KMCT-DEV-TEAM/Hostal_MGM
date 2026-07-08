@@ -38,3 +38,26 @@ export async function rejectVisitor(visitorId, payload) {
     const response = await visitorApi.rejectVisitor(visitorId, payload);
     return response.data;
 }
+
+/**
+ * Visit Management Endpoints
+ */
+export async function checkInVisitor(payload) {
+    const response = await visitorApi.checkInVisitor(payload);
+    return response.data;
+}
+
+export async function getSuperAdminHostelVisits(params) {
+    const response = await visitorApi.getSuperAdminHostelVisits(params);
+    return response.data;
+}
+
+export async function listVisitorVisits(params) {
+    const response = await visitorApi.listVisitorVisits(params);
+    return response.data;
+}
+
+export async function getVisitDetails(visitId) {
+    const response = await visitorApi.getVisitDetails(visitId);
+    return response.data;
+}

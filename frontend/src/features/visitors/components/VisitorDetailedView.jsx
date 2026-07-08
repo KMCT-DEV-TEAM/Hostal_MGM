@@ -4,6 +4,7 @@ import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import FilterModal from './modals/FilterModal';
 import CheckInModal from './modals/CheckInModal';
+import { formatDateReadable, formatTime } from '@/utils/formatters';
 
 const StatusBadge = ({ status }) => {
     const isInside = status.toLowerCase() === 'inside';
@@ -21,6 +22,7 @@ const StatusBadge = ({ status }) => {
 const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+    console.log('visitors from page;', visitors)
 
     const headers = [
         { key: 'date', label: 'Date' },
@@ -34,7 +36,7 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
 
     const renderRow = (visitor) => (
         <>
-            <td className="p-4 text-text-secondary font-medium">{visitor.date}</td>
+            <td className="p-4 text-text-secondary font-medium">{formatDateReadable(visitor.checkInTime)}</td>
             <td className="p-4 flex items-center gap-3
              text-gray-700">
                 <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
@@ -43,16 +45,12 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
                 <span className="text-sm font-semibold">{visitor.visitorName}</span>
             </td>
             <td className="p-4 text-text-secondary font-medium">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
-                        {visitor.visitingStudent.charAt(0)}
-                    </div>
-                    <span className="text-sm font-medium">{visitor.visitingStudent}</span>
-                </div>
+
+                <td className="p-4 text-text-secondary font-medium">{visitor.studentNames}</td>
             </td>
             <td className="p-4 text-text-secondary font-medium">{visitor.roomNo}</td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.checkIn}</td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.checkOut || '--------'}</td>
+            <td className="p-4 text-text-secondary font-medium">{formatTime(visitor.checkInTime)}</td>
+            <td className="p-4 text-text-secondary font-medium">{visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '--------'}</td>
             <td className="p-4">
                 <StatusBadge status={visitor.status} />
             </td>

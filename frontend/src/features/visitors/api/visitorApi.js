@@ -24,7 +24,12 @@ export const visitorApi = {
     // Methods mapped for backward compatibility with current UI implementation
     getVisitors: (params) => api.get(BASE_URL, { params }),
     getAggregatedVisitors: (params) => api.get(BASE_URL, { params }),
-    checkInVisitor: (payload) => api.post(`${BASE_URL}/parent/visitors`, payload), // Temporary placeholder
+
+    // Visit Management
+    checkInVisitor: (payload) => api.post(`${BASE_URL}/warden/visits/check-in`, payload),
+    getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
+    listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),
+    getVisitDetails: (visitId) => api.get(`${BASE_URL}/visitor-visits/${visitId}`),
 };
 
 export default visitorApi;
