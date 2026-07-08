@@ -6,7 +6,7 @@ import { ROLES } from '@/constants/roles';
 import Button from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
 import VisitorListTableView from '../components/VisitorListTableView';
-import CheckInModal from '../components/modals/CheckInModal';
+import RegisterVisitorModal from '../components/modals/RegisterVisitorModal';
 import {
     getAllVisitors,
     getParentVisitors,
@@ -132,7 +132,7 @@ const VisitorsPage = () => {
                 onReject={handleReject}
             />
 
-            <CheckInModal
+            <RegisterVisitorModal
                 isOpen={showCheckInModal}
                 onClose={() => setShowCheckInModal(false)}
                 onSuccess={() => {
