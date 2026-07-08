@@ -15,6 +15,10 @@ import {
     rejectVisitor
 } from '@/services/visitor.service';
 import { useDebounce } from '@/hooks/useDebounce';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { exportToExcel } from '@/utils/exportUtils';
+import { formatDateStandard } from '@/utils/formatters';
+import { useMemo } from 'react';
 
 const VisitorsPage = () => {
     const { user } = useAuthStore();
@@ -37,6 +41,21 @@ const VisitorsPage = () => {
     const canExport = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
 
     const [showCheckInModal, setShowCheckInModal] = useState(false);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
+    const exportFields = useMemo(() => [
+        {
+            name: "status",
+            label: "Status",
+            options: [
+                { label: 'All Status', value: '' },
+                { label: 'Pending', value: 'Pending' },
+                { label: 'Approved', value: 'Approved' },
+                { label: 'Rejected', value: 'Rejected' },
+            ]
+        }
+    ], []);
 
     const fetchVisitors = useCallback(async () => {
         try {
@@ -58,10 +77,10 @@ const VisitorsPage = () => {
             }
 
             const visitorsData = res?.data || [];
-            
+
             const totalItems = res?.total || visitorsData.length || 0;
             const totalPages = res?.totalPages || Math.ceil(visitorsData.length / 10) || 1;
-            
+
             setVisitors(visitorsData);
             setPagination({ totalPages, totalItems });
         } catch (error) {
@@ -96,6 +115,76 @@ const VisitorsPage = () => {
         }
     };
 
+    const handleExport = () => {
+        setIsExportConfirmOpen(true);
+    };
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            const params = {
+                search: debouncedSearch || undefined,
+                status: exportFilters.status || statusFilter || undefined,
+            };
+
+            const cleanParams = Object.fromEntries(
+                Object.entries(params).filter(([, value]) => value !== '' && value !== undefined && value !== null)
+            );
+
+            let response;
+            if (isParent) {
+                response = await getParentVisitors(cleanParams);
+            } else if (isStudent) {
+                response = await getStudentVisitors(cleanParams);
+            } else {
+                response = await getAllVisitors(cleanParams);
+            }
+
+            const dataToExport = response?.data || response?.visitors || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No visitor records match the selected filters');
+                setIsExportConfirmOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((r, index) => {
+                const visitingStudentNames = r.students && r.students.length > 0
+                    ? r.students.map(s => s.name || s).join(', ')
+                    : '--';
+
+                return {
+                    "S.No": index + 1,
+                    "Visitor Name": r.visitorName || r.name || 'Unknown',
+                    "Visiting Student": visitingStudentNames,
+                    "Organization": r.organizationName || '--',
+                    "Phone": r.phone || '--',
+                    "Email": r.email || '--',
+                    "Relation": r.relationship || r.relation || '--',
+                    "Status": r.status || 'Unknown',
+                    "Created At": r.createdAt ? formatDateStandard(r.createdAt) : '--',
+                    "Approved At": r.approvedAt ? formatDateStandard(r.approvedAt) : '--'
+                };
+            });
+
+            const isSuccess = exportToExcel(exportData, 'Visitors_Export', 'Visitors');
+
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+
+            setIsExportConfirmOpen(false);
+        } catch (err) {
+            console.error("Failed to export visitors:", err);
+            showErrorToast('Export failed', err.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 bg-background-secondary flex flex-col">
             <div className="mb-6 shrink-0 flex items-center justify-between gap-4">
@@ -116,7 +205,7 @@ const VisitorsPage = () => {
                     setStatusFilter(val);
                     setPage(1);
                 }}
-                onExportClick={() => { }} // Export logic
+                onExportClick={handleExport}
                 canApproveReject={canApproveReject}
                 canExport={canExport}
                 canRegister={isParent}
@@ -135,6 +224,16 @@ const VisitorsPage = () => {
                     setShowCheckInModal(false);
                     fetchVisitors();
                 }}
+            />
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Visitors"
+                subtitle="Select filters to apply before downloading visitor records"
+                fields={exportFields}
             />
         </div>
     );
