@@ -2,16 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useDebounce } from '@/hooks/useDebounce';
 import VisitorStats from '../components/VisitorStats';
 import VisitorDetailedView from '../components/VisitorDetailedView';
 import VisitorAggregatedView from '../components/VisitorAggregatedView';
 import { getSuperAdminHostelVisits, listVisitorVisits } from '@/services/visitor.service';
+
 const VisitorHistoryPage = () => {
     const { user } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [visitors, setVisitors] = useState([]);
     const [stats, setStats] = useState(null);
     const [selectedHostel, setSelectedHostel] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filters, setFilters] = useState({ status: '', fromDate: '', toDate: '' });
+    const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     const isSuperAdmin = user?.role === 'super_admin';
     const showAggregatedView = isSuperAdmin && !selectedHostel;
@@ -20,10 +25,17 @@ const VisitorHistoryPage = () => {
         try {
             setLoading(true);
             let res;
+            const params = { page: 1, limit: 10 };
+            if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+            if (filters.status) params.status = filters.status;
+            if (filters.fromDate) params.startDate = filters.fromDate;
+            if (filters.toDate) params.endDate = filters.toDate;
+
             if (showAggregatedView) {
-                res = await getSuperAdminHostelVisits({ page: 1, limit: 10 });
+                res = await getSuperAdminHostelVisits(params);
             } else {
-                res = await listVisitorVisits({ hostel: selectedHostel, page: 1, limit: 10 });
+                if (selectedHostel) params.hostel = selectedHostel;
+                res = await listVisitorVisits(params);
             }
 
             setVisitors(res.data || []);
@@ -34,20 +46,18 @@ const VisitorHistoryPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [showAggregatedView, selectedHostel]);
+    }, [showAggregatedView, selectedHostel, debouncedSearchQuery, filters]);
 
     useEffect(() => {
         fetchVisitors();
     }, [fetchVisitors]);
 
     const handleSearch = (searchTerm) => {
-        // Implement search logic (frontend filter for mock, or API call)
-        console.log("Searching for:", searchTerm);
+        setSearchQuery(searchTerm);
     };
 
-    const handleFilter = (filters) => {
-        // Implement filter logic
-        console.log("Filtering by:", filters);
+    const handleFilter = (newFilters) => {
+        setFilters(prev => ({ ...prev, ...newFilters }));
     };
 
     return (
@@ -77,6 +87,8 @@ const VisitorHistoryPage = () => {
                 <VisitorAggregatedView
                     visitors={visitors}
                     loading={loading}
+                    searchQuery={searchQuery}
+                    filters={filters}
                     onSearch={handleSearch}
                     onHostelFilter={(hostel) => handleFilter({ hostel })}
                     onRowClick={(hostel) => setSelectedHostel(hostel)}
@@ -85,6 +97,8 @@ const VisitorHistoryPage = () => {
                 <VisitorDetailedView
                     visitors={visitors}
                     loading={loading}
+                    searchQuery={searchQuery}
+                    filters={filters}
                     onSearch={handleSearch}
                     onFilter={handleFilter}
                     onRefresh={fetchVisitors}
