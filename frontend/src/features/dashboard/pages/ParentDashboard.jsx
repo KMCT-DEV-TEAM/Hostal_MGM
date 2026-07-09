@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getParentDashboardStats } from '@/services/parent.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -8,6 +9,7 @@ import {
     CalendarClock,
     Megaphone,
     Headset,
+    MessageSquare,
     ChevronDown
 } from 'lucide-react';
 import {
@@ -22,6 +24,7 @@ import {
     Pie,
     Cell
 } from 'recharts';
+import Dropdown from '@/components/ui/Dropdown';
 
 
 
@@ -60,6 +63,7 @@ const StatusBadge = ({ status }) => {
 export default function ParentDashboard() {
     const { user } = useAuthStore();
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [period, setPeriod] = useState('This Year');
     const [radialPeriod, setRadialPeriod] = useState('This Month');
     const [dashboardData, setDashboardData] = useState(null);
@@ -67,14 +71,14 @@ export default function ParentDashboard() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await getParentDashboardStats();
+                const res = await getParentDashboardStats({ period, radialPeriod });
                 setDashboardData(res?.data);
             } catch (err) {
                 console.error("Failed to fetch parent stats", err);
             }
         };
         fetchStats();
-    }, []);
+    }, [period, radialPeriod]);
 
     const attendanceData = dashboardData?.monthlyAttendance || [];
     const radialData = [
@@ -152,10 +156,10 @@ export default function ParentDashboard() {
 
                 {/* Attendance Overview Section */}
                 <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 relative">
                         {/* Left Side: Radial Chart */}
                         <div className="flex flex-col">
-                            <div className="flex justify-between items-start mb-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                                 <div>
                                     <h2 className="text-[20px] font-bold text-black">
                                         Attendance Overview
@@ -164,17 +168,16 @@ export default function ParentDashboard() {
                                         See the Attendance overview
                                     </p>
                                 </div>
-                                <div className="relative">
-                                    <select
-                                        value={radialPeriod}
-                                        onChange={(e) => setRadialPeriod(e.target.value)}
-                                        className="appearance-none bg-[#F9FAFB] border-none rounded-lg pl-3 pr-8 py-1.5 text-xs text-gray-500 font-medium cursor-pointer focus:outline-none"
-                                    >
-                                        <option>This Month</option>
-                                        <option>Last Month</option>
-                                    </select>
-                                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                </div>
+                                <Dropdown
+                                    options={[
+                                        { label: 'This Month', value: 'This Month' },
+                                        { label: 'Last Month', value: 'Last Month' }
+                                    ]}
+                                    value={radialPeriod}
+                                    onChange={(val) => setRadialPeriod(val)}
+                                    minWidth="w-[120px]"
+                                    triggerClassName="w-full bg-[#F9FAFB] border-none rounded-lg px-3 py-1.5 text-xs text-gray-500 font-medium cursor-pointer focus:outline-none flex justify-between items-center"
+                                />
                             </div>
 
                             <div className="flex-1 flex flex-col items-center justify-center mt-6">
@@ -204,67 +207,83 @@ export default function ParentDashboard() {
                                     </div>
                                 </div>
 
-                                <div className="flex gap-8 mt-6">
+                                <div className="flex flex-wrap gap-4 sm:gap-6 mt-6 justify-center">
                                     <div className="flex flex-col items-center">
-                                        <div className="flex items-center gap-2 text-xs text-gray-600 mb-1.5">
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-1.5">
                                             <span className="w-2.5 h-2.5 rounded-full bg-[#0F6E56]"></span>
                                             Present
                                         </div>
                                         <span className="text-[10px] text-gray-400">{dashboardData?.presentCount || 0} Days</span>
                                     </div>
                                     <div className="flex flex-col items-center">
-                                        <div className="flex items-center gap-2 text-xs text-gray-600 mb-1.5">
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-1.5">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></span>
+                                            Leave
+                                        </div>
+                                        <span className="text-[10px] text-gray-400">{dashboardData?.leaveCount || 0} Days</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-1.5">
                                             <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span>
                                             Absent
                                         </div>
-                                        <span className="text-[10px] text-gray-400">{(dashboardData?.totalDays || 0) - (dashboardData?.presentCount || 0)} days</span>
+                                        <span className="text-[10px] text-gray-400">{Math.max(0, (dashboardData?.totalDays || 0) - (dashboardData?.presentCount || 0) - (dashboardData?.leaveCount || 0))} Days</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Vertical Divider - only visible on large screens */}
+                        <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-[1px] h-1/2 bg-gray-200"></div>
+
                         {/* Right Side: Bar Chart */}
-                        <div className="flex flex-col relative pt-[46px]">
-                            <div className="absolute top-0 right-0 z-10">
-                                <div className="relative">
-                                    <select
-                                        value={period}
-                                        onChange={(e) => setPeriod(e.target.value)}
-                                        className="appearance-none bg-[#F9FAFB] border-none rounded-lg pl-3 pr-8 py-1.5 text-[11px] text-gray-500 font-medium cursor-pointer focus:outline-none"
-                                    >
-                                        <option>This Year</option>
-                                        <option>Last Year</option>
-                                    </select>
-                                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                </div>
+                        <div className="flex flex-col relative mt-6 lg:mt-0 pt-10 lg:pt-[46px]">
+                            <div className="absolute top-0 right-0 z-10 w-full sm:w-auto flex justify-end">
+                                <Dropdown
+                                    options={[
+                                        { label: 'This Year', value: 'This Year' },
+                                        { label: 'Last Year', value: 'Last Year' }
+                                    ]}
+                                    value={period}
+                                    onChange={(val) => setPeriod(val)}
+                                    minWidth="w-[120px]"
+                                    triggerClassName="w-full bg-[#F9FAFB] border-none rounded-lg px-3 py-1.5 text-[11px] text-gray-500 font-medium cursor-pointer focus:outline-none flex justify-between items-center"
+                                />
                             </div>
 
-                            <div className="flex-1 h-[220px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={attendanceData}
-                                        margin={{ top: 10, right: 0, left: -25, bottom: 0 }}
-                                        barSize={20}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                        <XAxis 
-                                            dataKey="month" 
-                                            axisLine={false} 
-                                            tickLine={false} 
-                                            tick={{ fill: '#9CA3AF', fontSize: 10, dy: 10 }}
-                                        />
-                                        <YAxis 
-                                            axisLine={false} 
-                                            tickLine={false} 
-                                            tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                                            tickFormatter={(value) => `${value}%`}
-                                            domain={[0, 100]}
-                                            ticks={[0, 20, 40, 60, 80, 100]}
-                                        />
-                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                        <Bar dataKey="value" fill="#0F6E56" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                            <div className="flex-1 min-h-[220px] w-full">
+                                {attendanceData.some(item => item.value > 0) ? (
+                                    <ResponsiveContainer width="100%" height={220}>
+                                        <BarChart
+                                            data={attendanceData}
+                                            margin={{ top: 10, right: 0, left: -25, bottom: 0 }}
+                                            barSize={20}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                                            <XAxis 
+                                                dataKey="month" 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fill: '#9CA3AF', fontSize: 10, dy: 10 }}
+                                            />
+                                            <YAxis 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                                                tickFormatter={(value) => `${value}%`}
+                                                domain={[0, 100]}
+                                                ticks={[0, 20, 40, 60, 80, 100]}
+                                            />
+                                            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                            <Bar dataKey="value" fill="#0F6E56" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-gray-400 pb-4">
+                                        <MessageSquare size={32} className="mb-2 text-gray-200" />
+                                        <p className="text-sm">No records found for {period.toLowerCase()}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -274,21 +293,24 @@ export default function ParentDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Recent Leave Requests */}
                     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col">
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
                                 <h2 className="text-sm font-bold text-[#000000]">Recent Leave Requests</h2>
                                 <p className="text-xs text-gray-400 mt-0.5">View recent leave requests</p>
                             </div>
-                            <button className="text-xs text-[#777777] font-medium hover:underline cursor-pointer">
+                            <button 
+                                onClick={() => navigate('/dashboard/leaves')}
+                                className="text-xs text-[#777777] font-medium hover:underline cursor-pointer"
+                            >
                                 View all
                             </button>
                         </div>
                         
                         <div className="flex flex-col gap-3 flex-1">
                             {leaveRequests.length > 0 ? leaveRequests.map((req) => (
-                                <div key={req._id} className="flex items-center justify-between bg-white border border-[#EEF2F7] rounded-[14px] p-4">
+                                <div key={req._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#EEF2F7] rounded-[14px] p-4">
                                     <div>
-                                        <div className="flex items-center gap-1.5 text-[13px] text-[#333333] font-medium">
+                                        <div className="flex items-center gap-1.5 text-[13px] text-[#333333] font-medium flex-wrap">
                                             <span className="capitalize">{req.passType?.replace('_', ' ')}</span>
                                             {req.reason && (
                                                 <span className="text-[#9CA3AF]">- {req.reason.substring(0, 20)}</span>
@@ -298,7 +320,9 @@ export default function ParentDashboard() {
                                             {new Date(req.fromDate || req.date).toLocaleDateString()} {req.toDate && `- ${new Date(req.toDate).toLocaleDateString()}`} <span className="ml-1">({req.totalDays || 1} days)</span>
                                         </div>
                                     </div>
-                                    <StatusBadge status={req.status === "approved" ? "Approved" : req.status.includes("pending") ? "Pending" : "Rejected"} />
+                                    <div className="self-start sm:self-auto">
+                                        <StatusBadge status={req.status === "approved" ? "Approved" : req.status.includes("pending") ? "Pending" : "Rejected"} />
+                                    </div>
                                 </div>
                             )) : (
                                 <div className="text-center text-sm text-gray-400 py-4">No recent leave requests found</div>
@@ -308,22 +332,25 @@ export default function ParentDashboard() {
 
                     {/* Recent Visitors */}
                     <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col">
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
                                 <h2 className="text-sm font-bold text-[#000000]">Recent Visitors</h2>
                                 <p className="text-xs text-gray-400 mt-0.5">View the list of recent visitors of your child</p>
                             </div>
-                            <button className="text-xs text-[#777777] font-medium hover:underline cursor-pointer">
+                            <button 
+                                onClick={() => navigate('/dashboard/visitors/history')}
+                                className="text-xs text-[#777777] font-medium hover:underline cursor-pointer"
+                            >
                                 View all
                             </button>
                         </div>
                         
                         <div className="flex flex-col gap-3 flex-1">
                             {visitors.length > 0 ? visitors.map((visitor) => (
-                                <div key={visitor._id} className="flex items-center justify-between bg-white border border-[#EEF2F7] rounded-[14px] p-4">
+                                <div key={visitor._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#EEF2F7] rounded-[14px] p-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-6 h-6 rounded-full bg-[#1E3A8A] flex items-center justify-center text-white text-[10px] font-medium">
-                                            {visitor.name.charAt(0).toUpperCase()}
+                                        <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                            {visitor.name ? visitor.name.substring(0, 2) : 'NA'}
                                         </div>
                                         <div>
                                             <div className="text-[13px] text-[#333333] font-medium mb-0.5">{visitor.name}</div>
@@ -332,7 +359,9 @@ export default function ParentDashboard() {
                                             </div>
                                         </div>
                                     </div>
-                                    <StatusBadge status={visitor.approvalStatus} />
+                                    <div className="self-start sm:self-auto mt-1 sm:mt-0">
+                                        <StatusBadge status={visitor.approvalStatus} />
+                                    </div>
                                 </div>
                             )) : (
                                 <div className="text-center text-sm text-gray-400 py-4">No recent visitors found</div>
@@ -383,11 +412,11 @@ export default function ParentDashboard() {
                                 Contact the hostel Warden for any assistance
                             </p>
                             
-                            <div className="flex justify-between items-center pt-2">
+                            <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 pt-2">
                                 <div className="text-[11px] text-gray-500">
-                                    Emergency Contact : <span className="text-[#3B82F6] font-medium">+91 6789876789</span>
+                                    Emergency Contact : <span className="text-primary font-medium whitespace-nowrap">+91 6789876789</span>
                                 </div>
-                                <div className="text-[10px] text-gray-400">
+                                <div className="text-[10px] text-gray-400 whitespace-nowrap ml-auto">
                                     24 / 7 Available
                                 </div>
                             </div>
