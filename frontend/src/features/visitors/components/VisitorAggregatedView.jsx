@@ -4,7 +4,7 @@ import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
 
-const VisitorAggregatedView = ({ visitors, loading, onSearch, onHostelFilter, onRowClick }) => {
+const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick }) => {
 
     const headers = [
         { key: 'date', label: 'Date' },
@@ -63,6 +63,7 @@ const VisitorAggregatedView = ({ visitors, loading, onSearch, onHostelFilter, on
     return (
         <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none">
             <DataTable
+                searchQuery={searchQuery}
                 headers={headers}
                 items={visitors}
                 loading={loading}

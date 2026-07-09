@@ -5,8 +5,7 @@ import Button from '@/components/ui/Button';
 import FilterModal from './modals/FilterModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
-
-const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh }) => {
+const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     console.log('visitors from page;', visitors)
 
@@ -57,20 +56,23 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
         </div>
     );
 
+    const hasActiveFilters = filters && (filters.status || filters.fromDate || filters.toDate);
+
     const toolbarActions = (
         <div className="flex items-center gap-2 relative">
             <Button
-                variant="outline"
+                variant={hasActiveFilters ? "primary" : "outline"}
                 size="sm"
                 fullWidth={false}
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
-                <Filter className="w-4 h-4" /> Filter
+                <Filter className="w-4 h-4" />
             </Button>
 
             <FilterModal
                 isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}
+                filters={filters}
                 onFilter={onFilter}
             />
 
@@ -83,6 +85,7 @@ const VisitorDetailedView = ({ visitors, loading, onSearch, onFilter, onRefresh 
     return (
         <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none relative">
             <DataTable
+                searchQuery={searchQuery}
                 headers={headers}
                 items={visitors}
                 loading={loading}
