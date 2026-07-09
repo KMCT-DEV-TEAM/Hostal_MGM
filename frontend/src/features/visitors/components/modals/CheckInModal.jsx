@@ -6,16 +6,16 @@ import { visitorApi } from '../../api/visitorApi';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import TimeInput from '@/components/ui/TimeInput';
 import Dropdown from '@/components/ui/Dropdown';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 const checkInSchema = z.object({
     visitorId: z.string().min(1, 'Visitor is required'),
-    idProofType: z.string().min(1, 'ID Proof Type is required'),
-    idNumber: z.string().min(1, 'ID Number is required'),
+    idProofType: z.string().optional(),
+    idNumber: z.string().optional(),
     purpose: z.string().min(1, 'Purpose is required'),
-    fromTime: z.string().min(1, 'From time is required'),
-    toTime: z.string().min(1, 'To time is required'),
+    expectedExitTime: z.string().min(1, 'Expected return time is required'),
 });
 
 const visitorOptions = [
@@ -46,12 +46,27 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
 
     const onSubmit = async (data) => {
         try {
-            await visitorApi.checkInVisitor(data);
+            const now = new Date();
+            const [hours, minutes] = data.expectedExitTime.split(':');
+            now.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+            const payload = {
+                visitor: {
+                    refId: data.visitorId,
+                    refType: prefilledVisitor?.refType || 'Visitor'
+                },
+                purpose: data.purpose,
+                expectedExitTime: now.toISOString()
+            };
+
+            await visitorApi.checkInVisitor(payload);
+            showSuccessToast('Visitor checked in successfully');
             reset();
             onSuccess();
             onClose();
         } catch (error) {
             console.error("Failed to check in", error);
+            showErrorToast('Failed to check in', error.message || 'Something went wrong');
         }
     };
 
@@ -88,36 +103,55 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                 />
                             )}
                         />
-                        {errors.visitorId && <span className="text-xs text-red-500 mt-1">{errors.visitorId.message}</span>}
+                        {errors.visitorId && <span className="text-xs text-danger mt-1">{errors.visitorId.message}</span>}
                     </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block mb-2 text-sm text-text-primary font-medium">Id Proof Type</label>
-                        <Controller
-                            name="idProofType"
-                            control={control}
-                            render={({ field }) => (
-                                <Dropdown
-                                    options={idProofOptions}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    placeholder="Select ID Type"
-                                    triggerClassName="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
+                    {prefilledVisitor ? (
+                        <>
+                            <div>
+                                <label className="block mb-2 text-sm text-text-primary font-medium">Id Proof Type</label>
+                                <div className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium uppercase">
+                                    {prefilledVisitor.idProofType || '--'}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block mb-2 text-sm text-text-primary font-medium">Id Number</label>
+                                <div className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium font-mono">
+                                    {prefilledVisitor.idProofNumber || '--'}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block mb-2 text-sm text-text-primary font-medium">Id Proof Type</label>
+                                <Controller
+                                    name="idProofType"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Dropdown
+                                            options={idProofOptions}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Select ID Type"
+                                            triggerClassName="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                        {errors.idProofType && <span className="text-xs text-red-500 mt-1">{errors.idProofType.message}</span>}
-                    </div>
-                    <div>
-                        <Input
-                            label="Id Number"
-                            {...register('idNumber')}
-                            placeholder="1234 5678 9012"
-                            error={errors.idNumber?.message}
-                        />
-                    </div>
+                                {errors.idProofType && <span className="text-xs text-red-500 mt-1">{errors.idProofType.message}</span>}
+                            </div>
+                            <div>
+                                <Input
+                                    label="Id Number"
+                                    {...register('idNumber')}
+                                    placeholder="1234 5678 9012"
+                                    error={errors.idNumber?.message}
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div>
@@ -131,18 +165,11 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                     {errors.purpose && <span className="text-xs text-red-500 mt-1">{errors.purpose.message}</span>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <Input
-                        label="From"
-                        type="time"
-                        {...register('fromTime')}
-                        error={errors.fromTime?.message}
-                    />
-                    <Input
-                        label="To"
-                        type="time"
-                        {...register('toTime')}
-                        error={errors.toTime?.message}
+                <div>
+                    <TimeInput
+                        label="Expected Return Time *"
+                        {...register('expectedExitTime')}
+                        error={errors.expectedExitTime?.message}
                     />
                 </div>
             </div>
