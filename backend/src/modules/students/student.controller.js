@@ -550,10 +550,8 @@ const getStudentFilterOptions = asyncHandler(async (req, res) => {
 
 
 
-// Get allocated furniture assets for a specific student
 const getStudentFurnitures = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  // Verify student exists (optional)
   const student = await Student.findById(id).lean();
   if (!student) {
     return sendError(res, 404, "Student not found");
@@ -594,39 +592,36 @@ const getStudentById = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
-  // RBAC checks
   if (user.role === "admin") {
     const admin = await User.findById(user.id || user._id).select("organization").lean();
-    if (!admin?.organization || student.organizationId.toString() !== admin.organization.toString()) {
+    console.log(admin, user, student)
+    if (!admin?.organization || student.organizationId?._id?.toString() !== admin.organization.toString()) {
       return sendError(res, 403, "Access denied: Student belongs to another organization");
     }
   }
-
   if (user.role === "warden") {
-    const warden = await User.findById(user.id || user._id).select("hostel").lean();
-    if (!warden?.hostel || student.hostelId?.toString() !== warden.hostel.toString()) {
+    const hostel = await Hostel.findOne({ wardens: user.id || user._id }).lean();
+    const studentHostelId = student.hostelId?._id?.toString() || student.hostelId?.toString();
+
+    if (!hostel || studentHostelId !== hostel._id.toString()) {
       return sendError(res, 403, "Access denied: Student belongs to another hostel");
     }
   }
 
-  // Fetch Parent
   const parents = await Parent.find({ studentId: id }).lean();
   if (parents && parents.length > 0) {
-    // Remove password fields just to be safe
     student.parents = parents.map(p => {
       const { password, ...parentData } = p;
       return parentData;
     });
   }
 
-  // Map populated fields to match aggregation pipeline structure
   student.organization = student.organizationId;
   student.hostel = student.hostelId;
   student.course = student.courseId;
   student.department = student.departmentId;
   student.batch = student.batchId;
 
-  // Optional: Restore IDs if frontend expects them to be strings/ObjectIds
   student.organizationId = student.organization?._id;
   student.hostelId = student.hostel?._id;
   student.courseId = student.course?._id;
