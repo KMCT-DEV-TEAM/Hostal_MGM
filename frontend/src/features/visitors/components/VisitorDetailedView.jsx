@@ -3,10 +3,12 @@ import { Download, Filter } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import FilterModal from './modals/FilterModal';
+import VisitDetailsModal from './modals/VisitDetailsModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
 const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedVisitId, setSelectedVisitId] = useState(null);
     console.log('visitors from page;', visitors)
 
     const headers = [
@@ -94,11 +96,18 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 toolbarActions={toolbarActions}
                 renderRow={renderRow}
                 renderMobileItem={renderMobileItem}
+                onRowClick={(row) => setSelectedVisitId(row.visitId || row._id || row.id)}
                 page={1}
                 setPage={() => { }}
                 limit={10}
                 totalItems={visitors?.length}
                 totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
+            />
+
+            <VisitDetailsModal
+                isOpen={!!selectedVisitId}
+                onClose={() => setSelectedVisitId(null)}
+                visitId={selectedVisitId}
             />
         </div>
     );
