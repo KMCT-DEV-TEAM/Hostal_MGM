@@ -527,11 +527,6 @@ export const DASHBOARD_NAV = {
             section: 'OPERATIONS',
             items: [
                 {
-                    icon: AlertTriangle,
-                    label: 'Complaints',
-                    path: '/dashboard/complaints'
-                },
-                {
                     icon: Calendar,
                     label: 'Attendance',
                     path: '/dashboard/attendance'
