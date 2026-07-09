@@ -1,7 +1,7 @@
 import React from 'react';
 import { getNotificationIconConfig } from '../utils/notificationIconConfig';
 
-const NotificationIcon = ({ event }) => {
+const NotificationIcon = ({ event = null }) => {
     // We expect the 'event' string here, e.g. 'PASS_ADMIN_APPROVED'
     const { icon: Icon, colorClass, borderColorClass } = getNotificationIconConfig(event);
 

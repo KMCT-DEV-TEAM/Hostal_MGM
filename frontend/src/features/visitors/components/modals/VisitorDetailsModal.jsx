@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { getVisitorDetails } from '@/services/visitor.service';
 import { useAuthStore } from '@/store/useAuthStore';
+
 import Button from '@/components/ui/Button';
 import CheckInModal from './CheckInModal';
 
@@ -94,7 +95,6 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
                             </Button>
                         )}
                     </div>
-
                     <hr className="border-gray-100 mb-8" />
 
                     <div className="space-y-1">
@@ -107,7 +107,6 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
                     </div>
                 </div>
             </div>
-
             <CheckInModal
                 isOpen={isCheckInOpen}
                 onClose={() => setIsCheckInOpen(false)}

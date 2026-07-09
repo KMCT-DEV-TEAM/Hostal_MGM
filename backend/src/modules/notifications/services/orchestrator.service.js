@@ -48,7 +48,6 @@ class OrchestratorService {
         }
 
         const recipientCursor = await recipientService.getRecipients(target);
-
         let processedCount = 0;
         let batch = [];
         const BATCH_SIZE = 500;
@@ -61,7 +60,6 @@ class OrchestratorService {
             // 3. Process the stream in batches
             for await (const user of recipientCursor) {
                 batch.push(user);
-
                 if (batch.length >= BATCH_SIZE) {
                     await this.processBatch(batch, eventName, data, channels, session, sender);
                     processedCount += batch.length;
