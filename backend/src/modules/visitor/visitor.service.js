@@ -869,6 +869,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
 
     // 5. Construct Visit Data
     const now = new Date();
+    const parsedExpectedExitTime = new Date(expectedExitTime);
 
     const visitData = {
         organizationId: organizationId,
@@ -881,7 +882,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
         purpose: purpose,
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         checkInTime: now,
-        expectedExitTime,
+        expectedExitTime: parsedExpectedExitTime,
         checkedInBy: wardenUser.id,
         visitTimeline: [{
             action: VISITOR_VISIT_TIMELINE_ACTIONS.CHECKED_IN,
@@ -903,7 +904,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
             studentName: studentNames,
             purpose: purpose,
             checkInTime: now.toISOString(),
-            expectedExitTime: expectedExitTime.toISOString()
+            expectedExitTime: parsedExpectedExitTime.toISOString()
         };
 
         const notificationSender = {
