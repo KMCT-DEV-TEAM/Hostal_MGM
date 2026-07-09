@@ -24,17 +24,13 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
     const renderRow = (visitor) => (
         <>
             <td className="p-4 text-text-secondary font-medium">{formatDateReadable(visitor.checkInTime)}</td>
-            <td className="p-4 flex items-center gap-3
-             text-gray-700">
+            <td className="p-4 flex items-center gap-3 text-gray-700">
                 <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
-                    {visitor.visitorName.charAt(0)}
+                    {(visitor.visitorName || 'U').charAt(0)}
                 </div>
-                <span className="text-sm font-semibold">{visitor.visitorName}</span>
+                <span className="text-sm font-semibold">{visitor.visitorName || 'Unknown'}</span>
             </td>
-            <td className="p-4 text-text-secondary font-medium">
-
-                <td className="p-4 text-text-secondary font-medium">{visitor.studentNames}</td>
-            </td>
+            <td className="p-4 text-text-secondary font-medium">{visitor.studentNames || '--'}</td>
             <td className="p-4 text-text-secondary font-medium">{visitor.roomNo}</td>
             <td className="p-4 text-text-secondary font-medium">{formatTime(visitor.checkInTime)}</td>
             <td className="p-4 text-text-secondary font-medium">{visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '--------'}</td>
@@ -47,13 +43,13 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
     const renderMobileItem = (visitor) => (
         <div className="flex flex-col gap-2 p-4">
             <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-900">{visitor.visitorName}</span>
-                <StatusBadge status={visitor.status} />
+                <span className="font-medium text-gray-900">{visitor.visitorName || 'Unknown'}</span>
+                <span className="text-sm text-gray-500">{formatDateReadable(visitor.checkInTime)}</span>
             </div>
-            <div className="text-sm text-gray-600">Visiting: {visitor.visitingStudent} ({visitor.roomNo})</div>
+            <div className="text-sm text-gray-600">Visiting: {visitor.visitingStudent || '--'} ({visitor.roomNo || '--'})</div>
             <div className="flex justify-between text-sm mt-1">
-                <span className="text-gray-500">In: {visitor.checkIn}</span>
-                <span className="text-gray-500">Out: {visitor.checkOut || '---'}</span>
+                <span className="text-gray-500">In: {formatTime(visitor.checkInTime)}</span>
+                <span className="text-gray-500">Out: {visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '---'}</span>
             </div>
         </div>
     );
