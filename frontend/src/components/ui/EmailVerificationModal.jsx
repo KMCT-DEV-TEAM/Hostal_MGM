@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, ArrowLeft } from 'lucide-react';
 import OtpInput from '@/components/ui/OtpInput';
 
-export default function EmailVerificationModal({ isOpen, onClose, onVerify, email, isSubmitting }) {
+export default function EmailVerificationModal({ isOpen, onClose, onVerify, email, isSubmitting, onResend, error }) {
     const [otp, setOtp] = useState('');
     const [isResending, setIsResending] = useState(false);
     const [resendTimer, setResendTimer] = useState(300);
@@ -39,8 +39,11 @@ export default function EmailVerificationModal({ isOpen, onClose, onVerify, emai
     const handleResend = async () => {
         setIsResending(true);
         try {
-            const authService = (await import('@/services/auth.service')).default;
-            await authService.requestEmailChange({ newEmail: email });
+            if (onResend) {
+                await onResend();
+            } else {
+                await requestEmailChange({ newEmail: email });
+            }
             setResendTimer(300);
             setIsTimerActive(true);
             const { showSuccessToast } = await import('@/utils/toast');
@@ -81,11 +84,14 @@ export default function EmailVerificationModal({ isOpen, onClose, onVerify, emai
                     A 6-digit code was sent to <span className="text-[#0A437A]">{email || '@usergmail.com'}</span>
                 </p>
 
-                <div className="flex justify-center gap-2 sm:gap-3 mb-8 w-full">
-                    <OtpInput value={otp} onChange={setOtp} />
+                <div className="flex justify-center gap-2 sm:gap-3 mb-2 w-full">
+                    <OtpInput value={otp} onChange={setOtp} error={!!error} />
                 </div>
+                {error && (
+                    <p className="text-red-500 text-xs mb-6 font-medium">{error}</p>
+                )}
 
-                <p className="text-[14px] text-gray-400 mb-8 font-medium">
+                <p className={`text-[14px] text-gray-400 font-medium ${error ? 'mb-8' : 'mb-8 mt-6'}`}>
                     Didn't receive it ? {resendTimer > 0 ? (
                         <span className="text-gray-500 font-semibold ml-1">Resend in {formatTime(resendTimer)}</span>
                     ) : (

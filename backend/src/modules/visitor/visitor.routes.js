@@ -1,12 +1,12 @@
 import express from 'express';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
-import { 
-    validateCreateVisitor, 
-    validateListVisitors, 
-    validateEndUserListVisitors, 
+import {
+    validateCreateVisitor,
+    validateListVisitors,
+    validateEndUserListVisitors,
     validateGetVisitorDetails,
-    validateApproveVisitor, 
+    validateApproveVisitor,
     validateRejectVisitor,
     validateCheckInVisitor,
     validateSuperAdminHostelVisits,
@@ -42,7 +42,7 @@ router.get(
 router.get(
     '/visitor-visits',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
     validateListVisits,
     visitorController.listVisitorVisits
 );

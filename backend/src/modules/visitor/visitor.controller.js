@@ -350,7 +350,7 @@ export const getSuperAdminHostelVisits = async (req, res) => {
 };
 
 /**
- * Super Admin, Admin, and Warden list visits
+ * Super Admin, Admin, Warden, Parent and Student list visits
  * @route GET /visitor-visits
  */
 export const listVisitorVisits = async (req, res) => {

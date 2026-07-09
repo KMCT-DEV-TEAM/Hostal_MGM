@@ -10,6 +10,7 @@ import {
     VISITOR_VISIT_TIMELINE_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import studentModel from '../students/student.model.js';
 
 /**
  * Parent creates a new visitor profile
@@ -868,6 +869,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
 
     // 5. Construct Visit Data
     const now = new Date();
+    const parsedExpectedExitTime = new Date(expectedExitTime);
 
     const visitData = {
         organizationId: organizationId,
@@ -880,7 +882,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
         purpose: purpose,
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         checkInTime: now,
-        expectedExitTime,
+        expectedExitTime: parsedExpectedExitTime,
         checkedInBy: wardenUser.id,
         visitTimeline: [{
             action: VISITOR_VISIT_TIMELINE_ACTIONS.CHECKED_IN,
@@ -902,7 +904,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
             studentName: studentNames,
             purpose: purpose,
             checkInTime: now.toISOString(),
-            expectedExitTime: expectedExitTime.toISOString()
+            expectedExitTime: parsedExpectedExitTime.toISOString()
         };
 
         const notificationSender = {
@@ -1028,6 +1030,26 @@ export const listVisitorVisits = async (query, user) => {
             throw error;
         }
         targetHostelId = wardenHostel._id.toString(); // Force warden to their hostel
+
+
+    } else if (user.role === 'parent') {
+        const Parent = mongoose.model('Parent');
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) {
+            const error = new Error('Parent not found.');
+            error.status = 404;
+            throw error;
+        }
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const authorizedStudentIds = parentDocs.map(p => p.studentId);
+
+        if (authorizedStudentIds.length === 0) {
+            return { total: 0, page: Number(page), limit: Number(limit), totalPages: 0, data: [] };
+        }
+        matchStage.students = { $in: authorizedStudentIds };
+
+    } else if (user.role === 'student') {
+        matchStage.students = new mongoose.Types.ObjectId(user.id);
     } else {
         const error = new Error('Unauthorized role to list visitor visits.');
         error.status = 403;

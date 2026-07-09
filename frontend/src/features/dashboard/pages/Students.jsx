@@ -1,5 +1,6 @@
 "use client"
 import React, { useCallback, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { getStudentPermissions } from "@/features/dashboard/config/studentPermissions";
@@ -12,6 +13,7 @@ import {
   getStudents,
 } from "@/services/student.service";
 import StudentsTable from "../components/students/StudentsTable";
+import StudentsMobileList from "../components/students/StudentsMobileList";
 import StudentsHeader from "../components/students/StudentsHeader";
 import StudentsToolbar from "../components/students/StudentsToolbar";
 import StudentFormModal from "../components/students/StudentFormModal";
@@ -310,7 +312,7 @@ export default function Students() {
   };
 
   return (
-    <div className="w-full sticky h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+    <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
       <StudentsHeader
         selectedIds={selectedIds}
         students={students}
@@ -321,83 +323,110 @@ export default function Students() {
         onDeactivateSelected={handleDeactivateSelected}
       />
 
-      <StudentsToolbar
-        canCreate={canCreate}
-        searchValue={filters.search}
-        onSearch={handleSearch}
-        onFilterClick={() => setIsFilterModalOpen(true)}
-        onExport={handleExport}
-        onAddClick={handleAddClick}
-      />
+      <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
+        <StudentsToolbar
+          canCreate={canCreate}
+          searchValue={filters.search}
+          onSearch={handleSearch}
+          onFilterClick={() => setIsFilterModalOpen(true)}
+          onExport={handleExport}
+          onAddClick={handleAddClick}
+          selectedIds={selectedIds}
+          onActivateSelected={handleActivateSelected}
+          onDeactivateSelected={handleDeactivateSelected}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
 
-      <StudentsTable
-        students={students}
-        loading={loading}
-        error={error}
-        canEdit={canEdit}
-        canDelete={canDelete}
-        showOrganizationColumn={role === ROLES.SUPER_ADMIN}
-        selectedIds={selectedIds}
-        onSelectAll={handleSelectAll}
-        onSelectRow={handleSelectRow}
-        onViewClick={setViewingStudent}
-        onEditClick={handleEditClick}
-        onDeleteClick={handleDeleteRow}
-        onStatusChange={handleStatusChange}
-        statusLoadingIds={statusLoadingIds}
-      />
+        <StudentsTable
+          students={students}
+          loading={loading}
+          error={error}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          showOrganizationColumn={role === ROLES.SUPER_ADMIN}
+          selectedIds={selectedIds}
+          onSelectAll={handleSelectAll}
+          onSelectRow={handleSelectRow}
+          onViewClick={setViewingStudent}
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeleteRow}
+          onStatusChange={handleStatusChange}
+          statusLoadingIds={statusLoadingIds}
+        />
 
-      <div className="flex flex-col sm:flex-row p-4 bg-white border border-gray-50 items-center justify-between text-xs font-medium text-gray-500 rounded-b-xl shadow-sm gap-3">
-        <div>
-          Showing {pagination.totalRecords === 0 ? 0 : (page - 1) * limit + 1}{" "}
-          to {Math.min(page * limit, pagination.totalRecords)} of{" "}
-          {pagination.totalRecords} entries
-        </div>
-        <div className="flex items-center gap-1 flex-wrap">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          {(() => {
-                            let startPage = Math.max(1, page - 1);
-                            let endPage = Math.min(pagination.totalPages, page + 1);
+        <StudentsMobileList
+          students={students}
+          loading={loading}
+          error={error}
+          canEdit={canEdit}
+          showOrganizationColumn={role === ROLES.SUPER_ADMIN}
+          selectedIds={selectedIds}
+          onSelectAll={handleSelectAll}
+          onSelectRow={handleSelectRow}
+          onViewClick={setViewingStudent}
+          onEditClick={handleEditClick}
+          onStatusChange={handleStatusChange}
+          statusLoadingIds={statusLoadingIds}
+        />
 
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(pagination.totalPages, 3);
-                                } else if (endPage === pagination.totalPages) {
-                                    startPage = Math.max(1, pagination.totalPages - 2);
-                                }
-                            }
+        <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+          <div>
+            <span className="hidden sm:inline">Showing </span>
+            {pagination.totalRecords === 0 ? 0 : (page - 1) * limit + 1}
+            <span className="hidden sm:inline"> to </span>
+            <span className="sm:hidden">-</span>
+            {Math.min(page * limit, pagination.totalRecords)} of {pagination.totalRecords}
+            <span className="hidden sm:inline"> entries</span>
+          </div>
 
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
+          <div className="flex items-center gap-1 flex-wrap">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {(() => {
+              let startPage = Math.max(1, page - 1);
+              let endPage = Math.min(pagination.totalPages, page + 1);
 
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-          <button
-            disabled={!pagination.hasNextPage}
-            onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
-            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
+              if (endPage - startPage < 2) {
+                if (startPage === 1) {
+                  endPage = Math.min(pagination.totalPages, 3);
+                } else if (endPage === pagination.totalPages) {
+                  startPage = Math.max(1, pagination.totalPages - 2);
+                }
+              }
+
+              const visiblePages = [];
+              for (let i = startPage; i <= endPage; i++) {
+                visiblePages.push(i);
+              }
+
+              return visiblePages.map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                    page === pageNum
+                      ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                      : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                  } cursor-pointer`}
+                >
+                  {pageNum}
+                </button>
+              ));
+            })()}
+            <button
+              disabled={!pagination.hasNextPage}
+              onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+              className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
