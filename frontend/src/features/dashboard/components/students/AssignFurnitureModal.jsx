@@ -140,7 +140,7 @@ export default function AssignFurnitureModal({
   const fetchFurnitureAssetsOptions = useCallback(async ({ page, search }) => {
     if (!selectedTypeId) return { options: [], hasMore: false };
     try {
-      const res = await furnitureApi.getAvailableFurnitureAssetsList(selectedTypeId, { page, search, limit: 10 });
+      const res = await furnitureApi.getAvailableFurnitureAssetsList(selectedTypeId, { page, status: "available", search, limit: 10 });
       const assets = res.data?.data?.assets || res.data?.assets || res.data?.data || [];
       const pagination = res.data?.data?.pagination || res.data?.pagination || {};
 

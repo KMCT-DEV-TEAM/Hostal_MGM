@@ -31,7 +31,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { changeStudentEmail } from "@/services/student.service";
 import { changeParentEmail } from "@/services/parent.service";
-import { formatDateStandard } from "@/utils/formatters";
+import { formatDateReadable, formatDateStandard } from "@/utils/formatters";
 import { getStudentFurnitures } from "@/services/student.service";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 import { getHostels } from "@/services/hostel.service";
@@ -567,7 +567,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                   label="Assigned On"
                 >
                   {assignedFurnitures.length > 0 && assignedFurnitures[0].createdAt
-                    ? formatDate(assignedFurnitures[0].createdAt)
+                    ? formatDateReadable(assignedFurnitures[0].createdAt)
                     : "N/A"}
                 </InfoRow>
                 <InfoRow
