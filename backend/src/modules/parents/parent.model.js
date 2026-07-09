@@ -57,5 +57,19 @@ const parentSchema = new mongoose.Schema(
 
 parentSchema.index({ studentId: 1 });
 
+
+parentSchema.set("toJSON", {
+  transform(doc, ret) {
+    delete ret.password;
+    return ret;
+  },
+});
+
+parentSchema.set("toObject", {
+  transform(doc, ret) {
+    delete ret.password;
+    return ret;
+  },
+});
 const Parent = mongoose.model("Parent", parentSchema);
 export default Parent;
