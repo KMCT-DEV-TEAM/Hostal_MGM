@@ -470,7 +470,8 @@ return (
                     options: [
                         { label: 'All Categories', value: '' },
                         ...categories.map(cat => ({ label: cat.name, value: cat.name }))
-                    ]
+                    ],
+                    defaultValue: categoryFilter === 'All' ? '' : categoryFilter
                 },
                 {
                     name: "status",
@@ -483,7 +484,8 @@ return (
                         { label: 'Rejected', value: 'Rejected' },
                         { label: 'Incomplete', value: 'Incomplete' },
                         { label: 'Resolved', value: 'Resolved' }
-                    ]
+                    ],
+                    defaultValue: statusFilter === 'All' ? '' : statusFilter
                 }
             ]}
         />

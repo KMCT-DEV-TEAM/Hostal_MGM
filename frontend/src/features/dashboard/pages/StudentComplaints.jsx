@@ -525,7 +525,8 @@ export default function StudentComplaints() {
                             { label: 'Rejected', value: 'Rejected' },
                             { label: 'Incomplete', value: 'Incomplete' },
                             { label: 'Resolved', value: 'Resolved' }
-                        ]
+                        ],
+                        defaultValue: statusFilter === 'All' ? '' : statusFilter
                     }
                 ]}
             />

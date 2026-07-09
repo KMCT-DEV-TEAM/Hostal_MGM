@@ -291,7 +291,8 @@ export default function Parents() {
                 { label: 'All Statuses', value: '' },
                 { label: 'Active Only', value: 'true' },
                 { label: 'Inactive Only', value: 'false' },
-            ]
+            ],
+            defaultValue: filters.isActive === 'true' ? 'true' : (filters.isActive === 'false' ? 'false' : '')
         }
     ];
 
@@ -302,7 +303,8 @@ export default function Parents() {
             options: [
                 { label: 'All Organizations', value: '' },
                 ...organizations.map(org => ({ label: org.name, value: org._id }))
-            ]
+            ],
+            defaultValue: filters.organizationId || ''
         });
     }
 
