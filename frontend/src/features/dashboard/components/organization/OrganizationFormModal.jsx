@@ -13,6 +13,8 @@ const OrganizationFormModal = ({
     isSubmitting
 }) => {
     const { t } = useTranslation();
+    const [errors, setErrors] = React.useState({ name: '', phone: '', email: '' });
+
     if (!isModalOpen) return null;
 
     return (
@@ -60,18 +62,33 @@ const OrganizationFormModal = ({
                                 <input
                                     name="name"
                                     value={formData.name}
-                                    onChange={handleInputChange}
+                                    pattern="[A-Za-z\s]+"
+                                    title="Only letters are allowed"
+                                    onChange={(e) => {
+                                        const originalVal = e.target.value;
+                                        const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
+                                        if (originalVal !== cleanVal) {
+                                            setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
+                                        } else {
+                                            setErrors(prev => ({ ...prev, name: '' }));
+                                        }
+                                        handleInputChange({ target: { name: 'name', value: cleanVal } });
+                                    }}
                                     required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
+                                    className={`w-full p-2.5 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs outline-none focus:border-[#0A437A]`}
                                     placeholder={t('org_name_placeholder')}
                                 />
+                                {errors.name && <p className="text-red-500 text-[10px] mt-1">{errors.name}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">{t('code')} <span className="text-red-500">*</span></label>
                                 <input
                                     name="code"
                                     value={formData.code}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        const val = e.target.value.toUpperCase();
+                                        handleInputChange({ target: { name: 'code', value: val } });
+                                    }}
                                     required
                                     disabled={isEditMode}
                                     className={`w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
@@ -83,7 +100,10 @@ const OrganizationFormModal = ({
                                 <input
                                     name="organisationNumber"
                                     value={formData.organisationNumber}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        const val = e.target.value.toUpperCase();
+                                        handleInputChange({ target: { name: 'organisationNumber', value: val } });
+                                    }}
                                     required
                                     className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
                                     placeholder="ORG001"
@@ -101,16 +121,33 @@ const OrganizationFormModal = ({
                                 <input
                                     name="email"
                                     value={formData.email}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/\s/.test(val)) {
+                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                        } else {
+                                            setErrors(prev => ({ ...prev, email: '' }));
+                                        }
+                                        handleInputChange(e);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === ' ') {
+                                            e.preventDefault();
+                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                        } else {
+                                            setErrors(prev => ({ ...prev, email: '' }));
+                                        }
+                                    }}
                                     type="email"
                                     required
                                     placeholder="info@example.com"
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                    className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 />
+                                {errors.email && <p className="text-red-500 text-[10px] mt-1">{errors.email}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
-                                <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
+                                <div className={`flex border ${errors.phone ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden focus-within:border-[#0A437A]`}>
                                     <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
                                         <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
                                         +91
@@ -119,9 +156,15 @@ const OrganizationFormModal = ({
                                         name="phone"
                                         value={formData.phone}
                                         onChange={(e) => {
-                                            const value = e.target.value.replace(/\D/g, '');
-                                            if (value.length <= 10) {
-                                                handleInputChange({ target: { name: 'phone', value } });
+                                            const originalVal = e.target.value;
+                                            const val = originalVal.replace(/\D/g, '');
+                                            if (originalVal !== val) {
+                                                setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
+                                            } else {
+                                                setErrors(prev => ({ ...prev, phone: '' }));
+                                            }
+                                            if (val.length <= 10) {
+                                                handleInputChange({ target: { name: 'phone', value: val } });
                                             }
                                         }}
                                         type="text"
@@ -129,10 +172,11 @@ const OrganizationFormModal = ({
                                         maxLength="10"
                                         pattern="[0-9]{10}"
                                         title="Please enter exactly 10 digits"
-                                        placeholder="9876543210"
+                                        placeholder="0000000000"
                                         className="w-full px-3 py-2 text-xs outline-none"
                                     />
                                 </div>
+                                {errors.phone && <p className="text-red-500 text-[10px] mt-1">{errors.phone}</p>}
                             </div>
                             <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-xs font-medium text-black mb-1">{t('full_address')} <span className="text-red-500">*</span></label>
@@ -152,7 +196,7 @@ const OrganizationFormModal = ({
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || (formData.phone?.length !== 10) || !!errors.name || !!errors.phone || !!errors.email}
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}

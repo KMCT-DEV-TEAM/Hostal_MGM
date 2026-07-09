@@ -155,6 +155,14 @@ export default function WardenFormModal({
                                                 }
                                                 setWardenForm({ ...wardenForm, email: val });
                                             }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === ' ') {
+                                                    e.preventDefault();
+                                                    setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                } else {
+                                                    setErrors(prev => ({ ...prev, email: '' }));
+                                                }
+                                            }}
                                             disabled={editingWarden}
                                             className={`w-full px-3 py-2.5 bg-gray-50/50 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs outline-none focus:border-[#0A437A] disabled:bg-gray-100 disabled:text-gray-500`}
                                         />

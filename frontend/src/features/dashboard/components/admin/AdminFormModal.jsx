@@ -180,6 +180,14 @@ const AdminFormModal = ({
                                             }
                                             setAdminForm({ ...adminForm, email: val });
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === ' ') {
+                                                e.preventDefault();
+                                                setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                            } else {
+                                                setErrors(prev => ({ ...prev, email: '' }));
+                                            }
+                                        }}
                                         className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                         disabled={isEmailVerified}
                                     />
