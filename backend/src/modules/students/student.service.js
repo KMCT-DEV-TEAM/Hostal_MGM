@@ -499,6 +499,10 @@ const getStudentsService = async ({
     },
 
     {
+      $unset: ["parents.password", "password"],
+    },
+
+    {
       $sort: {
         createdAt: -1,
       },

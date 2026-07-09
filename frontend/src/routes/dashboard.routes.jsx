@@ -5,6 +5,7 @@ import Administrator from '@/features/dashboard/pages/Administrator';
 import WardenManagement from '@/features/dashboard/pages/WardenManagement';
 import Parents from '@/features/dashboard/pages/Parents';
 import Students from '@/features/dashboard/pages/Students';
+import StudentDetailView from '@/features/dashboard/components/students/StudentDetailView';
 import AdminAttendance from '@/features/dashboard/pages/AdminAttendance';
 // import SuperAdminAttendance from '@/features/dashboard/pages/SuperAdminAttendance';
 import AttendanceScan from '@/features/dashboard/pages/AttendanceScan';
@@ -114,6 +115,16 @@ export const dashboardRoutes = [
             ROLES.WARDEN
         ],
         element: Students
+    },
+
+    {
+        path: 'students/:id',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN
+        ],
+        element: StudentDetailView
     },
 
     {

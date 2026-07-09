@@ -40,6 +40,14 @@ router.get(
 );
 
 router.get(
+    '/super-admin/visitors/hostels',
+    authMiddleware,
+    roleMiddleware('super_admin'),
+    validateSuperAdminHostelVisits,
+    visitorController.getSuperAdminHostelVisitors
+);
+
+router.get(
     '/visitor-visits',
     authMiddleware,
     roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),

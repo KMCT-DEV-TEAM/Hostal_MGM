@@ -3,6 +3,9 @@ import Modal from "@/components/ui/Modal";
 import Dropdown from "@/components/ui/Dropdown";
 import courseService from "@/services/course.service";
 import departmentService from "@/services/department.service";
+import PasswordConfirmModal from '@/components/ui/PasswordConfirmModal';
+import authService from '@/services/auth.service';
+import { showErrorToast } from '@/utils/toast';
 
 import { ROLES } from "@/constants/roles";
 export default function StudentExportFilterModal({
@@ -17,6 +20,8 @@ export default function StudentExportFilterModal({
   const [statusFilter, setStatusFilter] = useState("");
   const [courseId, setCourseId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -102,97 +107,122 @@ export default function StudentExportFilterModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onExport({
-      isActive: statusFilter,
-      course: courseId,
-      department: departmentId,
-    });
+    setIsPasswordModalOpen(true);
+  };
+
+  const handlePasswordConfirm = async (password) => {
+    setIsVerifyingPassword(true);
+    try {
+      await authService.verifyPassword({ password });
+      setIsVerifyingPassword(false);
+      setIsPasswordModalOpen(false);
+      onExport({
+        isActive: statusFilter,
+        course: courseId,
+        department: departmentId,
+      });
+    } catch (error) {
+      showErrorToast('Export Failed', 'Incorrect password');
+      setIsVerifyingPassword(false);
+    }
   };
 
   return (
-    <Modal bottomSheetOnMobile={true}
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      subtitle={subtitle}
-      maxWidth="max-w-md"
-      asForm
-      onSubmit={handleSubmit}
-      footer={
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
-            disabled={isExporting}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isExporting}
-            className="px-5 py-2 bg-[#0A437A] text-white rounded-md text-xs font-medium hover:bg-[#083663] disabled:opacity-50 flex items-center justify-center min-w-[120px] cursor-pointer"
-          >
-            {isExporting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              "Export to Excel"
-            )}
-          </button>
-        </div>
-      }
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div className="relative" style={{ zIndex: 20 }}>
-          <label className="block mb-1.5 text-xs font-medium text-gray-700">
-            Account Status
-          </label>
-          <Dropdown
-            options={statusOptions}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            className="w-full"
-          />
-        </div>
+    <>
+      <Modal bottomSheetOnMobile={true}
+        isOpen={isOpen}
+        onClose={onClose}
+        title={title}
+        subtitle={subtitle}
+        maxWidth="max-w-md"
+        asForm
+        onSubmit={handleSubmit}
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              disabled={isExporting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isExporting}
+              className="px-5 py-2 bg-[#0A437A] text-white rounded-md text-xs font-medium hover:bg-[#083663] disabled:opacity-50 flex items-center justify-center min-w-[120px] cursor-pointer"
+            >
+              {isExporting ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                "Export to Excel"
+              )}
+            </button>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="relative" style={{ zIndex: 20 }}>
+            <label className="block mb-1.5 text-xs font-medium text-gray-700">
+              Account Status
+            </label>
+            <Dropdown
+              options={statusOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              className="w-full"
+            />
+          </div>
 
-        <div className="relative" style={{ zIndex: 19 }}>
-          <label className="block mb-1.5 text-xs font-medium text-gray-700">
-            Course
-          </label>
-          <Dropdown
-            options={courseOptions}
-            value={courseId}
-            onChange={handleCourseChange}
-            className="w-full"
-          />
-          {loadingCourses && (
-            <p className="text-xs text-text-secondary mt-1">Loading courses...</p>
+          <div className="relative" style={{ zIndex: 19 }}>
+            <label className="block mb-1.5 text-xs font-medium text-gray-700">
+              Course
+            </label>
+            <Dropdown
+              options={courseOptions}
+              value={courseId}
+              onChange={handleCourseChange}
+              className="w-full"
+            />
+            {loadingCourses && (
+              <p className="text-xs text-text-secondary mt-1">Loading courses...</p>
+            )}
+          </div>
+
+
+          {role === ROLES.SUPER_ADMIN && (
+            <div className="relative sm:col-span-2" style={{ zIndex: 18 }}>
+              <label className="block mb-1.5 text-xs font-medium text-gray-700">
+                Department
+              </label>
+
+              <Dropdown
+                options={departmentOptions}
+                value={departmentId}
+                onChange={setDepartmentId}
+                disabled={!courseId}
+                className="w-full"
+              />
+
+              {loadingDepartments && (
+                <p className="text-xs text-text-secondary mt-1">
+                  Loading departments...
+                </p>
+              )}
+            </div>
           )}
         </div>
+      </Modal>
 
-       
-       {role === ROLES.SUPER_ADMIN && (
-  <div className="relative sm:col-span-2" style={{ zIndex: 18 }}>
-    <label className="block mb-1.5 text-xs font-medium text-gray-700">
-      Department
-    </label>
-
-    <Dropdown
-      options={departmentOptions}
-      value={departmentId}
-      onChange={setDepartmentId}
-      disabled={!courseId}
-      className="w-full"
-    />
-
-    {loadingDepartments && (
-      <p className="text-xs text-text-secondary mt-1">
-        Loading departments...
-      </p>
-    )}
-  </div>
-)}
-      </div>
-    </Modal>
+      <PasswordConfirmModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        onConfirm={handlePasswordConfirm}
+        title="Verify Password to Export"
+        message="Please enter your password to securely export the data."
+        confirmText={isVerifyingPassword ? "Verifying..." : "Verify & Export"}
+        isVerifying={isVerifyingPassword}
+      />
+    </>
   );
 }

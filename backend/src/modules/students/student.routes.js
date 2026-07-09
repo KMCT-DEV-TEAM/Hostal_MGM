@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent, validateUpdateStudentOrganization, validateBulkStudentStatus } from "./student.validation.js";
-import { createStudent, updateStudent, changeStudentEmail, toggleStudentStatus, bulkUpdateStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentsByWarden, getStudentFilterOptions, getStudentFurnitures } from "./student.controller.js";
+import { createStudent, updateStudent, changeStudentEmail, toggleStudentStatus, bulkUpdateStudentStatus, updateStudentHostelStatus, updateStudentHostel, updateStudentOrganization, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsBySuperAdmin, getStudentsByWarden, getStudentFilterOptions, getStudentFurnitures, getStudentById } from "./student.controller.js";
 
 const router = express.Router();
 
@@ -117,13 +117,21 @@ router.patch(
 
 
 // super admin change orgonisation
-router.patch(
-  "/:id/update-organization",
+router.put(
+  "/:id/organization",
   authMiddleware,
   roleMiddleware("super_admin"),
   validateStudentIdParam,
   validateUpdateStudentOrganization,
   updateStudentOrganization
-)
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  validateStudentIdParam,
+  getStudentById
+);
 
 export default router;

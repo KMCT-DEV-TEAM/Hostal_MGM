@@ -14,6 +14,7 @@ import batchService from "@/services/batch.service";
 import courseService from "@/services/course.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import EmailVerificationModal from "@/components/ui/EmailVerificationModal";
 
 // Human-readable labels used to build friendly required/invalid messages
 // for fields where Zod's default message isn't useful (enums, picked
@@ -221,7 +222,6 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [name, setName] = useState(editingStudent?.name || "");
   const [studentId, setStudentId] = useState(editingStudent?.studentId || "");
   const [dob, setDob] = useState(editingStudent?.dob?.split("T")[0] || "");
-  const [academicYear, setAcademicYear] = useState(editingStudent?.academicYear || "");
   const [address, setAddress] = useState(editingStudent?.address || "");
   const [phone, setPhone] = useState(editingStudent?.phone || "");
   const [parentPhone, setParentPhone] = useState("");
@@ -518,8 +518,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   };
 
-  const handleVerifyOtpSubmit = async () => {
-    if (!verifyOtpValue || verifyOtpValue.length !== 6) {
+  const handleVerifyOtpSubmit = async (otpValue) => {
+    if (!otpValue || otpValue.length !== 6) {
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "Please enter the 6-digit OTP" }));
       showErrorToast("Please enter the 6-digit OTP");
       return;
@@ -527,12 +527,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     try {
       setVerifyingOtp(true);
       const email = verifyTarget === "student" ? studentEmail : parentEmail;
-      await otpService.verifyOtp(email, verifyOtpValue);
+      await otpService.verifyOtp(email, otpValue);
       if (verifyTarget === "student") {
-        setStudentOtp(verifyOtpValue);
+        setStudentOtp(otpValue);
         setEmailVerified((prev) => ({ ...prev, student: true }));
       } else {
-        setParentOtp(verifyOtpValue);
+        setParentOtp(otpValue);
         setEmailVerified((prev) => ({ ...prev, parent: true }));
       }
       setOtpErrors((prev) => ({ ...prev, [verifyTarget]: "" }));
@@ -599,12 +599,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             type="email"
             required
             value={value}
-            // IMPORTANT: use readOnly, not disabled. Disabled inputs are
-            // excluded from FormData on submit, which was sending email
-            // as undefined to the Zod schema after verification.
-            readOnly={verified}
             onChange={(e) => {
-              if (verified) return;
               onValueChange(e.target.value);
               if (type === "student") {
                 setStudentOtp("");
@@ -617,7 +612,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             }}
             onBlur={(e) => validateField(name, e.target.value)}
             placeholder="Enter the email"
-            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] ${verified ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
           />
           <button
             type="button"
@@ -727,11 +722,12 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 <input type="hidden" name="gender" value={gender} />
               </Field>
 
-              <Field label="Date of Birth" error={fieldErrors.dob}>
+              <Field label="Date of Birth *" error={fieldErrors.dob}>
                 <input
                   type="date"
                   name="dob"
                   value={dob}
+                  max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0]}
                   onChange={(e) => {
                     setDob(e.target.value);
                     clearFieldError("dob");
@@ -739,6 +735,18 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                   onBlur={(e) => validateField("dob", e.target.value)}
                   className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
                 />
+                {dob && (
+                  <p className="text-[10.5px] text-gray-500 mt-1 font-medium">
+                    Age: {(() => {
+                      const d = new Date(dob);
+                      const t = new Date();
+                      let a = t.getFullYear() - d.getFullYear();
+                      const m = t.getMonth() - d.getMonth();
+                      if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+                      return a >= 0 ? a : 0;
+                    })()} years
+                  </p>
+                )}
               </Field>
 
               <Field label="Status" error={fieldErrors.status}>
@@ -816,18 +824,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
               </Field>
 
-              <Field label="Academic Year" error={fieldErrors.academicYear}>
-                <input
-                  name="academicYear"
-                  value={academicYear}
-                  onChange={(e) => {
-                    setAcademicYear(e.target.value);
-                    clearFieldError("academicYear");
-                  }}
-                  onBlur={(e) => validateField("academicYear", e.target.value)}
-                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs"
-                />
-              </Field>
+
 
               <Field label="Hostel" error={fieldErrors.hostelId}>
                 <Dropdown
@@ -847,7 +844,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
           {/* Address */}
           <section>
             <h3 className="text-sm font-medium text-primary mb-4">Address Information</h3>
-            <Field error={fieldErrors.address}>
+            <Field label="Full Address *" error={fieldErrors.address}>
               <textarea
                 name="address"
                 value={address}
@@ -908,45 +905,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       }
     >
       <div className="space-y-8">
-        {verifyModalOpen && (
-          <Modal bottomSheetOnMobile={true}
-            isOpen={true}
-            onClose={() => setVerifyModalOpen(false)}
-            title={`Verify ${verifyTarget === "student" ? "Student" : "Parent"} Email`}
-            maxWidth="max-w-xl"
-            asForm={false}
-          >
-            <div className="space-y-4">
-              <p className="text-xs text-text-secondary">
-                Enter the 6-digit OTP sent to{" "}
-                {verifyTarget === "student" ? studentEmail : parentEmail}.
-              </p>
-              <OtpInput value={verifyOtpValue} onChange={setVerifyOtpValue} error={!!otpErrors[verifyTarget]} />
-              {otpErrors[verifyTarget] && (
-                <p className="text-red-500 text-xs">{otpErrors[verifyTarget]}</p>
-              )}
-              <div className="flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => sendEmailOtp(verifyTarget === "student" ? studentEmail : parentEmail, verifyTarget, true)}
-                  disabled={sendingOtpFor === verifyTarget}
-                  className="px-3 py-2 bg-gray-100 text-xs rounded-lg text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  {sendingOtpFor === verifyTarget ? "Sending..." : "Resend OTP"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleVerifyOtpSubmit}
-                  disabled={verifyingOtp}
-                  className="px-3 py-2 bg-primary text-white flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50"
-                >
-                  {verifyingOtp && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {verifyingOtp ? "Verifying..." : "Confirm OTP"}
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
+        <EmailVerificationModal
+          isOpen={verifyModalOpen}
+          onClose={() => setVerifyModalOpen(false)}
+          onVerify={handleVerifyOtpSubmit}
+          email={verifyTarget === "student" ? studentEmail : parentEmail}
+          isSubmitting={verifyingOtp}
+          onResend={() => sendEmailOtp(verifyTarget === "student" ? studentEmail : parentEmail, verifyTarget, true)}
+          error={otpErrors[verifyTarget]}
+        />
 
         {/* Basic Info */}
         <section>
@@ -999,6 +966,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 name="dob"
                 type="date"
                 value={dob}
+                max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0]}
                 onChange={(e) => {
                   setDob(e.target.value);
                   clearFieldError("dob");
@@ -1006,6 +974,18 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
                 onBlur={(e) => validateField("dob", e.target.value)}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs  outline-none focus:border-secondary"
               />
+              {dob && (
+                <p className="text-[10.5px] text-gray-500 mt-1 font-medium">
+                  Age: {(() => {
+                    const d = new Date(dob);
+                    const t = new Date();
+                    let a = t.getFullYear() - d.getFullYear();
+                    const m = t.getMonth() - d.getMonth();
+                    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+                    return a >= 0 ? a : 0;
+                  })()} years
+                </p>
+              )}
             </Field>
           </div>
         </section>
@@ -1072,19 +1052,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
               {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
             </Field>
 
-            <Field label="Academic Year *" error={fieldErrors.academicYear}>
-              <input
-                name="academicYear"
-                value={academicYear}
-                onChange={(e) => {
-                  setAcademicYear(e.target.value);
-                  clearFieldError("academicYear");
-                }}
-                onBlur={(e) => validateField("academicYear", e.target.value)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                placeholder="2024-2025"
-              />
-            </Field>
+
 
             <Field label="Assign Hostel" error={fieldErrors.hostelId} className="sm:col-span-2">
               <Dropdown

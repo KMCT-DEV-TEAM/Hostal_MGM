@@ -463,6 +463,84 @@ export const getSuperAdminHostelVisitSummaryAggregated = async (matchStage, sear
  * @param {Number} limit 
  * @returns {Promise<Object>} { data: Array, total: Number }
  */
+/**
+ * Super Admin Hostel Visitor Aggregation
+ * @param {Object} matchStage 
+ * @param {Object} searchMatchStage 
+ * @param {Number} skip 
+ * @param {Number} limit 
+ * @param {Object} sortStage 
+ * @returns {Promise<Object>} { data, total }
+ */
+export const getSuperAdminHostelVisitorSummaryAggregated = async (matchStage, searchMatchStage, skip, limit, sortStage) => {
+    const pipeline = [
+        { $match: matchStage },
+        // Lookup students to get hostelId
+        {
+            $lookup: {
+                from: 'students',
+                localField: 'students',
+                foreignField: '_id',
+                as: 'studentDocs'
+            }
+        },
+        // We can get the hostelId from the first student since they are validated to belong to the same hostel
+        {
+            $addFields: {
+                hostelId: { $arrayElemAt: ['$studentDocs.hostelId', 0] }
+            }
+        },
+        {
+            $group: {
+                _id: '$hostelId',
+                totalVisitors: { $sum: 1 },
+                pendingApprovals: {
+                    $sum: { $cond: [{ $eq: ['$approvalStatus', 'Pending'] }, 1, 0] }
+                },
+                approvedVisitors: {
+                    $sum: { $cond: [{ $eq: ['$approvalStatus', 'Approved'] }, 1, 0] }
+                }
+            }
+        },
+        // Lookup Hostel info
+        {
+            $lookup: {
+                from: 'hostels',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'hostelInfo'
+            }
+        },
+        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
+        {
+            $project: {
+                _id: 0,
+                hostelId: '$_id',
+                hostelName: '$hostelInfo.name',
+                hostelCode: '$hostelInfo.code',
+                totalVisitors: 1,
+                pendingApprovals: 1,
+                approvedVisitors: 1
+            }
+        },
+        { $match: searchMatchStage },
+        { $sort: sortStage },
+        {
+            $facet: {
+                metadata: [{ $count: 'total' }],
+                data: [{ $skip: skip }, { $limit: limit }]
+            }
+        }
+    ];
+
+    const result = await Visitor.aggregate(pipeline);
+    
+    const data = result[0].data;
+    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+
+    return { data, total };
+};
+
 export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, skip, limit) => {
     const pipeline = [
         { $match: matchStage },
