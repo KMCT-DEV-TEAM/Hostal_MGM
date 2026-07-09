@@ -32,6 +32,7 @@ export default function WardenFormModal({
             asForm={true}
             onSubmit={handleSaveWarden}
             maxWidth="max-w-xl"
+            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>

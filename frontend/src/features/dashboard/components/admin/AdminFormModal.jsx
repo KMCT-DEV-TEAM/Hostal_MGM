@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useTranslation } from '@/hooks/useTranslation';
+import Dropdown from '@/components/ui/Dropdown';
 
 const AdminFormModal = ({
     activeModal,
@@ -29,6 +30,7 @@ const AdminFormModal = ({
             asForm={true}
             onSubmit={handleSaveAdmin}
             maxWidth="max-w-xl"
+            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>
@@ -140,20 +142,20 @@ const AdminFormModal = ({
                     <div className="border-b border-gray-100 mb-4" />
                     <div>
                         <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
-                        <select
-                            required={!editingAdmin}
-                            value={adminForm.organization}
-                            onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
-                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] appearance-none"
-                            disabled={!!editingAdmin}
-                        >
-                            <option value="">{t('select_organization')}</option>
-                            {organizations.map(org => (
-                                <option key={org._id} value={org._id}>{org.name}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700" style={{ marginTop: 'calc(100% - 2rem)', right: '1.5rem' }}>
-                        </div>
+                        {!!editingAdmin ? (
+                            <div className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-xs text-gray-500 cursor-not-allowed flex items-center justify-between">
+                                <span>{organizations.find(o => o._id === adminForm.organization)?.name || t('select_organization')}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down w-4 h-4 text-gray-400"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        ) : (
+                            <Dropdown
+                                options={organizations.map(org => ({ value: org._id, label: org.name }))}
+                                value={adminForm.organization}
+                                onChange={(val) => setAdminForm({ ...adminForm, organization: val })}
+                                placeholder={t('select_organization')}
+                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                            />
+                        )}
                     </div>
                 </section>
 
