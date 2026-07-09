@@ -234,7 +234,7 @@ export const validateCheckInVisitor = (req, res, next) => {
         });
     }
 
-    if (!expectedExitTime || typeof expectedExitTime !== 'string' || !isValidDateOrTime(expectedExitTime)) {
+    if (!expectedExitTime || typeof expectedExitTime !== 'string') {
         return res.status(400).json({
             success: false,
             message: "A valid expectedExitTime is required."
