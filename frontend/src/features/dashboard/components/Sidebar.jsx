@@ -175,7 +175,7 @@ function Sidebar({ isOpen, setIsOpen }) {
                     console.error("Failed to fetch pending complaints for sidebar:", error);
                 }
             };
-            
+
             fetchPendingComplaints();
 
             window.addEventListener('complaintsUpdated', fetchPendingComplaints);
@@ -243,13 +243,6 @@ function Sidebar({ isOpen, setIsOpen }) {
 
                 {/* Bottom Section */}
                 <div className="py-4 px-4 border-t border-gray-100 space-y-1 bg-white">
-                    <NavItem
-                        icon={User}
-                        label={t('my_profile') || 'My Profile'}
-                        to="/dashboard/profile"
-                        onClose={() => setIsOpen(false)}
-                    />
-
                     <NavItem
                         icon={Settings}
                         label={t('settings')}

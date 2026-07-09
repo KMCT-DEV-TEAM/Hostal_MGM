@@ -156,11 +156,11 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
       const studentId = student?._id || student?.id;
       const assetId = returnConfirmModal.asset._id || returnConfirmModal.asset.id;
       await furnitureApi.returnAsset(studentId, assetId);
-      
+
       // Re-fetch assigned furnitures
       const data = await getStudentFurnitures(role, studentId);
       setAssignedFurnitures(data?.assets || []);
-      
+
       showSuccessToast("Furniture returned successfully");
       setReturnConfirmModal({ isOpen: false, asset: null });
     } catch (error) {
@@ -340,12 +340,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
               >
                 {student.batch?.name || "N/A"}
               </InfoRow>
-              <InfoRow
-                icon={<Calendar className="w-4 h-4 text-gray-400" />}
-                label="Academic Year"
-              >
-                {student.academicYear || "N/A"}
-              </InfoRow>
+
               <InfoRow
                 icon={<Home className="w-4 h-4 text-gray-400" />}
                 label="Assigned Hostel"
@@ -545,7 +540,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                       assignedFurnitures.map((f, i) => (
                         <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
                           {f.furnitureTypeId?.name || "Unknown"}
-                          <button 
+                          <button
                             type="button"
                             className="hover:text-red-500 transition-colors ml-1 cursor-pointer"
                             onClick={() => handleReturnClick(f)}
