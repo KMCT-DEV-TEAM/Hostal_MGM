@@ -13,7 +13,7 @@ const OrganizationFormModal = ({
     isSubmitting
 }) => {
     const { t } = useTranslation();
-    const [errors, setErrors] = React.useState({ name: '', phone: '', email: '' });
+    const [errors, setErrors] = React.useState({});
 
     if (!isModalOpen) return null;
 
@@ -123,19 +123,18 @@ const OrganizationFormModal = ({
                                     value={formData.email}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        if (/\s/.test(val)) {
+                                        const cleanVal = val.replace(/\s/g, '');
+                                        if (val !== cleanVal) {
                                             setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                         } else {
                                             setErrors(prev => ({ ...prev, email: '' }));
                                         }
-                                        handleInputChange(e);
+                                        handleInputChange({ target: { name: 'email', value: cleanVal } });
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === ' ') {
                                             e.preventDefault();
                                             setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                        } else {
-                                            setErrors(prev => ({ ...prev, email: '' }));
                                         }
                                     }}
                                     type="email"
@@ -196,7 +195,7 @@ const OrganizationFormModal = ({
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="submit"
-                            disabled={isSubmitting || (formData.phone?.length !== 10) || !!errors.name || !!errors.phone || !!errors.email}
+                            disabled={isSubmitting || (formData.phone?.length !== 10)}
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}

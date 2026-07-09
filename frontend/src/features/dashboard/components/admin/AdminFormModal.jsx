@@ -19,7 +19,7 @@ const AdminFormModal = ({
     isVerifying
 }) => {
     const { t } = useTranslation();
-    const [errors, setErrors] = React.useState({ firstName: '', lastName: '', phone: '' });
+    const [errors, setErrors] = React.useState({});
 
     return (
         <Modal
@@ -43,7 +43,7 @@ const AdminFormModal = ({
                     </button>
                     <button
                         type="submit"
-                        disabled={(!isEmailVerified && !editingAdmin) || isSubmitting || (adminForm.phone?.length !== 10) || !!errors.firstName || !!errors.lastName || !!errors.email}
+                        disabled={(!isEmailVerified && !editingAdmin) || isSubmitting || (adminForm.phone?.length !== 10)}
                         className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
@@ -68,12 +68,13 @@ const AdminFormModal = ({
                                 value={adminForm.name ? adminForm.name.split(' ')[0] : ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/[^a-zA-Z]/.test(val)) {
+                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, firstName: 'Only letters are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, firstName: '' }));
                                     }
-                                    setAdminForm({ ...adminForm, name: `${val} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
+                                    setAdminForm({ ...adminForm, name: `${cleanVal} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.firstName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -90,12 +91,13 @@ const AdminFormModal = ({
                                 value={adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') : ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/[^a-zA-Z]/.test(val)) {
+                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, lastName: 'Only letters are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, lastName: '' }));
                                     }
-                                    setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${val}`.trim() });
+                                    setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${cleanVal}`.trim() });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.lastName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -175,19 +177,18 @@ const AdminFormModal = ({
                                         value={adminForm.email}
                                         onChange={(e) => {
                                             const val = e.target.value;
-                                            if (/\s/.test(val)) {
+                                            const cleanVal = val.replace(/\s/g, '');
+                                            if (val !== cleanVal) {
                                                 setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                             } else {
                                                 setErrors(prev => ({ ...prev, email: '' }));
                                             }
-                                            setAdminForm({ ...adminForm, email: val });
+                                            setAdminForm({ ...adminForm, email: cleanVal });
                                         }}
                                         onKeyDown={(e) => {
                                             if (e.key === ' ') {
                                                 e.preventDefault();
                                                 setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                            } else {
-                                                setErrors(prev => ({ ...prev, email: '' }));
                                             }
                                         }}
                                         className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}

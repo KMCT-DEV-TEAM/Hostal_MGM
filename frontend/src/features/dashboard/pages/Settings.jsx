@@ -24,7 +24,9 @@ export default function Settings() {
     // Preferences State
     const [notifications, setNotifications] = useState({
         emailAlerts: user?.settings?.notifications?.emailAlerts ?? true,
-        smsAlerts: user?.settings?.notifications?.smsAlerts ?? false
+        smsAlerts: user?.settings?.notifications?.smsAlerts ?? false,
+        pushAlerts: user?.settings?.notifications?.pushAlerts ?? true,
+        inAppAlerts: user?.settings?.notifications?.inAppAlerts ?? true
     });
     const [preferences, setPreferences] = useState({
         language: user?.settings?.preferences?.language ?? 'en'
@@ -41,7 +43,9 @@ export default function Settings() {
                     if (fetchedSettings.notifications) {
                         setNotifications({
                             emailAlerts: fetchedSettings.notifications.emailAlerts ?? true,
-                            smsAlerts: fetchedSettings.notifications.smsAlerts ?? false
+                            smsAlerts: fetchedSettings.notifications.smsAlerts ?? false,
+                            pushAlerts: fetchedSettings.notifications.pushAlerts ?? true,
+                            inAppAlerts: fetchedSettings.notifications.inAppAlerts ?? true
                         });
                     }
                     if (fetchedSettings.preferences) {
@@ -293,6 +297,32 @@ export default function Settings() {
                                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${notifications.smsAlerts ? 'bg-primary' : 'bg-gray-200'}`}
                             >
                                 <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.smsAlerts ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-sm font-medium text-gray-900">{t('push_alerts')}</h4>
+                                <p className="text-sm text-gray-500">{t('push_alerts_desc')}</p>
+                            </div>
+                            <button 
+                                onClick={() => handleToggleNotification('pushAlerts')}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${notifications.pushAlerts ? 'bg-primary' : 'bg-gray-200'}`}
+                            >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.pushAlerts ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-sm font-medium text-gray-900">{t('in_app_alerts')}</h4>
+                                <p className="text-sm text-gray-500">{t('in_app_alerts_desc')}</p>
+                            </div>
+                            <button 
+                                onClick={() => handleToggleNotification('inAppAlerts')}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${notifications.inAppAlerts ? 'bg-primary' : 'bg-gray-200'}`}
+                            >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.inAppAlerts ? 'translate-x-5' : 'translate-x-0'}`} />
                             </button>
                         </div>
                     </div>
