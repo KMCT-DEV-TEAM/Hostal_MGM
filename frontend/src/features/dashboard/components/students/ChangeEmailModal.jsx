@@ -5,6 +5,7 @@ import OtpInput from "@/components/ui/OtpInput";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import otpService from "@/services/otp.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import EmailVerificationModal from "@/components/ui/EmailVerificationModal";
 
 export default function ChangeEmailModal({
   isOpen,
@@ -50,6 +51,12 @@ export default function ChangeEmailModal({
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      showErrorToast("Validation Error", "Please enter a valid email address");
+      return;
+    }
+
     if (newEmail === oldEmail) {
       showErrorToast(
         "Validation Error",
@@ -75,8 +82,8 @@ export default function ChangeEmailModal({
     }
   };
 
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
+  const handleVerifyOtp = async (otpValue) => {
+    if (!otpValue || otpValue.length !== 6) {
       setOtpError("Please enter the 6-digit OTP");
       return;
     }
@@ -84,7 +91,8 @@ export default function ChangeEmailModal({
     try {
       setVerifyingOtp(true);
       setOtpError("");
-      await otpService.verifyOtp(newEmail, otp);
+      await otpService.verifyOtp(newEmail, otpValue);
+      setOtp(otpValue);
       setIsEmailVerified(true);
       setOtpModalOpen(false);
       showSuccessToast("Email verified successfully");
@@ -207,40 +215,17 @@ export default function ChangeEmailModal({
         </div>
       </Modal>
 
-      <Modal bottomSheetOnMobile={true}
+      <EmailVerificationModal
         isOpen={otpModalOpen}
         onClose={() => {
           if (!verifyingOtp) setOtpModalOpen(false);
         }}
-        title="Verify New Email"
-        subtitle={`Enter the 6-digit OTP sent to ${newEmail}`}
-        maxWidth="max-w-md"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={handleSendOtp}
-              disabled={sendingOtp || verifyingOtp}
-              className="px-4 py-2 bg-gray-100 rounded-md text-xs font-medium disabled:opacity-60"
-            >
-              {sendingOtp ? "Sending..." : "Resend OTP"}
-            </button>
-            <button
-              type="button"
-              onClick={handleVerifyOtp}
-              disabled={verifyingOtp}
-              className="px-4 py-2 bg-primary text-white rounded-md text-xs font-medium disabled:opacity-60"
-            >
-              {verifyingOtp ? "Verifying..." : "Confirm OTP"}
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <OtpInput value={otp} onChange={setOtp} error={!!otpError} />
-          {otpError && <p className="text-xs text-red-500">{otpError}</p>}
-        </div>
-      </Modal>
+        onVerify={handleVerifyOtp}
+        email={newEmail}
+        isSubmitting={verifyingOtp}
+        onResend={handleSendOtp}
+        error={otpError}
+      />
 
       <ConfirmationModal
         isOpen={confirmOpen}
