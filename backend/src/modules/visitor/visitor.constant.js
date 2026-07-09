@@ -17,14 +17,16 @@ export const VISITOR_VISIT_STATUS = {
     CHECKED_IN: 'Checked In',
     CHECKED_OUT: 'Checked Out',
     EXTENDED: 'Extended',
-    OVERSTAYED: 'Overstayed'
+    OVERSTAYED: 'Overstayed',
+    COMPLETED: 'Completed'
 };
 
 export const VISITOR_VISIT_TIMELINE_ACTIONS = {
     CHECKED_IN: 'Checked In',
     DURATION_EXTENDED: 'Duration Extended',
     OVERSTAYED: 'Overstayed',
-    CHECKED_OUT: 'Checked Out'
+    CHECKED_OUT: 'Checked Out',
+    AUTO_CHECKED_OUT: 'Auto Checked Out'
 };
 
 export const ID_PROOF_TYPES = {

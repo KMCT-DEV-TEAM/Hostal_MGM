@@ -7,6 +7,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Dropdown from '@/components/ui/Dropdown';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 const checkInSchema = z.object({
     visitorId: z.string().min(1, 'Visitor is required'),
@@ -28,10 +29,18 @@ const idProofOptions = [
     { value: 'Driving License', label: 'Driving License' }
 ];
 
-const CheckInModal = ({ isOpen, onClose, onSuccess }) => {
-    const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset } = useForm({
+const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
+    const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: zodResolver(checkInSchema),
     });
+
+    React.useEffect(() => {
+        if (prefilledVisitor && isOpen) {
+            setValue('visitorId', prefilledVisitor.visitorId || prefilledVisitor._id || prefilledVisitor.id);
+            setValue('idProofType', prefilledVisitor.idProofType || '');
+            setValue('idNumber', prefilledVisitor.idProofNumber || '');
+        }
+    }, [prefilledVisitor, isOpen, setValue]);
 
     if (!isOpen) return null;
 
@@ -56,23 +65,32 @@ const CheckInModal = ({ isOpen, onClose, onSuccess }) => {
             maxWidth="max-w-md"
         >
             <div className="flex flex-col gap-4 mt-2">
-                <div>
-                    <label className="block mb-2 text-sm text-text-primary font-medium">Visitor</label>
-                    <Controller
-                        name="visitorId"
-                        control={control}
-                        render={({ field }) => (
-                            <Dropdown 
-                                options={visitorOptions}
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder="Select Visitor"
-                                triggerClassName="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
-                            />
-                        )}
-                    />
-                    {errors.visitorId && <span className="text-xs text-red-500 mt-1">{errors.visitorId.message}</span>}
-                </div>
+                {prefilledVisitor ? (
+                    <div>
+                        <label className="block mb-2 text-sm text-text-primary font-medium">Visitor</label>
+                        <div className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium">
+                            {prefilledVisitor.visitorName || prefilledVisitor.name}
+                        </div>
+                    </div>
+                ) : (
+                    <div>
+                        <label className="block mb-2 text-sm text-text-primary font-medium">Visitor</label>
+                        <Controller
+                            name="visitorId"
+                            control={control}
+                            render={({ field }) => (
+                                <Dropdown
+                                    options={visitorOptions}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="Select Visitor"
+                                    triggerClassName="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
+                                />
+                            )}
+                        />
+                        {errors.visitorId && <span className="text-xs text-red-500 mt-1">{errors.visitorId.message}</span>}
+                    </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -81,7 +99,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess }) => {
                             name="idProofType"
                             control={control}
                             render={({ field }) => (
-                                <Dropdown 
+                                <Dropdown
                                     options={idProofOptions}
                                     value={field.value}
                                     onChange={field.onChange}
@@ -93,9 +111,9 @@ const CheckInModal = ({ isOpen, onClose, onSuccess }) => {
                         {errors.idProofType && <span className="text-xs text-red-500 mt-1">{errors.idProofType.message}</span>}
                     </div>
                     <div>
-                        <Input 
+                        <Input
                             label="Id Number"
-                            {...register('idNumber')} 
+                            {...register('idNumber')}
                             placeholder="1234 5678 9012"
                             error={errors.idNumber?.message}
                         />
@@ -104,8 +122,8 @@ const CheckInModal = ({ isOpen, onClose, onSuccess }) => {
 
                 <div>
                     <label className="block mb-2 text-sm text-text-primary font-medium">Visiting Purpose *</label>
-                    <textarea 
-                        {...register('purpose')} 
+                    <textarea
+                        {...register('purpose')}
                         placeholder="Enter text here..."
                         rows="2"
                         className={`w-full border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none ${errors.purpose ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-primary'}`}
@@ -114,31 +132,31 @@ const CheckInModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <Input 
+                    <Input
                         label="From"
-                        type="time" 
-                        {...register('fromTime')} 
+                        type="time"
+                        {...register('fromTime')}
                         error={errors.fromTime?.message}
                     />
-                    <Input 
+                    <Input
                         label="To"
-                        type="time" 
-                        {...register('toTime')} 
+                        type="time"
+                        {...register('toTime')}
                         error={errors.toTime?.message}
                     />
                 </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-                <Button 
-                    variant="outline" 
+                <Button
+                    variant="outline"
                     onClick={onClose}
                     fullWidth={false}
                 >
                     Cancel
                 </Button>
-                <Button 
-                    type="submit" 
+                <Button
+                    type="submit"
                     isLoading={isSubmitting}
                     fullWidth={false}
                 >

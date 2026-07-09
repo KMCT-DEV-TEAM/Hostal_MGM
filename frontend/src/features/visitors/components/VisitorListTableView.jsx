@@ -2,63 +2,27 @@ import React, { useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import { Filter, Download, Check, X, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
-
-const StatusBadge = ({ status }) => {
-    if (!status) return <span className="text-gray-400 font-semibold">-----</span>;
-
-    const normalizedStatus = status.toLowerCase();
-    let displayStatus = status;
-    let bgClass = '';
-    let textClass = '';
-    let borderClass = 'border';
-
-    if (normalizedStatus === 'approved') {
-        displayStatus = 'Approved';
-        bgClass = 'bg-success/10';
-        textClass = 'text-success';
-        borderClass = 'border-success/30';
-    } else if (normalizedStatus === 'rejected') {
-        displayStatus = 'Rejected';
-        bgClass = 'bg-danger/10';
-        textClass = 'text-danger';
-        borderClass = 'border-danger/30';
-    } else if (normalizedStatus === 'pending') {
-        displayStatus = 'Pending';
-        bgClass = 'bg-warning/10';
-        textClass = 'text-warning';
-        borderClass = 'border-warning/30';
-    } else if (normalizedStatus === 'inactive') {
-        displayStatus = 'Inactive';
-        bgClass = 'bg-gray-100';
-        textClass = 'text-gray-600';
-        borderClass = 'border-gray-200';
-    } else {
-        bgClass = 'bg-primary/10';
-        textClass = 'text-primary';
-        borderClass = 'border-primary/30';
-    }
-
-    return (
-        <span className={`px-3 py-1.5 rounded-md text-xs border inline-flex items-center justify-center gap-1.5 min-w-[100px] ${bgClass} ${textClass} ${borderClass}`}>
-            {displayStatus}
-        </span>
-    );
-};
+import StatusBadge from '@/components/ui/StatusBadge';
+import Dropdown from '@/components/ui/Dropdown';
 
 const VisitorListTableView = ({
     visitors,
     loading,
     searchQuery,
     onSearch,
-    onFilterClick,
-    onExportClick,
-    hasActiveFilters,
+    statusFilter,
+    onStatusFilterChange,
     canApproveReject,
     canExport,
-    canRegister,
+    onExportClick,
+    canRegister = false,
     onRegisterClick,
     onApprove,
-    onReject
+    onReject,
+    onRowClick,
+    page,
+    setPage,
+    pagination
 }) => {
 
     const headers = useMemo(() => {
@@ -139,16 +103,19 @@ const VisitorListTableView = ({
                 searchPlaceholder="Search visitors..."
                 toolbarActions={
                     <>
-                        <Button
-                            variant={hasActiveFilters ? "primary" : "outline"}
-                            size="icon"
-                            fullWidth={false}
-                            onClick={onFilterClick}
-                            className="!p-3 shrink-0"
-                            title="Filter visitors"
-                        >
-                            <Filter className="w-4 h-4" />
-                        </Button>
+                        <Dropdown
+                            options={[
+                                { value: '', label: 'All Status' },
+                                { value: 'Pending', label: 'Pending' },
+                                { value: 'Approved', label: 'Approved' },
+                                { value: 'Rejected', label: 'Rejected' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => onStatusFilterChange(val)}
+                            placeholder="Filter Status"
+                            minWidth="min-w-[140px]"
+                            triggerClassName="px-3 py-2 text-sm bg-white border-gray-200 focus:border-secondary h-10"
+                        />
                         {canExport && (
                             <Button
                                 variant="outline"
@@ -169,13 +136,19 @@ const VisitorListTableView = ({
                                 className="flex-1 sm:flex-none whitespace-nowrap"
                             >
                                 <Plus className="w-4 h-4" />
-                                Register Visitor
+                                Register
                             </Button>
                         )}
                     </>
                 }
                 renderRow={renderRow}
                 emptyText="No visitors found."
+                page={page}
+                setPage={setPage}
+                limit={10}
+                totalPages={pagination?.totalPages || 1}
+                totalItems={pagination?.totalItems || 0}
+                onRowClick={onRowClick}
             />
         </div>
     );

@@ -7,9 +7,9 @@ const variants = {
 };
 
 const sizes = {
-    sm: "px-3 py-2 text-sm rounded-md",
-    md: "px-4 py-2.5 text-sm rounded-md",
-    lg: "px-5 py-3 text-base rounded-md",
+    sm: "px-4 py-2 text-sm rounded-md",
+    md: "px-5 py-2.5 text-sm rounded-md",
+    lg: "px-6 py-3 text-base rounded-md",
     icon: "p-3 rounded-xl",
 };
 

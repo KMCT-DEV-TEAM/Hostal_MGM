@@ -5,8 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import VisitorStats from '../components/VisitorStats';
 import VisitorDetailedView from '../components/VisitorDetailedView';
 import VisitorAggregatedView from '../components/VisitorAggregatedView';
-import { visitorApi } from '../api/visitorApi';
-
+import { getSuperAdminHostelVisits, listVisitorVisits } from '@/services/visitor.service';
 const VisitorHistoryPage = () => {
     const { user } = useAuthStore();
     const [loading, setLoading] = useState(true);
@@ -20,12 +19,16 @@ const VisitorHistoryPage = () => {
     const fetchVisitors = useCallback(async () => {
         try {
             setLoading(true);
-            const res = showAggregatedView 
-                ? await visitorApi.getAggregatedVisitors() 
-                : await visitorApi.getVisitors({ hostel: selectedHostel });
-            
-            setVisitors(res.data.data.visitors);
-            setStats(res.data.data.stats);
+            let res;
+            if (showAggregatedView) {
+                res = await getSuperAdminHostelVisits({ page: 1, limit: 10 });
+            } else {
+                res = await listVisitorVisits({ hostel: selectedHostel, page: 1, limit: 10 });
+            }
+
+            setVisitors(res.data || []);
+            // TODO: Fetch real stats from dashboard-summary if needed
+            setStats(null);
         } catch (error) {
             console.error("Failed to fetch visitors", error);
         } finally {
@@ -51,7 +54,7 @@ const VisitorHistoryPage = () => {
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 bg-background-secondary flex flex-col">
             <div className="mb-6 shrink-0 flex items-center gap-4">
                 {selectedHostel && isSuperAdmin && (
-                    <button 
+                    <button
                         onClick={() => setSelectedHostel(null)}
                         className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0"
                     >
@@ -71,17 +74,17 @@ const VisitorHistoryPage = () => {
 
             {/* Role-Based Rendering */}
             {showAggregatedView ? (
-                <VisitorAggregatedView 
-                    visitors={visitors} 
-                    loading={loading} 
+                <VisitorAggregatedView
+                    visitors={visitors}
+                    loading={loading}
                     onSearch={handleSearch}
                     onHostelFilter={(hostel) => handleFilter({ hostel })}
                     onRowClick={(hostel) => setSelectedHostel(hostel)}
                 />
             ) : (
-                <VisitorDetailedView 
-                    visitors={visitors} 
-                    loading={loading} 
+                <VisitorDetailedView
+                    visitors={visitors}
+                    loading={loading}
                     onSearch={handleSearch}
                     onFilter={handleFilter}
                     onRefresh={fetchVisitors}

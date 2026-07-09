@@ -22,6 +22,29 @@ export default {
         }
     },
 
+    VISITOR_UPDATED: {
+        admin: {
+            "in-app": {
+                title: 'Visitor Updated',
+                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            },
+            push: {
+                title: 'Visitor Updated',
+                body: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            },
+            email: {
+                subject: 'Visitor Information Updated',
+                html: '<h1>Visitor Updated</h1><p><strong>{{visitorName}}</strong> information has been updated by the Parent.</p><p><strong>Updated Fields:</strong> {{updatedFields}}</p>'
+            }
+        },
+        warden: {
+            "in-app": {
+                title: 'Visitor Updated',
+                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            }
+        }
+    },
+
     VISITOR_APPROVED: {
         parent: {
             "in-app": {
@@ -59,30 +82,61 @@ export default {
     VISIT_CHECKED_IN: {
         parent: {
             "in-app": {
-                title: 'Visitor Checked In',
-                message: '{{visitorName}} checked in to visit {{studentNames}}.'
+                title: '{{personType}} Checked In',
+                message: '{{personName}} checked in to visit {{studentName}}.\nPurpose: {{purpose}}'
             },
             push: {
-                title: 'Visitor Checked In',
-                body: '{{visitorName}} checked in to visit {{studentNames}}.'
+                title: '{{personType}} Checked In',
+                body: '{{personName}} checked in to visit {{studentName}}.\nPurpose: {{purpose}}'
             },
             email: {
-                subject: 'Visitor Checked In',
-                html: '<h1>Visitor Checked In</h1><p><strong>{{visitorName}}</strong> has checked into the hostel to visit <strong>{{studentNames}}</strong>.</p>'
+                subject: '{{personType}} Checked In',
+                html: '<h1>{{personType}} Checked In</h1><p><strong>{{personName}}</strong> has checked into the hostel to visit <strong>{{studentName}}</strong>.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Expected Exit:</strong> {{expectedExitTime}}</p>'
             }
         },
         student: {
             "in-app": {
-                title: 'Visitor Checked In',
-                message: '{{visitorName}} checked in to visit you.'
+                title: '{{personType}} Checked In',
+                message: '{{personName}} checked in to visit you.\nPurpose: {{purpose}}'
             },
             push: {
-                title: 'Visitor Checked In',
-                body: '{{visitorName}} checked in to visit you.'
+                title: '{{personType}} Checked In',
+                body: '{{personName}} checked in to visit you.\nPurpose: {{purpose}}'
             },
             email: {
-                subject: 'Visitor Checked In',
-                html: '<h1>Visitor Checked In</h1><p><strong>{{visitorName}}</strong> has checked into the hostel to visit you.</p>'
+                subject: '{{personType}} Checked In',
+                html: '<h1>{{personType}} Checked In</h1><p><strong>{{personName}}</strong> has checked into the hostel to visit you.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Expected Exit:</strong> {{expectedExitTime}}</p>'
+            }
+        }
+    },
+
+    VISIT_AUTO_CHECKED_OUT: {
+        parent: {
+            "in-app": {
+                title: 'Visit Completed',
+                message: 'The visit by {{personName}} to {{studentName}} for {{purpose}} has been automatically completed.'
+            },
+            push: {
+                title: 'Visit Completed',
+                body: 'The visit by {{personName}} to {{studentName}} for {{purpose}} has been automatically completed.'
+            },
+            email: {
+                subject: 'Visit Automatically Completed',
+                html: '<h1>Visit Completed</h1><p>The visit by <strong>{{personName}}</strong> to <strong>{{studentName}}</strong> has been automatically completed as the expected duration has passed.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Check In:</strong> {{checkInTime}}</p><p><strong>Check Out:</strong> {{checkOutTime}}</p>'
+            }
+        },
+        student: {
+            "in-app": {
+                title: 'Visit Completed',
+                message: 'The visit by {{personName}} for {{purpose}} has been automatically completed.'
+            },
+            push: {
+                title: 'Visit Completed',
+                body: 'The visit by {{personName}} for {{purpose}} has been automatically completed.'
+            },
+            email: {
+                subject: 'Visit Automatically Completed',
+                html: '<h1>Visit Completed</h1><p>The visit by <strong>{{personName}}</strong> has been automatically completed as the expected duration has passed.</p><p><strong>Purpose:</strong> {{purpose}}</p><p><strong>Check In:</strong> {{checkInTime}}</p><p><strong>Check Out:</strong> {{checkOutTime}}</p>'
             }
         }
     }
