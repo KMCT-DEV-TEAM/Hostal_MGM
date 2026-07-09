@@ -1258,7 +1258,6 @@ export const autoCompleteExpiredVisits = async () => {
 
     try {
         const expiredVisits = await visitorRepository.getExpiredVisits(BATCH_SIZE);
-
         if (expiredVisits.length === 0) {
             return { processedCount, failedCount };
         }
@@ -1269,7 +1268,6 @@ export const autoCompleteExpiredVisits = async () => {
             try {
                 // Ensure idempotent processing by re-verifying status before updating if needed,
                 // but repository query already ensures they are 'Checked In'.
-
                 const completionTime = new Date();
                 const updatedVisit = await visitorRepository.autoCompleteVisit(visit._id, completionTime);
 
@@ -1385,7 +1383,6 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
     const allowedFields = [
         'name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'
     ];
-
     const updateData = {};
     const updatedFieldsList = [];
     for (const key of Object.keys(payload)) {
