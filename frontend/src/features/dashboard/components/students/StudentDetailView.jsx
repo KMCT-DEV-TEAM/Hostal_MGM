@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import Modal from "@/components/ui/Modal";
+import { useParams, useNavigate } from 'react-router-dom';
 import {
+  ArrowLeft,
   User,
   Users,
   Calendar,
@@ -29,10 +30,9 @@ import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
-import { changeStudentEmail } from "@/services/student.service";
+import { changeStudentEmail, getStudentFurnitures, getStudentById } from "@/services/student.service";
 import { changeParentEmail } from "@/services/parent.service";
 import { formatDateReadable, formatDateStandard } from "@/utils/formatters";
-import { getStudentFurnitures } from "@/services/student.service";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 import { getHostels } from "@/services/hostel.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
@@ -66,10 +66,17 @@ const InfoRow = ({ icon, label, children }) => (
   </div>
 );
 
-const StudentDetailView = ({ student, onClose, onStudentChange }) => {
+
+const StudentDetailView = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const role = useAuthStore((state) => state.user?.role);
-  const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] =
-    useState(false);
+
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [isDefaultParentModalOpen, setIsDefaultParentModalOpen] = useState(false);
   const [isAddParentModalOpen, setIsAddParentModalOpen] = useState(false);
   const [emailChangeTarget, setEmailChangeTarget] = useState(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -80,12 +87,27 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
   const [isReturning, setIsReturning] = useState(false);
 
   useEffect(() => {
+    const fetchStudent = async () => {
+      try {
+        setLoading(true);
+        const data = await getStudentById(role, id);
+        setStudent(data?.data || data);
+      } catch (err) {
+        setError(err.message || "Failed to load student details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id && role) {
+      fetchStudent();
+    }
+  }, [id, role]);
+
+  useEffect(() => {
     const fetchFurnitures = async () => {
       try {
         setLoadingFurnitures(true);
-        const studentId = student?._id || student?.id;
-        const data = await getStudentFurnitures(role, studentId);
-        console.log('Assigned furnitures:', data)
+        const data = await getStudentFurnitures(role, id);
         setAssignedFurnitures(data?.assets || []);
       } catch (err) {
         console.error('Failed to fetch assigned furnitures', err);
@@ -93,10 +115,14 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         setLoadingFurnitures(false);
       }
     };
-    if (student?._id || student?.id) {
+    if (id) {
       fetchFurnitures();
     }
-  }, [student?._id, student?.id, role]);
+  }, [id, role]);
+
+  const onStudentChange = (studentId, updater) => {
+    setStudent(prev => prev ? updater(prev) : prev);
+  };
 
   const [availableFurnitures, setAvailableFurnitures] = useState([]);
 
@@ -180,6 +206,14 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
     setIsAddParentModalOpen(false);
   });
 
+  if (loading) {
+    return <div className="flex h-[50vh] items-center justify-center text-gray-500">Loading student details...</div>;
+  }
+
+  if (error) {
+    return <div className="flex h-[50vh] items-center justify-center text-red-500">{error}</div>;
+  }
+
   if (!student) return null;
 
   const organizationName =
@@ -239,14 +273,23 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
   };
 
   return (
-    <Modal bottomSheetOnMobile={true}
-      isOpen={true}
-      onClose={onClose}
-      maxWidth="max-w-5xl"
-      avatar={student.name}
-      title={student.name}
-      subtitle={`Student - ${hostelName}`}
-    >
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/dashboard/students')}
+            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              {student.name}
+            </h1>
+            <p className="text-sm text-gray-500">Student - {hostelName}</p>
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 [&>*:first-child]:order-2 [&>*:last-child]:order-1 lg:[&>*:first-child]:order-none lg:[&>*:last-child]:order-none">
         {" "}
         {/* Main Content */}
@@ -428,19 +471,23 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
                   Primary parent/guardian contact details
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center w-fit gap-2">
                 <Button
                   variant="primary"
                   size="sm"
+                  fullWidth={false}
+                  className="whitespace-nowrap"
                   onClick={() => setIsAddParentModalOpen(true)}
                 >
                   <Plus className="w-4 h-4" />
                   Add Parent
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="primary"
+                  size="sm"
+                  fullWidth={false}
+                  className="whitespace-nowrap"
                   onClick={() => setIsDefaultParentModalOpen(true)}
-                  className="px-4 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
                 >
                   Set Default
                 </Button>
@@ -707,7 +754,7 @@ const StudentDetailView = ({ student, onClose, onStudentChange }) => {
         isSubmitting={isReturning}
         confirmButtonVariant="danger"
       />
-    </Modal>
+    </div>
   );
 };
 

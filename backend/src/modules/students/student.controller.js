@@ -574,6 +574,69 @@ const getStudentFurnitures = asyncHandler(async (req, res) => {
 
 
 
+const getStudentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return sendError(res, 400, "Invalid student ID");
+  }
+
+  const student = await Student.findById(id)
+    .populate("organizationId", "name code")
+    .populate("hostelId", "name code hosteltype")
+    .populate("courseId", "name code")
+    .populate("departmentId", "name code")
+    .populate("batchId", "name code")
+    .lean();
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  // RBAC checks
+  if (user.role === "admin") {
+    const admin = await User.findById(user.id || user._id).select("organization").lean();
+    if (!admin?.organization || student.organizationId.toString() !== admin.organization.toString()) {
+      return sendError(res, 403, "Access denied: Student belongs to another organization");
+    }
+  }
+
+  if (user.role === "warden") {
+    const warden = await User.findById(user.id || user._id).select("hostel").lean();
+    if (!warden?.hostel || student.hostelId?.toString() !== warden.hostel.toString()) {
+      return sendError(res, 403, "Access denied: Student belongs to another hostel");
+    }
+  }
+
+  // Fetch Parent
+  const parents = await Parent.find({ studentId: id }).lean();
+  if (parents && parents.length > 0) {
+    // Remove password fields just to be safe
+    student.parents = parents.map(p => {
+      const { password, ...parentData } = p;
+      return parentData;
+    });
+  }
+
+  // Map populated fields to match aggregation pipeline structure
+  student.organization = student.organizationId;
+  student.hostel = student.hostelId;
+  student.course = student.courseId;
+  student.department = student.departmentId;
+  student.batch = student.batchId;
+
+  // Optional: Restore IDs if frontend expects them to be strings/ObjectIds
+  student.organizationId = student.organization?._id;
+  student.hostelId = student.hostel?._id;
+  student.courseId = student.course?._id;
+  student.departmentId = student.department?._id;
+  student.batchId = student.batch?._id;
+
+  return sendSuccess(res, 200, "Student details fetched successfully", student);
+});
+
+
 export {
   createStudent,
   updateStudent,
@@ -589,5 +652,6 @@ export {
   getStudentsByWarden,
   getStudentFilterOptions,
   getStudentFurnitures,
+  getStudentById,
   bulkUpdateStudentStatus,
 };

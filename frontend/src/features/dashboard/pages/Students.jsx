@@ -1,5 +1,6 @@
 "use client"
 import React, { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
@@ -18,13 +19,13 @@ import StudentsHeader from "../components/students/StudentsHeader";
 import StudentsToolbar from "../components/students/StudentsToolbar";
 import StudentFormModal from "../components/students/StudentFormModal";
 import StudentFilterModal from "../components/students/StudentFilterModal";
-import StudentDetailView from "../components/students/StudentDetailView";
 import StudentExportFilterModal from "../components/Studentexportfiltermodal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import { exportToExcel } from "@/utils/exportUtils";
 
 export default function Students() {
+  const navigate = useNavigate();
   const role = useAuthStore((s) => s.user?.role);
   const { canEdit, canDelete, canCreate } = getStudentPermissions(role);
 
@@ -35,7 +36,6 @@ export default function Students() {
   const [statusLoadingIds, setStatusLoadingIds] = useState([]);
   const [pendingConfirm, setPendingConfirm] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [viewingStudent, setViewingStudent] = useState(null);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
  const [filters, setFilters] = useState({
@@ -64,11 +64,6 @@ export default function Students() {
           return typeof updater === "function" ? updater(student) : updater;
         }),
       );
-
-      setViewingStudent((current) => {
-        if (!current || getStudentId(current) !== studentId) return current;
-        return typeof updater === "function" ? updater(current) : updater;
-      });
     },
     [setStudents],
   );
@@ -98,6 +93,10 @@ export default function Students() {
   const handleEditClick = (student) => {
     setEditingStudent(student);
     setActiveModal("student");
+  };
+
+  const handleViewClick = (student) => {
+    navigate(`/dashboard/students/${getStudentId(student)}`);
   };
 
   const handleAddClick = () => {
@@ -348,7 +347,7 @@ export default function Students() {
           selectedIds={selectedIds}
           onSelectAll={handleSelectAll}
           onSelectRow={handleSelectRow}
-          onViewClick={setViewingStudent}
+          onViewClick={handleViewClick}
           onEditClick={handleEditClick}
           onDeleteClick={handleDeleteRow}
           onStatusChange={handleStatusChange}
@@ -364,7 +363,7 @@ export default function Students() {
           selectedIds={selectedIds}
           onSelectAll={handleSelectAll}
           onSelectRow={handleSelectRow}
-          onViewClick={setViewingStudent}
+          onViewClick={handleViewClick}
           onEditClick={handleEditClick}
           onStatusChange={handleStatusChange}
           statusLoadingIds={statusLoadingIds}
@@ -438,14 +437,6 @@ export default function Students() {
             setEditingStudent(null);
           }}
           onSave={handleSaveStudent}
-        />
-      )}
-
-      {viewingStudent && (
-        <StudentDetailView
-          student={viewingStudent}
-          onClose={() => setViewingStudent(null)}
-          onStudentChange={handleStudentTreeUpdate}
         />
       )}
 
