@@ -42,7 +42,7 @@ const LatestNotificationPopup = ({ notification, onClose }) => {
 
             {/* Content Area */}
             <div className="p-2 cursor-pointer hover:bg-gray-50 transition-colors bg-white">
-                <NotificationItem {...notification} />
+                <NotificationItem notification={notification} />
             </div>
 
             {/* Footer */}

@@ -745,7 +745,7 @@ export const getDashboardSummary = async (user) => {
  * @param {Object} wardenUser 
  */
 export const checkInVisitor = async (payload, wardenUser) => {
-    const { visitor, purpose, durationMinutes } = payload;
+    const { visitor, purpose, expectedExitTime } = payload;
 
     // 1. Role Verification (Redundant safety check)
     if (wardenUser.role !== 'warden') {
@@ -868,7 +868,6 @@ export const checkInVisitor = async (payload, wardenUser) => {
 
     // 5. Construct Visit Data
     const now = new Date();
-    const expectedExitTime = new Date(now.getTime() + durationMinutes * 60000);
 
     const visitData = {
         organizationId: organizationId,
@@ -881,7 +880,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
         purpose: purpose,
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         checkInTime: now,
-        expectedExitTime: expectedExitTime,
+        expectedExitTime,
         checkedInBy: wardenUser.id,
         visitTimeline: [{
             action: VISITOR_VISIT_TIMELINE_ACTIONS.CHECKED_IN,
@@ -1249,7 +1248,7 @@ export const autoCompleteExpiredVisits = async () => {
 
     try {
         const expiredVisits = await visitorRepository.getExpiredVisits(BATCH_SIZE);
-        
+
         if (expiredVisits.length === 0) {
             return { processedCount, failedCount };
         }
@@ -1260,7 +1259,7 @@ export const autoCompleteExpiredVisits = async () => {
             try {
                 // Ensure idempotent processing by re-verifying status before updating if needed,
                 // but repository query already ensures they are 'Checked In'.
-                
+
                 const completionTime = new Date();
                 const updatedVisit = await visitorRepository.autoCompleteVisit(visit._id, completionTime);
 
@@ -1376,7 +1375,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
     const allowedFields = [
         'name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'
     ];
-    
+
     const updateData = {};
     const updatedFieldsList = [];
     for (const key of Object.keys(payload)) {

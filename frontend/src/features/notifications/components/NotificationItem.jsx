@@ -19,7 +19,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
         checkTruncation();
         window.addEventListener('resize', checkTruncation);
         return () => window.removeEventListener('resize', checkTruncation);
-    }, [notification.description, isExpanded]);
+    }, [notification?.description, notification?.message, isExpanded]);
 
     const handleClick = (e) => {
         if (onMarkAsRead && !notification.isRead) {
@@ -43,7 +43,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
             onClick={handleClick}
             className="flex gap-4 py-4 px-2 hover:bg-gray-50/80 transition-colors rounded-xl cursor-pointer group"
         >
-            <NotificationIcon event={notification.event} />
+            <NotificationIcon event={notification?.event} />
             <div className="flex-1 min-w-0 flex flex-col justify-center relative">
                 <div className="flex justify-between items-center mb-1">
                     <h4 className="text-[14px] font-bold text-text-primary leading-none">{notification.title}</h4>
@@ -60,7 +60,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
                                 }`}
                         >
                             <p ref={textRef} className={isExpanded ? "whitespace-normal wrap-break-word" : "truncate"}>
-                                {notification.description}
+                                {notification?.description || notification?.message}
                             </p>
                         </div>
 
