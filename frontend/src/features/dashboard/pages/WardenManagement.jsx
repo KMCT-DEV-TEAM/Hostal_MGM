@@ -380,6 +380,10 @@ export default function WardenManagement() {
             showErrorToast('Validation Error', 'Please fill in all required fields');
             return;
         }
+        if (wardenForm.phone.length !== 10) {
+            showErrorToast('Validation Error', 'Phone number must be exactly 10 digits');
+            return;
+        }
         if (!isEmailVerified && !editingWarden) {
             showErrorToast('Validation Error', 'Please verify your email before saving');
             return;

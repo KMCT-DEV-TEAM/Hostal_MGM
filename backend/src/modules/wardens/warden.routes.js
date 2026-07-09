@@ -3,7 +3,7 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-import { getOrganizationData, getWardenByAdmin, getWardenStats } from "./warden.controller.js";
+import { getOrganizationData, getWardenByAdmin, getWardenStats, getWardenDashboardSummary } from "./warden.controller.js";
 
 const router = express.Router();
 
@@ -12,6 +12,13 @@ router.get(
   authMiddleware,
   roleMiddleware("warden"),
   getWardenStats
+);
+
+router.get(
+  "/dashboard-summary",
+  authMiddleware,
+  roleMiddleware("warden"),
+  getWardenDashboardSummary
 );
 
 router.get(

@@ -171,7 +171,13 @@ export const bulkUpdateStudentStatus = createRoleResolver(
   'student bulk status'
 );
 
+export async function getStudentDashboardStats() {
+  const response = await studentApi.getStudentDashboardStats();
+  return response.data;
+}
+
 const studentService = {
+  getStudentDashboardStats,
   createStudent,
   updateStudentByRole,
   changeStudentEmail,

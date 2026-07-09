@@ -170,7 +170,13 @@ export const setDefaultGuardian =
     "set default guardian"
   );
 
+export async function getParentDashboardStats() {
+  const response = await parentApi.getParentDashboardStats();
+  return response.data;
+}
+
 const parentService = {
+  getParentDashboardStats,
   createParent,
   updateParent,
   updateParentByRole,

@@ -400,6 +400,11 @@ export default function Administrator() {
             return;
         }
 
+        if (adminForm.phone.length !== 10) {
+            showErrorToast('Validation Error', 'Phone number must be exactly 10 digits');
+            return;
+        }
+
         if (!isEmailVerified && !editingAdmin) {
             showErrorToast('Validation Error', 'Please verify your email before saving');
             return;

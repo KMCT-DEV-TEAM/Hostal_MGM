@@ -3,15 +3,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import adminService from "@/services/admin.service";
 import wardenService from "@/services/warden.service";
-import organizationService from "@/services/organization.service";
-import hostelService from "@/services/hostel.service";
 import complaintService from "@/services/complaint.service";
 import { logApi } from "@/features/dashboard/api/logApi";
-
-import newStudentIcon from "../../../assets/images/dashboard/Frame.png";
-import complaintIcon from "../../../assets/images/dashboard/Vector (1).png";
-import passwordIcon from "../../../assets/images/dashboard/Group 719.png";
-import organizationIcon from "../../../assets/images/dashboard/Frame1.png";
+import Dropdown from '@/components/ui/Dropdown';
 
 import {
     BarChart,
@@ -44,73 +38,48 @@ import {
     KeyRound,
     Info,
     CheckCircle,
-    XCircle
+    XCircle,
+    Clock,
+    Loader2
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-
-
-const attendanceData = [
-    { month: "Jan", value: 70 },
-    { month: "Feb", value: 72 },
-    { month: "Mar", value: 78 },
-    { month: "Apr", value: 97 },
-    { month: "May", value: 82 },
-    { month: "Jun", value: 74 },
-    { month: "July", value: 68 },
-    { month: "Aug", value: 65 },
-    { month: "Sep", value: 67 },
-    { month: "Oct", value: 65 },
-    { month: "Nov", value: 60 },
-    { month: "Dec", value: 50 },
-];
+import MaintenanceStaffDashboardOverview from "../components/MaintenanceStaffDashboardOverview";
+import WardenDashboardOverview from "../components/WardenDashboardOverview";
 
 const COMPLAINT_COLORS = ["#0A467F", "#9D77CE", "#F8BA52", "#55CDA6", "#A6A6A6", "#FF6B6B", "#4DABF7", "#FF922B", "#20C997", "#339AF0"];
-
-const quickSummary = [
-    {
-        icon: Users,
-        iconBg: "bg-primary/10",
-        iconColor: "text-primary",
-        title: "New Students",
-        desc: "2 new students today",
-        descClass: "text-primary",
-    },
-    {
-        icon: AlertTriangle,
-        iconBg: "bg-danger/10",
-        iconColor: "text-danger",
-        title: "Complaint Status",
-        desc: "5 High Priority",
-        descClass: "text-danger",
-    },
-    {
-        icon: KeyRound,
-        iconBg: "bg-warning/10",
-        iconColor: "text-warning",
-        title: "Password Request",
-        desc: "10 New Requests",
-        descClass: "text-warning",
-    },
-    {
-        icon: Building2,
-        iconBg: "bg-success/10",
-        iconColor: "text-success",
-        title: "Inactive Organizations",
-        desc: "2 inactive organizations",
-        descClass: "text-primary",
-    },
-];
+import ParentDashboard from './ParentDashboard';
+import StudentDashboard from './StudentDashboard';
+import AdminDashboard from './AdminDashboard';
 
 function DashboardOverview() {
     const { t } = useTranslation();
     const { user } = useAuthStore();
+
     const [period, setPeriod] = useState("This Year");
+    const [attendancePeriod, setAttendancePeriod] = useState("This Year");
+    const [attendanceData, setAttendanceData] = useState([]);
+    const [attendanceMetrics, setAttendanceMetrics] = useState({
+        avgRate: "0%",
+        currentMonth: "0%",
+        vsLastMonth: "0%"
+    });
     const [recentActivities, setRecentActivities] = useState([]);
-    const [complaintData, setComplaintData] = useState([]);
-    const [complaintTotal, setComplaintTotal] = useState(0);
+
+    const defaultComplaintSummary = [
+        { name: 'Resolved', count: 499, value: 40, color: COMPLAINT_COLORS[0] },
+        { name: 'Pending', count: 312, value: 25, color: COMPLAINT_COLORS[1] },
+        { name: 'In progress', count: 187, value: 15, color: COMPLAINT_COLORS[2] },
+        { name: 'Rejected', count: 125, value: 10, color: COMPLAINT_COLORS[3] },
+        { name: 'Awaiting', count: 125, value: 10, color: COMPLAINT_COLORS[4] }
+    ];
+    const [complaintData, setComplaintData] = useState(defaultComplaintSummary);
+    const [complaintTotal, setComplaintTotal] = useState(50);
     const [dashboardStats, setDashboardStats] = useState({
         organizations: 0, admins: 0, wardens: 0, students: 0, hostels: 0,
-        parents: 0, pendingComplaints: 0, leaveRequests: 0, presentToday: 0, absent: 0
+        parents: 0, pendingComplaints: 0, leaveRequests: 0, presentToday: 0, absent: 0,
+        inactiveWardens: 0, parentsMessages: 0, leaveApproved: 0,
+        complaintsOverview: { total: 0, unresolved: 0 },
+        attendance: { thisYear: [], lastYear: [] }
     });
     const [studentChartData, setStudentChartData] = useState([]);
 
@@ -118,10 +87,7 @@ function DashboardOverview() {
         const fetchStats = async () => {
             try {
                 if (user?.role === ROLES.SUPER_ADMIN) {
-                    const [{ data: stats }, { data: chartData }] = await Promise.all([
-                        adminService.getSuperAdminDashboardStats(),
-                        adminService.getStudentCountByOrganization()
-                    ]);
+                    const { data: stats } = await adminService.getSuperAdminDashboardStats();
                     console.log('stats from super admin', stats)
 
                     setDashboardStats(prev => ({
@@ -130,16 +96,12 @@ function DashboardOverview() {
                         admins: stats?.admins || 0,
                         wardens: stats?.wardens || 0,
                         hostels: stats?.hostels || 0,
-                        students: stats?.students || 0
+                        students: stats?.students || 0,
+                        newStudentsToday: stats?.newStudentsToday || 0,
+                        highPriorityComplaints: stats?.highPriorityComplaints || 0,
+                        pendingPasswordRequests: stats?.pendingPasswordRequests || 0,
+                        inactiveOrganizations: stats?.inactiveOrganizations || 0,
                     }));
-
-                    if (chartData && Array.isArray(chartData)) {
-                        const formatted = chartData.map(item => ({
-                            name: item.name.length > 8 ? item.name.substring(0, 8) + '..' : item.name,
-                            value: item.count
-                        }));
-                        setStudentChartData(formatted);
-                    }
                 } else if (user?.role === ROLES.ADMIN) {
                     const { data: stats } = await adminService.getDashboardStats();
                     console.log('stats from admin', stats)
@@ -150,7 +112,15 @@ function DashboardOverview() {
                         students: stats?.students || 0,
                         parents: stats?.parents || 0,
                         pendingComplaints: stats?.pendingComplaints || 0,
-                        leaveRequests: stats?.leaveRequests || 0
+                        leaveRequests: stats?.leaveRequests || 0,
+                        wardenLastMonthCount: stats?.wardenLastMonthCount || 0,
+                        studentLastMonthCount: stats?.studentLastMonthCount || 0,
+                        parentLastMonthCount: stats?.parentLastMonthCount || 0,
+                        inactiveWardens: stats?.inactiveWardens || 0,
+                        parentsMessages: stats?.parentsMessages || 0,
+                        complaintsOverview: stats?.complaintsOverview || { total: 0, unresolved: 0 },
+                        leaveApproved: stats?.leaveApproved || 0,
+                        attendance: stats?.attendance || { thisYear: [], lastYear: [] }
                     }));
                 } else if (user?.role === ROLES.WARDEN) {
                     const { data: stats } = await wardenService.getWardenDashboardStats();
@@ -183,15 +153,16 @@ function DashboardOverview() {
         const fetchComplaintSummary = async () => {
             try {
                 const res = await complaintService.getComplaintSummary();
-                if (res.success && res.data) {
+                if (res.success && res.data && res.data.total > 0) {
                     const total = res.data.total;
-                    const categories = res.data.categories.map((cat, index) => ({
-                        name: cat.name,
-                        count: cat.count,
-                        value: total > 0 ? Math.round((cat.count / total) * 100) : 0,
+                    const items = (res.data.statuses && res.data.statuses.length > 0) ? res.data.statuses : res.data.categories;
+                    const mappedData = items.map((item, index) => ({
+                        name: item.name,
+                        count: item.count,
+                        value: total > 0 ? Math.round((item.count / total) * 100) : 0,
                         color: COMPLAINT_COLORS[index % COMPLAINT_COLORS.length]
                     }));
-                    setComplaintData(categories);
+                    setComplaintData(mappedData);
                     setComplaintTotal(total);
                 }
             } catch (error) {
@@ -204,22 +175,63 @@ function DashboardOverview() {
         fetchComplaintSummary();
     }, [user?.role]);
 
+    useEffect(() => {
+        if (user?.role === ROLES.SUPER_ADMIN) {
+            const fetchChartData = async () => {
+                try {
+                    const { data: chartData } = await adminService.getStudentCountByOrganization({ period });
+                    if (chartData && Array.isArray(chartData)) {
+                        const formatted = chartData.map(item => ({
+                            name: item.name.length > 8 ? item.name.substring(0, 8) + '..' : item.name,
+                            value: item.count
+                        }));
+                        setStudentChartData(formatted);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch chart data", error);
+                }
+            };
+            fetchChartData();
+        }
+    }, [user?.role, period]);
+
+    useEffect(() => {
+        if (user?.role === ROLES.SUPER_ADMIN) {
+            const fetchAttendanceData = async () => {
+                try {
+                    const res = await adminService.getAttendanceOverview({ period: attendancePeriod });
+                    if (res && res.data) {
+                        setAttendanceData(res.data.chartData || []);
+                        setAttendanceMetrics({
+                            avgRate: res.data.avgRate || "0%",
+                            currentMonth: res.data.currentMonth || "0%",
+                            vsLastMonth: res.data.vsLastMonth || "0%"
+                        });
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch attendance data", error);
+                }
+            };
+            fetchAttendanceData();
+        }
+    }, [user?.role, attendancePeriod]);
+
     const formatRelativeTime = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
         const diffInSeconds = Math.floor((now - date) / 1000);
-        
+
         if (diffInSeconds < 60) return 'Just now';
-        
+
         const diffInMinutes = Math.floor(diffInSeconds / 60);
         if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
-        
+
         const diffInHours = Math.floor(diffInMinutes / 60);
         if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-        
+
         const diffInDays = Math.floor(diffInHours / 24);
         if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-        
+
         return date.toLocaleDateString();
     };
 
@@ -252,23 +264,23 @@ function DashboardOverview() {
         if (user?.role === ROLES.ADMIN) {
             return [
                 {
-                    label: "Total Students", value: dashboardStats.students, sub: "+45 This month",
+                    label: "Total Students", value: dashboardStats.students, sub: `+${dashboardStats.studentLastMonthCount || 0} This month`,
                     icon: <GraduationCap size={18} className="text-[#446015]" />, iconBg: "bg-green-50"
                 },
                 {
-                    label: "Total Wardens", value: dashboardStats.wardens, sub: "+4 Added this month",
+                    label: "Total Wardens", value: dashboardStats.wardens, sub: `+${dashboardStats.wardenLastMonthCount || 0} Added this month`,
                     icon: <Users size={18} className="text-[#9747FF]" />, iconBg: "bg-violet-50"
                 },
                 {
-                    label: "Total Parents", value: dashboardStats.parents, sub: "+10 Added this month",
+                    label: "Total Parents", value: dashboardStats.parents, sub: `+${dashboardStats.parentLastMonthCount || 0} Added this month`,
                     icon: <Users size={18} className="text-[#2D7CC3]" />, iconBg: "bg-blue-50"
                 },
                 {
-                    label: "Pending Complaints", value: dashboardStats.pendingComplaints, sub: "5 High Priority",
+                    label: "Pending Complaints", value: dashboardStats.pendingComplaints, sub: "Requires attention",
                     icon: <AlertTriangle size={18} className="text-[#F59E0B]" />, iconBg: "bg-[#FFF4E5]"
                 },
                 {
-                    label: "Total Leave Requests", value: dashboardStats.leaveRequests, sub: "12 Pending",
+                    label: "Total Leave Requests", value: dashboardStats.leaveRequests, sub: "Awaiting approval",
                     icon: <MessageSquare size={18} className="text-[#2D7CC3]" />, iconBg: "bg-[#EAF3FF]"
                 }
             ];
@@ -345,6 +357,412 @@ function DashboardOverview() {
         setIsOrgModalOpen(false);
     };
 
+    const getQuickSummary = () => [
+        {
+            icon: Users,
+            iconBg: "bg-primary/10",
+            iconColor: "text-primary",
+            title: "New Students",
+            desc: `${dashboardStats.newStudentsToday || 0} new students today`,
+            descClass: "text-primary",
+        },
+        {
+            icon: AlertTriangle,
+            iconBg: "bg-danger/10",
+            iconColor: "text-danger",
+            title: "Complaint Status",
+            desc: `${dashboardStats.highPriorityComplaints || 0} High Priority`,
+            descClass: "text-danger",
+        },
+        {
+            icon: KeyRound,
+            iconBg: "bg-warning/10",
+            iconColor: "text-warning",
+            title: "Password Request",
+            desc: `${dashboardStats.pendingPasswordRequests || 0} New Requests`,
+            descClass: "text-warning",
+        },
+        {
+            icon: Building2,
+            iconBg: "bg-success/10",
+            iconColor: "text-success",
+            title: "Inactive Organizations",
+            desc: `${dashboardStats.inactiveOrganizations || 0} inactive organizations`,
+            descClass: "text-primary",
+        },
+    ];
+
+    if (user?.role === ROLES.PARENT) {
+        return <ParentDashboard />;
+    }
+
+    if (user?.role === ROLES.STUDENT) {
+        return <StudentDashboard />;
+    }
+
+    if (user?.role === 'maintenance_staff') {
+        return <MaintenanceStaffDashboardOverview />;
+    }
+
+    if (user?.role === ROLES.WARDEN) {
+        return <WardenDashboardOverview user={user} />;
+    }
+
+    const renderOrganizationOverview = () => (
+        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col">
+            <div className="flex justify-between mb-4">
+                <div>
+                    <h2 className="text-sm font-bold text-primary">
+                        Organization Overview
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                        View student distribution across organizations.
+                    </p>
+                </div>
+                <select
+                    value={period}
+                    onChange={(e) => setPeriod(e.target.value)}
+                    className="border border-gray-200 rounded-md px-3 py-1 text-xs text-gray-500 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                >
+                    <option>This Year</option>
+                    <option>Last Year</option>
+                </select>
+            </div>
+            <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                    data={studentChartData}
+                    barSize={18}
+                    margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
+                >
+                    <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#F0F1F3"
+                        vertical={false}
+                    />
+                    <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10, fill: "#8898AA" }}
+                        axisLine={false}
+                        tickLine={false}
+                    />
+                    <YAxis
+                        tick={{ fontSize: 10, fill: "#8898AA" }}
+                        axisLine={false}
+                        tickLine={false}
+                    />
+                    <Tooltip cursor={{ fill: "#F0F4FF" }} />
+                    <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
+    );
+
+    const renderQuickSummary = () => {
+        const quickSummary = [
+            {
+                icon: AlertTriangle,
+                iconBg: "bg-red-50",
+                iconColor: "text-red-400",
+                title: "Complaint Status",
+                desc: `${dashboardStats.complaintsOverview?.unresolved || 0} Pending`,
+            },
+            {
+                icon: UserCheck,
+                iconBg: "bg-green-50",
+                iconColor: "text-green-400",
+                title: "Leave Approved",
+                desc: `${dashboardStats.leaveApproved || 0} Approved`,
+            },
+            {
+                icon: MessageSquare,
+                iconBg: "bg-blue-50",
+                iconColor: "text-blue-400",
+                title: "Parents Messages",
+                desc: `${dashboardStats.parentsMessages || 0} New`,
+            },
+            {
+                icon: Users,
+                iconBg: "bg-orange-50",
+                iconColor: "text-orange-400",
+                title: "Inactive Warden",
+                desc: `${dashboardStats.inactiveWardens || 0} Inactive`,
+            },
+        ];
+
+        return (
+            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col h-full">
+                <h2 className="text-base font-bold text-gray-900 mb-1">Quick Summary</h2>
+                <p className="text-xs text-gray-400 mb-5">Today at a glance</p>
+
+                <div className="flex flex-col gap-3 flex-1 justify-center">
+                    {quickSummary.map((item, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50"
+                        >
+                            <div className={"w-10 h-10 rounded-lg flex items-center justify-center mr-4 " + item.iconBg}>
+                                <item.icon className={"w-5 h-5 " + item.iconColor} />
+                            </div>
+                            <div>
+                                <div className="text-xs text-gray-500 font-medium">{item.title}</div>
+                                <div className={`text-xs mt-0.5 ${item.iconColor}`}>{item.desc}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const renderAttendanceOverview = () => {
+        const currentData = (period === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || [];
+        
+        const validMonths = currentData.filter(d => d.value > 0);
+        const avgRate = validMonths.length > 0 
+            ? Math.round(validMonths.reduce((sum, d) => sum + d.value, 0) / validMonths.length)
+            : 0;
+            
+        const currentMonthIndex = new Date().getMonth();
+        const currentMonthValue = currentData[currentMonthIndex]?.value || 0;
+        
+        const lastMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
+        const lastMonthValue = currentData[lastMonthIndex]?.value || 0;
+        
+        let vsLast = 0;
+        if (lastMonthValue > 0) {
+            vsLast = (((currentMonthValue - lastMonthValue) / lastMonthValue) * 100).toFixed(1);
+        } else if (currentMonthValue > 0) {
+            vsLast = 100.0;
+        }
+
+        const vsLastFormatted = vsLast > 0 ? `+${vsLast}%` : `${vsLast}%`;
+
+        return (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full flex flex-col">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h2 className="text-[20px] font-bold text-black">
+                        Attendance Overview
+                    </h2>
+                    <p className="text-sm text-[#8F8F8F] mt-1">
+                        Overall attendance percentage across organizations.
+                    </p>
+                </div>
+                <Dropdown
+                    options={[
+                        { value: "This Year", label: "This Year" },
+                        { value: "Last Year", label: "Last Year" }
+                    ]}
+                    value={period}
+                    onChange={(val) => setPeriod(val)}
+                    placeholder="This Year"
+                    minWidth="w-32"
+                    triggerClassName="px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer"
+                />
+            </div>
+            <div className="flex gap-3 mb-8">
+                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                    <div className="text-[#2D7CC3] font-bold text-sm">{avgRate}%</div>
+                    <div className="text-xs text-[#8F8F8F] mt-1">Avg Rate</div>
+                </div>
+                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                    <div className="text-[#0F6E56] font-bold text-sm">{currentMonthValue}%</div>
+                    <div className="text-xs text-[#8F8F8F] mt-1">Current Month</div>
+                </div>
+                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
+                    <div className="text-[#0F6E56] font-bold text-sm">{vsLastFormatted}</div>
+                    <div className="text-xs text-[#8F8F8F] mt-1">vs Last</div>
+                </div>
+            </div>
+            <div className="flex-1 min-h-[220px]">
+                {((period === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || []).some(item => item.value > 0) ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                            data={period === "This Year" ? dashboardStats.attendance?.thisYear || [] : dashboardStats.attendance?.lastYear || []}
+                            margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                        >
+                            <defs>
+                                <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#0A467F" stopOpacity={0.15} />
+                                    <stop offset="95%" stopColor="#0A467F" stopOpacity={0.02} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid vertical={false} stroke="#EEF1F4" />
+                            <XAxis
+                                dataKey="month"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                            />
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                domain={[0, 100]}
+                                ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                                tickFormatter={(v) => v + "%"}
+                                tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                            />
+                            <Tooltip formatter={(value) => [value + "%", "Attendance"]} cursor={{ fill: "#F3F4F6" }} />
+                            <Area
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#0A467F"
+                                strokeWidth={3}
+                                fill="url(#attendanceGradient)"
+                                dot={false}
+                                activeDot={{ r: 5, fill: "#0A467F" }}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400 pb-10">
+                        <MessageSquare size={32} className="mb-2 text-gray-200" />
+                        <p className="text-sm">No attendance records found for {period.toLowerCase()}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+        );
+    };
+
+    const renderComplaintPieChart = () => (
+        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col items-center h-full">
+            <h2 className="text-sm font-bold text-[#000000] self-start w-full">
+                Complaint Status
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5 self-start w-full mb-6">
+                Current overview of all reported issues.
+            </p>
+            {complaintData.length > 0 ? (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-10 flex-1 w-full mt-4">
+                    <div className="relative w-[200px] h-[200px] flex-shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={complaintData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={70}
+                                    outerRadius={95}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {complaintData.map((entry, index) => (
+                                        <Cell key={"cell-" + index} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    formatter={(value, name) => [value + "%", name]}
+                                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-[32px] font-bold text-gray-900 leading-none">
+                                {complaintTotal}
+                            </span>
+                            <span className="text-xs text-gray-500 font-medium mt-1">Total Tasks</span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        {complaintData.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between w-[160px]">
+                                <div className="flex items-center gap-3 text-[13px] text-gray-700">
+                                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                                    <span className="truncate" title={item.name}>{item.name}</span>
+                                </div>
+                                <span className="text-[13px] font-semibold text-gray-900 ml-2">{item.value}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400 flex-1">
+                    <MessageSquare size={32} className="mb-2 text-gray-200" />
+                    <p className="text-sm">No complaints found</p>
+                </div>
+            )}
+        </div>
+    );
+
+    const renderRecentActivities = () => (
+        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col">
+            <div className="flex justify-between items-center mb-2">
+                <div>
+                    <h2 className="text-sm font-bold text-[#000000]">
+                        Recent Activities
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                        Latest actions across the system
+                    </p>
+                </div>
+                <a
+                    href="#"
+                    className="text-xs text-[#777777] font-medium hover:underline"
+                >
+                    View all
+                </a>
+            </div>
+            {recentActivities.map((log) => {
+                let iconBg = "bg-[#EAF3FF]";
+                let iconColor = "text-[#2D7CC3]";
+                let tagClass = "bg-[#EAF3FF] text-[#2D7CC3]";
+                let icon = <Info size={18} className={iconColor} />;
+                if (log.status === 'success') {
+                    iconBg = "bg-[#EEF7E7]";
+                    iconColor = "text-[#6B8E23]";
+                    tagClass = "bg-[#EEF7E7] text-[#6B8E23]";
+                    icon = <CheckCircle size={18} className={iconColor} />;
+                } else if (log.status === 'error') {
+                    iconBg = "bg-[#FEE2E2]";
+                    iconColor = "text-[#EF4444]";
+                    tagClass = "bg-[#FEE2E2] text-[#EF4444]";
+                    icon = <XCircle size={18} className={iconColor} />;
+                } else if (log.status === 'warning') {
+                    iconBg = "bg-[#FFF4E5]";
+                    iconColor = "text-[#F59E0B]";
+                    tagClass = "bg-[#FFF4E5] text-[#F59E0B]";
+                    icon = <AlertTriangle size={18} className={iconColor} />;
+                }
+                return (
+                    <div
+                        key={log._id}
+                        className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
+                    >
+                        <div className="flex items-center gap-4 flex-1">
+                            <div className={"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 " + iconBg}>
+                                {icon}
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center flex-wrap gap-2">
+                                    <p className="text-[13px] text-[#333333]">
+                                        {log.action} - <strong className="font-medium">{log.details?.length > 60 ? log.details.substring(0, 60) + '...' : log.details}</strong>
+                                    </p>
+                                    {log.status && (
+                                        <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize " + tagClass}>
+                                            {log.status}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-[#9CA3AF] mt-1 capitalize">
+                                    By {log.user?.name || log.user?.email || 'System'} {log.userRole ? "(" + log.userRole + ")" : ''}
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-xs text-[#9CA3AF] whitespace-nowrap ml-4">
+                            {formatRelativeTime(log.createdAt)}
+                        </span>
+                    </div>
+                );
+            })}
+            {recentActivities.length === 0 && (
+                <div className="text-center py-8 text-sm text-gray-500">No recent activities found.</div>
+            )}
+        </div>
+    );
+
+
     return (
         <div className="min-h-screen bg-[#F4F6F9] font-sans text-sm text-gray-900">
             {/* Topbar */}
@@ -364,7 +782,7 @@ function DashboardOverview() {
 
                 {/* Right Section */}
                 <div className="flex flex-wrap gap-2">
-                    {(user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN) && (
+                    {user?.role === ROLES.ADMIN && (
                         <button
                             onClick={() => setIsHostelModalOpen(true)}
                             className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
@@ -372,19 +790,10 @@ function DashboardOverview() {
                             + Add Hostel
                         </button>
                     )}
-
-                    {user?.role === ROLES.SUPER_ADMIN && (
-                        <button
-                            onClick={() => setIsOrgModalOpen(true)}
-                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
-                        >
-                            + Add Organization
-                        </button>
-                    )}
                 </div>
             </div>
 
-            <div className="p-6 md:p-8 flex flex-col gap-6">
+            <div className="p-4 md:p-8 flex flex-col gap-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {dynamicStatCards.map((c, index) => {
                         const borderColors = [
@@ -398,10 +807,10 @@ function DashboardOverview() {
                         return (
                             <div
                                 key={c.label}
-                                className={`bg-white rounded-xl p-5 border border-gray-100 border-t-1 ${borderColors[index]}`}
+                                className={`bg-white rounded-xl p-5 border border-gray-100 border-t-[2px] ${borderColors[index]} ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`}
                             >
                                 <div className="flex justify-between items-start">
-                                    <span className="text-xs text-gray-500 font-medium leading-tight">
+                                    <span className="text-xs text-gray-500 font-medium leading-tight uppercase tracking-wider">
                                         {c.label}
                                     </span>
 
@@ -412,7 +821,7 @@ function DashboardOverview() {
                                     </div>
                                 </div>
 
-                                <div className="text-[24px] font-semibold tracking-tight">
+                                <div className="text-[24px] font-semibold tracking-tight mt-2 mb-1">
                                     {c.value}
                                 </div>
 
@@ -422,55 +831,12 @@ function DashboardOverview() {
                     })}
                 </div>
 
-                {/* Hostel Overview + Quick Summary */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-                    {/* Organization Bar Chart */}
-                    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                        <div className="flex justify-between mb-4">
-                            <div>
-                                <h2 className="text-sm font-bold text-primary">
-                                    Organization Overview
-                                </h2>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                    View student distribution across organizations.
-                                </p>
-                            </div>
-                            <select
-                                value={period}
-                                onChange={(e) => setPeriod(e.target.value)}
-                                className="border border-gray-200 rounded-md px-3 py-1 text-xs text-gray-500 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                            >
-                                <option>This Year</option>
-                                <option>Last Year</option>
-                            </select>
-                        </div>
-                        <ResponsiveContainer width="100%" height={240}>
-                            <BarChart
-                                data={studentChartData}
-                                barSize={18}
-                                margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
-                            >
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    stroke="#F0F1F3"
-                                    vertical={false}
-                                />
-                                <XAxis
-                                    dataKey="name"
-                                    tick={{ fontSize: 10, fill: "#8898AA" }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tick={{ fontSize: 10, fill: "#8898AA" }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip cursor={{ fill: "#F0F4FF" }} />
-                                <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+
+                {user?.role === ROLES.SUPER_ADMIN && (
+                    <div className="flex flex-col gap-4">
+                        {/* Hostel Overview + Quick Summary */}
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+                            {renderOrganizationOverview()}
 
                     {/* Quick Summary */}
                     <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
@@ -478,10 +844,10 @@ function DashboardOverview() {
                         <p className="text-xs text-[#777777] mt-0.5 mb-2">
                             Today at a glance
                         </p>
-                        {quickSummary.map((item, i) => (
+                        {getQuickSummary().map((item, i, arr) => (
                             <div
                                 key={i}
-                                className={`flex items-center gap-3 py-3 ${i < quickSummary.length - 1 ? "border-b border-gray-50" : ""}`}
+                                className={`flex items-center gap-3 py-3 ${i < arr.length - 1 ? "border-b border-gray-50" : ""}`}
                             >
                                 <div className={`w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
                                     {/* Render component directly */}
@@ -504,7 +870,7 @@ function DashboardOverview() {
                     {/* Attendance Area Chart */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         {/* Header */}
-                        <div className="flex justify-between items-start mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
                                 <h2 className="text-[20px] font-bold text-black">
                                     Attendance Overview
@@ -514,244 +880,118 @@ function DashboardOverview() {
                                 </p>
                             </div>
 
-                            <select className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 outline-none bg-[#F8F8F8] ">
-                                <option>This Year</option>
-                                <option>Last Year</option>
-                            </select>
+                            <Dropdown
+                                options={[
+                                    { value: "This Year", label: "This Year" },
+                                    { value: "Last Year", label: "Last Year" }
+                                ]}
+                                value={attendancePeriod}
+                                onChange={(val) => setAttendancePeriod(val)}
+                                minWidth="w-32"
+                                triggerClassName="px-3 py-1.5 bg-[#F8F8F8] border border-gray-200 rounded-lg text-sm text-gray-500 font-medium shadow-sm focus:border-[#0A437A] cursor-pointer"
+                            />
                         </div>
 
                         {/* Stats */}
-                        <div className="flex gap-3 mb-8">
-                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                                <div className="text-[#2D7CC3] font-bold text-sm">91.2%</div>
+                        <div className="flex flex-wrap gap-3 mb-8">
+                            <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                                <div className="text-[#2D7CC3] font-bold text-sm">{attendanceMetrics.avgRate}</div>
                                 <div className="text-xs text-[#8F8F8F] mt-1">Avg Rate</div>
                             </div>
 
-                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                                <div className="text-[#0F6E56] font-bold text-sm">95.8%</div>
+                            <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                                <div className="text-[#0F6E56] font-bold text-sm">{attendanceMetrics.currentMonth}</div>
                                 <div className="text-xs text-[#8F8F8F] mt-1">Current Month</div>
                             </div>
 
-                            <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                                <div className="text-[#0F6E56] font-bold text-sm">+2.3%</div>
+                            <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                                <div className="text-[#0F6E56] font-bold text-sm">{attendanceMetrics.vsLastMonth}</div>
                                 <div className="text-xs text-[#8F8F8F] mt-1">vs Last</div>
                             </div>
                         </div>
 
                         {/* Chart */}
-                        <ResponsiveContainer width="100%" height={220}>
-                            <AreaChart
-                                data={attendanceData}
-                                margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-                            >
-                                <defs>
-                                    <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#0A467F" stopOpacity={0.15} />
-                                        <stop offset="95%" stopColor="#0A467F" stopOpacity={0.02} />
-                                    </linearGradient>
-                                </defs>
+                        {attendanceData.some(d => d.value > 0) ? (
+                            <ResponsiveContainer width="100%" height={220}>
+                                <AreaChart
+                                    data={attendanceData}
+                                    margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                                >
+                                    <defs>
+                                        <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#0A467F" stopOpacity={0.15} />
+                                            <stop offset="95%" stopColor="#0A467F" stopOpacity={0.02} />
+                                        </linearGradient>
+                                    </defs>
 
-                                <CartesianGrid
-                                    vertical={false}
-                                    stroke="#EEF1F4"
-                                />
+                                    <CartesianGrid
+                                        vertical={false}
+                                        stroke="#EEF1F4"
+                                    />
 
-                                <XAxis
-                                    dataKey="month"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                                />
+                                    <XAxis
+                                        dataKey="month"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                                    />
 
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    domain={[0, 100]}
-                                    ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
-                                    tickFormatter={(v) => `${v}%`}
-                                    tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                                />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        domain={[0, 100]}
+                                        ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                                        tickFormatter={(v) => `${v}%`}
+                                        tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                                    />
 
-                                <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
+                                    <Tooltip formatter={(value) => [`${value}%`, "Attendance"]} />
 
-                                <Area
-                                    type="monotone"
-                                    dataKey="value"
-                                    stroke="#0A467F"
-                                    strokeWidth={3}
-                                    fill="url(#attendanceGradient)"
-                                    dot={false}
-                                    activeDot={{
-                                        r: 5,
-                                        fill: "#0A467F",
-                                    }}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Complaint Pie Chart */}
-                    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                        <h2 className="text-sm font-bold text-[#000000] mb-5">
-                            Complaint Summary
-                        </h2>
-                        {complaintData.length > 0 ? (
-                            <div className="flex flex-col items-center justify-center gap-6">
-                                <PieChart width={190} height={190}>
-                                    <Pie
-                                        data={complaintData}
-                                        cx={90}
-                                        cy={90}
-                                        innerRadius={58}
-                                        outerRadius={88}
+                                    <Area
+                                        type="monotone"
                                         dataKey="value"
-                                        startAngle={90}
-                                        endAngle={-270}
-                                        labelLine={false}
-                                    >
-                                        {complaintData.map((e, i) => (
-                                            <Cell key={i} fill={e.color} />
-                                        ))}
-                                    </Pie>
-                                    <text
-                                        x={90}
-                                        y={84}
-                                        textAnchor="middle"
-                                        fontSize={22}
-                                        fontWeight={700}
-                                        fill="#1A1F36"
-                                    >
-                                        {complaintTotal}
-                                    </text>
-                                    <text
-                                        x={90}
-                                        y={104}
-                                        textAnchor="middle"
-                                        fontSize={10}
-                                        fill="#000000"
-                                    >
-                                        Total Complaints
-                                    </text>
-                                </PieChart>
-
-                                <div className="flex flex-col gap-3 w-full max-w-[220px]">
-                                    {complaintData.map((item) => (
-                                        <div
-                                            key={item.name}
-                                            className="flex items-center gap-2.5 text-xs"
-                                        >
-                                            <div
-                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                                style={{ background: item.color }}
-                                            />
-                                            <span className="text-gray-600 w-24">{item.name}</span>
-                                            <span className="font-bold text-gray-900 w-8 text-right">
-                                                {item.value}%
-                                            </span>
-                                            <span className="text-gray-300">({item.count})</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                                        stroke="#0A467F"
+                                        strokeWidth={3}
+                                        fill="url(#attendanceGradient)"
+                                        dot={false}
+                                        activeDot={{
+                                            r: 5,
+                                            fill: "#0A467F",
+                                        }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                                <MessageSquare size={32} className="mb-2 text-gray-200" />
-                                <p className="text-sm">No complaints found</p>
+                            <div className="flex flex-col items-center justify-center h-[220px] text-gray-400">
+                                <p className="text-sm">No data found in this date period</p>
                             </div>
                         )}
                     </div>
-                </div>
 
-                {/* Recent Activities */}
-                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center mb-2">
-                        <div>
-                            <h2 className="text-sm font-bold text-[#000000]">
-                                Recent Activities
-                            </h2>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                Latest actions across the system
-                            </p>
+                        {renderComplaintPieChart()}
                         </div>
-                        <a
-                            href="#"
-                            className="text-xs text-[#777777] font-medium hover:underline"
-                        >
-                            View all
-                        </a>
+
+                        <div className="mt-4">
+                            {renderRecentActivities()}
+                        </div>
                     </div>
+                )}
 
-                    {recentActivities.map((log) => {
-                        let iconBg = "bg-[#EAF3FF]";
-                        let iconColor = "text-[#2D7CC3]";
-                        let tagClass = "bg-[#EAF3FF] text-[#2D7CC3]";
-                        let icon = <Info size={18} className={iconColor} />;
+                {user?.role === ROLES.ADMIN && (
+                    <div className="flex flex-col gap-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-stretch">
+                            {renderAttendanceOverview()}
+                            {renderQuickSummary()}
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                            {renderComplaintPieChart()}
+                            {renderRecentActivities()}
+                        </div>
+                    </div>
+                )}
 
-                        if (log.status === 'success') {
-                            iconBg = "bg-[#EEF7E7]";
-                            iconColor = "text-[#6B8E23]";
-                            tagClass = "bg-[#EEF7E7] text-[#6B8E23]";
-                            icon = <CheckCircle size={18} className={iconColor} />;
-                        } else if (log.status === 'error') {
-                            iconBg = "bg-[#FEE2E2]";
-                            iconColor = "text-[#EF4444]";
-                            tagClass = "bg-[#FEE2E2] text-[#EF4444]";
-                            icon = <XCircle size={18} className={iconColor} />;
-                        } else if (log.status === 'warning') {
-                            iconBg = "bg-[#FFF4E5]";
-                            iconColor = "text-[#F59E0B]";
-                            tagClass = "bg-[#FFF4E5] text-[#F59E0B]";
-                            icon = <AlertTriangle size={18} className={iconColor} />;
-                        }
-
-                        return (
-                            <div
-                                key={log._id}
-                                className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
-                            >
-                                <div className="flex items-center gap-4 flex-1">
-                                    {/* Icon */}
-                                    <div
-                                        className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0`}
-                                    >
-                                        {icon}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1">
-                                        <div className="flex items-center flex-wrap gap-2">
-                                            <p className="text-[13px] text-[#333333]">
-                                                {log.action} - <strong className="font-medium">{log.details?.length > 60 ? log.details.substring(0, 60) + '...' : log.details}</strong>
-                                            </p>
-
-                                            {log.status && (
-                                                <span
-                                                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${tagClass}`}
-                                                >
-                                                    {log.status}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <p className="text-xs text-[#9CA3AF] mt-1 capitalize">
-                                            By {log.user?.name || log.user?.email || 'System'} {log.userRole ? `(${log.userRole})` : ''}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Time */}
-                                <span className="text-xs text-[#9CA3AF] whitespace-nowrap ml-4">
-                                    {formatRelativeTime(log.createdAt)}
-                                </span>
-                            </div>
-                        );
-                    })}
-
-                    {recentActivities.length === 0 && (
-                        <div className="text-center py-8 text-sm text-gray-500">No recent activities found.</div>
-                    )}
-                </div>
             </div>
+
 
             {isHostelModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">

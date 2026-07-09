@@ -3,7 +3,14 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-import { getSuperAdminStats, getStudentCountByOrganization, getAdminStats } from "./dashboard.controller.js";
+import { 
+  getSuperAdminStats, 
+  getStudentCountByOrganization, 
+  getAdminStats,
+  getStudentDashboardStats,
+  getParentDashboardStats,
+  getAttendanceOverview
+} from "./dashboard.controller.js";
 import { getDashboardStats } from "./dashboard.services.js";
 
 const router = express.Router();
@@ -19,6 +26,27 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin"),
   getStudentCountByOrganization
+);
+
+router.get(
+  "/attendance-overview",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  getAttendanceOverview
+);
+
+router.get(
+  "/student/stats",
+  authMiddleware,
+  roleMiddleware("student"),
+  getStudentDashboardStats
+);
+
+router.get(
+  "/parent/stats",
+  authMiddleware,
+  roleMiddleware("parent"),
+  getParentDashboardStats
 );
 
 export default router;

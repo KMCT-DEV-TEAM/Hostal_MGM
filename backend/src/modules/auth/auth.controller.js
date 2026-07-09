@@ -30,7 +30,7 @@ const login = asyncHandler(async (req, res) => {
   if (role === 'student') {
     user = await Student.findOne({ email });
   } else if (role === 'parent') {
-    user = await Parent.findOne({ email });
+    user = await Parent.findOne({ email }).populate("studentId", "name studentId email phone profileImage");
   } else {
     user = await findUserForLoginDb(email);
   }
@@ -126,7 +126,7 @@ const me = asyncHandler(async (req, res) => {
   if (req.user.role === 'student') {
     user = await Student.findById(req.user.id).select("-password").populate("hostelId", "name code");
   } else if (req.user.role === 'parent') {
-    user = await Parent.findById(req.user.id).select("-password");
+    user = await Parent.findById(req.user.id).select("-password").populate("studentId", "name studentId email phone profileImage");
   } else {
     user = await User.findById(req.user.id).select("-password");
   }
@@ -140,6 +140,14 @@ const me = asyncHandler(async (req, res) => {
   if (!userData.role) {
     userData.role = req.user.role;
   }
+  if (userData.role === 'warden') {
+    const assignedHostels = await Hostel.find({ wardens: user._id }).select("name code");
+    userData.assignedHostels = assignedHostels;
+  } else if (userData.role === 'student' && userData.hostelId) {
+    // Map hostelId to assignedHostels format for UI compatibility
+    userData.assignedHostels = [userData.hostelId];
+  }
+
   if (req.user.role === "student") {
     const qrToken = jwt.sign(
       {
@@ -160,14 +168,6 @@ const me = asyncHandler(async (req, res) => {
         profileImage: user.profileImage || null,
       },
     });
-  }
-
-  if (userData.role === 'warden') {
-    const assignedHostels = await Hostel.find({ wardens: user._id }).select("name code");
-    userData.assignedHostels = assignedHostels;
-  } else if (userData.role === 'student' && userData.hostelId) {
-    // Map hostelId to assignedHostels format for UI compatibility
-    userData.assignedHostels = [userData.hostelId];
   }
 
   return sendSuccess(res, 200, "Token is valid", { user: userData });

@@ -5,10 +5,18 @@ import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
+import Complaint from "../complaints/complaint.model.js";
+import Pass from "../passes/pass.model.js";
+import Visitor from "../visitor/visitor.model.js";
+import { AttendanceRecord, AttendanceWindow } from "../attendance/attendance.model.js";
+import PasswordRequest from "../passwordRequests/passwordRequest.model.js";
+import mongoose from "mongoose";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
   const [
     admins,
     wardens,
@@ -20,6 +28,10 @@ const getSuperAdminStats = asyncHandler(async (req, res) => {
     studentLastMonthCount,
     organizationLastMonthCount,
     hostelLastMonthCount,
+    newStudentsToday,
+    highPriorityComplaints,
+    pendingPasswordRequests,
+    inactiveOrganizations,
   ] = await Promise.all([
     User.countDocuments({ role: "admin" }),
     User.countDocuments({ role: "warden" }),
@@ -48,6 +60,11 @@ const getSuperAdminStats = asyncHandler(async (req, res) => {
     Hostel.countDocuments({
       createdAt: { $gte: lastMonth },
     }),
+
+    Student.countDocuments({ createdAt: { $gte: startOfToday } }),
+    Complaint.countDocuments({ priority: "High", status: { $nin: ["Resolved", "Rejected"] } }),
+    PasswordRequest.countDocuments({ status: "pending" }),
+    Organization.countDocuments({ isActive: false }),
   ]);
 
   return sendSuccess(
@@ -67,13 +84,43 @@ const getSuperAdminStats = asyncHandler(async (req, res) => {
         wardenLastMonthCount,
         studentLastMonthCount,
         hostelLastMonthCount,
+
+        newStudentsToday,
+        highPriorityComplaints,
+        pendingPasswordRequests,
+        inactiveOrganizations,
       },
     }
   );
 });
 
 const getStudentCountByOrganization = asyncHandler(async (req, res) => {
-  const stats = await Student.aggregate([
+  const { period } = req.query;
+  const matchStage = {};
+
+  if (period) {
+    const currentYear = new Date().getFullYear();
+    let startYear, endYear;
+
+    if (period === "This Year") {
+      startYear = new Date(currentYear, 0, 1);
+      endYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+    } else if (period === "Last Year") {
+      startYear = new Date(currentYear - 1, 0, 1);
+      endYear = new Date(currentYear - 1, 11, 31, 23, 59, 59, 999);
+    }
+
+    if (startYear && endYear) {
+      matchStage.createdAt = { $gte: startYear, $lte: endYear };
+    }
+  }
+
+  const pipeline = [];
+  if (Object.keys(matchStage).length > 0) {
+    pipeline.push({ $match: matchStage });
+  }
+
+  pipeline.push(
     {
       $group: {
         _id: "$organizationId",
@@ -103,8 +150,10 @@ const getStudentCountByOrganization = asyncHandler(async (req, res) => {
     },
     {
       $sort: { count: -1 },
-    },
-  ]);
+    }
+  );
+
+  const stats = await Student.aggregate(pipeline);
 
   return sendSuccess(res, 200, "Student count by organization fetched successfully", {
     data: stats,
@@ -128,6 +177,9 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const organizationId = admin.organization;
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
+  const lastYearStart = new Date(new Date().getFullYear() - 1, 0, 1);
+  const lastYearEnd = new Date(new Date().getFullYear() - 1, 11, 31, 23, 59, 59);
 
   const [
     wardens,
@@ -136,6 +188,14 @@ const getAdminStats = asyncHandler(async (req, res) => {
     wardenLastMonthCount,
     studentLastMonthCount,
     parentLastMonthCount,
+    pendingComplaintsCount,
+    leaveRequestsCount,
+    inactiveWardensCount,
+    totalComplaintsCount,
+    unresolvedComplaintsCount,
+    approvedLeaveRequestsCount,
+    thisYearAttendanceStats,
+    lastYearAttendanceStats
   ] = await Promise.all([
     User.countDocuments({
       role: "warden",
@@ -201,8 +261,110 @@ const getAdminStats = asyncHandler(async (req, res) => {
         $count: "total",
       },
     ]),
+
+    Complaint.countDocuments({
+      organizationId,
+      status: "Pending",
+    }),
+
+    Pass.aggregate([
+      {
+        $match: {
+          status: "pending_admin",
+        },
+      },
+      {
+        $lookup: {
+          from: "students",
+          localField: "studentId",
+          foreignField: "_id",
+          as: "student",
+        },
+      },
+      {
+        $unwind: "$student",
+      },
+      {
+        $match: {
+          "student.organizationId": organizationId,
+        },
+      },
+      {
+        $count: "total",
+      },
+    ]),
+
+    User.countDocuments({
+      role: "warden",
+      organization: organizationId,
+      isActive: false
+    }),
+
+    Complaint.countDocuments({
+      organizationId
+    }),
+
+    Complaint.countDocuments({
+      organizationId,
+      status: { $ne: "Resolved" }
+    }),
+
+    Pass.aggregate([
+      { $match: { status: "approved" } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": organizationId } },
+      { $count: "total" }
+    ]),
+
+    AttendanceRecord.aggregate([
+      { $match: { createdAt: { $gte: currentYearStart } } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": organizationId } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      }
+    ]),
+
+    AttendanceRecord.aggregate([
+      { $match: { createdAt: { $gte: lastYearStart, $lte: lastYearEnd } } },
+      { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
+      { $unwind: "$student" },
+      { $match: { "student.organizationId": organizationId } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      }
+    ])
   ]);
 
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const thisYearAttendance = monthNames.map((month, index) => {
+    const stat = thisYearAttendanceStats.find(s => s._id === index + 1);
+    let value = 0;
+    if (stat && stat.totalCount > 0) {
+      value = Math.round((stat.presentCount / stat.totalCount) * 100);
+    }
+    return { month, value };
+  });
+
+  const lastYearAttendance = monthNames.map((month, index) => {
+    const stat = lastYearAttendanceStats.find(s => s._id === index + 1);
+    let value = 0;
+    if (stat && stat.totalCount > 0) {
+      value = Math.round((stat.presentCount / stat.totalCount) * 100);
+    }
+    return { month, value };
+  });
 
   return sendSuccess(
     res,
@@ -216,14 +378,260 @@ const getAdminStats = asyncHandler(async (req, res) => {
         wardenLastMonthCount,
         studentLastMonthCount,
         parentLastMonthCount: parentLastMonthCount[0]?.total || 0,
+        pendingComplaints: pendingComplaintsCount || 0,
+        leaveRequests: leaveRequestsCount[0]?.total || 0,
+        
+        inactiveWardens: inactiveWardensCount,
+        parentsMessages: 0,
+        complaintsOverview: { total: totalComplaintsCount, unresolved: unresolvedComplaintsCount },
+        leaveApproved: approvedLeaveRequestsCount[0]?.total || 0,
+        attendance: {
+            thisYear: thisYearAttendance,
+            lastYear: lastYearAttendance
+        }
       },
     }
   );
 });
 
 
+const getStudentDashboardStats = asyncHandler(async (req, res) => {
+  const studentId = req.user.id;
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const attendanceRecords = await AttendanceRecord.find({
+    studentId,
+    createdAt: { $gte: startOfMonth }
+  });
+
+  let presentCount = 0;
+  let totalDays = attendanceRecords.length;
+  attendanceRecords.forEach(record => {
+    if (record.status === "present") presentCount++;
+  });
+  const attendanceRate = totalDays > 0 ? Math.round((presentCount / totalDays) * 100) : 0;
+
+  const monthlyStats = await AttendanceRecord.aggregate([
+    { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
+    {
+      $group: {
+        _id: { $month: "$createdAt" },
+        presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+        totalCount: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  const monthlyAttendance = monthNames.map((month, index) => {
+    const stat = monthlyStats.find(s => s._id === index + 1);
+    let value = 0;
+    if (stat && stat.totalCount > 0) {
+      value = Math.round((stat.presentCount / stat.totalCount) * 100);
+    }
+    return { month, value };
+  });
+
+  const openComplaintsCount = await Complaint.countDocuments({
+    studentId,
+    status: { $in: ["Pending", "In progress"] }
+  });
+
+  const pendingLeaveRequestsCount = await Pass.countDocuments({
+    studentId,
+    status: { $in: ["pending_parent", "pending_admin"] }
+  });
+
+  const recentComplaints = await Complaint.find({ studentId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
+
+  const recentLeaveRequests = await Pass.find({ studentId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
+
+  return sendSuccess(res, 200, "Student dashboard stats fetched successfully", {
+    data: {
+      attendanceRate,
+      presentCount,
+      totalDays,
+      openComplaintsCount,
+      pendingLeaveRequestsCount,
+      recentComplaints,
+      recentLeaveRequests,
+      monthlyAttendance
+    }
+  });
+});
+
+const getParentDashboardStats = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const parent = await Parent.findById(parentId).select('studentId');
+  
+  if (!parent) {
+    return sendError(res, 404, "Parent not found");
+  }
+
+  const studentId = parent.studentId;
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const attendanceRecords = await AttendanceRecord.find({
+    studentId,
+    createdAt: { $gte: startOfMonth }
+  });
+
+  let presentCount = 0;
+  let totalDays = attendanceRecords.length;
+  attendanceRecords.forEach(record => {
+    if (record.status === "present") presentCount++;
+  });
+  const attendanceRate = totalDays > 0 ? Math.round((presentCount / totalDays) * 100) : 0;
+
+  const monthlyStats = await AttendanceRecord.aggregate([
+    { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
+    {
+      $group: {
+        _id: { $month: "$createdAt" },
+        presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+        totalCount: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  const monthlyAttendance = monthNames.map((month, index) => {
+    const stat = monthlyStats.find(s => s._id === index + 1);
+    let value = 0;
+    if (stat && stat.totalCount > 0) {
+      value = Math.round((stat.presentCount / stat.totalCount) * 100);
+    }
+    return { month, value };
+  });
+
+  const pendingVisitorsCount = await Visitor.countDocuments({
+    students: studentId,
+    approvalStatus: "Pending"
+  });
+
+  const pendingLeaveRequestsCount = await Pass.countDocuments({
+    studentId,
+    status: { $in: ["pending_parent", "pending_admin"] }
+  });
+
+  const recentVisitors = await Visitor.find({ students: studentId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
+
+  const recentLeaveRequests = await Pass.find({ studentId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
+
+  return sendSuccess(res, 200, "Parent dashboard stats fetched successfully", {
+    data: {
+      attendanceRate,
+      presentCount,
+      totalDays,
+      pendingVisitorsCount,
+      pendingLeaveRequestsCount,
+      recentVisitors,
+      recentLeaveRequests,
+      monthlyAttendance
+    }
+  });
+});
+
+const getAttendanceOverview = asyncHandler(async (req, res) => {
+  const { period } = req.query; 
+  const currentYear = new Date().getFullYear();
+  const year = period === "Last Year" ? currentYear - 1 : currentYear;
+  
+  const startOfYear = new Date(year, 0, 1);
+  const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  const windows = await AttendanceWindow.aggregate([
+    {
+      $match: {
+        attendanceDate: { $gte: startOfYear, $lte: endOfYear }
+      }
+    },
+    {
+      $group: {
+        _id: { $month: "$attendanceDate" },
+        presentCount: { $sum: "$presentCount" },
+        totalStudents: { $sum: "$totalStudents" }
+      }
+    },
+    {
+      $sort: { "_id": 1 }
+    }
+  ]);
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  const dataMap = new Map();
+  monthNames.forEach(m => dataMap.set(m, { present: 0, total: 0 }));
+
+  windows.forEach(w => {
+    const monthName = monthNames[w._id - 1];
+    dataMap.set(monthName, { present: w.presentCount, total: w.totalStudents });
+  });
+
+  const chartData = monthNames.map(month => {
+    const data = dataMap.get(month);
+    const value = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+    return { month, value, rawPresent: data.present, rawTotal: data.total };
+  });
+
+  let yearlyPresent = 0;
+  let yearlyTotal = 0;
+  chartData.forEach(d => {
+    yearlyPresent += d.rawPresent;
+    yearlyTotal += d.rawTotal;
+  });
+  const avgRate = yearlyTotal > 0 ? Math.round((yearlyPresent / yearlyTotal) * 100) : 0;
+
+  const currentActualMonth = new Date().getMonth();
+  
+  let currentMonthRate = 0;
+  let lastMonthRate = 0;
+  
+  if (period === "Last Year") {
+     currentMonthRate = chartData[11].value;
+     lastMonthRate = chartData[10].value;
+  } else {
+     currentMonthRate = chartData[currentActualMonth].value;
+     lastMonthRate = currentActualMonth > 0 ? chartData[currentActualMonth - 1].value : chartData[11].value;
+  }
+  
+  const vsLastMonth = currentMonthRate - lastMonthRate;
+  
+  const cleanChartData = chartData.map(({ month, value }) => ({ month, value }));
+
+  return sendSuccess(res, 200, "Attendance overview fetched successfully", {
+    data: {
+      chartData: cleanChartData,
+      avgRate: avgRate + "%",
+      currentMonth: currentMonthRate + "%",
+      vsLastMonth: (vsLastMonth >= 0 ? "+" : "") + vsLastMonth + "%"
+    }
+  });
+});
+
 export {
   getSuperAdminStats,
   getStudentCountByOrganization,
   getAdminStats,
+  getStudentDashboardStats,
+  getParentDashboardStats,
+  getAttendanceOverview
 };

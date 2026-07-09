@@ -75,7 +75,8 @@ function Navbar({ onMenuClick }) {
                 <img
                     src={logo}
                     alt="KMCT Hostel Management"
-                    className="h-[45px] w-[45px] sm:h-[63px] sm:w-[60px] object-contain"
+                    className="h-[45px] w-[45px] sm:h-[63px] sm:w-[60px] object-contain cursor-pointer"
+                    onClick={() => navigate('/dashboard')}
                 />
             </div>
 

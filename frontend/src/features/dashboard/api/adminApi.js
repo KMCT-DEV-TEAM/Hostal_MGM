@@ -28,8 +28,11 @@ const adminApi = {
   getSuperAdminDashboardStats: () =>
     api.get("/super-admin/dashboard/stats"),
 
-  getStudentCountByOrganization: () =>
-    api.get("/super-admin/dashboard/student-count-by-organization"),
+  getStudentCountByOrganization: (params) =>
+    api.get("/super-admin/dashboard/student-count-by-organization", { params }),
+
+  getAttendanceOverview: (params) =>
+    api.get("/super-admin/dashboard/attendance-overview", { params }),
 };
 
 export default adminApi;
