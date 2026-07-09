@@ -9,34 +9,41 @@ import webpush from '../../config/push.config.js';
  * @returns {Promise<Object>} The registered subscription document
  */
 export const registerSubscriptionService = async (recipientData, subscriptionData) => {
-  let doc = await PushSubscription.findOne({
+  const { endpoint, keys } = subscriptionData;
+  const subEntry = { endpoint, keys, isActive: true };
+
+  // 1. Global Search: Does this exact endpoint exist anywhere in the DB?
+  let existingDoc = await PushSubscription.findOne({ 'subscriptions.endpoint': endpoint });
+
+  if (existingDoc) {
+    const isSameUser = existingDoc.recipient.id.toString() === recipientData.id.toString() &&
+                       existingDoc.recipient.model === recipientData.model;
+
+    if (!isSameUser) {
+      // 2. Reassignment: Endpoint belongs to another user. Remove it from them.
+      existingDoc.subscriptions = existingDoc.subscriptions.filter(sub => sub.endpoint !== endpoint);
+      await existingDoc.save();
+    } else {
+      // 3. Update: Endpoint belongs to this user. Just update keys & activate.
+      const existingIndex = existingDoc.subscriptions.findIndex(sub => sub.endpoint === endpoint);
+      if (existingIndex > -1) {
+        existingDoc.subscriptions[existingIndex].keys = keys;
+        existingDoc.subscriptions[existingIndex].isActive = true;
+      }
+      return await existingDoc.save();
+    }
+  }
+
+  // 4. Creation/Append: We are here if endpoint didn't exist, OR it was removed from another user.
+  let currentDoc = await PushSubscription.findOne({
     'recipient.id': recipientData.id,
     'recipient.model': recipientData.model
   });
 
-  const subEntry = {
-    endpoint: subscriptionData.endpoint,
-    keys: subscriptionData.keys,
-    isActive: true
-  };
-
-  if (doc) {
-    // Check if this endpoint already exists in the array
-    const existingIndex = doc.subscriptions.findIndex(
-      (sub) => sub.endpoint === subscriptionData.endpoint
-    );
-
-    if (existingIndex > -1) {
-      // Update existing
-      doc.subscriptions[existingIndex].keys = subscriptionData.keys;
-      doc.subscriptions[existingIndex].isActive = true;
-    } else {
-      // Add new
-      doc.subscriptions.push(subEntry);
-    }
-    return await doc.save();
+  if (currentDoc) {
+    currentDoc.subscriptions.push(subEntry);
+    return await currentDoc.save();
   } else {
-    // Create new recipient document
     const newDoc = new PushSubscription({
       recipient: recipientData,
       subscriptions: [subEntry]

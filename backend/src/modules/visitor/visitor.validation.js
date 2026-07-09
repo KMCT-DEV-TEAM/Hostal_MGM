@@ -204,7 +204,7 @@ export const validateRejectVisitor = (req, res, next) => {
 };
 
 export const validateCheckInVisitor = (req, res, next) => {
-    const { visitor, purpose, durationMinutes, studentId, students, hostelId, organizationId } = req.body;
+    const { visitor, purpose, expectedExitTime, studentId, students, hostelId, organizationId } = req.body;
 
     if (studentId || students || hostelId || organizationId) {
         return res.status(400).json({
@@ -234,12 +234,14 @@ export const validateCheckInVisitor = (req, res, next) => {
         });
     }
 
-    if (!durationMinutes || typeof durationMinutes !== 'number' || durationMinutes <= 0) {
+    if (!expectedExitTime || typeof expectedExitTime !== 'string' || !isValidDateOrTime(expectedExitTime)) {
         return res.status(400).json({
             success: false,
-            message: "A valid durationMinutes is required and must be greater than 0."
+            message: "A valid expectedExitTime is required."
         });
     }
+
+
 
     req.body.purpose = purpose.trim();
     next();
