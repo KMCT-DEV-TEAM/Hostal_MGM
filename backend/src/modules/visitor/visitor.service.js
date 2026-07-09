@@ -1033,12 +1033,23 @@ export const listVisitorVisits = async (query, user) => {
 
 
     } else if (user.role === 'parent') {
-        matchStage.refId = new mongoose.Types.ObjectId(user.id);
-        matchStage.refType = 'Parent';
+        const Parent = mongoose.model('Parent');
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) {
+            const error = new Error('Parent not found.');
+            error.status = 404;
+            throw error;
+        }
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const authorizedStudentIds = parentDocs.map(p => p.studentId);
+
+        if (authorizedStudentIds.length === 0) {
+            return { total: 0, page: Number(page), limit: Number(limit), totalPages: 0, data: [] };
+        }
+        matchStage.students = { $in: authorizedStudentIds };
 
     } else if (user.role === 'student') {
-        matchStage.refId = new mongoose.Types.ObjectId(user.id);
-        matchStage.refType = 'Student';
+        matchStage.students = new mongoose.Types.ObjectId(user.id);
     } else {
         const error = new Error('Unauthorized role to list visitor visits.');
         error.status = 403;
