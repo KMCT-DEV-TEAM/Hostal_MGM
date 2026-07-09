@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import adminService from "@/services/admin.service";
@@ -40,7 +41,13 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    Loader2
+    Loader2,
+    UserPlus,
+    Trash2,
+    Edit,
+    LogIn,
+    PlusCircle,
+    FileText
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import MaintenanceStaffDashboardOverview from "../components/MaintenanceStaffDashboardOverview";
@@ -409,8 +416,8 @@ function DashboardOverview() {
     }
 
     const renderOrganizationOverview = () => (
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col">
-            <div className="flex justify-between mb-4">
+        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col min-w-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4 sm:gap-0">
                 <div>
                     <h2 className="text-sm font-bold text-primary">
                         Organization Overview
@@ -419,41 +426,55 @@ function DashboardOverview() {
                         View student distribution across organizations.
                     </p>
                 </div>
-                <select
-                    value={period}
-                    onChange={(e) => setPeriod(e.target.value)}
-                    className="border border-gray-200 rounded-md px-3 py-1 text-xs text-gray-500 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                >
-                    <option>This Year</option>
-                    <option>Last Year</option>
-                </select>
+                <div className="shrink-0 w-full sm:w-auto">
+                    <Dropdown
+                        options={[
+                            { value: "This Year", label: "This Year" },
+                            { value: "Last Year", label: "Last Year" }
+                        ]}
+                        value={period}
+                        onChange={(val) => setPeriod(val)}
+                        placeholder="This Year"
+                        minWidth="w-full sm:w-28"
+                        triggerClassName="w-full sm:w-auto px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs text-gray-500 font-medium cursor-pointer"
+                    />
+                </div>
             </div>
-            <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                    data={studentChartData}
-                    barSize={18}
-                    margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
-                >
-                    <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="#F0F1F3"
-                        vertical={false}
-                    />
-                    <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 10, fill: "#8898AA" }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <YAxis
-                        tick={{ fontSize: 10, fill: "#8898AA" }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <Tooltip cursor={{ fill: "#F0F4FF" }} />
-                    <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
+            {studentChartData && studentChartData.length > 0 ? (
+                <div className="flex-1 w-full min-w-0 min-h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={studentChartData}
+                            barSize={18}
+                            margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
+                        >
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#F0F1F3"
+                            vertical={false}
+                        />
+                        <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 10, fill: "#8898AA" }}
+                            axisLine={false}
+                            tickLine={false}
+                        />
+                        <YAxis
+                            tick={{ fontSize: 10, fill: "#8898AA" }}
+                            axisLine={false}
+                            tickLine={false}
+                        />
+                        <Tooltip cursor={{ fill: "#F0F4FF" }} />
+                        <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        ) : (
+                <div className="flex flex-col items-center justify-center h-[240px] text-gray-400">
+                    <MessageSquare size={32} className="mb-2 text-gray-200" />
+                    <p className="text-sm">No record found</p>
+                </div>
+            )}
         </div>
     );
 
@@ -697,60 +718,83 @@ function DashboardOverview() {
                         Latest actions across the system
                     </p>
                 </div>
-                <a
-                    href="#"
+                <Link
+                    to="/dashboard/logs"
                     className="text-xs text-[#777777] font-medium hover:underline"
                 >
                     View all
-                </a>
+                </Link>
             </div>
             {recentActivities.map((log) => {
                 let iconBg = "bg-[#EAF3FF]";
                 let iconColor = "text-[#2D7CC3]";
                 let tagClass = "bg-[#EAF3FF] text-[#2D7CC3]";
-                let icon = <Info size={18} className={iconColor} />;
+                
+                const actionLower = (log.action || '').toLowerCase();
+                const detailsLower = (log.details || '').toLowerCase();
+                const combinedText = actionLower + ' ' + detailsLower;
+
+                let IconComponent = Info;
+
+                if (combinedText.includes('create') || combinedText.includes('add') || combinedText.includes('register')) {
+                    IconComponent = combinedText.includes('user') || combinedText.includes('student') || combinedText.includes('warden') || combinedText.includes('admin') || combinedText.includes('parent')
+                        ? UserPlus
+                        : PlusCircle;
+                } else if (combinedText.includes('delete') || combinedText.includes('remove')) {
+                    IconComponent = Trash2;
+                } else if (combinedText.includes('update') || combinedText.includes('edit') || combinedText.includes('modify')) {
+                    IconComponent = Edit;
+                } else if (combinedText.includes('login') || combinedText.includes('auth') || combinedText.includes('sign in')) {
+                    IconComponent = LogIn;
+                } else if (combinedText.includes('complaint') || combinedText.includes('issue')) {
+                    IconComponent = MessageSquare;
+                } else if (combinedText.includes('leave') || combinedText.includes('request')) {
+                    IconComponent = FileText;
+                }
+
                 if (log.status === 'success') {
                     iconBg = "bg-[#EEF7E7]";
                     iconColor = "text-[#6B8E23]";
                     tagClass = "bg-[#EEF7E7] text-[#6B8E23]";
-                    icon = <CheckCircle size={18} className={iconColor} />;
+                    if (IconComponent === Info) IconComponent = CheckCircle;
                 } else if (log.status === 'error') {
                     iconBg = "bg-[#FEE2E2]";
                     iconColor = "text-[#EF4444]";
                     tagClass = "bg-[#FEE2E2] text-[#EF4444]";
-                    icon = <XCircle size={18} className={iconColor} />;
+                    if (IconComponent === Info) IconComponent = XCircle;
                 } else if (log.status === 'warning') {
                     iconBg = "bg-[#FFF4E5]";
                     iconColor = "text-[#F59E0B]";
                     tagClass = "bg-[#FFF4E5] text-[#F59E0B]";
-                    icon = <AlertTriangle size={18} className={iconColor} />;
+                    if (IconComponent === Info) IconComponent = AlertTriangle;
                 }
+
                 return (
                     <div
                         key={log._id}
-                        className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3 gap-2 sm:gap-4"
                     >
-                        <div className="flex items-center gap-4 flex-1">
-                            <div className={"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 " + iconBg}>
-                                {icon}
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div className={"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 " + iconBg}>
+                                <IconComponent size={18} className={iconColor} />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <div className="flex items-center flex-wrap gap-2">
-                                    <p className="text-[13px] text-[#333333]">
+                                    <p className="text-[13px] text-[#333333] break-words">
                                         {log.action} - <strong className="font-medium">{log.details?.length > 60 ? log.details.substring(0, 60) + '...' : log.details}</strong>
                                     </p>
                                     {log.status && (
-                                        <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize " + tagClass}>
+                                        <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize shrink-0 " + tagClass}>
                                             {log.status}
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-xs text-[#9CA3AF] mt-1 capitalize">
+                                <p className="text-xs text-[#9CA3AF] mt-1 capitalize truncate">
                                     By {log.user?.name || log.user?.email || 'System'} {log.userRole ? "(" + log.userRole + ")" : ''}
                                 </p>
                             </div>
                         </div>
-                        <span className="text-xs text-[#9CA3AF] whitespace-nowrap ml-4">
+                        <span className="text-[11px] sm:text-xs text-[#9CA3AF] whitespace-nowrap self-start sm:self-auto ml-[52px] sm:ml-0">
                             {formatRelativeTime(log.createdAt)}
                         </span>
                     </div>
