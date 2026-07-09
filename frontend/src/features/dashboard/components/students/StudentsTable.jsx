@@ -11,8 +11,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 
 const COLUMNS = [
-  { key: "admissionNo", label: "Admission No" },
-  { key: "studentName", label: "Student Name" },
+  { key: "studentName", label: "Student Details" },
+  { key: "course", label: "Course" },
+  { key: "department", label: "Department" },
   { key: "organization", label: "Organization" },
   { key: "hostel", label: "Hostel" },
   { key: "status", label: "Status" },
@@ -75,12 +76,7 @@ export default function StudentsTable({
 
     return (
       <>
-        {/* Admission No */}
-        <td className="p-4 font-medium text-[#777777] text-start">
-          {s.studentId || "-"}
-        </td>
-
-        {/* Student Name with avatar */}
+        {/* Student Details with avatar */}
         <td className="p-4 font-medium text-[#777777]">
           <div
             className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
@@ -89,9 +85,28 @@ export default function StudentsTable({
             <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
               {getInitials(s.name)}
             </div>
-            <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">
-              {s.name || "-"}
-            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors truncate max-w-[150px]" title={s.name}>
+                {s.name || "-"}
+              </span>
+              <span className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[150px]" title={s.studentId}>
+                {s.studentId || "-"}
+              </span>
+            </div>
+          </div>
+        </td>
+
+        {/* Course */}
+        <td className="p-4 text-start text-gray-500">
+          <div className="truncate max-w-[120px]" title={s.course?.name || s.course || "-"}>
+            {s.course?.name || s.course || "-"}
+          </div>
+        </td>
+
+        {/* Department */}
+        <td className="p-4 text-start text-gray-500">
+          <div className="truncate max-w-[150px]" title={s.department?.name || s.department || "-"}>
+            {s.department?.name || s.department || "-"}
           </div>
         </td>
 
