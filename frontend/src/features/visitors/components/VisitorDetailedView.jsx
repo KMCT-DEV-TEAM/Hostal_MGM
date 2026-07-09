@@ -6,7 +6,7 @@ import FilterModal from './modals/FilterModal';
 import VisitDetailsModal from './modals/VisitDetailsModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
-const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh }) => {
+const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedVisitId, setSelectedVisitId] = useState(null);
     console.log('visitors from page;', visitors)
@@ -78,9 +78,11 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 onFilter={onFilter}
             />
 
-            <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex">
-                <Download className="w-4 h-4" /> Export
-            </Button>
+            {canExport && (
+                <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex" onClick={onExportClick}>
+                    <Download className="w-4 h-4" /> Export
+                </Button>
+            )}
         </div>
     );
 

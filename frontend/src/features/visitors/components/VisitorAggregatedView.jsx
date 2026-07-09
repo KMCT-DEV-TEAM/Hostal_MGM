@@ -4,7 +4,7 @@ import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
 
-const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick }) => {
+const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick, canExport, onExportClick }) => {
 
     const headers = [
         { key: 'date', label: 'Date' },
@@ -54,9 +54,11 @@ const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHos
                 triggerClassName="px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg outline-none min-w-[120px]"
             />
 
-            <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex">
-                <Download className="w-4 h-4" /> Export
-            </Button>
+            {canExport && (
+                <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex" onClick={onExportClick}>
+                    <Download className="w-4 h-4" /> Export
+                </Button>
+            )}
         </div>
     );
 
