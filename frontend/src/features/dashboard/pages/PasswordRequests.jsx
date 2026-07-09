@@ -469,7 +469,7 @@ const PasswordRequests = () => {
                     {
                         name: "status",
                         label: "Request Status",
-                        defaultValue: "all",
+                        defaultValue: statusFilter.toLowerCase(),
                         options: [
                             { label: 'All Status', value: 'all' },
                             { label: 'Pending', value: 'pending' },

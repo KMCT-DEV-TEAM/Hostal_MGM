@@ -35,18 +35,18 @@ const AdminFormModal = ({
             footer={
                 <>
                     <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
-                    >
-                        {t('cancel')}
-                    </button>
-                    <button
                         type="submit"
                         disabled={(!isEmailVerified && !editingAdmin) || isSubmitting || (adminForm.phone?.length !== 10)}
                         className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
+                    >
+                        {t('cancel')}
                     </button>
                 </>
             }
@@ -138,18 +138,13 @@ const AdminFormModal = ({
                     </div>
                 </section>
 
-                <section>
-                    <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
-                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
-                    <div className="border-b border-gray-100 mb-4" />
-                    <div>
-                        <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
-                        {!!editingAdmin ? (
-                            <div className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-xs text-gray-500 cursor-not-allowed flex items-center justify-between">
-                                <span>{organizations.find(o => o._id === adminForm.organization)?.name || t('select_organization')}</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down w-4 h-4 text-gray-400"><path d="m6 9 6 6 6-6"/></svg>
-                            </div>
-                        ) : (
+                {!editingAdmin && (
+                    <section>
+                        <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
+                        <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
+                        <div className="border-b border-gray-100 mb-4" />
+                        <div>
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
                             <Dropdown
                                 options={organizations.map(org => ({ value: org._id, label: org.name }))}
                                 value={adminForm.organization}
@@ -157,9 +152,9 @@ const AdminFormModal = ({
                                 placeholder={t('select_organization')}
                                 triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
                             />
-                        )}
-                    </div>
-                </section>
+                        </div>
+                    </section>
+                )}
 
                 {!editingAdmin && (
                     <section>

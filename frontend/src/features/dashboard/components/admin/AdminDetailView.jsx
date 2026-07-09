@@ -1,9 +1,32 @@
-import React from 'react';
-import { User, Mail, Phone, Building2, ToggleRight, Pencil } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, Building2, ToggleRight, Pencil, Hash, MapPin, Calendar, Loader2 } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 import Modal from '@/components/ui/Modal';
+import organizationService from '@/services/organization.service';
 
 const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal }) => {
+    const [orgDetails, setOrgDetails] = useState(null);
+    const [loadingOrg, setLoadingOrg] = useState(false);
+
+    useEffect(() => {
+        if (selectedAdminDetail && selectedAdminDetail.organization) {
+            const orgId = typeof selectedAdminDetail.organization === 'object' ? selectedAdminDetail.organization._id : selectedAdminDetail.organization;
+            if (orgId) {
+                const fetchOrg = async () => {
+                    setLoadingOrg(true);
+                    try {
+                        const res = await organizationService.getOrganizationById(orgId);
+                        if (res && res.data) setOrgDetails(res.data);
+                    } catch (err) {
+                        console.error('Failed to fetch organization details for admin:', err);
+                    } finally {
+                        setLoadingOrg(false);
+                    }
+                };
+                fetchOrg();
+            }
+        }
+    }, [selectedAdminDetail]);
     return (
         <Modal bottomSheetOnMobile={true}
             isOpen={true}
@@ -34,7 +57,46 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                                 </span>
                             </InfoRow>
                             <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail?.phone ? `+91 ${selectedAdminDetail.phone}` : 'N/A'}</InfoRow>
+                        </div>
+                    </div>
+
+                    {/* Organization Details Section */}
+                    <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Organization Details</h3>
+                        <p className="text-[11px] text-text-secondary mb-4">Details of assigned organization</p>
+                        <div className="space-y-1">
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400 shrink-0" /> Organization</>}>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</InfoRow>
+
+                            {loadingOrg ? (
+                                <div className="py-2">
+                                    <Loader2 className="w-5 h-5 text-[#0A437A] animate-spin mx-auto" />
+                                </div>
+                            ) : orgDetails ? (
+                                <>
+                                    <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Code</>}>{orgDetails.code || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Number</>}>{orgDetails.organisationNumber || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{orgDetails.email || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{orgDetails.phone ? `+91 ${orgDetails.phone}` : 'N/A'}</InfoRow>
+                                    <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Address</>}>{orgDetails.address || 'N/A'}</InfoRow>
+                                    <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
+                                        <span className="flex items-center">
+                                            <span className={`w-2 h-2 rounded-full ${orgDetails.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
+                                            {orgDetails.isActive ? "Active" : "Inactive"}
+                                        </span>
+                                    </InfoRow>
+                                    <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> Created</>}>{orgDetails.createdAt ? new Date(orgDetails.createdAt).toLocaleDateString() : 'N/A'}</InfoRow>
+                                </>
+                            ) : (
+                                typeof selectedAdminDetail?.organization === 'object' && selectedAdminDetail?.organization !== null && (
+                                    <>
+                                        <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Code</>}>{selectedAdminDetail.organization.code || 'N/A'}</InfoRow>
+                                        <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Number</>}>{selectedAdminDetail.organization.organisationNumber || 'N/A'}</InfoRow>
+                                        <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedAdminDetail.organization.email || 'N/A'}</InfoRow>
+                                        <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedAdminDetail.organization.phone ? `+91 ${selectedAdminDetail.organization.phone}` : 'N/A'}</InfoRow>
+                                        <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Address</>}>{selectedAdminDetail.organization.address || 'N/A'}</InfoRow>
+                                    </>
+                                )
+                            )}
                         </div>
                     </div>
                 </div>
@@ -43,6 +105,7 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
                     <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4">Admin Summary</h3>
                     <div className="space-y-1">
                         <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedAdminDetail?.name}</InfoRow>
+                        <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400 shrink-0" /> Organization</>}>{selectedAdminDetail?.organization?.name || selectedAdminDetail?.organization || 'N/A'}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                             <span className="flex items-center">
                                 <span className={`w-2 h-2 rounded-full ${selectedAdminDetail?.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>

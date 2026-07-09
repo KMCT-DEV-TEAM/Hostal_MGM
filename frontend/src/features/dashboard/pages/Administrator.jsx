@@ -530,11 +530,13 @@ export default function Administrator() {
             const params = { limit: 100000 };
             if (searchQuery) params.search = searchQuery;
 
-            // Allow export modal filter to override table filter
-            if (exportFilters.isActive !== '') {
-                params.status = exportFilters.isActive === 'true' ? 'Active' : 'Inactive';
-            } else if (statusFilter !== 'All') {
-                params.status = statusFilter;
+            // Allow export modal filter to override table filter completely
+            if (exportFilters.isActive === 'true') {
+                params.status = 'Active';
+            } else if (exportFilters.isActive === 'false') {
+                params.status = 'Inactive';
+            } else {
+                delete params.status;
             }
 
             const res = await adminService.getAdmins(params);
@@ -853,6 +855,18 @@ export default function Administrator() {
                 onExport={confirmExport}
                 isExporting={isExporting}
                 title="Export Admins Data"
+                fields={[
+                    {
+                        name: "isActive",
+                        label: "Account Status",
+                        options: [
+                            { label: 'All Status', value: 'all' },
+                            { label: 'Active Only', value: 'true' },
+                            { label: 'Inactive Only', value: 'false' },
+                        ],
+                        defaultValue: statusFilter === 'Active' ? 'true' : (statusFilter === 'Inactive' ? 'false' : 'all')
+                    }
+                ]}
             />
 
 
