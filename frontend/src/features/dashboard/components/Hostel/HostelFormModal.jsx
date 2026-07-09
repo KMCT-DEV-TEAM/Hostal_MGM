@@ -3,6 +3,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useTranslation } from '@/hooks/useTranslation';
+import Dropdown from '@/components/ui/Dropdown';
 
 const HostelFormModal = ({
     activeModal,
@@ -29,7 +30,7 @@ const HostelFormModal = ({
                 <>
                     <button
                         type="submit"
-                        disabled={isSubmitting || (hostelForm.phone && hostelForm.phone.length !== 10) || !!errors.name || !!errors.phone || !!errors.email}
+                        disabled={isSubmitting || !hostelForm.name || !hostelForm.code || !hostelForm.hosteltype || !hostelForm.capacity || !hostelForm.location || (hostelForm.phone && hostelForm.phone.length !== 10) || !!errors.name || !!errors.phone || !!errors.email}
                         className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingHostel ? t('save_changes') : t('save'))}
@@ -87,15 +88,16 @@ const HostelFormModal = ({
                         </div>
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_type')} <span className="text-red-500">*</span></label>
-                            <select
-                                required
+                            <Dropdown
+                                options={[
+                                    { label: 'Boys Hostel', value: 'boys' },
+                                    { label: 'Girls Hostel', value: 'girls' }
+                                ]}
                                 value={hostelForm.hosteltype}
-                                onChange={(e) => setHostelForm({ ...hostelForm, hosteltype: e.target.value })}
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] appearance-none"
-                            >
-                                <option value="boys">Boys Hostel</option>
-                                <option value="girls">Girls Hostel</option>
-                            </select>
+                                onChange={(val) => setHostelForm({ ...hostelForm, hosteltype: val })}
+                                placeholder="Select Hostel Type"
+                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] text-left"
+                            />
                         </div>
                     </div>
                 </section>
@@ -113,19 +115,18 @@ const HostelFormModal = ({
                                 value={hostelForm.email}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/\s/.test(val)) {
+                                    const cleanVal = val.replace(/\s/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, email: '' }));
                                     }
-                                    setHostelForm({ ...hostelForm, email: val });
+                                    setHostelForm({ ...hostelForm, email: cleanVal });
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === ' ') {
                                         e.preventDefault();
                                         setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                    } else {
-                                        setErrors(prev => ({ ...prev, email: '' }));
                                     }
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}

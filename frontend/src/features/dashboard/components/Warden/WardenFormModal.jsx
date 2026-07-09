@@ -21,7 +21,7 @@ export default function WardenFormModal({
     isVerifying
 }) {
     const { t } = useTranslation();
-    const [errors, setErrors] = React.useState({ firstName: '', lastName: '', phone: '' });
+    const [errors, setErrors] = React.useState({});
 
     return (
         <Modal
@@ -45,7 +45,7 @@ export default function WardenFormModal({
                     </button>
                     <button
                         type="submit"
-                        disabled={(!isEmailVerified && !editingWarden) || isSubmitting || (wardenForm.phone?.length !== 10) || !!errors.firstName || !!errors.lastName || !!errors.email}
+                        disabled={(!isEmailVerified && !editingWarden) || isSubmitting || (wardenForm.phone?.length !== 10)}
                         className="flex items-center justify-center min-w-[100px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingWarden ? t('save_changes') : t('save'))}
@@ -71,12 +71,13 @@ export default function WardenFormModal({
                                 value={wardenForm.name ? wardenForm.name.split(' ')[0] : ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/[^a-zA-Z]/.test(val)) {
+                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, firstName: 'Only letters are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, firstName: '' }));
                                     }
-                                    setWardenForm({ ...wardenForm, name: `${val} ${wardenForm.name ? wardenForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
+                                    setWardenForm({ ...wardenForm, name: `${cleanVal} ${wardenForm.name ? wardenForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.firstName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -93,12 +94,13 @@ export default function WardenFormModal({
                                 value={wardenForm.name ? wardenForm.name.split(' ').slice(1).join(' ') : ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/[^a-zA-Z]/.test(val)) {
+                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, lastName: 'Only letters are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, lastName: '' }));
                                     }
-                                    setWardenForm({ ...wardenForm, name: `${wardenForm.name ? wardenForm.name.split(' ')[0] : ''} ${val}`.trim() });
+                                    setWardenForm({ ...wardenForm, name: `${wardenForm.name ? wardenForm.name.split(' ')[0] : ''} ${cleanVal}`.trim() });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.lastName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -149,19 +151,18 @@ export default function WardenFormModal({
                                             value={wardenForm.email || ''}
                                             onChange={(e) => {
                                                 const val = e.target.value;
-                                                if (/\s/.test(val)) {
+                                                const cleanVal = val.replace(/\s/g, '');
+                                                if (val !== cleanVal) {
                                                     setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                                 } else {
                                                     setErrors(prev => ({ ...prev, email: '' }));
                                                 }
-                                                setWardenForm({ ...wardenForm, email: val });
+                                                setWardenForm({ ...wardenForm, email: cleanVal });
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key === ' ') {
                                                     e.preventDefault();
                                                     setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                                } else {
-                                                    setErrors(prev => ({ ...prev, email: '' }));
                                                 }
                                             }}
                                             disabled={editingWarden}
