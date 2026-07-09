@@ -350,6 +350,43 @@ export const getSuperAdminHostelVisits = async (req, res) => {
 };
 
 /**
+ * Super Admin gets hostel-wise visitor summary
+ * @route GET /super-admin/visitors/hostels
+ */
+export const getSuperAdminHostelVisitors = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User context missing."
+            });
+        }
+
+        const result = await visitorService.getSuperAdminHostelVisitors(req.query, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Hostel visitors summary fetched successfully.",
+            ...result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching hostel visitors."
+            : error.message;
+
+        console.error('[VisitorController] getSuperAdminHostelVisitors error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
  * Super Admin, Admin, Warden, Parent and Student list visits
  * @route GET /visitor-visits
  */

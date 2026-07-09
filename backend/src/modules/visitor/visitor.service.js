@@ -999,6 +999,42 @@ export const getSuperAdminHostelVisits = async (query, user) => {
 };
 
 /**
+ * Gets hostel-wise visitor summary for Super Admin
+ * @param {Object} query 
+ * @param {Object} user 
+ */
+export const getSuperAdminHostelVisitors = async (query, user) => {
+    if (user.role !== 'super_admin') {
+        const error = new Error('Unauthorized role.');
+        error.status = 403;
+        throw error;
+    }
+
+    const { page = 1, limit = 10, search } = query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const sortStage = { hostelName: 1 };
+
+    const matchStage = {}; // Super Admin sees all
+
+    const searchMatchStage = {};
+    if (search) {
+        searchMatchStage['hostelName'] = { $regex: search, $options: 'i' };
+    }
+
+    const { data, total } = await visitorRepository.getSuperAdminHostelVisitorSummaryAggregated(
+        matchStage,
+        searchMatchStage,
+        skip,
+        Number(limit),
+        sortStage
+    );
+
+    const totalPages = Math.ceil(total / Number(limit));
+
+    return { total, page: Number(page), limit: Number(limit), totalPages, data };
+};
+
+/**
  * Lists visits for Super Admin, Admin, and Warden
  * @param {Object} query 
  * @param {Object} user 
