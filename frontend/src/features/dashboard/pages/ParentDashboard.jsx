@@ -176,7 +176,7 @@ export default function ParentDashboard() {
                                     value={radialPeriod}
                                     onChange={(val) => setRadialPeriod(val)}
                                     minWidth="w-[120px]"
-                                    triggerClassName="w-full bg-[#F9FAFB] border-none rounded-lg px-3 py-1.5 text-xs text-gray-500 font-medium cursor-pointer focus:outline-none flex justify-between items-center"
+                                    triggerClassName="bg-[#F9FAFB] border-none rounded-lg px-3 py-1.5 text-xs text-gray-500 font-medium cursor-pointer focus:outline-none flex justify-between items-center gap-2"
                                 />
                             </div>
 
@@ -237,8 +237,8 @@ export default function ParentDashboard() {
                         <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-[1px] h-1/2 bg-gray-200"></div>
 
                         {/* Right Side: Bar Chart */}
-                        <div className="flex flex-col relative mt-6 lg:mt-0 pt-10 lg:pt-[46px]">
-                            <div className="absolute top-0 right-0 z-10 w-full sm:w-auto flex justify-end">
+                        <div className="flex flex-col mt-8 lg:mt-0">
+                            <div className="flex justify-start sm:justify-end items-start sm:items-center mb-6 lg:h-[52px]">
                                 <Dropdown
                                     options={[
                                         { label: 'This Year', value: 'This Year' },
@@ -247,11 +247,11 @@ export default function ParentDashboard() {
                                     value={period}
                                     onChange={(val) => setPeriod(val)}
                                     minWidth="w-[120px]"
-                                    triggerClassName="w-full bg-[#F9FAFB] border-none rounded-lg px-3 py-1.5 text-[11px] text-gray-500 font-medium cursor-pointer focus:outline-none flex justify-between items-center"
+                                    triggerClassName="bg-[#F9FAFB] border-none rounded-lg px-3 py-1.5 text-[11px] text-gray-500 font-medium cursor-pointer focus:outline-none flex justify-between items-center gap-2"
                                 />
                             </div>
 
-                            <div className="flex-1 min-h-[220px] w-full">
+                            <div className="flex-1 min-h-[220px] w-full relative mt-6">
                                 {attendanceData.some(item => item.value > 0) ? (
                                     <ResponsiveContainer width="100%" height={220}>
                                         <BarChart

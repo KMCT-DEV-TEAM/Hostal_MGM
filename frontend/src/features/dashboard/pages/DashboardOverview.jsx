@@ -536,31 +536,42 @@ function DashboardOverview() {
     };
 
     const renderAttendanceOverview = () => {
-        const currentData = (period === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || [];
-        
-        const validMonths = currentData.filter(d => d.value > 0);
-        const avgRate = validMonths.length > 0 
-            ? Math.round(validMonths.reduce((sum, d) => sum + d.value, 0) / validMonths.length)
-            : 0;
+        let currentData = [];
+        let avgRate = "0";
+        let currentMonthValue = 0;
+        let vsLastFormatted = "0%";
+
+        if (user?.role === ROLES.SUPER_ADMIN) {
+            currentData = attendanceData || [];
+            avgRate = attendanceMetrics.avgRate;
+            currentMonthValue = attendanceMetrics.currentMonth;
+            vsLastFormatted = attendanceMetrics.vsLastMonth;
+        } else {
+            currentData = (attendancePeriod === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || [];
             
-        const currentMonthIndex = new Date().getMonth();
-        const currentMonthValue = currentData[currentMonthIndex]?.value || 0;
-        
-        const lastMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
-        const lastMonthValue = currentData[lastMonthIndex]?.value || 0;
-        
-        let vsLast = 0;
-        if (lastMonthValue > 0) {
-            vsLast = (((currentMonthValue - lastMonthValue) / lastMonthValue) * 100).toFixed(1);
-        } else if (currentMonthValue > 0) {
-            vsLast = 100.0;
+            const validMonths = currentData.filter(d => d.value > 0);
+            avgRate = validMonths.length > 0 
+                ? Math.round(validMonths.reduce((sum, d) => sum + d.value, 0) / validMonths.length)
+                : 0;
+                
+            const currentMonthIndex = new Date().getMonth();
+            currentMonthValue = currentData[currentMonthIndex]?.value || 0;
+            
+            const lastMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
+            const lastMonthValue = currentData[lastMonthIndex]?.value || 0;
+            
+            let vsLast = 0;
+            if (lastMonthValue > 0) {
+                vsLast = (((currentMonthValue - lastMonthValue) / lastMonthValue) * 100).toFixed(1);
+            } else if (currentMonthValue > 0) {
+                vsLast = 100.0;
+            }
+            vsLastFormatted = vsLast > 0 ? `+${vsLast}%` : `${vsLast}%`;
         }
 
-        const vsLastFormatted = vsLast > 0 ? `+${vsLast}%` : `${vsLast}%`;
-
         return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full flex flex-col">
-            <div className="flex justify-between items-start mb-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h2 className="text-[20px] font-bold text-black">
                         Attendance Overview
@@ -569,37 +580,39 @@ function DashboardOverview() {
                         Overall attendance percentage across organizations.
                     </p>
                 </div>
-                <Dropdown
-                    options={[
-                        { value: "This Year", label: "This Year" },
-                        { value: "Last Year", label: "Last Year" }
-                    ]}
-                    value={period}
-                    onChange={(val) => setPeriod(val)}
-                    placeholder="This Year"
-                    minWidth="w-32"
-                    triggerClassName="px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer"
-                />
+                <div className="relative min-w-[120px] w-full sm:w-auto">
+                    <Dropdown
+                        options={[
+                            { value: "This Year", label: "This Year" },
+                            { value: "Last Year", label: "Last Year" }
+                        ]}
+                        value={attendancePeriod}
+                        onChange={(val) => setAttendancePeriod(val)}
+                        triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
+                    />
+                </div>
             </div>
-            <div className="flex gap-3 mb-8">
-                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                    <div className="text-[#2D7CC3] font-bold text-sm">{avgRate}%</div>
+            
+            <div className="flex flex-wrap gap-3 mb-8">
+                <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                    <div className="text-[#2D7CC3] font-bold text-sm">{avgRate}{user?.role === ROLES.SUPER_ADMIN && typeof avgRate === 'string' && avgRate.includes('%') ? '' : '%'}</div>
                     <div className="text-xs text-[#8F8F8F] mt-1">Avg Rate</div>
                 </div>
-                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                    <div className="text-[#0F6E56] font-bold text-sm">{currentMonthValue}%</div>
+                <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                    <div className="text-success font-bold text-sm">{currentMonthValue}{user?.role === ROLES.SUPER_ADMIN && typeof currentMonthValue === 'string' && currentMonthValue.includes('%') ? '' : '%'}</div>
                     <div className="text-xs text-[#8F8F8F] mt-1">Current Month</div>
                 </div>
-                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                    <div className="text-[#0F6E56] font-bold text-sm">{vsLastFormatted}</div>
+                <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                    <div className="text-success font-bold text-sm">{vsLastFormatted}</div>
                     <div className="text-xs text-[#8F8F8F] mt-1">vs Last</div>
                 </div>
             </div>
-            <div className="flex-1 min-h-[220px]">
-                {((period === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || []).some(item => item.value > 0) ? (
+
+            <div className="flex-1 min-h-[220px] w-full min-w-0">
+                {currentData.some(item => item.value > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
-                            data={period === "This Year" ? dashboardStats.attendance?.thisYear || [] : dashboardStats.attendance?.lastYear || []}
+                            data={currentData}
                             margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                         >
                             <defs>
@@ -825,11 +838,11 @@ function DashboardOverview() {
                 </div>
 
                 {/* Right Section */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
                     {user?.role === ROLES.ADMIN && (
                         <button
                             onClick={() => setIsHostelModalOpen(true)}
-                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer w-full md:w-auto"
                         >
                             + Add Hostel
                         </button>
@@ -912,7 +925,7 @@ function DashboardOverview() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Attendance Area Chart */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm overflow-hidden">
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
@@ -924,16 +937,17 @@ function DashboardOverview() {
                                 </p>
                             </div>
 
-                            <Dropdown
-                                options={[
-                                    { value: "This Year", label: "This Year" },
-                                    { value: "Last Year", label: "Last Year" }
-                                ]}
-                                value={attendancePeriod}
-                                onChange={(val) => setAttendancePeriod(val)}
-                                minWidth="w-32"
-                                triggerClassName="px-3 py-1.5 bg-[#F8F8F8] border border-gray-200 rounded-lg text-sm text-gray-500 font-medium shadow-sm focus:border-[#0A437A] cursor-pointer"
-                            />
+                            <div className="relative min-w-[120px] w-full sm:w-auto">
+                                <Dropdown
+                                    options={[
+                                        { value: "This Year", label: "This Year" },
+                                        { value: "Last Year", label: "Last Year" }
+                                    ]}
+                                    value={attendancePeriod}
+                                    onChange={(val) => setAttendancePeriod(val)}
+                                    triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
+                                />
+                            </div>
                         </div>
 
                         {/* Stats */}
@@ -956,8 +970,9 @@ function DashboardOverview() {
 
                         {/* Chart */}
                         {attendanceData.some(d => d.value > 0) ? (
-                            <ResponsiveContainer width="100%" height={220}>
-                                <AreaChart
+                            <div className="h-[220px] w-full min-w-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart
                                     data={attendanceData}
                                     margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                                 >
@@ -1004,7 +1019,8 @@ function DashboardOverview() {
                                         }}
                                     />
                                 </AreaChart>
-                            </ResponsiveContainer>
+                                </ResponsiveContainer>
+                            </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-[220px] text-gray-400">
                                 <p className="text-sm">No data found in this date period</p>
