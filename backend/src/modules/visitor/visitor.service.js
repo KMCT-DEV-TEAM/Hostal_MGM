@@ -10,6 +10,7 @@ import {
     VISITOR_VISIT_TIMELINE_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import studentModel from '../students/student.model.js';
 
 /**
  * Parent creates a new visitor profile
@@ -1028,6 +1029,15 @@ export const listVisitorVisits = async (query, user) => {
             throw error;
         }
         targetHostelId = wardenHostel._id.toString(); // Force warden to their hostel
+
+
+    } else if (user.role === 'parent') {
+        matchStage.refId = new mongoose.Types.ObjectId(user.id);
+        matchStage.refType = 'Parent';
+
+    } else if (user.role === 'student') {
+        matchStage.refId = new mongoose.Types.ObjectId(user.id);
+        matchStage.refType = 'Student';
     } else {
         const error = new Error('Unauthorized role to list visitor visits.');
         error.status = 403;
