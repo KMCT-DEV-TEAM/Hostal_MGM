@@ -639,7 +639,7 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
                         }
                     }
                 },
-                roomnumber: {
+                roomNumber: {
                     $reduce: {
                         input: "$studentDocs.roomNumber",
                         initialValue: "",
