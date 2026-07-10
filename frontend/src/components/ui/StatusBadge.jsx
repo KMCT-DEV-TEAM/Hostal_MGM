@@ -9,7 +9,7 @@ const getStatusConfig = (status) => {
     let variant = 'neutral';
 
     // Success mappings
-    if (['approved', 'present', 'returned', 'returned (on time)', 'available', 'active'].includes(normalized)) {
+    if (['approved', 'present', 'returned', 'returned (on time)', 'available', 'active', 'completed'].includes(normalized)) {
         variant = 'success';
     }
     // Danger mappings
@@ -21,7 +21,7 @@ const getStatusConfig = (status) => {
         variant = 'warning';
     }
     // Primary mappings
-    else if (['allocated'].includes(normalized)) {
+    else if (['allocated', 'checked in'].includes(normalized)) {
         variant = 'primary';
     }
     // Neutral mappings

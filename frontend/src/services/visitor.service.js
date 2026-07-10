@@ -52,6 +52,7 @@ export async function getSuperAdminHostelVisits(params) {
     return response.data;
 }
 
+
 export async function listVisitorVisits(params) {
     const response = await visitorApi.listVisitorVisits(params);
     return response.data;

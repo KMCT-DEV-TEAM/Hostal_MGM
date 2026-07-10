@@ -24,9 +24,11 @@ const createHostel = asyncHandler(async (req, res) => {
     finalOrganizations = [req.user.organization];
   }
 
-  const existingEmail = await checkExistingHostelEmailDb(email);
-  if (existingEmail) {
-    return sendError(res, 400, "Hostel email already exists");
+  if (email) {
+    const existingEmail = await checkExistingHostelEmailDb(email);
+    if (existingEmail) {
+      return sendError(res, 400, "Hostel email already exists");
+    }
   }
 
   const existingHostel = await checkExistingHostelCodeDb(code);

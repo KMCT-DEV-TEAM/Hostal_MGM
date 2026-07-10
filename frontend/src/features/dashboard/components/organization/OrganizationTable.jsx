@@ -31,7 +31,7 @@ const OrganizationTable = ({
 
     const renderRow = (o, index, isSelected, isLoading) => (
         <>
-            <td className="p-4 font-medium text-[#777777]">
+            <td className="p-4 font-medium text-[#777777] max-w-[200px]">
                 <div
                     className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
                     onClick={() => {
@@ -42,30 +42,30 @@ const OrganizationTable = ({
                     <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
                         {o.name ? o.name.substring(0, 2) : 'NA'}
                     </div>
-                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{o.name}</span>
+                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors truncate" title={o.name}>{o.name}</span>
                 </div>
             </td>
-            <td className="p-4 text-gray-500">
+            <td className="p-4 text-gray-500 max-w-[150px]">
                 <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    {o.email}
+                    <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="truncate" title={o.email}>{o.email}</span>
                 </div>
             </td>
-            <td className="p-4 text-gray-500">
+            <td className="p-4 text-gray-500 whitespace-nowrap">
                 <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    {o.phone || 'N/A'}
+                    <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span>{o.phone || 'N/A'}</span>
                 </div>
             </td>
-            <td className="p-4 text-gray-600">
+            <td className="p-4 text-gray-600 max-w-[150px]">
                 <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="truncate max-w-[150px]">{o.address || 'N/A'}</span>
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="truncate" title={o.address || 'N/A'}>{o.address || 'N/A'}</span>
                 </div>
             </td>
             <td className="p-4">
                 <div className="flex items-center justify-center gap-2 text-text-secondary">
-                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                    <Users className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     <span className="font-medium">{o.studentsCount || 0}</span>
                 </div>
             </td>

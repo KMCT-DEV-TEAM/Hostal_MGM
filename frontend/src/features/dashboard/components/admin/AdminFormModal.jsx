@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useTranslation } from '@/hooks/useTranslation';
+import Dropdown from '@/components/ui/Dropdown';
 
 const AdminFormModal = ({
     activeModal,
@@ -18,7 +19,7 @@ const AdminFormModal = ({
     isVerifying
 }) => {
     const { t } = useTranslation();
-    const [errors, setErrors] = React.useState({ firstName: '', lastName: '', phone: '' });
+    const [errors, setErrors] = React.useState({});
 
     return (
         <Modal
@@ -29,22 +30,23 @@ const AdminFormModal = ({
             asForm={true}
             onSubmit={handleSaveAdmin}
             maxWidth="max-w-xl"
+            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>
+                    <button
+                        type="submit"
+                        disabled={(!isEmailVerified && !editingAdmin) || isSubmitting || (adminForm.phone?.length !== 10)}
+                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
+                    </button>
                     <button
                         type="button"
                         onClick={handleCancel}
                         className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
                     >
                         {t('cancel')}
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={(!isEmailVerified && !editingAdmin) || isSubmitting || (adminForm.phone?.length !== 10) || !!errors.firstName || !!errors.lastName || !!errors.email}
-                        className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
                     </button>
                 </>
             }
@@ -66,12 +68,13 @@ const AdminFormModal = ({
                                 value={adminForm.name ? adminForm.name.split(' ')[0] : ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/[^a-zA-Z]/.test(val)) {
+                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, firstName: 'Only letters are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, firstName: '' }));
                                     }
-                                    setAdminForm({ ...adminForm, name: `${val} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
+                                    setAdminForm({ ...adminForm, name: `${cleanVal} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.firstName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -88,12 +91,13 @@ const AdminFormModal = ({
                                 value={adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') : ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    if (/[^a-zA-Z]/.test(val)) {
+                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, lastName: 'Only letters are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, lastName: '' }));
                                     }
-                                    setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${val}`.trim() });
+                                    setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${cleanVal}`.trim() });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.lastName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -134,28 +138,23 @@ const AdminFormModal = ({
                     </div>
                 </section>
 
-                <section>
-                    <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
-                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
-                    <div className="border-b border-gray-100 mb-4" />
-                    <div>
-                        <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
-                        <select
-                            required={!editingAdmin}
-                            value={adminForm.organization}
-                            onChange={(e) => setAdminForm({ ...adminForm, organization: e.target.value })}
-                            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] appearance-none"
-                            disabled={!!editingAdmin}
-                        >
-                            <option value="">{t('select_organization')}</option>
-                            {organizations.map(org => (
-                                <option key={org._id} value={org._id}>{org.name}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700" style={{ marginTop: 'calc(100% - 2rem)', right: '1.5rem' }}>
+                {!editingAdmin && (
+                    <section>
+                        <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
+                        <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
+                        <div className="border-b border-gray-100 mb-4" />
+                        <div>
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
+                            <Dropdown
+                                options={organizations.map(org => ({ value: org._id, label: org.name }))}
+                                value={adminForm.organization}
+                                onChange={(val) => setAdminForm({ ...adminForm, organization: val })}
+                                placeholder={t('select_organization')}
+                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                            />
                         </div>
-                    </div>
-                </section>
+                    </section>
+                )}
 
                 {!editingAdmin && (
                     <section>
@@ -173,12 +172,19 @@ const AdminFormModal = ({
                                         value={adminForm.email}
                                         onChange={(e) => {
                                             const val = e.target.value;
-                                            if (/\s/.test(val)) {
+                                            const cleanVal = val.replace(/\s/g, '');
+                                            if (val !== cleanVal) {
                                                 setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                             } else {
                                                 setErrors(prev => ({ ...prev, email: '' }));
                                             }
-                                            setAdminForm({ ...adminForm, email: val });
+                                            setAdminForm({ ...adminForm, email: cleanVal });
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === ' ') {
+                                                e.preventDefault();
+                                                setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                            }
                                         }}
                                         className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                         disabled={isEmailVerified}

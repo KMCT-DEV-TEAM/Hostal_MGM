@@ -56,7 +56,7 @@ const AdminTable = ({
                 </div>
             </td>
             <td className="p-4 text-start justify-start">
-                <div className="relative w-[145px]">
+                <div className="relative w-[220px]">
                     <Dropdown
                         minWidth=""
                         options={(() => {

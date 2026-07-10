@@ -1,24 +1,41 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import VisitorStats from '../components/VisitorStats';
 import VisitorDetailedView from '../components/VisitorDetailedView';
 import VisitorAggregatedView from '../components/VisitorAggregatedView';
 import { getSuperAdminHostelVisits, listVisitorVisits } from '@/services/visitor.service';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { exportToExcel } from '@/utils/exportUtils';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { formatDateReadable, formatTime } from '@/utils/formatters';
 
 const VisitorHistoryPage = () => {
     const { user } = useAuthStore();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [visitors, setVisitors] = useState([]);
     const [stats, setStats] = useState(null);
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedHostel, setSelectedHostel] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [filters, setFilters] = useState({ status: '', fromDate: '', toDate: '' });
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     const isSuperAdmin = user?.role === 'super_admin';
+    const canExport = ['super_admin', 'admin', 'warden'].includes(user?.role);
+    
+    const urlHostelId = searchParams.get('hostelId');
+    const urlHostelName = searchParams.get('hostelName');
+    
+    const selectedHostel = useMemo(() => {
+        return urlHostelId ? { id: urlHostelId, name: urlHostelName } : null;
+    }, [urlHostelId, urlHostelName]);
+
     const showAggregatedView = isSuperAdmin && !selectedHostel;
 
     const fetchVisitors = useCallback(async () => {
@@ -34,7 +51,7 @@ const VisitorHistoryPage = () => {
             if (showAggregatedView) {
                 res = await getSuperAdminHostelVisits(params);
             } else {
-                if (selectedHostel) params.hostel = selectedHostel;
+                if (selectedHostel) params.hostel = selectedHostel.id;
                 res = await listVisitorVisits(params);
             }
 
@@ -60,19 +77,90 @@ const VisitorHistoryPage = () => {
         setFilters(prev => ({ ...prev, ...newFilters }));
     };
 
+    const handleExport = () => {
+        setIsExportConfirmOpen(true);
+    };
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            const params = {};
+            if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+            if (exportFilters.status || filters.status) params.status = exportFilters.status || filters.status;
+            if (exportFilters.fromDate || filters.fromDate) params.startDate = exportFilters.fromDate || filters.fromDate;
+            if (exportFilters.toDate || filters.toDate) params.endDate = exportFilters.toDate || filters.toDate;
+
+            let res;
+            if (showAggregatedView) {
+                res = await getSuperAdminHostelVisits(params);
+            } else {
+                if (selectedHostel) params.hostel = selectedHostel.id;
+                res = await listVisitorVisits(params);
+            }
+
+            const dataToExport = res?.data || [];
+
+            if (dataToExport.length === 0) {
+                showErrorToast('Export failed', 'No visitor records match the selected filters');
+                setIsExportConfirmOpen(false);
+                setIsExporting(false);
+                return;
+            }
+
+            const exportData = showAggregatedView
+                ? dataToExport.map((r, index) => ({
+                    "S.No": index + 1,
+                    "Hostel": r.hostel || r._id || '--',
+                    "Warden": r.warden || '--',
+                    "Total Visitors": r.totalVisits || r.totalVisitors || 0,
+                    "Inside": r.inside || 0,
+                    "Completed": r.completed || 0,
+                }))
+                : dataToExport.map((r, index) => ({
+                    "S.No": index + 1,
+                    "Visitor Name": r.visitorName || 'Unknown',
+                    "Visiting Student": r.studentNames || '--',
+                    "Room NO": r.roomNo || '--',
+                    "Check In": r.checkInTime ? `${formatDateReadable(r.checkInTime)} ${formatTime(r.checkInTime)}` : '--',
+                    "Check Out": r.checkOutTime ? `${formatDateReadable(r.checkOutTime)} ${formatTime(r.checkOutTime)}` : '--',
+                    "Status": r.status || 'Unknown',
+                }));
+
+            const isSuccess = exportToExcel(exportData, 'Visitor_History_Export', 'History');
+
+            if (isSuccess) {
+                showSuccessToast('Exported successfully');
+            } else {
+                showErrorToast('Export failed', 'Could not generate the Excel file');
+            }
+
+            setIsExportConfirmOpen(false);
+        } catch (err) {
+            console.error("Failed to export history:", err);
+            showErrorToast('Export failed', err.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 bg-background-secondary flex flex-col">
             <div className="mb-6 shrink-0 flex items-center gap-4">
                 {selectedHostel && isSuperAdmin && (
                     <button
-                        onClick={() => setSelectedHostel(null)}
+                        onClick={() => {
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.delete('hostelId');
+                            newParams.delete('hostelName');
+                            setSearchParams(newParams);
+                        }}
                         className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                 )}
                 <PageHeader
-                    title={selectedHostel ? `Visitors History - ${selectedHostel}` : "Visitors History"}
+                    title={selectedHostel ? `Visitors History - ${selectedHostel.name}` : "Visitors History"}
                     subtitle={showAggregatedView ? "Overview of past visitors across all hostels" : "View historical visitors"}
                 />
             </div>
@@ -91,7 +179,14 @@ const VisitorHistoryPage = () => {
                     filters={filters}
                     onSearch={handleSearch}
                     onHostelFilter={(hostel) => handleFilter({ hostel })}
-                    onRowClick={(hostel) => setSelectedHostel(hostel)}
+                    onRowClick={(hostelObj) => {
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.set('hostelId', hostelObj.id);
+                        newParams.set('hostelName', hostelObj.name || '');
+                        setSearchParams(newParams);
+                    }}
+                    canExport={canExport}
+                    onExportClick={handleExport}
                 />
             ) : (
                 <VisitorDetailedView
@@ -102,8 +197,40 @@ const VisitorHistoryPage = () => {
                     onSearch={handleSearch}
                     onFilter={handleFilter}
                     onRefresh={fetchVisitors}
+                    canExport={canExport}
+                    onExportClick={handleExport}
                 />
             )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Visitor History"
+                subtitle="Select filters to apply before downloading visitor history records"
+                fields={[
+                    {
+                        name: "status",
+                        label: "Status",
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Checked In', value: 'Checked In' },
+                            { label: 'Completed', value: 'Completed' },
+                        ]
+                    },
+                    {
+                        name: "fromDate",
+                        label: "From Date",
+                        type: "date"
+                    },
+                    {
+                        name: "toDate",
+                        label: "To Date",
+                        type: "date"
+                    }
+                ]}
+            />
         </div>
     );
 };

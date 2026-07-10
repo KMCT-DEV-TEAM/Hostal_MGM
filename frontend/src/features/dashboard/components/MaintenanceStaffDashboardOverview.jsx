@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2, CheckCircle, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ComplaintService from '@/services/complaint.service';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
@@ -17,6 +17,26 @@ export default function MaintenanceStaffDashboardOverview() {
     const navigate = useNavigate();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const formatRelativeTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) return 'Just now';
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+        
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}h ago`;
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) return `${diffInDays}d ago`;
+        
+        return date.toLocaleDateString();
+    };
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -206,83 +226,92 @@ export default function MaintenanceStaffDashboardOverview() {
                 </div>
 
                 {/* Recent Tasks */}
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col mt-4">
-                    <div className="flex items-center justify-between p-6 pb-4">
-                        <h2 className="text-base font-bold text-gray-900">Recent Tasks</h2>
+                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col mt-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <div>
+                            <h2 className="text-sm font-bold text-[#000000]">
+                                Recent Tasks
+                            </h2>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                Latest tasks assigned to you
+                            </p>
+                        </div>
                         <button 
                             onClick={() => navigate('/dashboard/tasks')} 
-                            className="text-sm text-blue-500 hover:text-blue-600 font-medium"
+                            className="text-xs text-[#777777] font-medium hover:underline cursor-pointer"
                         >
-                            View all →
+                            View all
                         </button>
                     </div>
 
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-[#FAFBFD] border-y border-gray-100">
-                                <tr>
-                                    <th className="py-4 px-6 text-sm font-semibold text-gray-700">Task</th>
-                                    <th className="py-4 px-6 text-sm font-semibold text-gray-700">Location</th>
-                                    <th className="py-4 px-6 text-sm font-semibold text-gray-700">Priority</th>
-                                    <th className="py-4 px-6 text-sm font-semibold text-gray-700">Date</th>
-                                    <th className="py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {loading ? (
-                                    <TableSkeletonLoader columns={5} />
-                                ) : tasks.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="py-8 text-center text-gray-500 text-sm">No recent tasks found.</td>
-                                    </tr>
-                                ) : (
-                                    tasks.slice(0, 5).map((task) => (
-                                        <tr key={task._id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="py-4 px-6 text-sm text-gray-500">
-                                                A{task._id ? task._id.substring(task._id.length - 6).toUpperCase() : '112390'}
-                                            </td>
-                                            <td className="py-4 px-6 text-sm text-gray-500">
-                                                {task.subject || 'N/A'}
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <span className="inline-flex items-center justify-center px-4 py-1 text-xs font-medium rounded-md bg-red-50 text-red-500">
-                                                    {task.priority || 'High'}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-6 text-sm text-gray-500">
-                                                {new Date(task.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <span className={`inline-flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium rounded-md ${
-                                                    task.status === 'Pending' || task.status === 'Awaiting' 
-                                                        ? 'bg-orange-50 text-orange-500' 
-                                                        : task.status === 'Resolved' 
-                                                        ? 'bg-green-50 text-green-500'
-                                                        : task.status === 'In progress'
-                                                        ? 'bg-blue-50 text-blue-500'
-                                                        : 'bg-gray-100 text-gray-500'
-                                                }`}>
-                                                    {task.status || 'Pending'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    {loading ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                        </div>
+                    ) : tasks.length === 0 ? (
+                        <div className="text-center py-8 text-sm text-gray-500">No recent tasks found.</div>
+                    ) : (
+                        tasks.slice(0, 5).map((task) => {
+                            let iconBg = "bg-[#F3F4F6]";
+                            let iconColor = "text-[#6B7280]";
+                            let tagClass = "bg-[#F3F4F6] text-[#6B7280]";
+                            let IconComponent = Wrench;
 
-                    <div className="md:hidden">
-                        <MobileList
-                            items={tasks.slice(0, 5)}
-                            loading={loading}
-                            canSelect={false}
-                            canEdit={false}
-                            emptyText="No recent tasks found."
-                            titleFn={(task) => `A${task._id ? task._id.substring(task._id.length - 6).toUpperCase() : '112390'}`}
-                            renderBody={renderMobileBody}
-                        />
-                    </div>
+                            if (task.status === 'Resolved' || task.status === 'Completed') {
+                                iconBg = "bg-[#EEF7E7]";
+                                iconColor = "text-[#6B8E23]";
+                                tagClass = "bg-[#EEF7E7] text-[#6B8E23]";
+                                IconComponent = CheckCircle;
+                            } else if (task.status === 'In progress') {
+                                iconBg = "bg-[#EAF3FF]";
+                                iconColor = "text-[#2D7CC3]";
+                                tagClass = "bg-[#EAF3FF] text-[#2D7CC3]";
+                                IconComponent = Loader2;
+                            } else if (task.status === 'Pending' || task.status === 'Awaiting') {
+                                iconBg = "bg-[#FFF4E5]";
+                                iconColor = "text-[#F59E0B]";
+                                tagClass = "bg-[#FFF4E5] text-[#F59E0B]";
+                                IconComponent = Clock;
+                            }
+
+                            return (
+                                <div
+                                    key={task._id}
+                                    onClick={() => navigate('/dashboard/tasks')}
+                                    className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3 gap-2 sm:gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                        <div className={"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 " + iconBg}>
+                                            <IconComponent size={18} className={iconColor} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center flex-wrap gap-2">
+                                                <p className="text-[13px] text-[#333333] break-words font-medium">
+                                                    A{task._id ? task._id.substring(task._id.length - 6).toUpperCase() : '112390'} - {task.subject?.length > 40 ? task.subject.substring(0, 40) + '...' : (task.subject || 'N/A')}
+                                                </p>
+                                                {task.status && (
+                                                    <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize shrink-0 " + tagClass}>
+                                                        {task.status}
+                                                    </span>
+                                                )}
+                                                {task.priority && (
+                                                    <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize shrink-0 bg-red-50 text-red-500"}>
+                                                        {task.priority} Priority
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-[#9CA3AF] mt-1 capitalize truncate">
+                                                {new Date(task.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[11px] sm:text-xs text-[#9CA3AF] whitespace-nowrap self-start sm:self-auto ml-[52px] sm:ml-0">
+                                        {formatRelativeTime(task.createdAt)}
+                                    </span>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
         </div>
