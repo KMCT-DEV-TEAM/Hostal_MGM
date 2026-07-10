@@ -34,6 +34,9 @@ export const visitorApi = {
     
     // Get Visitor Profile Details
     getVisitorDetails: (visitorId) => api.get(`${BASE_URL}/${visitorId}`),
+    
+    // Dashboard Summary
+    getDashboardSummary: () => api.get(`${BASE_URL}/dashboard-summary`),
 };
 
 export default visitorApi;

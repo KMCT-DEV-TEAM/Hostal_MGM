@@ -72,3 +72,8 @@ export async function getVisitorDetails(visitorId) {
     const response = await visitorApi.getVisitorDetails(visitorId);
     return response.data;
 }
+
+export async function getDashboardSummary() {
+    const response = await visitorApi.getDashboardSummary();
+    return response.data;
+}

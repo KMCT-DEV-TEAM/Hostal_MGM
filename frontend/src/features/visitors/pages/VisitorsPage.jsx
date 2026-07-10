@@ -5,7 +5,8 @@ import { useSearchParams } from 'react-router-dom';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
 import Button from '@/components/ui/Button';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import VisitorStats from '../components/VisitorStats';
 import VisitorListTableView from '../components/VisitorListTableView';
 import VisitorProfilesAggregatedView from '../components/VisitorProfilesAggregatedView';
 import RegisterVisitorModal from '../components/modals/RegisterVisitorModal';
@@ -16,7 +17,8 @@ import {
     getStudentVisitors,
     approveVisitor,
     rejectVisitor,
-    getSuperAdminHostelVisitors
+    getSuperAdminHostelVisitors,
+    getDashboardSummary
 } from '@/services/visitor.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -32,6 +34,7 @@ const VisitorsPage = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
+    const [stats, setStats] = useState(null);
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 
@@ -50,8 +53,6 @@ const VisitorsPage = () => {
     }, [urlHostelId, urlHostelName]);
 
     const showAggregatedView = isSuperAdmin && !selectedHostel;
-    // const isParent = role === ROLES.PARENT;
-    // const isStudent = role === ROLES.STUDENT;
 
     const canApproveReject = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
     const canExport = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
@@ -113,6 +114,19 @@ const VisitorsPage = () => {
 
             setVisitors(visitorsData);
             setPagination({ totalPages, totalItems });
+
+            if (['super_admin', 'admin', 'warden'].includes(role)) {
+                try {
+                    const statsRes = await getDashboardSummary();
+                    if (statsRes && statsRes.success) {
+                        setStats(statsRes.cards);
+                    }
+                } catch (statsErr) {
+                    console.error("Failed to fetch dashboard summary", statsErr);
+                }
+            } else {
+                setStats(null);
+            }
         } catch (error) {
             console.error("Failed to fetch visitors", error);
             showErrorToast('Failed to load visitors');
@@ -237,6 +251,13 @@ const VisitorsPage = () => {
                     subtitle={showAggregatedView ? "Overview of visitors across all hostels" : "Manage visitor requests and profiles"}
                 />
             </div>
+
+            {/* Shared Stats Component */}
+            {['super_admin', 'admin', 'warden'].includes(role) && stats && (
+                <div className="shrink-0">
+                    <VisitorStats stats={stats} />
+                </div>
+            )}
 
             {/* Table View */}
             {showAggregatedView ? (
