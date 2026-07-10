@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const validateUpdateStudentHostel = (req, res, next) => {
   const { studentId } = req.params;
   const { hostelId, roomNumber } = req.body;
-  console.log(req.body)
   if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
     return res.status(400).json({ success: false, message: "Invalid or missing studentId parameter" });
   }
