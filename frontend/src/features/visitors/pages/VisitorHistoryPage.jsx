@@ -186,6 +186,7 @@ const VisitorHistoryPage = () => {
                     }}
                     canExport={canExport}
                     onExportClick={handleExport}
+                    userRole={user?.role}
                 />
             ) : (
                 <VisitorDetailedView
@@ -195,9 +196,10 @@ const VisitorHistoryPage = () => {
                     filters={filters}
                     onSearch={handleSearch}
                     onFilter={handleFilter}
-                    onRefresh={fetchVisitors}
+                    onRefresh={() => fetchVisitors(false)}
                     canExport={canExport}
                     onExportClick={handleExport}
+                    userRole={user?.role}
                 />
             )}
 

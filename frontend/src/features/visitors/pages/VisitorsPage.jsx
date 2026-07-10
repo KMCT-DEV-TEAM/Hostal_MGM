@@ -253,6 +253,7 @@ const VisitorsPage = () => {
                     }}
                     canExport={canExport}
                     onExportClick={handleExport}
+                    userRole={user?.role}
                 />
             ) : (
                 <VisitorListTableView
@@ -276,6 +277,7 @@ const VisitorsPage = () => {
                     setPage={setPage}
                     pagination={pagination}
                     onRowClick={handleRowClick}
+                    userRole={user?.role}
                 />
             )}
 

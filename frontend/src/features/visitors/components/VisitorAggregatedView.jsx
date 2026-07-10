@@ -7,7 +7,6 @@ import Dropdown from '@/components/ui/Dropdown';
 const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick, canExport, onExportClick }) => {
 
     const headers = [
-        { key: 'date', label: 'Date' },
         { key: 'hostel', label: 'Hostel' },
         { key: 'warden', label: 'Warden' },
         { key: 'totalVisitors', label: 'Total Visitors' },
@@ -17,7 +16,6 @@ const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHos
 
     const renderRow = (visitor) => (
         <>
-            <td className="p-4 text-text-secondary font-medium">--</td>
             <td className="p-4 font-bold text-gray-700 text-sm">{visitor.hostelName}</td>
             <td className="p-4 text-text-secondary font-medium">{visitor.wardenName || '--'}</td>
             <td className="p-4 text-text-secondary font-medium">{visitor.totalVisits || 0}</td>
@@ -30,7 +28,6 @@ const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHos
         <div className="flex flex-col gap-2 p-4">
             <div className="flex justify-between items-center">
                 <span className="font-medium text-text-primary">{visitor.hostelName}</span>
-                <span className="text-sm text-text-secondary">--</span>
             </div>
             <div className="text-sm text-gray-600">Warden: {visitor.wardenName || '--'}</div>
             <div className="flex gap-4 text-sm mt-1">
