@@ -15,6 +15,7 @@ const DepartmentFormModal = ({
     courses
 }) => {
     const { t } = useTranslation();
+    const [errors, setErrors] = React.useState({});
     const selectedCourse = (courses || []).find(c => c._id === formData.courseId);
     const courseCode = selectedCourse ? selectedCourse.code : '';
 
@@ -60,11 +61,23 @@ const DepartmentFormModal = ({
                             <input
                                 name="name"
                                 value={formData.name}
-                                onChange={handleInputChange}
+                                pattern="[A-Za-z]+"
+                                title="Only letters are allowed"
+                                onChange={(e) => {
+                                    const originalVal = e.target.value;
+                                    const cleanVal = originalVal.replace(/[^a-zA-Z]/g, '');
+                                    if (originalVal !== cleanVal) {
+                                        setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
+                                    } else {
+                                        setErrors(prev => ({ ...prev, name: '' }));
+                                    }
+                                    handleInputChange({ target: { name: 'name', value: cleanVal } });
+                                }}
                                 required
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="Enter Department name"
                             />
+                            {errors.name && <p className="text-red-500 text-[10px] mt-1">{errors.name}</p>}
                         </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('department_code')} <span className="text-red-500">*</span></label>
@@ -77,10 +90,13 @@ const DepartmentFormModal = ({
                                 <input
                                     name="code"
                                     value={formData.code}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        const val = e.target.value.toUpperCase();
+                                        handleInputChange({ target: { name: 'code', value: val } });
+                                    }}
                                     required
                                     disabled={isEditMode}
-                                    className={"w-full px-3 py-2 outline-none text-xs uppercase "}
+                                    className={`w-full px-3 py-2 outline-none text-xs uppercase ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-transparent'}`}
                                     placeholder="DEPT"
                                 />
                             </div>
