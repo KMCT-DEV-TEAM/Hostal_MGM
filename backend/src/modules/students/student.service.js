@@ -22,7 +22,6 @@ const createStudentWithParentDb = async (
   const {
     studentId,
     organizationId,
-    hostelId,
     name,
     gender,
     dob,
@@ -33,7 +32,6 @@ const createStudentWithParentDb = async (
     phone,
     email,
     address,
-    hostelStatus,
     parentName,
     parentPhone,
     parentEmail,
@@ -50,7 +48,6 @@ const createStudentWithParentDb = async (
       {
         studentId,
         organizationId,
-        hostelId,
         name,
         gender,
         dob,
@@ -64,7 +61,6 @@ const createStudentWithParentDb = async (
         tempPassword: true,
         isVerified: true,
         address,
-        hostelStatus,
       },
     ],
     { session }
@@ -87,13 +83,7 @@ const createStudentWithParentDb = async (
     { session }
   );
 
-  if (hostelId && organizationId) {
-    await Hostel.findByIdAndUpdate(
-      hostelId,
-      { $addToSet: { organizations: organizationId } },
-      { session }
-    );
-  }
+
 
   return {
     student: student[0],
@@ -140,15 +130,10 @@ const updateStudentDb = async (studentId, data) => {
     "batchId",
     "academicYear",
     "address",
-    "hostelId",
-    "hostelStatus",
     "isActive",
   ];
 
   const isStatusChanged = data.isActive !== undefined && data.isActive !== student.isActive;
-  const oldHostelId = student.hostelId ? student.hostelId.toString() : null;
-  const newHostelId = data.hostelId ? data.hostelId.toString() : null;
-  const isHostelChanged = data.hostelId !== undefined && newHostelId !== oldHostelId;
   const oldOrgId = student.organizationId ? student.organizationId.toString() : null;
   const newOrgId = data.organizationId ? data.organizationId.toString() : null;
   const isOrganizationChanged = data.organizationId !== undefined && newOrgId !== oldOrgId;
@@ -161,10 +146,7 @@ const updateStudentDb = async (studentId, data) => {
 
   await student.save();
 
-  if (isHostelChanged) {
-    if (oldHostelId) await syncHostelOrganizations(oldHostelId);
-    if (student.hostelId) await syncHostelOrganizations(student.hostelId);
-  } else if ((isOrganizationChanged || isStatusChanged) && student.hostelId) {
+  if ((isOrganizationChanged || isStatusChanged) && student.hostelId) {
     await syncHostelOrganizations(student.hostelId);
   }
 
@@ -222,10 +204,6 @@ const bulkUpdateStudentStatusDb = async (
     }
   }
 
-  const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
-  for (const hId of affectedHostels) {
-    await syncHostelOrganizations(hId);
-  }
 
   return result;
 };
@@ -244,10 +222,6 @@ const updateStudentsStatusByQuery = async (query, isActive) => {
       parents.forEach(p => getIo()?.to(p._id.toString()).emit("accountDeactivated"));
     }
     
-    const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
-    for (const hId of affectedHostels) {
-      await syncHostelOrganizations(hId);
-    }
   }
 };
 
