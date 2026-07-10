@@ -97,7 +97,10 @@ const VisitorListTableView = ({
                                     variant="ghost"
                                     size="sm"
                                     fullWidth={false}
-                                    onClick={() => onApprove(visitor.visitorId || visitor.id || visitor._id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onApprove(visitor.visitorId || visitor.id || visitor._id);
+                                    }}
                                     className="!p-1.5 bg-success/10 text-success hover:bg-success/20 hover:text-success"
                                     title="Approve"
                                 >
@@ -107,7 +110,10 @@ const VisitorListTableView = ({
                                     variant="ghost"
                                     size="sm"
                                     fullWidth={false}
-                                    onClick={() => onReject(visitor.visitorId || visitor.id || visitor._id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onReject(visitor.visitorId || visitor.id || visitor._id);
+                                    }}
                                     className="!p-1.5 bg-danger/10 text-danger hover:bg-danger/20 hover:text-danger"
                                     title="Reject"
                                 >

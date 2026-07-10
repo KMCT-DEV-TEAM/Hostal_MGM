@@ -24,6 +24,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDateStandard } from '@/utils/formatters';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const VisitorsPage = () => {
     const { user } = useAuthStore();
@@ -60,6 +61,8 @@ const VisitorsPage = () => {
     const [showCheckInModal, setShowCheckInModal] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, visitorId: null });
+    const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
 
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedVisitorId, setSelectedVisitorId] = useState(null);
@@ -139,23 +142,33 @@ const VisitorsPage = () => {
         fetchVisitors();
     }, [fetchVisitors]);
 
-    const handleApprove = async (id) => {
-        try {
-            await approveVisitor(id);
-            showSuccessToast('Visitor approved successfully');
-            fetchVisitors();
-        } catch (error) {
-            showErrorToast('Failed to approve visitor');
-        }
+    const handleApprove = (id) => {
+        setConfirmModal({ isOpen: true, type: 'approve', visitorId: id });
     };
 
-    const handleReject = async (id) => {
+    const handleReject = (id) => {
+        setConfirmModal({ isOpen: true, type: 'reject', visitorId: id });
+    };
+
+    const executeConfirmAction = async () => {
+        const { type, visitorId } = confirmModal;
+        if (!visitorId) return;
+
+        setIsConfirmSubmitting(true);
         try {
-            await rejectVisitor(id, { reason: 'Rejected by admin' });
-            showSuccessToast('Visitor rejected successfully');
+            if (type === 'approve') {
+                await approveVisitor(visitorId);
+                showSuccessToast('Visitor approved successfully');
+            } else if (type === 'reject') {
+                await rejectVisitor(visitorId, { reason: 'Rejected by admin' });
+                showSuccessToast('Visitor rejected successfully');
+            }
             fetchVisitors();
         } catch (error) {
-            showErrorToast('Failed to reject visitor');
+            showErrorToast(`Failed to ${type} visitor`);
+        } finally {
+            setIsConfirmSubmitting(false);
+            setConfirmModal({ isOpen: false, type: null, visitorId: null });
         }
     };
 
@@ -328,6 +341,19 @@ const VisitorsPage = () => {
                     setSelectedVisitorId(null);
                 }}
                 visitorId={selectedVisitorId}
+            />
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null, visitorId: null })}
+                onConfirm={executeConfirmAction}
+                title={confirmModal.type === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
+                message={confirmModal.type === 'approve'
+                    ? 'Are you sure you want to approve this visitor request?'
+                    : 'Are you sure you want to reject this visitor request?'}
+                confirmText={confirmModal.type === 'approve' ? 'Approve' : 'Reject'}
+                confirmButtonClass={confirmModal.type === 'approve' ? 'bg-success hover:bg-success/90' : 'bg-danger hover:bg-danger/90'}
+                isSubmitting={isConfirmSubmitting}
             />
         </div>
     );
