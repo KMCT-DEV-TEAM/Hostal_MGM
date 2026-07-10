@@ -320,7 +320,7 @@ export const validateUpdateVisitor = (req, res, next) => {
         });
     }
 
-    const allowedFields = ['name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'];
+    const allowedFields = ['name', 'relationship', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'];
     const updateKeys = Object.keys(req.body);
 
     if (updateKeys.length === 0) {
