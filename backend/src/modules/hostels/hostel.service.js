@@ -70,7 +70,7 @@ const getPaginatedHostelsDb = async (page = 1, limit = 10, search = "", status =
   const query = {};
 
   if (adminId) {
-    query.adminId = adminId;
+    // query.adminId = adminId;
   }
 
   if (status && status !== "All") {
@@ -114,7 +114,7 @@ const getHostelByIdDb = async (id, organizationId, adminId = null) => {
     query.organizations = organizationId;
   }
   if (adminId) {
-    query.adminId = adminId;
+    // query.adminId = adminId;
   }
   const hostel = await Hostel.findOne(query)
     .populate("wardens", "name email")

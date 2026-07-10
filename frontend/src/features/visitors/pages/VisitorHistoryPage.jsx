@@ -21,6 +21,7 @@ const VisitorHistoryPage = () => {
     const [stats, setStats] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [selectedHostel, setSelectedHostel] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [filters, setFilters] = useState({ status: '', fromDate: '', toDate: '' });
     const debouncedSearchQuery = useDebounce(searchQuery, 500);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import adminService from "@/services/admin.service";
@@ -40,7 +41,13 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    Loader2
+    Loader2,
+    UserPlus,
+    Trash2,
+    Edit,
+    LogIn,
+    PlusCircle,
+    FileText
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import MaintenanceStaffDashboardOverview from "../components/MaintenanceStaffDashboardOverview";
@@ -409,8 +416,8 @@ function DashboardOverview() {
     }
 
     const renderOrganizationOverview = () => (
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col">
-            <div className="flex justify-between mb-4">
+        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-full flex flex-col min-w-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4 sm:gap-0">
                 <div>
                     <h2 className="text-sm font-bold text-primary">
                         Organization Overview
@@ -419,41 +426,55 @@ function DashboardOverview() {
                         View student distribution across organizations.
                     </p>
                 </div>
-                <select
-                    value={period}
-                    onChange={(e) => setPeriod(e.target.value)}
-                    className="border border-gray-200 rounded-md px-3 py-1 text-xs text-gray-500 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                >
-                    <option>This Year</option>
-                    <option>Last Year</option>
-                </select>
+                <div className="shrink-0 w-full sm:w-auto">
+                    <Dropdown
+                        options={[
+                            { value: "This Year", label: "This Year" },
+                            { value: "Last Year", label: "Last Year" }
+                        ]}
+                        value={period}
+                        onChange={(val) => setPeriod(val)}
+                        placeholder="This Year"
+                        minWidth="w-full sm:w-28"
+                        triggerClassName="w-full sm:w-auto px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs text-gray-500 font-medium cursor-pointer"
+                    />
+                </div>
             </div>
-            <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                    data={studentChartData}
-                    barSize={18}
-                    margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
-                >
-                    <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="#F0F1F3"
-                        vertical={false}
-                    />
-                    <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 10, fill: "#8898AA" }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <YAxis
-                        tick={{ fontSize: 10, fill: "#8898AA" }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <Tooltip cursor={{ fill: "#F0F4FF" }} />
-                    <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
+            {studentChartData && studentChartData.length > 0 ? (
+                <div className="flex-1 w-full min-w-0 min-h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={studentChartData}
+                            barSize={18}
+                            margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
+                        >
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#F0F1F3"
+                            vertical={false}
+                        />
+                        <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 10, fill: "#8898AA" }}
+                            axisLine={false}
+                            tickLine={false}
+                        />
+                        <YAxis
+                            tick={{ fontSize: 10, fill: "#8898AA" }}
+                            axisLine={false}
+                            tickLine={false}
+                        />
+                        <Tooltip cursor={{ fill: "#F0F4FF" }} />
+                        <Bar dataKey="value" fill="#B8CAFF" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        ) : (
+                <div className="flex flex-col items-center justify-center h-[240px] text-gray-400">
+                    <MessageSquare size={32} className="mb-2 text-gray-200" />
+                    <p className="text-sm">No record found</p>
+                </div>
+            )}
         </div>
     );
 
@@ -515,31 +536,42 @@ function DashboardOverview() {
     };
 
     const renderAttendanceOverview = () => {
-        const currentData = (period === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || [];
-        
-        const validMonths = currentData.filter(d => d.value > 0);
-        const avgRate = validMonths.length > 0 
-            ? Math.round(validMonths.reduce((sum, d) => sum + d.value, 0) / validMonths.length)
-            : 0;
+        let currentData = [];
+        let avgRate = "0";
+        let currentMonthValue = 0;
+        let vsLastFormatted = "0%";
+
+        if (user?.role === ROLES.SUPER_ADMIN) {
+            currentData = attendanceData || [];
+            avgRate = attendanceMetrics.avgRate;
+            currentMonthValue = attendanceMetrics.currentMonth;
+            vsLastFormatted = attendanceMetrics.vsLastMonth;
+        } else {
+            currentData = (attendancePeriod === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || [];
             
-        const currentMonthIndex = new Date().getMonth();
-        const currentMonthValue = currentData[currentMonthIndex]?.value || 0;
-        
-        const lastMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
-        const lastMonthValue = currentData[lastMonthIndex]?.value || 0;
-        
-        let vsLast = 0;
-        if (lastMonthValue > 0) {
-            vsLast = (((currentMonthValue - lastMonthValue) / lastMonthValue) * 100).toFixed(1);
-        } else if (currentMonthValue > 0) {
-            vsLast = 100.0;
+            const validMonths = currentData.filter(d => d.value > 0);
+            avgRate = validMonths.length > 0 
+                ? Math.round(validMonths.reduce((sum, d) => sum + d.value, 0) / validMonths.length)
+                : 0;
+                
+            const currentMonthIndex = new Date().getMonth();
+            currentMonthValue = currentData[currentMonthIndex]?.value || 0;
+            
+            const lastMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
+            const lastMonthValue = currentData[lastMonthIndex]?.value || 0;
+            
+            let vsLast = 0;
+            if (lastMonthValue > 0) {
+                vsLast = (((currentMonthValue - lastMonthValue) / lastMonthValue) * 100).toFixed(1);
+            } else if (currentMonthValue > 0) {
+                vsLast = 100.0;
+            }
+            vsLastFormatted = vsLast > 0 ? `+${vsLast}%` : `${vsLast}%`;
         }
 
-        const vsLastFormatted = vsLast > 0 ? `+${vsLast}%` : `${vsLast}%`;
-
         return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full flex flex-col">
-            <div className="flex justify-between items-start mb-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h2 className="text-[20px] font-bold text-black">
                         Attendance Overview
@@ -548,37 +580,39 @@ function DashboardOverview() {
                         Overall attendance percentage across organizations.
                     </p>
                 </div>
-                <Dropdown
-                    options={[
-                        { value: "This Year", label: "This Year" },
-                        { value: "Last Year", label: "Last Year" }
-                    ]}
-                    value={period}
-                    onChange={(val) => setPeriod(val)}
-                    placeholder="This Year"
-                    minWidth="w-32"
-                    triggerClassName="px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer"
-                />
+                <div className="relative min-w-[120px] w-full sm:w-auto">
+                    <Dropdown
+                        options={[
+                            { value: "This Year", label: "This Year" },
+                            { value: "Last Year", label: "Last Year" }
+                        ]}
+                        value={attendancePeriod}
+                        onChange={(val) => setAttendancePeriod(val)}
+                        triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
+                    />
+                </div>
             </div>
-            <div className="flex gap-3 mb-8">
-                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                    <div className="text-[#2D7CC3] font-bold text-sm">{avgRate}%</div>
+            
+            <div className="flex flex-wrap gap-3 mb-8">
+                <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                    <div className="text-[#2D7CC3] font-bold text-sm">{avgRate}{user?.role === ROLES.SUPER_ADMIN && typeof avgRate === 'string' && avgRate.includes('%') ? '' : '%'}</div>
                     <div className="text-xs text-[#8F8F8F] mt-1">Avg Rate</div>
                 </div>
-                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                    <div className="text-[#0F6E56] font-bold text-sm">{currentMonthValue}%</div>
+                <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                    <div className="text-success font-bold text-sm">{currentMonthValue}{user?.role === ROLES.SUPER_ADMIN && typeof currentMonthValue === 'string' && currentMonthValue.includes('%') ? '' : '%'}</div>
                     <div className="text-xs text-[#8F8F8F] mt-1">Current Month</div>
                 </div>
-                <div className="bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-5 py-3 min-w-[90px] text-center">
-                    <div className="text-[#0F6E56] font-bold text-sm">{vsLastFormatted}</div>
+                <div className="flex-1 bg-[#F7F8FA] border border-[#ECEEF2] rounded-xl px-4 py-3 min-w-[90px] text-center">
+                    <div className="text-success font-bold text-sm">{vsLastFormatted}</div>
                     <div className="text-xs text-[#8F8F8F] mt-1">vs Last</div>
                 </div>
             </div>
-            <div className="flex-1 min-h-[220px]">
-                {((period === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || []).some(item => item.value > 0) ? (
+
+            <div className="flex-1 min-h-[220px] w-full min-w-0">
+                {currentData.some(item => item.value > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
-                            data={period === "This Year" ? dashboardStats.attendance?.thisYear || [] : dashboardStats.attendance?.lastYear || []}
+                            data={currentData}
                             margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                         >
                             <defs>
@@ -697,60 +731,83 @@ function DashboardOverview() {
                         Latest actions across the system
                     </p>
                 </div>
-                <a
-                    href="#"
+                <Link
+                    to="/dashboard/logs"
                     className="text-xs text-[#777777] font-medium hover:underline"
                 >
                     View all
-                </a>
+                </Link>
             </div>
             {recentActivities.map((log) => {
                 let iconBg = "bg-[#EAF3FF]";
                 let iconColor = "text-[#2D7CC3]";
                 let tagClass = "bg-[#EAF3FF] text-[#2D7CC3]";
-                let icon = <Info size={18} className={iconColor} />;
+                
+                const actionLower = (log.action || '').toLowerCase();
+                const detailsLower = (log.details || '').toLowerCase();
+                const combinedText = actionLower + ' ' + detailsLower;
+
+                let IconComponent = Info;
+
+                if (combinedText.includes('create') || combinedText.includes('add') || combinedText.includes('register')) {
+                    IconComponent = combinedText.includes('user') || combinedText.includes('student') || combinedText.includes('warden') || combinedText.includes('admin') || combinedText.includes('parent')
+                        ? UserPlus
+                        : PlusCircle;
+                } else if (combinedText.includes('delete') || combinedText.includes('remove')) {
+                    IconComponent = Trash2;
+                } else if (combinedText.includes('update') || combinedText.includes('edit') || combinedText.includes('modify')) {
+                    IconComponent = Edit;
+                } else if (combinedText.includes('login') || combinedText.includes('auth') || combinedText.includes('sign in')) {
+                    IconComponent = LogIn;
+                } else if (combinedText.includes('complaint') || combinedText.includes('issue')) {
+                    IconComponent = MessageSquare;
+                } else if (combinedText.includes('leave') || combinedText.includes('request')) {
+                    IconComponent = FileText;
+                }
+
                 if (log.status === 'success') {
                     iconBg = "bg-[#EEF7E7]";
                     iconColor = "text-[#6B8E23]";
                     tagClass = "bg-[#EEF7E7] text-[#6B8E23]";
-                    icon = <CheckCircle size={18} className={iconColor} />;
+                    if (IconComponent === Info) IconComponent = CheckCircle;
                 } else if (log.status === 'error') {
                     iconBg = "bg-[#FEE2E2]";
                     iconColor = "text-[#EF4444]";
                     tagClass = "bg-[#FEE2E2] text-[#EF4444]";
-                    icon = <XCircle size={18} className={iconColor} />;
+                    if (IconComponent === Info) IconComponent = XCircle;
                 } else if (log.status === 'warning') {
                     iconBg = "bg-[#FFF4E5]";
                     iconColor = "text-[#F59E0B]";
                     tagClass = "bg-[#FFF4E5] text-[#F59E0B]";
-                    icon = <AlertTriangle size={18} className={iconColor} />;
+                    if (IconComponent === Info) IconComponent = AlertTriangle;
                 }
+
                 return (
                     <div
                         key={log._id}
-                        className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3 gap-2 sm:gap-4"
                     >
-                        <div className="flex items-center gap-4 flex-1">
-                            <div className={"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 " + iconBg}>
-                                {icon}
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div className={"w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 " + iconBg}>
+                                <IconComponent size={18} className={iconColor} />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <div className="flex items-center flex-wrap gap-2">
-                                    <p className="text-[13px] text-[#333333]">
+                                    <p className="text-[13px] text-[#333333] break-words">
                                         {log.action} - <strong className="font-medium">{log.details?.length > 60 ? log.details.substring(0, 60) + '...' : log.details}</strong>
                                     </p>
                                     {log.status && (
-                                        <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize " + tagClass}>
+                                        <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize shrink-0 " + tagClass}>
                                             {log.status}
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-xs text-[#9CA3AF] mt-1 capitalize">
+                                <p className="text-xs text-[#9CA3AF] mt-1 capitalize truncate">
                                     By {log.user?.name || log.user?.email || 'System'} {log.userRole ? "(" + log.userRole + ")" : ''}
                                 </p>
                             </div>
                         </div>
-                        <span className="text-xs text-[#9CA3AF] whitespace-nowrap ml-4">
+                        <span className="text-[11px] sm:text-xs text-[#9CA3AF] whitespace-nowrap self-start sm:self-auto ml-[52px] sm:ml-0">
                             {formatRelativeTime(log.createdAt)}
                         </span>
                     </div>
@@ -781,11 +838,11 @@ function DashboardOverview() {
                 </div>
 
                 {/* Right Section */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
                     {user?.role === ROLES.ADMIN && (
                         <button
                             onClick={() => setIsHostelModalOpen(true)}
-                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer"
+                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer w-full md:w-auto"
                         >
                             + Add Hostel
                         </button>
@@ -868,7 +925,7 @@ function DashboardOverview() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Attendance Area Chart */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm overflow-hidden">
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
@@ -880,16 +937,17 @@ function DashboardOverview() {
                                 </p>
                             </div>
 
-                            <Dropdown
-                                options={[
-                                    { value: "This Year", label: "This Year" },
-                                    { value: "Last Year", label: "Last Year" }
-                                ]}
-                                value={attendancePeriod}
-                                onChange={(val) => setAttendancePeriod(val)}
-                                minWidth="w-32"
-                                triggerClassName="px-3 py-1.5 bg-[#F8F8F8] border border-gray-200 rounded-lg text-sm text-gray-500 font-medium shadow-sm focus:border-[#0A437A] cursor-pointer"
-                            />
+                            <div className="relative min-w-[120px] w-full sm:w-auto">
+                                <Dropdown
+                                    options={[
+                                        { value: "This Year", label: "This Year" },
+                                        { value: "Last Year", label: "Last Year" }
+                                    ]}
+                                    value={attendancePeriod}
+                                    onChange={(val) => setAttendancePeriod(val)}
+                                    triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
+                                />
+                            </div>
                         </div>
 
                         {/* Stats */}
@@ -912,8 +970,9 @@ function DashboardOverview() {
 
                         {/* Chart */}
                         {attendanceData.some(d => d.value > 0) ? (
-                            <ResponsiveContainer width="100%" height={220}>
-                                <AreaChart
+                            <div className="h-[220px] w-full min-w-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart
                                     data={attendanceData}
                                     margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                                 >
@@ -960,7 +1019,8 @@ function DashboardOverview() {
                                         }}
                                     />
                                 </AreaChart>
-                            </ResponsiveContainer>
+                                </ResponsiveContainer>
+                            </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-[220px] text-gray-400">
                                 <p className="text-sm">No data found in this date period</p>

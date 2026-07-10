@@ -279,7 +279,15 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const updateProfile = asyncHandler(async (req, res) => {
   const { name, email, phone, settings } = req.body;
-  const user = await User.findById(req.user.id);
+  
+  let user = null;
+  if (req.user.role === 'student') {
+    user = await Student.findById(req.user.id);
+  } else if (req.user.role === 'parent') {
+    user = await Parent.findById(req.user.id);
+  } else {
+    user = await User.findById(req.user.id);
+  }
 
   if (!user || !user.isActive) {
     return sendError(res, 404, "User not found or deactivated");
@@ -300,15 +308,17 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (phone) user.phone = phone;
 
   if (settings) {
+    if (!user.settings) user.settings = {};
+    
     if (settings.notifications) {
       user.settings.notifications = {
-        ...user.settings.notifications,
+        ...(user.settings.notifications || {}),
         ...settings.notifications
       };
     }
     if (settings.preferences) {
       user.settings.preferences = {
-        ...user.settings.preferences,
+        ...(user.settings.preferences || {}),
         ...settings.preferences
       };
     }

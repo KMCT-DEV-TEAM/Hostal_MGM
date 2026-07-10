@@ -61,7 +61,9 @@ const userSchema = new mongoose.Schema(
     settings: {
       notifications: {
         emailAlerts: { type: Boolean, default: true },
-        smsAlerts: { type: Boolean, default: false }
+        smsAlerts: { type: Boolean, default: false },
+        pushAlerts: { type: Boolean, default: true },
+        inAppAlerts: { type: Boolean, default: true }
       },
       preferences: {
         theme: { type: String, default: "light" },

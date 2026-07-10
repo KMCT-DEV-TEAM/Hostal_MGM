@@ -3,19 +3,21 @@ import mongoose from "mongoose";
 const validateCreateHostel = (req, res, next) => {
   const { name, code, email, organizations, wardens, adminId } = req.body;
 
-  if (!name || !code || !email) {
+  if (!name || !code) {
     return res.status(400).json({
       success: false,
-      message: "Hostel name, code, and email are required",
+      message: "Hostel name and code are required",
     });
   }
 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  if (!isValidEmail) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid email format",
-    });
+  if (email) {
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isValidEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
   }
 
   if (organizations && Array.isArray(organizations)) {
