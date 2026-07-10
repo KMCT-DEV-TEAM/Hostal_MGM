@@ -21,17 +21,16 @@ const VisitorHistoryPage = () => {
     const [stats, setStats] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [selectedHostel, setSelectedHostel] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [filters, setFilters] = useState({ status: '', fromDate: '', toDate: '' });
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     const isSuperAdmin = user?.role === 'super_admin';
     const canExport = ['super_admin', 'admin', 'warden'].includes(user?.role);
-    
+
     const urlHostelId = searchParams.get('hostelId');
     const urlHostelName = searchParams.get('hostelName');
-    
+
     const selectedHostel = useMemo(() => {
         return urlHostelId ? { id: urlHostelId, name: urlHostelName } : null;
     }, [urlHostelId, urlHostelName]);
