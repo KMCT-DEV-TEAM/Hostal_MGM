@@ -594,7 +594,6 @@ const getStudentById = asyncHandler(async (req, res) => {
 
   if (user.role === "admin") {
     const admin = await User.findById(user.id || user._id).select("organization").lean();
-    console.log(admin, user, student)
     if (!admin?.organization || student.organizationId?._id?.toString() !== admin.organization.toString()) {
       return sendError(res, 403, "Access denied: Student belongs to another organization");
     }

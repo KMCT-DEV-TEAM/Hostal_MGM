@@ -86,6 +86,23 @@ const StudentDetailView = () => {
   const [returnConfirmModal, setReturnConfirmModal] = useState({ isOpen: false, asset: null });
   const [isReturning, setIsReturning] = useState(false);
 
+  // Discard Confirmation State
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+  const [pendingCloseAction, setPendingCloseAction] = useState(null);
+
+  const handleModalCloseRequest = (closeAction) => {
+    setPendingCloseAction(() => closeAction);
+    setIsDiscardConfirmOpen(true);
+  };
+
+  const confirmDiscard = () => {
+    if (pendingCloseAction) {
+      pendingCloseAction();
+    }
+    setIsDiscardConfirmOpen(false);
+    setPendingCloseAction(null);
+  };
+
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -705,7 +722,7 @@ const StudentDetailView = () => {
       {isDefaultParentModalOpen && (
         <SetDefaultParentModal
           parents={parents}
-          onClose={() => setIsDefaultParentModalOpen(false)}
+          onClose={() => handleModalCloseRequest(() => setIsDefaultParentModalOpen(false))}
           onDefaultChange={(parentId) => {
             onStudentChange?.(student._id, (current) => ({
               ...current,
@@ -721,7 +738,7 @@ const StudentDetailView = () => {
       {isAddParentModalOpen && (
         <ParentFormModal
           studentId={student._id}
-          onClose={() => setIsAddParentModalOpen(false)}
+          onClose={() => handleModalCloseRequest(() => setIsAddParentModalOpen(false))}
           onSave={handleCreateParent}
         />
       )}
@@ -731,13 +748,13 @@ const StudentDetailView = () => {
         title="Change Email"
         subjectName={emailChangeTarget?.subjectName}
         currentEmail={emailChangeTarget?.currentEmail}
-        onClose={closeEmailChangeModal}
+        onClose={() => handleModalCloseRequest(closeEmailChangeModal)}
         onConfirmChange={handleEmailChange}
       />
 
       <AssignFurnitureModal
         isOpen={isAssignModalOpen}
-        onClose={() => setIsAssignModalOpen(false)}
+        onClose={() => handleModalCloseRequest(() => setIsAssignModalOpen(false))}
         isEdit={assignedFurnitures.length > 0}
         student={student}
         assignedFurnitures={assignedFurnitures}
@@ -753,6 +770,17 @@ const StudentDetailView = () => {
         confirmText="Return"
         isSubmitting={isReturning}
         confirmButtonVariant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={isDiscardConfirmOpen}
+        onClose={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={confirmDiscard}
+        title="Discard Changes"
+        message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+        confirmText="Discard"
+        cancelText="Continue Editing"
+        confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
       />
     </div>
   );
