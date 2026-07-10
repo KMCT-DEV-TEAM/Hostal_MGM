@@ -857,12 +857,26 @@ const StudentDetailView = () => {
                     badgeColor = "#2563eb"; // blue-600
                     badgeBg = "#dbeafe"; // blue-100
                     nodeColor = "#3b82f6"; // blue-500
+                  } else if (item.status === 'cancelled') {
+                    badgeColor = "#d97706"; // amber-600
+                    badgeBg = "#fef3c7"; // amber-100
+                    nodeColor = "#f59e0b"; // amber-500
                   }
 
-                  const title = `Allocated to ${item.hostelId?.name || 'Unknown'} (${item.roomNumber || 'N/A'})`;
-                  let subtitle = `${item.allocatedBy?.name || 'Admin'} Allocation`;
-                  if (item.status === 'vacated') subtitle = `${item.vacatedBy?.name || 'Admin'} - Vacated`;
-                  else if (item.status === 'transferred') subtitle = `${item.vacatedBy?.name || 'Admin'} - Transferred`;
+                  const hostelInfo = `${item.hostelId?.name || item.hostel?.name || 'Unknown'} (${item.roomNumber || 'N/A'})`;
+                  let title = `Allocated to ${hostelInfo}`;
+                  let subtitle = `${item.allocatedBy?.name || 'Admin'} - Allocation`;
+
+                  if (item.status === 'vacated') {
+                    title = `Vacated from ${hostelInfo}`;
+                    subtitle = `${item.vacatedBy?.name || item.allocatedBy?.name || 'Admin'} - Vacated`;
+                  } else if (item.status === 'transferred') {
+                    title = `Transferred from ${hostelInfo}`;
+                    subtitle = `${item.vacatedBy?.name || item.allocatedBy?.name || 'Admin'} - Transferred`;
+                  } else if (item.status === 'cancelled') {
+                    title = `Cancelled Allocation for ${hostelInfo}`;
+                    subtitle = `${item.vacatedBy?.name || item.allocatedBy?.name || 'Admin'} - Cancelled`;
+                  }
 
                   return (
                     <TimelineStep
