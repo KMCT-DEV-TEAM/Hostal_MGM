@@ -1,94 +1,100 @@
-import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { X } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import React, { useState, useEffect } from 'react';
+import Modal from '@/components/ui/Modal';
+import DateInput from '@/components/ui/DateInput';
 import Dropdown from '@/components/ui/Dropdown';
 
-const FilterModal = ({ isOpen, onClose, onFilter }) => {
-    const { register, handleSubmit, reset, control } = useForm();
+export default function FilterModal({
+    isOpen,
+    onClose,
+    filters = {},
+    onFilter
+}) {
+    const [localStatus, setLocalStatus] = useState('');
+    const [localFromDate, setLocalFromDate] = useState('');
+    const [localToDate, setLocalToDate] = useState('');
 
-    if (!isOpen) return null;
+    useEffect(() => {
+        if (isOpen) {
+            setLocalStatus(filters.status || '');
+            setLocalFromDate(filters.fromDate || '');
+            setLocalToDate(filters.toDate || '');
+        }
+    }, [isOpen, filters]);
 
-    const onSubmit = (data) => {
-        onFilter(data);
+    const handleReset = () => {
+        setLocalStatus('');
+        setLocalFromDate('');
+        setLocalToDate('');
+        if (onFilter) onFilter({ status: '', fromDate: '', toDate: '' });
         onClose();
     };
 
-    const handleReset = () => {
-        reset();
-        onFilter({});
+    const handleApply = () => {
+        if (onFilter) {
+            onFilter({
+                status: localStatus,
+                fromDate: localFromDate,
+                toDate: localToDate
+            });
+        }
         onClose();
     };
 
     return (
-        <div className="absolute top-12 right-0 z-50 bg-white rounded-xl shadow-lg border border-gray-100 p-4 w-72">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold text-gray-800">Filter Visitors</h3>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                    <X className="w-4 h-4" />
-                </button>
-            </div>
-            
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-2">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
-                        <input 
-                            type="date" 
-                            {...register('fromDate')} 
-                            className="w-full border border-gray-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-primary/20 outline-none"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                        <input 
-                            type="date" 
-                            {...register('toDate')} 
-                            className="w-full border border-gray-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-primary/20 outline-none"
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
-                    <Controller
-                        name="status"
-                        control={control}
-                        render={({ field }) => (
-                            <Dropdown 
-                                options={[
-                                    { value: '', label: 'All' },
-                                    { value: 'Inside', label: 'Inside' },
-                                    { value: 'Completed', label: 'Completed' }
-                                ]}
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder="All"
-                                triggerClassName="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg outline-none"
-                            />
-                        )}
-                    />
-                </div>
-
-                <div className="flex justify-between gap-2 mt-2">
-                    <Button 
-                        type="button" 
-                        variant="outline"
-                        size="sm"
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Filter Visitors"
+            titleSize="text-lg"
+            subtitle="Filter specific visitor history records"
+            maxWidth="max-w-md"
+            overflowClass="overflow-visible"
+            footer={
+                <div className="flex justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={handleApply}
+                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
+                    >
+                        Apply Filter
+                    </button>
+                    <button
+                        type="button"
                         onClick={handleReset}
+                        className="px-5 py-2 border border-gray-200 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
                     >
                         Reset
-                    </Button>
-                    <Button 
-                        type="submit" 
-                        size="sm"
-                    >
-                        Filter
-                    </Button>
+                    </button>
                 </div>
-            </form>
-        </div>
-    );
-};
+            }
+        >
+            <div className="grid grid-cols-2 gap-5">
+                <DateInput
+                    label="From Date"
+                    value={localFromDate}
+                    onChange={(e) => setLocalFromDate(e.target.value)}
+                />
+                <DateInput
+                    label="To Date"
+                    value={localToDate}
+                    onChange={(e) => setLocalToDate(e.target.value)}
+                />
 
-export default FilterModal;
+                <div className="col-span-2">
+                    <label className="block mb-1.5 text-xs font-medium">Status</label>
+                    <Dropdown
+                        options={[
+                            { label: 'All Status', value: '' },
+                            { label: 'Checked In', value: 'Checked In' },
+                            { label: 'Completed', value: 'Completed' }
+                        ]}
+                        value={localStatus}
+                        onChange={setLocalStatus}
+                        placeholder="Select status"
+                        triggerClassName="w-full h-10 px-3 bg-white border border-gray-200 rounded-md text-xs outline-none focus:border-secondary transition-colors"
+                    />
+                </div>
+            </div>
+        </Modal>
+    );
+}

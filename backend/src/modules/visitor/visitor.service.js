@@ -1040,7 +1040,7 @@ export const getSuperAdminHostelVisitors = async (query, user) => {
  * @param {Object} user 
  */
 export const listVisitorVisits = async (query, user) => {
-    const { page = 1, limit = 10, search, status, date, hostel, sortBy = 'checkInTime', sortOrder = 'desc' } = query;
+    const { page = 1, limit = 10, search, status, startDate, endDate, hostel, sortBy = 'checkInTime', sortOrder = 'desc' } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const matchStage = {};
@@ -1101,12 +1101,18 @@ export const listVisitorVisits = async (query, user) => {
         matchStage.status = status;
     }
 
-    if (date) {
-        const startDate = new Date(date);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(date);
-        endDate.setHours(23, 59, 59, 999);
-        matchStage.checkInTime = { $gte: startDate, $lte: endDate };
+    if (startDate || endDate) {
+        matchStage.checkInTime = {};
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            matchStage.checkInTime.$gte = start;
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            matchStage.checkInTime.$lte = end;
+        }
     }
 
     const searchMatchStage = {};
