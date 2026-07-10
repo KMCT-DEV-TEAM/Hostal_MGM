@@ -56,8 +56,6 @@ export default function StudentsToolbar({
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                     >
                         <SlidersHorizontal className="w-4 h-4" />
-                        <span className="sm:hidden">Filter</span>
-                        <span className="hidden sm:inline">Filter</span>
                     </button>
 
                     <button
