@@ -28,6 +28,7 @@ export const visitorApi = {
     // Visit Management
     checkInVisitor: (payload) => api.post(`${BASE_URL}/warden/visits/check-in`, payload),
     getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
+    getSuperAdminHostelVisitors: (params) => api.get(`${BASE_URL}/super-admin/visitors/hostels`, { params }),
     listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),
     getVisitDetails: (visitId) => api.get(`${BASE_URL}/visitor-visits/${visitId}`),
     

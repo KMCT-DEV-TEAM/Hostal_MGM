@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSearchParams } from 'react-router-dom';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
 import Button from '@/components/ui/Button';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import VisitorListTableView from '../components/VisitorListTableView';
+import VisitorsAggregatedView from '../components/VisitorsAggregatedView';
 import RegisterVisitorModal from '../components/modals/RegisterVisitorModal';
 import VisitorDetailsModal from '../components/modals/VisitorDetailsModal';
 import {
@@ -13,16 +15,17 @@ import {
     getParentVisitors,
     getStudentVisitors,
     approveVisitor,
-    rejectVisitor
+    rejectVisitor,
+    getSuperAdminHostelVisitors
 } from '@/services/visitor.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDateStandard } from '@/utils/formatters';
-import { useMemo } from 'react';
 
 const VisitorsPage = () => {
     const { user } = useAuthStore();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [visitors, setVisitors] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,9 +37,21 @@ const VisitorsPage = () => {
 
     const role = user?.role || ROLES.SUPER_ADMIN;
 
+    const isSuperAdmin = role === ROLES.SUPER_ADMIN;
     const isManagement = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(role);
     const isParent = role === ROLES.PARENT;
     const isStudent = role === ROLES.STUDENT;
+
+    const urlHostelId = searchParams.get('hostelId');
+    const urlHostelName = searchParams.get('hostelName');
+
+    const selectedHostel = useMemo(() => {
+        return urlHostelId ? { id: urlHostelId, name: urlHostelName } : null;
+    }, [urlHostelId, urlHostelName]);
+
+    const showAggregatedView = isSuperAdmin && !selectedHostel;
+    // const isParent = role === ROLES.PARENT;
+    // const isStudent = role === ROLES.STUDENT;
 
     const canApproveReject = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
     const canExport = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
@@ -44,7 +59,7 @@ const VisitorsPage = () => {
     const [showCheckInModal, setShowCheckInModal] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    
+
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedVisitorId, setSelectedVisitorId] = useState(null);
 
@@ -77,12 +92,18 @@ const VisitorsPage = () => {
             };
 
             let res;
-            if (isParent) {
-                res = await getParentVisitors(params);
-            } else if (isStudent) {
-                res = await getStudentVisitors(params);
+            if (showAggregatedView) {
+                res = await getSuperAdminHostelVisitors(params);
             } else {
-                res = await getAllVisitors(params);
+                if (selectedHostel) params.hostel = selectedHostel.id;
+
+                if (isParent) {
+                    res = await getParentVisitors(params);
+                } else if (isStudent) {
+                    res = await getStudentVisitors(params);
+                } else {
+                    res = await getAllVisitors(params);
+                }
             }
 
             const visitorsData = res?.data || [];
@@ -98,7 +119,7 @@ const VisitorsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [isParent, isStudent, debouncedSearch, statusFilter, page]);
+    }, [debouncedSearch, statusFilter, page, isParent, isStudent, showAggregatedView, selectedHostel]);
 
     useEffect(() => {
         fetchVisitors();
@@ -195,37 +216,68 @@ const VisitorsPage = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 bg-background-secondary flex flex-col">
-            <div className="mb-6 shrink-0 flex items-center justify-between gap-4">
+        <div className="flex flex-col h-full bg-gray-50 md:bg-gray-50/50 p-4 md:p-6 pb-20 md:pb-6 overflow-hidden">
+            {/* Header Section */}
+            <div className="mb-6 shrink-0 flex items-center gap-4">
+                {selectedHostel && isSuperAdmin && (
+                    <button
+                        onClick={() => {
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.delete('hostelId');
+                            newParams.delete('hostelName');
+                            setSearchParams(newParams);
+                        }}
+                        className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                )}
                 <PageHeader
-                    title="Visitors"
-                    subtitle="Manage visitor requests and profiles"
+                    title={selectedHostel ? `Visitors - ${selectedHostel.name}` : "Visitors"}
+                    subtitle={showAggregatedView ? "Overview of visitors across all hostels" : "Manage visitor requests and profiles"}
                 />
             </div>
 
             {/* Table View */}
-            <VisitorListTableView
-                visitors={visitors}
-                loading={loading}
-                searchQuery={searchQuery}
-                onSearch={setSearchQuery}
-                statusFilter={statusFilter}
-                onStatusFilterChange={(val) => {
-                    setStatusFilter(val);
-                    setPage(1);
-                }}
-                onExportClick={handleExport}
-                canApproveReject={canApproveReject}
-                canExport={canExport}
-                canRegister={isParent}
-                onRegisterClick={() => setShowCheckInModal(true)}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                page={page}
-                setPage={setPage}
-                pagination={pagination}
-                onRowClick={handleRowClick}
-            />
+            {showAggregatedView ? (
+                <VisitorsAggregatedView
+                    visitors={visitors}
+                    loading={loading}
+                    searchQuery={searchQuery}
+                    onSearch={setSearchQuery}
+                    onRowClick={(hostelObj) => {
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.set('hostelId', hostelObj.id);
+                        newParams.set('hostelName', hostelObj.name || '');
+                        setSearchParams(newParams);
+                    }}
+                    canExport={canExport}
+                    onExportClick={handleExport}
+                />
+            ) : (
+                <VisitorListTableView
+                    visitors={visitors}
+                    loading={loading}
+                    searchQuery={searchQuery}
+                    onSearch={setSearchQuery}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(val) => {
+                        setStatusFilter(val);
+                        setPage(1);
+                    }}
+                    onExportClick={handleExport}
+                    canApproveReject={canApproveReject}
+                    canExport={canExport}
+                    canRegister={isParent}
+                    onRegisterClick={() => setShowCheckInModal(true)}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    page={page}
+                    setPage={setPage}
+                    pagination={pagination}
+                    onRowClick={handleRowClick}
+                />
+            )}
 
             <RegisterVisitorModal
                 isOpen={showCheckInModal}
