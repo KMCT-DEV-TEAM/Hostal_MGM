@@ -550,10 +550,8 @@ const getStudentFilterOptions = asyncHandler(async (req, res) => {
 
 
 
-// Get allocated furniture assets for a specific student
 const getStudentFurnitures = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  // Verify student exists (optional)
   const student = await Student.findById(id).lean();
   if (!student) {
     return sendError(res, 404, "Student not found");
@@ -574,6 +572,66 @@ const getStudentFurnitures = asyncHandler(async (req, res) => {
 
 
 
+const getStudentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return sendError(res, 400, "Invalid student ID");
+  }
+
+  const student = await Student.findById(id)
+    .populate("organizationId", "name code")
+    .populate("hostelId", "name code hosteltype")
+    .populate("courseId", "name code")
+    .populate("departmentId", "name code")
+    .populate("batchId", "name code")
+    .lean();
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  if (user.role === "admin") {
+    const admin = await User.findById(user.id || user._id).select("organization").lean();
+    console.log(admin, user, student)
+    if (!admin?.organization || student.organizationId?._id?.toString() !== admin.organization.toString()) {
+      return sendError(res, 403, "Access denied: Student belongs to another organization");
+    }
+  }
+  if (user.role === "warden") {
+    const hostel = await Hostel.findOne({ wardens: user.id || user._id }).lean();
+    const studentHostelId = student.hostelId?._id?.toString() || student.hostelId?.toString();
+
+    if (!hostel || studentHostelId !== hostel._id.toString()) {
+      return sendError(res, 403, "Access denied: Student belongs to another hostel");
+    }
+  }
+
+  const parents = await Parent.find({ studentId: id }).lean();
+  if (parents && parents.length > 0) {
+    student.parents = parents.map(p => {
+      const { password, ...parentData } = p;
+      return parentData;
+    });
+  }
+
+  student.organization = student.organizationId;
+  student.hostel = student.hostelId;
+  student.course = student.courseId;
+  student.department = student.departmentId;
+  student.batch = student.batchId;
+
+  student.organizationId = student.organization?._id;
+  student.hostelId = student.hostel?._id;
+  student.courseId = student.course?._id;
+  student.departmentId = student.department?._id;
+  student.batchId = student.batch?._id;
+
+  return sendSuccess(res, 200, "Student details fetched successfully", student);
+});
+
+
 export {
   createStudent,
   updateStudent,
@@ -589,5 +647,6 @@ export {
   getStudentsByWarden,
   getStudentFilterOptions,
   getStudentFurnitures,
+  getStudentById,
   bulkUpdateStudentStatus,
 };

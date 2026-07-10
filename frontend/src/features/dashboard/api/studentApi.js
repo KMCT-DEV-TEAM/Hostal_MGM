@@ -21,6 +21,8 @@ const studentApi = {
   changeStudentEmailBySuperAdmin: (id, payload) =>
     api.patch(`/super-admin/students/${id}/change-email`, payload),
 
+  getStudentByIdByAdmin: (id) => api.get(`/admin/students/${id}`),
+
   getStudentsByAdmin: (params) =>
     api.get("/admin/students/admin", { params })
   ,
@@ -38,6 +40,8 @@ const studentApi = {
     api.patch(`/admin/students/bulk-status`, { ids, isActive }),
 
   //----super admin 
+  getStudentByIdBySuperAdmin: (id) => api.get(`/super-admin/students/${id}`),
+  
   getStudentsBySuperAdmin: (params) =>
     api.get("/super-admin/students/super-admin", { params }),
 
@@ -52,6 +56,8 @@ const studentApi = {
 
   bulkStatusBySuperAdmin: ({ ids, isActive }) =>
     api.patch(`/super-admin/students/bulk-status`, { ids, isActive }),
+
+  getStudentByIdByWarden: (id) => api.get(`/warden/students/${id}`),
 
   getStudentsByWarden: (params) =>
     api.get("/warden/students/warden", { params }),

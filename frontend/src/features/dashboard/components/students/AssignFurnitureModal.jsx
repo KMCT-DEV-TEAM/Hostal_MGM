@@ -107,14 +107,10 @@ export default function AssignFurnitureModal({
 
   useEffect(() => {
     if (isOpen) {
-      if (isEdit && assignedFurnitures.length > 0) {
-        setFurnitures(assignedFurnitures.map(f => f._id));
-      } else {
-        setFurnitures([]);
-      }
+      setFurnitures([]);
       setSelectedTypeId("");
     }
-  }, [isOpen, isEdit, assignedFurnitures]);
+  }, [isOpen]);
 
   const fetchFurnitureTypesOptions = useCallback(async ({ page, search }) => {
     try {
@@ -140,7 +136,7 @@ export default function AssignFurnitureModal({
   const fetchFurnitureAssetsOptions = useCallback(async ({ page, search }) => {
     if (!selectedTypeId) return { options: [], hasMore: false };
     try {
-      const res = await furnitureApi.getAvailableFurnitureAssetsList(selectedTypeId, { page, search, limit: 10 });
+      const res = await furnitureApi.getAvailableFurnitureAssetsList(selectedTypeId, { page, status: "available", search, limit: 10 });
       const assets = res.data?.data?.assets || res.data?.assets || res.data?.data || [];
       const pagination = res.data?.data?.pagination || res.data?.pagination || {};
 
@@ -221,7 +217,7 @@ export default function AssignFurnitureModal({
             type="submit"
             className="px-6 py-2 bg-primary hover:bg-secondary text-white rounded-md text-sm font-medium w-full sm:w-auto"
           >
-            {isEdit ? "Save Changes" : "Assign"}
+            Assign
           </Button>
           <Button
             type="button"

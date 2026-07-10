@@ -401,6 +401,7 @@ export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => 
     .limit(limit)
     .lean();
 
+
   const total = await FurnitureAsset.countDocuments(assetQuery);
 
   return sendSuccess(res, 200, "Available furniture assets retrieved.", { assets, total, page, limit });
