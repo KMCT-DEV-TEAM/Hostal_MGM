@@ -447,10 +447,15 @@ const StudentDetailView = () => {
 
           {/* Current Hostel */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex justify-between items-center mb-1">
-              <h3 className="text-lg font-semibold text-primary">
-                Current Hostel
-              </h3>
+            <div className="flex  mb-6 flex-col md:flex-row justify-left md:justify-between md:items-center items-left mb-1">
+              <div className="">
+                <h3 className="text-lg font-semibold text-primary">
+                  Current Hostel
+                </h3>
+                <p className="text-xs text-gray-400 mb-3">
+                  Current hostel allocation details
+                </p>
+              </div>
               <div className="flex  items-center gap-2">
                 <Button
                   size="sm"
@@ -469,9 +474,7 @@ const StudentDetailView = () => {
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mb-6">
-              Current hostel allocation details
-            </p>
+
             <div className="space-y-4">
               <InfoRow
                 icon={<Building2 className="w-4 h-4 text-gray-400" />}

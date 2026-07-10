@@ -87,6 +87,7 @@ export default function ManageHostelModal({ isOpen, onClose, student, onSave }) 
 
   return (
     <Modal
+      bottomSheetOnMobile={true}
       isOpen={isOpen}
       onClose={onClose}
       title={student?.hostelId ? "Change Hostel" : "Allocate Hostel"}
