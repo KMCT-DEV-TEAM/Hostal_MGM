@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import VisitorStats from '../components/VisitorStats';
 import VisitorDetailedView from '../components/VisitorDetailedView';
-import VisitorAggregatedView from '../components/VisitorAggregatedView';
+import VisitorHistoryAggregatedView from '../components/VisitorHistoryAggregatedView';
 import { getSuperAdminHostelVisits, listVisitorVisits } from '@/services/visitor.service';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -171,7 +171,7 @@ const VisitorHistoryPage = () => {
 
             {/* Role-Based Rendering */}
             {showAggregatedView ? (
-                <VisitorAggregatedView
+                <VisitorHistoryAggregatedView
                     visitors={visitors}
                     loading={loading}
                     searchQuery={searchQuery}

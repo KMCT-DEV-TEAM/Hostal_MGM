@@ -4,7 +4,7 @@ import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
 
-const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick, canExport, onExportClick }) => {
+const VisitorHistoryAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick }) => {
 
     const headers = [
         { key: 'hostel', label: 'Hostel' },
@@ -38,27 +38,6 @@ const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHos
         </div>
     );
 
-    const toolbarActions = (
-        <div className="flex items-center gap-2">
-            <Dropdown
-                options={[
-                    { value: '', label: 'All' },
-                    { value: 'Hostel A', label: 'Hostel A' },
-                    { value: 'Hostel B', label: 'Hostel B' }
-                ]}
-                onChange={(val) => onHostelFilter(val)}
-                placeholder="All Hostels"
-                triggerClassName="px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg outline-none min-w-[120px]"
-            />
-
-            {canExport && (
-                <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex" onClick={onExportClick}>
-                    <Download className="w-4 h-4" /> Export
-                </Button>
-            )}
-        </div>
-    );
-
     return (
         <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none">
             <DataTable
@@ -68,7 +47,6 @@ const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHos
                 loading={loading}
                 emptyText="No visitors found"
                 onSearchChange={(e) => onSearch(e.target.value)}
-                toolbarActions={toolbarActions}
                 renderRow={renderRow}
                 renderMobileItem={renderMobileItem}
                 onRowClick={(item) => onRowClick && onRowClick({ id: item.hostelId, name: item.hostelName })}
@@ -82,4 +60,4 @@ const VisitorAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHos
     );
 };
 
-export default VisitorAggregatedView;
+export default VisitorHistoryAggregatedView;

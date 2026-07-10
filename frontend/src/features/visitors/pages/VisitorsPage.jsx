@@ -7,7 +7,7 @@ import { ROLES } from '@/constants/roles';
 import Button from '@/components/ui/Button';
 import { Plus, ArrowLeft } from 'lucide-react';
 import VisitorListTableView from '../components/VisitorListTableView';
-import VisitorsAggregatedView from '../components/VisitorsAggregatedView';
+import VisitorProfilesAggregatedView from '../components/VisitorProfilesAggregatedView';
 import RegisterVisitorModal from '../components/modals/RegisterVisitorModal';
 import VisitorDetailsModal from '../components/modals/VisitorDetailsModal';
 import {
@@ -240,7 +240,7 @@ const VisitorsPage = () => {
 
             {/* Table View */}
             {showAggregatedView ? (
-                <VisitorsAggregatedView
+                <VisitorProfilesAggregatedView
                     visitors={visitors}
                     loading={loading}
                     searchQuery={searchQuery}

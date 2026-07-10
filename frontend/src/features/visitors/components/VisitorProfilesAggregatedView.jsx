@@ -1,9 +1,7 @@
 import React from 'react';
-import { Download } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
-import Button from '@/components/ui/Button';
 
-const VisitorsAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick, canExport, onExportClick }) => {
+const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick }) => {
 
     const headers = [
         { key: 'hostel', label: 'Hostel Name' },
@@ -37,16 +35,6 @@ const VisitorsAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRo
         </div>
     );
 
-    const toolbarActions = (
-        <div className="flex items-center gap-2">
-            {canExport && (
-                <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex" onClick={onExportClick}>
-                    <Download className="w-4 h-4" /> Export
-                </Button>
-            )}
-        </div>
-    );
-
     return (
         <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none">
             <DataTable
@@ -56,7 +44,6 @@ const VisitorsAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRo
                 loading={loading}
                 emptyText="No visitors found"
                 onSearchChange={(e) => onSearch(e.target.value)}
-                toolbarActions={toolbarActions}
                 renderRow={renderRow}
                 renderMobileItem={renderMobileItem}
                 onRowClick={(item) => onRowClick && onRowClick({ id: item.hostelId, name: item.hostelName })}
@@ -70,4 +57,4 @@ const VisitorsAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRo
     );
 };
 
-export default VisitorsAggregatedView;
+export default VisitorProfilesAggregatedView;
