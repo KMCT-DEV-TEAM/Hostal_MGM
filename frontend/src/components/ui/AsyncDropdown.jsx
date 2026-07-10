@@ -14,7 +14,9 @@ export default function AsyncDropdown({
     placement = "bottom",
     error,
     isMulti = false,
-    lookup = {}
+    lookup = {},
+    maxHeight = '200px',
+    preload = false,
 }) {
     const dropdownRef = useRef(null);
     const observerRef = useRef(null);
@@ -33,6 +35,8 @@ export default function AsyncDropdown({
     const [hasMore, setHasMore] = useState(true);
 
     const [initialLoading, setInitialLoading] = useState(false);
+
+    const [lastFetchedQuery, setLastFetchedQuery] = useState(null);
 
     const loadOptions = useCallback(async (pageNo, keyword, reset = false) => {
         try {
@@ -60,14 +64,18 @@ export default function AsyncDropdown({
     }, [fetchOptions]);
 
     useEffect(() => {
-        if (!open)
+        if (!open && !preload)
+            return;
+
+        if (open && lastFetchedQuery === debouncedSearch && options.length > 0)
             return;
 
         setPage(1);
 
         loadOptions(1, debouncedSearch, true);
+        setLastFetchedQuery(debouncedSearch);
 
-    }, [debouncedSearch, open, loadOptions]);
+    }, [debouncedSearch, open, preload, loadOptions, lastFetchedQuery, options.length]);
 
     useEffect(() => {
 
@@ -175,7 +183,8 @@ export default function AsyncDropdown({
             {open && (
 
                 <div
-                    className={`absolute z-50 flex flex-col min-w-full w-full max-w-[400px] ${placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none`}
+                    style={{ maxHeight: maxHeight }}
+                    className={`absolute z-50 flex flex-col   min-w-full w-full max-w-[400px] ${placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none`}
                 >
 
                     <div className="sticky top-0 bg-white px-2 py-1.5 border-b border-gray-100 z-10 shrink-0">

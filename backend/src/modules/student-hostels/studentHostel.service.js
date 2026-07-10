@@ -32,7 +32,7 @@ const deallocateFurniture = async (studentId, actor, session) => {
 const allocateHostelInternal = async (studentId, data, actor) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     const { hostelId, roomNumber, reason, remarks } = data;
 
@@ -77,7 +77,7 @@ const allocateHostelInternal = async (studentId, data, actor) => {
       hostelId,
       roomNumber,
       status: "active",
-      allocatedBy: actor._id,
+      allocatedBy: actor._id || actor.id,
       reason,
       remarks,
     });
@@ -147,7 +147,7 @@ const changeHostelInternal = async (studentId, data, actor) => {
 
     activeAllocation.status = "transferred";
     activeAllocation.vacatedAt = new Date();
-    activeAllocation.vacatedBy = actor._id;
+    activeAllocation.vacatedBy = actor._id || actor.id;
     activeAllocation.reason = reason || "Hostel Change";
     await activeAllocation.save({ session });
 
@@ -157,7 +157,7 @@ const changeHostelInternal = async (studentId, data, actor) => {
       hostelId,
       roomNumber,
       status: "active",
-      allocatedBy: actor._id,
+      allocatedBy: actor._id || actor.id,
       reason,
       remarks,
     });
@@ -229,7 +229,7 @@ export const vacateHostelService = async (studentId, data, actor) => {
 
     activeAllocation.status = "vacated";
     activeAllocation.vacatedAt = new Date();
-    activeAllocation.vacatedBy = actor._id;
+    activeAllocation.vacatedBy = actor._id || actor.id;
     activeAllocation.reason = reason;
     activeAllocation.remarks = remarks;
     await activeAllocation.save({ session });

@@ -2,7 +2,7 @@ import React from 'react';
 
 const getInitials = (name) => {
     if (!name || name === 'user' || name === 'Admin' || name === 'Parent' || name === 'Student') return name[0].toUpperCase();
-    const parts = name.split(' ');
+    const parts = name.split(' ').filter(a => a !== '').filter(a => a.trim());
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
     return name.substring(0, 2).toUpperCase();
 };

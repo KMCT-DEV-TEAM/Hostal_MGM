@@ -4,6 +4,7 @@ const variants = {
     primary: "bg-primary text-white hover:bg-secondary",
     outline: "bg-white border border-gray-200 text-text-secondary hover:bg-gray-50",
     ghost: "bg-transparent hover:bg-gray-100 text-text-secondary",
+    danger: "bg-red-400 text-white hover:bg-red-600",
 };
 
 const sizes = {
@@ -32,6 +33,7 @@ const Button = ({
                 inline-flex items-center justify-center gap-2
                 transition cursor-pointer
                 shadow-sm md:shadow-none
+                whitespace-nowrap
                 disabled:opacity-70 disabled:cursor-not-allowed
                 ${variants[variant]}
                 ${sizes[size]}

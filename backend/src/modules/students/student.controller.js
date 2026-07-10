@@ -12,6 +12,7 @@ import Organization from "../organizations/organization.model.js";
 import mongoose from "mongoose";
 import Parent from "../parents/parent.model.js";
 import hostelModel from "../hostels/hostel.model.js";
+import studentHostelModel from "../student-hostels/studentHostel.model.js";
 
 const createStudent = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
@@ -545,6 +546,15 @@ const getStudentById = asyncHandler(async (req, res) => {
       const { password, ...parentData } = p;
       return parentData;
     });
+  }
+
+  // Fetch active hostel allocation
+  const activeAllocation = await studentHostelModel.findOne({ studentId: id, status: "active" })
+    .populate("allocatedBy", "name")
+    .lean();
+
+  if (activeAllocation) {
+    student.activeAllocation = activeAllocation;
   }
 
   student.organization = student.organizationId;

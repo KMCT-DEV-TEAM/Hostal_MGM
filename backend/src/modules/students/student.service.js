@@ -22,6 +22,7 @@ const createStudentWithParentDb = async (
   const {
     studentId,
     organizationId,
+    hostelId,
     name,
     gender,
     dob,
@@ -32,6 +33,7 @@ const createStudentWithParentDb = async (
     phone,
     email,
     address,
+    hostelStatus,
     parentName,
     parentPhone,
     parentEmail,
@@ -48,6 +50,7 @@ const createStudentWithParentDb = async (
       {
         studentId,
         organizationId,
+        hostelId,
         name,
         gender,
         dob,
@@ -61,6 +64,7 @@ const createStudentWithParentDb = async (
         tempPassword: true,
         isVerified: true,
         address,
+        hostelStatus,
       },
     ],
     { session }
@@ -83,7 +87,13 @@ const createStudentWithParentDb = async (
     { session }
   );
 
-
+  if (hostelId && organizationId) {
+    await Hostel.findByIdAndUpdate(
+      hostelId,
+      { $addToSet: { organizations: organizationId } },
+      { session }
+    );
+  }
 
   return {
     student: student[0],
@@ -130,10 +140,12 @@ const updateStudentDb = async (studentId, data) => {
     "batchId",
     "academicYear",
     "address",
+    "hostelStatus",
     "isActive",
   ];
 
   const isStatusChanged = data.isActive !== undefined && data.isActive !== student.isActive;
+
   const oldOrgId = student.organizationId ? student.organizationId.toString() : null;
   const newOrgId = data.organizationId ? data.organizationId.toString() : null;
   const isOrganizationChanged = data.organizationId !== undefined && newOrgId !== oldOrgId;
@@ -146,13 +158,13 @@ const updateStudentDb = async (studentId, data) => {
 
   await student.save();
 
-  if ((isOrganizationChanged || isStatusChanged) && student.hostelId) {
+  if (isOrganizationChanged && student.hostelId) {
     await syncHostelOrganizations(student.hostelId);
   }
 
   if (isStatusChanged) {
     await Parent.updateMany({ studentId: student._id }, { isActive: student.isActive });
-    
+
     if (!student.isActive) {
       const { getIo } = await import("../../config/socket.js");
       getIo()?.to(student._id.toString()).emit("accountDeactivated");
@@ -195,7 +207,7 @@ const bulkUpdateStudentStatusDb = async (
       { studentId: { $in: studentIds } },
       { $set: { isActive } }
     );
-    
+
     if (!isActive) {
       const { getIo } = await import("../../config/socket.js");
       studentIds.forEach(id => getIo()?.to(id.toString()).emit("accountDeactivated"));
@@ -204,6 +216,10 @@ const bulkUpdateStudentStatusDb = async (
     }
   }
 
+  const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+  for (const hId of affectedHostels) {
+    await syncHostelOrganizations(hId);
+  }
 
   return result;
 };
@@ -221,7 +237,11 @@ const updateStudentsStatusByQuery = async (query, isActive) => {
       const parents = await Parent.find({ studentId: { $in: studentIds } }).select("_id");
       parents.forEach(p => getIo()?.to(p._id.toString()).emit("accountDeactivated"));
     }
-    
+
+    const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+    for (const hId of affectedHostels) {
+      await syncHostelOrganizations(hId);
+    }
   }
 };
 
