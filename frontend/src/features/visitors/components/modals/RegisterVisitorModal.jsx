@@ -31,10 +31,16 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess }) => {
 
     const onSubmit = async (data) => {
         try {
-            // Include dummy student ID for now as it's required by the backend payload
+            // Extract student ID correctly in case user.studentId is a populated object
+            const extractStudentId = (student) => {
+                if (!student) return null;
+                if (typeof student === 'object') return student._id || student.id;
+                return student;
+            };
+
             const payload = {
                 ...data,
-                students: [user.studentId]
+                students: [extractStudentId(user.studentId)]
             };
             await visitorApi.createVisitorProfile(payload);
             showSuccessToast("Visitor registered successfully!");

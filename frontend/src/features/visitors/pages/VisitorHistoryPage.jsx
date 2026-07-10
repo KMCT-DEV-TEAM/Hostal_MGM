@@ -6,8 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import VisitorStats from '../components/VisitorStats';
 import VisitorDetailedView from '../components/VisitorDetailedView';
-import VisitorAggregatedView from '../components/VisitorAggregatedView';
-import { getSuperAdminHostelVisits, listVisitorVisits } from '@/services/visitor.service';
+import VisitorHistoryAggregatedView from '../components/VisitorHistoryAggregatedView';
+import { getSuperAdminHostelVisits, listVisitorVisits, getDashboardSummary } from '@/services/visitor.service';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -55,8 +55,20 @@ const VisitorHistoryPage = () => {
             }
 
             setVisitors(res.data || []);
-            // TODO: Fetch real stats from dashboard-summary if needed
-            setStats(null);
+
+            // Fetch real stats from dashboard-summary if management role
+            if (['super_admin', 'admin', 'warden'].includes(user?.role)) {
+                try {
+                    const statsRes = await getDashboardSummary();
+                    if (statsRes && statsRes.success) {
+                        setStats(statsRes.cards);
+                    }
+                } catch (statsErr) {
+                    console.error("Failed to fetch dashboard summary", statsErr);
+                }
+            } else {
+                setStats(null);
+            }
         } catch (error) {
             console.error("Failed to fetch visitors", error);
         } finally {
@@ -165,13 +177,15 @@ const VisitorHistoryPage = () => {
             </div>
 
             {/* Shared Stats Component */}
-            <div className="shrink-0">
-                <VisitorStats stats={stats} />
-            </div>
+            {['super_admin', 'admin', 'warden'].includes(user?.role) && stats && (
+                <div className="shrink-0">
+                    <VisitorStats stats={stats} />
+                </div>
+            )}
 
             {/* Role-Based Rendering */}
             {showAggregatedView ? (
-                <VisitorAggregatedView
+                <VisitorHistoryAggregatedView
                     visitors={visitors}
                     loading={loading}
                     searchQuery={searchQuery}
@@ -186,6 +200,7 @@ const VisitorHistoryPage = () => {
                     }}
                     canExport={canExport}
                     onExportClick={handleExport}
+                    userRole={user?.role}
                 />
             ) : (
                 <VisitorDetailedView
@@ -195,9 +210,10 @@ const VisitorHistoryPage = () => {
                     filters={filters}
                     onSearch={handleSearch}
                     onFilter={handleFilter}
-                    onRefresh={fetchVisitors}
+                    onRefresh={() => fetchVisitors(false)}
                     canExport={canExport}
                     onExportClick={handleExport}
+                    userRole={user?.role}
                 />
             )}
 

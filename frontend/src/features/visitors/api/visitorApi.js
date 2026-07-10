@@ -28,11 +28,15 @@ export const visitorApi = {
     // Visit Management
     checkInVisitor: (payload) => api.post(`${BASE_URL}/warden/visits/check-in`, payload),
     getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
+    getSuperAdminHostelVisitors: (params) => api.get(`${BASE_URL}/super-admin/visitors/hostels`, { params }),
     listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),
     getVisitDetails: (visitId) => api.get(`${BASE_URL}/visitor-visits/${visitId}`),
     
     // Get Visitor Profile Details
     getVisitorDetails: (visitorId) => api.get(`${BASE_URL}/${visitorId}`),
+    
+    // Dashboard Summary
+    getDashboardSummary: () => api.get(`${BASE_URL}/dashboard-summary`),
 };
 
 export default visitorApi;

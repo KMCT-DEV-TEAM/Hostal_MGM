@@ -22,16 +22,33 @@ const VisitorListTableView = ({
     onRowClick,
     page,
     setPage,
-    pagination
+    pagination,
+    userRole
 }) => {
 
     const headers = useMemo(() => {
-        const baseCols = ["Visitor Name", "Visiting Student", "Organization", "Phone", "Relation", { label: "Status", align: "start" }];
+        const baseCols = ["Visitor Name"];
+        
+        if (userRole !== 'student') {
+            baseCols.push("Visiting Student");
+        }
+        if (['super_admin', 'admin', 'warden'].includes(userRole)) {
+            baseCols.push("Room No");
+        }
+
+        if (['warden', 'super_admin'].includes(userRole)) {
+            baseCols.push("Organization");
+        } else if (['admin', 'parent'].includes(userRole)) {
+            baseCols.push("Hostel");
+        }
+
+        baseCols.push("Phone", "Relation", { label: "Status", align: "start" });
+        
         if (canApproveReject) {
             baseCols.push({ label: "Actions", align: "center" });
         }
         return baseCols;
-    }, [canApproveReject]);
+    }, [canApproveReject, userRole]);
 
     const renderRow = (visitor) => {
         const visitingStudentNames = visitor.students && visitor.students.length > 0
@@ -51,8 +68,22 @@ const VisitorListTableView = ({
                     </div>
                     <span className="text-sm font-semibold">{visitorName}</span>
                 </td>
-                <td className="p-4 text-text-secondary font-medium">{visitingStudentNames}</td>
-                <td className="p-4 text-text-secondary font-medium">{organization}</td>
+                
+                {userRole !== 'student' && (
+                    <td className="p-4 text-text-secondary font-medium">{visitingStudentNames}</td>
+                )}
+                
+                {['super_admin', 'admin', 'warden'].includes(userRole) && (
+                    <td className="p-4 text-text-secondary font-medium">{visitor.roomNumber || '--'}</td>
+                )}
+
+                {['warden', 'super_admin'].includes(userRole) && (
+                    <td className="p-4 text-text-secondary font-medium">{organization}</td>
+                )}
+                {['admin', 'parent'].includes(userRole) && (
+                    <td className="p-4 text-text-secondary font-medium">{visitor.hostelName || '--'}</td>
+                )}
+
                 <td className="p-4 text-text-secondary font-medium">{phone}</td>
                 <td className="p-4 text-text-secondary font-medium capitalize">{relation}</td>
                 <td className="p-4">
@@ -66,7 +97,10 @@ const VisitorListTableView = ({
                                     variant="ghost"
                                     size="sm"
                                     fullWidth={false}
-                                    onClick={() => onApprove(visitor.visitorId || visitor.id || visitor._id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onApprove(visitor.visitorId || visitor.id || visitor._id);
+                                    }}
                                     className="!p-1.5 bg-success/10 text-success hover:bg-success/20 hover:text-success"
                                     title="Approve"
                                 >
@@ -76,7 +110,10 @@ const VisitorListTableView = ({
                                     variant="ghost"
                                     size="sm"
                                     fullWidth={false}
-                                    onClick={() => onReject(visitor.visitorId || visitor.id || visitor._id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onReject(visitor.visitorId || visitor.id || visitor._id);
+                                    }}
                                     className="!p-1.5 bg-danger/10 text-danger hover:bg-danger/20 hover:text-danger"
                                     title="Reject"
                                 >
