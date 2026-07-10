@@ -67,7 +67,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
     if (!visit) return null;
 
     const visitorName = visit.visitorInformation?.visitorName || 'Unknown';
-    const studentName = visit.studentInformation?.[0]?.name || 'Unknown';
+    const studentName = visit.studentInformation?.[0]?.studentName || 'Unknown';
     const subtitle = `Visitor - ${studentName}`;
 
     // Helper for rendering Timeline
@@ -146,7 +146,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
                     {/* Visit Information */}
                     <DetailCard title="Visit Information" subtitle="Basic Details about the Visit">
                         <div className="space-y-1">
-                            <DetailRow label="Visiting Student" value={`${studentName} (Room ${visit.studentInformation?.[0]?.roomNo || '--'})`} />
+                            <DetailRow label="Visiting Student" value={`${studentName} ${visit.studentInformation?.[0]?.roomNo ? `(Room ${visit.studentInformation?.[0]?.roomNo})` : ''}`} />
                             <DetailRow label="Room No" value={visit.studentInformation?.[0]?.roomNo} />
                             <DetailRow label="Purpose of Visit" value={visit.visitInformation?.purpose} />
                             <DetailRow label="Check-In" value={visit.visitInformation?.checkInTime ? `${formatTime(visit.visitInformation.checkInTime)}, ${formatDateReadable(visit.visitInformation.checkInTime)}` : '--'} />

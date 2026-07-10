@@ -98,6 +98,7 @@ export const getVisitors = async (matchStage, sortStage, skip, limit) => {
                 approvedAt: '$approvedTimelineEvent.createdAt',
                 organizationName: '$organizationInfo.name',
                 hostelName: '$hostelInfo.name',
+
                 students: {
                     $map: {
                         input: '$studentDocs',
@@ -534,7 +535,7 @@ export const getSuperAdminHostelVisitorSummaryAggregated = async (matchStage, se
     ];
 
     const result = await Visitor.aggregate(pipeline);
-    
+
     const data = result[0].data;
     const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
 
@@ -638,11 +639,17 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
                         }
                     }
                 },
-                roomNumber: {
-                    $cond: {
-                        if: { $gt: [{ $size: "$roomDocs" }, 0] },
-                        then: { $arrayElemAt: ["$roomDocs.roomNumber", 0] },
-                        else: "N/A"
+                roomnumber: {
+                    $reduce: {
+                        input: "$studentDocs.roomNumber",
+                        initialValue: "",
+                        in: {
+                            $cond: {
+                                if: { $eq: ["$$value", ""] },
+                                then: "$$this",
+                                else: { $concat: ["$$value", ", ", "$$this"] }
+                            }
+                        }
                     }
                 },
                 checkInTime: 1,
@@ -691,7 +698,7 @@ export const getVisitDetailsById = async (visitId) => {
         })
         .populate({
             path: 'students',
-            select: 'name studentId roomId department course',
+            select: 'name studentId roomNumber studentId',
         })
         .populate({
             path: 'hostelId',
