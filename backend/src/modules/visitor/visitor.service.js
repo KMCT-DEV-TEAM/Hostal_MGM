@@ -178,6 +178,12 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
 
     // 2. Authorization
     if (user.role === 'parent') {
+        if (!['Pending', 'Inactive'].includes(status)) {
+            const error = new Error('Parents can only change status to Pending or Inactive.');
+            error.status = 403;
+            throw error;
+        }
+
         const currentParent = await Parent.findById(user.id);
         if (!currentParent) {
             const error = new Error('Parent not found.');
@@ -195,7 +201,13 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
             error.status = 403;
             throw error;
         }
-    } else if (user.role !== 'admin' && user.role !== 'super_admin') {
+    } else if (user.role === 'admin' || user.role === 'super_admin') {
+        if (!['Inactive', 'Approved', 'Rejected'].includes(status)) {
+            const error = new Error('Admins can only change status to Inactive, Approved, or Rejected.');
+            error.status = 403;
+            throw error;
+        }
+    } else {
         const error = new Error('Unauthorized role to update visitor status.');
         error.status = 403;
         throw error;
@@ -490,7 +502,8 @@ export const getVisitorDetails = async (visitorId, user) => {
 
     const formattedStudents = visitor.students.map(s => ({
         id: s._id,
-        name: s.name
+        name: s.name,
+        roomNumber: s.roomNumber
     }));
 
     return {

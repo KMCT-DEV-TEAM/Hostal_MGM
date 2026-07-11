@@ -105,12 +105,21 @@ export const getVisitors = async (matchStage, sortStage, skip, limit) => {
                         as: 'st',
                         in: {
                             id: '$$st._id',
-                            name: '$$st.name'
+                            name: '$$st.name',
+                            roomNumber: '$$st.roomNumber'
                         }
                     }
                 },
                 priority: {
-                    $cond: { if: { $eq: ['$approvalStatus', 'Pending'] }, then: 1, else: 2 }
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ['$approvalStatus', 'Pending'] }, then: 1 },
+                            { case: { $eq: ['$approvalStatus', 'Approved'] }, then: 2 },
+                            { case: { $eq: ['$approvalStatus', 'Inactive'] }, then: 3 },
+                            { case: { $eq: ['$approvalStatus', 'Rejected'] }, then: 4 }
+                        ],
+                        default: 5
+                    }
                 }
             }
         },
@@ -124,7 +133,6 @@ export const getVisitors = async (matchStage, sortStage, skip, limit) => {
     ];
 
     const result = await Visitor.aggregate(pipeline);
-
     const data = result[0].data;
     const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
 
@@ -149,7 +157,7 @@ export const getVisitorDetails = async (visitorId) => {
     return await Visitor.findById(visitorId)
         .populate({
             path: 'students',
-            select: 'name hostelId'
+            select: 'name hostelId roomNumber'
         })
         .populate({
             path: 'organizationId',
