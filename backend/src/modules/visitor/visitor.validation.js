@@ -363,3 +363,24 @@ export const validateUpdateVisitor = (req, res, next) => {
 
     next();
 };
+
+export const validateUpdateVisitorStatus = (req, res, next) => {
+    const { visitorId } = req.params;
+    const { status } = req.body;
+
+    if (!isValidObjectId(visitorId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid visitor ID."
+        });
+    }
+
+    if (!status || !VISITOR_STATUS_VALUES.includes(status)) {
+        return res.status(400).json({
+            success: false,
+            message: `Invalid or missing status. Allowed values: ${VISITOR_STATUS_VALUES.join(', ')}`
+        });
+    }
+
+    next();
+};
