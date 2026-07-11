@@ -49,6 +49,13 @@ const parentSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
+    },
     settings: {
       notifications: {
         emailAlerts: { type: Boolean, default: true },

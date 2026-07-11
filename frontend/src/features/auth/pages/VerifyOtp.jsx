@@ -19,27 +19,30 @@ const VerifyOtp = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const email = location.state?.email;
+    const initialError = location.state?.initialError;
 
     // Redirect back if no email
     React.useEffect(() => {
         if (!email) navigate('/forgot-password', { replace: true });
     }, [email, navigate]);
 
-    const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    const { control, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(verifyOtpSchema),
         defaultValues: { otp: '' }
     });
 
     const [isResending, setIsResending] = React.useState(false);
+    const [resendError, setResendError] = React.useState(initialError || '');
 
     const handleResend = async () => {
         if (!email) return;
         setIsResending(true);
+        setResendError('');
         try {
             await authService.sendOtp({ email });
             showSuccessToast('OTP Resent', 'Check your email for the new verification code.');
         } catch (error) {
-            showErrorToast('Failed', error?.message || 'Failed to resend OTP.');
+            setResendError(error?.message || 'Failed to resend OTP.');
         } finally {
             setIsResending(false);
         }
@@ -47,12 +50,16 @@ const VerifyOtp = () => {
 
     const onSubmit = async (data) => {
         if (!email) return navigate('/forgot-password', { replace: true });
+        setResendError('');
         try {
             const res = await authService.verifyOtp({ email, otp: data.otp });
             showSuccessToast('OTP Verified', 'Please set a new password.');
             navigate('/reset-password', { state: { resetToken: res.data?.resetToken }, replace: true });
         } catch (error) {
-            showErrorToast('Failed', error?.message || 'Invalid OTP.');
+            setError('otp', {
+                type: 'manual',
+                message: error?.message || 'Invalid OTP.'
+            });
         }
     };
 
@@ -91,14 +98,20 @@ const VerifyOtp = () => {
                                     render={({ field }) => (
                                         <OtpInput
                                             value={field.value}
-                                            onChange={field.onChange}
+                                            onChange={(val) => {
+                                                field.onChange(val);
+                                                if (resendError) setResendError('');
+                                            }}
                                             length={6}
-                                            error={!!errors.otp}
+                                            error={!!errors.otp || !!resendError}
                                         />
                                     )}
                                 />
                                 {errors.otp && (
                                     <p className="text-red-500 text-xs mt-2 text-center">{errors.otp.message}</p>
+                                )}
+                                {resendError && (
+                                    <p className="text-red-500 text-xs mt-2 text-center">{resendError}</p>
                                 )}
                             </div>
 

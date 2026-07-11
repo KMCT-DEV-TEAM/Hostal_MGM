@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,17 +12,31 @@ import AuthCard from '@/features/auth/components/AuthCard';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { userLoginSchema } from '@/features/auth/validation/loginSchema';
+import { useLoginTimeout } from '@/hooks/useLoginTimeout';
 
 const UserPortalLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuthStore();
 
-    const { register, handleSubmit, setValue, watch, setError, formState: { errors, isSubmitting } } = useForm({
+    const { register, handleSubmit, setValue, watch, reset, setError, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(userLoginSchema),
         defaultValues: {
             role: 'student'
         }
     });
+
+    const [lockoutTime, setLockoutTime] = useState(0);
+
+    useEffect(() => {
+        if (lockoutTime > 0) {
+            const timer = setInterval(() => {
+                setLockoutTime(prev => prev - 1);
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [lockoutTime]);
+
+    useLoginTimeout(watch, reset, 60000); // 1 minute timeout
 
     const currentRole = watch('role');
 
@@ -34,6 +49,15 @@ const UserPortalLogin = () => {
         } catch (error) {
             console.log("error from the login page", error);
             const errorMessage = error?.message || 'Failed to sign in. Please check your credentials.';
+
+            // Check for lockout time
+            if (errorMessage.includes("Try again in") || errorMessage.includes("Account locked")) {
+                const match = errorMessage.match(/(\d+)\s*seconds?/i);
+                if (match && match[1]) {
+                    setLockoutTime(parseInt(match[1]));
+                }
+            }
+
             showErrorToast('Login Failed', errorMessage);
             setError('root', {
                 type: 'manual',
@@ -116,8 +140,8 @@ const UserPortalLogin = () => {
                             </div>
                         )}
 
-                        <Button type="submit" isLoading={isSubmitting}>
-                            {isSubmitting ? 'Signing in...' : 'Sign In'}
+                        <Button type="submit" isLoading={isSubmitting} disabled={lockoutTime > 0 || isSubmitting}>
+                            {lockoutTime > 0 ? `Try again in ${lockoutTime}s` : (isSubmitting ? 'Signing in...' : 'Sign In')}
                         </Button>
                     </form>
                 </AuthCard>

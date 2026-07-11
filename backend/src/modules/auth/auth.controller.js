@@ -9,7 +9,7 @@ import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
 import Hostel from "../hostels/hostel.model.js";
-import { generateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
+import { getOrCreateOtp, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
 import { getIo } from "../../config/socket.js";
 
@@ -65,10 +65,39 @@ const login = asyncHandler(async (req, res) => {
     return sendError(res, 401, "You are not authorized to login as Maintenance Staff. Check URL");
   }
 
+  // Check if account is locked
+  if (user.lockUntil && user.lockUntil > Date.now()) {
+    const remainingSecs = Math.ceil((user.lockUntil - Date.now()) / 1000);
+    return sendError(res, 403, `Account locked due to too many failed attempts. Try again in ${remainingSecs} seconds`);
+  }
+
   const isMatch = await verifyPassword(password, user.password);
 
   if (!isMatch) {
-    return sendError(res, 401, "Incorrect password");
+    const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+    let lockUntil = undefined;
+    
+    if (newFailedAttempts >= 3) {
+      lockUntil = Date.now() + 60 * 1000; // 1 minute lockout
+    }
+
+    await user.constructor.updateOne(
+      { _id: user._id },
+      { $set: { failedLoginAttempts: newFailedAttempts, lockUntil } }
+    );
+
+    if (newFailedAttempts >= 3) {
+      return sendError(res, 403, "Account locked due to too many failed attempts. Try again in 60 seconds");
+    }
+    return sendError(res, 401, `Incorrect password. ${3 - newFailedAttempts} attempts remaining`);
+  }
+
+  // Reset attempts on successful login
+  if (user.failedLoginAttempts > 0) {
+    await user.constructor.updateOne(
+      { _id: user._id },
+      { $set: { failedLoginAttempts: 0 }, $unset: { lockUntil: 1 } }
+    );
   }
 
   const accessToken = generateAccessToken(user);
@@ -227,8 +256,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   if (!user) return sendError(res, 404, "No account found with this email");
 
-  const otpCode = generateOtp();
-  await saveOtpDb(email, otpCode);
+  const { otpCode, isExisting } = await getOrCreateOtp(email);
+  if (isExisting) {
+    return sendError(res, 400, "OTP already sent. Please wait for it to expire before requesting a new one.");
+  }
 
   const subject = "Password Reset OTP";
   const text = `Your OTP for password reset is: ${otpCode}. It will expire in 5 minutes.`;
@@ -369,8 +400,10 @@ const requestEmailChange = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Email is already in use");
   }
 
-  const otpCode = generateOtp();
-  await saveOtpDb(newEmail, otpCode);
+  const { otpCode, isExisting } = await getOrCreateOtp(newEmail);
+  if (isExisting) {
+    return sendError(res, 400, "OTP already sent. Please wait for it to expire before requesting a new one.");
+  }
 
   const subject = "Email Change Verification OTP";
   const text = `Your OTP for changing your email address is: ${otpCode}. It will expire in 5 minutes.`;

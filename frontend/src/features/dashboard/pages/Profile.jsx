@@ -17,11 +17,13 @@ export default function Profile() {
     const [editingField, setEditingField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [errors, setErrors] = useState({});
 
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, field: null });
     const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+    const [otpModalError, setOtpModalError] = useState('');
 
     const formatRole = (role) => {
         if (!role) return '';
@@ -62,6 +64,7 @@ export default function Profile() {
     const handleCancelEdit = () => {
         setEditingField(null);
         setEditValue('');
+        setErrors({});
     };
 
     const handleOpenConfirm = async (field) => {
@@ -127,7 +130,13 @@ export default function Profile() {
             showSuccessToast('OTP Sent', 'Check your new email for the verification code');
             setIsEmailVerifyModalOpen(true);
         } catch (error) {
-            showErrorToast('Verification Failed', error?.message || 'Incorrect password');
+            const errorMsg = error?.message || 'Incorrect password';
+            if (errorMsg.toLowerCase().includes('otp already sent')) {
+                setOtpModalError(errorMsg);
+                setIsEmailVerifyModalOpen(true);
+            } else {
+                showErrorToast('Verification Failed', errorMsg);
+            }
         } finally {
             setIsVerifyingPassword(false);
             setIsSaving(false);
@@ -137,6 +146,7 @@ export default function Profile() {
 
     const handleVerifyEmail = async (otp) => {
         setIsSaving(true);
+        setOtpModalError('');
         try {
             const response = await authService.verifyEmailChange({ newEmail: editValue, otp });
             updateUser(response.user);
@@ -144,7 +154,7 @@ export default function Profile() {
             setEditingField(null);
             setIsEmailVerifyModalOpen(false);
         } catch (error) {
-            showErrorToast('Failed', error?.message || 'Failed to update email');
+            setOtpModalError(error?.message || 'Invalid OTP.');
         } finally {
             setIsSaving(false);
         }
@@ -206,29 +216,43 @@ export default function Profile() {
                                 <div className="text-gray-500 font-medium">{t('full_name')}</div>
                                 <div className="sm:col-span-2 flex items-center justify-between group">
                                     {editingField === 'name' ? (
-                                        <div className="flex items-center gap-2 w-full max-w-sm">
-                                            <input
-                                                type="text"
-                                                value={editValue}
-                                                onChange={(e) => setEditValue(e.target.value)}
-                                                className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50"
-                                                autoFocus
-                                                disabled={isSaving}
-                                            />
-                                            <button
-                                                onClick={() => handleOpenConfirm('name')}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                                            >
-                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
+                                        <div className="flex flex-col gap-1 w-full max-w-sm">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="text"
+                                                    value={editValue}
+                                                    pattern="[A-Za-z\s]+"
+                                                    title="Only letters are allowed"
+                                                    onChange={(e) => {
+                                                        const originalVal = e.target.value;
+                                                        const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
+                                                        if (originalVal !== cleanVal) {
+                                                            setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, name: '' }));
+                                                        }
+                                                        setEditValue(cleanVal);
+                                                    }}
+                                                    className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('name')}
+                                                    disabled={isSaving || (editValue && editValue.trim() === '')}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.name && <p className="text-red-500 text-[10px]">{errors.name}</p>}
                                         </div>
                                     ) : (
                                         <>
@@ -245,29 +269,47 @@ export default function Profile() {
                                 <div className="text-gray-500 font-medium">{t('email_address')}</div>
                                 <div className="sm:col-span-2 flex items-center justify-between group">
                                     {editingField === 'email' ? (
-                                        <div className="flex items-center gap-2 w-full max-w-sm">
-                                            <input
-                                                type="email"
-                                                value={editValue}
-                                                onChange={(e) => setEditValue(e.target.value)}
-                                                className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50"
-                                                autoFocus
-                                                disabled={isSaving}
-                                            />
-                                            <button
-                                                onClick={() => handleOpenConfirm('email')}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                                            >
-                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
+                                        <div className="flex flex-col gap-1 w-full max-w-sm">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="email"
+                                                    value={editValue}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        const cleanVal = val.replace(/\s/g, '');
+                                                        if (val !== cleanVal) {
+                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, email: '' }));
+                                                        }
+                                                        setEditValue(cleanVal);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                        }
+                                                    }}
+                                                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('email')}
+                                                    disabled={isSaving || (editValue && editValue.trim() === '')}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
                                         </div>
                                     ) : (
                                         <>
@@ -289,34 +331,47 @@ export default function Profile() {
                                 <div className="text-gray-500 font-medium">{t('phone_number')}</div>
                                 <div className="sm:col-span-2 flex items-center justify-between group">
                                     {editingField === 'phone' ? (
-                                        <div className="flex items-center gap-2 w-full max-w-sm">
-                                            <input
-                                                type="text"
-                                                value={editValue}
-                                                maxLength={10}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/\D/g, '');
-                                                    setEditValue(val);
-                                                }}
-                                                className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50"
-                                                autoFocus
-                                                disabled={isSaving}
-                                                placeholder="Enter 10 digit number"
-                                            />
-                                            <button
-                                                onClick={() => handleOpenConfirm('phone')}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                                            >
-                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
+                                        <div className="flex flex-col gap-1 w-full max-w-sm">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="text"
+                                                    value={editValue}
+                                                    maxLength={10}
+                                                    pattern="[0-9]{10}"
+                                                    title="Please enter exactly 10 digits"
+                                                    onChange={(e) => {
+                                                        const originalVal = e.target.value;
+                                                        const val = originalVal.replace(/\D/g, '');
+                                                        if (originalVal !== val) {
+                                                            setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, phone: '' }));
+                                                        }
+                                                        if (val.length <= 10) {
+                                                            setEditValue(val);
+                                                        }
+                                                    }}
+                                                    className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                    placeholder="Enter 10 digit number"
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('phone')}
+                                                    disabled={isSaving || (editValue && editValue.length !== 10)}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
                                         </div>
                                     ) : (
                                         <>
@@ -412,6 +467,7 @@ export default function Profile() {
                 onVerify={handleVerifyEmail}
                 email={editValue}
                 isSubmitting={isSaving}
+                initialError={otpModalError}
             />
             <PasswordConfirmModal
                 isOpen={isPasswordModalOpen}

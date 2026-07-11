@@ -28,11 +28,15 @@ const ForgotPassword = () => {
             navigate('/verify-otp', { state: { email: data.email }, replace: true });
         } catch (error) {
             const errorMsg = error?.message || 'Please try again.';
-            showErrorToast('Failed', errorMsg);
-            setError('email', {
-                type: 'manual',
-                message: errorMsg
-            });
+            if (errorMsg.toLowerCase().includes('otp already sent')) {
+                navigate('/verify-otp', { state: { email: data.email, initialError: errorMsg }, replace: true });
+            } else {
+                showErrorToast('Failed', errorMsg);
+                setError('email', {
+                    type: 'manual',
+                    message: errorMsg
+                });
+            }
         }
     };
 
