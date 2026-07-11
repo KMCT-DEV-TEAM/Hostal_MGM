@@ -162,6 +162,71 @@ export const createVisitorProfile = async (payload, user) => {
 };
 
 /**
+ * Update visitor status (by parent)
+ * @param {String} visitorId 
+ * @param {String} status 
+ * @param {Object} parentUser 
+ */
+export const updateVisitorStatus = async (visitorId, status, parentUser) => {
+    // 1. Fetch Visitor
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 2. Authorization
+    const currentParent = await Parent.findById(parentUser.id);
+    if (!currentParent) {
+        const error = new Error('Parent not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+    const parentStudentIds = parentDocs.map(p => p.studentId.toString());
+    const visitorStudentIds = visitor.students.map(s => s.toString());
+
+    const hasOverlap = visitorStudentIds.some(id => parentStudentIds.includes(id));
+    if (!hasOverlap) {
+        const error = new Error('Unauthorized to update this visitor.');
+        error.status = 403;
+        throw error;
+    }
+
+    // 3. Business Logic
+    if (visitor.approvalStatus === status) {
+        const error = new Error(`Visitor is already ${status}.`);
+        error.status = 400;
+        throw error;
+    }
+
+    // 4. Update Database
+    const updateData = {
+        approvalStatus: status
+    };
+
+    let actionName = 'Status Updated';
+    if (status === VISITOR_STATUS.INACTIVE) actionName = VISITOR_APPROVAL_ACTIONS.DEACTIVATED || 'Deactivated';
+    else if (status === VISITOR_STATUS.APPROVED || status === VISITOR_STATUS.PENDING) actionName = VISITOR_APPROVAL_ACTIONS.ACTIVATED || 'Activated';
+
+    const timelineEntry = {
+        action: actionName,
+        performedBy: parentUser.id,
+        remarks: `Status changed to ${status} by parent.`
+    };
+
+    const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
+        visitorId,
+        updateData,
+        timelineEntry
+    );
+
+    return updatedVisitor;
+};
+
+/**
  * Builds standard filter and sort stages for Visitor listings
  * @param {Object} query 
  * @returns {Object} { matchStage, sortStage, skip, limit }

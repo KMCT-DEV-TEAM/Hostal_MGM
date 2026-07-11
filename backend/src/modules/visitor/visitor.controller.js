@@ -89,17 +89,35 @@ export const listParentVisitors = async (req, res) => {
         });
 
     } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while fetching parent visitors."
-            : error.message;
-
-        console.error('[VisitorController] listParentVisitors error:', error);
-
-        return res.status(statusCode).json({
+        console.error('[VisitorController] listParentVisitors Error:', error);
+        return res.status(error.status || 500).json({
             success: false,
-            message: message
+            message: error.message || "Failed to fetch visitors."
+        });
+    }
+};
+
+/**
+ * Parent changes visitor status (e.g. Inactive to revoke access)
+ * @route PATCH /parent/visitors/:visitorId/status
+ */
+export const updateVisitorStatus = async (req, res) => {
+    try {
+        const { visitorId } = req.params;
+        const { status } = req.body;
+
+        const updatedVisitor = await visitorService.updateVisitorStatus(visitorId, status, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: `Visitor status updated to ${status} successfully.`,
+            data: updatedVisitor
+        });
+    } catch (error) {
+        console.error('[VisitorController] updateVisitorStatus Error:', error);
+        return res.status(error.status || 500).json({
+            success: false,
+            message: error.message || "Failed to update visitor status."
         });
     }
 };

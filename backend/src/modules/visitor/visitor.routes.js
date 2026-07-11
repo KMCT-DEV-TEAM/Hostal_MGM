@@ -12,7 +12,8 @@ import {
     validateSuperAdminHostelVisits,
     validateListVisits,
     validateGetVisitDetails,
-    validateUpdateVisitor
+    validateUpdateVisitor,
+    validateUpdateVisitorStatus
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -90,6 +91,13 @@ router.patch(
     visitorController.updateVisitor
 );
 
+router.patch(
+    '/parent/visitors/:visitorId/status',
+    authMiddleware,
+    roleMiddleware('parent'),
+    validateUpdateVisitorStatus,
+    visitorController.updateVisitorStatus
+);
 
 router.get(
     '/student/visitors',
