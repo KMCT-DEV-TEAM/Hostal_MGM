@@ -22,6 +22,29 @@ export default {
         }
     },
 
+    VISITOR_UPDATE_PENDING: {
+        admin: {
+            "in-app": {
+                title: 'Visitor Update Needs Approval',
+                message: '{{parentName}} has updated sensitive info for visitor ({{visitorName}}). Please review and re-approve.'
+            },
+            push: {
+                title: 'Visitor Update Needs Approval',
+                body: '{{parentName}} has updated sensitive info for visitor ({{visitorName}}). Please review and re-approve.'
+            },
+            email: {
+                subject: 'Visitor Update Needs Re-Approval',
+                html: '<h1>Visitor Update Request</h1><p><strong>{{parentName}}</strong> has updated information for visitor <strong>{{visitorName}}</strong>.</p><p>Because sensitive data was changed (Fields: {{updatedFields}}), their status has been moved back to Pending.</p><p>Please review this in the admin portal.</p>'
+            }
+        },
+        warden: {
+            "in-app": {
+                title: 'Visitor Update Needs Approval',
+                message: '{{parentName}} has updated sensitive info for visitor ({{visitorName}}). Pending re-approval.'
+            }
+        }
+    },
+
     VISITOR_UPDATED: {
         admin: {
             "in-app": {

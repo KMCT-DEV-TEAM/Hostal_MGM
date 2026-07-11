@@ -143,7 +143,8 @@ export const createVisitorProfile = async (payload, user) => {
             data: {
                 parentName: currentParent.parentName,
                 visitorName: name,
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: currentParent._id,
@@ -583,7 +584,8 @@ export const approveVisitor = async (visitorId, adminUser) => {
             },
             data: {
                 visitorName: visitor.name,
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: adminUser.id,
@@ -679,7 +681,8 @@ export const rejectVisitor = async (visitorId, reason, adminUser) => {
             },
             data: {
                 visitorName: visitor.name,
-                reason: reason
+                reason: reason,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: adminUser.id,
@@ -969,7 +972,8 @@ export const checkInVisitor = async (payload, wardenUser) => {
             studentName: studentNames,
             purpose: purpose,
             checkInTime: now.toISOString(),
-            expectedExitTime: parsedExpectedExitTime.toISOString()
+            expectedExitTime: parsedExpectedExitTime.toISOString(),
+            link: '/dashboard/visitors/history'
         };
 
         const notificationSender = {
@@ -1406,7 +1410,8 @@ export const autoCompleteExpiredVisits = async () => {
                     studentName: studentNames,
                     purpose: updatedVisit.purpose || 'Visit',
                     checkInTime: updatedVisit.checkInTime,
-                    checkOutTime: updatedVisit.checkOutTime
+                    checkOutTime: updatedVisit.checkOutTime,
+                    link: '/dashboard/visitors/history'
                 };
 
                 const notificationSender = {
@@ -1500,7 +1505,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
 
     // 3. Filter allowed fields and check for changes
     const allowedFields = [
-        'name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'
+        'name', 'relationship', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'
     ];
     const updateData = {};
     const updatedFieldsList = [];
@@ -1525,8 +1530,20 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         };
     }
 
-    // 4. Update
-    const updatedVisitor = await visitorRepository.updateVisitor(visitorId, updateData);
+    // 4. Update and revert to Pending Status
+    updateData.approvalStatus = VISITOR_STATUS.PENDING;
+
+    const timelineEntry = {
+        action: 'Updated & Needs Re-approval',
+        performedBy: user.id,
+        remarks: `Sensitive info updated (${updatedFieldsList.join(', ')}). Needs re-approval.`
+    };
+
+    const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
+        visitorId,
+        updateData,
+        timelineEntry
+    );
 
     // 5. Notify
     try {
@@ -1535,7 +1552,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         const hostelId = students.length > 0 ? students[0].hostelId : null;
 
         await orchestratorService.triggerNotification({
-            eventName: 'VISITOR_UPDATED',
+            eventName: 'VISITOR_UPDATE_PENDING',
             target: {
                 type: 'USER',
                 filter: {
@@ -1546,7 +1563,8 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
             data: {
                 visitorName: visitor.name,
                 updatedFields: updatedFieldsList.join(', '),
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: currentParent._id,
@@ -1558,7 +1576,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
             }
         });
     } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISITOR_UPDATED event:', notificationError);
+        console.error('[VisitorService] Failed to publish VISITOR_UPDATE_PENDING event:', notificationError);
     }
 
     return {
