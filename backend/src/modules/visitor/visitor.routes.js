@@ -91,14 +91,6 @@ router.patch(
     visitorController.updateVisitor
 );
 
-router.patch(
-    '/parent/visitors/:visitorId/status',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateUpdateVisitorStatus,
-    visitorController.updateVisitorStatus
-);
-
 router.get(
     '/student/visitors',
     authMiddleware,
@@ -157,6 +149,14 @@ router.patch(
     roleMiddleware('super_admin', 'admin'),
     validateRejectVisitor,
     visitorController.rejectVisitor
+);
+
+router.patch(
+    '/:visitorId/status',
+    authMiddleware,
+    roleMiddleware('super_admin', 'admin', 'parent'),
+    validateUpdateVisitorStatus,
+    visitorController.updateVisitorStatus
 );
 
 export default router;

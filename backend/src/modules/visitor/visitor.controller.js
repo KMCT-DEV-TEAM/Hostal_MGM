@@ -98,8 +98,7 @@ export const listParentVisitors = async (req, res) => {
 };
 
 /**
- * Parent changes visitor status (e.g. Inactive to revoke access)
- * @route PATCH /parent/visitors/:visitorId/status
+ * Update visitor status (by parent or admin)
  */
 export const updateVisitorStatus = async (req, res) => {
     try {

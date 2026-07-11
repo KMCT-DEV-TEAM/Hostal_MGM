@@ -10,7 +10,6 @@ import {
     VISITOR_VISIT_TIMELINE_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
-import studentModel from '../students/student.model.js';
 
 /**
  * Parent creates a new visitor profile
@@ -163,12 +162,12 @@ export const createVisitorProfile = async (payload, user) => {
 };
 
 /**
- * Update visitor status (by parent)
+ * Update visitor status (by parent or admin)
  * @param {String} visitorId 
  * @param {String} status 
- * @param {Object} parentUser 
+ * @param {Object} user 
  */
-export const updateVisitorStatus = async (visitorId, status, parentUser) => {
+export const updateVisitorStatus = async (visitorId, status, user) => {
     // 1. Fetch Visitor
     const visitor = await visitorRepository.findVisitorById(visitorId);
     if (!visitor) {
@@ -178,20 +177,26 @@ export const updateVisitorStatus = async (visitorId, status, parentUser) => {
     }
 
     // 2. Authorization
-    const currentParent = await Parent.findById(parentUser.id);
-    if (!currentParent) {
-        const error = new Error('Parent not found.');
-        error.status = 404;
-        throw error;
-    }
+    if (user.role === 'parent') {
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) {
+            const error = new Error('Parent not found.');
+            error.status = 404;
+            throw error;
+        }
 
-    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-    const parentStudentIds = parentDocs.map(p => p.studentId.toString());
-    const visitorStudentIds = visitor.students.map(s => s.toString());
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const parentStudentIds = parentDocs.map(p => p.studentId.toString());
+        const visitorStudentIds = visitor.students.map(s => s.toString());
 
-    const hasOverlap = visitorStudentIds.some(id => parentStudentIds.includes(id));
-    if (!hasOverlap) {
-        const error = new Error('Unauthorized to update this visitor.');
+        const hasOverlap = visitorStudentIds.some(id => parentStudentIds.includes(id));
+        if (!hasOverlap) {
+            const error = new Error('Unauthorized to update this visitor.');
+            error.status = 403;
+            throw error;
+        }
+    } else if (user.role !== 'admin' && user.role !== 'super_admin') {
+        const error = new Error('Unauthorized role to update visitor status.');
         error.status = 403;
         throw error;
     }
@@ -212,10 +217,12 @@ export const updateVisitorStatus = async (visitorId, status, parentUser) => {
     if (status === VISITOR_STATUS.INACTIVE) actionName = VISITOR_APPROVAL_ACTIONS.DEACTIVATED || 'Deactivated';
     else if (status === VISITOR_STATUS.APPROVED || status === VISITOR_STATUS.PENDING) actionName = VISITOR_APPROVAL_ACTIONS.ACTIVATED || 'Activated';
 
+    const roleName = user.role === 'parent' ? 'parent' : (user.role === 'super_admin' ? 'super admin' : 'admin');
+
     const timelineEntry = {
         action: actionName,
-        performedBy: parentUser.id,
-        remarks: `Status changed to ${status} by parent.`
+        performedBy: user.id,
+        remarks: `Status changed to ${status} by ${roleName}.`
     };
 
     const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
