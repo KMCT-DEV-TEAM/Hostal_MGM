@@ -502,7 +502,8 @@ export const getVisitorDetails = async (visitorId, user) => {
 
     const formattedStudents = visitor.students.map(s => ({
         id: s._id,
-        name: s.name
+        name: s.name,
+        roomNumber: s.roomNumber
     }));
 
     return {

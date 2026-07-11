@@ -105,7 +105,8 @@ export const getVisitors = async (matchStage, sortStage, skip, limit) => {
                         as: 'st',
                         in: {
                             id: '$$st._id',
-                            name: '$$st.name'
+                            name: '$$st.name',
+                            roomNumber: '$$st.roomNumber'
                         }
                     }
                 },
@@ -156,7 +157,7 @@ export const getVisitorDetails = async (visitorId) => {
     return await Visitor.findById(visitorId)
         .populate({
             path: 'students',
-            select: 'name hostelId'
+            select: 'name hostelId roomNumber'
         })
         .populate({
             path: 'organizationId',
