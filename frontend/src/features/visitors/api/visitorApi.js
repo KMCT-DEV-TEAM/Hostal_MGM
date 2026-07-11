@@ -5,6 +5,9 @@ const BASE_URL = '/visitor'
 export const visitorApi = {
     // 1. Create Visitor Profile
     createVisitorProfile: (payload) => api.post(`${BASE_URL}/parent/visitors`, payload),
+    
+    // Update Visitor Profile
+    updateVisitorProfile: (visitorId, payload) => api.patch(`${BASE_URL}/parent/visitors/${visitorId}`, payload),
 
     // 2. List Parent Visitors
     getParentVisitors: (params) => api.get(`${BASE_URL}/parent/visitors`, { params }),
@@ -28,11 +31,15 @@ export const visitorApi = {
     // Visit Management
     checkInVisitor: (payload) => api.post(`${BASE_URL}/warden/visits/check-in`, payload),
     getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
+    getSuperAdminHostelVisitors: (params) => api.get(`${BASE_URL}/super-admin/visitors/hostels`, { params }),
     listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),
     getVisitDetails: (visitId) => api.get(`${BASE_URL}/visitor-visits/${visitId}`),
     
     // Get Visitor Profile Details
     getVisitorDetails: (visitorId) => api.get(`${BASE_URL}/${visitorId}`),
+    
+    // Dashboard Summary
+    getDashboardSummary: () => api.get(`${BASE_URL}/dashboard-summary`),
 };
 
 export default visitorApi;

@@ -6,20 +6,38 @@ import FilterModal from './modals/FilterModal';
 import VisitDetailsModal from './modals/VisitDetailsModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
-const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick }) => {
+const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick, userRole }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedVisitId, setSelectedVisitId] = useState(null);
-    console.log('visitors from page;', visitors)
 
-    const headers = [
-        { key: 'date', label: 'Date' },
-        { key: 'visitorName', label: 'Visitors Name' },
-        { key: 'visitingStudent', label: 'Visiting Student' },
-        { key: 'roomNo', label: 'Room NO' },
-        { key: 'checkIn', label: 'Check In' },
-        { key: 'checkOut', label: 'Check Out' },
-        { key: 'status', label: 'Status' }
-    ];
+    const headers = React.useMemo(() => {
+        const baseCols = [
+            { key: 'date', label: 'Date' },
+            { key: 'visitorName', label: 'Visitors Name' }
+        ];
+
+        if (userRole !== 'student') {
+            baseCols.push({ key: 'visitingStudent', label: 'Visiting Student' });
+        }
+
+        if (['super_admin', 'admin', 'warden'].includes(userRole)) {
+            baseCols.push({ key: 'roomNo', label: 'Room NO' });
+        }
+
+        if (['warden', 'super_admin'].includes(userRole)) {
+            baseCols.push({ key: 'organization', label: 'Organization' });
+        } else if (['admin', 'parent'].includes(userRole)) {
+            baseCols.push({ key: 'hostel', label: 'Hostel' });
+        }
+
+        baseCols.push(
+            { key: 'checkIn', label: 'Check In' },
+            { key: 'checkOut', label: 'Check Out' },
+            { key: 'status', label: 'Status' }
+        );
+
+        return baseCols;
+    }, [userRole]);
 
     const renderRow = (visitor) => (
         <>
@@ -30,8 +48,22 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 </div>
                 <span className="text-sm font-semibold">{visitor.visitorName || 'Unknown'}</span>
             </td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.studentNames || '--'}</td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.roomNo}</td>
+            
+            {userRole !== 'student' && (
+                <td className="p-4 text-text-secondary font-medium">{visitor.studentNames || '--'}</td>
+            )}
+            
+            {['super_admin', 'admin', 'warden'].includes(userRole) && (
+                <td className="p-4 text-text-secondary font-medium">{visitor.roomNumber || visitor.roomNo || '--'}</td>
+            )}
+
+            {['warden', 'super_admin'].includes(userRole) && (
+                <td className="p-4 text-text-secondary font-medium">{visitor.organizationName || '--'}</td>
+            )}
+            {['admin', 'parent'].includes(userRole) && (
+                <td className="p-4 text-text-secondary font-medium">{visitor.hostelName || '--'}</td>
+            )}
+
             <td className="p-4 text-text-secondary font-medium">{formatTime(visitor.checkInTime)}</td>
             <td className="p-4 text-text-secondary font-medium">{visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '--------'}</td>
             <td className="p-4">

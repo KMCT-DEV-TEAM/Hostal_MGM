@@ -111,14 +111,18 @@ export const validateAllocate = async (req, res, next) => {
     }
 
     if (!student.isActive) {
-      return res.status(400).json({ success: false, message: "Student is inactive." });
+      return res.status(400).json({ success: false, message: `Student ${student.name} is inactive.` });
+    }
+
+    if (!student.hostelId) {
+      return res.status(400).json({ success: false, message: `Student ${student.name} is not assigned to a hostel. Please assign a hostel to this student first.` });
     }
 
     const validatedAssets = [];
 
     for (const id of assetsToAllocate) {
       if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ success: false, message: `Invalid assetId: ${id}` });
+        return res.status(400).json({ success: false, message: `Invalid assetId provided: ${id}` });
       }
 
       const asset = await FurnitureAsset.findById(id).populate("furnitureTypeId").lean();
@@ -127,19 +131,19 @@ export const validateAllocate = async (req, res, next) => {
       }
 
       if (asset.status === "inactive") {
-        return res.status(409).json({ success: false, message: `Furniture asset ${asset.code || id} is inactive.` });
+        return res.status(409).json({ success: false, message: `Furniture asset ${asset.code || id} is inactive and cannot be allocated.` });
       }
 
       if (asset.status !== "available") {
-        return res.status(409).json({ success: false, message: `Furniture ${asset.code || id} is not available.` });
+        return res.status(409).json({ success: false, message: `Furniture ${asset.code || id} is already in use or unavailable.` });
       }
 
       if (asset.studentId) {
-        return res.status(409).json({ success: false, message: `Asset ${asset.code || id} is already allocated.` });
+        return res.status(409).json({ success: false, message: `Furniture asset ${asset.code || id} is already allocated to another student.` });
       }
-      console.log(String(asset.furnitureTypeId.hostelId), String(student.hostelId))
+
       if (String(asset.furnitureTypeId.hostelId) !== String(student.hostelId)) {
-        return res.status(403).json({ success: false, message: `Student ${student.name} belongs to another hostel than asset ${asset.code || id}.` });
+        return res.status(403).json({ success: false, message: `Asset ${asset.code || id} belongs to a different hostel. You can only assign furniture from the student's allocated hostel.` });
       }
 
       validatedAssets.push(asset);

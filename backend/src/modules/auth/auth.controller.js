@@ -151,11 +151,10 @@ const me = asyncHandler(async (req, res) => {
   if (req.user.role === "student") {
     const qrToken = jwt.sign(
       {
-        studentId: user._id, // This is the MongoDB _id
+        studentId: user._id,
         idString: user.studentId,
         name: user.name,
-        roomNo: user.roomNo,
-        // profileImage: user.profileImage || null,
+        roomNo: user.roomNumber,
         type: "attendance_qr",
       },
       process.env.JWT_ACCESS_TOKEN
@@ -279,7 +278,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const updateProfile = asyncHandler(async (req, res) => {
   const { name, email, phone, settings } = req.body;
-  
+
   let user = null;
   if (req.user.role === 'student') {
     user = await Student.findById(req.user.id);
@@ -309,7 +308,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   if (settings) {
     if (!user.settings) user.settings = {};
-    
+
     if (settings.notifications) {
       user.settings.notifications = {
         ...(user.settings.notifications || {}),

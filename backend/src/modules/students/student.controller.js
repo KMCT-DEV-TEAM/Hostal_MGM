@@ -7,18 +7,19 @@ import { syncHostelOrganizations } from "../hostels/hostel.service.js";
 import User from "../users/user.model.js";
 import FurnitureAsset from "../furnitures/furnitureAsset.model.js";
 import Student from "./student.model.js";
-import Hostel from "../hostels/hostel.model.js";
 import Organization from "../organizations/organization.model.js";
 
 import mongoose from "mongoose";
 import Parent from "../parents/parent.model.js";
+import hostelModel from "../hostels/hostel.model.js";
+import studentHostelModel from "../student-hostels/studentHostel.model.js";
 
 const createStudent = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
-    const { email, parentEmail, hostelId } = req.body;
+    const { email, parentEmail } = req.body;
     let { organizationId } = req.body;
 
     if (email === parentEmail) {
@@ -313,75 +314,7 @@ const bulkUpdateStudentStatus = asyncHandler(async (req, res) => {
     }
   );
 });
-const updateStudentHostelStatus = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { hostelStatus } = req.body;
 
-  if (!["active", "inactive"].includes(hostelStatus)) {
-    return sendError(res, 400, "Invalid hostelStatus");
-  }
-
-  const student = await Student.findByIdAndUpdate(
-    id,
-    { hostelStatus },
-    { new: true, runValidators: true }
-  );
-
-  if (!student) {
-    return sendError(res, 404, "Student not found");
-  }
-
-  if (student.hostelId) {
-    await syncHostelOrganizations(student.hostelId);
-  }
-
-  return sendSuccess(
-    res,
-    200,
-    "Student hostel status updated successfully",
-    {
-      studentId: student.studentId,
-      name: student.name,
-      email: student.email,
-      hostelStatus: student.hostelStatus,
-    }
-  );
-});
-
-const updateStudentHostel = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { hostelId } = req.body;
-
-  if (!hostelId || !mongoose.Types.ObjectId.isValid(hostelId)) {
-    return sendError(res, 400, "Invalid hostelId");
-  }
-
-  const hostel = await Hostel.findById(hostelId);
-  if (!hostel) {
-    return sendError(res, 404, "Hostel not found");
-  }
-
-  const student = await Student.findById(id);
-  if (!student) {
-    return sendError(res, 404, "Student not found");
-  }
-
-  const oldHostelId = student.hostelId;
-
-  student.hostelId = hostelId;
-  await student.save();
-
-  if (oldHostelId && oldHostelId.toString() !== hostelId.toString()) {
-    await syncHostelOrganizations(oldHostelId);
-  }
-  await syncHostelOrganizations(hostelId);
-
-  return sendSuccess(res, 200, "Student hostel updated successfully", {
-    studentId: student.studentId,
-    name: student.name,
-    hostelId: student.hostelId,
-  });
-});
 
 const updateStudentOrganization = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -491,7 +424,7 @@ const getStudentsByAdmin = asyncHandler(async (req, res) => {
 
 const getStudentsByWarden = asyncHandler(async (req, res) => {
   const wardenId = req.user.id;
-  const wardenHostels = await Hostel.find({ wardens: wardenId }).select('_id').lean();
+  const wardenHostels = await hostelModel.find({ wardens: wardenId }).select('_id').lean();
 
   if (!wardenHostels.length) {
     return sendSuccess(res, 200, "Students fetched successfully", {
@@ -594,13 +527,12 @@ const getStudentById = asyncHandler(async (req, res) => {
 
   if (user.role === "admin") {
     const admin = await User.findById(user.id || user._id).select("organization").lean();
-    console.log(admin, user, student)
     if (!admin?.organization || student.organizationId?._id?.toString() !== admin.organization.toString()) {
       return sendError(res, 403, "Access denied: Student belongs to another organization");
     }
   }
   if (user.role === "warden") {
-    const hostel = await Hostel.findOne({ wardens: user.id || user._id }).lean();
+    const hostel = await hostelModel.findOne({ wardens: user.id || user._id }).lean();
     const studentHostelId = student.hostelId?._id?.toString() || student.hostelId?.toString();
 
     if (!hostel || studentHostelId !== hostel._id.toString()) {
@@ -614,6 +546,15 @@ const getStudentById = asyncHandler(async (req, res) => {
       const { password, ...parentData } = p;
       return parentData;
     });
+  }
+
+  // Fetch active hostel allocation
+  const activeAllocation = await studentHostelModel.findOne({ studentId: id, status: "active" })
+    .populate("allocatedBy", "name")
+    .lean();
+
+  if (activeAllocation) {
+    student.activeAllocation = activeAllocation;
   }
 
   student.organization = student.organizationId;
@@ -637,8 +578,6 @@ export {
   updateStudent,
   changeStudentEmail,
   toggleStudentStatus,
-  updateStudentHostelStatus,
-  updateStudentHostel,
   updateStudentOrganization,
   getAdminOrganizationData,
   getAdminStats,

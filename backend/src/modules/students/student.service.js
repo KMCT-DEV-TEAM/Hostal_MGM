@@ -140,15 +140,12 @@ const updateStudentDb = async (studentId, data) => {
     "batchId",
     "academicYear",
     "address",
-    "hostelId",
     "hostelStatus",
     "isActive",
   ];
 
   const isStatusChanged = data.isActive !== undefined && data.isActive !== student.isActive;
-  const oldHostelId = student.hostelId ? student.hostelId.toString() : null;
-  const newHostelId = data.hostelId ? data.hostelId.toString() : null;
-  const isHostelChanged = data.hostelId !== undefined && newHostelId !== oldHostelId;
+
   const oldOrgId = student.organizationId ? student.organizationId.toString() : null;
   const newOrgId = data.organizationId ? data.organizationId.toString() : null;
   const isOrganizationChanged = data.organizationId !== undefined && newOrgId !== oldOrgId;
@@ -161,16 +158,13 @@ const updateStudentDb = async (studentId, data) => {
 
   await student.save();
 
-  if (isHostelChanged) {
-    if (oldHostelId) await syncHostelOrganizations(oldHostelId);
-    if (student.hostelId) await syncHostelOrganizations(student.hostelId);
-  } else if ((isOrganizationChanged || isStatusChanged) && student.hostelId) {
+  if (isOrganizationChanged && student.hostelId) {
     await syncHostelOrganizations(student.hostelId);
   }
 
   if (isStatusChanged) {
     await Parent.updateMany({ studentId: student._id }, { isActive: student.isActive });
-    
+
     if (!student.isActive) {
       const { getIo } = await import("../../config/socket.js");
       getIo()?.to(student._id.toString()).emit("accountDeactivated");
@@ -213,7 +207,7 @@ const bulkUpdateStudentStatusDb = async (
       { studentId: { $in: studentIds } },
       { $set: { isActive } }
     );
-    
+
     if (!isActive) {
       const { getIo } = await import("../../config/socket.js");
       studentIds.forEach(id => getIo()?.to(id.toString()).emit("accountDeactivated"));
@@ -243,7 +237,7 @@ const updateStudentsStatusByQuery = async (query, isActive) => {
       const parents = await Parent.find({ studentId: { $in: studentIds } }).select("_id");
       parents.forEach(p => getIo()?.to(p._id.toString()).emit("accountDeactivated"));
     }
-    
+
     const affectedHostels = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
     for (const hId of affectedHostels) {
       await syncHostelOrganizations(hId);

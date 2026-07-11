@@ -8,6 +8,11 @@ export async function createVisitorProfile(payload) {
     return response.data;
 }
 
+export async function updateVisitorProfile(visitorId, payload) {
+    const response = await visitorApi.updateVisitorProfile(visitorId, payload);
+    return response.data;
+}
+
 export async function getParentVisitors(params) {
     const response = await visitorApi.getParentVisitors(params);
     return response.data;
@@ -52,6 +57,11 @@ export async function getSuperAdminHostelVisits(params) {
     return response.data;
 }
 
+export async function getSuperAdminHostelVisitors(params) {
+    const response = await visitorApi.getSuperAdminHostelVisitors(params);
+    return response.data;
+}
+
 
 export async function listVisitorVisits(params) {
     const response = await visitorApi.listVisitorVisits(params);
@@ -65,5 +75,10 @@ export async function getVisitDetails(visitId) {
 
 export async function getVisitorDetails(visitorId) {
     const response = await visitorApi.getVisitorDetails(visitorId);
+    return response.data;
+}
+
+export async function getDashboardSummary() {
+    const response = await visitorApi.getDashboardSummary();
     return response.data;
 }

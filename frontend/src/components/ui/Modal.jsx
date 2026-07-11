@@ -16,7 +16,7 @@ export default function Modal({
   icon,
   zIndex = 50,
   overflowClass = "overflow-y-auto",
-  bottomSheetOnMobile = false,
+  bottomSheetOnMobile = true,
 }) {
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -28,11 +28,10 @@ export default function Modal({
       style={{ zIndex }}
     >
       <Wrapper
-        className={`bg-white w-full ${maxWidth} max-h-[90vh] ${overflowClass} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-5 md:p-8 shadow-2xl ${
-          bottomSheetOnMobile 
-            ? 'rounded-t-2xl md:rounded-2xl rounded-b-none animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200' 
+        className={`bg-white w-full ${maxWidth} max-h-[90vh] ${overflowClass} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none p-5 md:p-8 shadow-2xl ${bottomSheetOnMobile
+            ? 'rounded-t-2xl md:rounded-2xl rounded-b-none animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200'
             : 'rounded-2xl animate-in fade-in zoom-in-95 duration-200'
-        }`}
+          }`}
         onSubmit={asForm ? onSubmit : undefined}
       >
         {/* Header */}

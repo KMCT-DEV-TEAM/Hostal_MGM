@@ -27,6 +27,7 @@ import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
 import AssignFurnitureModal from "./AssignFurnitureModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import ManageHostelModal from "./ManageHostelModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
@@ -36,6 +37,8 @@ import { formatDateReadable, formatDateStandard } from "@/utils/formatters";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 import { getHostels } from "@/services/hostel.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import { vacateHostel, getStudentHostelTimeline } from "@/services/studentHostel.service";
+import TimelineStep from "@/components/ui/TimelineStep";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -80,11 +83,64 @@ const StudentDetailView = () => {
   const [isAddParentModalOpen, setIsAddParentModalOpen] = useState(false);
   const [emailChangeTarget, setEmailChangeTarget] = useState(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isManageHostelModalOpen, setIsManageHostelModalOpen] = useState(false);
 
   const [assignedFurnitures, setAssignedFurnitures] = useState([]);
   const [loadingFurnitures, setLoadingFurnitures] = useState(false);
+  const [timelineData, setTimelineData] = useState([]);
   const [returnConfirmModal, setReturnConfirmModal] = useState({ isOpen: false, asset: null });
   const [isReturning, setIsReturning] = useState(false);
+
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+  const [pendingCloseAction, setPendingCloseAction] = useState(null);
+
+  const [isVacateConfirmOpen, setIsVacateConfirmOpen] = useState(false);
+  const [isVacating, setIsVacating] = useState(false);
+
+  const handleModalCloseRequest = (closeAction) => {
+    setPendingCloseAction(() => closeAction);
+    setIsDiscardConfirmOpen(true);
+  };
+
+  const confirmDiscard = () => {
+    if (pendingCloseAction) {
+      pendingCloseAction();
+    }
+    setIsDiscardConfirmOpen(false);
+    setPendingCloseAction(null);
+  };
+
+  const fetchTimeline = React.useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await getStudentHostelTimeline(id);
+      setTimelineData(data?.data?.timeline || data?.timeline || []);
+    } catch (err) {
+      console.error('Failed to fetch hostel timeline', err);
+    }
+  }, [id]);
+
+  const handleVacateHostel = async () => {
+    setIsVacating(true);
+    try {
+      await vacateHostel(student._id);
+      showSuccessToast("Student vacated from hostel successfully");
+      setIsVacateConfirmOpen(false);
+      onStudentChange?.(student._id, (current) => ({
+        ...current,
+        hostelStatus: "vacated",
+        hostelId: null,
+        hostel: null,
+        roomNumber: null,
+        activeAllocation: null
+      }));
+      fetchTimeline(); // Re-fetch timeline on vacate
+    } catch (error) {
+      showErrorToast(error?.response?.data?.message || error.message || "Failed to vacate hostel");
+    } finally {
+      setIsVacating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStudent = async () => {
@@ -115,10 +171,12 @@ const StudentDetailView = () => {
         setLoadingFurnitures(false);
       }
     };
+
     if (id) {
       fetchFurnitures();
+      fetchTimeline();
     }
-  }, [id, role]);
+  }, [id, role, fetchTimeline]);
 
   const onStudentChange = (studentId, updater) => {
     setStudent(prev => prev ? updater(prev) : prev);
@@ -384,11 +442,80 @@ const StudentDetailView = () => {
                 {student.batch?.name || "N/A"}
               </InfoRow>
 
+            </div>
+          </div>
+
+          {/* Current Hostel */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex  mb-6 flex-col md:flex-row justify-left md:justify-between md:items-center items-left mb-1">
+              <div className="">
+                <h3 className="text-lg font-semibold text-primary">
+                  Current Hostel
+                </h3>
+                <p className="text-xs text-gray-400 mb-3">
+                  Current hostel allocation details
+                </p>
+              </div>
+              <div className="flex  items-center gap-2">
+                <Button
+                  size="sm"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setIsManageHostelModalOpen(true)}
+                >
+                  {!student.hostelId ? "Allocate Hostel" : "Change Hostel"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => setIsVacateConfirmOpen(true)}
+                  disabled={!student.hostelId || student.hostelStatus !== 'active'}
+                >
+                  Vacate Hostel
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
               <InfoRow
-                icon={<Home className="w-4 h-4 text-gray-400" />}
-                label="Assigned Hostel"
+                icon={<Building2 className="w-4 h-4 text-gray-400" />}
+                label="Hostel"
               >
                 {hostelName}
+              </InfoRow>
+              <InfoRow
+                icon={<Home className="w-4 h-4 text-gray-400" />}
+                label="Room"
+              >
+                {student.roomNumber || "N/A"}
+              </InfoRow>
+              <InfoRow
+                icon={<Calendar className="w-4 h-4 text-gray-400" />}
+                label="Joined On"
+              >
+                {student.activeAllocation?.joinedAt ? formatDateStandard(student.activeAllocation.joinedAt) : "N/A"}
+              </InfoRow>
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  {student.hostelStatus === "active" ? (
+                    <CheckCircle2 className="w-4 h-4 " />
+                  ) : (
+                    <XCircle className="w-4 h-4 " />
+                  )}
+                  Status
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                  <span className="hidden sm:inline">: </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${student.hostelStatus === "active" ? "bg-green-500" : "bg-red-500"}`}
+                  />
+                  {student.hostelStatus ? student.hostelStatus.charAt(0).toUpperCase() + student.hostelStatus.slice(1) : "N/A"}
+                </span>
+              </div>
+              <InfoRow
+                icon={<User className="w-4 h-4 text-gray-400" />}
+                label="Allocated By"
+              >
+                {student.activeAllocation?.allocatedBy?.name || "N/A"}
               </InfoRow>
             </div>
           </div>
@@ -627,77 +754,151 @@ const StudentDetailView = () => {
             )}
           </div>
         </div>
-        {/* Right Summary Sidebar */}
-        <div className="bg-white p-5 col-span-2 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-          <div className="flex items-center gap-2 mb-4">
-            <User className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold text-primary">
-              Student Summary
-            </h3>
+        <div className="lg:col-span-2 space-y-6">
+          {/* Right Summary Sidebar */}
+          <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-primary">
+                Student Summary
+              </h3>
+            </div>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Badge className="w-4 h-4 text-gray-400" /> Admission No
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900">
+                  <span className="hidden sm:inline">: </span>
+                  {student.studentId || "N/A"}
+                </span>
+              </div>
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-gray-400" /> Full Name
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900">
+                  <span className="hidden sm:inline">: </span>
+                  {student.name || "N/A"}
+                </span>
+              </div>
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-gray-400" /> Gender
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900">
+                  <span className="hidden sm:inline">: </span>
+                  {student.gender || "N/A"}
+                </span>
+              </div>
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-gray-400" /> Organization
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900 break-words">
+                  <span className="hidden sm:inline">: </span>
+                  {organizationName}
+                </span>
+              </div>
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Home className="w-4 h-4 text-gray-400" /> Hostel
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900">
+                  <span className="hidden sm:inline">: </span>
+                  {hostelName}
+                </span>
+              </div>
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  {isActive ? (
+                    <CheckCircle2 className="w-4 h-4 " />
+                  ) : (
+                    <XCircle className="w-4 h-4 " />
+                  )}
+                  Status
+                </span>
+                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
+                  <span className="hidden sm:inline">: </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`}
+                  />
+                  {isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5">
-                <Badge className="w-4 h-4 text-gray-400" /> Admission No
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900">
-                <span className="hidden sm:inline">: </span>
-                {student.studentId || "N/A"}
-              </span>
+
+          {/* Timeline Section */}
+          <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+            <div className="flex items-center gap-2 mb-6">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-primary">
+                Hostel History
+              </h3>
             </div>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5">
-                <User className="w-4 h-4 text-gray-400" /> Full Name
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900">
-                <span className="hidden sm:inline">: </span>
-                {student.name || "N/A"}
-              </span>
-            </div>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-gray-400" /> Gender
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900">
-                <span className="hidden sm:inline">: </span>
-                {student.gender || "N/A"}
-              </span>
-            </div>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-gray-400" /> Organization
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900 break-words">
-                <span className="hidden sm:inline">: </span>
-                {organizationName}
-              </span>
-            </div>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-              <span className="text-gray-500 flex items-center gap-1.5">
-                <Home className="w-4 h-4 text-gray-400" /> Hostel
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900">
-                <span className="hidden sm:inline">: </span>
-                {hostelName}
-              </span>
-            </div>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-              <span className="text-gray-500 flex items-center gap-1.5">
-                {isActive ? (
-                  <CheckCircle2 className="w-4 h-4 " />
-                ) : (
-                  <XCircle className="w-4 h-4 " />
-                )}
-                Status
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
-                <span className="hidden sm:inline">: </span>
-                <span
-                  className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`}
-                />
-                {isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
+
+            {timelineData.length === 0 ? (
+              <div className="text-sm text-gray-500 text-center py-4">No hostel history available.</div>
+            ) : (
+              <div className="pl-6 border-l-2 border-gray-100 space-y-8 relative ml-3">
+                {timelineData.map((item, index) => {
+                  let badgeColor = "#6b7280";
+                  let badgeBg = "#f3f4f6";
+                  let nodeColor = "#9ca3af";
+                  let badgeLabel = item.status;
+
+                  if (item.status === 'active') {
+                    badgeColor = "#16a34a"; // green-600
+                    badgeBg = "#dcfce7"; // green-100
+                    nodeColor = "#22c55e"; // green-500
+                  } else if (item.status === 'vacated') {
+                    badgeColor = "#dc2626"; // red-600
+                    badgeBg = "#fee2e2"; // red-100
+                    nodeColor = "#ef4444"; // red-500
+                  } else if (item.status === 'transferred') {
+                    badgeColor = "#2563eb"; // blue-600
+                    badgeBg = "#dbeafe"; // blue-100
+                    nodeColor = "#3b82f6"; // blue-500
+                  } else if (item.status === 'cancelled') {
+                    badgeColor = "#d97706"; // amber-600
+                    badgeBg = "#fef3c7"; // amber-100
+                    nodeColor = "#f59e0b"; // amber-500
+                  }
+
+                  const hostelInfo = `${item.hostelId?.name || item.hostel?.name || 'Unknown'} (${item.roomNumber || 'N/A'})`;
+                  let title = `Allocated to ${hostelInfo}`;
+                  let subtitle = `${item.allocatedBy?.name || 'Admin'} - Allocation`;
+
+                  if (item.status === 'vacated') {
+                    title = `Vacated from ${hostelInfo}`;
+                    subtitle = `${item.vacatedBy?.name || item.allocatedBy?.name || 'Admin'} - Vacated`;
+                  } else if (item.status === 'transferred') {
+                    title = `Transferred from ${hostelInfo}`;
+                    subtitle = `${item.vacatedBy?.name || item.allocatedBy?.name || 'Admin'} - Transferred`;
+                  } else if (item.status === 'cancelled') {
+                    title = `Cancelled Allocation for ${hostelInfo}`;
+                    subtitle = `${item.vacatedBy?.name || item.allocatedBy?.name || 'Admin'} - Cancelled`;
+                  }
+
+                  return (
+                    <TimelineStep
+                      key={item._id || index}
+                      title={title}
+                      subtitle={subtitle}
+                      status={item.status}
+                      formattedDate={formatDateStandard(item.joinedAt)}
+                      badgeLabel={badgeLabel}
+                      badgeColor={badgeColor}
+                      badgeBg={badgeBg}
+                      nodeColor={nodeColor}
+                      avatarBg="#f3f4f6"
+                      avatarColor="#374151"
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -705,7 +906,7 @@ const StudentDetailView = () => {
       {isDefaultParentModalOpen && (
         <SetDefaultParentModal
           parents={parents}
-          onClose={() => setIsDefaultParentModalOpen(false)}
+          onClose={() => handleModalCloseRequest(() => setIsDefaultParentModalOpen(false))}
           onDefaultChange={(parentId) => {
             onStudentChange?.(student._id, (current) => ({
               ...current,
@@ -721,7 +922,7 @@ const StudentDetailView = () => {
       {isAddParentModalOpen && (
         <ParentFormModal
           studentId={student._id}
-          onClose={() => setIsAddParentModalOpen(false)}
+          onClose={() => handleModalCloseRequest(() => setIsAddParentModalOpen(false))}
           onSave={handleCreateParent}
         />
       )}
@@ -731,17 +932,28 @@ const StudentDetailView = () => {
         title="Change Email"
         subjectName={emailChangeTarget?.subjectName}
         currentEmail={emailChangeTarget?.currentEmail}
-        onClose={closeEmailChangeModal}
+        onClose={() => handleModalCloseRequest(closeEmailChangeModal)}
         onConfirmChange={handleEmailChange}
       />
 
       <AssignFurnitureModal
         isOpen={isAssignModalOpen}
-        onClose={() => setIsAssignModalOpen(false)}
+        onClose={() => handleModalCloseRequest(() => setIsAssignModalOpen(false))}
         isEdit={assignedFurnitures.length > 0}
         student={student}
         assignedFurnitures={assignedFurnitures}
         onSave={handleAssignSave}
+      />
+
+      <ConfirmationModal
+        isOpen={isVacateConfirmOpen}
+        onClose={() => setIsVacateConfirmOpen(false)}
+        onConfirm={handleVacateHostel}
+        title="Vacate Hostel"
+        message="Are you sure you want to vacate this student from the hostel? This action will mark their current allocation as vacated."
+        confirmText="Vacate"
+        isSubmitting={isVacating}
+        confirmButtonVariant="danger"
       />
 
       <ConfirmationModal
@@ -753,6 +965,35 @@ const StudentDetailView = () => {
         confirmText="Return"
         isSubmitting={isReturning}
         confirmButtonVariant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={isDiscardConfirmOpen}
+        onClose={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={confirmDiscard}
+        title="Discard Changes"
+        message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+        confirmText="Discard"
+        cancelText="Continue Editing"
+        confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+      />
+
+      <ManageHostelModal
+        isOpen={isManageHostelModalOpen}
+        onClose={() => handleModalCloseRequest(() => setIsManageHostelModalOpen(false))}
+        student={student}
+        onSave={(data) => {
+          onStudentChange?.(student._id, (current) => ({
+            ...current,
+            hostelId: data.hostelId,
+            hostel: data.hostel,
+            roomNumber: data.roomNumber,
+            hostelStatus: data.hostelStatus,
+            activeAllocation: data.activeAllocation,
+          }));
+          setIsManageHostelModalOpen(false);
+          fetchTimeline();
+        }}
       />
     </div>
   );

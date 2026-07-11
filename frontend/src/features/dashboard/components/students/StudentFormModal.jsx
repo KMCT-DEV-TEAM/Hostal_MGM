@@ -193,7 +193,6 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     if (!organization) return null;
     return typeof organization === "string" ? organization : organization._id || null;
   });
-  const [hostels, setHostels] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [loadingHostels, setLoadingHostels] = useState(false);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
@@ -235,22 +234,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     }
   }, [role, userOrganization]);
 
-  const loadHostels = async (orgId) => {
-    if (!orgId) {
-      setHostels([]);
-      return;
-    }
-    setLoadingHostels(true);
-    try {
-      const res = await getHostels({ page: 1, limit: 0, status: "Active", organizationId: orgId });
-      setHostels(res.data || []);
-    } catch (error) {
-      console.error("Failed to load hostels", error);
-      showErrorToast("Failed to load hostels");
-    } finally {
-      setLoadingHostels(false);
-    }
-  };
+
 
   const loadOrganizations = async () => {
     setLoadingOrganizations(true);
@@ -290,7 +274,6 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   useEffect(() => {
     loadCourses(organizationId);
-    loadHostels(organizationId);
   }, [organizationId]);
 
   useEffect(() => {
@@ -573,10 +556,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     ...batches.map((b) => ({ value: b._id, label: b.name })),
   ];
 
-  const hostelOptions = [
-    { value: "", label: (role !== ROLES.SUPER_ADMIN || organizationId) ? "Select hostel" : "Select an organization first" },
-    ...hostels.map((hostel) => ({ value: hostel._id, label: hostel.name })),
-  ];
+
 
   const organizationOptions = [
     { value: "", label: "Select organization" },
@@ -826,18 +806,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
 
 
-              <Field label="Hostel" error={fieldErrors.hostelId}>
-                <Dropdown
-                  options={hostelOptions}
-                  value={hostelId}
-                  onChange={handleHostelChange}
-                  disabled={role === ROLES.SUPER_ADMIN && !organizationId}
-                  className="w-full"
-                  minWidth=""
-                  triggerClassName={`${dropdownTriggerClass} ${(role === ROLES.SUPER_ADMIN && !organizationId) ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
-                />
-                <input type="hidden" name="hostelId" value={hostelId} />
-              </Field>
+
             </div>
           </section>
 
@@ -1054,19 +1023,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
 
 
-            <Field label="Assign Hostel" error={fieldErrors.hostelId} className="sm:col-span-2">
-              <Dropdown
-                options={hostelOptions}
-                value={hostelId}
-                onChange={handleHostelChange}
-                disabled={role === ROLES.SUPER_ADMIN && !organizationId}
-                className="w-full"
-                minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!hostelId ? "text-gray-400" : ""} ${(role === ROLES.SUPER_ADMIN && !organizationId) ? "disabled:bg-gray-100 disabled:cursor-not-allowed opacity-60 pointer-events-none" : ""}`}
-              />
-              <input type="hidden" name="hostelId" value={hostelId} />
-              {loadingHostels && <p className="text-xs text-text-secondary mt-2">Loading hostels...</p>}
-            </Field>
+
           </div>
         </section>
 

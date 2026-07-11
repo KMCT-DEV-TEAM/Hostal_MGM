@@ -21,6 +21,12 @@ const studentSchema = new mongoose.Schema(
       default: null,
     },
 
+    roomNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     name: {
       type: String,
       required: true,

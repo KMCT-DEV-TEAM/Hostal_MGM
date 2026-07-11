@@ -42,15 +42,15 @@ const LogsViewer = ({ entityType }) => {
         setIsLoading(true);
         try {
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
-            const res = await logApi.getLogs({ 
-                page, 
-                limit: 10, 
+            const res = await logApi.getLogs({
+                page,
+                limit: 10,
                 status: apiStatus,
                 search: debouncedSearch,
                 startDate,
                 endDate
             });
-            
+
             const responseData = res.data?.data || res.data;
             let fetchedLogs = responseData.logs || [];
             if (entityType) {
@@ -58,9 +58,9 @@ const LogsViewer = ({ entityType }) => {
             }
 
             setLogs(fetchedLogs);
-            setPagination({ 
-                page: responseData.currentPage || 1, 
-                limit: 10, 
+            setPagination({
+                page: responseData.currentPage || 1,
+                limit: 10,
                 totalPages: responseData.totalPages || 1,
                 totalDocs: responseData.totalCount || responseData.totalLogs || responseData.totalRecords || responseData.totalDocs || responseData.total || 0
             });
@@ -77,7 +77,7 @@ const LogsViewer = ({ entityType }) => {
 
     useEffect(() => {
         const socket = initSocket();
-        
+
         const handleLogEvent = () => {
             fetchLogs(pagination.page);
         };
@@ -173,10 +173,10 @@ const LogsViewer = ({ entityType }) => {
                             type="text"
                             placeholder="Search logs..."
                             value={searchQuery}
-                            onChange={(e) => { 
-                                setSearchQuery(e.target.value); 
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
                                 setIsLoading(true);
-                                setPagination(p => ({ ...p, page: 1 })); 
+                                setPagination(p => ({ ...p, page: 1 }));
                             }}
                             className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
                         />
@@ -216,13 +216,13 @@ const LogsViewer = ({ entityType }) => {
 
                 <div className="hidden sm:flex items-center gap-3 w-full sm:w-auto justify-end">
                     {/* Desktop Buttons */}
-                        <button
-                            onClick={() => setIsFilterModalOpen(true)}
-                            className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px] w-[38px]"
-                            title="Filter"
-                        >
-                            <SlidersHorizontal className="w-5 h-5" />
-                        </button>
+                    <button
+                        onClick={() => setIsFilterModalOpen(true)}
+                        className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px] w-[38px]"
+                        title="Filter"
+                    >
+                        <SlidersHorizontal className="w-5 h-5" />
+                    </button>
                     <button
                         onClick={() => setIsExportFilterModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
@@ -233,75 +233,75 @@ const LogsViewer = ({ entityType }) => {
             </div>
 
             <ListTable
-    headers={['Action', 'Timestamp', 'User', 'Details', { label: 'Action', align: 'center' }]}
-    items={logs}
-    loading={isLoading}
-    canSelect={false}
-    emptyText="No logs found matching your criteria."
-    renderRow={(log, index) => (
-        <>
-            <td className="p-4 font-medium text-[#777777]">
-                <div
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-                    onClick={() => setSelectedLog(log)}
-                >
-                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                        {log.action ? log.action.substring(0, 2) : 'NA'}
-                    </div>
-                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{log.action}</span>
-                </div>
-            </td>
-            <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                <div className="flex items-center justify-start gap-1.5">
-                    <Clock size={14} className="text-gray-400" />
-                    <span>{new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-            </td>
-            <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                <div className="flex items-center justify-start gap-1.5">
-                    <User size={14} className="text-gray-400" />
-                    <span>{log.user?.name || log.user?.email || 'Unknown'} <span className="text-[10px] text-gray-400 ml-1">({log.userRole})</span></span>
-                </div>
-            </td>
-            <td className="p-4 text-start text-gray-500 max-w-md truncate">
-                {log.details}
-            </td>
-            <td className="p-4">
-                <div className="flex gap-3 items-center justify-center">
-                    <button
-                        onClick={() => setSelectedLog(log)}
-                        className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                    >
-                        <Eye className="w-4 h-4 text-secondary" />
-                    </button>
-                </div>
-            </td>
-        </>
-    )}
-/>
+                headers={['Action', 'Timestamp', 'User', 'Details', { label: 'Action', align: 'center' }]}
+                items={logs}
+                loading={isLoading}
+                canSelect={false}
+                emptyText="No logs found matching your criteria."
+                renderRow={(log, index) => (
+                    <>
+                        <td className="p-4 font-medium text-[#777777]">
+                            <div
+                                className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
+                                onClick={() => setSelectedLog(log)}
+                            >
+                                <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                    {log.action ? log.action.substring(0, 2) : 'NA'}
+                                </div>
+                                <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{log.action}</span>
+                            </div>
+                        </td>
+                        <td className="p-4 text-start text-gray-500 whitespace-nowrap">
+                            <div className="flex items-center justify-start gap-1.5">
+                                <Clock size={14} className="text-gray-400" />
+                                <span>{new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                        </td>
+                        <td className="p-4 text-start text-gray-500 whitespace-nowrap">
+                            <div className="flex items-center justify-start gap-1.5">
+                                <User size={14} className="text-gray-400" />
+                                <span>{log.user?.name || log.user?.email || 'Unknown'} <span className="text-[10px] text-gray-400 ml-1">({log.userRole})</span></span>
+                            </div>
+                        </td>
+                        <td className="p-4 text-start text-gray-500 max-w-md truncate">
+                            {log.details}
+                        </td>
+                        <td className="p-4">
+                            <div className="flex gap-3 items-center justify-center">
+                                <button
+                                    onClick={() => setSelectedLog(log)}
+                                    className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    <Eye className="w-4 h-4 text-secondary" />
+                                </button>
+                            </div>
+                        </td>
+                    </>
+                )}
+            />
 
-<MobileList
-    items={logs}
-    loading={isLoading}
-    canSelect={false}
-    emptyText="No logs found matching your criteria."
-    titleFn={(log) => log.action}
-    onViewDetails={(log) => setSelectedLog(log)}
-    renderBody={(log) => (
-        <>
-            <MobileRow label="Status" value={
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
-                    {log.status}
-                </span>
-            } />
-            <MobileRow label="User" value={log.user?.name || log.user?.email || 'Unknown'} />
-            <MobileRow label="Time" value={`${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
-            <MobileRow label="Details" value={
-                <span className="break-words">{log.details}</span>
-            } />
-        </>
-    )}
-/>
+            <MobileList
+                items={logs}
+                loading={isLoading}
+                canSelect={false}
+                emptyText="No logs found matching your criteria."
+                titleFn={(log) => log.action}
+                onViewDetails={(log) => setSelectedLog(log)}
+                renderBody={(log) => (
+                    <>
+                        <MobileRow label="Status" value={
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
+                                {log.status}
+                            </span>
+                        } />
+                        <MobileRow label="User" value={log.user?.name || log.user?.email || 'Unknown'} />
+                        <MobileRow label="Time" value={`${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
+                        <MobileRow label="Details" value={
+                            <span className="break-words">{log.details}</span>
+                        } />
+                    </>
+                )}
+            />
 
             {!isLoading && pagination.totalPages > 0 && (
                 <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
@@ -363,7 +363,7 @@ const LogsViewer = ({ entityType }) => {
                     </div>
                 </div>
             )}
-            
+
             <ExportFilterModal
                 isOpen={isExportFilterModalOpen}
                 onClose={() => setIsExportFilterModalOpen(false)}
@@ -390,7 +390,7 @@ const LogsViewer = ({ entityType }) => {
                     }}
                 />
             )}
-            
+
             <LogDetailView log={selectedLog} onClose={() => setSelectedLog(null)} />
         </div>
     );
