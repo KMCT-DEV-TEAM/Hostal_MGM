@@ -14,28 +14,29 @@ const pushSubscriptionSchema = new mongoose.Schema(
         enum: ['User', 'Student', 'Parent'],
       },
     },
-    subscriptions: [
-      {
-        endpoint: {
-          type: String,
-          required: true,
-        },
-        keys: {
-          p256dh: {
-            type: String,
-            required: true,
-          },
-          auth: {
-            type: String,
-            required: true,
-          },
-        },
-        isActive: {
-          type: Boolean,
-          default: true,
-        },
-      }
-    ]
+    endpoint: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    keys: {
+      p256dh: {
+        type: String,
+        required: true,
+      },
+      auth: {
+        type: String,
+        required: true,
+      },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    inactiveAt: {
+      type: Date,
+      default: null,
+    }
   },
   {
     timestamps: true,
@@ -43,10 +44,14 @@ const pushSubscriptionSchema = new mongoose.Schema(
 );
 
 // Indexes
-// One document per recipient
-pushSubscriptionSchema.index({ 'recipient.id': 1, 'recipient.model': 1 }, { unique: true });
-// Index on the endpoints inside the array for quick lookup/removal
-pushSubscriptionSchema.index({ 'subscriptions.endpoint': 1 });
+// For quickly finding all active subscriptions for a recipient
+pushSubscriptionSchema.index({ 'recipient.id': 1, 'recipient.model': 1, isActive: 1 });
+// TTL index: delete documents 90 days (7776000 seconds) after they become inactive. 
+// Partial filter ensures we don't index (and therefore don't expire) documents where inactiveAt is null.
+pushSubscriptionSchema.index(
+  { inactiveAt: 1 },
+  { expireAfterSeconds: 90 * 24 * 60 * 60, partialFilterExpression: { isActive: false } }
+);
 
 const PushSubscription = mongoose.model('PushSubscription', pushSubscriptionSchema);
 

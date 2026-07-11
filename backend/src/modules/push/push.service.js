@@ -10,94 +10,82 @@ import webpush from '../../config/push.config.js';
  */
 export const registerSubscriptionService = async (recipientData, subscriptionData) => {
   const { endpoint, keys } = subscriptionData;
-  const subEntry = { endpoint, keys, isActive: true };
 
-  // 1. Global Search: Does this exact endpoint exist anywhere in the DB?
-  let existingDoc = await PushSubscription.findOne({ 'subscriptions.endpoint': endpoint });
-
-  if (existingDoc) {
-    const isSameUser = existingDoc.recipient.id.toString() === recipientData.id.toString() &&
-                       existingDoc.recipient.model === recipientData.model;
-
-    if (!isSameUser) {
-      // 2. Reassignment: Endpoint belongs to another user. Remove it from them.
-      existingDoc.subscriptions = existingDoc.subscriptions.filter(sub => sub.endpoint !== endpoint);
-      await existingDoc.save();
-    } else {
-      // 3. Update: Endpoint belongs to this user. Just update keys & activate.
-      const existingIndex = existingDoc.subscriptions.findIndex(sub => sub.endpoint === endpoint);
-      if (existingIndex > -1) {
-        existingDoc.subscriptions[existingIndex].keys = keys;
-        existingDoc.subscriptions[existingIndex].isActive = true;
-      }
-      return await existingDoc.save();
+  try {
+    return await PushSubscription.findOneAndUpdate(
+      { endpoint },
+      {
+        $set: {
+          recipient: recipientData,
+          keys,
+          isActive: true,
+          inactiveAt: null
+        }
+      },
+      { upsert: true, new: true }
+    );
+  } catch (error) {
+    if (error.code === 11000 && error.message.includes('recipient.id_1_recipient.model_1')) {
+      console.log('Dropping legacy unique index on PushSubscription...');
+      await PushSubscription.collection.dropIndex('recipient.id_1_recipient.model_1').catch(e => console.log('Index already dropped or drop failed:', e.message));
+      
+      return await PushSubscription.findOneAndUpdate(
+        { endpoint },
+        {
+          $set: {
+            recipient: recipientData,
+            keys,
+            isActive: true,
+            inactiveAt: null
+          }
+        },
+        { upsert: true, new: true }
+      );
     }
-  }
-
-  // 4. Creation/Append: We are here if endpoint didn't exist, OR it was removed from another user.
-  let currentDoc = await PushSubscription.findOne({
-    'recipient.id': recipientData.id,
-    'recipient.model': recipientData.model
-  });
-
-  if (currentDoc) {
-    currentDoc.subscriptions.push(subEntry);
-    return await currentDoc.save();
-  } else {
-    const newDoc = new PushSubscription({
-      recipient: recipientData,
-      subscriptions: [subEntry]
-    });
-    return await newDoc.save();
+    throw error;
   }
 };
 
 /**
- * Soft removes a subscription by marking it as inactive inside the array.
+ * Soft removes a subscription by marking it as inactive, OR hard deletes it if specified.
  * @param {String} endpoint - The subscription endpoint URL
- * @returns {Promise<Object|null>} The updated document or null if not found
+ * @param {Boolean} hardDelete - Whether to hard delete the subscription
+ * @returns {Promise<Object|null>} The updated/deleted document or null if not found
  */
-export const removeSubscriptionService = async (endpoint) => {
-  return await PushSubscription.findOneAndUpdate(
-    { 'subscriptions.endpoint': endpoint },
-    { $set: { 'subscriptions.$.isActive': false } },
-    { new: true }
-  );
+export const removeSubscriptionService = async (endpoint, hardDelete = false) => {
+  if (hardDelete) {
+    return await PushSubscription.findOneAndDelete({ endpoint });
+  } else {
+    return await PushSubscription.findOneAndUpdate(
+      { endpoint },
+      { $set: { isActive: false, inactiveAt: new Date() } },
+      { new: true }
+    );
+  }
 };
 
 /**
- * Retrieves all active subscriptions for a specific recipient using aggregation.
+ * Retrieves all active subscriptions for a specific recipient.
  * @param {String} recipientId - The ID of the recipient
  * @param {String} recipientModel - The Model of the recipient
  * @returns {Promise<Array>} Array of active subscriptions
  */
 export const getActiveSubscriptionsService = async (recipientId, recipientModel) => {
   const matchQuery = {
-    'recipient.id': new mongoose.Types.ObjectId(recipientId)
+    'recipient.id': new mongoose.Types.ObjectId(recipientId),
+    isActive: true
   };
   
   if (recipientModel) {
     matchQuery['recipient.model'] = recipientModel;
   }
 
-  const result = await PushSubscription.aggregate([
-    { $match: matchQuery },
-    { $unwind: '$subscriptions' },
-    {
-      $match: {
-        'subscriptions.isActive': true
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        endpoint: '$subscriptions.endpoint',
-        keys: '$subscriptions.keys'
-      }
-    }
-  ]);
+  const subscriptions = await PushSubscription.find(matchQuery).lean();
   
-  return result;
+  return subscriptions.map(sub => ({
+    endpoint: sub.endpoint,
+    keys: sub.keys
+  }));
 };
 
 /**
@@ -137,13 +125,13 @@ export const sendPushNotification = async (recipient, payload) => {
       failures.push({ endpoint: sub.endpoint, error: error.message, statusCode });
 
       if (statusCode === 404 || statusCode === 410) {
-        // Deactivate subscription as per requirements
-        await removeSubscriptionService(sub.endpoint);
+        // Invalid/expired subscription - hard delete immediately (it's unusable and will never recover)
+        await removeSubscriptionService(sub.endpoint, true);
       }
     }
   });
 
-  await Promise.allSettled(promises); // Use Promise.allSettled to ensure all finish even if one crashes
+  await Promise.allSettled(promises);
 
   return {
     success: true,
