@@ -161,6 +161,10 @@ const VisitorsPage = () => {
         setConfirmModal({ isOpen: true, type: 'delete', visitorId: id });
     };
 
+    const handleActive = (id) => {
+        setConfirmModal({ isOpen: true, type: 'active', visitorId: id });
+    };
+
     const executeConfirmAction = async () => {
         const { type, visitorId } = confirmModal;
         if (!visitorId) return;
@@ -176,6 +180,10 @@ const VisitorsPage = () => {
             } else if (type === 'delete') {
                 await updateVisitorStatus(visitorId, 'Inactive');
                 showSuccessToast('Visitor deleted successfully');
+            } else if (type === 'active') {
+                const newStatus = ['admin', 'super_admin'].includes(user?.role) ? 'Approved' : 'Pending';
+                await updateVisitorStatus(visitorId, newStatus);
+                showSuccessToast(`Visitor status updated to ${newStatus.toLowerCase()} successfully`);
             }
             fetchVisitors();
         } catch (error) {
@@ -362,6 +370,11 @@ const VisitorsPage = () => {
                     setSelectedVisitorId(null);
                 }}
                 visitorId={selectedVisitorId}
+                userRole={user?.role}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onDelete={handleDelete}
+                onActive={handleActive}
             />
 
             <ConfirmationModal
@@ -371,20 +384,23 @@ const VisitorsPage = () => {
                 title={
                     confirmModal.type === 'approve' ? 'Confirm Approval' :
                     confirmModal.type === 'reject' ? 'Confirm Rejection' :
+                    confirmModal.type === 'active' ? 'Confirm Activation' :
                     'Confirm Deletion'
                 }
                 message={
                     confirmModal.type === 'approve' ? 'Are you sure you want to approve this visitor request?' :
                     confirmModal.type === 'reject' ? 'Are you sure you want to reject this visitor request?' :
+                    confirmModal.type === 'active' ? `Are you sure you want to activate this visitor? Their status will be set to ${['admin', 'super_admin'].includes(user?.role) ? 'approved' : 'pending'}.` :
                     'Are you sure you want to delete this visitor profile?'
                 }
                 confirmText={
                     confirmModal.type === 'approve' ? 'Approve' :
                     confirmModal.type === 'reject' ? 'Reject' :
+                    confirmModal.type === 'active' ? 'Activate' :
                     'Delete'
                 }
                 confirmButtonClass={
-                    confirmModal.type === 'approve' ? 'bg-success hover:bg-success/90' :
+                    confirmModal.type === 'approve' || confirmModal.type === 'active' ? 'bg-success hover:bg-success/90' :
                     'bg-danger hover:bg-danger/90'
                 }
                 isSubmitting={isConfirmSubmitting}

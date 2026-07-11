@@ -6,7 +6,15 @@ import { useAuthStore } from '@/store/useAuthStore';
 import Button from '@/components/ui/Button';
 import CheckInModal from './CheckInModal';
 
-export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
+export default function VisitorDetailsModal({
+    isOpen,
+    onClose,
+    visitorId,
+    onApprove,
+    onReject,
+    onDelete,
+    onActive
+}) {
     const [visitor, setVisitor] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -69,6 +77,82 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
         </div>
     );
 
+    const renderFooter = () => {
+        if (!visitor) return null;
+
+        const role = user?.role;
+        const status = visitor.status?.toLowerCase();
+
+        const canApproveReject = ['super_admin', 'admin'].includes(role) && status === 'pending';
+        const canDelete = (['super_admin', 'admin'].includes(role) && ['approved', 'rejected', 'active'].includes(status)) ||
+            (role === 'parent' && status !== 'inactive');
+        const canActive = ['super_admin', 'admin', 'parent'].includes(role) && status === 'inactive';
+
+        if (!canApproveReject && !canDelete && !canActive) return null;
+
+        return (
+            <div className="flex items-center justify-end gap-3 w-full">
+                {canApproveReject && (
+                    <>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            className="border-primary! text-primary! hover:bg-primary! hover:text-white!"
+                            onClick={() => {
+                                onClose();
+                                onReject && onReject(visitorId);
+                            }}
+                        >
+                            Reject
+                        </Button>
+                        <Button
+                            size="sm"
+                            fullWidth={false}
+                            className="!bg-primary! hover:!bg-primary! hover:!text-white!"
+                            onClick={() => {
+                                onClose();
+                                onApprove && onApprove(visitorId);
+                            }}
+                        >
+                            Approve
+                        </Button>
+                    </>
+                )}
+
+                {canDelete && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        className="!border-danger !text-danger hover:!bg-danger hover:!text-white"
+                        onClick={() => {
+                            onClose();
+                            onDelete && onDelete(visitorId);
+                        }}
+                    >
+                        Delete
+                    </Button>
+                )}
+
+                {canActive && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        className="!border-success !text-success hover:!bg-success hover:!text-white"
+                        onClick={() => {
+                            onClose();
+                            onActive && onActive(visitorId);
+                        }}
+                    >
+                        Active
+                    </Button>
+                )}
+            </div>
+        );
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -77,6 +161,7 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
             subtitle={subtitle}
             avatar={visitorName}
             maxWidth="max-w-3xl"
+            footer={renderFooter()}
         >
             <div className="mt-6 border-t border-gray-100 pt-6">
                 <div className="border border-gray-200/60 rounded-2xl p-6 md:p-8 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
