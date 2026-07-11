@@ -143,7 +143,8 @@ export const createVisitorProfile = async (payload, user) => {
             data: {
                 parentName: currentParent.parentName,
                 visitorName: name,
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: currentParent._id,
@@ -159,6 +160,79 @@ export const createVisitorProfile = async (payload, user) => {
     }
 
     return newVisitor;
+};
+
+/**
+ * Update visitor status (by parent or admin)
+ * @param {String} visitorId 
+ * @param {String} status 
+ * @param {Object} user 
+ */
+export const updateVisitorStatus = async (visitorId, status, user) => {
+    // 1. Fetch Visitor
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 2. Authorization
+    if (user.role === 'parent') {
+        const currentParent = await Parent.findById(user.id);
+        if (!currentParent) {
+            const error = new Error('Parent not found.');
+            error.status = 404;
+            throw error;
+        }
+
+        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
+        const parentStudentIds = parentDocs.map(p => p.studentId.toString());
+        const visitorStudentIds = visitor.students.map(s => s.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => parentStudentIds.includes(id));
+        if (!hasOverlap) {
+            const error = new Error('Unauthorized to update this visitor.');
+            error.status = 403;
+            throw error;
+        }
+    } else if (user.role !== 'admin' && user.role !== 'super_admin') {
+        const error = new Error('Unauthorized role to update visitor status.');
+        error.status = 403;
+        throw error;
+    }
+
+    // 3. Business Logic
+    if (visitor.approvalStatus === status) {
+        const error = new Error(`Visitor is already ${status}.`);
+        error.status = 400;
+        throw error;
+    }
+
+    // 4. Update Database
+    const updateData = {
+        approvalStatus: status
+    };
+
+    let actionName = 'Status Updated';
+    if (status === VISITOR_STATUS.INACTIVE) actionName = VISITOR_APPROVAL_ACTIONS.DEACTIVATED || 'Deactivated';
+    else if (status === VISITOR_STATUS.APPROVED || status === VISITOR_STATUS.PENDING) actionName = VISITOR_APPROVAL_ACTIONS.ACTIVATED || 'Activated';
+
+    const roleName = user.role === 'parent' ? 'parent' : (user.role === 'super_admin' ? 'super admin' : 'admin');
+
+    const timelineEntry = {
+        action: actionName,
+        performedBy: user.id,
+        remarks: `Status changed to ${status} by ${roleName}.`
+    };
+
+    const updatedVisitor = await visitorRepository.updateVisitorStatus(
+        visitorId,
+        updateData,
+        timelineEntry
+    );
+
+    return updatedVisitor;
 };
 
 /**
@@ -518,7 +592,8 @@ export const approveVisitor = async (visitorId, adminUser) => {
             },
             data: {
                 visitorName: visitor.name,
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: adminUser.id,
@@ -614,7 +689,8 @@ export const rejectVisitor = async (visitorId, reason, adminUser) => {
             },
             data: {
                 visitorName: visitor.name,
-                reason: reason
+                reason: reason,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: adminUser.id,
@@ -904,7 +980,8 @@ export const checkInVisitor = async (payload, wardenUser) => {
             studentName: studentNames,
             purpose: purpose,
             checkInTime: now.toISOString(),
-            expectedExitTime: parsedExpectedExitTime.toISOString()
+            expectedExitTime: parsedExpectedExitTime.toISOString(),
+            link: '/dashboard/visitors/history'
         };
 
         const notificationSender = {
@@ -1193,16 +1270,14 @@ export const getVisitDetails = async (visitId, user) => {
 
     // 2. Field-Level Security (ID Proof Masking)
     let maskedIdProofNumber = null;
-    const visitorData = visit.visitor?.refId;
-
-    if (visitorData && visitorData.idProofNumber) {
+    if (visit.visitorId && visit.visitorId.idProofNumber) {
         const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
 
         if (isSuperAdminOrAdmin) {
-            maskedIdProofNumber = visitorData.idProofNumber;
+            maskedIdProofNumber = visit.visitorId.idProofNumber;
         } else {
             // Mask all but last 4 characters
-            const num = visitorData.idProofNumber;
+            const num = visit.visitorId.idProofNumber;
             if (num.length > 4) {
                 maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
             } else {
@@ -1221,11 +1296,14 @@ export const getVisitDetails = async (visitId, user) => {
         remarks: t.remarks,
         createdAt: t.createdAt
     }));
+
     const formattedStudents = visit.students.map(s => ({
         studentId: s._id,
         studentName: s.name,
-        studentIdNumber: s.studentId,
-        roomNo: s.roomNumber || null,
+        studentIdNumber: s.studentIdNumber,
+        roomNumber: s.roomId ? s.roomId.roomNumber : null,
+        department: s.department,
+        course: s.course
     }));
 
     // Calculate Visit Duration if checked out
@@ -1243,7 +1321,7 @@ export const getVisitDetails = async (visitId, user) => {
     }
 
     const studentNames = formattedStudents.map(s => s.studentName).join(', ');
-    const visitorName = visitorData ? visitorData.name : 'Unknown';
+    const visitorName = visit.visitorId ? visit.visitorId.name : 'Unknown';
 
     return {
         // Quick Summary
@@ -1257,14 +1335,13 @@ export const getVisitDetails = async (visitId, user) => {
         },
 
         // Visitor Information
-        visitorInformation: visitorData ? {
-            visitorId: visitorData._id,
-            visitorName: visitorData.name,
-            phone: visitorData.phone,
-            email: visitorData.email,
-            relationship: visitorData.relationship,
-            address: visitorData.address,
-            idProofType: visitorData.idProofType,
+        visitorInformation: visit.visitorId ? {
+            visitorId: visit.visitorId._id,
+            visitorName: visit.visitorId.name,
+            phone: visit.visitorId.phone,
+            relationship: visit.visitorId.relationship,
+            address: visit.visitorId.address,
+            idProofType: visit.visitorId.idProofType,
             idProofNumber: maskedIdProofNumber
         } : null,
 
@@ -1341,7 +1418,8 @@ export const autoCompleteExpiredVisits = async () => {
                     studentName: studentNames,
                     purpose: updatedVisit.purpose || 'Visit',
                     checkInTime: updatedVisit.checkInTime,
-                    checkOutTime: updatedVisit.checkOutTime
+                    checkOutTime: updatedVisit.checkOutTime,
+                    link: '/dashboard/visitors/history'
                 };
 
                 const notificationSender = {
@@ -1435,7 +1513,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
 
     // 3. Filter allowed fields and check for changes
     const allowedFields = [
-        'name', 'relationship', 'idProofType', 'idProofNumber', 'email', 'phone'
+        'name', 'relationship', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'
     ];
     const updateData = {};
     const updatedFieldsList = [];
@@ -1460,8 +1538,20 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         };
     }
 
-    // 4. Update
-    const updatedVisitor = await visitorRepository.updateVisitor(visitorId, updateData);
+    // 4. Update and revert to Pending Status
+    updateData.approvalStatus = VISITOR_STATUS.PENDING;
+
+    const timelineEntry = {
+        action: 'Updated & Needs Re-approval',
+        performedBy: user.id,
+        remarks: `Sensitive info updated (${updatedFieldsList.join(', ')}). Needs re-approval.`
+    };
+
+    const updatedVisitor = await visitorRepository.updateVisitorStatus(
+        visitorId,
+        updateData,
+        timelineEntry
+    );
 
     // 5. Notify
     try {
@@ -1470,7 +1560,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         const hostelId = students.length > 0 ? students[0].hostelId : null;
 
         await orchestratorService.triggerNotification({
-            eventName: 'VISITOR_UPDATED',
+            eventName: 'VISITOR_UPDATE_PENDING',
             target: {
                 type: 'USER',
                 filter: {
@@ -1481,7 +1571,8 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
             data: {
                 visitorName: visitor.name,
                 updatedFields: updatedFieldsList.join(', '),
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             },
             sender: {
                 id: currentParent._id,
@@ -1493,7 +1584,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
             }
         });
     } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISITOR_UPDATED event:', notificationError);
+        console.error('[VisitorService] Failed to publish VISITOR_UPDATE_PENDING event:', notificationError);
     }
 
     return {

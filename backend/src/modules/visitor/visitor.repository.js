@@ -108,6 +108,9 @@ export const getVisitors = async (matchStage, sortStage, skip, limit) => {
                             name: '$$st.name'
                         }
                     }
+                },
+                priority: {
+                    $cond: { if: { $eq: ['$approvalStatus', 'Pending'] }, then: 1, else: 2 }
                 }
             }
         },
