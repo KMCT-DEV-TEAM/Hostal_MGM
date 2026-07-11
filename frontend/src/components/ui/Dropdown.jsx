@@ -13,6 +13,7 @@ export default function Dropdown({
     error
 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [dynamicPlacement, setDynamicPlacement] = useState(placement);
     const dropdownRef = useRef(null);
 
     // Close when clicking outside
@@ -40,11 +41,27 @@ export default function Dropdown({
         setIsOpen(false);
     };
 
+    const handleToggle = () => {
+        if (!isOpen) {
+            if (dropdownRef.current) {
+                const rect = dropdownRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const dropdownHeight = 200; // estimated max height based on max-h-48 (192px)
+                if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+                    setDynamicPlacement('top');
+                } else {
+                    setDynamicPlacement(placement);
+                }
+            }
+        }
+        setIsOpen(!isOpen);
+    };
+
     return (
         <div className={`relative ${minWidth} ${className}`} ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleToggle}
                 className={`flex items-center justify-between w-full border rounded-lg outline-none transition-colors ${triggerClassName || 'px-3 py-2 text-sm bg-white border-gray-200 focus:border-secondary'}`}
             >
                 <span className="truncate mr-2 font-inherit text-inherit">{displayValue}</span>
@@ -52,7 +69,7 @@ export default function Dropdown({
             </button>
 
             {isOpen && (
-                <div className={`absolute z-[100] flex flex-col min-w-full w-max max-w-[200px] ${placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
+                <div className={`absolute z-[100] flex flex-col min-w-full w-max max-w-[200px] ${dynamicPlacement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
                     {options.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-gray-400 text-center">No options</div>
                     ) : (

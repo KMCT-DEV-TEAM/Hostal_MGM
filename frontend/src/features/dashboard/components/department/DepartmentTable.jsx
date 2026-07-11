@@ -40,19 +40,19 @@ const DepartmentTable = ({
                     <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
                         {o.name ? o.name.substring(0, 2) : 'NA'}
                     </div>
-                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{o.name}</span>
+                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors truncate max-w-[150px]" title={o.name}>{o.name}</span>
                 </div>
             </td>
             <td className="p-4 text-gray-500">
                 <div className="flex items-center gap-2 text-start">
-                    <FileText className="w-3.5 h-3.5 text-gray-400" />
-                    {o.code || 'N/A'}
+                    <FileText className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="truncate max-w-[120px]" title={o.code || 'N/A'}>{o.code || 'N/A'}</span>
                 </div>
             </td>
             <td className="p-4 text-gray-500">
                 <div className="flex items-center gap-2 text-start">
-                    <Building2 className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="truncate max-w-[150px]">
+                    <Building2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="truncate max-w-[150px]" title={o.courseId ? o.courseId.name : 'N/A'}>
                         {o.courseId ? o.courseId.name : 'N/A'}
                     </span>
                 </div>
