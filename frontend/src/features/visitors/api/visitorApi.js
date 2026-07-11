@@ -24,6 +24,9 @@ export const visitorApi = {
     // 6. Reject Visitor
     rejectVisitor: (visitorId, payload) => api.patch(`${BASE_URL}/${visitorId}/reject`, payload),
 
+    // 7. Update Visitor Status (used for soft delete)
+    updateVisitorStatus: (visitorId, status) => api.patch(`${BASE_URL}/${visitorId}/status`, { status }),
+
     // Methods mapped for backward compatibility with current UI implementation
     getVisitors: (params) => api.get(BASE_URL, { params }),
     getAggregatedVisitors: (params) => api.get(BASE_URL, { params }),

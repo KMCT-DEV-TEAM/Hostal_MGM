@@ -18,7 +18,8 @@ import {
     approveVisitor,
     rejectVisitor,
     getSuperAdminHostelVisitors,
-    getDashboardSummary
+    getDashboardSummary,
+    updateVisitorStatus
 } from '@/services/visitor.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -156,6 +157,10 @@ const VisitorsPage = () => {
         setShowCheckInModal(true);
     };
 
+    const handleDelete = (id) => {
+        setConfirmModal({ isOpen: true, type: 'delete', visitorId: id });
+    };
+
     const executeConfirmAction = async () => {
         const { type, visitorId } = confirmModal;
         if (!visitorId) return;
@@ -168,6 +173,9 @@ const VisitorsPage = () => {
             } else if (type === 'reject') {
                 await rejectVisitor(visitorId, { reason: 'Rejected by admin' });
                 showSuccessToast('Visitor rejected successfully');
+            } else if (type === 'delete') {
+                await updateVisitorStatus(visitorId, 'Inactive');
+                showSuccessToast('Visitor deleted successfully');
             }
             fetchVisitors();
         } catch (error) {
@@ -314,6 +322,7 @@ const VisitorsPage = () => {
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onEdit={handleEdit}
+                    onDelete={handleDelete}
                     page={page}
                     setPage={setPage}
                     pagination={pagination}
@@ -359,12 +368,25 @@ const VisitorsPage = () => {
                 isOpen={confirmModal.isOpen}
                 onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null, visitorId: null })}
                 onConfirm={executeConfirmAction}
-                title={confirmModal.type === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
-                message={confirmModal.type === 'approve'
-                    ? 'Are you sure you want to approve this visitor request?'
-                    : 'Are you sure you want to reject this visitor request?'}
-                confirmText={confirmModal.type === 'approve' ? 'Approve' : 'Reject'}
-                confirmButtonClass={confirmModal.type === 'approve' ? 'bg-success hover:bg-success/90' : 'bg-danger hover:bg-danger/90'}
+                title={
+                    confirmModal.type === 'approve' ? 'Confirm Approval' :
+                    confirmModal.type === 'reject' ? 'Confirm Rejection' :
+                    'Confirm Deletion'
+                }
+                message={
+                    confirmModal.type === 'approve' ? 'Are you sure you want to approve this visitor request?' :
+                    confirmModal.type === 'reject' ? 'Are you sure you want to reject this visitor request?' :
+                    'Are you sure you want to delete this visitor profile?'
+                }
+                confirmText={
+                    confirmModal.type === 'approve' ? 'Approve' :
+                    confirmModal.type === 'reject' ? 'Reject' :
+                    'Delete'
+                }
+                confirmButtonClass={
+                    confirmModal.type === 'approve' ? 'bg-success hover:bg-success/90' :
+                    'bg-danger hover:bg-danger/90'
+                }
                 isSubmitting={isConfirmSubmitting}
             />
         </div>

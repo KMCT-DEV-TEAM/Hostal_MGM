@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { Filter, Download, Check, X, Plus, Edit } from 'lucide-react';
+import { Filter, Download, Check, X, Plus, Edit, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
@@ -24,7 +24,8 @@ const VisitorListTableView = ({
     setPage,
     pagination,
     userRole,
-    onEdit
+    onEdit,
+    onDelete
 }) => {
 
     const headers = useMemo(() => {
@@ -123,7 +124,21 @@ const VisitorListTableView = ({
                             </div>
                         )}
                         {canApproveReject && visitor.status?.toLowerCase() !== 'pending' && (
-                            <span className="text-gray-400 text-sm">--</span>
+                            <div className="flex items-center justify-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    fullWidth={false}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete && onDelete(visitor.visitorId || visitor.id || visitor._id);
+                                    }}
+                                    className="!p-1.5 bg-danger/10 text-danger hover:bg-danger/20"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
                         )}
                         
                         {userRole === 'parent' && (
@@ -141,7 +156,19 @@ const VisitorListTableView = ({
                                 >
                                     <Edit className="w-4 h-4" />
                                 </Button>
-                                {/* Delete button will be added later */}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    fullWidth={false}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete && onDelete(visitor.visitorId || visitor.id || visitor._id);
+                                    }}
+                                    className="!p-1.5 bg-danger/10 text-danger hover:bg-danger/20"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
                             </div>
                         )}
                     </td>

@@ -260,7 +260,7 @@ const buildListingStages = (query) => {
     if (sortBy === 'visitorName') actualSortField = 'name';
     if (sortBy === 'status') actualSortField = 'approvalStatus';
 
-    const sortStage = { [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
+    const sortStage = { priority: 1, [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
     const skip = (Number(page) - 1) * Number(limit);
 
     return { matchStage, sortStage, skip, limit: Number(limit), page: Number(page) };
@@ -1536,6 +1536,15 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
             photoUrl: visitor.photoUrl,
             updatedAt: visitor.updatedAt
         };
+    }
+
+    if (updateData.phone) {
+        const existingVisitor = await visitorRepository.findDuplicateVisitor(visitor.organizationId, updateData.phone);
+        if (existingVisitor && existingVisitor._id.toString() !== visitorId) {
+            const error = new Error('Another visitor is already registered with this phone number in the organization.');
+            error.status = 400;
+            throw error;
+        }
     }
 
     // 4. Update and revert to Pending Status
