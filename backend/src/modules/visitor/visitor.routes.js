@@ -132,7 +132,6 @@ router.get(
     validateGetVisitorDetails,
     visitorController.getVisitorDetails
 );
-
 // ---------------------------------------------------------
 // Action Routes
 // ---------------------------------------------------------

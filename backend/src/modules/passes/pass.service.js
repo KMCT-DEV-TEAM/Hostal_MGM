@@ -225,7 +225,7 @@ export const getPassesDb = async (studentId, query) => {
 
 export const getPassDetailsDb = async (passId, studentId) => {
   return await Pass.findOne({ _id: passId, studentId })
-    .populate("studentId", "name admissionNo roomNo")
+    .populate("studentId", "name admissionNo roomNumber")
     .populate("hostelId", "name")
     .lean();
 };
@@ -257,7 +257,7 @@ export const updatePassApprovalDb = async (passId, parentId, action, remarks) =>
       }
     },
     { new: true }
-  ).populate("studentId", "name admissionNo roomNo");
+  ).populate("studentId", "name admissionNo roomNumber");
 };
 
 export const getParentDb = async (parentId) => {
@@ -333,7 +333,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } }
   ];
 
-  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo.roomNo"]);
+  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo"]);
   if (searchMatch) pipeline.push(searchMatch);
 
   const projectStage = {
@@ -354,7 +354,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
       admissionNo: "$studentInfo.admissionNo",
-      roomNo: "$studentInfo.roomNo"
+      roomNumber: "$studentInfo.roomNumber"
     },
     parentInfo: {
       _id: "$parentInfo._id",
@@ -629,7 +629,7 @@ export const getManagementPassesDb = async (
   const searchMatch = buildSearchMatch(query.search, [
     "studentInfo.name",
     "studentInfo.admissionNo",
-    "studentInfo.roomNo",
+    "studentInfo.roomNumber",
     "hostelInfo.name",
   ]);
 
@@ -699,7 +699,7 @@ export const getManagementPassesDb = async (
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
       admissionNo: "$studentInfo.admissionNo",
-      roomNo: "$studentInfo.roomNo",
+      roomNumber: "$studentInfo.roomNumber",
     },
 
     hostelInfo: {
@@ -779,7 +779,7 @@ export const getManagementPassDetailsDb = async (passId) => {
           studentId: "$student.studentId",
           course: "$courseInfo.name",
           department: "$departmentInfo.name",
-          roomNo: "$student.roomNo"
+          roomNumber: "$student.roomNumber"
         },
         parentId: {
           _id: "$parent._id",
@@ -834,7 +834,7 @@ export const managementCancelPassDb = async (passId, reason, scope) => {
 
 export const getWardenPassDetailsDb = async (passId, hostelId) => {
   return await Pass.findOne({ _id: passId, hostelId })
-    .populate("studentId", "name admissionNo course department batch roomNo")
+    .populate("studentId", "name  studentId roomNumber")
     .populate("parentId", "parentName phone relationship")
     .populate("hostelId", "name")
     .populate("adminApproval.actionBy", "name")

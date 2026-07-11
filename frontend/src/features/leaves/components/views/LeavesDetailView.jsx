@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Download } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Dropdown from '@/components/ui/Dropdown';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { formatDateReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../badges/LeaveReturnBadge';
@@ -30,6 +31,17 @@ export default function LeavesDetailView({
     pagination
 }) {
     const navigate = useNavigate();
+
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null, value: null, type: null });
+
+    const handleConfirm = () => {
+        if (confirmModal.type === 'status') {
+            onUpdateStatus(confirmModal.id, confirmModal.value);
+        } else if (confirmModal.type === 'return') {
+            onUpdateReturn(confirmModal.id, confirmModal.value);
+        }
+        setConfirmModal({ isOpen: false, id: null, value: null, type: null });
+    };
 
     const getStudentName = (r) => r.studentInfo?.name || r.studentName || 'Unknown';
     const getStudentInitials = (name) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -69,139 +81,150 @@ export default function LeavesDetailView({
 
 
     return (
-        <DataTable
-            searchQuery={searchQuery}
-            onSearchChange={(e) => setSearchQuery(e.target.value)}
-            searchPlaceholder="Search"
-            loading={loading}
-            onRowClick={onRowClick}
-            toolbarActions={
-                <>
-                    <button
-                        type="button"
-                        onClick={onFilterClick}
-                        className={`p-3 border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-                        title="Filter leaves"
-                    >
-                        <Filter className="w-4 h-4" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onExport}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                    >
-                        <Download className="w-4 h-4" />
-                        Export
-                    </button>
-                </>
-            }
-            headers={tableHeaders}
-            items={passesData}
-            canSelect={false}
-            emptyText="No leave records matching the active filters."
-            renderRow={(r) => {
-                const studentName = getStudentName(r);
-                return (
+        <>
+            <DataTable
+                searchQuery={searchQuery}
+                onSearchChange={(e) => setSearchQuery(e.target.value)}
+                searchPlaceholder="Search"
+                loading={loading}
+                onRowClick={onRowClick}
+                toolbarActions={
                     <>
-                        {/* Student initials and full name */}
-                        <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
-                            <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                {getStudentInitials(studentName)}
-                            </div>
-                            <span className="text-sm font-semibold">{studentName}</span>
-                        </td>
-
-                        {/* Room No (if drilldown/warden/admin) or Hostel name (if SuperAdmin aggregate view) */}
-                        <td className="p-4 text-text-secondary font-medium">
-                            {selectedHostel || isWarden || isAdmin ? (r.studentInfo?.roomNo || r.roomNo || '--') : (
-                                <span
-                                    className="text-primary font-semibold hover:underline cursor-pointer"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelInfo?._id || r.hostelId?._id || r.hostel)}`);
-                                    }}
-                                >
-                                    {r.hostelInfo?.name || r.hostelId?.name || r.hostel}
-                                </span>
-                            )}
-                        </td>
-
-                        {/* Period / Date */}
-                        <td className="p-4 text-text-secondary lowercase">
-                            {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
-                        </td>
-
-                        {/* Days / Type */}
-                        <td className="p-4 text-text-secondary capitalize">
-                            {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : r.type || r.outPassCategory}
-                        </td>
-
-                        {/* Times (Out pass only) */}
-                        {!isHomePass && (
-                            <>
-                                <td className="p-4 text-text-secondary">
-                                    {r.outTime || '--'}
-                                </td>
-                                <td className="p-4 text-text-secondary">
-                                    {r.expectedReturnTime || r.returnTime || '--'}
-                                </td>
-                            </>
-                        )}
-
-                        {/* Inline Status Dropdown */}
-                        <td className="p-4">
-                            {isAdmin && r.status === 'pending_admin' ? (
-                                <Dropdown
-                                    options={statusOptions}
-                                    value="Pending"
-                                    onChange={(val) => onUpdateStatus(r._id || r.id, val)}
-                                    minWidth="w-[130px]"
-                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]`}
-                                />
-                            ) : (
-                                <LeaveStatusBadge status={r.status} />
-                            )}
-                        </td>
-
-                        {/* Inline Return Dropdown */}
-                        <td className="p-4">
-                            {isWarden && r.status === 'approved' ? (
-                                <Dropdown
-                                    options={getReturnOptions(getReturnStatus(r))}
-                                    value=""
-                                    placeholder={getReturnStatus(r)}
-                                    onChange={(val) => onUpdateReturn(r._id || r.id, val)}
-                                    minWidth="w-[160px]"
-                                    triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50 w-[160px]`}
-                                />
-                            ) : (
-                                <LeaveReturnBadge returnTracking={r.returnTracking} />
-                            )}
-                        </td>
+                        <button
+                            type="button"
+                            onClick={onFilterClick}
+                            className={`p-3 border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                            title="Filter leaves"
+                        >
+                            <Filter className="w-4 h-4" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onExport}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export
+                        </button>
                     </>
-                );
-            }}
-            renderMobileItem={(r) => {
-                const studentName = getStudentName(r);
-                return (
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-bold text-primary">
-                                {studentName}
-                            </span>
-                            <LeaveStatusBadge status={r.status} />
+                }
+                headers={tableHeaders}
+                items={passesData}
+                canSelect={false}
+                emptyText="No leave records matching the active filters."
+                renderRow={(r) => {
+                    const studentName = getStudentName(r);
+                    return (
+                        <>
+                            {/* Student initials and full name */}
+                            <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
+                                <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                                    {getStudentInitials(studentName)}
+                                </div>
+                                <span className="text-sm font-semibold">{studentName}</span>
+                            </td>
+
+                            {/* Room No (if drilldown/warden/admin) or Hostel name (if SuperAdmin aggregate view) */}
+                            <td className="p-4 text-text-secondary font-medium">
+                                {selectedHostel || isWarden || isAdmin ? (r.studentInfo?.roomNumber || '--') : (
+                                    <span
+                                        className="text-primary font-semibold hover:underline cursor-pointer"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelInfo?._id || r.hostelId?._id || r.hostel)}`);
+                                        }}
+                                    >
+                                        {r.hostelInfo?.name || r.hostelId?.name || r.hostel}
+                                    </span>
+                                )}
+                            </td>
+
+                            {/* Period / Date */}
+                            <td className="p-4 text-text-secondary lowercase">
+                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
+                            </td>
+
+                            {/* Days / Type */}
+                            <td className="p-4 text-text-secondary capitalize">
+                                {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : r.type || r.outPassCategory}
+                            </td>
+
+                            {/* Times (Out pass only) */}
+                            {!isHomePass && (
+                                <>
+                                    <td className="p-4 text-text-secondary">
+                                        {r.outTime || '--'}
+                                    </td>
+                                    <td className="p-4 text-text-secondary">
+                                        {r.expectedReturnTime || r.returnTime || '--'}
+                                    </td>
+                                </>
+                            )}
+
+                            {/* Inline Status Dropdown */}
+                            <td className="p-4">
+                                {isAdmin && r.status === 'pending_admin' ? (
+                                    <Dropdown
+                                        options={statusOptions}
+                                        value="Pending"
+                                        onChange={(val) => setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'status' })}
+                                        minWidth="w-[130px]"
+                                        triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]`}
+                                    />
+                                ) : (
+                                    <LeaveStatusBadge status={r.status} />
+                                )}
+                            </td>
+
+                            {/* Inline Return Dropdown */}
+                            <td className="p-4">
+                                {isWarden && r.status === 'approved' ? (
+                                    <Dropdown
+                                        options={getReturnOptions(getReturnStatus(r))}
+                                        value=""
+                                        placeholder={getReturnStatus(r)}
+                                        onChange={(val) => setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'return' })}
+                                        minWidth="w-[160px]"
+                                        triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50 w-[160px]`}
+                                    />
+                                ) : (
+                                    <LeaveReturnBadge returnTracking={r.returnTracking} />
+                                )}
+                            </td>
+                        </>
+                    );
+                }}
+                renderMobileItem={(r) => {
+                    const studentName = getStudentName(r);
+                    return (
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-primary">
+                                    {studentName}
+                                </span>
+                                <LeaveStatusBadge status={r.status} />
+                            </div>
+                            <div className="text-xs text-text-secondary">
+                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
+                            </div>
                         </div>
-                        <div className="text-xs text-text-secondary">
-                            {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
-                        </div>
-                    </div>
-                );
-            }}
-            page={page}
-            setPage={setPage}
-            limit={10}
-            totalItems={pagination?.totalRecords || 0}
-            totalPages={pagination?.totalPages || 1}
-        />
+                    );
+                }}
+                page={page}
+                setPage={setPage}
+                limit={10}
+                totalItems={pagination?.totalRecords || 0}
+                totalPages={pagination?.totalPages || 1}
+            />
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null, value: null, type: null })}
+                onConfirm={handleConfirm}
+                title={confirmModal.type === 'status' ? 'Update Leave Status' : 'Update Return Status'}
+                message={`Are you sure you want to mark this leave as ${confirmModal.value}?`}
+                confirmText="Confirm Update"
+            />
+        </>
     );
 }
