@@ -8,6 +8,11 @@ export async function createVisitorProfile(payload) {
     return response.data;
 }
 
+export async function updateVisitorProfile(visitorId, payload) {
+    const response = await visitorApi.updateVisitorProfile(visitorId, payload);
+    return response.data;
+}
+
 export async function getParentVisitors(params) {
     const response = await visitorApi.getParentVisitors(params);
     return response.data;

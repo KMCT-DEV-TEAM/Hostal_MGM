@@ -59,6 +59,7 @@ const VisitorsPage = () => {
     const canExport = [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
 
     const [showCheckInModal, setShowCheckInModal] = useState(false);
+    const [editVisitorData, setEditVisitorData] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, visitorId: null });
@@ -148,6 +149,11 @@ const VisitorsPage = () => {
 
     const handleReject = (id) => {
         setConfirmModal({ isOpen: true, type: 'reject', visitorId: id });
+    };
+
+    const handleEdit = (visitor) => {
+        setEditVisitorData(visitor);
+        setShowCheckInModal(true);
     };
 
     const executeConfirmAction = async () => {
@@ -307,6 +313,7 @@ const VisitorsPage = () => {
                     onRegisterClick={() => setShowCheckInModal(true)}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onEdit={handleEdit}
                     page={page}
                     setPage={setPage}
                     pagination={pagination}
@@ -317,9 +324,14 @@ const VisitorsPage = () => {
 
             <RegisterVisitorModal
                 isOpen={showCheckInModal}
-                onClose={() => setShowCheckInModal(false)}
+                initialData={editVisitorData}
+                onClose={() => {
+                    setShowCheckInModal(false);
+                    setEditVisitorData(null);
+                }}
                 onSuccess={() => {
                     setShowCheckInModal(false);
+                    setEditVisitorData(null);
                     fetchVisitors();
                 }}
             />

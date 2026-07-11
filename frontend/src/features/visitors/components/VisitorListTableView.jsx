@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { Filter, Download, Check, X, Plus } from 'lucide-react';
+import { Filter, Download, Check, X, Plus, Edit } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
@@ -23,7 +23,8 @@ const VisitorListTableView = ({
     page,
     setPage,
     pagination,
-    userRole
+    userRole,
+    onEdit
 }) => {
 
     const headers = useMemo(() => {
@@ -44,7 +45,7 @@ const VisitorListTableView = ({
 
         baseCols.push("Phone", "Relation", { label: "Status", align: "start" });
         
-        if (canApproveReject) {
+        if (canApproveReject || userRole === 'parent') {
             baseCols.push({ label: "Actions", align: "center" });
         }
         return baseCols;
@@ -89,9 +90,9 @@ const VisitorListTableView = ({
                 <td className="p-4">
                     <StatusBadge status={visitor.status} />
                 </td>
-                {canApproveReject && (
+                {(canApproveReject || userRole === 'parent') && (
                     <td className="p-4 text-center">
-                        {visitor.status?.toLowerCase() === 'pending' ? (
+                        {canApproveReject && visitor.status?.toLowerCase() === 'pending' && (
                             <div className="flex items-center justify-center gap-2">
                                 <Button
                                     variant="ghost"
@@ -120,8 +121,28 @@ const VisitorListTableView = ({
                                     <X className="w-4 h-4" />
                                 </Button>
                             </div>
-                        ) : (
+                        )}
+                        {canApproveReject && visitor.status?.toLowerCase() !== 'pending' && (
                             <span className="text-gray-400 text-sm">--</span>
+                        )}
+                        
+                        {userRole === 'parent' && (
+                            <div className="flex items-center justify-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    fullWidth={false}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit && onEdit(visitor);
+                                    }}
+                                    className="!p-1.5 bg-secondary/10 text-secondary hover:bg-secondary/20"
+                                    title="Edit"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </Button>
+                                {/* Delete button will be added later */}
+                            </div>
                         )}
                     </td>
                 )}

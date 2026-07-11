@@ -5,6 +5,9 @@ const BASE_URL = '/visitor'
 export const visitorApi = {
     // 1. Create Visitor Profile
     createVisitorProfile: (payload) => api.post(`${BASE_URL}/parent/visitors`, payload),
+    
+    // Update Visitor Profile
+    updateVisitorProfile: (visitorId, payload) => api.patch(`${BASE_URL}/parent/visitors/${visitorId}`, payload),
 
     // 2. List Parent Visitors
     getParentVisitors: (params) => api.get(`${BASE_URL}/parent/visitors`, { params }),

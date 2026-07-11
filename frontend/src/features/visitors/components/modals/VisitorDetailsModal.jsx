@@ -50,7 +50,7 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
     if (error) {
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Error" maxWidth="max-w-md">
-                <div className="p-4 text-center text-red-500 font-medium">{error}</div>
+                <div className="p-4 text-center text-danger font-medium">{error}</div>
             </Modal>
         );
     }
@@ -63,9 +63,9 @@ export default function VisitorDetailsModal({ isOpen, onClose, visitorId }) {
 
     const renderRow = (label, value) => (
         <div className="flex mb-5 last:mb-0">
-            <div className="w-32 text-gray-500 text-sm font-medium">{label}</div>
-            <div className="w-8 text-gray-400 text-sm font-medium">:</div>
-            <div className="flex-1 font-medium text-gray-900 text-sm capitalize">{value || '--'}</div>
+            <div className="w-32 text-text-secondary text-sm font-medium">{label}</div>
+            <div className="w-8 text-text-secondary text-sm font-medium">:</div>
+            <div className="flex-1 font-medium text-text-primary text-sm capitalize">{value || '--'}</div>
         </div>
     );
 
