@@ -225,7 +225,8 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
         remarks: `Status changed to ${status} by ${roleName}.`
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
+
+    const updatedVisitor = await visitorRepository.updateVisitorStatus(
         visitorId,
         updateData,
         timelineEntry
@@ -1269,16 +1270,14 @@ export const getVisitDetails = async (visitId, user) => {
 
     // 2. Field-Level Security (ID Proof Masking)
     let maskedIdProofNumber = null;
-    const visitorData = visit.visitor?.refId;
-
-    if (visitorData && visitorData.idProofNumber) {
+    if (visit.visitorId && visit.visitorId.idProofNumber) {
         const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
 
         if (isSuperAdminOrAdmin) {
-            maskedIdProofNumber = visitorData.idProofNumber;
+            maskedIdProofNumber = visit.visitorId.idProofNumber;
         } else {
             // Mask all but last 4 characters
-            const num = visitorData.idProofNumber;
+            const num = visit.visitorId.idProofNumber;
             if (num.length > 4) {
                 maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
             } else {
@@ -1297,11 +1296,14 @@ export const getVisitDetails = async (visitId, user) => {
         remarks: t.remarks,
         createdAt: t.createdAt
     }));
+
     const formattedStudents = visit.students.map(s => ({
         studentId: s._id,
         studentName: s.name,
-        studentIdNumber: s.studentId,
-        roomNo: s.roomNumber || null,
+        studentIdNumber: s.studentIdNumber,
+        roomNumber: s.roomId ? s.roomId.roomNumber : null,
+        department: s.department,
+        course: s.course
     }));
 
     // Calculate Visit Duration if checked out
@@ -1319,7 +1321,7 @@ export const getVisitDetails = async (visitId, user) => {
     }
 
     const studentNames = formattedStudents.map(s => s.studentName).join(', ');
-    const visitorName = visitorData ? visitorData.name : 'Unknown';
+    const visitorName = visit.visitorId ? visit.visitorId.name : 'Unknown';
 
     return {
         // Quick Summary
@@ -1333,14 +1335,13 @@ export const getVisitDetails = async (visitId, user) => {
         },
 
         // Visitor Information
-        visitorInformation: visitorData ? {
-            visitorId: visitorData._id,
-            visitorName: visitorData.name,
-            phone: visitorData.phone,
-            email: visitorData.email,
-            relationship: visitorData.relationship,
-            address: visitorData.address,
-            idProofType: visitorData.idProofType,
+        visitorInformation: visit.visitorId ? {
+            visitorId: visit.visitorId._id,
+            visitorName: visit.visitorId.name,
+            phone: visit.visitorId.phone,
+            relationship: visit.visitorId.relationship,
+            address: visit.visitorId.address,
+            idProofType: visit.visitorId.idProofType,
             idProofNumber: maskedIdProofNumber
         } : null,
 
@@ -1546,7 +1547,8 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         remarks: `Sensitive info updated (${updatedFieldsList.join(', ')}). Needs re-approval.`
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
+
+    const updatedVisitor = await visitorRepository.updateVisitorStatus(
         visitorId,
         updateData,
         timelineEntry

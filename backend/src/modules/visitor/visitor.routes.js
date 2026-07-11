@@ -14,6 +14,7 @@ import {
     validateGetVisitDetails,
     validateUpdateVisitor,
     validateUpdateVisitorStatus
+
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -155,7 +156,7 @@ router.patch(
     '/:visitorId/status',
     authMiddleware,
     roleMiddleware('super_admin', 'admin', 'parent'),
-    validateUpdateVisitorStatus,
+    validateUpdateVisitor,
     visitorController.updateVisitorStatus
 );
 
