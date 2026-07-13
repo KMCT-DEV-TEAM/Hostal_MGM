@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { generateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb } from "./otp.service.js";
+import { getOrCreateOtp, verifyOtpDb, deleteOtpDb } from "./otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
 
 const sendOtp = asyncHandler(async (req, res) => {
@@ -10,8 +10,10 @@ const sendOtp = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Email is required");
   }
 
-  const otpCode = generateOtp();
-  await saveOtpDb(email, otpCode);
+  const { otpCode, isExisting } = await getOrCreateOtp(email);
+  if (isExisting) {
+    return sendError(res, 400, "OTP already sent. Please wait for it to expire before requesting a new one.");
+  }
 
   const subject = "Your OTP Code for Verification";
   const text = `Your OTP code is: ${otpCode}. It will expire in 5 minutes.`;

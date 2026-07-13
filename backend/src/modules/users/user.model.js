@@ -58,6 +58,15 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    lockUntil: {
+      type: Date,
+    },
+
     settings: {
       notifications: {
         emailAlerts: { type: Boolean, default: true },

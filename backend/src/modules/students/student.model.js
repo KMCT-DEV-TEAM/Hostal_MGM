@@ -113,6 +113,15 @@ const studentSchema = new mongoose.Schema(
       default: Date.now,
     },
 
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    lockUntil: {
+      type: Date,
+    },
+
     settings: {
       notifications: {
         emailAlerts: { type: Boolean, default: true },

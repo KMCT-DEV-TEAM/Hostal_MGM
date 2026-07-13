@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowLeft } from 'lucide-react';
 import OtpInput from '@/components/ui/OtpInput';
+import authService from '@/services/auth.service';
 
-export default function EmailVerificationModal({ isOpen, onClose, onVerify, email, isSubmitting, onResend, error }) {
+export default function EmailVerificationModal({ isOpen, onClose, onVerify, email, isSubmitting, onResend, initialError }) {
     const [otp, setOtp] = useState('');
     const [isResending, setIsResending] = useState(false);
     const [resendTimer, setResendTimer] = useState(300);
     const [isTimerActive, setIsTimerActive] = useState(true);
+    const [localError, setLocalError] = useState(initialError || '');
+
+    useEffect(() => {
+        if (initialError) setLocalError(initialError);
+    }, [initialError]);
 
     useEffect(() => {
         let interval;
@@ -38,19 +44,19 @@ export default function EmailVerificationModal({ isOpen, onClose, onVerify, emai
 
     const handleResend = async () => {
         setIsResending(true);
+        setLocalError('');
         try {
             if (onResend) {
                 await onResend();
             } else {
-                await requestEmailChange({ newEmail: email });
+                await authService.requestEmailChange({ newEmail: email });
             }
             setResendTimer(300);
             setIsTimerActive(true);
             const { showSuccessToast } = await import('@/utils/toast');
             showSuccessToast('OTP Resent', 'Check your new email for the verification code');
         } catch (error) {
-            const { showErrorToast } = await import('@/utils/toast');
-            showErrorToast('Failed', error?.message || 'Failed to resend OTP');
+            setLocalError(error?.message || 'Failed to resend OTP');
         } finally {
             setIsResending(false);
         }
@@ -85,13 +91,13 @@ export default function EmailVerificationModal({ isOpen, onClose, onVerify, emai
                 </p>
 
                 <div className="flex justify-center gap-2 sm:gap-3 mb-2 w-full">
-                    <OtpInput value={otp} onChange={setOtp} error={!!error} />
+                    <OtpInput value={otp} onChange={(val) => { setOtp(val); if (localError) setLocalError(''); }} error={!!localError} />
                 </div>
-                {error && (
-                    <p className="text-red-500 text-xs mb-6 font-medium">{error}</p>
+                {localError && (
+                    <p className="text-red-500 text-xs mb-6 font-medium">{localError}</p>
                 )}
 
-                <p className={`text-[14px] text-gray-400 font-medium ${error ? 'mb-8' : 'mb-8 mt-6'}`}>
+                <p className={`text-[14px] text-gray-400 font-medium ${localError ? 'mb-8' : 'mb-8 mt-6'}`}>
                     Didn't receive it ? {resendTimer > 0 ? (
                         <span className="text-gray-500 font-semibold ml-1">Resend in {formatTime(resendTimer)}</span>
                     ) : (

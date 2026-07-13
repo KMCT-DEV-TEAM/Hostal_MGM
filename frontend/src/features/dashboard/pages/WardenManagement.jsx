@@ -62,6 +62,7 @@ export default function WardenManagement() {
     const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [isChangingEmail, setIsChangingEmail] = useState(false);
+    const [otpError, setOtpError] = useState('');
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -342,6 +343,7 @@ export default function WardenManagement() {
             return;
         }
         setIsVerifying(true);
+        setOtpError('');
         try {
             await otpService.sendOtp(email);
             setOtpSource(source);
@@ -353,7 +355,18 @@ export default function WardenManagement() {
                 setIsEmailChangeModalOpen(false);
             }
         } catch (error) {
-            showErrorToast('Action Failed', error?.message || 'Failed to send OTP');
+            const errorMsg = error?.message || 'Failed to send OTP';
+            if (errorMsg.toLowerCase().includes('otp already sent')) {
+                setOtpError(errorMsg);
+                setOtpSource(source);
+                setOtpCode(['', '', '', '', '', '']);
+                setIsOtpModalOpen(true);
+                if (source === 'emailChange') {
+                    setIsEmailChangeModalOpen(false);
+                }
+            } else {
+                showErrorToast('Action Failed', errorMsg);
+            }
         } finally {
             setIsVerifying(false);
         }
@@ -361,6 +374,7 @@ export default function WardenManagement() {
 
     const handleResendOtp = async () => {
         setIsVerifying(true);
+        setOtpError('');
         const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
         try {
             await otpService.sendOtp(emailToVerify);
@@ -368,7 +382,7 @@ export default function WardenManagement() {
             setIsTimerActive(true);
             showSuccessToast('Success', 'OTP resent successfully!');
         } catch (error) {
-            showErrorToast('Error', error?.message || 'Failed to resend OTP');
+            setOtpError(error?.message || 'Failed to resend OTP');
         } finally {
             setIsVerifying(false);
         }
@@ -858,7 +872,7 @@ export default function WardenManagement() {
                         <hr className="border-gray-200 mb-6" />
 
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-[#222222] mb-2">Current Email <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-medium text-[#222222] mb-2">Current Email <span className="text-danger">*</span></label>
                             <input
                                 type="email"
                                 value={emailChangeForm}
@@ -870,7 +884,7 @@ export default function WardenManagement() {
                         </div>
 
                         <div className="mb-8">
-                            <label className="block text-sm font-medium text-[#222222] mb-2">New Email <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-medium text-[#222222] mb-2">New Email <span className="text-danger">*</span></label>
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <input
                                     type="email"
@@ -895,7 +909,7 @@ export default function WardenManagement() {
 
                         {isEmailVerified && (
                             <div className="mb-8">
-                                <label className="block text-sm font-medium text-[#222222] mb-2">Your Password <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-medium text-[#222222] mb-2">Your Password <span className="text-danger">*</span></label>
                                 <input
                                     type="password"
                                     value={passwordConfirm}
@@ -923,10 +937,13 @@ export default function WardenManagement() {
                     <form onSubmit={async (e) => {
                         e.preventDefault();
                         const code = otpCode.join('');
-                        if (code.length < 6) return;
-
+                        if (code.length !== 6) {
+                            setOtpError('Please enter a 6-digit code');
+                            return;
+                        }
+                        setIsVerifyingOtp(true);
+                        setOtpError('');
                         try {
-                            setIsVerifyingOtp(true);
                             const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
 
@@ -938,7 +955,7 @@ export default function WardenManagement() {
                                 showSuccessToast('Success', 'Email verified successfully!');
                             }
                         } catch (err) {
-                            showErrorToast('Error', err?.message || 'Invalid OTP');
+                            setOtpError(err?.message || 'Invalid OTP');
                         } finally {
                             setIsVerifyingOtp(false);
                         }
@@ -995,10 +1012,14 @@ export default function WardenManagement() {
                                         }
                                     }}
                                     className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border focus:outline-none transition-colors 
-                                        ${digit ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-300 text-[#0A437A] focus:border-[#0A437A]'}`}
+                                        ${otpError ? 'text-primary border-primary' : (digit ? 'border-[#0A437A] text-[#0A437A]' : 'border-gray-300 text-[#0A437A] focus:border-[#0A437A]')}`}
                                 />
                             ))}
                         </div>
+
+                        {otpError && (
+                            <p className="text-danger text-xs mb-6 font-medium text-center">{otpError}</p>
+                        )}
 
                         <p className="text-[14px] text-gray-400 mb-8 font-medium">
                             Didn't receive it ? {resendTimer > 0 ? (

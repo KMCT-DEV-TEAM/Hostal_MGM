@@ -130,6 +130,9 @@ const ContactAdministrator = () => {
                                 label="New Password"
                                 type="password"
                                 {...registerPassword('newPassword')}
+                                onCopy={(e) => e.preventDefault()}
+                                onPaste={(e) => e.preventDefault()}
+                                onCut={(e) => e.preventDefault()}
                                 error={passwordErrors.newPassword?.message}
                                 placeholder="Enter new password"
                             />
@@ -138,6 +141,9 @@ const ContactAdministrator = () => {
                                 label="Confirm Password"
                                 type="password"
                                 {...registerPassword('confirmPassword')}
+                                onCopy={(e) => e.preventDefault()}
+                                onPaste={(e) => e.preventDefault()}
+                                onCut={(e) => e.preventDefault()}
                                 error={passwordErrors.confirmPassword?.message}
                                 placeholder="Confirm new password"
                             />

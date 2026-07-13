@@ -29,8 +29,24 @@ const HostelFormModal = ({
             footer={
                 <>
                     <button
-                        type="submit"
-                        disabled={isSubmitting || !hostelForm.name || !hostelForm.code || !hostelForm.hosteltype || !hostelForm.capacity || !hostelForm.location || (hostelForm.phone && hostelForm.phone.length !== 10) || !!errors.name || !!errors.phone || !!errors.email}
+                        disabled={isSubmitting}
+                        onClick={(e) => {
+                            let newErrors = { ...errors };
+                            let hasError = false;
+                            if (!hostelForm.name) { newErrors.name = 'Hostel Name is required'; hasError = true; }
+                            if (!hostelForm.code) { newErrors.code = 'Hostel Code is required'; hasError = true; }
+                            if (!hostelForm.hosteltype) { newErrors.hosteltype = 'Hostel Type is required'; hasError = true; }
+                            if (!hostelForm.capacity) { newErrors.capacity = 'Capacity is required'; hasError = true; }
+                            if (!hostelForm.location) { newErrors.location = 'Address is required'; hasError = true; }
+                            if (hostelForm.phone && hostelForm.phone.length !== 10) { newErrors.phone = 'Phone must be exactly 10 digits'; hasError = true; }
+                            if (!hostelForm.phone) { newErrors.phone = 'Phone is required'; hasError = true; }
+                            if (errors.email) { hasError = true; }
+                            
+                            setErrors(newErrors);
+                            if (hasError) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingHostel ? t('save_changes') : t('save'))}
@@ -81,10 +97,11 @@ const HostelFormModal = ({
                                 type="text"
                                 required
                                 value={hostelForm.code}
-                                onChange={(e) => setHostelForm({ ...hostelForm, code: e.target.value.toUpperCase() })}
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                onChange={(e) => { setHostelForm({ ...hostelForm, code: e.target.value.toUpperCase() }); setErrors(prev => ({ ...prev, code: '' })); }}
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.code ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="HST-001"
                             />
+                            {errors.code && <p className="text-red-500 text-[10px] mt-1">{errors.code}</p>}
                         </div>
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('hostel_type')} <span className="text-red-500">*</span></label>
@@ -94,10 +111,11 @@ const HostelFormModal = ({
                                     { label: 'Girls Hostel', value: 'girls' }
                                 ]}
                                 value={hostelForm.hosteltype}
-                                onChange={(val) => setHostelForm({ ...hostelForm, hosteltype: val })}
+                                onChange={(val) => { setHostelForm({ ...hostelForm, hosteltype: val }); setErrors(prev => ({ ...prev, hosteltype: '' })); }}
                                 placeholder="Select Hostel Type"
-                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] text-left"
+                                triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.hosteltype ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A] text-left`}
                             />
+                            {errors.hosteltype && <p className="text-red-500 text-[10px] mt-1">{errors.hosteltype}</p>}
                         </div>
                     </div>
                 </section>
@@ -162,10 +180,11 @@ const HostelFormModal = ({
                                 required
                                 rows="3"
                                 value={hostelForm.location}
-                                onChange={(e) => setHostelForm({ ...hostelForm, location: e.target.value })}
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                onChange={(e) => { setHostelForm({ ...hostelForm, location: e.target.value }); setErrors(prev => ({ ...prev, location: '' })); }}
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.location ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder={t('full address placeholder')}
                             ></textarea>
+                            {errors.location && <p className="text-red-500 text-[10px] mt-1">{errors.location}</p>}
                         </div>
                     </div>
                 </section>
@@ -183,10 +202,11 @@ const HostelFormModal = ({
                                 required
                                 min="1"
                                 value={hostelForm.capacity}
-                                onChange={(e) => setHostelForm({ ...hostelForm, capacity: parseInt(e.target.value) || '' })}
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                onChange={(e) => { setHostelForm({ ...hostelForm, capacity: parseInt(e.target.value) || '' }); setErrors(prev => ({ ...prev, capacity: '' })); }}
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.capacity ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="100"
                             />
+                            {errors.capacity && <p className="text-red-500 text-[10px] mt-1">{errors.capacity}</p>}
                         </div>
                     </div>
                 </section>
