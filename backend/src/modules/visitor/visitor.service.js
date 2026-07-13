@@ -1571,6 +1571,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
 
     const updatedVisitor = await visitorRepository.updateVisitorStatus(
 
+
         visitorId,
         updateData,
         timelineEntry

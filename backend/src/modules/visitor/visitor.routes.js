@@ -13,7 +13,12 @@ import {
     validateListVisits,
     validateGetVisitDetails,
     validateUpdateVisitor,
+<<<<<<< HEAD
     validateUpdateVisitorStatus
+=======
+    validateUpdateVisitorStatus,
+
+>>>>>>> 55c4a87e9d66a9bb678e87f0025ea1141bef36e3
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
