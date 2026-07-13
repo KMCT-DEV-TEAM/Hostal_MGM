@@ -3,6 +3,7 @@ import { Download, Box, PackageCheck, PackageOpen } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
+import { InfoCard } from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -171,7 +172,7 @@ export default function WardenFurniture() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="lg:grid  hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <StatsCard
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}
@@ -258,6 +259,26 @@ export default function WardenFurniture() {
                 limit={limit}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
+                renderMobileItem={(item) => (
+                    <div >
+                        <InfoCard
+                            title={item.typeInfo?.name || "Unknown Furniture"}
+                            subtitle={item.furnitureId || "--"}
+                            status={{
+                                text: item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : "Unknown",
+                                color: item.status === 'available' ? 'green' :
+                                    item.status === 'allocated' ? 'blue' :
+                                        item.status === 'maintenance' ? 'yellow' :
+                                            item.status === 'scrap' || item.status === 'lost' ? 'red' : 'gray'
+                            }}
+                            fields={[
+                                { label: "Organization", value: item.organization?.name || "--" },
+                                { label: "Assigned To", value: item.studentId?.name || "Unassigned" }
+                            ]}
+                            onClick={() => handleRowClick(item)}
+                        />
+                    </div>
+                )}
             />
 
             <ExportFilterModal

@@ -3,6 +3,7 @@ import { Plus, Download, Edit2, Box, PackageCheck, PackageOpen } from 'lucide-re
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
+import { InfoCard } from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -255,7 +256,7 @@ export default function AdminFurniture() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+            <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 <StatsCard
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}
@@ -389,6 +390,28 @@ export default function AdminFurniture() {
                 limit={limit}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
+                renderMobileItem={(item) => (
+                    <div className="mb-2">
+                        <InfoCard
+                            title={item.name}
+                            subtitle={item.organization?.name || "No Organization"}
+                            fields={[
+                                { label: "Hostel", value: item.hostel?.name || "--" }
+                            ]}
+                            stats={[
+                                { label: "Quantity", value: item.total || item.assets?.total || 0 },
+                                { label: "Assigned", value: item.allocated || item.assets?.allocated || 0 },
+                                { label: "Available", value: item.available || item.assets?.available || 0 }
+                            ]}
+                            editable={isAdmin}
+                            onEdit={isAdmin ? () => {
+                                setSelectedType(item);
+                                setIsAddModalOpen(true);
+                            } : undefined}
+                            onClick={() => handleRowClick(item)}
+                        />
+                    </div>
+                )}
             />
 
             {isAddModalOpen && isAdmin && (

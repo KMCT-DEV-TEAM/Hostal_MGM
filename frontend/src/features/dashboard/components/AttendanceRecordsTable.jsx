@@ -5,8 +5,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import StudentAttendanceModal from './StudentAttendanceModal';
-import FilterAttendanceModal from './FilterAttendanceModal';
-import { Filter } from 'lucide-react';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function AttendanceRecordsTable({ windowId }) {
     const { user } = useAuthStore();
@@ -16,7 +16,6 @@ export default function AttendanceRecordsTable({ windowId }) {
     const [page, setPage] = useState(1);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filters, setFilters] = useState({});
     const [pagination, setPagination] = useState({
         totalRecords: 0,
@@ -87,12 +86,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                     {item.student?.room || 'N/A'}
                 </td>
                 <td className="p-4 align-middle">
-                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-medium w-[130px] ${item.status === 'present' ? 'bg-green-50 text-green-700' :
-                        item.status === 'absent' ? 'bg-red-50 text-red-700' :
-                            'bg-orange-50 text-orange-700'
-                        }`}>
-                        {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}
-                    </span>
+                    <StatusBadge status={item.status || 'pending'} className="w-[130px]" />
                 </td>
             </>
         );
@@ -113,12 +107,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                         )}
                         <span className="font-semibold text-gray-900">{item.student?.name || 'Unknown'}</span>
                     </div>
-                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-medium w-[130px] ${item.status === 'present' ? 'bg-green-50 text-green-700' :
-                        item.status === 'absent' ? 'bg-red-50 text-red-700' :
-                            'bg-orange-50 text-orange-700'
-                        }`}>
-                        {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}
-                    </span>
+                    <StatusBadge status={item.status || 'pending'} className="w-[130px]" />
                 </div>
                 <div className="text-gray-600 grid grid-cols-2 gap-2 mt-2">
                     <div>
@@ -153,13 +142,27 @@ export default function AttendanceRecordsTable({ windowId }) {
                 }}
                 searchPlaceholder="Search student..."
                 toolbarActions={
-                    <button
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2 rounded-md transition-colors ${Object.keys(filters).length > 0 ? 'bg-primary text-white hover:bg-secondary' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                        title="Filter records"
-                    >
-                        <Filter className="w-5 h-5" />
-                    </button>
+                    <div className="w-[140px]">
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: '' },
+                                { label: 'Present', value: 'present' },
+                                { label: 'Absent', value: 'absent' },
+                                { label: 'On Leave', value: 'on_leave' }
+                            ]}
+                            value={filters.status || ''}
+                            onChange={(val) => {
+                                if (val) {
+                                    setFilters({ status: val });
+                                } else {
+                                    setFilters({});
+                                }
+                                setPage(1);
+                            }}
+                            placeholder="Filter Status"
+                            minWidth="min-w-[140px]"
+                        />
+                    </div>
                 }
                 headers={headers}
                 items={records}
@@ -189,26 +192,6 @@ export default function AttendanceRecordsTable({ windowId }) {
                 student={selectedStudent}
                 windowId={windowId}
                 onRecordUpdated={fetchRecords}
-            />
-
-            <FilterAttendanceModal
-                isOpen={isFilterModalOpen}
-                onClose={() => setIsFilterModalOpen(false)}
-                filters={filters}
-                onApply={(newFilters) => {
-                    // Remove empty filters
-                    const cleanedFilters = Object.fromEntries(
-                        Object.entries(newFilters).filter(([_, v]) => v !== '')
-                    );
-                    setFilters(cleanedFilters);
-                    setIsFilterModalOpen(false);
-                    setPage(1);
-                }}
-                onReset={() => {
-                    setFilters({});
-                    setIsFilterModalOpen(false);
-                    setPage(1);
-                }}
             />
         </>
     );
