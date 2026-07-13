@@ -30,9 +30,9 @@ export default function AttendanceHeader({ onStatsFetched }) {
             const today = new Date().toISOString();
             const response = await attendanceService.getAdminWardenDashboardStatsByRole(user.role, { date: today });
             const data = response || {};
-            const newStats = { 
-                totalStudents: data.totalStudents || 0, 
-                presentToday: data.presentToday || 0, 
+            const newStats = {
+                totalStudents: data.totalStudents || 0,
+                presentToday: data.presentToday || 0,
                 absentToday: data.absentToday || 0,
                 windowId: data.windowId || null,
                 windowStatus: data.windowStatus || null,
@@ -64,7 +64,7 @@ export default function AttendanceHeader({ onStatsFetched }) {
             setIsCreating(true);
             const response = await attendanceService.createWindowByRole(user.role);
             showSuccessToast('Success', response?.message || 'Attendance window created');
-            
+
             if (response?.data?._id) {
                 navigate(`/dashboard/attendance/scan/${response.data._id}`);
             } else {
@@ -111,21 +111,21 @@ export default function AttendanceHeader({ onStatsFetched }) {
                 <StatsCard
                     label="TOTAL STUDENTS"
                     value={isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : stats.totalStudents}
-                    icon={<Users className="w-5 h-5 text-blue-600" />}
+                    icon={<Users className="w-5 h-5 text-primary" />}
                     iconBg="bg-blue-50"
                     borderColor="border-t-2 border-t-primary"
                 />
                 <StatsCard
                     label="PRESENT TODAY"
                     value={isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : stats.presentToday}
-                    icon={<CalendarCheck className="w-5 h-5 text-green-600" />}
+                    icon={<CalendarCheck className="w-5 h-5 text-success" />}
                     iconBg="bg-green-50"
                     borderColor="border-t-2 border-t-success"
                 />
                 <StatsCard
                     label="ABSENT TODAY"
                     value={isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : stats.absentToday}
-                    icon={<CalendarX className="w-5 h-5 text-red-600" />}
+                    icon={<CalendarX className="w-5 h-5 text-danger" />}
                     iconBg="bg-red-50"
                     borderColor="border-t-2 border-t-warning"
                 />

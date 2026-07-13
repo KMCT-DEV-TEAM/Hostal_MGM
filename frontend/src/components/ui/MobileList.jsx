@@ -79,20 +79,18 @@ export default function MobileList({
                     const isExpanded = expandedIds.includes(rowId);
 
                     return (
-                        <div 
-                            key={rowId || index} 
-                            className={`bg-white rounded-xl shrink-0 ${
-                                isExpanded 
-                                    ? 'overflow-visible shadow-md z-10 relative' 
+                        <div
+                            key={rowId || index}
+                            className={`bg-white rounded-xl shrink-0 ${isExpanded
+                                    ? 'overflow-visible shadow-md z-10 relative'
                                     : 'overflow-hidden shadow-sm'
-                            } ${
-                                isExpanded 
-                                    ? (isSelected ? 'border-x border-t border-b-0 border-[#0A437A]' : 'border-x border-t border-b-0 border-gray-200') 
+                                } ${isExpanded
+                                    ? (isSelected ? 'border-x border-t border-b-0 border-[#0A437A]' : 'border-x border-t border-b-0 border-gray-200')
                                     : (isSelected ? 'border border-[#0A437A]' : 'border border-gray-50')
-                            }`}
+                                }`}
                         >
                             {/* Header */}
-                            <div 
+                            <div
                                 className={`flex justify-between items-center p-3 border-b border-gray-50 bg-gray-50/30 cursor-pointer ${isExpanded ? 'rounded-t-xl' : ''}`}
                                 onClick={(e) => toggleExpand(e, rowId)}
                             >
@@ -181,7 +179,7 @@ export const MobileRow = ({ label, value, valueClass = "text-text-secondary" }) 
     <div className="flex border-b border-gray-50/50 bg-white items-center min-h-[40px]">
         <div className="w-1/3 py-2.5 px-3 text-text-secondary font-medium border-r border-gray-50/50 break-words">{label}</div>
         <div className={`w-2/3 py-2.5 px-3 flex items-center gap-1 ${valueClass}`}>
-            <span className="shrink-0">:</span> 
+            <span className="shrink-0">:</span>
             <div className="flex-1 min-w-0 break-words">{value}</div>
         </div>
     </div>
@@ -192,7 +190,7 @@ export const MobileStatusRow = ({ label = "Status", isActive, onClick }) => (
         <div className="w-1/3 py-2.5 px-3 text-text-secondary font-medium border-r border-gray-50/50">{label}</div>
         <div className="w-2/3 py-2.5 px-3 flex items-center gap-1">
             <span className="mr-1">:</span>
-            <button 
+            <button
                 type="button"
                 onClick={onClick}
                 className="flex items-center font-medium cursor-pointer text-text-secondary"
