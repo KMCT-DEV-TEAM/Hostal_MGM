@@ -10,7 +10,6 @@ import {
     VISITOR_VISIT_TIMELINE_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
-import studentModel from '../students/student.model.js';
 
 /**
  * Parent creates a new visitor profile
@@ -239,6 +238,7 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
     };
 
     const updatedVisitor = await visitorRepository.updateVisitorStatus(
+
         visitorId,
         updateData,
         timelineEntry
@@ -1570,6 +1570,7 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
     };
 
     const updatedVisitor = await visitorRepository.updateVisitorStatus(
+
         visitorId,
         updateData,
         timelineEntry
