@@ -237,8 +237,8 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
         remarks: `Status changed to ${status} by ${roleName}.`
     };
 
-
     const updatedVisitor = await visitorRepository.updateVisitorStatus(
+
         visitorId,
         updateData,
         timelineEntry
@@ -1569,8 +1569,9 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         remarks: `Sensitive info updated (${updatedFieldsList.join(', ')}). Needs re-approval.`
     };
 
-
     const updatedVisitor = await visitorRepository.updateVisitorStatus(
+
+
         visitorId,
         updateData,
         timelineEntry

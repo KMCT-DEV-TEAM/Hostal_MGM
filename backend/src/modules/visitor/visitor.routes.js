@@ -14,7 +14,6 @@ import {
     validateGetVisitDetails,
     validateUpdateVisitor,
     validateUpdateVisitorStatus,
-
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -132,7 +131,6 @@ router.get(
     validateGetVisitorDetails,
     visitorController.getVisitorDetails
 );
-
 // ---------------------------------------------------------
 // Action Routes
 // ---------------------------------------------------------

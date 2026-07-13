@@ -333,7 +333,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     ];
   }
   if (query.room) {
-    studentMatch["studentInfo.roomNo"] = { $regex: query.room, $options: "i" };
+    studentMatch["studentInfo.roomNumber"] = { $regex: query.room, $options: "i" };
   }
 
   if (Object.keys(studentMatch).length > 0) {
