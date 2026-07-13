@@ -741,7 +741,7 @@ export const approvePass = asyncHandler(async (req, res) => {
       }
     },
     { new: true }
-  ).populate("studentId", "name admissionNo roomNo");
+  ).populate("studentId", "name admissionNo roomNumber");
 
   const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
   const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
@@ -885,6 +885,40 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
     return sendError(res, 409, "The student has already been marked as left.");
   }
 
+  const now = new Date();
+
+  if (pass.passType === "home_pass" && pass.fromDate && pass.toDate) {
+    const startOfLeave = new Date(pass.fromDate);
+    startOfLeave.setUTCHours(0, 0, 0, 0);
+    const endOfLeave = new Date(pass.toDate);
+    endOfLeave.setUTCHours(23, 59, 59, 999);
+
+    if (now < startOfLeave) {
+      return sendError(res, 400, "The student cannot be marked as left before their scheduled leave date.");
+    }
+    if (now > endOfLeave) {
+      return sendError(res, 400, "This pass has expired. The student cannot leave using an expired pass.");
+    }
+  } else if (pass.passType === "out_pass" && pass.date) {
+    const startOfOutDate = new Date(pass.date);
+    startOfOutDate.setUTCHours(0, 0, 0, 0);
+
+    let endOfOutDate = new Date(pass.date);
+    if (pass.expectedReturnTime) {
+      const [hours, minutes] = pass.expectedReturnTime.split(":");
+      endOfOutDate.setUTCHours(parseInt(hours), parseInt(minutes), 59, 999);
+    } else {
+      endOfOutDate.setUTCHours(23, 59, 59, 999);
+    }
+
+    if (now < startOfOutDate) {
+      return sendError(res, 400, "The student cannot be marked as left before their scheduled out date.");
+    }
+    if (now > endOfOutDate) {
+      return sendError(res, 400, "This out pass has expired. The student cannot leave using an expired pass.");
+    }
+  }
+
   const updateQuery = {
     $set: {
       "returnTracking.leftHostelAt": new Date(),
@@ -937,6 +971,10 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
   }
 
   const returnedAt = new Date();
+
+  if (returnedAt < new Date(pass.returnTracking.leftHostelAt)) {
+    return sendError(res, 400, "Return time cannot be before the time the student left the hostel.");
+  }
 
   // Calculate on-time / late
   let returnStatus = "on_time";

@@ -68,6 +68,29 @@ export default {
         }
     },
 
+    VISITOR_UPDATE_PENDING: {
+        admin: {
+            "in-app": {
+                title: 'Visitor Update Needs Approval',
+                message: '{{visitorName}} has updated sensitive information ({{updatedFields}}) for student(s): {{studentNames}}. Please review and approve.'
+            },
+            push: {
+                title: 'Visitor Update Needs Approval',
+                body: '{{visitorName}} has updated sensitive information ({{updatedFields}}) for student(s): {{studentNames}}. Please review and approve.'
+            },
+            email: {
+                subject: 'Visitor Update Needs Approval',
+                html: '<h1>Visitor Update Needs Approval</h1><p><strong>{{visitorName}}</strong> has updated sensitive information (<strong>{{updatedFields}}</strong>) for student(s): <strong>{{studentNames}}</strong>.</p><p>Please review this update in the admin portal.</p>'
+            }
+        },
+        warden: {
+            "in-app": {
+                title: 'Visitor Update Needs Approval',
+                message: '{{visitorName}} has updated sensitive information ({{updatedFields}}) for student(s): {{studentNames}}.'
+            }
+        }
+    },
+
     VISITOR_APPROVED: {
         parent: {
             "in-app": {

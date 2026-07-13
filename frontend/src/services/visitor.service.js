@@ -44,6 +44,11 @@ export async function rejectVisitor(visitorId, payload) {
     return response.data;
 }
 
+export async function updateVisitorStatus(visitorId, status) {
+    const response = await visitorApi.updateVisitorStatus(visitorId, status);
+    return response.data;
+}
+
 /**
  * Visit Management Endpoints
  */

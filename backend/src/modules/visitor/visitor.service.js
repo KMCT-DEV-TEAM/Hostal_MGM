@@ -178,6 +178,12 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
 
     // 2. Authorization
     if (user.role === 'parent') {
+        if (!['Pending', 'Inactive'].includes(status)) {
+            const error = new Error('Parents can only change status to Pending or Inactive.');
+            error.status = 403;
+            throw error;
+        }
+
         const currentParent = await Parent.findById(user.id);
         if (!currentParent) {
             const error = new Error('Parent not found.');
@@ -195,7 +201,13 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
             error.status = 403;
             throw error;
         }
-    } else if (user.role !== 'admin' && user.role !== 'super_admin') {
+    } else if (user.role === 'admin' || user.role === 'super_admin') {
+        if (!['Inactive', 'Approved', 'Rejected'].includes(status)) {
+            const error = new Error('Admins can only change status to Inactive, Approved, or Rejected.');
+            error.status = 403;
+            throw error;
+        }
+    } else {
         const error = new Error('Unauthorized role to update visitor status.');
         error.status = 403;
         throw error;
@@ -225,7 +237,8 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
         remarks: `Status changed to ${status} by ${roleName}.`
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
+    const updatedVisitor = await visitorRepository.updateVisitorStatus(
+
         visitorId,
         updateData,
         timelineEntry
@@ -259,7 +272,7 @@ const buildListingStages = (query) => {
     if (sortBy === 'visitorName') actualSortField = 'name';
     if (sortBy === 'status') actualSortField = 'approvalStatus';
 
-    const sortStage = { [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
+    const sortStage = { priority: 1, [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
     const skip = (Number(page) - 1) * Number(limit);
 
     return { matchStage, sortStage, skip, limit: Number(limit), page: Number(page) };
@@ -489,7 +502,8 @@ export const getVisitorDetails = async (visitorId, user) => {
 
     const formattedStudents = visitor.students.map(s => ({
         id: s._id,
-        name: s.name
+        name: s.name,
+        roomNumber: s.roomNumber
     }));
 
     return {
@@ -1269,16 +1283,14 @@ export const getVisitDetails = async (visitId, user) => {
 
     // 2. Field-Level Security (ID Proof Masking)
     let maskedIdProofNumber = null;
-    const visitorData = visit.visitor?.refId;
-
-    if (visitorData && visitorData.idProofNumber) {
+    if (visit.visitorId && visit.visitorId.idProofNumber) {
         const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
 
         if (isSuperAdminOrAdmin) {
-            maskedIdProofNumber = visitorData.idProofNumber;
+            maskedIdProofNumber = visit.visitorId.idProofNumber;
         } else {
             // Mask all but last 4 characters
-            const num = visitorData.idProofNumber;
+            const num = visit.visitorId.idProofNumber;
             if (num.length > 4) {
                 maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
             } else {
@@ -1297,11 +1309,14 @@ export const getVisitDetails = async (visitId, user) => {
         remarks: t.remarks,
         createdAt: t.createdAt
     }));
+
     const formattedStudents = visit.students.map(s => ({
         studentId: s._id,
         studentName: s.name,
-        studentIdNumber: s.studentId,
-        roomNo: s.roomNumber || null,
+        studentIdNumber: s.studentIdNumber,
+        roomNumber: s.roomId ? s.roomId.roomNumber : null,
+        department: s.department,
+        course: s.course
     }));
 
     // Calculate Visit Duration if checked out
@@ -1319,7 +1334,7 @@ export const getVisitDetails = async (visitId, user) => {
     }
 
     const studentNames = formattedStudents.map(s => s.studentName).join(', ');
-    const visitorName = visitorData ? visitorData.name : 'Unknown';
+    const visitorName = visit.visitorId ? visit.visitorId.name : 'Unknown';
 
     return {
         // Quick Summary
@@ -1333,14 +1348,13 @@ export const getVisitDetails = async (visitId, user) => {
         },
 
         // Visitor Information
-        visitorInformation: visitorData ? {
-            visitorId: visitorData._id,
-            visitorName: visitorData.name,
-            phone: visitorData.phone,
-            email: visitorData.email,
-            relationship: visitorData.relationship,
-            address: visitorData.address,
-            idProofType: visitorData.idProofType,
+        visitorInformation: visit.visitorId ? {
+            visitorId: visit.visitorId._id,
+            visitorName: visit.visitorId.name,
+            phone: visit.visitorId.phone,
+            relationship: visit.visitorId.relationship,
+            address: visit.visitorId.address,
+            idProofType: visit.visitorId.idProofType,
             idProofNumber: maskedIdProofNumber
         } : null,
 
@@ -1537,6 +1551,15 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         };
     }
 
+    if (updateData.phone) {
+        const existingVisitor = await visitorRepository.findDuplicateVisitor(visitor.organizationId, updateData.phone);
+        if (existingVisitor && existingVisitor._id.toString() !== visitorId) {
+            const error = new Error('Another visitor is already registered with this phone number in the organization.');
+            error.status = 400;
+            throw error;
+        }
+    }
+
     // 4. Update and revert to Pending Status
     updateData.approvalStatus = VISITOR_STATUS.PENDING;
 
@@ -1546,7 +1569,9 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
         remarks: `Sensitive info updated (${updatedFieldsList.join(', ')}). Needs re-approval.`
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorWithTimeline(
+    const updatedVisitor = await visitorRepository.updateVisitorStatus(
+
+
         visitorId,
         updateData,
         timelineEntry

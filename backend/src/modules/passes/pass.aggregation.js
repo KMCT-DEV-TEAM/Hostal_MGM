@@ -46,7 +46,7 @@ export const buildStudentPassProjection = () => ({
     _id: "$studentInfo._id",
     name: "$studentInfo.name",
     admissionNo: "$studentInfo.admissionNo",
-    roomNo: "$studentInfo.roomNo"
+    roomNumber: "$studentInfo.roomNumber"
   }
 });
 

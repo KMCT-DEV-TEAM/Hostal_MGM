@@ -281,6 +281,24 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                 {/* LEFT COLUMN */}
                 <div className="space-y-6">
 
+                    {/* Student Information */}
+                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
+                        <h3 className="text-primary font-semibold text-sm mb-1">Student Information</h3>
+                        <p className="text-xs text-gray-400 mb-6">Details about student</p>
+
+                        <div className="grid grid-cols-[140px_1fr] gap-y-4 text-sm">
+                            <div className="text-gray-500">Student</div>
+                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.name || '--'}</span></div>
+
+                            <div className="text-gray-500">Admission No</div>
+                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.studentId || '--'}</span></div>
+
+
+                            <div className="text-gray-500">Room No</div>
+                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.roomNumber || '--'}</span></div>
+                        </div>
+                    </div>
+
                     {/* Leave Information */}
                     <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
                         <h3 className="text-primary font-semibold text-sm mb-1">Leave Information</h3>
@@ -385,13 +403,24 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
 
                     {/* Quick Summary */}
                     <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Quick Summary</h3>
-                        <p className="text-xs text-gray-400 mb-6">Quick Summary about the leave requests</p>
+                        <h3 className="text-primary font-semibold text-sm mb-1">Quick Summery</h3>
+                        <p className="text-xs text-gray-400 mb-6">Quick Summery about the leave requests</p>
 
                         <div className="space-y-4 text-sm">
-                            <div className="grid grid-cols-[100px_1fr] items-center">
+                            <div className="grid grid-cols-[130px_1fr] items-center">
                                 <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    Student
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-gray-400">:</span>
+                                    <span className="text-gray-700 font-medium">{request.studentId?.name || '--'}</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-[130px_1fr] items-center">
+                                <div className="text-gray-400 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     Status
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -399,38 +428,43 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                     {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-[100px_1fr] items-center">
+                            
+                            <div className="grid grid-cols-[130px_1fr] items-center">
                                 <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Parent
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Parent approval
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className="text-gray-400">:</span>
                                     {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-[100px_1fr] items-center">
+                            
+                            <div className="grid grid-cols-[130px_1fr] items-center">
                                 <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    {isHomePass ? 'From Date' : 'Date'}
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    Leave Period
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className="text-gray-400">:</span>
-                                    <span className="text-gray-700 font-medium">{formatDateReadable(isHomePass ? request.fromDate : request.date)}</span>
+                                    <span className="text-gray-700 font-medium">
+                                        {isHomePass ? `${formatDateReadable(request.fromDate)} - ${formatDateReadable(request.toDate)}` : formatDateReadable(request.date)}
+                                    </span>
                                 </div>
                             </div>
-                            {isHomePass && (
-                                <div className="grid grid-cols-[100px_1fr] items-center">
-                                    <div className="text-gray-400 flex items-center gap-2">
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        To Date
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-gray-400">:</span>
-                                        <span className="text-gray-700 font-medium">{formatDateReadable(request.toDate)}</span>
-                                    </div>
+
+                            <div className="grid grid-cols-[130px_1fr] items-center">
+                                <div className="text-gray-400 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                    Return
                                 </div>
-                            )}
+                                <div className="flex items-center gap-3">
+                                    <span className="text-gray-400">:</span>
+                                    <span className="text-gray-700 font-medium">
+                                        {isReturned ? (request.returnTracking?.returnStatus === 'late' ? 'Returned (Late)' : 'Returned') : '-----'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

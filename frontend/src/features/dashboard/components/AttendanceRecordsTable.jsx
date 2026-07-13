@@ -187,6 +187,8 @@ export default function AttendanceRecordsTable({ windowId }) {
                     setTimeout(() => setSelectedStudent(null), 200); // Clear after animation
                 }}
                 student={selectedStudent}
+                windowId={windowId}
+                onRecordUpdated={fetchRecords}
             />
 
             <FilterAttendanceModal
