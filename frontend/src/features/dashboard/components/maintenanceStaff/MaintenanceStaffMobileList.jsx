@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Wrench } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -55,7 +56,22 @@ const MaintenanceStaffMobileList = ({
             canSelect={true}
             canEdit={true}
             emptyText={t('no_records_found')}
+            iconFn={(staff) => (
+                <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
+                    <Wrench className="w-5 h-5 text-slate-500" />
+                </div>
+            )}
             titleFn={(staff) => staff.name}
+            subtitleFn={(staff) => staff.specialization || 'Maintenance Staff'}
+            rightTopFn={(staff) => staff.phone || 'N/A'}
+            statusBadgeFn={(staff) => (
+                <MobileCardStatusBadge
+                    status={staff.isActive ? "Active" : "Inactive"}
+                    dotColorClass={staff.isActive ? 'bg-green-500' : 'bg-red-500'}
+                    bgColorClass={staff.isActive ? 'bg-green-50' : 'bg-red-50'}
+                    textColorClass={staff.isActive ? 'text-green-600' : 'text-red-600'}
+                />
+            )}
             renderBody={renderBody}
             onViewDetails={(staff) => {
                 setSelectedStaffDetail(staff);

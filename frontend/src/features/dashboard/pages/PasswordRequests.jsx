@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Check, X, Search, Mail, Clock, ShieldCheck, Download, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Square, CheckSquare, MoreVertical, SlidersHorizontal } from "lucide-react";
+import { Check, X, Search, Mail, Clock, ShieldCheck, Download, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Square, CheckSquare, MoreVertical, SlidersHorizontal, Key } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import ListTable from "@/components/ui/ListTable";
-import MobileList, { MobileRow } from "@/components/ui/MobileList";
+import MobileList, { MobileRow, MobileCardStatusBadge } from "@/components/ui/MobileList";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import { passwordRequestApi } from "@/features/dashboard/api/passwordRequestApi";
 import { exportToExcel } from '@/utils/exportUtils';
@@ -376,22 +376,31 @@ const PasswordRequests = () => {
                     canSelect={true}
                     isSelectableFn={(item) => item.status === 'pending'}
                     emptyText="No pending password requests found."
+                    iconFn={(request) => (
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center font-bold text-sm uppercase">
+                            <Key className="w-5 h-5 text-blue-500" />
+                        </div>
+                    )}
                     titleFn={(request) => request.user?.name}
+                    subtitleFn={(request) => <span className="capitalize">{request.userRole || request.user?.role || 'User'}</span>}
+                    rightTopFn={(request) => `${new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                    statusBadgeFn={(request) => {
+                        let dotColor = 'bg-yellow-500', bgColor = 'bg-yellow-50', textColor = 'text-yellow-600';
+                        if (request.status === 'approved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+                        else if (request.status === 'rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+                        return (
+                            <MobileCardStatusBadge
+                                status={request.status || 'Pending'}
+                                dotColorClass={dotColor}
+                                bgColorClass={bgColor}
+                                textColorClass={textColor}
+                            />
+                        );
+                    }}
                     renderBody={(request) => (
                         <>
                             <MobileRow label="Email" value={request.user?.email} />
-                            <MobileRow label="Role" value={<span className="capitalize">{request.userRole || request.user?.role}</span>} />
-                            <MobileRow label="Requested" value={`${new Date(request.createdAt).toLocaleDateString()} at ${new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
-                            <MobileRow label="Status" value={
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium capitalize border ${
-                                    request.status === 'approved' ? 'bg-success-50 text-success border-success' :
-                                    request.status === 'rejected' ? 'bg-danger-50 text-danger border-danger' :
-                                    'bg-transparent text-yellow-600 border-yellow-400'
-                                }`}>
-                                    {request.status}
-                                </span>
-                            } />
-
+                            <MobileRow label="Requested Date" value={new Date(request.createdAt).toLocaleDateString()} />
                         </>
                     )}
                 />
