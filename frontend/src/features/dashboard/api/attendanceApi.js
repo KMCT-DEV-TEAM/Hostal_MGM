@@ -10,6 +10,7 @@ export const getRecordsByWarden = (id, params) => apiClient.get(`/warden/attenda
 export const scanStudentByWarden = (id, data) => apiClient.post(`/warden/attendance/windows/${id}/scan`, data);
 export const completeWindowByWarden = (id) => apiClient.patch(`/warden/attendance/windows/${id}/complete`);
 export const getStudentCalendarByWarden = (params) => apiClient.get('/warden/attendance/student-calendar', { params });
+export const correctAttendanceByWarden = (windowId, studentId, data) => apiClient.patch(`/warden/attendance/windows/${windowId}/students/${studentId}`, data);
 
 // --- ADMIN API ---
 export const getWindowsByAdmin = (params) => apiClient.get('/admin/attendance/windows', { params });
@@ -38,7 +39,7 @@ export const getParentCalendar = (params) => apiClient.get('/parent/attendance/c
 export const getParentDetails = (date) => apiClient.get(`/parent/attendance/details/${date}`);
 
 const attendanceApi = {
-    getWindowsByWarden, getDashboardStatsByWarden, createWindowsByWarden, getWindowDetailsByWarden, getRecordsByWarden, scanStudentByWarden, completeWindowByWarden, getStudentCalendarByWarden,
+    getWindowsByWarden, getDashboardStatsByWarden, createWindowsByWarden, getWindowDetailsByWarden, getRecordsByWarden, scanStudentByWarden, completeWindowByWarden, getStudentCalendarByWarden, correctAttendanceByWarden,
     getWindowsByAdmin, getDashboardStatsByAdmin, getWindowDetailsByAdmin, getRecordsByAdmin, getStudentCalendarByAdmin,
     getWindowsBySuperAdmin, getDashboardStatsBySuperAdmin, getWindowDetailsBySuperAdmin, getRecordsBySuperAdmin, getStudentCalendarBySuperAdmin,
     getStudentDashboard, getStudentHistory, getStudentCalendar, getStudentDetails,

@@ -2,14 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
+import UpdateAttendanceModal from './UpdateAttendanceModal';
 
-export default function StudentAttendanceModal({ isOpen, onClose, student }) {
+export default function StudentAttendanceModal({ isOpen, onClose, student, windowId, onRecordUpdated }) {
     const { user } = useAuthStore();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [calendarData, setCalendarData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [updateModalData, setUpdateModalData] = useState(null);
 
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
@@ -84,10 +87,21 @@ export default function StudentAttendanceModal({ isOpen, onClose, student }) {
             statusClasses = 'border-warning/70 text-warning bg-warning/5';
         }
 
+        const today = new Date();
+        const isToday = (dayNum === today.getDate() && month === (today.getMonth() + 1) && year === today.getFullYear());
+
+        let wrapperProps = {};
+        if (isToday && user?.role === ROLES.WARDEN) {
+            statusClasses += ' cursor-pointer hover:opacity-80 hover:scale-105';
+            wrapperProps.onClick = () => {
+                setUpdateModalData({ date: dayStr, status, windowId });
+            };
+        }
+
         return (
             <div key={dayStr || Math.random()} className="flex justify-center">
                 {dayNum ? (
-                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs font-medium ${statusClasses}`}>
+                    <div {...wrapperProps} className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs font-medium transition-all ${statusClasses}`}>
                         {dayNum}
                     </div>
                 ) : (
@@ -199,6 +213,22 @@ export default function StudentAttendanceModal({ isOpen, onClose, student }) {
                     </div>
                 </div>
             </div>
+
+            {updateModalData && (
+                <UpdateAttendanceModal
+                    isOpen={!!updateModalData}
+                    onClose={() => setUpdateModalData(null)}
+                    student={student}
+                    date={updateModalData.date}
+                    currentStatus={updateModalData.status}
+                    windowId={updateModalData.windowId}
+                    onSuccess={() => {
+                        setUpdateModalData(null);
+                        fetchCalendar();
+                        if (onRecordUpdated) onRecordUpdated();
+                    }}
+                />
+            )}
         </Modal>
     );
 }
