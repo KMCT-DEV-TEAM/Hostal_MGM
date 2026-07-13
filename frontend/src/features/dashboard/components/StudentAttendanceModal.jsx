@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import UpdateAttendanceModal from './UpdateAttendanceModal';
@@ -90,7 +91,7 @@ export default function StudentAttendanceModal({ isOpen, onClose, student, windo
         const isToday = (dayNum === today.getDate() && month === (today.getMonth() + 1) && year === today.getFullYear());
 
         let wrapperProps = {};
-        if (isToday) {
+        if (isToday && user?.role === ROLES.WARDEN) {
             statusClasses += ' cursor-pointer hover:opacity-80 hover:scale-105';
             wrapperProps.onClick = () => {
                 setUpdateModalData({ date: dayStr, status, windowId });
