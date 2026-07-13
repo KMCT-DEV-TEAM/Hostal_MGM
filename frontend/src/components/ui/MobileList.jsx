@@ -33,7 +33,8 @@ export default function MobileList({
     emptyText = "No items match the selected filter.",
     titleFn,
     isSelectableFn,
-    renderBody
+    renderBody,
+    renderItem
 }) {
     const isAllSelected = items.length > 0 && selectedIds.length === items.length;
     const [expandedIds, setExpandedIds] = useState([]);
@@ -77,6 +78,14 @@ export default function MobileList({
                     const rowId = item._id || item.id;
                     const isSelected = selectedIds.includes(rowId);
                     const isExpanded = expandedIds.includes(rowId);
+
+                    if (renderItem) {
+                        return (
+                            <React.Fragment key={rowId || index}>
+                                {renderItem(item, isSelected)}
+                            </React.Fragment>
+                        );
+                    }
 
                     return (
                         <div 
