@@ -165,7 +165,7 @@ export default function WardenFurniture() {
     const availableFurnitures = dashboardStats?.available || 0;
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full  p-4 md:p-6 flex flex-col bg-background-secondary">
             {/* Header */}
             <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
