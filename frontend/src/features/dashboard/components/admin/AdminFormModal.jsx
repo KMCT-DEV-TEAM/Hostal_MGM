@@ -35,8 +35,22 @@ const AdminFormModal = ({
             footer={
                 <>
                     <button
-                        type="submit"
-                        disabled={(!isEmailVerified && !editingAdmin) || isSubmitting || (adminForm.phone?.length !== 10)}
+                        disabled={isSubmitting}
+                        onClick={(e) => {
+                            let newErrors = { ...errors };
+                            let hasError = false;
+                            if (!adminForm.name || !adminForm.name.trim()) { newErrors.firstName = 'Name is required'; hasError = true; }
+                            if (!adminForm.phone) { newErrors.phone = 'Phone number is required'; hasError = true; }
+                            else if (adminForm.phone.length !== 10) { newErrors.phone = 'Phone number must be exactly 10 digits'; hasError = true; }
+                            if (!adminForm.email) { newErrors.email = 'Email is required'; hasError = true; }
+                            else if (!isEmailVerified && !editingAdmin) { newErrors.email = 'Please verify your email'; hasError = true; }
+                            if (!editingAdmin && !adminForm.organization) { newErrors.organization = 'Organization is required'; hasError = true; }
+                            
+                            setErrors(newErrors);
+                            if (hasError) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="flex items-center justify-center min-w-[80px] px-4 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-secondary disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingAdmin ? t('save_changes') : t('save'))}
@@ -148,10 +162,11 @@ const AdminFormModal = ({
                             <Dropdown
                                 options={organizations.map(org => ({ value: org._id, label: org.name }))}
                                 value={adminForm.organization}
-                                onChange={(val) => setAdminForm({ ...adminForm, organization: val })}
+                                onChange={(val) => { setAdminForm({ ...adminForm, organization: val }); setErrors(prev => ({ ...prev, organization: '' })); }}
                                 placeholder={t('select_organization')}
-                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                                triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.organization ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left`}
                             />
+                            {errors.organization && <p className="text-red-500 text-[10px] mt-1">{errors.organization}</p>}
                         </div>
                     </section>
                 )}
