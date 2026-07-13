@@ -393,10 +393,12 @@ export default function AdminFurniture() {
                 renderMobileItem={(item) => (
                     <div className="mb-2">
                         <InfoCard
+                            avatar={item.name}
                             title={item.name}
                             subtitle={item.organization?.name || "No Organization"}
                             fields={[
-                                { label: "Hostel", value: item.hostel?.name || "--" }
+                                { label: "Hostel", value: item.hostel?.name || "--" },
+
                             ]}
                             stats={[
                                 { label: "Quantity", value: item.total || item.assets?.total || 0 },
