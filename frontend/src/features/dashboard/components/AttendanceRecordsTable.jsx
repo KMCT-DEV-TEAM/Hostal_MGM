@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { formatDateISO } from '@/utils/formatters';
+import { formatDateISO, formatDateReadable } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
@@ -111,7 +111,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                 </div>
                 <div className="text-gray-600 grid grid-cols-2 gap-2 mt-2">
                     <div>
-                        <span className="font-medium">Date:</span> {formatDate(item.scannedAt)}
+                        <span className="font-medium">Date:</span> {formatDateReadable(item.scannedAt)}
                     </div>
                     <div>
                         <span className="font-medium">Room:</span> {item.student?.room || 'N/A'}
