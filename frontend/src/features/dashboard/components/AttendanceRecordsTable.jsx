@@ -6,6 +6,7 @@ import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import StudentAttendanceModal from './StudentAttendanceModal';
 import FilterAttendanceModal from './FilterAttendanceModal';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { Filter } from 'lucide-react';
 
 export default function AttendanceRecordsTable({ windowId }) {
@@ -87,12 +88,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                     {item.student?.room || 'N/A'}
                 </td>
                 <td className="p-4 align-middle">
-                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-medium w-[130px] ${item.status === 'present' ? 'bg-green-50 text-green-700' :
-                        item.status === 'absent' ? 'bg-red-50 text-red-700' :
-                            'bg-orange-50 text-orange-700'
-                        }`}>
-                        {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}
-                    </span>
+                    <StatusBadge status={item.status || 'pending'} className="w-[130px]" />
                 </td>
             </>
         );
@@ -113,12 +109,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                         )}
                         <span className="font-semibold text-gray-900">{item.student?.name || 'Unknown'}</span>
                     </div>
-                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-medium w-[130px] ${item.status === 'present' ? 'bg-green-50 text-green-700' :
-                        item.status === 'absent' ? 'bg-red-50 text-red-700' :
-                            'bg-orange-50 text-orange-700'
-                        }`}>
-                        {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}
-                    </span>
+                    <StatusBadge status={item.status || 'pending'} className="w-[130px]" />
                 </div>
                 <div className="text-gray-600 grid grid-cols-2 gap-2 mt-2">
                     <div>

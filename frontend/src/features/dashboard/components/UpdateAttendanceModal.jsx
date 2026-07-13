@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { CheckCircle2 } from 'lucide-react';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -10,6 +11,7 @@ import { formatDateReadable } from '@/utils/formatters';
 export default function UpdateAttendanceModal({ isOpen, onClose, student, date, currentStatus, windowId, onSuccess }) {
     const { user } = useAuthStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, statusToUpdate: null });
 
     if (!isOpen || !student) return null;
 
@@ -28,12 +30,17 @@ export default function UpdateAttendanceModal({ isOpen, onClose, student, date, 
                 remarks: `Marked ${statusToUpdate.replace('_', ' ')} manually by warden`
             });
             showSuccessToast('Attendance corrected successfully.');
+            setConfirmModal({ isOpen: false, statusToUpdate: null });
             if (onSuccess) onSuccess();
         } catch (error) {
             showErrorToast('Failed to update attendance', error.message);
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const confirmUpdate = (status) => {
+        setConfirmModal({ isOpen: true, statusToUpdate: status });
     };
 
     const isCurrentlyAbsent = currentStatus === 'absent';
@@ -86,7 +93,7 @@ export default function UpdateAttendanceModal({ isOpen, onClose, student, date, 
                     <div className="flex flex-wrap justify-center gap-3 w-full mt-2">
                         {currentStatus !== 'present' && (
                             <Button
-                                onClick={() => handleUpdateStatus('present')}
+                                onClick={() => confirmUpdate('present')}
                                 disabled={isSubmitting}
                                 className="bg-success! hover:bg-success/90! text-white text-xs px-3"
                                 fullWidth={false}
@@ -97,7 +104,7 @@ export default function UpdateAttendanceModal({ isOpen, onClose, student, date, 
                         )}
                         {currentStatus !== 'absent' && (
                             <Button
-                                onClick={() => handleUpdateStatus('absent')}
+                                onClick={() => confirmUpdate('absent')}
                                 disabled={isSubmitting}
                                 className="bg-danger! hover:bg-danger/90! text-white text-xs px-3"
                                 fullWidth={false}
@@ -108,7 +115,7 @@ export default function UpdateAttendanceModal({ isOpen, onClose, student, date, 
                         )}
                         {currentStatus !== 'on_leave' && (
                             <Button
-                                onClick={() => handleUpdateStatus('on_leave')}
+                                onClick={() => confirmUpdate('on_leave')}
                                 disabled={isSubmitting}
                                 className="bg-warning! hover:bg-warning/90! text-white text-xs px-3"
                                 fullWidth={false}
@@ -124,6 +131,18 @@ export default function UpdateAttendanceModal({ isOpen, onClose, student, date, 
             <div className="mt-8 text-center">
                 <p className="text-[10px] text-text-secondary">Attendance can be updated for today only</p>
             </div>
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, statusToUpdate: null })}
+                onConfirm={() => handleUpdateStatus(confirmModal.statusToUpdate)}
+                title="Confirm Update"
+                message={`Are you sure you want to mark ${student.name}'s attendance as ${confirmModal.statusToUpdate?.replace('_', ' ')}?`}
+                confirmText="Yes, Update"
+                cancelText="Cancel"
+                isSubmitting={isSubmitting}
+                variant="primary"
+            />
         </Modal>
     );
 }

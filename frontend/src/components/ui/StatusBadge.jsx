@@ -17,7 +17,7 @@ const getStatusConfig = (status) => {
         variant = 'danger';
     }
     // Warning mappings
-    else if (normalized.includes('pending') || ['maintenance'].includes(normalized)) {
+    else if (normalized.includes('pending') || ['maintenance', 'on_leave', 'on leave'].includes(normalized)) {
         variant = 'warning';
     }
     // Primary mappings
