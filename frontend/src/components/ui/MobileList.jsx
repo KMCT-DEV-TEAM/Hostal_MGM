@@ -95,8 +95,8 @@ export default function MobileList({
                         <div
                             key={rowId || index}
                             className={`bg-white rounded-xl shrink-0 mb-4 shadow-sm border transition-all ${isExpanded
-                                    ? 'overflow-visible z-10 relative'
-                                    : 'overflow-hidden'
+                                ? 'overflow-visible z-10 relative'
+                                : 'overflow-hidden'
                                 } ${isSelected ? 'border-primary bg-blue-50/20' : 'border-gray-100'}`}
                         >
                             {/* Header */}
@@ -144,7 +144,7 @@ export default function MobileList({
                                             </div>
                                         )}
                                         <div className="flex flex-col flex-1 min-w-0 pr-2">
-                                            <span className="font-bold text-primary text-base mb-1 truncate transition-colors">
+                                            <span className="font-semibold text-primary text-base mb-1 truncate transition-colors">
                                                 {titleFn ? titleFn(item) : (item.name || `Item ${index + 1}`)}
                                             </span>
                                             {subtitleFn && (
@@ -225,17 +225,16 @@ export const MobileStatusRow = ({ label = "Status", isActive, onClick }) => (
         <button
             type="button"
             onClick={onClick}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium cursor-pointer ${
-                isActive ? 'bg-green-50/70 text-green-600' : 'bg-red-50/70 text-red-600'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium cursor-pointer ${isActive ? 'bg-success/70 text-success' : 'bg-danger/70 text-danger'
+                }`}
         >
-            <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-success' : 'bg-danger'}`}></div>
             {isActive ? 'Active' : 'Inactive'}
         </button>
     </div>
 );
 
-export const MobileCardStatusBadge = ({ status, dotColorClass = "bg-blue-500", bgColorClass = "bg-blue-50", textColorClass = "text-blue-600" }) => (
+export const MobileCardStatusBadge = ({ status, dotColorClass = "bg-success", bgColorClass = "bg-success/70", textColorClass = "text-success" }) => (
     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${bgColorClass} ${textColorClass}`}>
         <div className={`w-1.5 h-1.5 rounded-full ${dotColorClass}`}></div>
         {status}
