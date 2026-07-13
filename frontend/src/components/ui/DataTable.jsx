@@ -160,7 +160,7 @@ export default function DataTable({
 
             {/* Toolbar section */}
             {hasToolbar && (
-                <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
+                <div className="px-2 md:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
                     {/* Top Row for Mobile (Search + Primary Action) / Left side for Desktop */}
                     <div className="flex w-full md:w-auto items-center gap-1">
                         {onSearchChange && (
