@@ -1,8 +1,9 @@
 import React from 'react';
-import { Square, CheckSquare, Search } from 'lucide-react';
+import { Square, CheckSquare, Search, Plus, Download, Trash2 } from 'lucide-react';
 import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import MobileList from '@/components/ui/MobileList';
 import Pagination from '@/components/ui/Pagination';
+import Dropdown from '@/components/ui/Dropdown';
 
 /**
  * Reusable layout component for data tables.
@@ -16,6 +17,16 @@ export default function DataTable({
 
     // Toolbar Props
     toolbarActions, // ReactNode
+    onAdd,
+    addText = "Add New",
+    onExport,
+    exportText = "Export",
+    filterOptions,
+    filterValue,
+    onFilterChange,
+    filterPlaceholder = "Filter",
+    onDeleteSelected,
+    deleteText = "Delete",
 
     // Table Props (Desktop)
     headers = [],
@@ -48,17 +59,112 @@ export default function DataTable({
     const isAllSelected = items.length > 0 && selectedIds.length === items.length;
     const totalCols = (canSelect ? 1 : 0) + headers.length;
 
-    const hasToolbar = onSearchChange || toolbarActions;
+    const getFlattenedChildren = (children) => {
+        const flat = [];
+        React.Children.forEach(children, (child) => {
+            if (child && child.type === React.Fragment) {
+                flat.push(...getFlattenedChildren(child.props.children));
+            } else if (child !== null && child !== undefined && child !== false) {
+                flat.push(child);
+            }
+        });
+        return flat;
+    };
+
+    const btnDelete = onDeleteSelected && selectedIds?.length > 0 ? (
+        <button
+            key="delete"
+            onClick={onDeleteSelected}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-xl text-sm font-semibold text-danger hover:bg-red-100 transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+        >
+            <Trash2 className="w-4 h-4" />
+            {deleteText} {selectedIds.length > 0 ? `( ${selectedIds.length} )` : ''}
+        </button>
+    ) : null;
+
+    const ddFilter = filterOptions ? (
+        <Dropdown
+            key="filter"
+            options={filterOptions}
+            value={filterValue}
+            onChange={onFilterChange}
+            placeholder={filterPlaceholder}
+            minWidth="w-[140px]"
+        />
+    ) : null;
+
+    const btnExport = onExport ? (
+        <button
+            key="export"
+            onClick={onExport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap font-medium"
+        >
+            <Download className="w-4 h-4" />
+            {exportText}
+        </button>
+    ) : null;
+
+    const btnAdd = onAdd ? (
+        <button
+            key="add"
+            onClick={onAdd}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+        >
+            <Plus className="w-4 h-4" />
+            {addText}
+        </button>
+    ) : null;
+
+    const customActions = getFlattenedChildren(toolbarActions);
+
+    // Build Desktop Actions: Delete -> Custom -> Filter -> Export -> Add
+    const desktopActions = [];
+    if (btnDelete) desktopActions.push(btnDelete);
+    desktopActions.push(...customActions);
+    if (ddFilter) desktopActions.push(ddFilter);
+    if (btnExport) desktopActions.push(btnExport);
+    if (btnAdd) desktopActions.push(btnAdd);
+
+    // Build Mobile Actions
+    let mobilePrimaryAction = null;
+    const mobileSecondaryActions = [];
+
+    // Primary mobile action preference: Add > Filter > Export > Custom
+    if (btnAdd) {
+        mobilePrimaryAction = btnAdd;
+    } else if (ddFilter) {
+        mobilePrimaryAction = ddFilter;
+    } else if (btnExport) {
+        mobilePrimaryAction = btnExport;
+    } else if (customActions.length > 0) {
+        mobilePrimaryAction = customActions[0];
+    }
+
+    // Secondary mobile actions: Everything else
+    if (btnDelete) mobileSecondaryActions.push(btnDelete);
+    if (customActions.length > 0) {
+        if (mobilePrimaryAction === customActions[0]) {
+            mobileSecondaryActions.push(...customActions.slice(1));
+        } else {
+            mobileSecondaryActions.push(...customActions);
+        }
+    }
+    if (ddFilter && mobilePrimaryAction !== ddFilter) mobileSecondaryActions.push(ddFilter);
+    if (btnExport && mobilePrimaryAction !== btnExport) mobileSecondaryActions.push(btnExport);
+    if (btnAdd && mobilePrimaryAction !== btnAdd) mobileSecondaryActions.push(btnAdd);
+
+    const hasToolbar = onSearchChange || desktopActions.length > 0;
 
     return (
         <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
 
             {/* Toolbar section */}
             {hasToolbar && (
-                <div className="p-4 flex flex-row items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="relative w-full max-w-sm">
+                <div className="px-2 md:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
+                    {/* Top Row for Mobile (Search + Primary Action) / Left side for Desktop */}
+                    <div className="flex w-full md:w-auto items-center gap-1">
                         {onSearchChange && (
-                            <>
+                            <div className="relative flex-1 md:w-80 shrink-0">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none placeholder-gray-400 font-medium text-gray-700"
@@ -66,13 +172,28 @@ export default function DataTable({
                                     value={searchQuery}
                                     onChange={onSearchChange}
                                 />
-                            </>
+                            </div>
+                        )}
+
+                        {/* Primary Action on Mobile */}
+                        {mobilePrimaryAction && (
+                            <div className="md:hidden shrink-0">
+                                {mobilePrimaryAction}
+                            </div>
                         )}
                     </div>
 
-                    {toolbarActions && (
-                        <div className="flex items-center gap-3">
-                            {toolbarActions}
+                    {/* Secondary Actions on Mobile / All Actions on Desktop */}
+                    {desktopActions.length > 0 && (
+                        <div className="flex flex-col md:flex-row items-center w-full md:w-auto pb-1 md:pb-0">
+                            {/* Mobile: skip primaryAction */}
+                            <div className="flex md:hidden items-center gap-3 w-full [&>*]:flex-1 [&_button]:justify-center">
+                                {mobileSecondaryActions}
+                            </div>
+                            {/* Desktop: show all actions */}
+                            <div className="hidden md:flex items-center gap-3 w-auto">
+                                {desktopActions}
+                            </div>
                         </div>
                     )}
                 </div>

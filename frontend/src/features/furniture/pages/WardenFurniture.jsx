@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Box, PackageCheck, PackageOpen } from 'lucide-react';
+import { Download, Box, PackageCheck, PackageOpen, Building2Icon, User } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
@@ -262,6 +262,7 @@ export default function WardenFurniture() {
                 renderMobileItem={(item) => (
                     <div >
                         <InfoCard
+                            avatar={item.typeInfo?.name}
                             title={item.typeInfo?.name || "Unknown Furniture"}
                             subtitle={item.furnitureId || "--"}
                             status={{
@@ -272,8 +273,8 @@ export default function WardenFurniture() {
                                             item.status === 'scrap' || item.status === 'lost' ? 'red' : 'gray'
                             }}
                             fields={[
-                                { label: "Organization", value: item.organization?.name || "--" },
-                                { label: "Assigned To", value: item.studentId?.name || "Unassigned" }
+                                { label: "Organization", value: item.organization?.name || "--", icon: <Building2Icon /> },
+                                { label: "Assigned To", value: item.studentId?.name || "Unassigned", icon: <User /> }
                             ]}
                             onClick={() => handleRowClick(item)}
                         />

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Edit2, Archive, CheckCircle2, XCircle, AlertTriangle, Hammer, Hash, Box, PackageCheck, PackageOpen, Trash2, Filter, Download } from 'lucide-react';
+import { ArrowLeft, Edit2, Archive, CheckCircle2, XCircle, AlertTriangle, Hammer, Hash, Box, PackageCheck, PackageOpen, Trash2, Filter, Download, User } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
+import { InfoCard } from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -227,7 +228,7 @@ export default function FurnitureDetails() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+            <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 <StatsCard
                     label="TOTAL FURNITURES"
                     value={stats?.totalAssets || 0}
@@ -252,39 +253,19 @@ export default function FurnitureDetails() {
             </div>
 
             <DataTable
-                toolbarActions={
-                    <>
-                        {selectedIds.length > 0 && (
-                            <button
-                                onClick={handleDeleteSelected}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-xl text-sm font-semibold text-danger hover:bg-red-100 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                            >
-                                Delete ( {selectedIds.length} )
-                            </button>
-                        )}
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: 'All' },
-                                { label: 'Available', value: 'available' },
-                                { label: 'Allocated', value: 'allocated' },
-                                { label: 'Maintenance', value: 'maintenance' },
-                                { label: 'Lost', value: 'lost' },
-                                { label: 'Scrap', value: 'scrap' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
-                            placeholder="All Status"
-                            minWidth="w-[140px]"
-                        />
-                        <button
-                            onClick={handleExport}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" />
-                            Export
-                        </button>
-                    </>
-                }
+                onDeleteSelected={handleDeleteSelected}
+                filterOptions={[
+                    { label: 'All Status', value: 'All' },
+                    { label: 'Available', value: 'available' },
+                    { label: 'Allocated', value: 'allocated' },
+                    { label: 'Maintenance', value: 'maintenance' },
+                    { label: 'Lost', value: 'lost' },
+                    { label: 'Scrap', value: 'scrap' }
+                ]}
+                filterValue={statusFilter}
+                onFilterChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                filterPlaceholder="All Status"
+                onExport={handleExport}
                 searchQuery={searchInput}
                 onSearchChange={(e) => setSearchInput(e.target.value)}
                 searchPlaceholder="Search assets..."
@@ -297,6 +278,29 @@ export default function FurnitureDetails() {
                 onRowClick={handleRowClick}
                 emptyText="No assets found."
                 loading={loading}
+                renderMobileItem={(item) => {
+                    const titleName = details?.typeInfo?.name || "Furniture";
+                    return (
+                        <div>
+                            <InfoCard
+                                avatar={item.studentId?.name || titleName}
+                                title={item.furnitureId || "--"}
+                                subtitle={titleName}
+                                status={{
+                                    text: item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : "Unknown",
+                                    color: item.status === 'available' ? 'green' :
+                                        item.status === 'allocated' ? 'blue' :
+                                            item.status === 'maintenance' ? 'yellow' :
+                                                item.status === 'scrap' || item.status === 'lost' ? 'red' : 'gray'
+                                }}
+                                fields={[
+                                    { label: "Assigned To", value: item.studentId?.name || "Unassigned", icon: <User /> }
+                                ]}
+                                onClick={() => handleRowClick(item)}
+                            />
+                        </div>
+                    );
+                }}
                 renderRow={(item) => {
                     return (
                         <>
