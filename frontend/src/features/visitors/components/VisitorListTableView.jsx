@@ -4,6 +4,7 @@ import { Download, Check, X, Plus, Edit, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
+import InfoCard from '@/components/ui/InfoCard';
 
 const VisitorListTableView = ({
     visitors,
@@ -123,47 +124,42 @@ const VisitorListTableView = ({
                 searchQuery={searchQuery}
                 onSearchChange={(e) => onSearch(e.target.value)}
                 searchPlaceholder="Search visitors..."
-                toolbarActions={
-                    <>
-                        <Dropdown
-                            options={[
-                                { value: '', label: 'All Status' },
-                                { value: 'Pending', label: 'Pending' },
-                                { value: 'Approved', label: 'Approved' },
-                                { value: 'Rejected', label: 'Rejected' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => onStatusFilterChange(val)}
-                            placeholder="Filter Status"
-                            minWidth="min-w-[140px]"
-                            triggerClassName="px-3 py-2 text-sm bg-white border-gray-200 focus:border-secondary h-10"
-                        />
-                        {canExport && (
-                            <Button
-                                variant="outline"
-                                size="md"
-                                fullWidth={false}
-                                onClick={onExportClick}
-                                className="flex-1 sm:flex-none whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" />
-                                Export
-                            </Button>
-                        )}
-                        {canRegister && (
-                            <Button
-                                size="md"
-                                fullWidth={false}
-                                onClick={onRegisterClick}
-                                className="flex-1 sm:flex-none whitespace-nowrap"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Register
-                            </Button>
-                        )}
-                    </>
-                }
+                filterOptions={[
+                    { value: '', label: 'All Status' },
+                    { value: 'Pending', label: 'Pending' },
+                    { value: 'Approved', label: 'Approved' },
+                    { value: 'Rejected', label: 'Rejected' }
+                ]}
+                filterValue={statusFilter}
+                onFilterChange={onStatusFilterChange}
+                filterPlaceholder="Filter Status"
+                onExport={canExport ? onExportClick : undefined}
+                onAdd={canRegister ? onRegisterClick : undefined}
+                addText="Register"
                 renderRow={renderRow}
+                renderMobileItem={(visitor) => {
+                    const visitorName = visitor.visitorName || visitor.name || 'Unknown';
+                    const relation = visitor.relationship || visitor.relation || '--';
+                    const visitingStudentNames = visitor.students && visitor.students.length > 0 ? visitor.students.map(s => s.name || s).join(', ') : '--';
+                    return (
+                        <div className="mb-2">
+                            <InfoCard
+                                avatar={visitorName}
+                                title={visitorName}
+                                subtitle={relation}
+                                status={{ text: visitor.status, color: visitor.status.Cheked_in ? "green" : visitor.status.Cheked_out ? "red" : visitor.status.Extended ? "yellow" : visitor.status.Overstayed ? "red" : visitor.status.Completed ? "green" : "gray" }}
+                                fields={[
+                                    { label: "Phone", value: visitor.phone || '--' },
+                                    userRole !== 'student' && { label: "Student", value: visitingStudentNames },
+                                    ['super_admin', 'admin', 'warden'].includes(userRole) && { label: "Room", value: visitor.roomNumber || '--' },
+                                ].filter(Boolean)}
+                                onClick={() => onRowClick && onRowClick(visitor)}
+                                editable={userRole === 'parent'}
+                                onEdit={() => onEdit && onEdit(visitor)}
+                            />
+                        </div>
+                    );
+                }}
                 emptyText="No visitors found."
                 page={page}
                 setPage={setPage}

@@ -117,7 +117,7 @@ export default function StudentAttendanceModal({ isOpen, onClose, student, windo
             onClose={onClose}
             maxWidth="max-w-md"
         >
-            <div className="-mt-16"> {/* Negative margin to offset Modal's default padding/header spacing */}
+            <div className="-mt-16 py-4"> {/* Negative margin to offset Modal's default padding/header spacing */}
 
 
                 {/* Profile Section */}

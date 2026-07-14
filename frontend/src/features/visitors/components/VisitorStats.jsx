@@ -29,7 +29,7 @@ const VisitorStats = ({ stats }) => {
     if (!stats || !Array.isArray(stats)) return null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="md:grid hidden grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {stats.map((stat) => {
                 const config = iconMapping[stat.key] || {
                     icon: Users,
@@ -37,7 +37,7 @@ const VisitorStats = ({ stats }) => {
                     borderColor: 'border-t-2 border-t-gray-300'
                 };
                 const Icon = config.icon;
-                
+
                 return (
                     <StatsCard
                         key={stat.key}

@@ -8,15 +8,17 @@ import Dropdown from '@/components/ui/Dropdown';
 import { showSuccessToast } from '@/utils/toast';
 
 // Modular imports
-import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
-import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
+import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
+// import { LeaveStatusBadge, LeaveReturnBadge } from '../components/badges/LeaveBadges';
+import InfoCard from '@/components/ui/InfoCard';
 import leaveService from '@/services/leave.service';
 import { formatDateReadable } from '@/utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import LeaveActionModal from '../components/modals/LeaveActionModal';
-import FilterLeavesModal from '../components/modals/FilterLeavesModal';
+import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
+import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 
 export default function ParentLeaves() {
     const { passType } = useParams();
@@ -36,7 +38,7 @@ export default function ParentLeaves() {
     const [actionModalConfig, setActionModalConfig] = useState({ isOpen: false, actionType: '', request: null });
     const [actionRemarks, setActionRemarks] = useState('');
     const [isActionSubmitting, setIsActionSubmitting] = useState(false);
-    
+
     // View Modal State
     const [viewId, setViewId] = useState(null);
 
@@ -88,7 +90,7 @@ export default function ParentLeaves() {
 
     const handleConfirmAction = async (remarks) => {
         if (!actionModalConfig.request) return;
-        
+
         try {
             setIsActionSubmitting(true);
             const { actionType, request } = actionModalConfig;
@@ -113,11 +115,6 @@ export default function ParentLeaves() {
         }
     };
 
-    const getDisplayStatus = (status) => {
-        if (!status) return 'pending_parent';
-        return status;
-    };
-
     const getStudentName = (r) => {
         return r.studentId?.name || r.studentName || 'Student';
     };
@@ -126,7 +123,6 @@ export default function ParentLeaves() {
         if (r.totalDays) return r.totalDays;
         if (r.fromDate && r.toDate) {
             const days = Math.round((new Date(r.toDate) - new Date(r.fromDate)) / (1000 * 60 * 60 * 24));
-            // Add 1 if inclusive, but assuming standard difference
             return days || 1;
         }
         return '--';
@@ -143,7 +139,7 @@ export default function ParentLeaves() {
     ];
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full overflow-y-auto p-4 md:p-6 flex flex-col bg-background-secondary">
             <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
@@ -151,15 +147,6 @@ export default function ParentLeaves() {
             <LeaveStatsCards stats={statsData} />
 
             <DataTable
-                toolbarActions={
-                    <button
-                        type="button"
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2.5 border rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.values(filters).some(Boolean) ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                    >
-                        <Filter className="w-4 h-4" />
-                    </button>
-                }
                 headers={tableHeaders}
                 items={requests}
                 canSelect={false}
@@ -223,54 +210,35 @@ export default function ParentLeaves() {
                     </>
                 )}
                 renderMobileItem={(r) => (
-                    <div className="space-y-3" onClick={() => setViewId(r._id)}>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                                {getStudentName(r).split(' ').map(n => n[0]).join('').substring(0, 2)}
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-bold text-gray-800">{getStudentName(r)}</h4>
-                                <span className="text-xs text-text-secondary">Applied: {formatDateReadable(r.createdAt)}</span>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg">
-                            <span className="font-bold text-gray-700 text-sm">
-                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
-                            </span>
-                            <span className="text-xs text-text-secondary font-medium bg-white px-2 py-1 rounded shadow-sm border border-gray-100">
-                                {isHomePass ? `${getDurationDays(r)} Days` : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}
-                            </span>
-                        </div>
-
-                        <div className="text-sm text-text-secondary space-y-2.5 pt-1">
-                            {!isHomePass && (
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="font-medium text-gray-500">Outing Time:</span>
-                                    <span className="font-semibold text-gray-700 bg-gray-50 px-2 py-0.5 rounded">{r.outTime || '--'} - {r.expectedReturnTime || r.returnTime || '--'}</span>
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-center pt-1 border-t border-gray-50" onClick={(e) => e.stopPropagation()}>
-                                <span className="font-medium text-gray-500 text-xs">Approval Status:</span>
-                                {r.status === 'pending_parent' ? (
-                                    <Dropdown
-                                        options={statusOptions}
-                                        value="pending_parent"
-                                        onChange={(val) => openActionModal(r, val)}
-                                        minWidth="w-[130px]"
-                                        triggerClassName="px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]"
-                                    />
-                                ) : (
-                                    <LeaveStatusBadge status={r.status} />
-                                )}
-                            </div>
-
-                            <div className="flex justify-between items-center">
-                                <span className="font-medium text-gray-500 text-xs">Return Status:</span>
-                                <LeaveReturnBadge returnTracking={r.returnTracking} />
-                            </div>
-                        </div>
+                    <div className="mb-2">
+                        <InfoCard
+                            avatar={getStudentName(r)}
+                            title={getStudentName(r)}
+                            subtitle={`Applied: ${formatDateReadable(r.createdAt)}`}
+                            fields={[
+                                { label: "Date", value: isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date) },
+                                { label: "Type/Duration", value: isHomePass ? `${getDurationDays(r)} Days` : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')) },
+                                !isHomePass && { label: "Outing Time", value: `${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}` },
+                                { label: "Return", value: <LeaveReturnBadge returnTracking={r.returnTracking} /> },
+                                {
+                                    label: "Status",
+                                    value: r.status === 'pending_parent' ? (
+                                        <div onClick={(e) => e.stopPropagation()}>
+                                            <Dropdown
+                                                options={statusOptions}
+                                                value="pending_parent"
+                                                onChange={(val) => openActionModal(r, val)}
+                                                minWidth="w-32"
+                                                triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <LeaveStatusBadge status={r.status} />
+                                    )
+                                }
+                            ].filter(Boolean)}
+                            onClick={() => setViewId(r._id)}
+                        />
                     </div>
                 )}
                 page={page}

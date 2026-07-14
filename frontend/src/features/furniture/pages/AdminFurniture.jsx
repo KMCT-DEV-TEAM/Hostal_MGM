@@ -3,7 +3,7 @@ import { Plus, Download, Edit2, Box, PackageCheck, PackageOpen } from 'lucide-re
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
-import { InfoCard } from '@/components/ui/InfoCard';
+import InfoCard from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -249,14 +249,14 @@ export default function AdminFurniture() {
     const availableFurnitures = dashboardStats?.available || 0;
 
     return (
-        <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full  p-4 md:p-6 flex flex-col bg-background-secondary">
             {/* Header */}
-            <div className="mb-6 ">
+            <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
 
             {/* Stat Cards */}
-            <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 ">
+            <div className="md:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 <StatsCard
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}
@@ -281,20 +281,56 @@ export default function AdminFurniture() {
             </div>
 
             <DataTable
-                onDeleteSelected={isAdmin && selectedIds.length > 0 ? () => setConfirmModal({ isOpen: true, type: 'deleteSelected' }) : undefined}
-                filterOptions={[
-                    { label: 'All Status', value: 'All' },
-                    { label: 'Active', value: 'true' },
-                    { label: 'Inactive', value: 'false' }
-                ]}
-                filterValue={statusFilter}
-                onFilterChange={(val) => updateSearchParams({ isActive: val, page: 1 })}
-                filterPlaceholder="All Status"
-                onExport={() => setIsExportConfirmOpen(true)}
-                onAdd={isAdmin ? () => {
-                    setSelectedType(null);
-                    setIsAddModalOpen(true);
-                } : undefined}
+                toolbarActions={
+                    <>
+                        {isAdmin && selectedIds.length > 0 && (
+                            <Button
+                                variant="outline"
+                                fullWidth={false}
+                                size="md"
+                                onClick={() => setConfirmModal({ isOpen: true, type: 'deleteSelected' })}
+                                className="border-red-200 text-danger bg-red-50 hover:bg-red-100"
+                            >
+                                Delete ({selectedIds.length})
+                            </Button>
+                        )}
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Active', value: 'true' },
+                                { label: 'Inactive', value: 'false' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => updateSearchParams({ isActive: val, page: 1 })}
+                            placeholder="All Status"
+                            minWidth="w-[140px]"
+                        />
+                        <Button
+                            variant='outline'
+                            fullWidth={false}
+                            size="md"
+                            onClick={() => setIsExportConfirmOpen(true)}
+                        >
+                            <Download className="w-4 h-4" />
+                            Export
+                        </Button>
+
+                        {isAdmin && (
+                            <Button
+                                variant="primary"
+                                fullWidth={false}
+                                size="md"
+                                onClick={() => {
+                                    setSelectedType(null);
+                                    setIsAddModalOpen(true);
+                                }}
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add New
+                            </Button>
+                        )}
+                    </>
+                }
                 searchQuery={searchInput}
                 onSearchChange={(e) => setSearchInput(e.target.value)}
                 searchPlaceholder="Search furniture types..."

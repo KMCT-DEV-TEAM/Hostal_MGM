@@ -312,7 +312,7 @@ export default function AdminLeaves() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
             <div className="mb-6 shrink-0 flex items-center gap-3">
                 {selectedHostel && (
                     <button

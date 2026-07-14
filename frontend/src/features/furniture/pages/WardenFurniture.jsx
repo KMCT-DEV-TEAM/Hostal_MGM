@@ -3,7 +3,7 @@ import { Download, Box, PackageCheck, PackageOpen, Building2Icon, User } from 'l
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
-import { InfoCard } from '@/components/ui/InfoCard';
+import InfoCard from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -165,7 +165,7 @@ export default function WardenFurniture() {
     const availableFurnitures = dashboardStats?.available || 0;
 
     return (
-        <div className="w-full h-full  p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
             {/* Header */}
             <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
@@ -197,33 +197,19 @@ export default function WardenFurniture() {
             </div>
 
             <DataTable
-                toolbarActions={
-                    <>
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: 'All' },
-                                { label: 'Available', value: 'available' },
-                                { label: 'Allocated', value: 'allocated' },
-                                { label: 'Maintenance', value: 'maintenance' },
-                                { label: 'Inactive', value: 'inactive' },
-                                { label: 'Lost', value: 'lost' },
-                                { label: 'Scrap', value: 'scrap' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => updateSearchParams({ status: val, page: 1 })}
-                            placeholder="All Status"
-                            minWidth="w-[140px]"
-                        />
-                        <button
-                            type="button"
-                            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-                            onClick={() => setIsExportConfirmOpen(true)}
-                        >
-                            <Download className="w-4 h-4" />
-                            Export
-                        </button>
-                    </>
-                }
+                filterOptions={[
+                    { label: 'All Status', value: 'All' },
+                    { label: 'Available', value: 'available' },
+                    { label: 'Allocated', value: 'allocated' },
+                    { label: 'Maintenance', value: 'maintenance' },
+                    { label: 'Inactive', value: 'inactive' },
+                    { label: 'Lost', value: 'lost' },
+                    { label: 'Scrap', value: 'scrap' }
+                ]}
+                filterValue={statusFilter}
+                onFilterChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                filterPlaceholder="All Status"
+                onExport={() => setIsExportConfirmOpen(true)}
                 searchQuery={searchInput}
                 onSearchChange={(e) => setSearchInput(e.target.value)}
                 searchPlaceholder="Search furniture assets..."

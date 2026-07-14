@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
+import InfoCard from '@/components/ui/InfoCard';
 
 const VisitorHistoryAggregatedView = ({ visitors, loading, searchQuery, onSearch, onHostelFilter, onRowClick }) => {
 
@@ -25,16 +26,17 @@ const VisitorHistoryAggregatedView = ({ visitors, loading, searchQuery, onSearch
     );
 
     const renderMobileItem = (visitor) => (
-        <div className="flex flex-col gap-2 p-4">
-            <div className="flex justify-between items-center">
-                <span className="font-medium text-text-primary">{visitor.hostelName}</span>
-            </div>
-            <div className="text-sm text-gray-600">Warden: {visitor.wardenName || '--'}</div>
-            <div className="flex gap-4 text-sm mt-1">
-                <span className="text-gray-600">Total: {visitor.totalVisits || 0}</span>
-                <span className="text-green-600">Inside: {visitor.inside || 0}</span>
-                <span className="text-blue-600">Completed: {visitor.completed || 0}</span>
-            </div>
+        <div className="">
+            <InfoCard
+                title={visitor.hostelName || '--'}
+                subtitle={`Warden: ${visitor.wardenName || '--'}`}
+                onClick={() => onRowClick && onRowClick({ id: visitor.hostelId, name: visitor.hostelName })}
+                stats={[
+                    { label: "Total", value: visitor.totalVisits || 0 },
+                    { label: "Inside", value: <span className="text-success">{visitor.inside || 0}</span> },
+                    { label: "Completed", value: <span className="text-secondary">{visitor.completed || 0}</span> }
+                ]}
+            />
         </div>
     );
 
