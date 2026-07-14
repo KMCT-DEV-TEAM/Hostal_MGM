@@ -7,8 +7,12 @@ import UserLayout from "./UserLayout";
 const LayoutDispatcher = () => {
     const role = useAuthStore(s => s.user?.role);
 
-    // If the role is Student or Parent, use the UserLayout
-    if (role === ROLES.STUDENT || role === ROLES.PARENT) {
+    const isConsumer =
+        role === ROLES.STUDENT ||
+        role === ROLES.PARENT;
+
+    // Student and Parent routing (Responsive logic is inside UserLayout)
+    if (isConsumer) {
         return <UserLayout />;
     }
 
