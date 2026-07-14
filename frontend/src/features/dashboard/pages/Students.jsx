@@ -14,9 +14,8 @@ import {
   getStudents,
 } from "@/services/student.service";
 import StudentsTable from "../components/students/StudentsTable";
-import StudentsMobileList from "../components/students/StudentsMobileList";
 import StudentsHeader from "../components/students/StudentsHeader";
-import StudentsToolbar from "../components/students/StudentsToolbar";
+
 import StudentFormModal from "../components/students/StudentFormModal";
 import StudentFilterModal from "../components/students/StudentFilterModal";
 import StudentExportFilterModal from "../components/Studentexportfiltermodal";
@@ -38,14 +37,14 @@ export default function Students() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
- const [filters, setFilters] = useState({
-  search: "",
-  courseId: "",
-  departmentId: "",
-  hostelId: "",
-  organizationId: "",
-  isActive: "",
-});
+  const [filters, setFilters] = useState({
+    search: "",
+    courseId: "",
+    departmentId: "",
+    hostelId: "",
+    organizationId: "",
+    isActive: "",
+  });
   const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -311,7 +310,7 @@ export default function Students() {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+    <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
       <StudentsHeader
         selectedIds={selectedIds}
         students={students}
@@ -323,21 +322,15 @@ export default function Students() {
       />
 
       <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-        <StudentsToolbar
+        <StudentsTable
           canCreate={canCreate}
           searchValue={filters.search}
           onSearch={handleSearch}
           onFilterClick={() => setIsFilterModalOpen(true)}
           onExport={handleExport}
           onAddClick={handleAddClick}
-          selectedIds={selectedIds}
           onActivateSelected={handleActivateSelected}
           onDeactivateSelected={handleDeactivateSelected}
-          canEdit={canEdit}
-          canDelete={canDelete}
-        />
-
-        <StudentsTable
           students={students}
           loading={loading}
           error={error}
@@ -354,20 +347,6 @@ export default function Students() {
           statusLoadingIds={statusLoadingIds}
         />
 
-        <StudentsMobileList
-          students={students}
-          loading={loading}
-          error={error}
-          canEdit={canEdit}
-          showOrganizationColumn={role === ROLES.SUPER_ADMIN}
-          selectedIds={selectedIds}
-          onSelectAll={handleSelectAll}
-          onSelectRow={handleSelectRow}
-          onViewClick={handleViewClick}
-          onEditClick={handleEditClick}
-          onStatusChange={handleStatusChange}
-          statusLoadingIds={statusLoadingIds}
-        />
 
         <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
           <div>
@@ -408,11 +387,10 @@ export default function Students() {
                 <button
                   key={pageNum}
                   onClick={() => setPage(pageNum)}
-                  className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
-                    page === pageNum
-                      ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                      : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                  } cursor-pointer`}
+                  className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
+                    ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                    : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                    } cursor-pointer`}
                 >
                   {pageNum}
                 </button>

@@ -191,9 +191,9 @@ export const InfoCard = forwardRef(
           {/* Fields */}
           {fields.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-50">
-              <div className="grid grid-cols-2 gap-y-5 gap-x-4">
+              <div className="grid grid-cols-2 gap-y-2 gap-x-2">
                 {fields.map((field, idx) => (
-                  <div key={idx} className="flex flex-col gap-1.5">
+                  <div key={idx} className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-[13px] text-gray-400 font-medium">
                       {field.icon && (
                         <span className="text-gray-400 flex-shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">
