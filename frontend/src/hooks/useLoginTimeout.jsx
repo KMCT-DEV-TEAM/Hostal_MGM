@@ -8,11 +8,11 @@ export const useLoginTimeout = (watch, reset, timeoutMs = 60000) => { // Default
         const checkTimeout = () => {
             const values = watch();
             // Check if user has entered anything (e.g. email or password)
-            const hasData = Object.values(values).some(val => val !== '' && val !== null && val !== undefined && val !== 'student' && val !== 'parent');
+            const hasData = Object.values(values).some(val => typeof val === 'string' && val.trim() !== '' && !['student', 'parent', 'admin', 'warden', 'maintenance_staff'].includes(val));
             
             if (hasData) {
                 reset();
-                showErrorToast('Session Timeout', 'Login form cleared due to inactivity for your security.');
+                showErrorToast('Session Timeout', 'Login fields cleared due to inactivity for your security.');
             }
         };
 

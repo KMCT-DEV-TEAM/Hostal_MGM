@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Network } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -55,7 +56,22 @@ const DepartmentMobileList = ({
             canSelect={true}
             canEdit={true}
             emptyText={t('no_records_found')}
+            iconFn={(o) => (
+                <div className="w-10 h-10 rounded-full bg-cyan-50 flex items-center justify-center">
+                    <Network className="w-5 h-5 text-cyan-500" />
+                </div>
+            )}
             titleFn={(o) => o.name}
+            subtitleFn={(o) => o.courseId ? o.courseId.name : 'Department'}
+            rightTopFn={(o) => o.code || 'N/A'}
+            statusBadgeFn={(o) => (
+                <MobileCardStatusBadge
+                    status={o.isActive ? "Active" : "Inactive"}
+                    dotColorClass={o.isActive ? 'bg-green-500' : 'bg-red-500'}
+                    bgColorClass={o.isActive ? 'bg-green-50' : 'bg-red-50'}
+                    textColorClass={o.isActive ? 'text-green-600' : 'text-red-600'}
+                />
+            )}
             renderBody={renderBody}
             onViewDetails={(o) => {
                 setSelectedDepartmentDetail(o);

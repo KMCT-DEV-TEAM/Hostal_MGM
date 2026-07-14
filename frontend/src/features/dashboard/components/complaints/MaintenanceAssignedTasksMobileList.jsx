@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Droplet, Lightbulb, Wifi, Wrench, AlertCircle } from 'lucide-react';
 
 const MaintenanceAssignedTasksMobileList = ({
     tasks,
@@ -8,6 +9,24 @@ const MaintenanceAssignedTasksMobileList = ({
     handleRejectClick,
     getStatusStyle
 }) => {
+
+    const getCategoryIcon = (category) => {
+        const cat = category?.toLowerCase() || '';
+        if (cat.includes('water') || cat.includes('plumb')) return <Droplet className="w-5 h-5 text-blue-500" />;
+        if (cat.includes('light') || cat.includes('electric')) return <Lightbulb className="w-5 h-5 text-orange-500" />;
+        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return <Wifi className="w-5 h-5 text-teal-500" />;
+        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return <Wrench className="w-5 h-5 text-gray-500" />;
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+    };
+
+    const getCategoryBgColor = (category) => {
+        const cat = category?.toLowerCase() || '';
+        if (cat.includes('water') || cat.includes('plumb')) return "bg-blue-50";
+        if (cat.includes('light') || cat.includes('electric')) return "bg-orange-50";
+        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return "bg-teal-50";
+        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return "bg-gray-50";
+        return "bg-red-50";
+    };
 
     const renderBody = (task) => (
         <>
@@ -53,7 +72,28 @@ const MaintenanceAssignedTasksMobileList = ({
             canSelect={false}
             canEdit={false}
             emptyText="No tasks found."
+            iconFn={(task) => (
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryBgColor(task.category?.name)}`}>
+                    {getCategoryIcon(task.category?.name)}
+                </div>
+            )}
             titleFn={(task) => task.subject || 'Task'}
+            subtitleFn={(task) => task.roomNo ? `Room ${task.roomNo}` : (task.category?.name || 'N/A')}
+            rightTopFn={(task) => new Date(task.createdAt).toLocaleDateString()}
+            statusBadgeFn={(task) => {
+                let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
+                if (task.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+                else if (task.status === 'Pending') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+                else if (task.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+                return (
+                    <MobileCardStatusBadge
+                        status={task.status || 'Pending'}
+                        dotColorClass={dotColor}
+                        bgColorClass={bgColor}
+                        textColorClass={textColor}
+                    />
+                );
+            }}
             renderBody={renderBody}
         />
     );

@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Building2 } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -73,7 +74,22 @@ const HostelMobileList = ({
             canSelect={true}
             canEdit={(hostel) => user?.role === 'super_admin' || hostel.adminId?._id === user?._id || hostel.adminId?._id === user?.id || hostel.adminId === user?._id || hostel.adminId === user?.id}
             emptyText={t('no_hostel_found')}
+            iconFn={(hostel) => (
+                <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-purple-500" />
+                </div>
+            )}
             titleFn={(hostel) => hostel.name}
+            subtitleFn={(hostel) => <span className="capitalize">{hostel.hosteltype} | {hostel.capacity} capacity</span>}
+            rightTopFn={(hostel) => hostel.studentsCount ? `${hostel.studentsCount} Students` : null}
+            statusBadgeFn={(hostel) => (
+                <MobileCardStatusBadge
+                    status={hostel.isActive ? 'Active' : 'Inactive'}
+                    dotColorClass={hostel.isActive ? 'bg-green-500' : 'bg-red-500'}
+                    bgColorClass={hostel.isActive ? 'bg-green-50' : 'bg-red-50'}
+                    textColorClass={hostel.isActive ? 'text-green-600' : 'text-red-600'}
+                />
+            )}
             renderBody={renderBody}
             onViewDetails={(hostel) => {
                 setSelectedHostelDetail(hostel);

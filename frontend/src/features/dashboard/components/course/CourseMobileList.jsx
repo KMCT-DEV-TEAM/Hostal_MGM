@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { BookOpen } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -54,7 +55,22 @@ const CourseMobileList = ({
             canSelect={true}
             canEdit={true}
             emptyText="No Courses match the selected filter."
+            iconFn={(o) => (
+                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-orange-500" />
+                </div>
+            )}
             titleFn={(o) => o.name}
+            subtitleFn={(o) => o.code || 'Course'}
+            rightTopFn={(o) => o.batchesCount ? `${o.batchesCount} Batches` : null}
+            statusBadgeFn={(o) => (
+                <MobileCardStatusBadge
+                    status={o.isActive ? "Active" : "Inactive"}
+                    dotColorClass={o.isActive ? 'bg-green-500' : 'bg-red-500'}
+                    bgColorClass={o.isActive ? 'bg-green-50' : 'bg-red-50'}
+                    textColorClass={o.isActive ? 'text-green-600' : 'text-red-600'}
+                />
+            )}
             renderBody={renderBody}
             onViewDetails={(o) => {
                 setSelectedCourseDetail(o);

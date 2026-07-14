@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -26,6 +27,7 @@ const UserPortalLogin = () => {
     });
 
     const [lockoutTime, setLockoutTime] = useState(0);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         if (lockoutTime > 0) {
@@ -118,11 +120,20 @@ const UserPortalLogin = () => {
 
                         <div>
                             <Input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 label="Password"
                                 {...register('password')}
                                 error={errors.password?.message}
                                 placeholder="Enter your password"
+                                endIcon={
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="focus:outline-none hover:text-gray-600 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                }
                             />
                             <div className="flex justify-end mt-2">
                                 <Link

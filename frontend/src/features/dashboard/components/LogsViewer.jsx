@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal, Eye, MoreVertical } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
 import ListTable from "@/components/ui/ListTable";
-import MobileList, { MobileRow } from "@/components/ui/MobileList";
+import MobileList, { MobileRow, MobileCardStatusBadge } from "@/components/ui/MobileList";
 import DateInput from "@/components/ui/DateInput";
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import LogsFilterModal from "./LogsFilterModal";
@@ -285,7 +285,28 @@ const LogsViewer = ({ entityType }) => {
                 loading={isLoading}
                 canSelect={false}
                 emptyText="No logs found matching your criteria."
+                iconFn={(log) => (
+                    <div className="w-10 h-10 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-sm uppercase">
+                        {log.action ? log.action.substring(0, 2) : 'NA'}
+                    </div>
+                )}
                 titleFn={(log) => log.action}
+                subtitleFn={(log) => log.user?.name || log.user?.email || 'Unknown'}
+                rightTopFn={(log) => `${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                statusBadgeFn={(log) => {
+                    let dotColor = 'bg-gray-500', bgColor = 'bg-gray-50', textColor = 'text-gray-600';
+                    if (log.status === 'success') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+                    else if (log.status === 'error') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+                    else if (log.status === 'warning') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+                    return (
+                        <MobileCardStatusBadge
+                            status={log.status || 'Unknown'}
+                            dotColorClass={dotColor}
+                            bgColorClass={bgColor}
+                            textColorClass={textColor}
+                        />
+                    );
+                }}
                 onViewDetails={(log) => setSelectedLog(log)}
                 renderBody={(log) => (
                     <>

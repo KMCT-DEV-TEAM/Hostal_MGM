@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Droplet, Lightbulb, Wifi, Wrench, AlertCircle } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 
 const WardenComplaintsMobileList = ({
@@ -15,12 +16,53 @@ const WardenComplaintsMobileList = ({
         label: cat.name
     }));
 
+    const getCategoryIcon = (category) => {
+        const cat = category?.toLowerCase() || '';
+        if (cat.includes('water') || cat.includes('plumb')) return <Droplet className="w-5 h-5 text-blue-500" />;
+        if (cat.includes('light') || cat.includes('electric')) return <Lightbulb className="w-5 h-5 text-orange-500" />;
+        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return <Wifi className="w-5 h-5 text-teal-500" />;
+        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return <Wrench className="w-5 h-5 text-gray-500" />;
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+    };
+
+    const getCategoryBgColor = (category) => {
+        const cat = category?.toLowerCase() || '';
+        if (cat.includes('water') || cat.includes('plumb')) return "bg-blue-50";
+        if (cat.includes('light') || cat.includes('electric')) return "bg-orange-50";
+        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return "bg-teal-50";
+        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return "bg-gray-50";
+        return "bg-red-50";
+    };
+
     return (
         <MobileList
             items={complaints}
             loading={loading}
             emptyText="No complaints found."
-            titleFn={(complaint) => `${complaint.student} - ${complaint.subject}`}
+            iconFn={(complaint) => (
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryBgColor(complaint.category)}`}>
+                    {getCategoryIcon(complaint.category)}
+                </div>
+            )}
+            titleFn={(complaint) => `${complaint.subject} - ${complaint.roomNo}`}
+            subtitleFn={(complaint) => `${complaint.student} • ${complaint.description || complaint.category}`}
+            rightTopFn={(complaint) => complaint.date}
+            statusBadgeFn={(complaint) => {
+                let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
+                if (complaint.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+                else if (complaint.status === 'Awaiting' || complaint.status === 'Pending') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+                else if (complaint.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+                else if (complaint.status === 'Incomplete') { dotColor = 'bg-primary'; bgColor = 'bg-primary/10'; textColor = 'text-primary'; }
+
+                return (
+                    <MobileCardStatusBadge
+                        status={complaint.status || 'Pending'}
+                        dotColorClass={dotColor}
+                        bgColorClass={bgColor}
+                        textColorClass={textColor}
+                    />
+                );
+            }}
             onViewDetails={(complaint) => onViewClick && onViewClick(complaint)}
             renderBody={(complaint) => (
                 <>

@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Globe } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -71,7 +72,22 @@ const OrganizationMobileList = ({
             canSelect={!isAdmin}
             canEdit={!isAdmin}
             emptyText={t('no_org_found')}
+            iconFn={(o) => (
+                <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-teal-500" />
+                </div>
+            )}
             titleFn={(o) => o.name}
+            subtitleFn={(o) => o.email || o.phone || 'Organization'}
+            rightTopFn={(o) => o.studentsCount ? `${o.studentsCount} Students` : null}
+            statusBadgeFn={(o) => (
+                <MobileCardStatusBadge
+                    status={o.isActive ? t('active') : t('inactive')}
+                    dotColorClass={o.isActive ? 'bg-green-500' : 'bg-red-500'}
+                    bgColorClass={o.isActive ? 'bg-green-50' : 'bg-red-50'}
+                    textColorClass={o.isActive ? 'text-green-600' : 'text-red-600'}
+                />
+            )}
             renderBody={renderBody}
             onViewDetails={(o) => {
                 setSelectedOrganizationDetail(o);

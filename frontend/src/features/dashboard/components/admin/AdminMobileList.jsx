@@ -1,5 +1,6 @@
 import React from 'react';
-import MobileList, { MobileRow } from '@/components/ui/MobileList';
+import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Shield } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 
 const AdminMobileList = ({
@@ -71,7 +72,22 @@ const AdminMobileList = ({
             canSelect={true}
             canEdit={true}
             emptyText="No administrators match the selected filter."
+            iconFn={(admin) => (
+                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-indigo-500" />
+                </div>
+            )}
             titleFn={(admin) => admin.name}
+            subtitleFn={(admin) => admin.email}
+            rightTopFn={(admin) => admin.phone || 'N/A'}
+            statusBadgeFn={(admin) => (
+                <MobileCardStatusBadge
+                    status={admin.isActive ? 'Active' : 'Inactive'}
+                    dotColorClass={admin.isActive ? 'bg-green-500' : 'bg-red-500'}
+                    bgColorClass={admin.isActive ? 'bg-green-50' : 'bg-red-50'}
+                    textColorClass={admin.isActive ? 'text-green-600' : 'text-red-600'}
+                />
+            )}
             renderBody={renderBody}
             onViewDetails={(admin) => {
                 setSelectedAdminDetail(admin);
