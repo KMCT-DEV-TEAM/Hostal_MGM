@@ -108,7 +108,6 @@ export default function ParentsTable({
                     fields={[
                         { label: "Phone", value: p.phone || "-" },
                         { label: "Student", value: p.student?.name || "No Student" },
-                        (role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN) && { label: "Organization", value: p.organization?.name || "N/A" }
                     ].filter(Boolean)}
                     editable={canEdit}
                     onEdit={() => onEdit && onEdit(p)}
@@ -169,8 +168,8 @@ export default function ParentsTable({
                                         )
                                     }
                                     triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${(p.isActive === true || p.isActive === 'true')
-                                            ? 'bg-green-50 text-success border-green-200 hover:bg-green-100'
-                                            : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'
+                                        ? 'bg-green-50 text-success border-green-200 hover:bg-green-100'
+                                        : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'
                                         }`}
                                 />
                             </div>
