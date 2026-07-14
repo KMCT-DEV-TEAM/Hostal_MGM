@@ -9,7 +9,7 @@ const MobileHeader = () => {
 
     return (
         <div className="pt-8 pb-4 px-4 bg-background-secondary">
-            <div className="bg-white rounded-[24px] p-2 flex items-center justify-between shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)] border border-gray-50">
+            <div className="bg-white rounded-[24px] p-2 flex items-center justify-between shadow-sm border border-gray-50">
                 <div className="flex items-center gap-3 pl-1">
                     {user?.profileImage ? (
                         <img

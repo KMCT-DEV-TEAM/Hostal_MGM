@@ -26,6 +26,7 @@ const StudentAttendanceContainer = () => {
         if (!user?.role) return;
         try {
             const res = await attendanceService.getDashboardStatsByRole(user.role);
+            console.log('fetchDashboardStats response:', res);
             setTodayStats(res?.today || null);
         } catch (error) {
             console.error('Failed to load dashboard stats', error);
@@ -58,11 +59,13 @@ const StudentAttendanceContainer = () => {
         fetchDashboardStats();
     }, [fetchDashboardStats]);
 
-    useEffect(() => {
-        fetchHistory();
-    }, [fetchHistory]);
-
     const { isMobile } = useBreakpoint();
+
+    useEffect(() => {
+        if (!isMobile) {
+            fetchHistory();
+        }
+    }, [fetchHistory, isMobile]);
 
     const viewProps = {
         pageTitle,

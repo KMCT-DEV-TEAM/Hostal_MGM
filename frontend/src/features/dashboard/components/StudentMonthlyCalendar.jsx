@@ -113,19 +113,31 @@ export default function StudentMonthlyCalendar({
         <div className="flex flex-col shrink-0">
             {/* Stats Boxes */}
             {showStats && (
-                <div className="grid grid-cols-2 gap-4 mb-6 shrink-0">
-                    <div className="border border-red-100 bg-white rounded-xl md:rounded-[24px] p-3 md:p-5 shadow-sm flex flex-col relative shrink-0">
-                        <span className="text-[10px] font-bold text-gray-500 tracking-wider mb-2 uppercase">Total Absent</span>
-                        <span className="text-xl md:text-2xl font-semibold text-gray-900">{calendarData?.summary?.absent || 0}</span>
-                        <div className="absolute top-3 right-3 bg-red-50 p-1 md:p-1.5 rounded-lg">
-                            <CalendarIcon className="w-3 h-3 md:w-4 md:h-4 text-red-400" />
-                        </div>
+                <div className="bg-white rounded-xl md:rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-50 flex flex-col gap-4 md:gap-6 shrink-0 mb-6">
+                    <div>
+                        <h3 className="text-base md:text-lg font-semibold text-text-primary">Monthly Summary</h3>
+                        <p className="text-xs md:text-sm text-text-secondary mt-1">Performance metrics for {monthName} {year}</p>
                     </div>
-                    <div className="border border-green-100 bg-white rounded-xl md:rounded-[24px] p-3 md:p-5 shadow-sm flex flex-col relative shrink-0">
-                        <span className="text-[10px] font-bold text-gray-500 tracking-wider mb-2 uppercase">Total Present</span>
-                        <span className="text-xl md:text-2xl font-semibold text-gray-900">{calendarData?.summary?.present || 0}</span>
-                        <div className="absolute top-3 right-3 bg-green-50 p-1 md:p-1.5 rounded-lg">
-                            <CalendarIcon className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
+
+                    <div className="flex gap-3 md:gap-4">
+                        <div className="flex-1 bg-green-50/50 rounded-[12px] md:rounded-[16px] p-3 md:p-4 flex items-center gap-3 md:gap-4">
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-[10px] md:rounded-[12px] bg-green-50 flex items-center justify-center shrink-0">
+                                <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-green-500" strokeWidth={1.5} />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-lg md:text-xl font-bold text-text-primary">{(calendarData?.summary?.present || 0).toString().padStart(2, '0')}</span>
+                                <span className="text-[9px] md:text-[10px] font-semibold text-text-secondary uppercase tracking-wider">Present</span>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 bg-red-50/50 rounded-[12px] md:rounded-[16px] p-3 md:p-4 flex items-center gap-3 md:gap-4">
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-[10px] md:rounded-[12px] bg-red-50 flex items-center justify-center shrink-0">
+                                <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500" strokeWidth={1.5} />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-lg md:text-xl font-bold text-text-primary">{(calendarData?.summary?.absent || 0).toString().padStart(2, '0')}</span>
+                                <span className="text-[9px] md:text-[10px] font-semibold text-text-secondary uppercase tracking-wider">Absent</span>
+                            </div>
                         </div>
                     </div>
                 </div>
