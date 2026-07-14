@@ -49,7 +49,7 @@ export default function MobileList({
     };
 
     return (
-        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none px-2 sm:px-0">
+        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none px-2 sm:px-0">
             {canSelect && !loading && !error && selectedIds.length > 0 && items.length > 0 && (
                 <div className="flex items-center gap-2 px-1 mb-1">
                     <button

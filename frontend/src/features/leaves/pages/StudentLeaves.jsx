@@ -15,6 +15,7 @@ import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import ApplyLeaveModal from '../components/modals/ApplyLeaveModal';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
+import InfoCard from '@/components/ui/InfoCard';
 
 export default function StudentLeaves() {
     const { passType } = useParams();
@@ -87,7 +88,7 @@ export default function StudentLeaves() {
         : ["Date", "Type", "In", "Out", "Status", "Return", "Action"];
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
             <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
@@ -95,24 +96,8 @@ export default function StudentLeaves() {
             <LeaveStatsCards stats={statsData} isStudent />
 
             <DataTable
-                toolbarActions={
-                    <>
-                        <button
-                            type="button"
-                            onClick={() => setIsFilterModalOpen(true)}
-                            className={`p-2.5 border rounded-md transition-colors shadow-sm md:shadow-none flex items-center justify-center ${Object.values(filters).some(Boolean) ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                        >
-                            <Filter className="w-4 h-4" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { setEditData(null); setIsApplyModalOpen(true); }}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors flex-1 sm:flex-none cursor-pointer whitespace-nowrap shadow-sm md:shadow-none"
-                        >
-                            <Plus className="w-4 h-4" /> Apply
-                        </button>
-                    </>
-                }
+                onAdd={() => { setEditData(null); setIsApplyModalOpen(true); }}
+                addText="Apply"
                 headers={tableHeaders}
                 items={requests}
                 loading={loading}
@@ -167,36 +152,19 @@ export default function StudentLeaves() {
                     </>
                 )}
                 renderMobileItem={(r) => (
-                    <div className="space-y-2.5">
-                        <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-700 text-sm">
-                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.date)}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium">
-                                {isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}
-                            </span>
-                        </div>
-                        <hr className="border-gray-50" />
-                        <div className="text-xs text-text-secondary space-y-2">
-                            {!isHomePass && (
-                                <div>{`Outing Time: ${r.outTime || '-----'} - ${r.expectedReturnTime || '-----'}`}</div>
-                            )}
-                            <div className="flex justify-between items-center gap-2 pt-1">
-                                <span className="font-medium text-gray-500">Status:</span>
-                                <LeaveStatusBadge status={r.status} />
-                            </div>
-                            <div className="flex justify-between items-center gap-2">
-                                <span className="font-medium text-gray-500">Return:</span>
-                                <LeaveReturnBadge returnTracking={r.returnTracking} />
-                            </div>
-                        </div>
-                        {['pending_parent', 'pending_warden', 'approved'].includes(r.status) && (
-                            <div className="flex justify-end pt-2 border-t border-gray-50 mt-2 relative z-10">
-                                <button onClick={(e) => { e.stopPropagation(); openEditModal(r); }} className="text-accent flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors cursor-pointer p-1">
-                                    <Pencil className="w-3.5 h-3.5" /> Edit Request
-                                </button>
-                            </div>
-                        )}
+                    <div className="mb-2">
+                        <InfoCard
+                            title={isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.date)}
+                            subtitle={isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass'))}
+                            fields={[
+                                !isHomePass && { label: "Outing Time", value: `${r.outTime || '--'} - ${r.expectedReturnTime || '--'}` },
+                                { label: "Status", value: <LeaveStatusBadge status={r.status} /> },
+                                { label: "Return", value: <LeaveReturnBadge returnTracking={r.returnTracking} /> }
+                            ].filter(Boolean)}
+                            editable={['pending_parent', 'pending_warden', 'approved'].includes(r.status)}
+                            onEdit={() => openEditModal(r)}
+                            onClick={() => setViewId(r._id)}
+                        />
                     </div>
                 )}
                 page={page}
@@ -204,7 +172,16 @@ export default function StudentLeaves() {
                 limit={limit}
                 totalItems={totalItems}
                 totalPages={totalPages || 1}
-            />
+            >
+                {/* Custom Toolbar Actions */}
+                <button
+                    type="button"
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2.5 border rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center ${Object.values(filters).some(Boolean) ? 'bg-[#0A437A] text-white border-[#0A437A] hover:bg-[#0A437A]/90' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 h-10 w-10'}`}
+                >
+                    <Filter className="w-4 h-4" />
+                </button>
+            </DataTable>
 
             <ApplyLeaveModal
                 isOpen={isApplyModalOpen}

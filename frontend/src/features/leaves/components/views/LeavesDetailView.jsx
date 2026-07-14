@@ -7,6 +7,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { formatDateReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../badges/LeaveReturnBadge';
+import InfoCard from '@/components/ui/InfoCard';
 
 export default function LeavesDetailView({
     passesData,
@@ -88,26 +89,7 @@ export default function LeavesDetailView({
                 searchPlaceholder="Search"
                 loading={loading}
                 onRowClick={onRowClick}
-                toolbarActions={
-                    <>
-                        <button
-                            type="button"
-                            onClick={onFilterClick}
-                            className={`p-3 border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'bg-primary text-white border-primary hover:bg-secondary hover:border-secondary' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-                            title="Filter leaves"
-                        >
-                            <Filter className="w-4 h-4" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onExport}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-text-secondary hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Download className="w-4 h-4" />
-                            Export
-                        </button>
-                    </>
-                }
+                onExport={onExport}
                 headers={tableHeaders}
                 items={passesData}
                 canSelect={false}
@@ -197,16 +179,40 @@ export default function LeavesDetailView({
                 renderMobileItem={(r) => {
                     const studentName = getStudentName(r);
                     return (
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-primary">
-                                    {studentName}
-                                </span>
-                                <LeaveStatusBadge status={r.status} />
-                            </div>
-                            <div className="text-xs text-text-secondary">
-                                {isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date)}
-                            </div>
+                        <div className="mb-2">
+                            <InfoCard
+                                avatar={studentName}
+                                title={studentName}
+                                subtitle={selectedHostel || isWarden || isAdmin ? (r.studentInfo?.roomNumber || 'Room --') : (r.hostelInfo?.name || r.hostelId?.name || r.hostel)}
+                                onClick={onRowClick ? () => onRowClick(r) : undefined}
+                                status={{
+                                    text: r.status ? r.status.replace('_', ' ') : 'pending',
+                                    color: r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : r.status === 'pending_admin' ? 'yellow' : 'orenge'
+                                }}
+                                fields={[
+                                    { label: "Date", value: isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date) },
+                                    { label: "Type/Duration", value: isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : (r.type || r.outPassCategory) },
+                                    !isHomePass && { label: "Outing Time", value: `${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}` },
+
+                                    r.returnTracking?.returnStatus && {
+                                        label: "Return Status",
+                                        value: isWarden && r.status === 'approved' ? (
+                                            <div onClick={(e) => e.stopPropagation()}>
+                                                <Dropdown
+                                                    options={getReturnOptions(getReturnStatus(r))}
+                                                    value=""
+                                                    placeholder={getReturnStatus(r)}
+                                                    onChange={(val) => setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'return' })}
+                                                    minWidth="w-32"
+                                                    triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <LeaveReturnBadge returnTracking={r.returnTracking} />
+                                        )
+                                    }
+                                ].filter(Boolean)}
+                            />
                         </div>
                     );
                 }}
@@ -215,7 +221,17 @@ export default function LeavesDetailView({
                 limit={10}
                 totalItems={pagination?.totalRecords || 0}
                 totalPages={pagination?.totalPages || 1}
-            />
+            >
+                {/* Custom Toolbar Actions */}
+                <button
+                    type="button"
+                    onClick={onFilterClick}
+                    className={`p-2.5 border rounded-xl transition-all cursor-pointer shadow-sm md:shadow-none shrink-0 flex items-center justify-center ${hasActiveFilters ? 'bg-[#0A437A] text-white border-[#0A437A] hover:bg-[#0A437A]/90' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 h-10 w-10'}`}
+                    title="Filter leaves"
+                >
+                    <Filter className="w-4 h-4" />
+                </button>
+            </DataTable>
 
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}

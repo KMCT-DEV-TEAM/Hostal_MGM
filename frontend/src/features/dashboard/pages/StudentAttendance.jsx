@@ -5,6 +5,7 @@ import DataTable from "@/components/ui/DataTable";
 import { Filter } from 'lucide-react';
 import FilterAttendanceModal from '../components/FilterAttendanceModal';
 import { useAuthStore } from '@/store/useAuthStore';
+import InfoCard from '@/components/ui/InfoCard';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 
@@ -69,7 +70,7 @@ const StudentAttendance = () => {
     const tableHeaders = ["Date", "Day", "Time", "Status"];
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
             <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
@@ -82,16 +83,6 @@ const StudentAttendance = () => {
             </div>
 
             <DataTable
-
-                toolbarActions={
-                    <button
-                        type="button"
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2.5 rounded-md transition-colors shadow-sm md:shadow-none flex items-center justify-center ${Object.keys(filters).length > 0 ? 'bg-primary text-white border border-primary hover:bg-primary/90' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                    >
-                        <Filter className="w-4 h-4" />
-                    </button>
-                }
                 headers={tableHeaders}
                 items={history}
                 loading={loading}
@@ -114,20 +105,15 @@ const StudentAttendance = () => {
                     </>
                 )}
                 renderMobileItem={(r) => (
-                    <div className="space-y-2.5">
-                        <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-700 text-sm">
-                                {formatDateReadable(r.scannedAt || r.createdAt)}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium">
-                                {formatDay(r.scannedAt || r.createdAt)}
-                            </span>
-                        </div>
-                        <hr className="border-gray-50" />
-                        <div className="flex justify-between items-center gap-2 pt-1">
-                            <span className="font-medium text-gray-500 text-xs">Status:</span>
-                            <LeaveStatusBadge status={r.status} />
-                        </div>
+                    <div className="mb-2">
+                        <InfoCard
+                            title={formatDateReadable(r.scannedAt || r.createdAt)}
+                            subtitle={formatDay(r.scannedAt || r.createdAt)}
+                            fields={[
+                                { label: "Time", value: r.markedAt || '--' },
+                            ]}
+                            status={{ text: r.status || 'pending', color: r.status === 'present' ? 'green' : r.status === 'absent' ? 'red' : r.status === 'on_leave' ? 'orenge' : 'default' }}
+                        />
                     </div>
                 )}
                 page={page}
@@ -135,7 +121,16 @@ const StudentAttendance = () => {
                 limit={10}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages || 1}
-            />
+            >
+                {/* Custom Toolbar Actions */}
+                <button
+                    type="button"
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2.5 rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white border-[#0A437A] hover:bg-[#0A437A]/90' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 h-10 w-10'}`}
+                >
+                    <Filter className="w-4 h-4" />
+                </button>
+            </DataTable>
 
             <FilterAttendanceModal
                 isOpen={isFilterModalOpen}

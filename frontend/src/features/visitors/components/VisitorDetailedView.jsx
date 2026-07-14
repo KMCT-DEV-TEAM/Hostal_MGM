@@ -6,6 +6,7 @@ import FilterModal from './modals/FilterModal';
 import VisitDetailsModal from './modals/VisitDetailsModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
+import InfoCard from '@/components/ui/InfoCard';
 const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick, userRole }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedVisitId, setSelectedVisitId] = useState(null);
@@ -48,11 +49,11 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 </div>
                 <span className="text-sm font-semibold">{visitor.visitorName || 'Unknown'}</span>
             </td>
-            
+
             {userRole !== 'student' && (
                 <td className="p-4 text-text-secondary font-medium">{visitor.studentNames || '--'}</td>
             )}
-            
+
             {['super_admin', 'admin', 'warden'].includes(userRole) && (
                 <td className="p-4 text-text-secondary font-medium">{visitor.roomNumber || visitor.roomNo || '--'}</td>
             )}
@@ -72,47 +73,10 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
         </>
     );
 
-    const renderMobileItem = (visitor) => (
-        <div className="flex flex-col gap-2 p-4">
-            <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-900">{visitor.visitorName || 'Unknown'}</span>
-                <span className="text-sm text-gray-500">{formatDateReadable(visitor.checkInTime)}</span>
-            </div>
-            <div className="text-sm text-gray-600">Visiting: {visitor.visitingStudent || '--'} ({visitor.roomNo || '--'})</div>
-            <div className="flex justify-between text-sm mt-1">
-                <span className="text-gray-500">In: {formatTime(visitor.checkInTime)}</span>
-                <span className="text-gray-500">Out: {visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '---'}</span>
-            </div>
-        </div>
-    );
 
     const hasActiveFilters = filters && (filters.status || filters.fromDate || filters.toDate);
 
-    const toolbarActions = (
-        <div className="flex items-center gap-2 relative">
-            <Button
-                variant={hasActiveFilters ? "primary" : "outline"}
-                size="sm"
-                fullWidth={false}
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-            >
-                <Filter className="w-4 h-4" />
-            </Button>
 
-            <FilterModal
-                isOpen={isFilterOpen}
-                onClose={() => setIsFilterOpen(false)}
-                filters={filters}
-                onFilter={onFilter}
-            />
-
-            {canExport && (
-                <Button variant="outline" size="sm" fullWidth={false} className="hidden sm:flex" onClick={onExportClick}>
-                    <Download className="w-4 h-4" /> Export
-                </Button>
-            )}
-        </div>
-    );
 
     return (
         <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none relative">
@@ -123,16 +87,54 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 loading={loading}
                 emptyText="No visitors found"
                 onSearchChange={(e) => onSearch(e.target.value)}
-                toolbarActions={toolbarActions}
+                onExport={canExport ? onExportClick : undefined}
                 renderRow={renderRow}
-                renderMobileItem={renderMobileItem}
+                renderMobileItem={(visitor) => {
+                    const visitorName = visitor.visitorName || visitor.name || 'Unknown';
+                    return (
+                        <div className="mb-2">
+                            <InfoCard
+                                avatar={visitorName}
+                                title={visitorName}
+                                onClick={() => { setSelectedVisitId(visitor.visitId || visitor._id || visitor.id) }}
+                                subtitle={formatDateReadable(visitor.checkInTime)}
+                                status={{ text: visitor.status, color: "green" }}
+                                fields={[
+                                    { label: "In", value: formatTime(visitor.checkInTime) },
+                                    { label: "Out", value: visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '---' },
+                                    { label: "Visiting", value: `${visitor.visitingStudent || visitor.studentNames || '--'} (${visitor.roomNo || visitor.roomNumber || '--'})` },
+                                ]}
+                            />
+                        </div>
+                    );
+                }}
                 onRowClick={(row) => setSelectedVisitId(row.visitId || row._id || row.id)}
                 page={1}
                 setPage={() => { }}
                 limit={10}
                 totalItems={visitors?.length}
                 totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
-            />
+            >
+                {/* Custom Toolbar Actions */}
+                <div className="flex items-center gap-2 relative shrink-0">
+                    <Button
+                        variant={hasActiveFilters ? "primary" : "outline"}
+                        size="md"
+                        fullWidth={false}
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        className="!p-2.5 shadow-sm md:shadow-none bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 h-10 w-10 flex items-center justify-center"
+                    >
+                        <Filter className="w-4 h-4" />
+                    </Button>
+
+                    <FilterModal
+                        isOpen={isFilterOpen}
+                        onClose={() => setIsFilterOpen(false)}
+                        filters={filters}
+                        onFilter={onFilter}
+                    />
+                </div>
+            </DataTable>
 
             <VisitDetailsModal
                 isOpen={!!selectedVisitId}

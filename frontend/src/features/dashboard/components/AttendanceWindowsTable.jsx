@@ -6,7 +6,7 @@ import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import FilterWindowsModal from './FilterWindowsModal';
 import { Filter } from 'lucide-react';
-
+import InfoCard from '@/components/ui/InfoCard';
 export default function AttendanceWindowsTable({ showHostel = true, showWarden = true, onRowClick }) {
     const { user } = useAuthStore();
     const [windows, setWindows] = useState([]);
@@ -101,27 +101,21 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
 
     const renderMobileItem = (item) => {
         return (
-            <div className="flex flex-col gap-2 w-full text-sm">
-                <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">{formatDateISO(item.attendanceDate)}</span>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.status === 'open' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
-                        }`}>
-                        {capitalize(item.status)}
-                    </span>
-                </div>
-                {showHostel && (
-                    <div className="text-gray-600">
-                        <span className="font-medium">Hostel:</span> {item.hostel?.name || 'N/A'}
-                    </div>
-                )}
-                <div className="text-gray-600">
-                    <span className="font-medium">Stats:</span> <span className="text-green-600">{item.presentCount}</span> / <span className="text-red-600">{item.absentCount}</span> / {item.totalStudents}
-                </div>
-                {showWarden && (
-                    <div className="text-gray-600">
-                        <span className="font-medium">Started By:</span> {item.startedBy?.name || 'N/A'}
-                    </div>
-                )}
+            <div className="mb-2">
+                <InfoCard
+                    onClick={onRowClick ? () => onRowClick(item) : undefined}
+                    title={formatDateISO(item.attendanceDate)}
+                    status={{ text: capitalize(item.status), color: item.status === 'open' ? 'blue' : 'green' }}
+                    fields={[
+                        showHostel && { label: "Hostel", value: item.hostel?.name || 'N/A' },
+                        showWarden && { label: "Started By", value: item.startedBy?.name || 'N/A' }
+                    ].filter(Boolean)}
+                    stats={[
+                        { label: "Total", value: item.totalStudents },
+                        { label: "Present", value: <span className="text-green-600">{item.presentCount}</span> },
+                        { label: "Absent", value: <span className="text-red-600">{item.absentCount}</span> }
+                    ]}
+                />
             </div>
         );
     };
@@ -135,15 +129,6 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
                     setPage(1);
                 }}
                 searchPlaceholder="Search by date or hostel..."
-                toolbarActions={
-                    <button
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2 rounded-md transition-colors ${Object.keys(filters).length > 0 ? 'bg-primary text-white hover:bg-secondary' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                        title="Filter windows"
-                    >
-                        <Filter className="w-5 h-5" />
-                    </button>
-                }
                 headers={headers}
                 items={windows}
                 loading={loading}
@@ -156,7 +141,16 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
                 emptyText="No attendance windows found."
-            />
+            >
+                {/* Custom Toolbar Actions */}
+                <button
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2.5 rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white hover:bg-[#0A437A]/90' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 h-10 w-10'}`}
+                    title="Filter windows"
+                >
+                    <Filter className="w-4 h-4" />
+                </button>
+            </DataTable>
             <FilterWindowsModal
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
