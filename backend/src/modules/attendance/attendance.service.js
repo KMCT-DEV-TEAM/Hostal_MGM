@@ -335,6 +335,18 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   if (query.room) {
     studentMatch["studentInfo.roomNumber"] = { $regex: query.room, $options: "i" };
   }
+  if (query.organizationId && mongoose.Types.ObjectId.isValid(query.organizationId)) {
+    studentMatch["studentInfo.organizationId"] = new mongoose.Types.ObjectId(query.organizationId);
+  }
+  if (query.courseId && mongoose.Types.ObjectId.isValid(query.courseId)) {
+    studentMatch["studentInfo.courseId"] = new mongoose.Types.ObjectId(query.courseId);
+  }
+  if (query.departmentId && mongoose.Types.ObjectId.isValid(query.departmentId)) {
+    studentMatch["studentInfo.departmentId"] = new mongoose.Types.ObjectId(query.departmentId);
+  }
+  if (query.batchId && mongoose.Types.ObjectId.isValid(query.batchId)) {
+    studentMatch["studentInfo.batchId"] = new mongoose.Types.ObjectId(query.batchId);
+  }
 
   if (Object.keys(studentMatch).length > 0) {
     pipeline.push({ $match: studentMatch });

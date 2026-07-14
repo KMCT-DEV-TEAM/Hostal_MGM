@@ -105,7 +105,7 @@ const StudentAttendance = () => {
                     </>
                 )}
                 renderMobileItem={(r) => (
-                    <div className="mb-2">
+                    <div className="">
                         <InfoCard
                             title={formatDateReadable(r.scannedAt || r.createdAt)}
                             subtitle={formatDay(r.scannedAt || r.createdAt)}

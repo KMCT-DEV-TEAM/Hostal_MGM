@@ -74,7 +74,7 @@ export default function WardenComplaints({ hostel, onBack }) {
 
         // Socket.IO real-time updates
         const socket = initSocket();
-        
+
         const handleComplaintEvent = () => {
             fetchComplaints();
         };
@@ -115,115 +115,115 @@ export default function WardenComplaints({ hostel, onBack }) {
     const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
     const [isSubmittingPriority, setIsSubmittingPriority] = useState(false);
     const limit = 10;
-    
+
     useEffect(() => {
         if (viewingComplaint) {
             const updated = complaints.find(c => c.id === viewingComplaint.id);
             if (updated) setViewingComplaint(updated);
         }
     }, [complaints]);
-const handleCategoryChange = (id, newCategoryVal) => {
-    const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
-    setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });
-};
+    const handleCategoryChange = (id, newCategoryVal) => {
+        const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });
+    };
 
-const handlePriorityChange = (id, newPriority) => {
-    setConfirmPriorityChange({ isOpen: true, complaintId: id, newPriority });
-};
+    const handlePriorityChange = (id, newPriority) => {
+        setConfirmPriorityChange({ isOpen: true, complaintId: id, newPriority });
+    };
 
 
 
-useEffect(() => {
-    const timer = setTimeout(() => {
-        setDebouncedSearch(searchQuery);
-        setCurrentPage(1); // Reset page on new search
-    }, 500);
-    return () => clearTimeout(timer);
-}, [searchQuery]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
-// Apply filtering
-const filteredComplaints = complaints.filter(complaint => {
-    const query = debouncedSearch.toLowerCase();
-    const matchesSearch = Object.values(complaint).some(val =>
-        String(val).toLowerCase().includes(query)
-    );
-    const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
-    const matchesPriority = priorityFilter === 'All' || complaint.priority === priorityFilter;
-    const matchesCategory = categoryFilter === 'All' || complaint.category === categoryFilter;
-    const matchesRoomNo = roomNoFilter === '' || complaint.roomNo.toLowerCase().includes(roomNoFilter.toLowerCase());
-    
-    let matchesDate = true;
-    if (startDateFilter || endDateFilter) {
-        const complaintDate = new Date(complaint.createdAt).setHours(0,0,0,0);
-        if (startDateFilter) {
-            const start = new Date(startDateFilter).setHours(0,0,0,0);
-            if (complaintDate < start) matchesDate = false;
-        }
-        if (endDateFilter && matchesDate) {
-            const end = new Date(endDateFilter).setHours(23,59,59,999);
-            if (complaintDate > end) matchesDate = false;
-        }
-    }
+    // Apply filtering
+    const filteredComplaints = complaints.filter(complaint => {
+        const query = debouncedSearch.toLowerCase();
+        const matchesSearch = Object.values(complaint).some(val =>
+            String(val).toLowerCase().includes(query)
+        );
+        const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
+        const matchesPriority = priorityFilter === 'All' || complaint.priority === priorityFilter;
+        const matchesCategory = categoryFilter === 'All' || complaint.category === categoryFilter;
+        const matchesRoomNo = roomNoFilter === '' || complaint.roomNo.toLowerCase().includes(roomNoFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesRoomNo && matchesDate;
-});
-
-const confirmExport = async (exportFilters) => {
-    setIsExporting(true);
-    try {
-        let dataToExport = complaints;
-
-        if (exportFilters.status) {
-            dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
-        }
-
-        if (exportFilters.startDate) {
-            const start = new Date(exportFilters.startDate).setHours(0, 0, 0, 0);
-            dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0, 0, 0, 0) >= start);
-        }
-        if (exportFilters.endDate) {
-            const end = new Date(exportFilters.endDate).setHours(23, 59, 59, 999);
-            dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23, 59, 59, 999) <= end);
-        }
-        if (exportFilters.category) {
-            dataToExport = dataToExport.filter(c => c.category === exportFilters.category);
-        }
-
-        if (dataToExport && dataToExport.length > 0) {
-            const exportData = dataToExport.map((complaint, index) => ({
-                "SL No": index + 1,
-                "Student": complaint.student,
-                "Room No": complaint.roomNo,
-                "Category": complaint.category,
-                "Subject": complaint.subject,
-                "Priority": complaint.priority,
-                "Date": complaint.date,
-                "Status": complaint.status,
-            }));
-
-            const isSuccess = exportToExcel(exportData, "Warden_Complaints_Export", "Complaints");
-
-            if (isSuccess) {
-                showSuccessToast('Export Successful', 'The complaints list has been downloaded.');
-            } else {
-                showErrorToast('Export Failed', 'Could not generate the Excel file.');
+        let matchesDate = true;
+        if (startDateFilter || endDateFilter) {
+            const complaintDate = new Date(complaint.createdAt).setHours(0, 0, 0, 0);
+            if (startDateFilter) {
+                const start = new Date(startDateFilter).setHours(0, 0, 0, 0);
+                if (complaintDate < start) matchesDate = false;
             }
-        } else {
-            showErrorToast('Export Failed', 'No data available to export matching the filters.');
+            if (endDateFilter && matchesDate) {
+                const end = new Date(endDateFilter).setHours(23, 59, 59, 999);
+                if (complaintDate > end) matchesDate = false;
+            }
         }
-    } catch (error) {
-        console.error("Export Failed", error);
-        showErrorToast('Export Failed', error?.message || 'Failed to export data.');
-    } finally {
-        setIsExportConfirmOpen(false);
-        setIsExporting(false);
-    }
-};
 
-// Apply pagination
-const totalComplaints = filteredComplaints.length;
-const totalPages = Math.ceil(totalComplaints / limit) || 1;
-const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
+        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesRoomNo && matchesDate;
+    });
+
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            let dataToExport = complaints;
+
+            if (exportFilters.status) {
+                dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
+            }
+
+            if (exportFilters.startDate) {
+                const start = new Date(exportFilters.startDate).setHours(0, 0, 0, 0);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0, 0, 0, 0) >= start);
+            }
+            if (exportFilters.endDate) {
+                const end = new Date(exportFilters.endDate).setHours(23, 59, 59, 999);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23, 59, 59, 999) <= end);
+            }
+            if (exportFilters.category) {
+                dataToExport = dataToExport.filter(c => c.category === exportFilters.category);
+            }
+
+            if (dataToExport && dataToExport.length > 0) {
+                const exportData = dataToExport.map((complaint, index) => ({
+                    "SL No": index + 1,
+                    "Student": complaint.student,
+                    "Room No": complaint.roomNo,
+                    "Category": complaint.category,
+                    "Subject": complaint.subject,
+                    "Priority": complaint.priority,
+                    "Date": complaint.date,
+                    "Status": complaint.status,
+                }));
+
+                const isSuccess = exportToExcel(exportData, "Warden_Complaints_Export", "Complaints");
+
+                if (isSuccess) {
+                    showSuccessToast('Export Successful', 'The complaints list has been downloaded.');
+                } else {
+                    showErrorToast('Export Failed', 'Could not generate the Excel file.');
+                }
+            } else {
+                showErrorToast('Export Failed', 'No data available to export matching the filters.');
+            }
+        } catch (error) {
+            console.error("Export Failed", error);
+            showErrorToast('Export Failed', error?.message || 'Failed to export data.');
+        } finally {
+            setIsExportConfirmOpen(false);
+            setIsExporting(false);
+        }
+    };
+
+    // Apply pagination
+    const totalComplaints = filteredComplaints.length;
+    const totalPages = Math.ceil(totalComplaints / limit) || 1;
+    const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
 
     // Top cards aggregate
     const totalAll = complaints.length;
@@ -231,130 +231,128 @@ const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, 
     const inProgressAll = complaints.filter(c => c.status === 'In progress').length;
     const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
 
-return (
-    <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
-            <div>
-                {onBack && (
-                    <button onClick={onBack} className="flex items-center text-sm text-text-secondary hover:text-primary mb-2 cursor-pointer transition-colors">
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to Organizations
+    return (
+        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
+                <div>
+                    {onBack && (
+                        <BackButton text="Back to Organizations" onClick={onBack} />
+                    )}
+                    <h1 className="text-2xl font-bold text-black">
+                        {hostel ? `${hostel} Complaints` : 'Complaints'}
+                    </h1>
+                    <p className="text-sm text-text-secondary mt-1">
+                        {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
+                    </p>
+                </div>
+
+                <div className="hidden md:flex items-center self-end sm:self-auto">
+                    <button
+                        onClick={() => setShowKPIs(!showKPIs)}
+                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                    >
+                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
                     </button>
-                )}
-                <h1 className="text-2xl font-bold text-black">
-                    {hostel ? `${hostel} Complaints` : 'Complaints'}
-                </h1>
-                <p className="text-sm text-text-secondary mt-1">
-                    {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
-                </p>
-            </div>
-
-            <div className="hidden md:flex items-center self-end sm:self-auto">
-                <button
-                    onClick={() => setShowKPIs(!showKPIs)}
-                    className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-                >
-                    {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                </button>
-            </div>
-        </div>
-
-        {/* Stat Cards Section */}
-        {showKPIs && (
-        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
-            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
-                    <h3 className="text-xl font-bold text-gray-900">{totalAll}</h3>
-                </div>
-                <div className="p-1.5 bg-red-50 rounded text-red-400">
-                    <AlertTriangle className="w-4 h-4" />
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
-                    <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
-                </div>
-                <div className="p-1.5 bg-orange-50 rounded text-orange-400">
-                    <Clock className="w-4 h-4" />
-                </div>
-            </div>
+            {/* Stat Cards Section */}
+            {showKPIs && (
+                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
+                            <h3 className="text-xl font-bold text-gray-900">{totalAll}</h3>
+                        </div>
+                        <div className="p-1.5 bg-red-50 rounded text-red-400">
+                            <AlertTriangle className="w-4 h-4" />
+                        </div>
+                    </div>
 
-            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
-                    <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
-                </div>
-                <div className="p-1.5 bg-blue-50 rounded text-blue-400">
-                    <Loader2 className="w-4 h-4" />
-                </div>
-            </div>
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
+                            <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
+                        </div>
+                        <div className="p-1.5 bg-orange-50 rounded text-orange-400">
+                            <Clock className="w-4 h-4" />
+                        </div>
+                    </div>
 
-            <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
-                    <h3 className="text-xl font-bold text-gray-900">{resolvedAll}</h3>
-                </div>
-                <div className="p-1.5 bg-green-50 rounded text-green-500">
-                    <CheckCircle className="w-4 h-4" />
-                </div>
-            </div>
-        </div>
-        )}
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
+                            <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
+                        </div>
+                        <div className="p-1.5 bg-blue-50 rounded text-blue-400">
+                            <Loader2 className="w-4 h-4" />
+                        </div>
+                    </div>
 
-        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
-            {/* Toolbar Section */}
-            <WardenComplaintsToolbar
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                openFilterModal={() => setIsFilterModalOpen(true)}
-                initiateExport={() => setIsExportConfirmOpen(true)}
-            />
+                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
+                            <h3 className="text-xl font-bold text-gray-900">{resolvedAll}</h3>
+                        </div>
+                        <div className="p-1.5 bg-green-50 rounded text-green-500">
+                            <CheckCircle className="w-4 h-4" />
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            {/* Table Section */}
-            <div className="hidden md:block flex-1 min-h-0">
-                <WardenComplaintsTable
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
+                {/* Toolbar Section */}
+                <WardenComplaintsToolbar
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    openFilterModal={() => setIsFilterModalOpen(true)}
+                    initiateExport={() => setIsExportConfirmOpen(true)}
+                />
+
+                {/* Table Section */}
+                <div className="hidden md:block flex-1 min-h-0">
+                    <WardenComplaintsTable
+                        loading={isLoading}
+                        complaints={paginatedComplaints}
+                        categories={categories}
+                        handleCategoryChange={handleCategoryChange}
+                        handlePriorityChange={handlePriorityChange}
+                        onViewClick={(c) => setViewingComplaint(c)}
+                        isViewOnly={isViewOnly}
+                    />
+                </div>
+
+                <WardenComplaintsMobileList
                     loading={isLoading}
                     complaints={paginatedComplaints}
                     categories={categories}
                     handleCategoryChange={handleCategoryChange}
                     handlePriorityChange={handlePriorityChange}
                     onViewClick={(c) => setViewingComplaint(c)}
-                    isViewOnly={isViewOnly}
                 />
-            </div>
 
-            <WardenComplaintsMobileList
-                loading={isLoading}
-                complaints={paginatedComplaints}
-                categories={categories}
-                handleCategoryChange={handleCategoryChange}
-                handlePriorityChange={handlePriorityChange}
-                onViewClick={(c) => setViewingComplaint(c)}
-            />
+                {/* Pagination Section */}
+                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                    <div>
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                        <span className="hidden sm:inline"> entries</span>
+                    </div>
 
-            {/* Pagination Section */}
-            <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                <div>
-                    <span className="hidden sm:inline">Showing </span>
-                    {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
-                    <span className="hidden sm:inline"> to </span>
-                    <span className="sm:hidden">-</span>
-                    {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
-                    <span className="hidden sm:inline"> entries</span>
-                </div>
+                    <div className="flex items-center gap-1">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
 
-                <div className="flex items-center gap-1">
-                    <button
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    {(() => {
+                        {(() => {
                             let startPage = Math.max(1, currentPage - 1);
                             let endPage = Math.min(totalPages, currentPage + 1);
 
@@ -385,164 +383,164 @@ return (
                             ));
                         })()}
 
-                    <button
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
+                        <button
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {isFilterModalOpen && (
-            <WardenComplaintsFilterModal
-                initialRoomNo={roomNoFilter}
-                initialCategory={categoryFilter}
-                initialStartDate={startDateFilter}
-                initialEndDate={endDateFilter}
-                initialPriority={priorityFilter}
-                initialStatus={statusFilter}
-                categories={categories}
-                onClose={() => setIsFilterModalOpen(false)}
-                onApply={(filters) => {
-                    setRoomNoFilter(filters.roomNo);
-                    setCategoryFilter(filters.category);
-                    setStartDateFilter(filters.startDate);
-                    setEndDateFilter(filters.endDate);
-                    setPriorityFilter(filters.priority);
-                    setStatusFilter(filters.status);
-                    setCurrentPage(1); // Reset to first page on filter
-                    setIsFilterModalOpen(false);
-                }}
-            />
-        )}
+            {isFilterModalOpen && (
+                <WardenComplaintsFilterModal
+                    initialRoomNo={roomNoFilter}
+                    initialCategory={categoryFilter}
+                    initialStartDate={startDateFilter}
+                    initialEndDate={endDateFilter}
+                    initialPriority={priorityFilter}
+                    initialStatus={statusFilter}
+                    categories={categories}
+                    onClose={() => setIsFilterModalOpen(false)}
+                    onApply={(filters) => {
+                        setRoomNoFilter(filters.roomNo);
+                        setCategoryFilter(filters.category);
+                        setStartDateFilter(filters.startDate);
+                        setEndDateFilter(filters.endDate);
+                        setPriorityFilter(filters.priority);
+                        setStatusFilter(filters.status);
+                        setCurrentPage(1); // Reset to first page on filter
+                        setIsFilterModalOpen(false);
+                    }}
+                />
+            )}
 
-        {viewingComplaint && (
-            <WardenComplaintDetailView
-                complaint={viewingComplaint}
-                onClose={() => setViewingComplaint(null)}
-                onOpenAssignStaff={(complaint) => setAssignStaffModalState({ isOpen: true, complaint })}
-                onRefresh={fetchComplaints}
-            />
-        )}
+            {viewingComplaint && (
+                <WardenComplaintDetailView
+                    complaint={viewingComplaint}
+                    onClose={() => setViewingComplaint(null)}
+                    onOpenAssignStaff={(complaint) => setAssignStaffModalState({ isOpen: true, complaint })}
+                    onRefresh={fetchComplaints}
+                />
+            )}
 
-        <AssignStaffModal
-            isOpen={assignStaffModalState.isOpen}
-            onClose={() => setAssignStaffModalState({ isOpen: false, complaint: null })}
-            complaint={assignStaffModalState.complaint}
-            onAssigned={(assignedStaff, updatedComplaintData) => {
-                setComplaints(complaints.map(c => {
-                    if (c.id === assignStaffModalState.complaint.id) {
-                        return {
-                            ...c,
+            <AssignStaffModal
+                isOpen={assignStaffModalState.isOpen}
+                onClose={() => setAssignStaffModalState({ isOpen: false, complaint: null })}
+                complaint={assignStaffModalState.complaint}
+                onAssigned={(assignedStaff, updatedComplaintData) => {
+                    setComplaints(complaints.map(c => {
+                        if (c.id === assignStaffModalState.complaint.id) {
+                            return {
+                                ...c,
+                                assignedStaff,
+                                status: updatedComplaintData?.status || 'In progress',
+                                timeline: updatedComplaintData?.timeline || c.timeline
+                            };
+                        }
+                        return c;
+                    }));
+                    if (viewingComplaint && viewingComplaint.id === assignStaffModalState.complaint.id) {
+                        setViewingComplaint({
+                            ...viewingComplaint,
                             assignedStaff,
                             status: updatedComplaintData?.status || 'In progress',
-                            timeline: updatedComplaintData?.timeline || c.timeline
-                        };
+                            timeline: updatedComplaintData?.timeline || viewingComplaint.timeline
+                        });
                     }
-                    return c;
-                }));
-                if (viewingComplaint && viewingComplaint.id === assignStaffModalState.complaint.id) {
-                    setViewingComplaint({
-                        ...viewingComplaint,
-                        assignedStaff,
-                        status: updatedComplaintData?.status || 'In progress',
-                        timeline: updatedComplaintData?.timeline || viewingComplaint.timeline
-                    });
-                }
-            }}
-        />
+                }}
+            />
 
-        <ExportFilterModal
-            isOpen={isExportConfirmOpen}
-            onClose={() => setIsExportConfirmOpen(false)}
-            onExport={confirmExport}
-            isExporting={isExporting}
-            title="Export Complaints Data"
-            fields={[
-                { name: 'startDate', label: 'Start Date', type: 'date' },
-                { name: 'endDate', label: 'End Date', type: 'date' },
-                {
-                    name: "category",
-                    label: "Category",
-                    options: [
-                        { label: 'All Categories', value: '' },
-                        ...categories.map(cat => ({ label: cat.name, value: cat.name }))
-                    ],
-                    defaultValue: categoryFilter === 'All' ? '' : categoryFilter
-                },
-                {
-                    name: "status",
-                    label: "Complaint Status",
-                    options: [
-                        { label: 'All Status', value: '' },
-                        { label: 'Pending', value: 'Pending' },
-                        { label: 'Awaiting', value: 'Awaiting' },
-                        { label: 'In progress', value: 'In progress' },
-                        { label: 'Rejected', value: 'Rejected' },
-                        { label: 'Incomplete', value: 'Incomplete' },
-                        { label: 'Resolved', value: 'Resolved' }
-                    ],
-                    defaultValue: statusFilter === 'All' ? '' : statusFilter
-                }
-            ]}
-        />
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Complaints Data"
+                fields={[
+                    { name: 'startDate', label: 'Start Date', type: 'date' },
+                    { name: 'endDate', label: 'End Date', type: 'date' },
+                    {
+                        name: "category",
+                        label: "Category",
+                        options: [
+                            { label: 'All Categories', value: '' },
+                            ...categories.map(cat => ({ label: cat.name, value: cat.name }))
+                        ],
+                        defaultValue: categoryFilter === 'All' ? '' : categoryFilter
+                    },
+                    {
+                        name: "status",
+                        label: "Complaint Status",
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Pending', value: 'Pending' },
+                            { label: 'Awaiting', value: 'Awaiting' },
+                            { label: 'In progress', value: 'In progress' },
+                            { label: 'Rejected', value: 'Rejected' },
+                            { label: 'Incomplete', value: 'Incomplete' },
+                            { label: 'Resolved', value: 'Resolved' }
+                        ],
+                        defaultValue: statusFilter === 'All' ? '' : statusFilter
+                    }
+                ]}
+            />
 
-        <ConfirmationModal
-            isOpen={confirmCategoryChange.isOpen}
-            onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null })}
-            onConfirm={async () => {
-                try {
-                    setIsSubmittingCategory(true);
-                    await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { category: confirmCategoryChange.newCategoryId });
-                    setComplaints(complaints.map(c =>
-                        c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory, categoryId: confirmCategoryChange.newCategoryId } : c
-                    ));
-                    showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
-                } catch (error) {
-                    showErrorToast('Update Failed', error.message || 'Failed to update category');
-                } finally {
-                    setIsSubmittingCategory(false);
-                    setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null });
-                }
-            }}
-            title="Confirm Category Change"
-            message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
-            confirmText="Change"
-            isSubmitting={isSubmittingCategory}
-            loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
-            confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
-        />
+            <ConfirmationModal
+                isOpen={confirmCategoryChange.isOpen}
+                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null })}
+                onConfirm={async () => {
+                    try {
+                        setIsSubmittingCategory(true);
+                        await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { category: confirmCategoryChange.newCategoryId });
+                        setComplaints(complaints.map(c =>
+                            c.id === confirmCategoryChange.complaintId ? { ...c, category: confirmCategoryChange.newCategory, categoryId: confirmCategoryChange.newCategoryId } : c
+                        ));
+                        showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategory}`);
+                    } catch (error) {
+                        showErrorToast('Update Failed', error.message || 'Failed to update category');
+                    } finally {
+                        setIsSubmittingCategory(false);
+                        setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategory: null, newCategoryId: null });
+                    }
+                }}
+                title="Confirm Category Change"
+                message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategory}?`}
+                confirmText="Change"
+                isSubmitting={isSubmittingCategory}
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
+            />
 
-        <ConfirmationModal
-            isOpen={confirmPriorityChange.isOpen}
-            onClose={() => setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null })}
-            onConfirm={async () => {
-                try {
-                    setIsSubmittingPriority(true);
-                    await ComplaintService.updateComplaint(confirmPriorityChange.complaintId, { priority: confirmPriorityChange.newPriority });
-                    setComplaints(complaints.map(c =>
-                        c.id === confirmPriorityChange.complaintId ? { ...c, priority: confirmPriorityChange.newPriority } : c
-                    ));
-                    showSuccessToast('Priority Updated', `Complaint priority changed to ${confirmPriorityChange.newPriority}`);
-                } catch (error) {
-                    showErrorToast('Update Failed', error.message || 'Failed to update priority');
-                } finally {
-                    setIsSubmittingPriority(false);
-                    setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null });
-                }
-            }}
-            title="Confirm Priority Change"
-            message={`Are you sure you want to change the priority to ${confirmPriorityChange.newPriority}?`}
-            confirmText="Change"
-            isSubmitting={isSubmittingPriority}
-            loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
-            confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
-        />
+            <ConfirmationModal
+                isOpen={confirmPriorityChange.isOpen}
+                onClose={() => setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null })}
+                onConfirm={async () => {
+                    try {
+                        setIsSubmittingPriority(true);
+                        await ComplaintService.updateComplaint(confirmPriorityChange.complaintId, { priority: confirmPriorityChange.newPriority });
+                        setComplaints(complaints.map(c =>
+                            c.id === confirmPriorityChange.complaintId ? { ...c, priority: confirmPriorityChange.newPriority } : c
+                        ));
+                        showSuccessToast('Priority Updated', `Complaint priority changed to ${confirmPriorityChange.newPriority}`);
+                    } catch (error) {
+                        showErrorToast('Update Failed', error.message || 'Failed to update priority');
+                    } finally {
+                        setIsSubmittingPriority(false);
+                        setConfirmPriorityChange({ isOpen: false, complaintId: null, newPriority: null });
+                    }
+                }}
+                title="Confirm Priority Change"
+                message={`Are you sure you want to change the priority to ${confirmPriorityChange.newPriority}?`}
+                confirmText="Change"
+                isSubmitting={isSubmittingPriority}
+                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
+            />
 
 
-    </div>
-);
+        </div>
+    );
 }

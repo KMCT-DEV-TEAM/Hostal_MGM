@@ -21,6 +21,7 @@ import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
 import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDateISO } from '@/utils/formatters';
+import BackButton from '@/components/ui/BackButton';
 
 export default function FurnitureDetails() {
     const { id } = useParams();
@@ -215,15 +216,8 @@ export default function FurnitureDetails() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
             {/* Header */}
+            <BackButton text="Back to List" onClick={() => navigate('/dashboard/furniture')} />
             <div className="mb-6 shrink-0 flex items-center gap-3">
-                <button
-                    type="button"
-                    onClick={() => navigate('/dashboard/furniture')}
-                    className="p-2 border border-gray-200 rounded-xl bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                    title="Back to List"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
 

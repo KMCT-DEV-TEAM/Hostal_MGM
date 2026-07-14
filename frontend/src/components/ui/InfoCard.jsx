@@ -33,7 +33,6 @@ export const InfoCard = forwardRef(
     },
     ref
   ) => {
-    console.log(status)
     const isImageUrl =
       typeof avatar === "string" &&
       (avatar.startsWith("http") ||

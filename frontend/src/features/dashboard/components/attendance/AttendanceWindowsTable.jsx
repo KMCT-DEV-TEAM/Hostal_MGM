@@ -141,18 +141,19 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
                 emptyText="No attendance windows found."
-            >
-                {/* Custom Toolbar Actions */}
-                <button
-                    onClick={() => setIsFilterModalOpen(true)}
-                    className={`p-2.5 rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white hover:bg-[#0A437A]/90' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 h-10 w-10'}`}
-                    title="Filter windows"
-                >
-                    <Filter className="w-4 h-4" />
-                </button>
-            </DataTable>
+                toolbarActions={
+                    <button
+                        onClick={() => setIsFilterModalOpen(true)}
+                        className={`p-2.5 rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white hover:bg-[#0A437A]/90' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 h-10 w-10'}`}
+                        title="Filter windows"
+                    >
+                        <Filter className="w-4 h-4" />
+                    </button>
+                }
+            />
             <FilterWindowsModal
                 isOpen={isFilterModalOpen}
+                showHostel={showHostel}
                 onClose={() => setIsFilterModalOpen(false)}
                 filters={filters}
                 onApply={(newFilters) => {
