@@ -4,11 +4,11 @@ import Sidebar from "@/features/dashboard/components/Sidebar";
 import MobileHeader from "@/components/shared/MobileHeader";
 import MobileFooter from "@/components/shared/MobileFooter";
 import { Outlet } from "react-router-dom";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 const UserLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const isMobile = useMediaQuery('(max-width: 768px)');
+    const { isMobile } = useBreakpoint();
 
     return (
         <div className="flex flex-col h-screen bg-[#F8FAFC]">
