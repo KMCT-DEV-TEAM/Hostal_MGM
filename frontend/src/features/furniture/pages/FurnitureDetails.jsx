@@ -3,7 +3,7 @@ import { ArrowLeft, Edit2, Archive, CheckCircle2, XCircle, AlertTriangle, Hammer
 import { useNavigate, useParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
-import { InfoCard } from '@/components/ui/InfoCard';
+import InfoCard from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -213,7 +213,7 @@ export default function FurnitureDetails() {
     const pageSubtitle = `Manage all furnitures of ${titleName}`;
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
             {/* Header */}
             <div className="mb-6 shrink-0 flex items-center gap-3">
                 <button

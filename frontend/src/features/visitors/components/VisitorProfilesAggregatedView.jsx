@@ -1,5 +1,6 @@
 import React from 'react';
 import DataTable from '@/components/ui/DataTable';
+import InfoCard from '@/components/ui/InfoCard';
 
 const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick }) => {
 
@@ -22,16 +23,17 @@ const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearc
     );
 
     const renderMobileItem = (visitor) => (
-        <div className="flex flex-col gap-2 p-4">
-            <div className="flex justify-between items-center">
-                <span className="font-medium text-text-primary">{visitor.hostelName || '--'}</span>
-                <span className="text-sm text-text-secondary">{visitor.hostelCode || '--'}</span>
-            </div>
-            <div className="flex gap-4 text-sm mt-1">
-                <span className="text-gray-600">Total: {visitor.totalVisitors || 0}</span>
-                <span className="text-success">Approved: {visitor.approvedVisitors || 0}</span>
-                <span className="text-secondary">Pending: {visitor.pendingApprovals || 0}</span>
-            </div>
+        <div className="mb-2">
+            <InfoCard
+                title={visitor.hostelName || '--'}
+                subtitle={visitor.hostelCode || '--'}
+                onClick={() => onRowClick && onRowClick({ id: visitor.hostelId, name: visitor.hostelName })}
+                stats={[
+                    { label: "Total", value: visitor.totalVisitors || 0 },
+                    { label: "Approved", value: <span className="text-success">{visitor.approvedVisitors || 0}</span> },
+                    { label: "Pending", value: <span className="text-secondary">{visitor.pendingApprovals || 0}</span> }
+                ]}
+            />
         </div>
     );
 

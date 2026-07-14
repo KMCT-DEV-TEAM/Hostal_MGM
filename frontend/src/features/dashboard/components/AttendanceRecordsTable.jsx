@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DataTable from '@/components/ui/DataTable';
+import InfoCard from '@/components/ui/InfoCard';
 import { formatDateISO, formatDateReadable } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
@@ -93,30 +94,23 @@ export default function AttendanceRecordsTable({ windowId }) {
     };
 
     const renderMobileItem = (item) => {
-        const dateObj = new Date(item.scannedAt);
         return (
-            <div className="flex flex-col gap-3 w-full text-sm">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {item.student?.profileImage ? (
-                            <img src={item.student.profileImage} alt="" className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center text-xs font-medium">
-                                {item.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
-                            </div>
-                        )}
-                        <span className="font-semibold text-gray-900">{item.student?.name || 'Unknown'}</span>
-                    </div>
-                    <StatusBadge status={item.status || 'pending'} className="w-[130px]" />
-                </div>
-                <div className="text-gray-600 grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                        <span className="font-medium">Date:</span> {formatDateReadable(item.scannedAt)}
-                    </div>
-                    <div>
-                        <span className="font-medium">Room:</span> {item.student?.room || 'N/A'}
-                    </div>
-                </div>
+            <div className="">
+                <InfoCard
+                    onClick={() => {
+                        if (item.student) {
+                            setSelectedStudent(item.student);
+                            setIsModalOpen(true);
+                        }
+                    }}
+                    avatar={item.student?.profileImage || item.student?.name || 'ST'}
+                    title={item.student?.name || 'Unknown'}
+                    fields={[
+                        { label: "Date", value: formatDateReadable(item.scannedAt) },
+                        { label: "Room", value: item.student?.room || 'N/A' }
+                    ]}
+                    status={{ text: item.status || 'pending', color: item.status === 'present' ? 'green' : item.status === 'absent' ? 'red' : item.status === 'on_leave' ? 'orenge' : 'default' }}
+                />
             </div>
         );
     };
@@ -141,29 +135,22 @@ export default function AttendanceRecordsTable({ windowId }) {
                     setPage(1);
                 }}
                 searchPlaceholder="Search student..."
-                toolbarActions={
-                    <div className="w-[140px]">
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: '' },
-                                { label: 'Present', value: 'present' },
-                                { label: 'Absent', value: 'absent' },
-                                { label: 'On Leave', value: 'on_leave' }
-                            ]}
-                            value={filters.status || ''}
-                            onChange={(val) => {
-                                if (val) {
-                                    setFilters({ status: val });
-                                } else {
-                                    setFilters({});
-                                }
-                                setPage(1);
-                            }}
-                            placeholder="Filter Status"
-                            minWidth="min-w-[140px]"
-                        />
-                    </div>
-                }
+                filterOptions={[
+                    { label: 'All Status', value: '' },
+                    { label: 'Present', value: 'present' },
+                    { label: 'Absent', value: 'absent' },
+                    { label: 'On Leave', value: 'on_leave' }
+                ]}
+                filterValue={filters.status || ''}
+                onFilterChange={(val) => {
+                    if (val) {
+                        setFilters({ status: val });
+                    } else {
+                        setFilters({});
+                    }
+                    setPage(1);
+                }}
+                filterPlaceholder="Filter Status"
                 headers={headers}
                 items={records}
                 loading={loading}

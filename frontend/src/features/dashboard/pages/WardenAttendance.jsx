@@ -11,7 +11,7 @@ const WardenAttendance = () => {
 
     if (windowId) {
         return (
-            <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-text-primary flex flex-col">
+            <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-text-primary flex flex-col">
                 <div className="flex items-center gap-4 mb-6">
                     <button
                         onClick={() => navigate('/dashboard/attendance')}
@@ -24,7 +24,7 @@ const WardenAttendance = () => {
                         <p className="text-sm text-text-secondary mt-1">Viewing student attendance for the selected window.</p>
                     </div>
                 </div>
-                <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 md:min-h-0 flex flex-col">
                     <AttendanceRecordsTable windowId={windowId} />
                 </div>
             </div>
@@ -32,9 +32,9 @@ const WardenAttendance = () => {
     }
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-text-primary flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-text-primary flex flex-col">
             <AttendanceHeader />
-            <div className="mt-8 flex-1 min-h-0 flex flex-col">
+            <div className="mt-8 flex-1 md:min-h-0 flex flex-col">
                 <AttendanceWindowsTable
                     showHostel={false}
                     showWarden={false}

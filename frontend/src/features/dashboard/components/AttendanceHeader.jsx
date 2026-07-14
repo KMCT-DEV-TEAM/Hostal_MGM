@@ -107,7 +107,7 @@ export default function AttendanceHeader({ onStatsFetched }) {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="lg:grid hidden  grid-cols-1 lg:grid-cols-3 gap-6">
                 <StatsCard
                     label="TOTAL STUDENTS"
                     value={isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : stats.totalStudents}

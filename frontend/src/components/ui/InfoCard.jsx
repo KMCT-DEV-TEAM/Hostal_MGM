@@ -7,6 +7,7 @@ const colorStyles = {
   red: "bg-red-50 text-red-600",
   yellow: "bg-yellow-50 text-yellow-600",
   blue: "bg-blue-50 text-blue-600",
+  orenge: "bg-[#FFF4ED] text-[#D97706]",
   gray: "bg-gray-50 text-gray-600",
   purple: "bg-purple-50 text-purple-600",
 };
@@ -32,6 +33,7 @@ export const InfoCard = forwardRef(
     },
     ref
   ) => {
+    console.log(status)
     const isImageUrl =
       typeof avatar === "string" &&
       (avatar.startsWith("http") ||
@@ -115,7 +117,7 @@ export const InfoCard = forwardRef(
         role={onClick ? "button" : "article"}
         aria-label={title}
         className={clsx(
-          "w-full bg-white rounded-[28px] shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100/50 overflow-hidden",
+          "w-full bg-white rounded-[18px] shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100/50 overflow-hidden",
           "transition-all duration-300 ease-in-out group",
           onClick &&
           "cursor-pointer hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:scale-[0.99]",
@@ -181,7 +183,7 @@ export const InfoCard = forwardRef(
                 )}
               >
                 <span className="w-[5px] h-[5px] rounded-full bg-current opacity-90" />
-                {status.text}
+                {status?.text?.charAt(0).toUpperCase() + status?.text?.slice(1)}
               </div>
             )}
           </div>
@@ -201,7 +203,7 @@ export const InfoCard = forwardRef(
                       <span className="truncate">{field.label}</span>
                     </div>
                     <div className="text-[15px] text-gray-800 font-medium truncate">
-                      {field.value ? field.value.charAt(0).toUpperCase() + field.value.slice(1) : "-"}
+                      {field.value ? field.value : "-"}
                     </div>
                   </div>
                 ))}
@@ -255,3 +257,5 @@ export const InfoCard = forwardRef(
 );
 
 InfoCard.displayName = "InfoCard";
+
+export default InfoCard;

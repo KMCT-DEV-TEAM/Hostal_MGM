@@ -3,7 +3,7 @@ import { Plus, Download, Edit2, Box, PackageCheck, PackageOpen } from 'lucide-re
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
 import DataTable from '@/components/ui/DataTable';
-import { InfoCard } from '@/components/ui/InfoCard';
+import InfoCard from '@/components/ui/InfoCard';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -249,14 +249,14 @@ export default function AdminFurniture() {
     const availableFurnitures = dashboardStats?.available || 0;
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full  p-4 md:p-6 flex flex-col bg-background-secondary">
             {/* Header */}
             <div className="mb-6 shrink-0">
                 <PageHeader title={pageTitle} subtitle={pageSubtitle} />
             </div>
 
             {/* Stat Cards */}
-            <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+            <div className="md:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 <StatsCard
                     label="TOTAL FURNITURES"
                     value={totalFurnitures}

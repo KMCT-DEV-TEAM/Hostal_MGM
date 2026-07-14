@@ -4,7 +4,6 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
-import Button from '@/components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
 import VisitorStats from '../components/VisitorStats';
 import VisitorListTableView from '../components/VisitorListTableView';
@@ -265,7 +264,7 @@ const VisitorsPage = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 md:bg-gray-50/50 p-4 md:p-6 pb-20 md:pb-6 overflow-hidden">
+        <div className="flex flex-col h-full bg-gray-50 md:bg-gray-50/50 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto md:overflow-hidden">
             {/* Header Section */}
             <div className="mb-6 shrink-0 flex items-center gap-4">
                 {selectedHostel && isSuperAdmin && (
@@ -383,25 +382,25 @@ const VisitorsPage = () => {
                 onConfirm={executeConfirmAction}
                 title={
                     confirmModal.type === 'approve' ? 'Confirm Approval' :
-                    confirmModal.type === 'reject' ? 'Confirm Rejection' :
-                    confirmModal.type === 'active' ? 'Confirm Activation' :
-                    'Confirm Deletion'
+                        confirmModal.type === 'reject' ? 'Confirm Rejection' :
+                            confirmModal.type === 'active' ? 'Confirm Activation' :
+                                'Confirm Deletion'
                 }
                 message={
                     confirmModal.type === 'approve' ? 'Are you sure you want to approve this visitor request?' :
-                    confirmModal.type === 'reject' ? 'Are you sure you want to reject this visitor request?' :
-                    confirmModal.type === 'active' ? `Are you sure you want to activate this visitor? Their status will be set to ${['admin', 'super_admin'].includes(user?.role) ? 'approved' : 'pending'}.` :
-                    'Are you sure you want to delete this visitor profile?'
+                        confirmModal.type === 'reject' ? 'Are you sure you want to reject this visitor request?' :
+                            confirmModal.type === 'active' ? `Are you sure you want to activate this visitor? Their status will be set to ${['admin', 'super_admin'].includes(user?.role) ? 'approved' : 'pending'}.` :
+                                'Are you sure you want to delete this visitor profile?'
                 }
                 confirmText={
                     confirmModal.type === 'approve' ? 'Approve' :
-                    confirmModal.type === 'reject' ? 'Reject' :
-                    confirmModal.type === 'active' ? 'Activate' :
-                    'Delete'
+                        confirmModal.type === 'reject' ? 'Reject' :
+                            confirmModal.type === 'active' ? 'Activate' :
+                                'Delete'
                 }
                 confirmButtonClass={
                     confirmModal.type === 'approve' || confirmModal.type === 'active' ? 'bg-success hover:bg-success/90' :
-                    'bg-danger hover:bg-danger/90'
+                        'bg-danger hover:bg-danger/90'
                 }
                 isSubmitting={isConfirmSubmitting}
             />

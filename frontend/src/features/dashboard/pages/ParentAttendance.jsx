@@ -10,6 +10,7 @@ import { showErrorToast } from '@/utils/toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatDateReadable, formatDay } from '@/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
+import InfoCard from '@/components/ui/InfoCard';
 
 const ParentAttendance = () => {
     const pageTitle = "Attendance";
@@ -76,7 +77,7 @@ const ParentAttendance = () => {
     const tableHeaders = ["Date", "Day", "Time ", "Status"];
 
     return (
-        <div className="w-full h-full overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
+        <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
 
             <PageHeader
                 title={pageTitle}
@@ -101,16 +102,6 @@ const ParentAttendance = () => {
                     setSearchQuery(e.target.value);
                     setPage(1);
                 }}
-                toolbarActions={
-                    <button
-                        type="button"
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className={`p-2.5 rounded-md transition-colors shadow-sm md:shadow-none flex items-center justify-center ${Object.keys(filters).length > 0 ? 'bg-primary text-white border border-primary hover:bg-primary/90' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                        title="Filter attendance"
-                    >
-                        <Filter className="w-4 h-4" />
-                    </button>
-                }
                 renderRow={(r) => (
                     <>
                         <td className="p-4 text-text-secondary text-sm font-medium">
@@ -128,20 +119,17 @@ const ParentAttendance = () => {
                     </>
                 )}
                 renderMobileItem={(r) => (
-                    <div className="space-y-2.5">
-                        <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-700 text-sm">
-                                {formatDateReadable(r.date)}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium">
-                                {formatDay(r.date)}
-                            </span>
-                        </div>
-                        <hr className="border-gray-50" />
-                        <div className="flex justify-between items-center gap-2 pt-1">
-                            <span className="font-medium text-gray-500 text-xs">Status:</span>
-                            <LeaveStatusBadge status={r.status || 'pending'} />
-                        </div>
+                    <div>
+                        <InfoCard
+                            title={formatDateReadable(r.date)}
+                            subtitle={formatDay(r.date)}
+                            fields={[
+                                { label: "Time", value: r.markedAt || '--' },
+                                // { label: "Status", value: <LeaveStatusBadge status={r.status || 'pending'} /> }
+                            ]}
+                            status={{ text: r.status || 'pending', color: r.status === 'Present' ? 'green' : r.status === 'Absent' ? 'red' : r.status === 'On_leave' ? 'orenge' : 'default' }}
+
+                        />
                     </div>
                 )}
                 page={page}
@@ -149,7 +137,17 @@ const ParentAttendance = () => {
                 limit={10}
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages || 1}
-            />
+            >
+                {/* Custom Toolbar Actions */}
+                <button
+                    type="button"
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2.5 rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white border-[#0A437A] hover:bg-[#0A437A]/90' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 h-10 w-10'}`}
+                    title="Filter attendance"
+                >
+                    <Filter className="w-4 h-4" />
+                </button>
+            </DataTable>
 
             <FilterAttendanceModal
                 isOpen={isFilterModalOpen}
