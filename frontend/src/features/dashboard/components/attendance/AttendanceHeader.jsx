@@ -86,19 +86,20 @@ export default function AttendanceHeader({ onStatsFetched }) {
                     <p className="text-sm text-gray-500 mt-1">
                         Generate attendance QR codes and monitor student attendance records.
                     </p>
+
                 </div>
                 {user?.role === ROLES.WARDEN && (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
                         <button
                             onClick={handleCreateAttendance}
                             disabled={isCreating}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary transition-colors text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary transition-colors text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanLine className="w-4 h-4" />}
                             {isCreating ? 'Starting...' : (stats.windowStatus === 'open' ? 'Attendance in Progress' : "Mark Today's Attendance")}
                         </button>
                         {stats.windowStatus === 'open' && stats.windowStartedAt && (
-                            <p className="text-xs text-gray-500 mt-2">
+                            <p className="text-xs text-gray-500 text-center sm:text-right">
                                 Started by {stats.windowStartedByName} at {new Date(stats.windowStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                         )}
@@ -107,7 +108,7 @@ export default function AttendanceHeader({ onStatsFetched }) {
             </div>
 
             {/* Stats Cards */}
-            <div className="lg:grid hidden  grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="md:grid hidden  grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 <StatsCard
                     label="TOTAL STUDENTS"
                     value={isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : stats.totalStudents}

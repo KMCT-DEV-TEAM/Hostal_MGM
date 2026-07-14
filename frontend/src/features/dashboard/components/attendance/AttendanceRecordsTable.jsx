@@ -5,7 +5,7 @@ import { formatDateISO, formatDateReadable } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
-import StudentAttendanceModal from './StudentAttendanceModal';
+import StudentAttendanceModal from '../StudentAttendanceModal';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
 

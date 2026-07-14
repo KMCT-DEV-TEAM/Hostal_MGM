@@ -1,9 +1,9 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import AttendanceHeader from '../components/AttendanceHeader';
-import AttendanceWindowsTable from '../components/AttendanceWindowsTable';
-import AttendanceRecordsTable from '../components/AttendanceRecordsTable';
+import AttendanceHeader from '../components/attendance/AttendanceHeader';
+import AttendanceWindowsTable from '../components/attendance/AttendanceWindowsTable';
+import AttendanceRecordsTable from '../components/attendance/AttendanceRecordsTable';
 
 const WardenAttendance = () => {
     const { windowId } = useParams();

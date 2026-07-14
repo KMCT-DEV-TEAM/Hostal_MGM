@@ -3,7 +3,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import ParentAttendanceStatsCards from "../components/ParentAttendanceStatsCards";
 import DataTable from "@/components/ui/DataTable";
 import { Filter } from 'lucide-react';
-import FilterAttendanceModal from '../components/FilterAttendanceModal';
+import FilterAttendanceModal from '../components/attendance/FilterAttendanceModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';

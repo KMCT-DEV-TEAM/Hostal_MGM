@@ -3,7 +3,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import StudentAttendanceStatsCard from "../components/StudentAttendanceStatsCard";
 import DataTable from "@/components/ui/DataTable";
 import { Filter } from 'lucide-react';
-import FilterAttendanceModal from '../components/FilterAttendanceModal';
+import FilterAttendanceModal from '../components/attendance/FilterAttendanceModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import InfoCard from '@/components/ui/InfoCard';
 import attendanceService from '@/services/attendance.service';
@@ -11,7 +11,7 @@ import { showErrorToast } from '@/utils/toast';
 
 import { formatDateReadable, formatDay } from '@/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
-import AttendanceQRModal from '../components/AttendanceQRModal';
+import AttendanceQRModal from '../components/attendance/AttendanceQRModal';
 
 const StudentAttendance = () => {
     const pageTitle = "My Attendance";

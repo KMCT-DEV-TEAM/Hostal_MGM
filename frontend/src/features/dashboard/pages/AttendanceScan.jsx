@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { Calendar, Clock, GraduationCap, CalendarCheck, Scan, Maximize, Search, UserCheck } from 'lucide-react';
+import { Calendar, Clock, GraduationCap, CalendarCheck, Scan, Maximize, Search, UserCheck, ArrowLeft } from 'lucide-react';
 import ScanQRModal from '../components/ScanQRModal';
 import ConfirmStudentModal from '../components/ConfirmStudentModal';
-import AttendanceSuccessModal from '../components/AttendanceSuccessModal';
+import AttendanceSuccessModal from '../components/attendance/AttendanceSuccessModal';
 
 // Using a basic fallback base64 decoder since jwt-decode wasn't installed
 const decodeJWT = (token) => {
@@ -60,9 +60,17 @@ export default function AttendanceScan() {
         }
     }, [windowId, user?.role]);
 
+    const location = useLocation();
+
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+
+        if (location.state?.autoOpenScanner) {
+            setIsScanOpen(true);
+            // Clean up state so it doesn't reopen on refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [fetchData, location]);
 
     const handleScanSuccess = (token) => {
         let decoded;
@@ -162,16 +170,23 @@ export default function AttendanceScan() {
     return (
         <div className="w-full h-full flex flex-col p-4 md:p-6 bg-[#F8FAFC]">
             {/* Header */}
-            <div className="flex flex-row justify-between items-center mb-6">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-xl font-bold text-gray-900">Mark Attendance</h1>
-                    <p className="text-sm text-gray-500 mt-1">Attendance &gt; Mark Attendance</p>
-
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 hover:bg-gray-200 rounded-full transition-colors shrink-0"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-xl font-bold text-gray-900">Mark Attendance</h1>
+                        <p className="text-sm text-gray-500 mt-1">Attendance &gt; Mark Attendance</p>
+                    </div>
                 </div>
 
                 <button
                     onClick={() => setIsScanOpen(true)}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#0A437A] text-white rounded-md font-medium text-sm w-max hover:bg-secondary transition-colors"
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#0A437A] text-white rounded-md font-medium text-sm w-full sm:w-auto hover:bg-secondary transition-colors"
                 >
                     <Maximize className="w-4 h-4" />
                     Mark Today's Attendance
@@ -179,7 +194,7 @@ export default function AttendanceScan() {
             </div>
 
             {/* Stats Row */}
-            <div className="bg-white  p-6 rounded-md  flex flex-wrap items-center justify-between mb-6 shadow-sm">
+            <div className="bg-white p-4 sm:p-6 rounded-md grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded bg-[#F4F7FB] flex items-center justify-center text-[#3BA0FF]">
                         <Calendar className="w-4 h-4" />
@@ -240,9 +255,9 @@ export default function AttendanceScan() {
 
             {/* Scanned Students List */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-[300px]">
-                <div className="p-4 border-b border-gray-50 flex items-center justify-between">
+                <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <h3 className="font-semibold text-gray-900">Recently Scanned <span className="text-gray-400 font-normal">({filteredSessionRecords.length})</span></h3>
-                    <div className="relative w-64">
+                    <div className="relative w-full sm:w-64">
                         <input
                             type="text"
                             placeholder="Search"
