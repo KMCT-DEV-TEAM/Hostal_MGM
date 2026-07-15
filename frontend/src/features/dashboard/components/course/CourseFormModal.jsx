@@ -28,7 +28,6 @@ const CourseFormModal = ({
             asForm={true}
             onSubmit={handleSubmit}
             maxWidth="max-w-xl"
-            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>
@@ -56,21 +55,19 @@ const CourseFormModal = ({
                     <div className="border-b border-gray-100 mb-4" />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {!isEditMode && (
-                            <div className="col-span-1 sm:col-span-2">
-                                <label className="block text-[10px] font-medium text-black mb-1">Organization <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <Dropdown
-                                        options={(organizations || []).map(org => ({ value: org._id, label: org.name }))}
-                                        value={formData.organizationId || ''}
-                                        onChange={(val) => handleInputChange({ target: { name: 'organizationId', value: val } })}
-                                        placeholder="Select Organization"
-                                        minWidth="w-full"
-                                        triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
-                                    />
-                                </div>
+                        <div className="col-span-1 sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-black mb-1">Organization <span className="text-red-500">*</span></label>
+                            <div className="relative">
+                                <Dropdown
+                                    options={(organizations || []).map(org => ({ value: org._id, label: org.name }))}
+                                    value={formData.organizationId || ''}
+                                    onChange={(val) => handleInputChange({ target: { name: 'organizationId', value: val } })}
+                                    placeholder="Select Organization"
+                                    minWidth="w-full"
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                />
                             </div>
-                        )}
+                        </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('course_name')} <span className="text-red-500">*</span></label>
                             <input
@@ -116,6 +113,21 @@ const CourseFormModal = ({
                                 />
                             </div>
                         </div>
+                        
+                        {isEditMode && (
+                            <div className="col-span-1 sm:col-span-2">
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
+                                <Dropdown
+                                    options={[
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Inactive', label: 'Inactive' }
+                                    ]}
+                                    value={formData.isActive !== undefined ? (formData.isActive ? 'Active' : 'Inactive') : (formData.status || 'Active')}
+                                    onChange={(val) => handleInputChange({ target: { name: 'isActive', value: val === 'Active' } })}
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                                />
+                            </div>
+                        )}
                     </div>
                 </section>
             </div>

@@ -212,8 +212,8 @@ export default function Administrator() {
     // ==========================================
     // SELECTION & ACTION HANDLERS
     // ==========================================
-    const handleSelectAll = () => {
-        const currentVisibleIds = admins.map(w => w._id);
+    const handleSelectAll = (mobileIds) => {
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : admins.map(w => w._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -464,8 +464,25 @@ export default function Administrator() {
                     name: adminForm.name,
                     phone: adminForm.phone
                 });
+
+                let updatedAdmin = { ...res.data };
+
+                // Check if Organization changed
+                const oldOrgId = editingAdmin.organization?._id || editingAdmin.organization;
+                if (adminForm.organization !== oldOrgId) {
+                    await adminService.updateOrganization(editingAdmin._id, { organizationId: adminForm.organization });
+                    const newOrg = organizations.find(o => o._id === adminForm.organization);
+                    updatedAdmin.organization = newOrg ? newOrg : { _id: adminForm.organization };
+                }
+
+                // Check if Status changed
+                if (adminForm.isActive !== editingAdmin.isActive) {
+                    await adminService.bulkToggleStatus({ ids: [editingAdmin._id], isActive: adminForm.isActive });
+                    updatedAdmin.isActive = adminForm.isActive;
+                }
+
                 if (res && res.data) {
-                    setAdmins(admins.map(w => w._id === editingAdmin._id ? { ...w, ...res.data } : w));
+                    setAdmins(admins.map(w => w._id === editingAdmin._id ? { ...w, ...updatedAdmin } : w));
                     showSuccessToast('Administrator Updated', res?.message || 'Administrator details saved successfully');
                 }
             } catch (error) {
@@ -698,6 +715,10 @@ export default function Administrator() {
                 />
 
                 <AdminMobileList
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    hasMore={currentPage < totalPages}
+                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
                     paginatedAdmins={admins}
                     organizations={organizations}
                     openEditAdminModal={openEditAdminModal}
@@ -716,7 +737,7 @@ export default function Administrator() {
                 {/* ==========================================
                 PAGINATION BAR FOOTER
                 ========================================== */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
                         {totalAdmins === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
@@ -790,7 +811,7 @@ export default function Administrator() {
                     setAdminForm={setAdminForm}
                     handleSaveAdmin={handleSaveAdmin}
                     handleCancel={handleCancel}
-                    organizations={organizations}
+                    organizations={organizations.filter(org => org.isActive)}
                     isEmailVerified={isEmailVerified}
                     handleVerifyClick={handleVerifyClick}
                     isSubmitting={isSubmitting}

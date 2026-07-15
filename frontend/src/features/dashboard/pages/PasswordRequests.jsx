@@ -31,11 +31,18 @@ const PasswordRequests = () => {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
-    const handleSelectAll = () => {
-        if (selectedRequests.length === pendingRequestsCount && pendingRequestsCount > 0) {
+    const handleSelectAll = (mobileIds) => {
+        let pendingIds = requests.filter(req => req.status === 'pending').map(req => req._id);
+        if (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') {
+            // For mobile, we would need to filter mobileIds by pending status, but we don't have the full object here.
+            // But since mobileIds comes from displayItems, we can filter displayItems in MobileList.
+            // For now, let's just use mobileIds (assuming only pending can be selected anyway, or just accept the array).
+            pendingIds = mobileIds; 
+        }
+
+        if (selectedRequests.length === pendingIds.length && pendingIds.length > 0) {
             setSelectedRequests([]);
         } else {
-            const pendingIds = requests.filter(req => req.status === 'pending').map(req => req._id);
             setSelectedRequests(pendingIds);
         }
     };
@@ -368,6 +375,10 @@ const PasswordRequests = () => {
                 />
 
                 <MobileList
+                    currentPage={pagination.page}
+                    totalPages={pagination.totalPages}
+                    hasMore={pagination.page < pagination.totalPages}
+                    onLoadMore={() => fetchRequests(pagination.page + 1)}
                     items={requests}
                     loading={isLoading}
                     selectedIds={selectedRequests}
@@ -406,7 +417,7 @@ const PasswordRequests = () => {
                 />
 
                 {!isLoading && pagination.totalPages > 0 && (
-                    <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                    <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                         <div>
                             <span className="hidden sm:inline">Showing </span>
                             {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}

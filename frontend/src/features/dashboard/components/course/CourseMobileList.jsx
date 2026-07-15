@@ -14,34 +14,10 @@ const CourseMobileList = ({
     selectedIds,
     handleSelectAll,
     handleSelectRow,
-    handleStatusChangeClick
+    handleStatusChangeClick,
+    ...rest
 }) => {
     const { t } = useTranslation();
-
-    const renderBody = (o) => (
-        <>
-            <MobileRow label="Id" value={(o.courseId || o._id.substring(o._id.length - 6)).toUpperCase()} />
-            <MobileRow label={t('course_code')} value={o.code || 'N/A'} />
-            <MobileRow label="Batches" value={o.batchesCount || 0} />
-            <MobileRow 
-                label={t('status')} 
-                value={
-                    <div onClick={(e) => e.stopPropagation()} className="w-full">
-                        <Dropdown
-                            minWidth=""
-                            options={[
-                                { value: "Active", label: "Active" },
-                                { value: "Inactive", label: "Inactive" }
-                            ]}
-                            value={o.isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick && handleStatusChangeClick(o._id, o.isActive)}
-                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors w-full ${o.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
-                        />
-                    </div>
-                } 
-            />
-        </>
-    );
 
     return (
         <MobileList
@@ -56,13 +32,23 @@ const CourseMobileList = ({
             canEdit={true}
             emptyText="No Courses match the selected filter."
             iconFn={(o) => (
-                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-orange-500" />
+                <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                    {o.name ? o.name.substring(0, 2) : 'NA'}
                 </div>
             )}
             titleFn={(o) => o.name}
-            subtitleFn={(o) => o.code || 'Course'}
-            rightTopFn={(o) => o.batchesCount ? `${o.batchesCount} Batches` : null}
+            subtitleFn={(o) => (
+                <>
+                    <span className="font-semibold text-gray-500">Code:</span>
+                    <span>{o.code || 'N/A'}</span>
+                </>
+            )}
+            rightTopFn={(o) => o.batchesCount ? (
+                <>
+                    <span className="font-semibold text-gray-500">Batches:</span>
+                    <span>{o.batchesCount}</span>
+                </>
+            ) : null}
             statusBadgeFn={(o) => (
                 <MobileCardStatusBadge
                     status={o.isActive ? "Active" : "Inactive"}
@@ -71,11 +57,11 @@ const CourseMobileList = ({
                     textColorClass={o.isActive ? 'text-green-600' : 'text-red-600'}
                 />
             )}
-            renderBody={renderBody}
             onViewDetails={(o) => {
                 setSelectedCourseDetail(o);
                 setView('detail');
             }}
+            {...rest}
         />
     );
 };

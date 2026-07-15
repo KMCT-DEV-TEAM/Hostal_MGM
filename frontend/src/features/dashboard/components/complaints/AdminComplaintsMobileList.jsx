@@ -6,10 +6,12 @@ const AdminComplaintsMobileList = ({
     complaints,
     loading,
     onRowClick,
-    showWarden = false
+    showWarden = false,
+    ...rest
 }) => {
     return (
         <MobileList
+            {...rest}
             items={complaints}
             loading={loading}
             emptyText="No records found."
