@@ -580,7 +580,7 @@ const StudentDetailView = () => {
                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                 Full Address
               </span>
-              <span className="sm:col-span-2 font-medium text-gray-900 leading-relaxed">
+              <span className="sm:col-span-2 font-medium text-gray-900 leading-relaxed break-words whitespace-pre-wrap overflow-hidden" style={{ wordBreak: 'break-word' }}>
                 <span className="hidden sm:inline">: </span>
                 {student.address || "N/A"}
               </span>

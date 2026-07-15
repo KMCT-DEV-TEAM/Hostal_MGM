@@ -331,6 +331,31 @@ export default function WardenComplaints({ hostel, onBack }) {
                     handlePriorityChange={handlePriorityChange}
                     onViewClick={(c) => setViewingComplaint(c)}
                 />
+            </div>
+
+            <WardenComplaintsMobileList
+                currentPage={currentPage}
+                totalPages={totalPages}
+                hasMore={currentPage < totalPages}
+                onLoadMore={() => setCurrentPage(prev => prev + 1)}
+                loading={isLoading}
+                complaints={paginatedComplaints}
+                categories={categories}
+                handleCategoryChange={handleCategoryChange}
+                handlePriorityChange={handlePriorityChange}
+                onViewClick={(c) => setViewingComplaint(c)}
+            />
+
+            {/* Pagination Section */}
+            <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div>
+                    <span className="hidden sm:inline">Showing </span>
+                    {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
+                    <span className="hidden sm:inline"> to </span>
+                    <span className="sm:hidden">-</span>
+                    {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
+                    <span className="hidden sm:inline"> entries</span>
+                </div>
 
                 {/* Pagination Section */}
                 <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">

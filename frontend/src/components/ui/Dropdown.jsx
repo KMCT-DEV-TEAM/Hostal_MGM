@@ -47,7 +47,21 @@ export default function Dropdown({
                 const rect = dropdownRef.current.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const dropdownHeight = 200; // estimated max height based on max-h-48 (192px)
-                if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+                
+                let spaceBelowParent = spaceBelow;
+                let scrollParent = dropdownRef.current.parentElement;
+                while (scrollParent) {
+                    if (scrollParent === document.body || scrollParent === document.documentElement) break;
+                    const style = window.getComputedStyle(scrollParent);
+                    if (/(auto|scroll)/.test(style.overflow + style.overflowY)) {
+                        const parentRect = scrollParent.getBoundingClientRect();
+                        spaceBelowParent = parentRect.bottom - rect.bottom;
+                        break;
+                    }
+                    scrollParent = scrollParent.parentElement;
+                }
+
+                if ((spaceBelow < dropdownHeight || spaceBelowParent < dropdownHeight) && rect.top > dropdownHeight) {
                     setDynamicPlacement('top');
                 } else {
                     setDynamicPlacement(placement);

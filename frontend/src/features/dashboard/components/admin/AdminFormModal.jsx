@@ -30,7 +30,6 @@ const AdminFormModal = ({
             asForm={true}
             onSubmit={handleSaveAdmin}
             maxWidth="max-w-xl"
-            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>
@@ -44,7 +43,7 @@ const AdminFormModal = ({
                             else if (adminForm.phone.length !== 10) { newErrors.phone = 'Phone number must be exactly 10 digits'; hasError = true; }
                             if (!adminForm.email) { newErrors.email = 'Email is required'; hasError = true; }
                             else if (!isEmailVerified && !editingAdmin) { newErrors.email = 'Please verify your email'; hasError = true; }
-                            if (!editingAdmin && !adminForm.organization) { newErrors.organization = 'Organization is required'; hasError = true; }
+                            if (!adminForm.organization) { newErrors.organization = 'Organization is required'; hasError = true; }
                             
                             setErrors(newErrors);
                             if (hasError) {
@@ -152,11 +151,12 @@ const AdminFormModal = ({
                     </div>
                 </section>
 
-                {!editingAdmin && (
-                    <section>
-                        <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
-                        <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
-                        <div className="border-b border-gray-100 mb-4" />
+                <section>
+                    <h3 className="text-xs font-semibold text-primary mb-1">{t('admin_org_assignment')}</h3>
+                    <h5 className='text-xs text-[#777777] mb-4'>{t('admin_org_assignment_desc')}</h5>
+                    <div className="border-b border-gray-100 mb-4" />
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
                             <Dropdown
@@ -168,8 +168,23 @@ const AdminFormModal = ({
                             />
                             {errors.organization && <p className="text-red-500 text-[10px] mt-1">{errors.organization}</p>}
                         </div>
-                    </section>
-                )}
+
+                        {editingAdmin && (
+                            <div>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
+                                <Dropdown
+                                    options={[
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Inactive', label: 'Inactive' }
+                                    ]}
+                                    value={adminForm.isActive !== undefined ? (adminForm.isActive ? 'Active' : 'Inactive') : (adminForm.status || 'Active')}
+                                    onChange={(val) => setAdminForm({ ...adminForm, isActive: val === 'Active' })}
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </section>
 
                 {!editingAdmin && (
                     <section>

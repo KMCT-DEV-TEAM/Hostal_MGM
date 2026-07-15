@@ -15,7 +15,8 @@ const OrganizationMobileList = ({
     openModal,
     handleStatusChangeClick,
     loading,
-    error
+    error,
+    ...rest
 }) => {
     const { t } = useTranslation();
 
@@ -93,6 +94,7 @@ const OrganizationMobileList = ({
                 setSelectedOrganizationDetail(o);
                 setView('detail');
             }}
+            {...rest}
         />
     );
 };

@@ -194,7 +194,7 @@ const HostelFormModal = ({
                     <h5 className="text-[10px] text-gray-500 mb-4">{t('capacity_details_desc')}</h5>
                     <div className="border-b border-gray-100 mb-4" />
 
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('total_capacity')} <span className="text-red-500">*</span></label>
                             <input
@@ -208,6 +208,21 @@ const HostelFormModal = ({
                             />
                             {errors.capacity && <p className="text-red-500 text-[10px] mt-1">{errors.capacity}</p>}
                         </div>
+                        
+                        {editingHostel && (
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
+                                <Dropdown
+                                    options={[
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Inactive', label: 'Inactive' }
+                                    ]}
+                                    value={hostelForm.isActive !== undefined ? (hostelForm.isActive ? 'Active' : 'Inactive') : (hostelForm.status || 'Active')}
+                                    onChange={(val) => setHostelForm({ ...hostelForm, isActive: val === 'Active' })}
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                                />
+                            </div>
+                        )}
                     </div>
                 </section>
             </div>

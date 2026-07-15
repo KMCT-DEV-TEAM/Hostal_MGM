@@ -281,6 +281,10 @@ const LogsViewer = ({ entityType }) => {
             />
 
             <MobileList
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                hasMore={pagination.page < pagination.totalPages}
+                onLoadMore={() => fetchLogs(pagination.page + 1)}
                 items={logs}
                 loading={isLoading}
                 canSelect={false}
@@ -325,7 +329,7 @@ const LogsViewer = ({ entityType }) => {
             />
 
             {!isLoading && pagination.totalPages > 0 && (
-                <div className="flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
                         {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}

@@ -9,7 +9,8 @@ const WardenComplaintsMobileList = ({
     categories = [],
     handleCategoryChange,
     handlePriorityChange,
-    onViewClick
+    onViewClick,
+    ...rest
 }) => {
     const categoryOptions = categories.map(cat => ({
         value: cat._id,
@@ -36,6 +37,7 @@ const WardenComplaintsMobileList = ({
 
     return (
         <MobileList
+            {...rest}
             items={complaints}
             loading={loading}
             emptyText="No complaints found."
