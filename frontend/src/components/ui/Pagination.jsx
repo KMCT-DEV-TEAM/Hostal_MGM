@@ -9,7 +9,7 @@ export default function Pagination({
     totalPages,
 }) {
     return (
-        <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+        <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
             <div>
                 <span className="hidden sm:inline">Showing </span>
                 {totalItems === 0 ? 0 : (page - 1) * limit + 1}

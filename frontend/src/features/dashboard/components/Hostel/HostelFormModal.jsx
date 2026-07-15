@@ -217,8 +217,8 @@ const HostelFormModal = ({
                                         { value: 'Active', label: 'Active' },
                                         { value: 'Inactive', label: 'Inactive' }
                                     ]}
-                                    value={hostelForm.isActive !== undefined ? (hostelForm.isActive ? 'Active' : 'Inactive') : (hostelForm.status || 'Active')}
-                                    onChange={(val) => setHostelForm({ ...hostelForm, isActive: val === 'Active' })}
+                                    value={hostelForm.status || (hostelForm.isActive !== undefined ? (hostelForm.isActive ? 'Active' : 'Inactive') : 'Active')}
+                                    onChange={(val) => setHostelForm({ ...hostelForm, status: val, isActive: val === 'Active' })}
                                     triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
                                 />
                             </div>

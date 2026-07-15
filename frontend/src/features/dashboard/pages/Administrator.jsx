@@ -2,6 +2,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import ListToolbar from '@/components/ui/ListToolbar';
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import {
     Square,
     CheckSquare,
@@ -81,6 +82,7 @@ export default function Administrator() {
     const [isOrgUpdating, setIsOrgUpdating] = useState(false);
     const [isEmailUpdating, setIsEmailUpdating] = useState(false);
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false)
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
 
     // Email Change Flow State
     const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
@@ -658,7 +660,7 @@ export default function Administrator() {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
-                            <div className="relative">
+                            <div className="relative" ref={bulkMenuRef}>
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                     className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"

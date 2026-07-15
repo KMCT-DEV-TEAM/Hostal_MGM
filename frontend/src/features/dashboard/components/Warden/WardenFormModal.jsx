@@ -219,8 +219,8 @@ export default function WardenFormModal({
                                         { value: 'Active', label: 'Active' },
                                         { value: 'Inactive', label: 'Inactive' }
                                     ]}
-                                    value={wardenForm.isActive !== undefined ? (wardenForm.isActive ? 'Active' : 'Inactive') : (wardenForm.status || 'Active')}
-                                    onChange={(val) => setWardenForm({ ...wardenForm, isActive: val === 'Active' })}
+                                    value={wardenForm.status || (wardenForm.isActive !== undefined ? (wardenForm.isActive ? 'Active' : 'Inactive') : 'Active')}
+                                    onChange={(val) => setWardenForm({ ...wardenForm, status: val, isActive: val === 'Active' })}
                                     triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
                                 />
                             </div>

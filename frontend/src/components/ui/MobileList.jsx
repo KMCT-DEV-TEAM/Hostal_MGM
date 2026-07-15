@@ -231,12 +231,12 @@ export default function MobileList({
                                         {(subtitleFn || rightTopFn) && (
                                             <div className="flex flex-col gap-1 text-[10px] sm:text-xs text-gray-500 mb-2">
                                                 {subtitleFn && (
-                                                    <div className="flex items-center gap-1.5">
+                                                    <div className="flex items-center gap-1.5 min-w-0 truncate">
                                                         {subtitleFn(item)}
                                                     </div>
                                                 )}
                                                 {rightTopFn && (
-                                                    <div className="flex items-center gap-1.5">
+                                                    <div className="flex items-center gap-1.5 min-w-0 truncate">
                                                         {rightTopFn(item)}
                                                     </div>
                                                 )}
@@ -291,7 +291,7 @@ export const MobileRow = ({ label, value, valueClass = "text-gray-700 font-mediu
             {icon && <div className="w-3.5 h-3.5 shrink-0 flex items-center justify-center">{icon}</div>}
             <span className="font-medium">{label}:</span>
         </div>
-        <div className={`text-right ${valueClass}`}>{value}</div>
+        <div className={`text-right truncate min-w-0 ${valueClass}`}>{value}</div>
     </div>
 );
 

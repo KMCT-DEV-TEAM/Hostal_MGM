@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import { Search, Download, Plus, MoreVertical } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 
@@ -14,7 +15,7 @@ export default function HostelToolbar({
     handleBulkStatusClick
 }) {
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
-
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
     return (
         <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
             <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
@@ -61,8 +62,8 @@ export default function HostelToolbar({
                     >
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    
-                    <div className="relative">
+
+                    <div className="relative" ref={bulkMenuRef}>
                         <button
                             onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                             className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"

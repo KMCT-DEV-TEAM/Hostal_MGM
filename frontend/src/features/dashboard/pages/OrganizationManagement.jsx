@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
@@ -66,6 +67,7 @@ const OrganizationManagement = () => {
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
     const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));;
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -165,7 +167,10 @@ const OrganizationManagement = () => {
                 organisationNumber: org.organisationNumber || '',
                 email: org.email || '',
                 phone: org.phone || '',
-                address: org.address || ''
+                address: org.address || '',
+                status: org.isActive ? 'Active' : 'Inactive',
+                isActive: org.isActive,
+                originalIsActive: org.isActive
             });
         } else {
             setEditingId(null);
@@ -175,7 +180,9 @@ const OrganizationManagement = () => {
                 organisationNumber: '',
                 email: '',
                 phone: '',
-                address: ''
+                address: '',
+                status: 'Active',
+                isActive: true
             });
         }
         setIsModalOpen(true);
@@ -200,6 +207,9 @@ const OrganizationManagement = () => {
             setIsSubmitting(true);
             if (isEditMode && editingId) {
                 await organizationService.updateOrganization(editingId, formData);
+                if (formData.isActive !== formData.originalIsActive) {
+                    await organizationService.toggleStatus(editingId);
+                }
                 showSuccessToast('Organization Updated', 'Organization details saved successfully');
             } else {
                 await organizationService.createOrganization(formData);
@@ -330,7 +340,7 @@ const OrganizationManagement = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
                 <div>
@@ -392,7 +402,7 @@ const OrganizationManagement = () => {
                             )}
 
                             {!isAdmin && (
-                                <div className="relative">
+                                <div className="relative" ref={bulkMenuRef}>
                                     <button
                                         onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                         className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
