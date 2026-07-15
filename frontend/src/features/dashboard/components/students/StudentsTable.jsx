@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useClickOutside } from '@/hooks/useClickOutside';
 import {
   Pencil,
   Building2,
@@ -59,6 +60,7 @@ export default function StudentsTable({
   const [searchTerm, setSearchTerm] = useState(searchValue);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+  const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
 
   useEffect(() => {
     setSearchTerm(searchValue);
@@ -229,7 +231,7 @@ export default function StudentsTable({
       </button>
 
       {(canEdit || canDelete) && (
-        <div className="relative">
+        <div className="relative" ref={bulkMenuRef}>
           <button
             onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
             className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer h-full"

@@ -15,6 +15,10 @@ const OrganizationMobileList = ({
     handleStatusChangeClick,
     loading,
     error,
+    currentPage,
+    totalPages,
+    hasMore,
+    onLoadMore,
     ...rest
 }) => {
     const { t } = useTranslation();
@@ -30,6 +34,10 @@ const OrganizationMobileList = ({
             onEdit={isAdmin ? undefined : (o) => openModal('edit', o)}
             canSelect={!isAdmin}
             canEdit={!isAdmin}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
             emptyText={t('no_org_found')}
             iconFn={(o) => (
                 <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
