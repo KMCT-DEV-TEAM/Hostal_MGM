@@ -310,12 +310,13 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
 
   const pass = await getManagementPassDetailsDb(id, scope);
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+  console.log(pass)
+  console.log(scope, "scop");
 
   const hostel = await Hostel.findOne({ _id: pass.hostelId?._id, organizations: scope.organizationId });
   if (!hostel) {
     return sendError(res, 403, "You don't have permission to view this pass.");
   }
-
   return sendSuccess(res, 200, "Pass details loaded successfully.", { data: pass });
 });
 
@@ -327,7 +328,6 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
 
   const pass = await Pass.findById(id).populate("hostelId");
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
-
   if (!pass.hostelId || !pass.hostelId.organizations || !pass.hostelId.organizations.some(org => org.toString() === scope.organizationId.toString())) {
     return sendError(res, 403, "You don't have permission to approve passes for this hostel.");
   }

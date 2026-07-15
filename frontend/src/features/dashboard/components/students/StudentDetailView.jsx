@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   User,
   Users,
   Calendar,
@@ -39,6 +38,8 @@ import { getHostels } from "@/services/hostel.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { vacateHostel, getStudentHostelTimeline } from "@/services/studentHostel.service";
 import TimelineStep from "@/components/ui/TimelineStep";
+import BackButton from "@/components/ui/BackButton";
+import PageHeader from "@/components/ui/PageHeader";
 
 const getParentId = (parent) =>
   String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
@@ -265,7 +266,51 @@ const StudentDetailView = () => {
   });
 
   if (loading) {
-    return <div className="flex h-[50vh] items-center justify-center text-gray-500">Loading student details...</div>;
+    return (
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-2 mb-6">
+          <div className="h-8 bg-gray-200 rounded-md w-64 mb-1"></div>
+          <div className="h-4 bg-gray-200 rounded-md w-48"></div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Main Content Skeleton */}
+          <div className="lg:col-span-3 space-y-6">
+            {[1, 2].map((card) => (
+              <div key={card} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div className="h-5 bg-gray-200 rounded-md w-1/4 mb-6"></div>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((row) => (
+                    <div key={row} className="flex flex-col sm:grid sm:grid-cols-3 gap-2">
+                      <div className="h-4 bg-gray-200 rounded-md w-1/2"></div>
+                      <div className="sm:col-span-2 h-4 bg-gray-200 rounded-md w-3/4"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Sidebar Skeleton */}
+          <div className="lg:col-span-2 space-y-6">
+            {[1, 2].map((card) => (
+              <div key={card} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div className="h-5 bg-gray-200 rounded-md w-1/3 mb-6"></div>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((row) => (
+                    <div key={row} className="flex flex-col sm:grid sm:grid-cols-3 gap-2">
+                      <div className="h-4 bg-gray-200 rounded-md w-1/2"></div>
+                      <div className="sm:col-span-2 h-4 bg-gray-200 rounded-md w-full"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -334,17 +379,13 @@ const StudentDetailView = () => {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard/students')}
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              {student.name}
-            </h1>
-            <p className="text-sm text-gray-500">Student - {hostelName}</p>
+
+          <div className="flex flex-col">
+            <PageHeader
+              title={student.name}
+              subtitle={`Student - ${hostelName}`}
+              actionButton={<BackButton text="Back to Students" />}
+            />
           </div>
         </div>
       </div>
@@ -710,7 +751,9 @@ const StudentDetailView = () => {
                   </span>
                   <div className="sm:col-span-2 font-medium text-gray-900 flex flex-wrap gap-2 items-center">
                     <span className="hidden sm:inline">: </span>
-                    {assignedFurnitures.length > 0 ? (
+                    {loadingFurnitures ? (
+                      <div className="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+                    ) : assignedFurnitures.length > 0 ? (
                       assignedFurnitures.map((f, i) => (
                         <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
                           {f.furnitureTypeId?.name || "Unknown"}
@@ -732,7 +775,9 @@ const StudentDetailView = () => {
                   icon={<Hash className="w-4 h-4 text-gray-400" />}
                   label="Furniture Id"
                 >
-                  {assignedFurnitures.length > 0
+                  {loadingFurnitures ? (
+                    <div className="h-4 bg-gray-200 rounded-md w-40 animate-pulse mt-0.5"></div>
+                  ) : assignedFurnitures.length > 0
                     ? assignedFurnitures.map((f) => f.furnitureId).join(", ")
                     : "N/A"}
                 </InfoRow>
@@ -740,7 +785,9 @@ const StudentDetailView = () => {
                   icon={<Calendar className="w-4 h-4 text-gray-400" />}
                   label="Assigned On"
                 >
-                  {assignedFurnitures.length > 0 && assignedFurnitures[0].createdAt
+                  {loadingFurnitures ? (
+                    <div className="h-4 bg-gray-200 rounded-md w-28 animate-pulse mt-0.5"></div>
+                  ) : assignedFurnitures.length > 0 && assignedFurnitures[0].createdAt
                     ? formatDateReadable(assignedFurnitures[0].createdAt)
                     : "N/A"}
                 </InfoRow>
@@ -748,7 +795,9 @@ const StudentDetailView = () => {
                   icon={<User className="w-4 h-4 text-gray-400" />}
                   label="Assigned By"
                 >
-                  Warden
+                  {loadingFurnitures ? (
+                    <div className="h-4 bg-gray-200 rounded-md w-20 animate-pulse mt-0.5"></div>
+                  ) : "Warden"}
                 </InfoRow>
               </div>
             )}

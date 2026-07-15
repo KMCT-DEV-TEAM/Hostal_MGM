@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Hostel from "./hostel.model.js";
 import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
+import studentModel from "../students/student.model.js";
 
 const checkExistingHostelCodeDb = async (code) => {
   return await Hostel.findOne({ code });
@@ -201,10 +202,19 @@ const bulkUpdateHostelStatusDb = async (ids, isActive, organizationId, adminId =
   }
 };
 
-const syncHostelOrganizations = async (hostelId) => {
+const syncHostelOrganizations = async (hostelId, session = null) => {
   if (!hostelId) return;
-  const organizations = await Student.distinct("organizationId", { hostelId });
-  await Hostel.findByIdAndUpdate(hostelId, { organizations });
+  let organizations;
+  if (session) {
+    const result = await studentModel.aggregate([
+      { $match: { hostelId: new mongoose.Types.ObjectId(hostelId) } },
+      { $group: { _id: "$organizationId" } }
+    ]).session(session);
+    organizations = result.map(r => r._id).filter(Boolean);
+  } else {
+    organizations = await studentModel.distinct("organizationId", { hostelId });
+  }
+  await Hostel.findByIdAndUpdate(hostelId, { organizations }, { session });
 };
 
 export {
