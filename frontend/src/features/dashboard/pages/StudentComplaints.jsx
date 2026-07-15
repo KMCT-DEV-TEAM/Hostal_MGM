@@ -335,18 +335,22 @@ export default function StudentComplaints() {
                 />
 
                 {/* Mobile List Section */}
-                <StudentComplaintsMobileList
-                    loading={loading}
-                    complaints={paginatedComplaints}
-                    categories={categories}
-                    handleCategoryChange={handleCategoryChange}
-                    openEditModal={handleEdit}
-                    onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
-                />
+            <StudentComplaintsMobileList
+                currentPage={currentPage}
+                totalPages={totalPages}
+                hasMore={currentPage < totalPages}
+                onLoadMore={() => setCurrentPage(prev => prev + 1)}
+                loading={loading}
+                complaints={paginatedComplaints}
+                categories={categories}
+                handleCategoryChange={handleCategoryChange}
+                openEditModal={handleEdit}
+                onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
+            />
 
-                {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-text-secondary rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div className="hidden sm:block">
+            {/* PAGINATION BAR FOOTER */}
+            <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-text-secondary rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden sm:block">
                         Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
                         {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
                     </div>

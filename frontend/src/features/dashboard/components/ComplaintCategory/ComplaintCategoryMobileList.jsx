@@ -14,33 +14,11 @@ const ComplaintCategoryMobileList = ({
     selectedIds,
     handleSelectAll,
     handleSelectRow,
-    handleStatusChangeClick
+    handleStatusChangeClick,
+    ...rest
 }) => {
     const { t } = useTranslation();
 
-    const renderBody = (c) => (
-        <>
-            <MobileRow label="Id" value={(c.categoryId || c._id.substring(c._id.length - 6)).toUpperCase()} />
-            <MobileRow label="Desc." value={c.description || 'N/A'} />
-            <MobileRow 
-                label={t('status')} 
-                value={
-                    <div onClick={(e) => e.stopPropagation()} className="w-full">
-                        <Dropdown
-                            minWidth=""
-                            options={[
-                                { value: "Active", label: "Active" },
-                                { value: "Inactive", label: "Inactive" }
-                            ]}
-                            value={c.isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick && handleStatusChangeClick(c._id, c.isActive)}
-                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors w-full ${c.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
-                        />
-                    </div>
-                } 
-            />
-        </>
-    );
 
     return (
         <MobileList
@@ -50,17 +28,23 @@ const ComplaintCategoryMobileList = ({
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
             onSelect={handleSelectRow}
-            onEdit={(c) => openModal('edit', c)}
+            onEdit={(c) =
+            {...rest}> openModal('edit', c)}
             canSelect={true}
             canEdit={true}
             emptyText={t('no_records_found')}
             iconFn={(c) => (
-                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
-                    <Tag className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                    {c.name ? c.name.substring(0, 2) : 'NA'}
                 </div>
             )}
             titleFn={(c) => c.name}
-            subtitleFn={(c) => c.description || 'Category'}
+            subtitleFn={(c) => (
+                <>
+                    <Tag className="w-3 h-3" />
+                    <span className="truncate max-w-[120px]">{c.description || 'Category'}</span>
+                </>
+            )}
             statusBadgeFn={(c) => (
                 <MobileCardStatusBadge
                     status={c.isActive ? "Active" : "Inactive"}
@@ -69,11 +53,11 @@ const ComplaintCategoryMobileList = ({
                     textColorClass={c.isActive ? 'text-green-600' : 'text-red-600'}
                 />
             )}
-            renderBody={renderBody}
             onViewDetails={(c) => {
                 setSelectedCategoryDetail(c);
                 setView('detail');
             }}
+            {...rest}
         />
     );
 };

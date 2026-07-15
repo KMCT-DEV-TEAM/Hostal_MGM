@@ -28,7 +28,6 @@ const DepartmentFormModal = ({
             asForm={true}
             onSubmit={handleSubmit}
             maxWidth="max-w-xl"
-            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>

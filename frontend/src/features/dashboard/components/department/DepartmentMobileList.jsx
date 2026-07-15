@@ -14,35 +14,11 @@ const DepartmentMobileList = ({
     selectedIds,
     handleSelectAll,
     handleSelectRow,
-    handleStatusChangeClick
+    handleStatusChangeClick,
+    ...rest
 }) => {
     const { t } = useTranslation();
 
-    const renderBody = (o) => (
-        <>
-            <MobileRow label="Id" value={(o.departmentId || o._id.substring(o._id.length - 6)).toUpperCase()} />
-            <MobileRow label={t('department_code')} value={o.code || 'N/A'} />
-            <MobileRow label={t('course')} value={o.courseId ? o.courseId.name : 'N/A'} />
-            <MobileRow label={t('num_batches')} value={o.batchesCount || 0} />
-            <MobileRow 
-                label={t('status')} 
-                value={
-                    <div onClick={(e) => e.stopPropagation()} className="w-full">
-                        <Dropdown
-                            minWidth=""
-                            options={[
-                                { value: "Active", label: "Active" },
-                                { value: "Inactive", label: "Inactive" }
-                            ]}
-                            value={o.isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick && handleStatusChangeClick(o._id, o.isActive)}
-                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors w-full ${o.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
-                        />
-                    </div>
-                } 
-            />
-        </>
-    );
 
     return (
         <MobileList
@@ -57,13 +33,23 @@ const DepartmentMobileList = ({
             canEdit={true}
             emptyText={t('no_records_found')}
             iconFn={(o) => (
-                <div className="w-10 h-10 rounded-full bg-cyan-50 flex items-center justify-center">
-                    <Network className="w-5 h-5 text-cyan-500" />
+                <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                    {o.name ? o.name.substring(0, 2) : 'NA'}
                 </div>
             )}
             titleFn={(o) => o.name}
-            subtitleFn={(o) => o.courseId ? o.courseId.name : 'Department'}
-            rightTopFn={(o) => o.code || 'N/A'}
+            subtitleFn={(o) => (
+                <>
+                    <Network className="w-3 h-3" />
+                    <span className="truncate max-w-[120px]">{o.courseId ? o.courseId.name : 'Department'}</span>
+                </>
+            )}
+            rightTopFn={(o) => (
+                <>
+                    <span className="font-semibold text-gray-500">Code:</span>
+                    <span>{o.code || 'N/A'}</span>
+                </>
+            )}
             statusBadgeFn={(o) => (
                 <MobileCardStatusBadge
                     status={o.isActive ? "Active" : "Inactive"}
@@ -72,11 +58,11 @@ const DepartmentMobileList = ({
                     textColorClass={o.isActive ? 'text-green-600' : 'text-red-600'}
                 />
             )}
-            renderBody={renderBody}
             onViewDetails={(o) => {
                 setSelectedDepartmentDetail(o);
                 setView('detail');
             }}
+            {...rest}
         />
     );
 };

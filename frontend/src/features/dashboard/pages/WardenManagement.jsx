@@ -169,8 +169,8 @@ export default function WardenManagement() {
     // ==========================================
     // SELECTION & ACTION HANDLERS
     // ==========================================
-    const handleSelectAll = () => {
-        const currentVisibleIds = paginatedWardens.map(w => w.id);
+    const handleSelectAll = (mobileIds) => {
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : paginatedWardens.map(w => w.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -423,9 +423,27 @@ export default function WardenManagement() {
 
             if (editingWarden) {
                 // Update Existing Record
-                const res = await wardenService.updateWarden(editingWarden.id, payload);
+                const res = await wardenService.updateWarden(editingWarden.id, {
+                    name: wardenForm.name,
+                    phone: wardenForm.phone
+                });
+
+                let updatedWarden = { ...res.data };
+
+                const oldHostelId = typeof editingWarden.hostel === 'object' ? editingWarden.hostel?._id : editingWarden.hostel;
+                if (wardenForm.hostel !== oldHostelId) {
+                    await wardenService.updateWardenHostel(editingWarden.id, { hostelId: wardenForm.hostel });
+                    const newHostel = availableHostels.find(h => h._id === wardenForm.hostel);
+                    updatedWarden.hostel = newHostel ? newHostel : { _id: wardenForm.hostel };
+                }
+
+                if (wardenForm.status !== editingWarden.status) {
+                    await wardenService.bulkToggleStatus({ ids: [editingWarden.id], isActive: wardenForm.status === 'Active' });
+                    updatedWarden.status = wardenForm.status;
+                }
+
                 if (res && (res.success || res.data)) {
-                    setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...wardenForm } : w));
+                    setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...updatedWarden } : w));
                     fetchWardens(); // Re-fetch to ensure sync
                     showSuccessToast('Warden Updated', res?.message || 'Warden details saved successfully');
                 }
@@ -626,6 +644,10 @@ export default function WardenManagement() {
                 />
 
                 <WardenMobileList
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    hasMore={currentPage < totalPages}
+                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
                     wardens={wardens}
                     paginatedWardens={paginatedWardens}
                     selectedIds={selectedIds}
@@ -644,7 +666,7 @@ export default function WardenManagement() {
                 {/* ==========================================
                 PAGINATION BAR FOOTER
                 ========================================== */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
                         {totalWardens === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
@@ -711,7 +733,7 @@ export default function WardenManagement() {
                 editingWarden={editingWarden}
                 handleSaveWarden={handleSaveWarden}
                 handleCancel={handleCancel}
-                AVAILABLE_HOSTELS={availableHostels}
+                AVAILABLE_HOSTELS={availableHostels.filter(h => h.isActive)}
                 isEmailVerified={isEmailVerified}
                 setIsOtpModalOpen={setIsOtpModalOpen}
                 setOtpSource={setOtpSource}

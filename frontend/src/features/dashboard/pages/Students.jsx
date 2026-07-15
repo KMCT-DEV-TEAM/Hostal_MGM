@@ -38,14 +38,14 @@ export default function Students() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
- const [filters, setFilters] = useState({
-  search: "",
-  courseId: "",
-  departmentId: "",
-  hostelId: "",
-  organizationId: "",
-  isActive: "",
-});
+  const [filters, setFilters] = useState({
+    search: "",
+    courseId: "",
+    departmentId: "",
+    hostelId: "",
+    organizationId: "",
+    isActive: "",
+  });
   const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -408,11 +408,10 @@ export default function Students() {
                 <button
                   key={pageNum}
                   onClick={() => setPage(pageNum)}
-                  className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
-                    page === pageNum
+                  className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
                       ? 'bg-[#0A437A] text-white shadow-sm font-bold'
                       : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                  } cursor-pointer`}
+                    } cursor-pointer`}
                 >
                   {pageNum}
                 </button>

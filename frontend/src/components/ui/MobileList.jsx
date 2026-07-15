@@ -38,23 +38,112 @@ export default function MobileList({
     statusBadgeFn,
     isSelectableFn,
     renderBody,
-    renderItem
+    renderItem,
+    hasMore,
+    onLoadMore,
+    currentPage,
+    totalPages
 }) {
-    const isAllSelected = items.length > 0 && selectedIds.length === items.length;
+    const [accumulatedItems, setAccumulatedItems] = useState([]);
+
+    React.useEffect(() => {
+        if (currentPage === undefined) {
+            setAccumulatedItems(items);
+            return;
+        }
+
+        if (currentPage === 1) {
+            setAccumulatedItems(items);
+        } else {
+            setAccumulatedItems(prev => {
+                const freshMap = new Map(items.map(i => [i._id || i.id, i]));
+                
+                const updatedPrev = prev.map(p => {
+                    const id = p._id || p.id;
+                    if (freshMap.has(id)) {
+                        const fresh = freshMap.get(id);
+                        freshMap.delete(id);
+                        return fresh;
+                    }
+                    return p;
+                });
+                
+                return [...updatedPrev, ...Array.from(freshMap.values())];
+            });
+        }
+    }, [items, currentPage]);
+
+    const displayItems = currentPage !== undefined ? accumulatedItems : items;
+
+    const isAllSelected = displayItems.length > 0 && displayItems.every(item => selectedIds.includes(item._id || item.id));
     const [expandedIds, setExpandedIds] = useState([]);
+    const observer = React.useRef();
+
+    const [artificialLoading, setArtificialLoading] = useState(false);
+
+    const lastElementRef = React.useCallback(node => {
+        if (loading || artificialLoading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore && onLoadMore) {
+                setArtificialLoading(true);
+                setTimeout(() => {
+                    setArtificialLoading(false);
+                    onLoadMore();
+                }, 2000);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, artificialLoading, hasMore, onLoadMore]);
+
+    const displayLoading = loading || artificialLoading;
 
     const toggleExpand = (e, id) => {
         e.stopPropagation();
         setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
+    const pressTimer = React.useRef(null);
+    const isLongPress = React.useRef(false);
+
+    const startPress = (rowId, item) => {
+        if (!canSelect) return;
+        if (isSelectableFn && !isSelectableFn(item)) return;
+        
+        isLongPress.current = false;
+        pressTimer.current = setTimeout(() => {
+            if (onSelect) onSelect(rowId);
+            isLongPress.current = true;
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(50);
+            }
+        }, 500);
+    };
+
+    const cancelPress = () => {
+        if (pressTimer.current) {
+            clearTimeout(pressTimer.current);
+            pressTimer.current = null;
+        }
+        setTimeout(() => {
+            isLongPress.current = false;
+        }, 50);
+    };
+
     return (
-        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none px-2 sm:px-0">
-            {canSelect && !loading && !error && selectedIds.length > 0 && items.length > 0 && (
+        <div className="md:hidden flex flex-col gap-4 mt-4 md:mt-0 flex-1 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none px-2 sm:px-0">
+            {canSelect && !displayLoading && !error && selectedIds.length > 0 && displayItems.length > 0 && (
                 <div className="flex items-center gap-2 px-1 mb-1">
                     <button
                         type="button"
-                        onClick={onSelectAll}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (onSelectAll) {
+                                const allIds = displayItems.map(i => i._id || i.id);
+                                onSelectAll(allIds);
+                            }
+                        }}
                         className="focus:outline-none text-gray-400 cursor-pointer flex items-center gap-2"
                     >
                         {isAllSelected ? (
@@ -67,166 +156,152 @@ export default function MobileList({
                 </div>
             )}
 
-            {loading ? (
-                <MobileSkeletonLoader rows={3} />
-            ) : error ? (
+            {error ? (
                 <div className="text-center text-danger p-8 bg-white rounded-xl shadow-sm">
                     {typeof error === 'object' ? error.message || JSON.stringify(error) : error}
                 </div>
-            ) : items.length === 0 ? (
+            ) : displayItems.length === 0 && !displayLoading ? (
                 <div className="text-center text-gray-400 p-8 bg-white rounded-xl shadow-sm">
                     {emptyText}
                 </div>
             ) : (
-                items.map((item, index) => {
-                    const rowId = item._id || item.id;
-                    const isSelected = selectedIds.includes(rowId);
-                    const isExpanded = expandedIds.includes(rowId);
+                <>
+                    {displayItems.map((item, index) => {
+                        const rowId = item._id || item.id;
+                        const isSelected = selectedIds.includes(rowId);
+                        const isLastItem = index === displayItems.length - 1;
+                        
+                        if (renderItem) {
+                            return (
+                                <React.Fragment key={rowId || index}>
+                                    <div ref={isLastItem ? lastElementRef : null}>
+                                        {renderItem(item, isSelected)}
+                                    </div>
+                                </React.Fragment>
+                            );
+                        }
 
-                    if (renderItem) {
                         return (
-                            <React.Fragment key={rowId || index}>
-                                {renderItem(item, isSelected)}
-                            </React.Fragment>
-                        );
-                    }
-
-                    return (
-                        <div
-                            key={rowId || index}
-                            className={`bg-white rounded-xl shrink-0 mb-4 shadow-sm border transition-all ${isExpanded
-                                ? 'overflow-visible z-10 relative'
-                                : 'overflow-hidden'
-                                } ${isSelected ? 'border-primary bg-blue-50/20' : 'border-gray-100'}`}
-                        >
-                            {/* Header */}
-                            {/* Header */}
                             <div
-                                className={`flex flex-col p-4 cursor-pointer ${isExpanded ? 'border-b border-gray-50' : ''}`}
-                                onClick={(e) => toggleExpand(e, rowId)}
+                                key={rowId || index}
+                                ref={isLastItem ? lastElementRef : null}
+                                className={`bg-white p-4 rounded-xl shadow-sm flex flex-col relative border transition-all select-none ${isSelected ? 'border-primary bg-blue-50/20' : 'border-gray-100'} ${canSelect ? 'cursor-pointer' : ''}`}
+                                onTouchStart={() => startPress(rowId, item)}
+                                onTouchEnd={cancelPress}
+                                onTouchMove={cancelPress}
+                                onMouseDown={() => startPress(rowId, item)}
+                                onMouseUp={cancelPress}
+                                onMouseLeave={cancelPress}
+                                onClick={(e) => {
+                                    if (isLongPress.current) {
+                                        e.preventDefault();
+                                        return;
+                                    }
+                                    if (canSelect && selectedIds.length > 0) {
+                                        if (isSelectableFn && !isSelectableFn(item)) return;
+                                        if (onSelect) onSelect(rowId);
+                                    }
+                                }}
                             >
-                                <div className="flex items-start justify-between w-full">
-                                    <div className="flex items-start gap-3 w-full">
-                                        {canSelect && (
-                                            <div className="mt-1 flex items-center justify-center shrink-0">
-                                                {isSelectableFn ? isSelectableFn(item) ? (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); onSelect && onSelect(rowId); }}
-                                                        className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
-                                                    >
-                                                        {isSelected ? (
-                                                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                                        ) : (
-                                                            <Square className="w-5 h-5" />
-                                                        )}
-                                                    </button>
-                                                ) : (
-                                                    <button disabled className="focus:outline-none text-gray-300 opacity-50 cursor-not-allowed flex items-center justify-center shrink-0">
-                                                        <Square className="w-5 h-5" />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); onSelect && onSelect(rowId); }}
-                                                        className="focus:outline-none text-gray-300 cursor-pointer flex items-center justify-center shrink-0"
-                                                    >
-                                                        {isSelected ? (
-                                                            <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                                        ) : (
-                                                            <Square className="w-5 h-5" />
-                                                        )}
-                                                    </button>
+
+
+                                {/* Content */}
+                                <div className="flex items-start gap-4">
+                                    {iconFn && (
+                                        <div className="shrink-0 mt-1">
+                                            {iconFn(item)}
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1 min-w-0 pr-2">
+                                        <div 
+                                            className="font-bold text-primary text-base mb-1 truncate transition-colors cursor-pointer hover:text-primary"
+                                            onClick={(e) => {
+                                                if (canSelect && selectedIds.length > 0) {
+                                                    // Let the parent card's onClick handle selection
+                                                    return;
+                                                }
+                                                e.stopPropagation();
+                                                onViewDetails && onViewDetails(item);
+                                            }}
+                                        >
+                                            {titleFn ? titleFn(item) : (item.name || `Item ${index + 1}`)}
+                                        </div>
+                                        
+                                        {(subtitleFn || rightTopFn) && (
+                                            <div className="flex flex-col gap-1 text-[10px] sm:text-xs text-gray-500 mb-2">
+                                                {subtitleFn && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        {subtitleFn(item)}
+                                                    </div>
+                                                )}
+                                                {rightTopFn && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        {rightTopFn(item)}
+                                                    </div>
                                                 )}
                                             </div>
                                         )}
-                                        {iconFn && (
-                                            <div className="shrink-0 mt-1">
-                                                {iconFn(item)}
+                                        
+                                        {renderBody && (
+                                            <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-50 text-[10px] sm:text-xs text-gray-400 w-full min-w-0">
+                                                {renderBody(item)}
                                             </div>
                                         )}
-                                        <div className="flex flex-col flex-1 min-w-0 pr-2">
-                                            <span className="font-semibold text-primary text-base mb-1 truncate transition-colors">
-                                                {titleFn ? titleFn(item) : (item.name || `Item ${index + 1}`)}
-                                            </span>
-                                            {subtitleFn && (
-                                                <span className="text-[10px] sm:text-xs text-gray-500 mb-1 truncate">
-                                                    {subtitleFn(item)}
-                                                </span>
-                                            )}
-                                        </div>
                                     </div>
-                                    {rightTopFn && (
-                                        <div className="shrink-0 text-gray-400 text-xs ml-2 mt-1 whitespace-nowrap">
-                                            {rightTopFn(item)}
-                                        </div>
-                                    )}
                                 </div>
-
-                                {/* Bottom section: Status + Actions */}
-                                {(statusBadgeFn || onEdit || renderBody) && (
-                                    <div className="flex items-center justify-between mt-4">
-                                        <div className="flex-1">
-                                            {statusBadgeFn && statusBadgeFn(item)}
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            {((typeof canEdit === 'function' ? canEdit(item) : canEdit) && onEdit) ? (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
-                                                >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                </button>
-                                            ) : (
-                                                (canEdit === true || (typeof canEdit === 'function')) && onEdit ? (
-                                                    <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                                                        <Pencil className="w-3.5 h-3.5 text-gray-300 cursor-not-allowed" />
-                                                    </div>
-                                                ) : null
-                                            )}
-
-                                        </div>
+                                
+                                {/* Bottom Action Bar: Status & Edit */}
+                                {(statusBadgeFn || canEdit) && (
+                                    <div className="flex justify-end items-center gap-3 mt-auto pt-2">
+                                        {statusBadgeFn && (
+                                            <div>
+                                                {statusBadgeFn(item)}
+                                            </div>
+                                        )}
+                                        {((typeof canEdit === 'function' ? canEdit(item) : canEdit) && onEdit) ? (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                                                className="text-blue-400 hover:text-primary cursor-pointer shrink-0 z-10 p-1"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        ) : (canEdit === true || (typeof canEdit === 'function')) && onEdit ? (
+                                            <div className="shrink-0 z-10 p-1">
+                                                <Pencil className="w-4 h-4 text-gray-300 cursor-not-allowed" />
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )}
                             </div>
-
-                            {/* Expandable Content */}
-                            {isExpanded && (
-                                <div className="flex flex-col animate-in slide-in-from-top-2 fade-in duration-200 rounded-b-2xl p-4 pt-2">
-                                    <div className="flex flex-col gap-1.5 text-xs">
-                                        {renderBody && renderBody(item)}
-                                    </div>
-                                    {onViewDetails && (
-                                        <button
-                                            onClick={() => onViewDetails(item)}
-                                            className="w-full mt-4 py-2 bg-[#0A437A]/5 text-[#0A437A] font-semibold text-[13px] hover:bg-[#0A437A]/10 transition-colors cursor-pointer rounded-lg border border-[#0A437A]/10"
-                                        >
-                                            View Details
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })
+                        );
+                    })}
+                    {displayLoading && (
+                        <MobileSkeletonLoader rows={displayItems.length === 0 ? 5 : 1} />
+                    )}
+                </>
             )}
         </div>
     );
 }
 
-export const MobileRow = ({ label, value, valueClass = "text-gray-900 font-medium" }) => (
-    <div className="flex justify-between items-start py-1.5 border-b border-gray-50/50 last:border-0 min-h-[32px]">
-        <span className="text-gray-400 font-medium whitespace-nowrap mr-4">{label}</span>
-        <div className={`text-right break-words flex-1 ${valueClass}`}>{value}</div>
+export const MobileRow = ({ label, value, valueClass = "text-gray-700 font-medium", icon }) => (
+    <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs text-gray-500 mb-2 w-full min-w-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 shrink-0">
+            {icon && <div className="w-3.5 h-3.5 shrink-0 flex items-center justify-center">{icon}</div>}
+            <span className="font-medium">{label}:</span>
+        </div>
+        <div className={`text-right ${valueClass}`}>{value}</div>
     </div>
 );
 
 export const MobileStatusRow = ({ label = "Status", isActive, onClick }) => (
-    <div className="flex justify-between items-center py-1.5 border-b border-gray-50/50 last:border-0 min-h-[32px]">
-        <span className="text-gray-400 font-medium">{label}</span>
+    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-400 mb-1.5 w-full min-w-0">
+        <div className="font-medium whitespace-nowrap shrink-0">{label}:</div>
         <button
             type="button"
             onClick={onClick}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium cursor-pointer ${isActive ? 'bg-success/70 text-success' : 'bg-danger/70 text-danger'
-                }`}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer ${isActive ? 'bg-success/70 text-success' : 'bg-danger/70 text-danger'}`}
         >
             <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-success' : 'bg-danger'}`}></div>
             {isActive ? 'Active' : 'Inactive'}

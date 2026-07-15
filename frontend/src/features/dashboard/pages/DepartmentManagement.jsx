@@ -241,9 +241,9 @@ const DepartmentManagement = () => {
         setIsModalOpen(false);
     };
 
-    const handleSelectAll = () => {
+    const handleSelectAll = (mobileIds) => {
         // Use _id instead of id
-        const currentVisibleIds = Departments.map(h => h._id);
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : Departments.map(h => h._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {

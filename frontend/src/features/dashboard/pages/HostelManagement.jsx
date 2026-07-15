@@ -155,8 +155,8 @@ export default function HostelManagement() {
     // ==========================================
     // SELECTION & ACTION HANDLERS
     // ==========================================
-    const handleSelectAll = () => {
-        const currentVisibleIds = hostels.map(h => h._id);
+    const handleSelectAll = (mobileIds) => {
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : hostels.map(h => h._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -199,7 +199,24 @@ export default function HostelManagement() {
                 capacity: Number(hostelForm.capacity),
             };
             if (editingHostel) {
-                await hostelService.updateHostel(editingHostel._id, payload);
+                // Update Existing Record
+                const res = await hostelService.updateHostel(editingHostel._id, {
+                    code: hostelForm.code,
+                    name: hostelForm.name,
+                    phone: hostelForm.phone,
+                    email: hostelForm.email,
+                    hosteltype: hostelForm.type,
+                    capacity: hostelForm.capacity,
+                    location: hostelForm.location
+                });
+                
+                let updatedHostel = { ...res.data };
+                const currentStatus = editingHostel.isActive ? 'Active' : 'Inactive';
+                if (hostelForm.status !== currentStatus) {
+                    await hostelService.bulkToggleStatus({ ids: [editingHostel._id], isActive: hostelForm.status === 'Active' });
+                    updatedHostel.isActive = hostelForm.status === 'Active';
+                }
+
                 showSuccessToast('Hostel Updated', 'Hostel details saved successfully');
             } else {
                 await hostelService.createHostel(payload);
@@ -481,6 +498,10 @@ export default function HostelManagement() {
                 />
 
                 <HostelMobileList
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    hasMore={currentPage < totalPages}
+                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
                     hostels={hostels}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}

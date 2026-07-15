@@ -168,8 +168,8 @@ const ComplaintCategories = () => {
         setIsModalOpen(false);
     };
 
-    const handleSelectAll = () => {
-        const currentVisibleIds = complaintCategories.map(c => c._id);
+    const handleSelectAll = (mobileIds) => {
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : complaintCategories.map(c => c._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
