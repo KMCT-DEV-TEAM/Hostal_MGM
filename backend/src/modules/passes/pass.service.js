@@ -848,3 +848,304 @@ export const updateWardenPassWorkflowDb = async (passId, hostelId, updateQuery) 
     { new: true }
   ).populate("studentId", "name admissionNo");
 };
+
+// ─── Unified Pass Listing ────────────────────────────────────────────────────
+
+/**
+ * Shared helper: build a smart date filter that handles home_pass and out_pass
+ * date fields correctly when passType may or may not be specified.
+ */
+const buildUnifiedDateFilter = (filter, passType, fromDate, toDate) => {
+  if (!fromDate && !toDate) return;
+
+  const rangeCondition = (field) => {
+    const cond = {};
+    if (fromDate) {
+      const s = new Date(fromDate);
+      s.setUTCHours(0, 0, 0, 0);
+      cond.$gte = s;
+    }
+    if (toDate) {
+      const e = new Date(toDate);
+      e.setUTCHours(23, 59, 59, 999);
+      cond.$lte = e;
+    }
+    return { [field]: cond };
+  };
+
+  if (passType === "home_pass") {
+    Object.assign(filter, rangeCondition("fromDate"));
+  } else if (passType === "out_pass") {
+    Object.assign(filter, rangeCondition("date"));
+  } else {
+    // No passType specified — match either home_pass fromDate OR out_pass date
+    const cond = {};
+    if (fromDate) {
+      const s = new Date(fromDate);
+      s.setUTCHours(0, 0, 0, 0);
+      cond.$gte = s;
+    }
+    if (toDate) {
+      const e = new Date(toDate);
+      e.setUTCHours(23, 59, 59, 999);
+      cond.$lte = e;
+    }
+    filter.$or = [{ fromDate: cond }, { date: cond }];
+  }
+};
+
+/** Status buckets for the two modes */
+const REQUEST_STATUSES = ["pending_parent", "pending_admin", "approved"];
+const HISTORY_STATUSES = ["rejected", "cancelled", "returned", "completed"];
+
+/**
+ * Build the base match filter from unified query params.
+ * Used by both student and parent listing.
+ */
+const buildUnifiedMatchFilter = (baseFilter, query) => {
+  const filter = { ...baseFilter };
+
+  // Mode → status bucket (overridden if explicit ?status= is provided)
+  if (query.status) {
+    filter.status = query.status;
+  } else {
+    const mode = query.mode === "history" ? "history" : "requests";
+    filter.status = { $in: mode === "history" ? HISTORY_STATUSES : REQUEST_STATUSES };
+  }
+
+  if (query.passType) filter.passType = query.passType;
+  if (query.category) filter.outPassCategory = query.category;
+  if (query.outTime) filter.outTime = query.outTime;
+  if (query.returnTime) filter.expectedReturnTime = query.returnTime;
+
+  buildUnifiedDateFilter(filter, query.passType, query.fromDate, query.toDate);
+
+  return filter;
+};
+
+// ─── Student Unified Listing ─────────────────────────────────────────────────
+
+export const getStudentPassesUnifiedDb = async (studentId, query) => {
+  const page = Math.max(parseInt(query.page) || 1, 1);
+  const limit = Math.min(parseInt(query.limit) || 10, 50);
+  const skip = (page - 1) * limit;
+
+  const sortField = ["createdAt", "fromDate", "date"].includes(query.sortBy) ? query.sortBy : "createdAt";
+  const sortDir = query.sortOrder === "asc" ? 1 : -1;
+
+  const baseFilter = { studentId: new mongoose.Types.ObjectId(studentId) };
+  const filter = buildUnifiedMatchFilter(baseFilter, query);
+
+  // Summary counts are always scoped to student, mode-independent
+  const summaryPipeline = [
+    { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
+    {
+      $facet: {
+        total: [{ $count: "count" }],
+        approved: [{ $match: { status: "approved" } }, { $count: "count" }],
+        pending: [
+          { $match: { status: { $in: ["pending_parent", "pending_admin"] } } },
+          { $count: "count" }
+        ]
+      }
+    }
+  ];
+
+  const listPipeline = [
+    { $match: filter },
+    { $sort: { [sortField]: sortDir, createdAt: -1 } },
+    {
+      $lookup: {
+        from: "parents",
+        localField: "parentId",
+        foreignField: "_id",
+        as: "parentInfo"
+      }
+    },
+    { $unwind: { path: "$parentInfo", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "hostelId",
+        foreignField: "_id",
+        as: "hostelInfo"
+      }
+    },
+    { $unwind: { path: "$hostelInfo", preserveNullAndEmptyArrays: true } }
+  ];
+
+  // Search by reason
+  if (query.search) {
+    const regex = new RegExp(query.search, "i");
+    listPipeline.push({ $match: { reason: regex } });
+  }
+
+  const projectStage = {
+    _id: 1,
+    passType: 1,
+    outPassCategory: 1,
+    status: 1,
+    reason: 1,
+    fromDate: 1,
+    toDate: 1,
+    date: 1,
+    totalDays: 1,
+    outTime: 1,
+    expectedReturnTime: 1,
+    createdAt: 1,
+    changeInfo: { edited: 1, editedBy: 1, editedAt: 1 },
+    cancellationRequest: { requested: 1, requestedBy: 1 },
+    parentApproval: { status: 1, remarks: 1 },
+    adminApproval: { status: 1, remarks: 1 },
+    returnTracking: { returnStatus: 1, leftHostelAt: 1, returnedAt: 1 },
+    parentInfo: { _id: "$parentInfo._id", parentName: "$parentInfo.parentName" },
+    hostelInfo: { _id: "$hostelInfo._id", name: "$hostelInfo.name" }
+  };
+
+  listPipeline.push({
+    $facet: {
+      metadata: [{ $count: "totalRecords" }],
+      data: [{ $skip: skip }, { $limit: limit }, { $project: projectStage }]
+    }
+  });
+
+  const [summaryResult, listResult] = await Promise.all([
+    Pass.aggregate(summaryPipeline),
+    Pass.aggregate(listPipeline)
+  ]);
+
+  const sr = summaryResult[0];
+  const totalRecords = listResult[0]?.metadata[0]?.totalRecords || 0;
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  return {
+    mode: query.status ? "filtered" : (query.mode === "history" ? "history" : "requests"),
+    summary: {
+      total: sr?.total[0]?.count || 0,
+      approved: sr?.approved[0]?.count || 0,
+      pending: sr?.pending[0]?.count || 0
+    },
+    passes: listResult[0]?.data || [],
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
+};
+
+// ─── Parent Unified Listing ──────────────────────────────────────────────────
+
+export const getParentPassesUnifiedDb = async (studentId, query) => {
+  const page = Math.max(parseInt(query.page) || 1, 1);
+  const limit = Math.min(parseInt(query.limit) || 10, 50);
+  const skip = (page - 1) * limit;
+
+  const sortField = ["createdAt", "fromDate", "date"].includes(query.sortBy) ? query.sortBy : "createdAt";
+  const sortDir = query.sortOrder === "asc" ? 1 : -1;
+
+  const baseFilter = { studentId: new mongoose.Types.ObjectId(studentId) };
+  const filter = buildUnifiedMatchFilter(baseFilter, query);
+
+  // Summary counts
+  const summaryPipeline = [
+    { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
+    {
+      $facet: {
+        total: [{ $count: "count" }],
+        approved: [{ $match: { status: "approved" } }, { $count: "count" }],
+        pending: [
+          { $match: { status: { $in: ["pending_parent", "pending_admin"] } } },
+          { $count: "count" }
+        ]
+      }
+    }
+  ];
+
+  const listPipeline = [
+    { $match: filter },
+    {
+      $lookup: {
+        from: "students",
+        localField: "studentId",
+        foreignField: "_id",
+        as: "studentInfo"
+      }
+    },
+    { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } }
+  ];
+
+  // Search by reason or student name
+  if (query.search) {
+    const regex = new RegExp(query.search, "i");
+    listPipeline.push({
+      $match: {
+        $or: [{ reason: regex }, { "studentInfo.name": regex }]
+      }
+    });
+  }
+
+  listPipeline.push({ $sort: { [sortField]: sortDir, createdAt: -1 } });
+
+  const projectStage = {
+    _id: 1,
+    passType: 1,
+    outPassCategory: 1,
+    status: 1,
+    reason: 1,
+    fromDate: 1,
+    toDate: 1,
+    date: 1,
+    totalDays: 1,
+    outTime: 1,
+    expectedReturnTime: 1,
+    createdAt: 1,
+    cancellationRequest: { requested: 1, requestedBy: 1 },
+    parentApproval: { status: 1, remarks: 1 },
+    adminApproval: { status: 1, remarks: 1 },
+    returnTracking: { returnStatus: 1, leftHostelAt: 1, returnedAt: 1 },
+    studentInfo: {
+      _id: "$studentInfo._id",
+      name: "$studentInfo.name",
+      admissionNo: "$studentInfo.admissionNo",
+      roomNumber: "$studentInfo.roomNumber"
+    }
+  };
+
+  listPipeline.push({
+    $facet: {
+      metadata: [{ $count: "totalRecords" }],
+      data: [{ $skip: skip }, { $limit: limit }, { $project: projectStage }]
+    }
+  });
+
+  const [summaryResult, listResult] = await Promise.all([
+    Pass.aggregate(summaryPipeline),
+    Pass.aggregate(listPipeline)
+  ]);
+
+  const sr = summaryResult[0];
+  const totalRecords = listResult[0]?.metadata[0]?.totalRecords || 0;
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  return {
+    mode: query.status ? "filtered" : (query.mode === "history" ? "history" : "requests"),
+    summary: {
+      total: sr?.total[0]?.count || 0,
+      approved: sr?.approved[0]?.count || 0,
+      pending: sr?.pending[0]?.count || 0
+    },
+    passes: listResult[0]?.data || [],
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
+};

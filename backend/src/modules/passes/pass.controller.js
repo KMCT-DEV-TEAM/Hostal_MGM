@@ -20,7 +20,9 @@ import {
   getManagementHostelsDb,
   getManagementPassesDb,
   getManagementPassDetailsDb,
-  managementCancelPassDb
+  managementCancelPassDb,
+  getStudentPassesUnifiedDb,
+  getParentPassesUnifiedDb
 } from "./pass.service.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
@@ -1079,4 +1081,34 @@ export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
 
+// ─── Unified Listing Controllers ─────────────────────────────────────────────
 
+export const getMyPassesUnified = asyncHandler(async (req, res) => {
+  const studentId = req.user.id;
+  const result = await getStudentPassesUnifiedDb(studentId, req.query);
+
+  return sendSuccess(res, 200, "Passes loaded successfully.", {
+    mode: result.mode,
+    summary: result.summary,
+    data: result.passes,
+    pagination: result.pagination
+  });
+});
+
+export const getParentPassesUnified = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  const parent = await getParentDb(parentId);
+
+  if (!parent || !parent.studentId) {
+    return sendError(res, 404, "We couldn't find your account or your linked student.");
+  }
+
+  const result = await getParentPassesUnifiedDb(parent.studentId, req.query);
+
+  return sendSuccess(res, 200, "Passes loaded successfully.", {
+    mode: result.mode,
+    summary: result.summary,
+    data: result.passes,
+    pagination: result.pagination
+  });
+});
