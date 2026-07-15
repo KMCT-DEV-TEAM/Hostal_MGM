@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import MobileNotificationCard from '../components/MobileNotificationCard';
 import { Loader2 } from 'lucide-react';
 
@@ -10,6 +11,11 @@ const NotificationsMobileView = ({
     fetchingMore,
     bottomRef
 }) => {
+
+    useLayoutConfig({
+        footer: false
+    })
+
     return (
         <div className="w-full h-full flex flex-col">
 
