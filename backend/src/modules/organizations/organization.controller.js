@@ -76,7 +76,6 @@ const getOrganizations = asyncHandler(async (req, res) => {
   }
 
   const { organizations, totalCount } = await getPaginatedOrganizationsDb(page, limit, search, status, adminOrganizationId);
-  console.log("DEBUG organizations:", JSON.stringify(organizations[0], null, 2));
 
   return sendSuccess(res, 200, "Organizations fetched successfully", {
     count: organizations.length,
