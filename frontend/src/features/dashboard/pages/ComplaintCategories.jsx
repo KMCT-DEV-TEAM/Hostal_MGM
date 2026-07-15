@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import PageHeader from '@/components/ui/PageHeader';
+import ListToolbar from '@/components/ui/ListToolbar';
+import PaginationFooter from '@/components/ui/PaginationFooter';
+import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import {
     Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight, Loader2, MoreVertical
 } from 'lucide-react';
@@ -168,8 +172,8 @@ const ComplaintCategories = () => {
         setIsModalOpen(false);
     };
 
-    const handleSelectAll = () => {
-        const currentVisibleIds = complaintCategories.map(c => c._id);
+    const handleSelectAll = (mobileIds) => {
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : complaintCategories.map(c => c._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {

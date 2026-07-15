@@ -32,7 +32,6 @@ export default function WardenFormModal({
             asForm={true}
             onSubmit={handleSaveWarden}
             maxWidth="max-w-xl"
-            overflowClass="overflow-visible"
             bottomSheetOnMobile={true}
             footer={
                 <>
@@ -194,14 +193,14 @@ export default function WardenFormModal({
                     </div>
                 </section>
 
-                {!editingWarden && (
-                    <section>
-                        <h3 className="text-sm font-semibold text-[#0A437A] mb-2">{t('assigned_hostel')}</h3>
-                        <h5 className="text-xs text-[#777777] mb-4">{t('assigned_hostel_desc')}</h5>
-                        <div className="border-b border-gray-100 mb-4" />
+                <section>
+                    <h3 className="text-sm font-semibold text-[#0A437A] mb-2">{t('assigned_hostel')}</h3>
+                    <h5 className="text-xs text-[#777777] mb-4">{t('assigned_hostel_desc')}</h5>
+                    <div className="border-b border-gray-100 mb-4" />
 
-                        <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')} <span className="text-red-500">*</span></label>
-                        <div className="relative">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')} <span className="text-red-500">*</span></label>
                             <Dropdown
                                 options={AVAILABLE_HOSTELS.map(h => ({ value: h._id || h, label: h.name || h }))}
                                 value={wardenForm.hostel}
@@ -211,8 +210,23 @@ export default function WardenFormModal({
                                 triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
                             />
                         </div>
-                    </section>
-                )}
+
+                        {editingWarden && (
+                            <div>
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
+                                <Dropdown
+                                    options={[
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Inactive', label: 'Inactive' }
+                                    ]}
+                                    value={wardenForm.isActive !== undefined ? (wardenForm.isActive ? 'Active' : 'Inactive') : (wardenForm.status || 'Active')}
+                                    onChange={(val) => setWardenForm({ ...wardenForm, isActive: val === 'Active' })}
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </section>
             </div>
         </Modal>
     );

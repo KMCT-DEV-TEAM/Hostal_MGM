@@ -14,7 +14,8 @@ const BatchMobileList = ({
     setSelectedBatchDetail,
     setView,
     handleStatusChangeClick,
-    openModal
+    openModal,
+    ...rest
 }) => {
     const { t } = useTranslation();
 

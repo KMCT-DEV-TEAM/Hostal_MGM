@@ -1,64 +1,19 @@
 import React from 'react';
 import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { Shield } from 'lucide-react';
-import Dropdown from '@/components/ui/Dropdown';
+import { Mail, Phone } from 'lucide-react';
 
 const AdminMobileList = ({
     paginatedAdmins,
-    organizations = [],
     openEditAdminModal,
     setSelectedAdminDetail,
     setView,
     selectedIds,
     handleSelectAll,
     handleSelectRow,
-    handleOrganizationChange,
-    handleStatusChangeClick,
     loading,
-    error
+    error,
+    ...rest
 }) => {
-
-    const renderBody = (admin) => (
-        <>
-            <MobileRow label="Email" value={admin.email || 'N/A'} />
-            <MobileRow label="Phone" value={admin.phone || 'N/A'} />
-            <MobileRow 
-                label="Organization" 
-                value={
-                    <div onClick={(e) => e.stopPropagation()} className="w-full">
-                        <Dropdown
-                            minWidth=""
-                            options={[
-                                { value: "", label: "Select Organization" },
-                                ...organizations.map(org => ({ value: org._id, label: org.name }))
-                            ]}
-                            value={admin.organization?._id || admin.organization || ""}
-                            onChange={(val) => handleOrganizationChange(admin._id, val)}
-                            placeholder="Select Organization"
-                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-gray-300 transition-colors w-full"
-                        />
-                    </div>
-                } 
-            />
-            <MobileRow 
-                label="Status" 
-                value={
-                    <div onClick={(e) => e.stopPropagation()} className="w-full">
-                        <Dropdown
-                            minWidth=""
-                            options={[
-                                { value: "Active", label: "Active" },
-                                { value: "Inactive", label: "Inactive" }
-                            ]}
-                            value={admin.isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick(admin._id, admin.isActive ? "Active" : "Inactive")}
-                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors w-full ${admin.isActive ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
-                        />
-                    </div>
-                } 
-            />
-        </>
-    );
 
     return (
         <MobileList
@@ -73,13 +28,23 @@ const AdminMobileList = ({
             canEdit={true}
             emptyText="No administrators match the selected filter."
             iconFn={(admin) => (
-                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                    {admin.name ? admin.name.substring(0, 2) : 'NA'}
                 </div>
             )}
             titleFn={(admin) => admin.name}
-            subtitleFn={(admin) => admin.email}
-            rightTopFn={(admin) => admin.phone || 'N/A'}
+            subtitleFn={(admin) => (
+                <>
+                    <Mail className="w-3 h-3" />
+                    <span className="truncate max-w-[120px]">{admin.email || 'N/A'}</span>
+                </>
+            )}
+            rightTopFn={(admin) => (
+                <>
+                    <Phone className="w-3 h-3" />
+                    <span>{admin.phone || 'N/A'}</span>
+                </>
+            )}
             statusBadgeFn={(admin) => (
                 <MobileCardStatusBadge
                     status={admin.isActive ? 'Active' : 'Inactive'}
@@ -88,11 +53,11 @@ const AdminMobileList = ({
                     textColorClass={admin.isActive ? 'text-green-600' : 'text-red-600'}
                 />
             )}
-            renderBody={renderBody}
             onViewDetails={(admin) => {
                 setSelectedAdminDetail(admin);
                 setView('detail');
             }}
+        {...rest}
         />
     );
 };

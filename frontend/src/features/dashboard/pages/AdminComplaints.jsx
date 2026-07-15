@@ -205,6 +205,10 @@ export default function AdminComplaints() {
                 </div>
 
                 <AdminComplaintsMobileList
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    hasMore={currentPage < totalPages}
+                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
                     complaints={paginatedComplaints}
                     loading={loading}
                     onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}
@@ -212,7 +216,7 @@ export default function AdminComplaints() {
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
                         {totalComplaintsCount === 0 ? 0 : (currentPage - 1) * limit + 1}

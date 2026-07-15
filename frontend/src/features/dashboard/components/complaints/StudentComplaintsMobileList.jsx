@@ -9,7 +9,8 @@ const StudentComplaintsMobileList = ({
     categories = [],
     handleCategoryChange,
     openEditModal,
-    onViewDetail
+    onViewDetail,
+    ...rest
 }) => {
     // Transform categories into Dropdown options format
     const categoryOptions = categories.map(cat => ({
@@ -37,6 +38,7 @@ const StudentComplaintsMobileList = ({
 
     return (
         <MobileList
+            {...rest}
             items={complaints}
             loading={loading}
             emptyText="No complaints found."

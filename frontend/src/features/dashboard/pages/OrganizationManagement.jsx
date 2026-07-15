@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import PageHeader from '@/components/ui/PageHeader';
+import ListToolbar from '@/components/ui/ListToolbar';
+import PaginationFooter from '@/components/ui/PaginationFooter';
+import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import {
     Square, Pencil, Trash2, Plus, Search,
@@ -223,9 +227,9 @@ const OrganizationManagement = () => {
         setIsModalOpen(false);
     };
 
-    const handleSelectAll = () => {
+    const handleSelectAll = (mobileIds) => {
         // Use _id instead of id
-        const currentVisibleIds = orgs.map(h => h._id);
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : orgs.map(h => h._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -443,6 +447,10 @@ const OrganizationManagement = () => {
                 />
 
                 <OrganizationMobileList
+                    currentPage={page}
+                    totalPages={totalPages}
+                    hasMore={page < totalPages}
+                    onLoadMore={() => setPage(prev => prev + 1)}
                     orgs={orgs}
                     loading={loading}
                     error={error}
@@ -457,7 +465,7 @@ const OrganizationManagement = () => {
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div>
                         <span className="hidden sm:inline">Showing </span>
                         {totalOrgs === 0 ? 0 : (page - 1) * limit + 1}
