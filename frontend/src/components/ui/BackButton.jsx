@@ -17,7 +17,7 @@ export default function BackButton({ text = "Back", onClick, className = "" }) {
         <button
             type="button"
             onClick={handleClick}
-            className={`flex items-center text-sm text-text-secondary hover:text-primary mb-2 cursor-pointer transition-colors ${className}`}
+            className={`flex items-center text-sm text-text-secondary hover:text-primary cursor-pointer transition-colors ${className}`}
         >
             <ChevronLeft className="w-4 h-4 mr-1" />
             {text}

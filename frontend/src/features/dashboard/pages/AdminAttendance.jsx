@@ -5,6 +5,7 @@ import AttendanceHeader from '../components/attendance/AttendanceHeader';
 import AttendanceWindowsTable from '../components/attendance/AttendanceWindowsTable';
 import AttendanceRecordsTable from '../components/attendance/AttendanceRecordsTable';
 import BackButton from '@/components/ui/BackButton';
+import PageHeader from '@/components/ui/PageHeader';
 
 const AdminAttendance = () => {
     const { windowId } = useParams();
@@ -14,11 +15,12 @@ const AdminAttendance = () => {
         return (
             <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
                 <div className="mb-6">
-                    <BackButton text="Back to Windows" onClick={() => navigate('/dashboard/attendance')} />
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Attendance Records</h1>
-                        <p className="text-sm text-gray-500 mt-1">Viewing student attendance for the selected window.</p>
-                    </div>
+
+                    <PageHeader
+                        title="Attendance Records"
+                        subtitle="Viewing student attendance for the selected window."
+                        actionButton={<BackButton text="Back to Windows" onClick={() => navigate('/dashboard/attendance')} />}
+                    />
                 </div>
                 <div className="flex-1 md:min-h-0 flex flex-col">
                     <AttendanceRecordsTable windowId={windowId} />

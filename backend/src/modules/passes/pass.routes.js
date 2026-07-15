@@ -31,7 +31,9 @@ import {
   getSuperAdminDashboardStats,
   getSuperAdminOrganizationsHostels,
   getSuperAdminPassDetails,
-  superAdminCancelPass
+  superAdminCancelPass,
+  getMyPassesUnified,
+  getParentPassesUnified
 } from "./pass.controller.js";
 
 import {
@@ -40,7 +42,8 @@ import {
   validateUpdatePass,
   validateCancelPass,
   validateGetPasses,
-  validateRejectPass
+  validateRejectPass,
+  validateGetPassesUnified
 } from "./pass.validation.js";
 
 export const studentPassRouter = express.Router();
@@ -52,6 +55,15 @@ studentPassRouter.post(
   roleMiddleware("student"),
   validateCreatePass,
   createPass
+);
+
+// Unified listing: GET /passes?mode=requests|history
+studentPassRouter.get(
+  "/passes",
+  authMiddleware,
+  roleMiddleware("student"),
+  validateGetPassesUnified,
+  getMyPassesUnified
 );
 
 studentPassRouter.get(
@@ -91,6 +103,15 @@ studentPassRouter.patch(
 
 export const parentPassRouter = express.Router();
 
+
+// Unified listing: GET /passes?mode=requests|history
+parentPassRouter.get(
+  "/passes",
+  authMiddleware,
+  roleMiddleware("parent"),
+  validateGetPassesUnified,
+  getParentPassesUnified
+);
 
 // Pass Listing & Details
 parentPassRouter.get(
