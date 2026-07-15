@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import FilterAttendanceModal from '../components/FilterAttendanceModal';
+
+import FilterAttendanceModal from '../components/attendance/FilterAttendanceModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
-import AttendanceQRModal from '../components/AttendanceQRModal';
+import AttendanceQRModal from '../components/attendance/AttendanceQRModal';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import StudentAttendanceDesktopView from '../views/StudentAttendanceDesktopView';
 import StudentAttendanceMobileView from '../views/StudentAttendanceMobileView';
@@ -82,6 +83,7 @@ const StudentAttendanceContainer = () => {
     };
 
     return (
+
         <>
             {isMobile ? (
                 <StudentAttendanceMobileView {...viewProps} />

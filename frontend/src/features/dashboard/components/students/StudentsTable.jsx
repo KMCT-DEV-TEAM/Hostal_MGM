@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Pencil,
   Building2,
   Home,
+  SlidersHorizontal,
+  MoreVertical,
 } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
 import Dropdown from "@/components/ui/Dropdown";
-import ListTable from "@/components/ui/ListTable";
+import DataTable from "@/components/ui/DataTable";
+import InfoCard from "@/components/ui/InfoCard";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
@@ -24,7 +28,16 @@ export default function StudentsTable({
   students,
   loading,
   error,
+  canCreate,
   canEdit,
+  canDelete,
+  searchValue = "",
+  onSearch,
+  onFilterClick,
+  onExport,
+  onAddClick,
+  onActivateSelected,
+  onDeactivateSelected,
   showOrganizationColumn = false,
   selectedIds,
   onSelectAll,
@@ -42,6 +55,18 @@ export default function StudentsTable({
   const showActionsColumn = canManage;
   const getStudentId = (s) => s._id ?? s.id;
   const { t } = useTranslation();
+
+  const [searchTerm, setSearchTerm] = useState(searchValue);
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setSearchTerm(searchValue);
+  }, [searchValue]);
+
+  useEffect(() => {
+    onSearch?.(debouncedSearchTerm);
+  }, [debouncedSearchTerm, onSearch]);
 
   const getHostelName = (hostel) => {
     if (!hostel || typeof hostel !== "object") return hostel || "-";
@@ -172,8 +197,82 @@ export default function StudentsTable({
     );
   };
 
+  const renderMobileItem = (s, isSelected) => {
+    const isActive = Boolean(s.isActive);
+    return (
+      <div className="">
+        <InfoCard
+          avatar={s.name}
+          title={s.name || "-"}
+          subtitle={s.studentId || "-"}
+          onClick={() => onViewClick?.(s)}
+          status={{ text: isActive ? t("active") : t("inactive"), color: isActive ? "green" : "red" }}
+          fields={[
+            // { label: "Course", value: s.course?.name || s.course || "-" },
+            // { label: "Department", value: s.department?.name || s.department || "-" },
+            showOrganizationColumn && { label: "Organization", value: getOrganizationName(s.organization, s.organizationId) },
+            { label: "Hostel", value: getHostelName(s.hostel) },
+          ].filter(Boolean)}
+          editable={canManage}
+          onEdit={() => !statusLoadingIds.includes(getStudentId(s)) && onEditClick?.(s)}
+        />
+      </div>
+    );
+  };
+
+  const toolbarActions = (
+    <div className="flex gap-3 w-full sm:w-auto">
+      <button
+        onClick={onFilterClick}
+        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+      >
+        <SlidersHorizontal className="w-4 h-4" />
+      </button>
+
+      {(canEdit || canDelete) && (
+        <div className="relative">
+          <button
+            onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+            className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer h-full"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {isBulkMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+              {canEdit && (
+                <button
+                  onClick={() => { setIsBulkMenuOpen(false); onActivateSelected?.(); }}
+                  disabled={selectedIds.length === 0}
+                  className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected?.(); }}
+                  disabled={selectedIds.length === 0}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <ListTable
+    <DataTable
+      searchQuery={searchTerm}
+      onSearchChange={(e) => setSearchTerm(e.target.value)}
+      searchPlaceholder="Search Students..."
+      toolbarActions={toolbarActions}
+      onAdd={canCreate ? onAddClick : undefined}
+      addText="Add New"
+      onExport={onExport}
       headers={headers}
       items={students}
       loading={loading}
@@ -185,6 +284,8 @@ export default function StudentsTable({
       statusLoadingIds={statusLoadingIds}
       emptyText="No records found matching your search criteria."
       renderRow={renderRow}
+      renderMobileItem={renderMobileItem}
+      onRowClick={onViewClick}
     />
   );
 }

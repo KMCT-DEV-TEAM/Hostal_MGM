@@ -2,30 +2,51 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import DateInput from '@/components/ui/DateInput';
 import Dropdown from '@/components/ui/Dropdown';
+import { useAuthStore } from '@/store/useAuthStore';
+import { getStudentFilterOptions } from '@/services/student.service';
 
 export default function FilterWindowsModal({
     isOpen,
+    showHostel = true,
     onClose,
     filters = {},
     onApply,
     onReset
 }) {
+    const role = useAuthStore((state) => state.user?.role);
     const [localFromDate, setLocalFromDate] = useState('');
     const [localToDate, setLocalToDate] = useState('');
     const [localStatus, setLocalStatus] = useState('');
+    const [localHostelId, setLocalHostelId] = useState('');
+    const [hostels, setHostels] = useState([]);
 
     useEffect(() => {
         if (isOpen) {
             setLocalFromDate(filters.fromDate || '');
             setLocalToDate(filters.toDate || '');
             setLocalStatus(filters.status || '');
+            setLocalHostelId(filters.hostelId || '');
         }
     }, [isOpen, filters]);
+
+    useEffect(() => {
+        if (isOpen && showHostel && role) {
+            getStudentFilterOptions(role).then((data) => {
+                if (data?.filters?.hostels) {
+                    setHostels([
+                        { value: '', label: 'All Hostels' },
+                        ...data.filters.hostels.map(h => ({ value: h.value, label: h.label }))
+                    ]);
+                }
+            }).catch(err => console.error("Error loading hostels", err));
+        }
+    }, [isOpen, showHostel, role]);
 
     const handleReset = () => {
         setLocalFromDate('');
         setLocalToDate('');
         setLocalStatus('');
+        setLocalHostelId('');
         if (onReset) onReset();
     };
 
@@ -34,7 +55,8 @@ export default function FilterWindowsModal({
             onApply({
                 fromDate: localFromDate,
                 toDate: localToDate,
-                status: localStatus
+                status: localStatus,
+                ...(showHostel && { hostelId: localHostelId })
             });
         }
     };
@@ -49,22 +71,22 @@ export default function FilterWindowsModal({
             maxWidth="max-w-md"
             overflowClass="overflow-visible"
             footer={
-                <div className="flex justify-end gap-3 w-full">
+                <>
                     <button
                         type="button"
                         onClick={handleReset}
-                        className="px-5 py-2 border border-gray-200 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
+                        className="flex-1 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
                     >
                         Reset
                     </button>
                     <button
                         type="button"
                         onClick={handleApply}
-                        className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
+                        className="flex-1 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#0A437A]/90 transition-colors"
                     >
                         Filter
                     </button>
-                </div>
+                </>
             }
         >
             <div className="grid grid-cols-2 gap-5 mt-4">
@@ -79,6 +101,19 @@ export default function FilterWindowsModal({
                     onChange={(e) => setLocalToDate(e.target.value)}
                 />
 
+                {showHostel && (
+                    <div className="col-span-2">
+                        <label className="block mb-1.5 text-xs font-medium">Hostel</label>
+                        <Dropdown
+                            options={hostels}
+                            value={localHostelId}
+                            onChange={(val) => setLocalHostelId(val)}
+                            placeholder="All Hostels"
+                            triggerClassName="w-full px-2.5 py-2.5 text-xs bg-white border border-gray-200 focus:border-secondary transition-colors rounded-lg flex justify-between items-center"
+                        />
+                    </div>
+                )}
+
                 <div className="col-span-2">
                     <label className="block mb-1.5 text-xs font-medium">Status</label>
                     <Dropdown
@@ -90,7 +125,7 @@ export default function FilterWindowsModal({
                         value={localStatus}
                         onChange={(val) => setLocalStatus(val)}
                         placeholder="Select status"
-                        triggerClassName="w-full h-10 px-3 border border-gray-200 rounded-md text-xs bg-gray-50 text-gray-700 flex justify-between items-center transition-colors focus:border-secondary"
+                        triggerClassName="w-full px-2.5 py-2.5 text-xs bg-white border border-gray-200 focus:border-secondary transition-colors rounded-lg flex justify-between items-center"
                     />
                 </div>
             </div>

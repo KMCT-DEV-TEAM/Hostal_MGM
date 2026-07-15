@@ -67,7 +67,7 @@ export default function MobileList({
                 </div>
             )}
 
-            {loading ? (
+            {loading && items.length === 0 ? (
                 <MobileSkeletonLoader rows={3} />
             ) : error ? (
                 <div className="text-center text-danger p-8 bg-white rounded-xl shadow-sm">
@@ -78,7 +78,11 @@ export default function MobileList({
                     {emptyText}
                 </div>
             ) : (
-                items.map((item, index) => {
+                <div className="relative">
+                    {loading && (
+                        <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-20 rounded-xl" />
+                    )}
+                    {items.map((item, index) => {
                     const rowId = item._id || item.id;
                     const isSelected = selectedIds.includes(rowId);
                     const isExpanded = expandedIds.includes(rowId);
@@ -207,6 +211,8 @@ export default function MobileList({
                         </div>
                     );
                 })
+                }
+                </div>
             )}
         </div>
     );
