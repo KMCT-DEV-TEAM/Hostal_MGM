@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useLayoutStore } from "@/store/useLayoutStore";
+import { useShallow } from "zustand/react/shallow";
 import Navbar from "@/features/dashboard/components/Navbar";
 import Sidebar from "@/features/dashboard/components/Sidebar";
 import MobileHeader from "@/components/shared/MobileHeader";
@@ -10,11 +12,17 @@ const UserLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { isMobile } = useBreakpoint();
 
+    const { showHeader, showFooter } = useLayoutStore(
+        useShallow((state) => ({
+            showHeader: state.showHeader,
+            showFooter: state.showFooter,
+        }))
+    );
     return (
-        <div className="flex flex-col h-screen bg-[#F8FAFC]">
+        <div className={`flex flex-col h-screen bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
             {/* Header Area */}
             {isMobile ? (
-                <MobileHeader />
+                showHeader && <MobileHeader />
             ) : (
                 <div className="h-[82px] shrink-0">
                     <Navbar onMenuClick={() => setIsSidebarOpen(prev => !prev)} />
@@ -29,7 +37,7 @@ const UserLayout = () => {
                         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
                     </>
                 )}
-                
+
                 {/* 
                   The Outlet is exactly here in both cases!
                   This preserves its state completely on resize.
@@ -40,7 +48,7 @@ const UserLayout = () => {
             </div>
 
             {/* Footer Area */}
-            {isMobile && <MobileFooter />}
+            {isMobile && showFooter && <MobileFooter />}
         </div>
     );
 };

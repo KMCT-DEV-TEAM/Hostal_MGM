@@ -11,7 +11,7 @@ const StudentAttendanceMobileView = ({
     return (
         <div className="w-full h-full p-4 flex flex-col bg-background-secondary gap-4 overflow-y-auto">
             {/* Today's Status Card */}
-            <div className="bg-white rounded-[24px] p-5 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)] border border-gray-50 flex items-center justify-between shrink-0">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-50 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center shrink-0">
                         <CheckCircle className="w-6 h-6 text-success" strokeWidth={1.5} />
