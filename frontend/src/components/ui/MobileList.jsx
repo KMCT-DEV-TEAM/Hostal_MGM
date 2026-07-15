@@ -273,6 +273,7 @@ export default function MobileList({
                                         ) : null}
                                     </div>
                                 )}
+                            </div>
                         );
                     })}
                     {displayLoading && (
