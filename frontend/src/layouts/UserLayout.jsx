@@ -11,7 +11,7 @@ const UserLayout = () => {
     const { isMobile } = useBreakpoint();
 
     return (
-        <div className="flex flex-col h-screen bg-[#F8FAFC]">
+        <div className={`flex flex-col h-screen bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
             {/* Header Area */}
             {isMobile ? (
                 <MobileHeader />
@@ -29,7 +29,7 @@ const UserLayout = () => {
                         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
                     </>
                 )}
-                
+
                 {/* 
                   The Outlet is exactly here in both cases!
                   This preserves its state completely on resize.
