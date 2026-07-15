@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import Dropdown from '@/components/ui/Dropdown';
 
 const OrganizationFormModal = ({
     isModalOpen,
@@ -177,6 +178,25 @@ const OrganizationFormModal = ({
                                 </div>
                                 {errors.phone && <p className="text-red-500 text-[10px] mt-1">{errors.phone}</p>}
                             </div>
+                            {isEditMode && (
+                                <div className="col-span-1 sm:col-span-2">
+                                    <label className="block text-[10px] font-medium text-black mb-1">Status <span className="text-red-500">*</span></label>
+                                    <Dropdown
+                                        options={[
+                                            { label: 'Active', value: 'Active' },
+                                            { label: 'Inactive', value: 'Inactive' }
+                                        ]}
+                                        value={formData.status}
+                                        onChange={(val) => {
+                                            handleInputChange({ target: { name: 'status', value: val } });
+                                            handleInputChange({ target: { name: 'isActive', value: val === 'Active' } });
+                                        }}
+                                        placeholder="Select Status"
+                                        minWidth="w-full"
+                                        triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                    />
+                                </div>
+                            )}
                             <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-xs font-medium text-black mb-1">{t('full_address')} <span className="text-red-500">*</span></label>
                                 <textarea

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
-import PaginationFooter from '@/components/ui/PaginationFooter';
+
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2, MoreVertical } from 'lucide-react';
@@ -49,6 +50,7 @@ export default function MaintenanceStaffManagement() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
 
     // Email verification state
     const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -605,7 +607,7 @@ export default function MaintenanceStaffManagement() {
                             >
                                 <Download className="w-4 h-4" /> {t('export')}
                             </button>
-                            <div className="relative">
+                            <div className="relative" ref={bulkMenuRef}>
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                     className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
