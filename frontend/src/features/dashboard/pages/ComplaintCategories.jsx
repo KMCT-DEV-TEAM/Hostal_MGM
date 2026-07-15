@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PageHeader from '@/components/ui/PageHeader';
-import ListToolbar from '@/components/ui/ListToolbar';
-import PaginationFooter from '@/components/ui/PaginationFooter';
-import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import {
     Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight, Loader2, MoreVertical
 } from 'lucide-react';
@@ -172,8 +168,8 @@ const ComplaintCategories = () => {
         setIsModalOpen(false);
     };
 
-    const handleSelectAll = (mobileIds) => {
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : complaintCategories.map(c => c._id);
+    const handleSelectAll = () => {
+        const currentVisibleIds = complaintCategories.map(c => c._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -293,7 +289,7 @@ const ComplaintCategories = () => {
                         </div>
                         <button onClick={() => openModal('add')} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
 
-                        </div>
+                    </div>
 
                     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="flex gap-3 w-full sm:w-auto">

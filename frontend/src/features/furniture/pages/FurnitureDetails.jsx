@@ -15,7 +15,6 @@ import Button from '@/components/ui/Button';
 import Dropdown from '@/components/ui/Dropdown';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ChangeAssetStatusModal from '../components/modals/ChangeAssetStatusModal';
-import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import AssetDetailsModal from '../components/modals/AssetDetailsModal';
 import FurnitureStatusBadge from '../components/badges/FurnitureStatusBadge';
 import { useFurnitureAssets } from '../hooks/useFurnitureAssets';
@@ -216,9 +215,8 @@ export default function FurnitureDetails() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
             {/* Header */}
-            <BackButton text="Back to List" onClick={() => navigate('/dashboard/furniture')} />
             <div className="mb-6 shrink-0 flex items-center gap-3">
-                <PageHeader title={pageTitle} subtitle={pageSubtitle} />
+                <PageHeader title={pageTitle} subtitle={pageSubtitle} actionButton={<BackButton text="Back to List" onClick={() => navigate('/dashboard/furniture')} />} />
             </div>
 
             {/* Stat Cards */}

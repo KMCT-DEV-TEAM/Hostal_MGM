@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
-import PaginationFooter from '@/components/ui/PaginationFooter';
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import {
@@ -391,7 +390,7 @@ const OrganizationManagement = () => {
                                     <Download className="w-4 h-4" /> Export
                                 </button>
                             )}
-                            
+
                             {!isAdmin && (
                                 <div className="relative">
                                     <button

@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import PageHeader from '@/components/ui/PageHeader';
-import ListToolbar from '@/components/ui/ListToolbar';
-import PaginationFooter from '@/components/ui/PaginationFooter';
+
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import {
     Square,
@@ -140,7 +138,7 @@ export default function HostelManagement() {
 
     React.useEffect(() => {
         const socket = initSocket();
-        
+
         const handleHostelEvent = () => {
             fetchHostels();
         };
@@ -213,7 +211,7 @@ export default function HostelManagement() {
                     capacity: hostelForm.capacity,
                     location: hostelForm.location
                 });
-                
+
                 let updatedHostel = { ...res.data };
                 const currentStatus = editingHostel.isActive ? 'Active' : 'Inactive';
                 if (hostelForm.status !== currentStatus) {
@@ -263,7 +261,7 @@ export default function HostelManagement() {
             const res = await hostelService.toggleStatus(statusToUpdate.id);
             if (res && (res.success || res.data)) {
                 const newStatus = !statusToUpdate.currentStatus;
-                setHostels(hostels.map(h => 
+                setHostels(hostels.map(h =>
                     h._id === statusToUpdate.id ? { ...h, isActive: newStatus } : h
                 ));
                 showSuccessToast('Status Updated', res?.message || 'Hostel status changed successfully');
@@ -466,7 +464,7 @@ export default function HostelManagement() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
-            <HostelHeader 
+            <HostelHeader
                 selectedIds={selectedIds}
                 handleBulkStatusClick={handleBulkStatusClick}
             />
@@ -530,7 +528,7 @@ export default function HostelManagement() {
             {/* ==========================================
              MODAL 1: HOSTEL (ADD & EDIT WORKFLOWS)
              ========================================== */}
-            
+
             <HostelFormModal
                 activeModal={activeModal}
                 handleCancel={handleCancel}
@@ -541,7 +539,7 @@ export default function HostelManagement() {
                 isSubmitting={isSubmitting}
             />
 
-            
+
             {/* Confirmation Modal for Edit */}
             <ConfirmationModal
                 isOpen={isEditConfirmOpen}
