@@ -15,6 +15,8 @@ import ComplaintCategoryService from '@/services/complaintCategory.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket, getSocket } from '@/services/socket.service';
+import BackButton from '@/components/ui/BackButton';
+import PageHeader from '@/components/ui/PageHeader';
 
 export default function WardenComplaints({ hostel, onBack }) {
     const { user } = useAuthStore();
@@ -235,7 +237,7 @@ export default function WardenComplaints({ hostel, onBack }) {
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
                 <div>
-                    {onBack && (
+                    {/* {onBack && (
                         <BackButton text="Back to Organizations" onClick={onBack} />
                     )}
                     <h1 className="text-2xl font-bold text-black">
@@ -243,7 +245,12 @@ export default function WardenComplaints({ hostel, onBack }) {
                     </h1>
                     <p className="text-sm text-text-secondary mt-1">
                         {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
-                    </p>
+                    </p> */}
+                    <PageHeader
+                        title="Complaints"
+                        subtitle="Manage and resolve student complaints in your hostel."
+                        actionButton={onBack && <BackButton text="Back to Organizations" onClick={onBack} />}
+                    />
                 </div>
 
                 <div className="hidden md:flex items-center self-end sm:self-auto">

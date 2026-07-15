@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
-import { Download, Check, X, Plus, Edit, Trash2 } from 'lucide-react';
+import { Edit, } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
-import Dropdown from '@/components/ui/Dropdown';
 import InfoCard from '@/components/ui/InfoCard';
 
 const VisitorListTableView = ({
@@ -147,7 +146,13 @@ const VisitorListTableView = ({
                                 avatar={visitorName}
                                 title={visitorName}
                                 subtitle={relation}
-                                status={{ text: visitor.status, color: visitor.status.Cheked_in ? "green" : visitor.status.Cheked_out ? "red" : visitor.status.Extended ? "yellow" : visitor.status.Overstayed ? "red" : visitor.status.Completed ? "green" : "gray" }}
+                                status={{
+                                    text: visitor.status || 'Unknown',
+                                    color: ['Checked_in', 'Approved', 'Completed'].includes(visitor.status) ? "green"
+                                        : ['Checked_out', 'Rejected', 'Overstayed'].includes(visitor.status) ? "red"
+                                            : ['Extended', 'Pending'].includes(visitor.status) ? "yellow"
+                                                : "gray"
+                                }}
                                 fields={[
                                     { label: "Phone", value: visitor.phone || '--' },
                                     userRole !== 'student' && { label: "Student", value: visitingStudentNames },

@@ -34,7 +34,8 @@ const allocateHostelInternal = async (studentId, data, actor) => {
   session.startTransaction();
 
   try {
-    const { hostelId, roomNumber, reason, remarks } = data;
+    const { hostelId, roomNumber, reason, remarks, joinedAt } = data;
+    console.log("allocateHostelInternal -> START", { studentId, data, actorId: actor._id || actor.id });
 
     const student = await Student.findById(studentId).session(session);
     if (!student) {
@@ -78,6 +79,7 @@ const allocateHostelInternal = async (studentId, data, actor) => {
       roomNumber,
       status: "active",
       allocatedBy: actor._id || actor.id,
+      joinedAt: joinedAt || new Date(),
       reason,
       remarks,
     });
@@ -88,11 +90,13 @@ const allocateHostelInternal = async (studentId, data, actor) => {
     student.hostelStatus = "active";
     await student.save({ session });
 
-    await syncHostelOrganizations(hostelId);
+    await syncHostelOrganizations(hostelId, session);
 
     await session.commitTransaction();
+    console.log("allocateHostelInternal -> SUCCESS", { allocationId: allocation._id, studentId });
     return { allocation, student, oldHostelId: null };
   } catch (error) {
+    console.error("allocateHostelInternal -> ERROR", error);
     await session.abortTransaction();
     throw error;
   } finally {
@@ -105,7 +109,8 @@ const changeHostelInternal = async (studentId, data, actor) => {
   session.startTransaction();
 
   try {
-    const { hostelId, roomNumber, reason, remarks } = data;
+    const { hostelId, roomNumber, reason, remarks, joinedAt } = data;
+    console.log("changeHostelInternal -> START", { studentId, data, actorId: actor._id || actor.id });
 
     const student = await Student.findById(studentId).session(session);
     if (!student) {
@@ -158,6 +163,7 @@ const changeHostelInternal = async (studentId, data, actor) => {
       roomNumber,
       status: "active",
       allocatedBy: actor._id || actor.id,
+      joinedAt: joinedAt || new Date(),
       reason,
       remarks,
     });
@@ -170,12 +176,14 @@ const changeHostelInternal = async (studentId, data, actor) => {
 
     await deallocateFurniture(studentId, actor, session);
 
-    await syncHostelOrganizations(oldHostelId);
-    await syncHostelOrganizations(hostelId);
+    await syncHostelOrganizations(oldHostelId, session);
+    await syncHostelOrganizations(hostelId, session);
 
     await session.commitTransaction();
+    console.log("changeHostelInternal -> SUCCESS", { newAllocationId: newAllocation._id, oldAllocationId: activeAllocation._id, studentId });
     return { oldAllocation: activeAllocation, newAllocation, student, oldHostelId };
   } catch (error) {
+    console.error("changeHostelInternal -> ERROR", error);
     await session.abortTransaction();
     throw error;
   } finally {
@@ -241,7 +249,7 @@ export const vacateHostelService = async (studentId, data, actor) => {
 
     await deallocateFurniture(studentId, actor, session);
 
-    await syncHostelOrganizations(oldHostelId);
+    await syncHostelOrganizations(oldHostelId, session);
 
     await session.commitTransaction();
     return { allocation: activeAllocation, student, oldHostelId };

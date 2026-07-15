@@ -17,6 +17,7 @@ import LeaveActionModal from '../components/modals/LeaveActionModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDateStandard } from '@/utils/formatters';
+import BackButton from '@/components/ui/BackButton';
 
 export default function AdminLeaves() {
     const { passType, hostelName } = useParams();
@@ -314,22 +315,13 @@ export default function AdminLeaves() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
             <div className="mb-6 shrink-0 flex items-center gap-3">
-                {selectedHostel && (
-                    <button
-                        type="button"
-                        onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}`)}
-                        className="p-2 border border-gray-200 rounded-xl bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                        title="Back to List"
-                    >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="19" y1="12" x2="5" y2="12" />
-                            <polyline points="12 19 5 12 12 5" />
-                        </svg>
-                    </button>
-                )}
+
                 <PageHeader
                     title={selectedHostel ? `${isHomePass ? "Home Pass" : "Out Pass"}` : (isHomePass ? "Home Pass" : "Out Pass")}
                     subtitle={selectedHostel ? `Monitoring student leave records` : pageSubtitle}
+                    actionButton={selectedHostel && (
+                        <BackButton text={'Back to List'} onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}`)} />
+                    )}
                 />
             </div>
 

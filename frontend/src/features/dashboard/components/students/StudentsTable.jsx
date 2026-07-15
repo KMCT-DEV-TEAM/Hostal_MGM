@@ -107,12 +107,11 @@ export default function StudentsTable({
         <td className="p-4 font-medium text-[#777777]">
           <div
             className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-            onClick={() => onViewClick?.(s)}
           >
             <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
               {getInitials(s.name)}
             </div>
-            <div className="flex flex-col min-w-0">
+            <div onClick={() => onViewClick?.(s)} className="flex flex-col min-w-0">
               <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors truncate max-w-[150px]" title={s.name}>
                 {s.name || "-"}
               </span>
@@ -202,7 +201,7 @@ export default function StudentsTable({
   const renderMobileItem = (s, isSelected) => {
     const isActive = Boolean(s.isActive);
     return (
-      <div className="">
+      <div className="mt-2">
         <InfoCard
           avatar={s.name}
           title={s.name || "-"}

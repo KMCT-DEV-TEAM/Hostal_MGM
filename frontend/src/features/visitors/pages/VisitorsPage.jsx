@@ -25,6 +25,7 @@ import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { formatDateStandard } from '@/utils/formatters';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import BackButton from '@/components/ui/BackButton';
 
 const VisitorsPage = () => {
     const { user } = useAuthStore();
@@ -267,21 +268,17 @@ const VisitorsPage = () => {
         <div className="flex flex-col h-full bg-gray-50 md:bg-gray-50/50 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto md:overflow-hidden">
             {/* Header Section */}
             <div className="mb-6 shrink-0 flex items-center gap-4">
-                {selectedHostel && isSuperAdmin && (
-                    <button
-                        onClick={() => {
-                            const newParams = new URLSearchParams(searchParams);
-                            newParams.delete('hostelId');
-                            newParams.delete('hostelName');
-                            setSearchParams(newParams);
-                        }}
-                        className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                )}
+
                 <PageHeader
                     title={selectedHostel ? `Visitors - ${selectedHostel.name}` : "Visitors"}
+                    actionButton={
+                        selectedHostel && isSuperAdmin && (
+                            <BackButton
+                                text="Back to All"
+
+                            />
+                        )
+                    }
                     subtitle={showAggregatedView ? "Overview of visitors across all hostels" : "Manage visitor requests and profiles"}
                 />
             </div>

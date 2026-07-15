@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
-
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import {
@@ -417,6 +416,7 @@ const CourseManagement = () => {
                             </button>
 
                             <div className="relative" ref={bulkMenuRef}>
+
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                     className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"

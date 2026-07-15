@@ -15,14 +15,6 @@ export const updateStudentHostel = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
   const result = await updateStudentHostelService(studentId, req.body, req.user);
 
-  getIo()?.emit("studentHostelUpdated", {
-    action: result.action,
-    studentId: result.student._id,
-    oldHostelId: result.oldHostelId,
-    newHostelId: result.student.hostelId,
-    roomNumber: result.student.roomNumber,
-  });
-
   const eventName = result.action === "allocated" ? "HOSTEL_ALLOCATED" : "HOSTEL_CHANGED";
   const studentName = result.student.name || `${result.student.firstName || ''} ${result.student.lastName || ''}`.trim();
 
