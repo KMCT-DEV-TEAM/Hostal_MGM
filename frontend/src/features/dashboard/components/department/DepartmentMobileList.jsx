@@ -15,6 +15,10 @@ const DepartmentMobileList = ({
     handleSelectAll,
     handleSelectRow,
     handleStatusChangeClick,
+    currentPage,
+    totalPages,
+    hasMore,
+    onLoadMore,
     ...rest
 }) => {
     const { t } = useTranslation();
@@ -22,6 +26,11 @@ const DepartmentMobileList = ({
 
     return (
         <MobileList
+            {...rest}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
             items={Departments}
             loading={loading}
             error={error}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useClickOutside } from '@/hooks/useClickOutside';
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal, Eye, MoreVertical } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
 import ListTable from "@/components/ui/ListTable";
@@ -29,6 +30,7 @@ const LogsViewer = ({ entityType }) => {
     const [isExporting, setIsExporting] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const mobileMenuRef = useClickOutside(() => setIsMobileMenuOpen(false));
     const [expandedIds, setExpandedIds] = useState([]);
 
     useEffect(() => {
@@ -182,7 +184,7 @@ const LogsViewer = ({ entityType }) => {
                         />
                     </div>
                     {/* Mobile More Options Button */}
-                    <div className="sm:hidden relative">
+                    <div className="sm:hidden relative" ref={mobileMenuRef}>
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px]"

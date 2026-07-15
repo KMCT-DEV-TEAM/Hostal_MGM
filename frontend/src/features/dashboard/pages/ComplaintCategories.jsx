@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
-import PaginationFooter from '@/components/ui/PaginationFooter';
+
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import {
     Plus, Search, Download, ChevronDown, ChevronLeft, ChevronRight, Loader2, MoreVertical
@@ -43,6 +44,7 @@ const ComplaintCategories = () => {
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
     const [isConfirming, setIsConfirming] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -293,7 +295,7 @@ const ComplaintCategories = () => {
                         </div>
                         <button onClick={() => openModal('add')} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
 
-                        </div>
+                    </div>
 
                     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                         <div className="flex gap-3 w-full sm:w-auto">
@@ -320,7 +322,7 @@ const ComplaintCategories = () => {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
-                            <div className="relative">
+                            <div className="relative" ref={bulkMenuRef}>
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                     className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
@@ -382,7 +384,7 @@ const ComplaintCategories = () => {
                     handleStatusChangeClick={handleStatusChangeClick}
                 />
 
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div className="hidden sm:block">
                         Showing {totalCategories === 0 ? 0 : (page - 1) * limit + 1} to{" "}
                         {Math.min(page * limit, totalCategories)} of {totalCategories} entries

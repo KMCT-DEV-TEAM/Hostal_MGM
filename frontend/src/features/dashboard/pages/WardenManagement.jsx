@@ -1,5 +1,6 @@
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import React, { useState, useMemo, useEffect } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import WardenTable from '../components/Warden/WardenTable';
 import WardenMobileList from '../components/Warden/WardenMobileList';
 import WardenDetailView from '../components/Warden/WardenDetailView';
@@ -42,6 +43,7 @@ export default function WardenManagement() {
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
     const [bulkStatusToUpdate, setBulkStatusToUpdate] = useState(null);
     const [isHostelConfirmOpen, setIsHostelConfirmOpen] = useState(false);
     const [hostelChangeToConfirm, setHostelChangeToConfirm] = useState(null);
@@ -527,7 +529,7 @@ export default function WardenManagement() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
             {/* ==========================================
              HEADER ACTION SECTION
@@ -591,7 +593,7 @@ export default function WardenManagement() {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
-                            <div className="relative">
+                            <div className="relative" ref={bulkMenuRef}>
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                     className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"

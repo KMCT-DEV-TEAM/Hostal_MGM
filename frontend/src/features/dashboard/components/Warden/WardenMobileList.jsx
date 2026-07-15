@@ -16,6 +16,10 @@ const WardenMobileList = ({
     handleStatusChangeClick,
     loading,
     error,
+    currentPage,
+    totalPages,
+    hasMore,
+    onLoadMore,
     ...rest
 }) => {
     return (
@@ -30,6 +34,10 @@ const WardenMobileList = ({
             onEdit={openEditWardenModal}
             canSelect={true}
             canEdit={true}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
             emptyText="No wardens match the selected filter."
             iconFn={(warden) => (
                 <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">

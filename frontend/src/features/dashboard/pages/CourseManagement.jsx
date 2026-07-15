@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
-import PaginationFooter from '@/components/ui/PaginationFooter';
+
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import {
@@ -59,6 +60,7 @@ const CourseManagement = () => {
     const [isAddConfirmOpen, setIsAddConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
     const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     const [statusToUpdate, setStatusToUpdate] = useState(null);
     const [isBulkStatusConfirmOpen, setIsBulkStatusConfirmOpen] = useState(false);
@@ -179,14 +181,19 @@ const CourseManagement = () => {
             setFormData({
                 name: course.name || '',
                 code: suffixCode || '',
-                organizationId: orgId || ''
+                organizationId: orgId || '',
+                status: course.isActive ? 'Active' : 'Inactive',
+                isActive: course.isActive,
+                originalIsActive: course.isActive
             });
         } else {
             setEditingId(null);
             setFormData({
                 name: '',
                 code: '',
-                organizationId: ''
+                organizationId: '',
+                status: 'Active',
+                isActive: true
             });
         }
         setIsModalOpen(true);
@@ -219,6 +226,9 @@ const CourseManagement = () => {
 
             if (isEditMode && editingId) {
                 await CourseService.updateCourse(editingId, finalData);
+                if (formData.isActive !== formData.originalIsActive) {
+                    await CourseService.toggleStatus(editingId);
+                }
                 showSuccessToast('Course Updated', 'Course details saved successfully');
             } else {
                 await CourseService.createCourse(finalData);
@@ -351,7 +361,7 @@ const CourseManagement = () => {
 
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
                 <div>
@@ -405,8 +415,8 @@ const CourseManagement = () => {
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
-                            
-                            <div className="relative">
+
+                            <div className="relative" ref={bulkMenuRef}>
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                                     className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
@@ -455,6 +465,10 @@ const CourseManagement = () => {
                 />
 
                 <CourseMobileList
+                    currentPage={page}
+                    totalPages={totalPages}
+                    hasMore={page < totalPages}
+                    onLoadMore={() => setPage(prev => prev + 1)}
                     courses={courses}
                     loading={loading}
                     error={error}
@@ -468,7 +482,7 @@ const CourseManagement = () => {
                 />
 
                 {/* PAGINATION BAR FOOTER */}
-                <div className="flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
                     <div className="hidden sm:block">
                         Showing {totalcourses === 0 ? 0 : (page - 1) * limit + 1} to{" "}
                         {Math.min(page * limit, totalcourses)} of {totalcourses} entries
