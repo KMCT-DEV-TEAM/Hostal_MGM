@@ -57,7 +57,7 @@ export default function MobileList({
         } else {
             setAccumulatedItems(prev => {
                 const freshMap = new Map(items.map(i => [i._id || i.id, i]));
-                
+
                 const updatedPrev = prev.map(p => {
                     const id = p._id || p.id;
                     if (freshMap.has(id)) {
@@ -67,7 +67,7 @@ export default function MobileList({
                     }
                     return p;
                 });
-                
+
                 return [...updatedPrev, ...Array.from(freshMap.values())];
             });
         }
@@ -109,7 +109,7 @@ export default function MobileList({
     const startPress = (rowId, item) => {
         if (!canSelect) return;
         if (isSelectableFn && !isSelectableFn(item)) return;
-        
+
         isLongPress.current = false;
         pressTimer.current = setTimeout(() => {
             if (onSelect) onSelect(rowId);
@@ -170,7 +170,7 @@ export default function MobileList({
                         const rowId = item._id || item.id;
                         const isSelected = selectedIds.includes(rowId);
                         const isLastItem = index === displayItems.length - 1;
-                        
+
                         if (renderItem) {
                             return (
                                 <React.Fragment key={rowId || index}>
@@ -214,7 +214,7 @@ export default function MobileList({
                                     )}
 
                                     <div className="flex-1 min-w-0 pr-2">
-                                        <div 
+                                        <div
                                             className="font-bold text-primary text-base mb-1 truncate transition-colors cursor-pointer hover:text-primary"
                                             onClick={(e) => {
                                                 if (canSelect && selectedIds.length > 0) {
@@ -227,7 +227,7 @@ export default function MobileList({
                                         >
                                             {titleFn ? titleFn(item) : (item.name || `Item ${index + 1}`)}
                                         </div>
-                                        
+
                                         {(subtitleFn || rightTopFn) && (
                                             <div className="flex flex-col gap-1 text-[10px] sm:text-xs text-gray-500 mb-2">
                                                 {subtitleFn && (
@@ -242,7 +242,7 @@ export default function MobileList({
                                                 )}
                                             </div>
                                         )}
-                                        
+
                                         {renderBody && (
                                             <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-50 text-[10px] sm:text-xs text-gray-400 w-full min-w-0">
                                                 {renderBody(item)}
@@ -250,7 +250,7 @@ export default function MobileList({
                                         )}
                                     </div>
                                 </div>
-                                
+
                                 {/* Bottom Action Bar: Status & Edit */}
                                 {(statusBadgeFn || canEdit) && (
                                     <div className="flex justify-end items-center gap-3 mt-auto pt-2">
