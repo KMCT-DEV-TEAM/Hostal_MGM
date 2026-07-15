@@ -1,9 +1,10 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import AttendanceHeader from '../components/AttendanceHeader';
-import AttendanceWindowsTable from '../components/AttendanceWindowsTable';
-import AttendanceRecordsTable from '../components/AttendanceRecordsTable';
+import AttendanceHeader from '../components/attendance/AttendanceHeader';
+import AttendanceWindowsTable from '../components/attendance/AttendanceWindowsTable';
+import AttendanceRecordsTable from '../components/attendance/AttendanceRecordsTable';
+import BackButton from '@/components/ui/BackButton';
 
 const WardenAttendance = () => {
     const { windowId } = useParams();
@@ -12,13 +13,8 @@ const WardenAttendance = () => {
     if (windowId) {
         return (
             <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-text-primary flex flex-col">
-                <div className="flex items-center gap-4 mb-6">
-                    <button
-                        onClick={() => navigate('/dashboard/attendance')}
-                        className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                    >
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
-                    </button>
+                <div className="mb-6">
+                    <BackButton text="Back to Windows" onClick={() => navigate('/dashboard/attendance')} />
                     <div>
                         <h1 className="text-2xl font-bold text-text-primary">Attendance Records</h1>
                         <p className="text-sm text-text-secondary mt-1">Viewing student attendance for the selected window.</p>

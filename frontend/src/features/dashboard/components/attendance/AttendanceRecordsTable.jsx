@@ -5,9 +5,10 @@ import { formatDateISO, formatDateReadable } from '@/utils/formatters';
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
-import StudentAttendanceModal from './StudentAttendanceModal';
+import StudentAttendanceModal from '../StudentAttendanceModal';
 import StatusBadge from '@/components/ui/StatusBadge';
-import Dropdown from '@/components/ui/Dropdown';
+import FilterRecordsModal from './FilterRecordsModal';
+import { Filter } from 'lucide-react';
 
 export default function AttendanceRecordsTable({ windowId }) {
     const { user } = useAuthStore();
@@ -17,6 +18,7 @@ export default function AttendanceRecordsTable({ windowId }) {
     const [page, setPage] = useState(1);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filters, setFilters] = useState({});
     const [pagination, setPagination] = useState({
         totalRecords: 0,
@@ -95,7 +97,7 @@ export default function AttendanceRecordsTable({ windowId }) {
 
     const renderMobileItem = (item) => {
         return (
-            <div className="">
+            <div className="mb-2">
                 <InfoCard
                     onClick={() => {
                         if (item.student) {
@@ -135,22 +137,6 @@ export default function AttendanceRecordsTable({ windowId }) {
                     setPage(1);
                 }}
                 searchPlaceholder="Search student..."
-                filterOptions={[
-                    { label: 'All Status', value: '' },
-                    { label: 'Present', value: 'present' },
-                    { label: 'Absent', value: 'absent' },
-                    { label: 'On Leave', value: 'on_leave' }
-                ]}
-                filterValue={filters.status || ''}
-                onFilterChange={(val) => {
-                    if (val) {
-                        setFilters({ status: val });
-                    } else {
-                        setFilters({});
-                    }
-                    setPage(1);
-                }}
-                filterPlaceholder="Filter Status"
                 headers={headers}
                 items={records}
                 loading={loading}
@@ -168,7 +154,38 @@ export default function AttendanceRecordsTable({ windowId }) {
                 totalItems={pagination.totalRecords}
                 totalPages={pagination.totalPages}
                 emptyText="No records found."
+                toolbarActions={
+                    <button
+                        onClick={() => setIsFilterModalOpen(true)}
+                        className={`p-2.5 rounded-xl transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white hover:bg-[#0A437A]/90' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 h-10 w-10'}`}
+                        title="Filter records"
+                    >
+                        <Filter className="w-4 h-4" />
+                    </button>
+                }
             />
+
+            {isFilterModalOpen && (
+                <FilterRecordsModal
+                    initialFilters={filters}
+                    onClose={() => setIsFilterModalOpen(false)}
+                    onApply={(newFilters) => {
+                        const cleanedFilters = Object.fromEntries(
+                            Object.entries(newFilters).filter(([_, v]) => v !== '')
+                        );
+                        setFilters(cleanedFilters);
+                        setIsFilterModalOpen(false);
+                        setPage(1);
+                    }}
+                    onFilterChange={(newFilters) => {
+                        const cleanedFilters = Object.fromEntries(
+                            Object.entries(newFilters).filter(([_, v]) => v !== '')
+                        );
+                        setFilters(cleanedFilters);
+                        setPage(1);
+                    }}
+                />
+            )}
 
             <StudentAttendanceModal
                 isOpen={isModalOpen}

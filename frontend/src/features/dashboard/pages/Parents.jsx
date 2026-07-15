@@ -7,9 +7,7 @@ import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus,
 import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
 import ParentsHeader from '../components/parents/ParentsHeader';
-import ParentsToolbar from '../components/parents/ParentsToolbar';
 import ParentsTable from '../components/parents/ParentsTable';
-import ParentsMobileList from '../components/parents/ParentsMobileList';
 import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -309,7 +307,7 @@ export default function Parents() {
     }
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden p-4 md:p-6 flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden p-4 md:p-6 flex flex-col">
             <ParentsHeader
                 selectedIds={selectedIds}
                 onActivateSelected={handleActivateSelected}
@@ -319,17 +317,12 @@ export default function Parents() {
             />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                <ParentsToolbar
+                <ParentsTable
                     onSearch={handleSearch}
                     onFilterChange={handleFilterChange}
                     onExport={handleExport}
                     canCreate={canCreate}
-                    canEdit={canEdit}
-                    role={role}
                     organizations={organizations}
-                />
-
-                <ParentsTable
                     parents={parents}
                     loading={loading}
                     error={error ? error.message || error : null}
@@ -337,20 +330,6 @@ export default function Parents() {
                     onSelectAll={handleSelectAll}
                     onSelect={handleSelect}
                     onStatusChangeRequest={handleStatusChangeRequest}
-                    onEdit={handleEdit}
-                    onView={handleView}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    statusLoadingIds={statusLoadingIds}
-                    role={role}
-                />
-                <ParentsMobileList
-                    parents={parents}
-                    loading={loading}
-                    error={error ? error.message || error : null}
-                    selectedIds={selectedIds}
-                    onSelectAll={handleSelectAll}
-                    onSelect={handleSelect}
                     onEdit={handleEdit}
                     onView={handleView}
                     canEdit={canEdit}
