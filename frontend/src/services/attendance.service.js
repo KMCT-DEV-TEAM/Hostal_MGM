@@ -84,6 +84,11 @@ export async function getStudentHistory(params) {
     return response.data;
 }
 
+export async function getStudentCalendar(params) {
+    const response = await attendanceApi.getStudentCalendar(params);
+    return response.data;
+}
+
 export async function getParentDashboard() {
     const response = await attendanceApi.getParentDashboard();
     return response.data;
@@ -91,6 +96,11 @@ export async function getParentDashboard() {
 
 export async function getParentHistory(params) {
     const response = await attendanceApi.getParentHistory(params);
+    return response.data;
+}
+
+export async function getParentCalendar(params) {
+    const response = await attendanceApi.getParentCalendar(params);
     return response.data;
 }
 
@@ -110,6 +120,8 @@ const ATTENDANCE_STUDENT_CALENDAR_FETCHERS = {
     [ROLES.WARDEN]: getStudentCalendarByWarden,
     [ROLES.ADMIN]: getStudentCalendarByAdmin,
     [ROLES.SUPER_ADMIN]: getStudentCalendarBySuperAdmin,
+    [ROLES.STUDENT]: getStudentCalendar,
+    [ROLES.PARENT]: getParentCalendar,
 };
 
 const ATTENDANCE_DASHBOARD_STATS_FETCHERS = {

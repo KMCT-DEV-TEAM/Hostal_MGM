@@ -1,8 +1,48 @@
+import React from 'react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { MapPin, LayoutGrid, Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const MobileHeader = () => {
-    return (
-        <div>
+    const { user } = useAuthStore();
+    const initials = user?.name?.substring(0, 2).toUpperCase() || 'ST';
 
+    return (
+        <div className="pt-8 pb-4 px-4 bg-background-secondary">
+            <div className="bg-white rounded-[24px] p-2 flex items-center justify-between shadow-sm border border-gray-50">
+                <div className="flex items-center gap-3 pl-1">
+                    {user?.profileImage ? (
+                        <img
+                            src={user.profileImage}
+                            alt={user?.name}
+                            className="w-11 h-11 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold">
+                            {initials}
+                        </div>
+                    )}
+                    <div className="flex flex-col">
+                        <span className="text-[15px] font-semibold text-text-primary leading-tight">
+                            {user?.name || 'Value not getting'}
+                        </span>
+                        <div className="flex items-center text-text-secondary gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-xs">{user?.room || 'Value not getting'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 pr-3">
+                    <button className="text-text-secondary hover:text-gray-600 transition-colors">
+                        <LayoutGrid className="w-[22px] h-[22px]" strokeWidth={1.5} />
+                    </button>
+                    <Link to="/dashboard/notifications" className="text-text-secondary hover:text-gray-600 relative transition-colors">
+                        <Bell className="w-[22px] h-[22px]" strokeWidth={1.5} />
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full border-2 border-white"></span>
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 };
