@@ -1,27 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-<<<<<<< HEAD
-import PageHeader from "@/components/ui/PageHeader";
-import StudentAttendanceStatsCard from "../components/StudentAttendanceStatsCard";
-import DataTable from "@/components/ui/DataTable";
-import { Filter } from 'lucide-react';
+
 import FilterAttendanceModal from '../components/attendance/FilterAttendanceModal';
-=======
-import FilterAttendanceModal from '../components/FilterAttendanceModal';
->>>>>>> 70cbe1840ffcda2fdf64db66a46fd9e0ec19b9c1
 import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
-<<<<<<< HEAD
-
-import { formatDateReadable, formatDay } from '@/utils/formatters';
-import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
 import AttendanceQRModal from '../components/attendance/AttendanceQRModal';
-=======
-import AttendanceQRModal from '../components/AttendanceQRModal';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import StudentAttendanceDesktopView from '../views/StudentAttendanceDesktopView';
 import StudentAttendanceMobileView from '../views/StudentAttendanceMobileView';
->>>>>>> 70cbe1840ffcda2fdf64db66a46fd9e0ec19b9c1
 
 const StudentAttendanceContainer = () => {
     const pageTitle = "My Attendance";
