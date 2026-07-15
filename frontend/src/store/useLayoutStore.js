@@ -1,18 +1,25 @@
 import { create } from "zustand";
 
+const defaultState = {
+    header: {
+        variant: "dashboard",
+        title: "",
+        showBack: false,
+    },
+    footer: {
+        visible: true,
+    }
+};
+
 export const useLayoutStore = create((set) => ({
-    showHeader: true,
-    showFooter: true,
+    ...defaultState,
 
-    setShowHeader: (value) =>
-        set({ showHeader: value }),
+    setHeader: (headerConfig) =>
+        set((state) => ({ header: { ...state.header, ...headerConfig } })),
 
-    setShowFooter: (value) =>
-        set({ showFooter: value }),
+    setFooter: (footerConfig) =>
+        set((state) => ({ footer: { ...state.footer, ...footerConfig } })),
 
     resetLayout: () =>
-        set({
-            showHeader: true,
-            showFooter: true,
-        }),
+        set(defaultState),
 }));

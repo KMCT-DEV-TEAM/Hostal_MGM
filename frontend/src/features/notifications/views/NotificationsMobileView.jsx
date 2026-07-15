@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import MobileNotificationCard from '../components/MobileNotificationCard';
+import NotificationSkeleton from '../components/NotificationSkeleton';
 import { Loader2 } from 'lucide-react';
 
 const NotificationsMobileView = ({
@@ -13,17 +14,22 @@ const NotificationsMobileView = ({
 }) => {
 
     useLayoutConfig({
-        footer: false
-    })
+        header: {
+            variant: "page",
+            title: "Notifications",
+            showBack: true
+        },
+        footer: {
+            visible: false
+        }
+    });
 
     return (
         <div className="w-full h-full flex flex-col">
-
-
             {/* List */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
                 {loading && notifications.length === 0 ? (
-                    <div className="py-10 text-center text-sm text-gray-500">Loading notifications...</div>
+                    <NotificationSkeleton rows={5} />
                 ) : notifications.length === 0 ? (
                     <div className="py-10 text-center text-sm text-gray-500">No new notifications</div>
                 ) : (

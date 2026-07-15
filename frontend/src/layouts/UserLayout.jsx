@@ -12,43 +12,36 @@ const UserLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { isMobile } = useBreakpoint();
 
-    const { showHeader, showFooter } = useLayoutStore(
-        useShallow((state) => ({
-            showHeader: state.showHeader,
-            showFooter: state.showFooter,
-        }))
-    );
+    const headerVariant = useLayoutStore((state) => state.header.variant);
+    const footerVisible = useLayoutStore((state) => state.footer.visible);
+
     return (
         <div className={`flex flex-col h-screen bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
             {/* Header Area */}
             {isMobile ? (
-                showHeader && <MobileHeader />
+                headerVariant !== "none" && <MobileHeader />
             ) : (
                 <div className="h-[82px] shrink-0">
                     <Navbar onMenuClick={() => setIsSidebarOpen(prev => !prev)} />
                 </div>
             )}
 
-            {/* Main Body Area */}
-            <div className={`flex-1 flex overflow-hidden relative ${!isMobile ? 'h-[calc(100vh-82px)]' : ''}`}>
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Sidebar */}
                 {!isMobile && (
-                    <>
-                        <div className="hidden lg:block w-[250px] shrink-0"></div>
-                        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-                    </>
+                    <div className="shrink-0">
+                        <Sidebar isOpen={isSidebarOpen} />
+                    </div>
                 )}
 
-                {/* 
-                  The Outlet is exactly here in both cases!
-                  This preserves its state completely on resize.
-                */}
-                <main className="flex-1 overflow-y-auto w-full relative">
+                {/* Main Content Area */}
+                <main className="flex-1 relative w-full max-w-full min-w-0 flex flex-col overflow-hidden">
                     <Outlet />
                 </main>
             </div>
 
             {/* Footer Area */}
-            {isMobile && showFooter && <MobileFooter />}
+            {isMobile && footerVisible && <MobileFooter />}
         </div>
     );
 };
