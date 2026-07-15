@@ -132,7 +132,7 @@ export default function StudentMonthlyCalendar({
 
                         <div className="flex-1 rounded-[12px] md:rounded-[16px] p-3 md:p-4 flex items-center gap-3 md:gap-4">
                             <div className="w-10 h-10 rounded-[10px] md:rounded-[12px] bg-red-50 flex items-center justify-center shrink-0">
-                                <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-red-500" strokeWidth={1.5} />
+                                <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-danger" strokeWidth={1.5} />
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-text-primary">{(calendarData?.summary?.absent || 0).toString().padStart(2, '0')}</span>
