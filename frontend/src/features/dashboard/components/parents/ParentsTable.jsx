@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Mail, Phone } from 'lucide-react';
+import { Pencil, Mail, Phone, Plus, Download, icons, Users, Building, MoreVertical, Filter } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
-import DataTable from '@/components/ui/DataTable';
-import InfoCard from '@/components/ui/InfoCard';
+import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ROLES } from '@/constants/roles';
@@ -11,21 +10,30 @@ export default function ParentsTable({
     onSearch,
     onFilterChange,
     onExport,
+    onAddClick,
     canCreate,
     organizations = [],
     parents,
     loading,
     error,
-    selectedIds,
+    selectedIds = [],
     onSelectAll,
     onSelect,
+    onActivateSelected,
+    onDeactivateSelected,
     onStatusChangeRequest,
     onEdit,
     onView,
     canEdit,
     canDelete,
     statusLoadingIds = [],
-    role
+    role,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalItems,
+    totalPages
 }) {
     const { t } = useTranslation();
 
@@ -38,16 +46,6 @@ export default function ParentsTable({
         onSearch?.(debouncedSearchTerm);
     }, [debouncedSearchTerm, onSearch]);
 
-    const headers = [
-        t('name'),
-        t('email'),
-        t('phone'),
-        t('student'),
-        ...(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN ? [t('organization')] : []),
-        ...(canEdit ? [t('status')] : []),
-        ...(canEdit ? [{ label: t('action'), align: 'center' }] : [])
-    ];
-
     const statusOptions = [
         { label: 'All Status', value: '' },
         { label: 'Active', value: 'Active' },
@@ -59,8 +57,99 @@ export default function ParentsTable({
         ...organizations.map(org => ({ label: org.name, value: org._id }))
     ];
 
-    const toolbarActions = (
-        <div className="flex w-full sm:w-auto gap-3">
+    const columns = [
+        {
+            key: 'parentName',
+            header: t('name'),
+            type: "user",
+            truncate: true,
+            titleAccessor: (p) => p.parentName,
+            avatarAccessor: (p) => p.parentName,
+        },
+        {
+            key: 'email',
+            header: t('email'),
+            icon: Mail,
+            accessor: (p) => p.email,
+        },
+        {
+            key: 'phone',
+            header: t('phone'),
+            icon: Phone,
+            accessor: (p) => p.phone,
+        },
+        {
+            key: 'student',
+            header: t('student'),
+            icon: Users,
+            accessor: (p) => p.student?.name || p.student || "-",
+        },
+        ...(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN ? [{
+            key: 'organization',
+            header: t('organization'),
+            icon: Building,
+            accessor: (p) => p.organization?.name || "N/A",
+        }] : []),
+        ...(canEdit ? [{
+            key: 'status',
+            header: t('status'),
+            renderCell: (p) => {
+                const isActive = p.isActive === true || p.isActive === 'true';
+                return (
+                    <div className="relative inline-block w-[105px]" onClick={(e) => e.stopPropagation()}>
+                        <Dropdown
+                            minWidth=""
+                            options={[
+                                { value: "Active", label: "Active" },
+                                { value: "Inactive", label: "Inactive" }
+                            ]}
+                            value={isActive ? 'Active' : 'Inactive'}
+                            onChange={(val) => onStatusChangeRequest?.(p, val === 'Active')}
+                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive
+                                ? 'bg-green-50 text-success border-green-200 hover:bg-green-100'
+                                : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'
+                                }`}
+                        />
+                    </div>
+                );
+            }
+        }] : []),
+        ...(canEdit ? [{
+            key: 'action',
+            header: t('action'),
+            align: 'center',
+            renderCell: (p) => (
+                <div className="flex text-primary items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
+                        <Pencil className="w-4 h-4 text-secondary" />
+                    </button>
+                </div>
+            )
+        }] : [])
+    ];
+
+    const cardConfig = {
+        avatar: (p) => p.parentName?.split(' ').map(n => n[0]).join('').substring(0, 2),
+        title: (p) => p.parentName || "-",
+        subtitle: (p) => p.email || "-",
+        status: (p) => {
+            const isActive = p.isActive === true || p.isActive === 'true';
+            return {
+                text: isActive ? "Active" : "Inactive",
+                color: isActive ? "green" : "red"
+            };
+        },
+        fields: [
+            { icon: Users, accessor: (p) => p.student?.name || "No Student" },
+            ...(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN ? [{
+                icon: Building, accessor: (p) => p.organization?.name || "N/A",
+            }] : [])
+        ],
+        onEdit: canEdit ? onEdit : undefined
+    };
+
+    const toolbarEndSlot = (
+        <div className="flex items-center gap-2 lg:gap-3 w-full sm:w-auto">
             {canEdit && (
                 <Dropdown
                     className="flex-1 sm:flex-none"
@@ -74,8 +163,9 @@ export default function ParentsTable({
                         );
                     }}
                     placeholder="All Status"
-                    minWidth="w-32"
-                    triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium"
+                    mobileIcon={<Filter className="w-4 h-4" />}
+                    minWidth="w-auto lg:w-32"
+                    triggerClassName="w-full flex items-center justify-center lg:justify-between px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
                 />
             )}
             {role === ROLES.SUPER_ADMIN && (
@@ -88,104 +178,84 @@ export default function ParentsTable({
                         onFilterChange?.('organizationId', val);
                     }}
                     placeholder="All Organizations"
-                    minWidth="w-40"
-                    triggerClassName="w-full appearance-none bg-white border border-gray-100 md:border-gray-200 rounded-lg px-3 py-2 text-sm text-[#777777] font-medium"
+                    mobileIcon={<Building className="w-4 h-4" />}
+                    minWidth="w-auto lg:w-40"
+                    triggerClassName="w-full flex items-center justify-center lg:justify-between px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
                 />
+            )}
+
+            {(canEdit || canDelete) && (
+                <Dropdown
+                    className="flex-1 sm:flex-none"
+                    options={[
+                        ...(canEdit ? [{
+                            value: "active",
+                            label: `Active ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`,
+                            disabled: selectedIds.length === 0
+                        }] : []),
+                        ...(canDelete ? [{
+                            value: "inactive",
+                            label: `Inactive ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`,
+                            disabled: selectedIds.length === 0
+                        }] : [])
+                    ]}
+                    value={null}
+                    placeholder={<MoreVertical className="w-4 h-4 text-gray-500" />}
+                    hideChevron={true}
+                    onChange={(val) => {
+                        if (val === "active") onActivateSelected?.();
+                        if (val === "inactive") onDeactivateSelected?.();
+                    }}
+                    minWidth="w-auto"
+                    triggerClassName="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                />
+            )}
+
+            <button
+                onClick={onExport}
+                className="flex items-center justify-center p-2 bg-gray-50 text-gray-600 hover:text-gray-900 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors tooltip-trigger"
+                title="Export Data"
+            >
+                <Download className="w-5 h-5" />
+            </button>
+
+            {canCreate && (
+                <button
+                    onClick={onAddClick}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] hover:bg-[#0A437A]/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
+                >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add Parent</span>
+                </button>
             )}
         </div>
     );
 
-    const renderMobileItem = (p) => {
-        const isActive = p.isActive === true || p.isActive === 'true';
-        return (
-            <div className="">
-                <InfoCard
-                    avatar={p.parentName}
-                    title={p.parentName || "-"}
-                    subtitle={p.email || "-"}
-                    onClick={() => onView && onView(p)}
-                    status={{ text: isActive ? "Active" : "Inactive", color: isActive ? "green" : "red" }}
-                    fields={[
-                        { label: "Phone", value: p.phone || "-" },
-                        { label: "Student", value: p.student?.name || "No Student" },
-                    ].filter(Boolean)}
-                    editable={canEdit}
-                    onEdit={() => onEdit && onEdit(p)}
-                />
-            </div>
-        );
-    };
-
     return (
-        <DataTable
+        <DataView
+            pageScrollMode={true}
+            data={parents}
+            columns={columns}
+            cardConfig={cardConfig}
             searchQuery={searchTerm}
             onSearchChange={(e) => setSearchTerm(e.target.value)}
             searchPlaceholder="Search Parents..."
-            onExport={onExport}
-            toolbarActions={toolbarActions}
-            headers={headers}
-            items={parents}
-            loading={loading}
-            error={error}
+            toolbarEndSlot={toolbarEndSlot}
+            onRowClick={onView}
             selectedIds={selectedIds}
             onSelectAll={onSelectAll}
-            onSelect={onSelect}
+            onSelectRow={onSelect}
             canSelect={canEdit || canDelete}
-            statusLoadingIds={statusLoadingIds}
+            loading={loading}
+            error={error}
             emptyText="No parents match the selected filter."
-            onRowClick={onView}
-            renderMobileItem={renderMobileItem}
-            renderRow={(p) => (
-                <>
-                    <td
-                        className="p-4 flex items-center gap-3 font-medium text-text-secondary"
-                    >
-                        <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
-                            {p.parentName?.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                        </div>
-                        <span className="truncate max-w-[150px]">{p.parentName}</span>
-                    </td>
-                    <td className="p-4 text-text-secondary"><Mail className="w-3 h-3 inline mr-2 text-gray-400" />{p.email}</td>
-                    <td className="p-4 text-text-secondary whitespace-nowrap"><Phone className="w-3 h-3 inline mr-2 text-gray-400" />{p.phone}</td>
-                    <td className="p-4 text-text-secondary font-medium">{p.student?.name ?? "No Student"}</td>
-                    {(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN) && (
-                        <td className="p-4 text-text-secondary font-medium">{p.organization?.name || "N/A"}</td>
-                    )}
-                    {canEdit && (
-                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                            <div className="relative inline-block w-[105px]">
-                                <Dropdown
-                                    minWidth=""
-                                    options={[
-                                        { value: "Active", label: "Active" },
-                                        { value: "Inactive", label: "Inactive" }
-                                    ]}
-                                    value={(p.isActive === true || p.isActive === 'true') ? 'Active' : 'Inactive'}
-                                    onChange={(val) =>
-                                        onStatusChangeRequest?.(
-                                            p,
-                                            val === 'Active'
-                                        )
-                                    }
-                                    triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${(p.isActive === true || p.isActive === 'true')
-                                        ? 'bg-green-50 text-success border-green-200 hover:bg-green-100'
-                                        : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'
-                                        }`}
-                                />
-                            </div>
-                        </td>
-                    )}
-                    {canEdit && (
-                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex text-primary items-center justify-center">
-                                <button onClick={() => onEdit && onEdit(p)} className="hover:text-secondary focus:outline-none transition-colors p-1 cursor-pointer">
-                                    <Pencil className="w-4 h-4 text-secondary" />
-                                </button>
-                            </div>
-                        </td>
-                    )}
-                </>
-            )}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            className="h-full border-none shadow-none"
         />
     );
 }

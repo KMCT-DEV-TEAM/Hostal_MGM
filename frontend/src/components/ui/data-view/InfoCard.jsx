@@ -32,7 +32,7 @@ export default function InfoCard({
     };
 
     return (
-        <div 
+        <div
             onClick={(e) => {
                 if (canSelect && (selected || selectionMode)) {
                     onSelect?.();
@@ -59,7 +59,7 @@ export default function InfoCard({
                 {avatar && (
                     <div className="flex-shrink-0">
                         {typeof avatar === 'string' ? (
-                            <div className="w-12 h-12 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm">
+                            <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-semibold text-sm uppercase shadow-sm">
                                 {avatar}
                             </div>
                         ) : (
@@ -70,7 +70,7 @@ export default function InfoCard({
 
                 {/* Right Column: Content */}
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
-                    
+
                     {/* Header: Title */}
                     {title && (
                         <h3 className="text-base font-bold text-[#0A437A] truncate mb-1.5">
@@ -80,7 +80,7 @@ export default function InfoCard({
 
                     {/* Middle: Icon Fields */}
                     {fields.length > 0 && (
-                        <div className="flex flex-col gap-1.5 mb-2">
+                        <div className="flex flex-col gap-1.5 ">
                             {fields.map((field, idx) => {
                                 const Icon = field.icon;
                                 return (
@@ -103,14 +103,13 @@ export default function InfoCard({
                                 ${status.color === 'gray' ? 'bg-gray-100 text-gray-700' : ''}
                                 ${!['green', 'red', 'gray'].includes(status.color) ? 'bg-gray-50 text-gray-700' : ''}
                             `}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${
-                                    status.color === 'green' ? 'bg-green-500' : 
+                                <div className={`w-1.5 h-1.5 rounded-full ${status.color === 'green' ? 'bg-green-500' :
                                     status.color === 'red' ? 'bg-red-500' : 'bg-gray-400'
-                                }`} />
+                                    }`} />
                                 {status.text}
                             </div>
                         )}
-                        
+
                         {onEdit && (
                             <button
                                 onClick={(e) => {

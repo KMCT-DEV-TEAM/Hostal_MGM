@@ -30,6 +30,7 @@ export default function Parents() {
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
     const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [filters, setFilters] = useState({ search: '', isActive: '', organizationId: '' });
     const [organizations, setOrganizations] = useState([]);
 
@@ -59,10 +60,16 @@ export default function Parents() {
     const { parents, setParents, pagination, loading, error, refetch } = useParents({
         ...filters,
         search: debouncedSearch,
-        page
+        page,
+        limit
     });
 
     const getParentId = (parent) => parent._id ?? parent.id;
+
+    const handleAddClick = () => {
+        setEditingParent(null);
+        setActiveModal('edit');
+    };
 
     const applyStatusChange = (ids, response) => {
         const changedIds = new Set(Array.isArray(ids) ? ids : [ids]);
@@ -310,47 +317,41 @@ export default function Parents() {
     }
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden p-4 md:p-6 flex flex-col">
-            <ParentsHeader
-                selectedIds={selectedIds}
-                onActivateSelected={handleActivateSelected}
-                onDeactivateSelected={handleDeactivateSelected}
-                canEdit={canEdit}
-                canDelete={canDelete}
-            />
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <ParentsHeader />
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                <ParentsTable
-                    onSearch={handleSearch}
-                    onFilterChange={handleFilterChange}
-                    onExport={handleExport}
-                    canCreate={canCreate}
-                    organizations={organizations}
-                    parents={parents}
-                    loading={loading}
-                    error={error ? error.message || error : null}
-                    selectedIds={selectedIds}
-                    onSelectAll={handleSelectAll}
-                    onSelect={handleSelect}
-                    onStatusChangeRequest={handleStatusChangeRequest}
-                    onEdit={handleEdit}
-                    onView={handleView}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    statusLoadingIds={statusLoadingIds}
-                    role={role}
-                />
-
-                {parents.length > 0 && !loading && !error && (
-                    <Pagination
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
+                    <ParentsTable
+                        onSearch={handleSearch}
+                        onFilterChange={handleFilterChange}
+                        onExport={handleExport}
+                        onAddClick={handleAddClick}
+                        canCreate={canCreate}
+                        organizations={organizations}
+                        parents={parents}
+                        loading={loading}
+                        error={error ? error.message || error : null}
+                        selectedIds={selectedIds}
+                        onSelectAll={handleSelectAll}
+                        onSelect={handleSelect}
+                        onStatusChangeRequest={handleStatusChangeRequest}
+                        onEdit={handleEdit}
+                        onView={handleView}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
+                        statusLoadingIds={statusLoadingIds}
+                        role={role}
                         page={page}
                         setPage={setPage}
-                        limit={pagination.limit || 10}
+                        limit={limit}
+                        setLimit={setLimit}
                         totalItems={pagination.totalRecords || 0}
                         totalPages={pagination.totalPages || 0}
+                        onActivateSelected={handleActivateSelected}
+                        onDeactivateSelected={handleDeactivateSelected}
                     />
-                )}
-            </div>
+                </div>
 
             {/* Modals */}
             {activeModal === 'view' && (
@@ -410,6 +411,7 @@ export default function Parents() {
                 title="Export Parents Data"
                 fields={exportFields}
             />
+            </div>
         </div>
     );
 }

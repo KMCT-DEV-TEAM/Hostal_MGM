@@ -124,6 +124,30 @@ export default function DesktopTable({
                                                 {text || '-'}
                                             </div>
                                         );
+                                    } els
+                                    e if (col.type === 'user') {
+                                        const title = col.titleAccessor ? col.titleAccessor(item) : (typeof value === 'string' ? value : '');
+                                        const subtitle = col.subtitleAccessor ? col.subtitleAccessor(item) : null;
+                                        const avatarStr = col.avatarAccessor ? col.avatarAccessor(item) : title;
+                                        const getInitials = (name = "") => name.trim().split(/\s+/).filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || "NA";
+
+                                        content = (
+                                            <div className="flex items-center gap-3 w-full">
+                                                <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                                    {getInitials(avatarStr)}
+                                                </div>
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className={`font-medium text-[#777777] transition-colors truncate ${col.truncate ? 'max-w-[150px]' : ''}`} title={title}>
+                                                        {title || "-"}
+                                                    </span>
+                                                    {subtitle && (
+                                                        <span className={`text-[11px] text-gray-400 mt-0.5 truncate ${col.truncate ? 'max-w-[150px]' : ''}`} title={subtitle}>
+                                                            {subtitle || "-"}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
                                     } else {
                                         // Standard text w/ optional icon
                                         content = (

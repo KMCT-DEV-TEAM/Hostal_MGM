@@ -207,22 +207,12 @@ export default function DataView({
                     <div className="flex-1 flex items-center justify-center">
                         <ErrorState message={error} />
                     </div>
-                ) : loading && !data?.length ? (
-                    <div className="flex-1 flex items-center justify-center">
-                        <LoadingState message="Loading data..." />
-                    </div>
-                ) : data?.length === 0 ? (
+                ) : data?.length === 0 && !loading ? (
                     <div className="flex-1 flex items-center justify-center">
                         <EmptyState message={emptyText} />
                     </div>
                 ) : (
                     <>
-                        {loading && (
-                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-20 flex items-center justify-center">
-                                <LoadingState message="" />
-                            </div>
-                        )}
-
                         <DesktopTable
                             pageScrollMode={pageScrollMode}
                             data={data}
@@ -232,6 +222,7 @@ export default function DataView({
                             onSelectAll={onSelectAll}
                             onSelectRow={onSelectRow}
                             canSelect={canSelect}
+                            loading={loading}
                         />
 
                         {cardConfig && (

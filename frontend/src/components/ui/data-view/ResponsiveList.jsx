@@ -51,11 +51,17 @@ export default function ResponsiveList({
         if (node) observer.current.observe(node);
     }, [isLoadingMore, hasMore, onLoadMore]);
 
-    if (!accumulatedData || accumulatedData.length === 0) return null;
+    if ((!accumulatedData || accumulatedData.length === 0) && !loading) return null;
 
     return (
         <div className={`flex flex-col gap-3 mt-4 md:hidden bg-gray-50/50 ${pageScrollMode ? '' : 'flex-1 overflow-y-auto'}`}>
-            {canSelect && accumulatedData.length > 0 && selectedIds.length > 0 && (
+            {loading && (!accumulatedData || accumulatedData.length === 0) ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                    <InfoCard key={`skeleton-${index}`} isLoading={true} />
+                ))
+            ) : (
+                <>
+                    {canSelect && accumulatedData.length > 0 && selectedIds.length > 0 && (
                 <div className={`z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm mb-1 ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
                     <button
                         type="button"
@@ -80,10 +86,14 @@ export default function ResponsiveList({
                 // Evaluate config accessors
                 const avatar = cardConfig.avatar ? cardConfig.avatar(item) : null;
                 const title = cardConfig.title ? cardConfig.title(item) : null;
-                const fields = cardConfig.fields ? cardConfig.fields.map(f => ({
-                    icon: f.icon,
-                    value: f.accessor(item)
-                })).filter(f => f.value) : [];
+                const fields = cardConfig.fields ? cardConfig.fields.map(f => {
+                    const Icon = f.icon;
+                    return {
+                        label: f.label || f.header,
+                        icon: Icon ? (typeof Icon === 'function' ? <Icon /> : Icon) : null,
+                        value: f.accessor(item)
+                    };
+                }).filter(f => f.value) : [];
                 const status = cardConfig.status ? cardConfig.status(item) : null;
 
                 const card = (
@@ -107,6 +117,8 @@ export default function ResponsiveList({
                 }
                 return card;
             })}
+            </>
+            )}
 
             {isLoadingMore && (
                 <div className="flex justify-center py-4">

@@ -82,25 +82,11 @@ export default function StudentsTable({
     {
       key: "studentName",
       header: "Student Details",
-      // Complex cell needing avatar rendering
-      renderCell: (s) => (
-        <div
-          className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-          onClick={() => onViewClick?.(s)}
-        >
-          <div className="w-8 h-8 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
-            {getInitials(s.name)}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors truncate max-w-[150px]" title={s.name}>
-              {s.name || "-"}
-            </span>
-            <span className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[150px]" title={s.studentId}>
-              {s.studentId || "-"}
-            </span>
-          </div>
-        </div>
-      )
+      type: "user",
+      truncate: true,
+      titleAccessor: (s) => s.name,
+      subtitleAccessor: (s) => s.studentId,
+      avatarAccessor: (s) => s.name,
     },
     {
       key: "course",
@@ -179,7 +165,7 @@ export default function StudentsTable({
 
   // 2. Card Configuration for ResponsiveList
   const cardConfig = {
-    avatar: (s) => getInitials(s.name),
+    avatar: (s) => s.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
     title: (s) => s.name || "-",
     subtitle: (s) => s.studentId || "-",
     status: (s) => ({
@@ -204,10 +190,10 @@ export default function StudentsTable({
       {onExport && (
         <button
           onClick={onExport}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+          className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
         >
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">Export</span>
+          <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+          <span className="hidden lg:inline">Export</span>
         </button>
       )}
       {(canEdit || canDelete) && (
@@ -225,13 +211,14 @@ export default function StudentsTable({
             }] : [])
           ]}
           value={null}
-          placeholder="Bulk Actions"
+          placeholder={<MoreVertical className="w-4 h-4 text-gray-500" />}
+          hideChevron={true}
           onChange={(val) => {
             if (val === "active") onActivateSelected?.();
             if (val === "inactive") onDeactivateSelected?.();
           }}
-          minWidth="w-[140px]"
-          triggerClassName="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+          minWidth="w-auto"
+          triggerClassName="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
         />
       )}
       {canCreate && (
