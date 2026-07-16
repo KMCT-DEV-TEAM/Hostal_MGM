@@ -7,7 +7,7 @@ import { showErrorToast } from '@/utils/toast';
 import AttendanceQRModal from '../components/attendance/AttendanceQRModal';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import StudentAttendanceDesktopView from '../views/StudentAttendanceDesktopView';
-import StudentAttendanceMobileView from '../views/StudentAttendanceMobileView';
+import AttendanceMobileView from '../views/AttendanceMobileView';
 
 const StudentAttendanceContainer = () => {
     const pageTitle = "My Attendance";
@@ -86,7 +86,7 @@ const StudentAttendanceContainer = () => {
 
         <>
             {isMobile ? (
-                <StudentAttendanceMobileView {...viewProps} />
+                <AttendanceMobileView {...viewProps} />
             ) : (
                 <StudentAttendanceDesktopView {...viewProps} />
             )}
