@@ -11,6 +11,7 @@ export default function StudentLeavesMobileView({
     searchQuery,
     setSearchQuery,
     onFilterClick,
+    onAddClick,
     openEditModal
 }) {
     const location = useLocation();
@@ -29,6 +30,7 @@ export default function StudentLeavesMobileView({
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
                 onFilterClick={onFilterClick}
+                onAddClick={onAddClick}
                 data={requests}
                 isLoading={loading}
                 hasMore={hasMore}

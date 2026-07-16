@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Search, Filter, Loader2 } from 'lucide-react';
+import { Search, Filter, Loader2, Plus } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function MobileListContainer({
     // Tabs (Route-based)
@@ -12,6 +13,7 @@ export default function MobileListContainer({
     searchValue = "",
     onSearchChange,
     onFilterClick, // If provided, shows the filter button
+    onAddClick, // If provided, shows a floating action button
 
     // List & Pagination
     data = [],
@@ -24,17 +26,35 @@ export default function MobileListContainer({
     const observer = useRef(null);
     const location = useLocation();
 
+    // Debounce Logic
+    const [localSearch, setLocalSearch] = useState(searchValue || "");
+    const debouncedSearch = useDebounce(localSearch, 500);
+
+    // Sync external override (e.g. parent clears search)
+    useEffect(() => {
+        if (searchValue !== debouncedSearch) {
+            setLocalSearch(searchValue || "");
+        }
+    }, [searchValue]);
+
+    // Emit debounced value back to parent
+    useEffect(() => {
+        if (onSearchChange && debouncedSearch !== searchValue) {
+            onSearchChange(debouncedSearch);
+        }
+    }, [debouncedSearch]);
+
     // Infinite Scroll Intersection Observer
     const lastElementRef = useCallback(node => {
         if (isLoading) return;
         if (observer.current) observer.current.disconnect();
-        
+
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting && hasMore) {
                 if (onLoadMore) onLoadMore();
             }
         });
-        
+
         if (node) observer.current.observe(node);
     }, [isLoading, hasMore, onLoadMore]);
 
@@ -50,11 +70,10 @@ export default function MobileListContainer({
                             <NavLink
                                 key={tab.path}
                                 to={tab.path}
-                                className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                                    isActive 
-                                        ? 'bg-primary text-white shadow-sm' 
-                                        : 'text-text-secondary hover:bg-gray-50'
-                                }`}
+                                className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-colors ${isActive
+                                    ? 'bg-primary text-white shadow-sm'
+                                    : 'text-text-secondary hover:bg-gray-50'
+                                    }`}
                                 // Prevent default active class from NavLink to strictly use custom logic if needed
                                 style={{ textDecoration: 'none' }}
                             >
@@ -73,8 +92,8 @@ export default function MobileListContainer({
                         <input
                             type="text"
                             placeholder={searchPlaceholder}
-                            value={searchValue}
-                            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+                            value={localSearch}
+                            onChange={(e) => setLocalSearch(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-[14px] text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm transition-all"
                         />
                     </div>
@@ -94,8 +113,8 @@ export default function MobileListContainer({
                 {data.map((item, index) => {
                     const isLast = index === data.length - 1;
                     return (
-                        <div 
-                            key={item._id || item.id || index} 
+                        <div
+                            key={item._id || item.id || index}
                             ref={isLast ? lastElementRef : null}
                         >
                             {renderItem(item, index)}
@@ -120,6 +139,15 @@ export default function MobileListContainer({
                     </div>
                 )}
             </div>
+            {/* Floating Action Button */}
+            {onAddClick && (
+                <button
+                    onClick={onAddClick}
+                    className="fixed bottom-28 right-6 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(var(--primary-rgb),0.4)] active:scale-95 transition-transform z-50"
+                >
+                    <Plus className="w-6 h-6" strokeWidth={2.5} />
+                </button>
+            )}
         </div>
     );
 }

@@ -130,7 +130,11 @@ export default function StudentLeaves() {
         setSearchQuery,
         hasMore: page < totalPages,
         onLoadMore: () => setPage(p => p + 1),
-        onFilterClick: () => setIsFilterModalOpen(true)
+        onFilterClick: () => setIsFilterModalOpen(true),
+        onAddClick: () => {
+            setEditData(null);
+            setIsApplyModalOpen(true);
+        }
     };
 
     return (
