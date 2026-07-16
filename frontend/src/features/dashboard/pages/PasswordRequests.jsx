@@ -14,6 +14,7 @@ import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
 import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
 import PasswordRequestsFilterModal from "../components/PasswordRequestsFilterModal";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 const PasswordRequests = () => {
     const [requests, setRequests] = useState([]);
@@ -73,8 +74,14 @@ const PasswordRequests = () => {
                 status: apiStatus,
                 search: debouncedSearch
             });
-            setRequests(res.data.requests || []);
-            setPagination(res.data.pagination || { page: 1, limit: 10, totalPages: 1 });
+            const dataPayload = res.data || {};
+            setRequests(dataPayload.requests || dataPayload.data || (Array.isArray(dataPayload) ? dataPayload : []));
+            setPagination({
+                page: dataPayload.pagination?.page || res.page || dataPayload.page || page,
+                limit: dataPayload.pagination?.limit || res.limit || dataPayload.limit || 10,
+                totalPages: dataPayload.pagination?.totalPages || res.totalPages || dataPayload.totalPages || 1,
+                totalDocs: dataPayload.pagination?.totalDocs || res.totalCount || dataPayload.totalCount || 0
+            });
         } catch (error) {
             showErrorToast('Failed to load password requests', error?.message);
         } finally {
@@ -389,32 +396,56 @@ const PasswordRequests = () => {
                     isSelectableFn={(item) => item.status === 'pending'}
                     emptyText="No pending password requests found."
                     iconFn={(request) => (
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center font-bold text-sm uppercase">
-                            <Key className="w-5 h-5 text-blue-500" />
+                        <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                            {request.user?.name ? request.user.name.substring(0, 2) : 'NA'}
                         </div>
                     )}
-                    titleFn={(request) => request.user?.name}
-                    subtitleFn={(request) => <span className="capitalize">{request.userRole || request.user?.role || 'User'}</span>}
-                    rightTopFn={(request) => `${new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                    titleFn={(request) => request.user?.name || 'Unknown User'}
+                    subtitleFn={(request) => (
+                        <>
+                            <Mail className="w-3 h-3 text-gray-400 shrink-0" />
+                            <span className="truncate max-w-[120px]">{request.user?.email || 'N/A'}</span>
+                        </>
+                    )}
+                    rightTopFn={(request) => (
+                        <>
+                            <ShieldCheck className="w-3 h-3 text-gray-400 shrink-0" />
+                            <span className="capitalize">{request.userRole || request.user?.role || 'User'}</span>
+                        </>
+                    )}
                     statusBadgeFn={(request) => {
                         let dotColor = 'bg-yellow-500', bgColor = 'bg-yellow-50', textColor = 'text-yellow-600';
                         if (request.status === 'approved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
                         else if (request.status === 'rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
                         return (
-                            <MobileCardStatusBadge
-                                status={request.status || 'Pending'}
-                                dotColorClass={dotColor}
-                                bgColorClass={bgColor}
-                                textColorClass={textColor}
-                            />
+                            <div className="flex items-center gap-3">
+                                {request.status === 'pending' && (
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            className="px-2 py-1 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); openConfirmModal('approve', request._id); }}
+                                        >
+                                            <Check className="w-3 h-3 mr-0.5" />
+                                            Approve
+                                        </button>
+                                        <button
+                                            className="px-2 py-1 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); openConfirmModal('reject', request._id); }}
+                                        >
+                                            <X className="w-3 h-3 mr-0.5" />
+                                            Reject
+                                        </button>
+                                    </div>
+                                )}
+                                <MobileCardStatusBadge
+                                    status={request.status || 'Pending'}
+                                    dotColorClass={dotColor}
+                                    bgColorClass={bgColor}
+                                    textColorClass={textColor}
+                                />
+                            </div>
                         );
                     }}
-                    renderBody={(request) => (
-                        <>
-                            <MobileRow label="Email" value={request.user?.email} />
-                            <MobileRow label="Requested Date" value={new Date(request.createdAt).toLocaleDateString()} />
-                        </>
-                    )}
                 />
 
                 {!isLoading && pagination.totalPages > 0 && (

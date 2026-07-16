@@ -4,6 +4,7 @@ const leaveApi = {
   // Student endpoints
   createLeave: (payload) => api.post("/student/passes/", payload),
   getMyLeaves: (params) => api.get("/student/passes/my-passes", { params }),
+  getUnifiedPasses: (params) => api.get("/student/passes/passes", { params }),
   updateLeave: (id, payload) => api.put(`/student/passes/${id}`, payload),
   cancelLeave: (id, payload) => api.patch(`/student/passes/${id}/cancel`, payload),
   getLeaveById: (id) => api.get(`/student/passes/${id}`),

@@ -1,13 +1,14 @@
 import React from 'react';
-import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { Droplet, Lightbulb, Wifi, Wrench, AlertCircle } from 'lucide-react';
+import MobileList, { MobileCardStatusBadge } from '@/components/ui/MobileList';
+import { Droplet, Lightbulb, Wifi, Wrench, AlertCircle, FileText, Clock, Home } from 'lucide-react';
 
 const MaintenanceAssignedTasksMobileList = ({
     tasks,
     loading,
     handleResolveClick,
     handleRejectClick,
-    getStatusStyle
+    getStatusStyle,
+    onViewClick
 }) => {
 
     const getCategoryIcon = (category) => {
@@ -28,73 +29,79 @@ const MaintenanceAssignedTasksMobileList = ({
         return "bg-red-50";
     };
 
-    const renderBody = (task) => (
-        <>
-            <MobileRow label="Room" value={task.roomNo} />
-            <MobileRow label="Category" value={task.category?.name || 'N/A'} />
-            <MobileRow label="Assigned On" value={new Date(task.createdAt).toLocaleDateString()} />
-            <MobileRow 
-                label="Status" 
-                value={
-                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1 text-xs font-medium rounded-md border-none ${getStatusStyle(task.status)}`}>
-                        {task.status || 'Pending'}
-                    </span>
-                } 
-            />
-            {task.status === 'In progress' && (
-                <MobileRow 
-                    label="Action" 
-                    value={
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleResolveClick(task); }}
-                                className="px-3 py-1.5 bg-[#0A437A] text-white rounded text-xs font-medium hover:bg-primary-200 transition-colors cursor-pointer"
-                            >
-                                Resolve
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleRejectClick(task); }}
-                                className="px-3 py-1.5 bg-danger-100 text-danger-700 rounded text-xs font-medium hover:bg-danger-200 transition-colors cursor-pointer"
-                            >
-                                Reject
-                            </button>
-                        </div>
-                    } 
-                />
-            )}
-        </>
-    );
+    const renderItem = (task) => {
+        let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
+        if (task.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+        else if (task.status === 'Pending' || task.status === 'Awaiting') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+        else if (task.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
 
-    return (
-        <MobileList
-            items={tasks}
-            loading={loading}
-            canSelect={false}
-            canEdit={false}
-            emptyText="No tasks found."
-            iconFn={(task) => (
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryBgColor(task.category?.name)}`}>
-                    {getCategoryIcon(task.category?.name)}
+        return (
+            <div 
+                className="bg-white p-4 rounded-xl shadow-sm flex flex-col relative border border-gray-100 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                onClick={() => onViewClick && onViewClick(task)}
+            >
+                <div className="flex items-start gap-4">
+                    <div className="shrink-0 mt-1">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryBgColor(task.category)}`}>
+                            {getCategoryIcon(task.category)}
+                        </div>
+                    </div>
+                    <div className="flex-1 min-w-0 pr-2">
+                        <div className="font-bold text-primary text-base mb-1 truncate">
+                            {task.subject || 'Unknown Task'}
+                        </div>
+                        <div className="flex flex-col gap-1 text-[10px] sm:text-xs text-gray-500 mb-2">
+                            <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                <FileText className="w-3 h-3 text-gray-400 shrink-0" />
+                                <span className="truncate max-w-[200px]">{task.category || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                <Home className="w-3 h-3 text-gray-400 shrink-0" />
+                                <span className="truncate max-w-[150px]">Room: {task.roomNo || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            )}
-            titleFn={(task) => task.subject || 'Task'}
-            subtitleFn={(task) => task.roomNo ? `Room ${task.roomNo}` : (task.category?.name || 'N/A')}
-            rightTopFn={(task) => new Date(task.createdAt).toLocaleDateString()}
-            statusBadgeFn={(task) => {
-                let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
-                if (task.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
-                else if (task.status === 'Pending') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
-                else if (task.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
-                return (
+
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500">
+                        <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                        <span>{task.date}</span>
+                    </div>
                     <MobileCardStatusBadge
                         status={task.status || 'Pending'}
                         dotColorClass={dotColor}
                         bgColorClass={bgColor}
                         textColorClass={textColor}
                     />
-                );
-            }}
-            renderBody={renderBody}
+                </div>
+
+                {task.status === 'In progress' && (
+                    <div className="flex items-center w-full gap-3 mt-4 pt-4 border-t border-gray-50">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleResolveClick(task); }}
+                            className="flex-1 py-2.5 bg-[#0A437A] text-white rounded-lg text-sm font-semibold hover:bg-primary-200 transition-colors cursor-pointer text-center"
+                        >
+                            Resolve
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleRejectClick(task); }}
+                            className="flex-1 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors cursor-pointer text-center"
+                        >
+                            Reject
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <MobileList
+            items={tasks}
+            loading={loading}
+            emptyText="No tasks found."
+            renderItem={renderItem}
         />
     );
 };

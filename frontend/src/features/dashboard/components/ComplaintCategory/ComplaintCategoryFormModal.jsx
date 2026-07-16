@@ -2,7 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import Modal from '@/components/ui/Modal';
-
+import Dropdown from '@/components/ui/Dropdown';
 const ComplaintCategoryFormModal = ({
     isModalOpen,
     isEditMode,
@@ -72,6 +72,23 @@ const ComplaintCategoryFormModal = ({
                                 className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] resize-none min-h-[100px]"
                             />
                         </div>
+                        {isEditMode && (
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
+                                <Dropdown
+                                    options={[
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Inactive', label: 'Inactive' }
+                                    ]}
+                                    value={formData.isActive !== undefined ? (formData.isActive ? 'Active' : 'Inactive') : (formData.status || 'Active')}
+                                    onChange={(val) => {
+                                        handleInputChange({ target: { name: 'status', value: val } });
+                                        handleInputChange({ target: { name: 'isActive', value: val === 'Active' } });
+                                    }}
+                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
+                                />
+                            </div>
+                        )}
                     </div>
                 </section>
             </div>

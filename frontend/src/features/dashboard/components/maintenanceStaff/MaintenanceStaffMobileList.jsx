@@ -28,8 +28,7 @@ const MaintenanceStaffMobileList = ({
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
             onSelect={handleSelectRow}
-            onEdit={(staff) =
-            {...rest}> openEditStaffModal(staff)}
+            onEdit={(staff) => openEditStaffModal(staff)}
             canSelect={true}
             canEdit={true}
             emptyText={t('no_records_found')}

@@ -78,7 +78,7 @@ const LeaveCard = ({ data, onEdit }) => {
             {/* Progress Bar */}
             {progressStep >= 0 && (
                 <div className="mt-2 flex flex-col gap-2">
-                    <div className="flex gap-1 h-1.5 w-full">
+                    <div className="flex gap-1 h-1 w-full">
                         <div className="flex-1 rounded-full bg-success"></div>
                         <div className={`flex-1 rounded-full ${progressStep >= 1 ? 'bg-success' : 'bg-gray-100'}`}></div>
                         <div className={`flex-1 rounded-full ${progressStep >= 2 ? 'bg-success' : 'bg-gray-100'}`}></div>

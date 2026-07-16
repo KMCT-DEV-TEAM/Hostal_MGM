@@ -115,54 +115,8 @@ const MaintenanceStaffFormModal = ({
                                 className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                             />
                         </div>
-                    </div>
-                </section>
-
-                {userRole === 'super_admin' && (
-                    <section>
-                        <h3 className="text-xs font-semibold text-primary mb-1">{t('Organization Assignment')}</h3>
-                        <h5 className='text-xs text-[#777777] mb-4'>{t('Assign this staff member to an organization.')}</h5>
-                        <div className="border-b border-gray-100 mb-4" />
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-[10px] font-medium text-black mb-1">Organization <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <Dropdown
-                                        options={(organizations || []).map(org => ({ value: org._id, label: org.name }))}
-                                        value={staffForm.organizationId || ''}
-                                        onChange={(val) => setStaffForm({ ...staffForm, organizationId: val })}
-                                        placeholder="Select Organization"
-                                        minWidth="w-full"
-                                        triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
-                                    />
-                                </div>
-                            </div>
-                            
-                            {editingStaff && (
-                                <div>
-                                    <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
-                                    <Dropdown
-                                        options={[
-                                            { value: 'Active', label: 'Active' },
-                                            { value: 'Inactive', label: 'Inactive' }
-                                        ]}
-                                        value={staffForm.isActive !== undefined ? (staffForm.isActive ? 'Active' : 'Inactive') : (staffForm.status || 'Active')}
-                                        onChange={(val) => setStaffForm({ ...staffForm, isActive: val === 'Active' })}
-                                        triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                )}
-                
-                {userRole !== 'super_admin' && editingStaff && (
-                    <section>
-                        <h3 className="text-xs font-semibold text-primary mb-1">{t('Settings')}</h3>
-                        <div className="border-b border-gray-100 mb-4" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
+                        {editingStaff && (
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
                                 <Dropdown
                                     options={[
@@ -170,13 +124,13 @@ const MaintenanceStaffFormModal = ({
                                         { value: 'Inactive', label: 'Inactive' }
                                     ]}
                                     value={staffForm.isActive !== undefined ? (staffForm.isActive ? 'Active' : 'Inactive') : (staffForm.status || 'Active')}
-                                    onChange={(val) => setStaffForm({ ...staffForm, isActive: val === 'Active' })}
+                                    onChange={(val) => setStaffForm({ ...staffForm, isActive: val === 'Active', status: val })}
                                     triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
                                 />
                             </div>
-                        </div>
-                    </section>
-                )}
+                        )}
+                    </div>
+                </section>
 
                 {!editingStaff && (
                     <section>

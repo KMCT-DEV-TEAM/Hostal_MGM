@@ -1,6 +1,6 @@
 import React from 'react';
 import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { Network } from 'lucide-react';
+import { Network, Hash } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -55,8 +55,8 @@ const DepartmentMobileList = ({
             )}
             rightTopFn={(o) => (
                 <>
-                    <span className="font-semibold text-gray-500">Code:</span>
-                    <span>{o.code || 'N/A'}</span>
+                    <Hash className="w-3 h-3 text-gray-400" />
+                    <span className="truncate max-w-[80px]">{o.code || 'N/A'}</span>
                 </>
             )}
             statusBadgeFn={(o) => (

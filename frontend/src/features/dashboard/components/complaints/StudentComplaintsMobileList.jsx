@@ -1,6 +1,6 @@
 import React from 'react';
 import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { Droplet, Lightbulb, Wifi, Wrench, AlertCircle } from 'lucide-react';
+import { FileText, Clock } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 
 const StudentComplaintsMobileList = ({
@@ -18,23 +18,7 @@ const StudentComplaintsMobileList = ({
         label: cat.name
     }));
 
-    const getCategoryIcon = (category) => {
-        const cat = category?.toLowerCase() || '';
-        if (cat.includes('water') || cat.includes('plumb')) return <Droplet className="w-5 h-5 text-blue-500" />;
-        if (cat.includes('light') || cat.includes('electric')) return <Lightbulb className="w-5 h-5 text-orange-500" />;
-        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return <Wifi className="w-5 h-5 text-teal-500" />;
-        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return <Wrench className="w-5 h-5 text-gray-500" />;
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-    };
 
-    const getCategoryBgColor = (category) => {
-        const cat = category?.toLowerCase() || '';
-        if (cat.includes('water') || cat.includes('plumb')) return "bg-blue-50";
-        if (cat.includes('light') || cat.includes('electric')) return "bg-orange-50";
-        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return "bg-teal-50";
-        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return "bg-gray-50";
-        return "bg-red-50";
-    };
 
     return (
         <MobileList
@@ -43,13 +27,23 @@ const StudentComplaintsMobileList = ({
             loading={loading}
             emptyText="No complaints found."
             iconFn={(complaint) => (
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryBgColor(complaint.category)}`}>
-                    {getCategoryIcon(complaint.category)}
+                <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                    {complaint.subject ? complaint.subject.substring(0, 2) : 'NA'}
                 </div>
             )}
-            titleFn={(complaint) => `${complaint.subject} - ${complaint.roomNo}`}
-            subtitleFn={(complaint) => complaint.description || complaint.category}
-            rightTopFn={(complaint) => complaint.date}
+            titleFn={(complaint) => complaint.subject || 'Unknown Subject'}
+            subtitleFn={(complaint) => (
+                <>
+                    <FileText className="w-3 h-3 text-gray-400 shrink-0" />
+                    <span className="truncate max-w-[150px]">{complaint.description || complaint.category || 'N/A'}</span>
+                </>
+            )}
+            rightTopFn={(complaint) => (
+                <>
+                    <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                    <span>{complaint.date || 'N/A'}</span>
+                </>
+            )}
             statusBadgeFn={(complaint) => (
                 <MobileCardStatusBadge
                     status={complaint.status}

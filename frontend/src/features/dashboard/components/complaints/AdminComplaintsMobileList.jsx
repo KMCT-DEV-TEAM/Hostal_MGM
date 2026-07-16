@@ -1,6 +1,6 @@
 import React from 'react';
 import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, FileText, AlertCircle } from 'lucide-react';
 
 const AdminComplaintsMobileList = ({
     complaints,
@@ -16,13 +16,23 @@ const AdminComplaintsMobileList = ({
             loading={loading}
             emptyText="No records found."
             iconFn={() => (
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-blue-500" />
+                <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                    <BarChart3 className="w-5 h-5 text-white" />
                 </div>
             )}
             titleFn={(complaint) => `${complaint.organization} - ${complaint.hostel}`}
-            subtitleFn={(complaint) => `Total Complaints: ${complaint.totalComplaints}`}
-            rightTopFn={(complaint) => complaint.pending > 0 ? `${complaint.pending} Pending` : null}
+            subtitleFn={(complaint) => (
+                <>
+                    <FileText className="w-3 h-3 text-gray-400 shrink-0" />
+                    <span className="truncate max-w-[150px]">Total: {complaint.totalComplaints}</span>
+                </>
+            )}
+            rightTopFn={(complaint) => complaint.pending > 0 ? (
+                <>
+                    <AlertCircle className="w-3 h-3 text-gray-400 shrink-0" />
+                    <span>{complaint.pending} Pending</span>
+                </>
+            ) : null}
             statusBadgeFn={(complaint) => {
                 const hasPending = complaint.pending > 0;
                 return (
@@ -35,15 +45,7 @@ const AdminComplaintsMobileList = ({
                 );
             }}
             onViewDetails={(complaint) => onRowClick && onRowClick(complaint)}
-            renderBody={(complaint) => (
-                <>
-                    <MobileRow label="Total" value={<span className="text-[#0A437A] font-bold">{complaint.totalComplaints}</span>} />
-                    {showWarden && <MobileRow label="Warden" value={complaint.warden} />}
-                    <MobileRow label="Pending" value={<span className="text-yellow-600 font-medium">{complaint.pending}</span>} />
-                    <MobileRow label="In Progress" value={<span className="text-blue-600 font-medium">{complaint.inProgress}</span>} />
-                    <MobileRow label="Resolved" value={<span className="text-green-600 font-medium">{complaint.resolved}</span>} />
-                </>
-            )}
+
         />
     );
 };

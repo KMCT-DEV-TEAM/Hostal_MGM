@@ -56,18 +56,28 @@ export default function StudentLeaves() {
                 ...(filters.toDate && { endDate: filters.toDate })
             };
 
+            let res;
+            let passesArray = [];
+
             if (!isMobile) {
+                // Desktop: Old API (/my-passes)
                 payload.passType = isHomePass ? 'home_pass' : 'out_pass';
+                res = await leaveService.getMyLeaves(payload);
+                passesArray = res.data || res.passes || [];
             } else {
-                if (!filters.status) {
-                    if (isRequestsTab) payload.status = 'pending_parent,pending_warden';
-                    if (isHistoryTab) payload.status = 'approved,rejected,completed,cancelled';
+                // Mobile: New Unified API (/passes)
+                payload.mode = isRequestsTab ? 'requests' : 'history';
+                
+                // If the user has explicitly selected a status filter, it overrides mode in the API.
+                // We don't need to manually string together "pending_parent,pending_warden" anymore.
+                // The backend handles mode=requests and mode=history perfectly!
+                if (filters.status) {
+                    payload.status = filters.status.toLowerCase();
                 }
+
+                res = await leaveService.getUnifiedPasses(payload);
+                passesArray = res?.data || [];
             }
-
-            const res = await leaveService.getMyLeaves(payload);
-
-            const passesArray = res.data || res.passes || [];
 
             if (isMobile && page > 1) {
                 setRequests(prev => [...prev, ...passesArray]);
@@ -75,11 +85,12 @@ export default function StudentLeaves() {
                 setRequests(passesArray);
             }
 
-            setTotalItems(res.pagination?.totalRecords || res.pagination?.total || 0);
-            setTotalPages(res.pagination?.totalPages || 1);
+            const pagination = res.pagination || res.data?.pagination || {};
+            setTotalItems(pagination.totalRecords || pagination.total || 0);
+            setTotalPages(pagination.totalPages || 1);
 
             setStatsData({
-                total: res.pagination?.totalRecords || res.pagination?.total || 0,
+                total: pagination.totalRecords || pagination.total || 0,
                 approved: passesArray.filter(r => r.status === 'approved').length,
                 pending: passesArray.filter(r => r.status.includes('pending')).length
             });
@@ -94,11 +105,11 @@ export default function StudentLeaves() {
     useEffect(() => {
         setSearchQuery('');
         setPage(1);
-    }, [isHomePass]);
+    }, [passType, isHomePass]);
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, isHomePass, filters.status, filters.category, filters.fromDate, filters.toDate]);
+    }, [page, passType, isHomePass, filters.status, filters.category, filters.fromDate, filters.toDate]);
 
     const viewProps = {
         pageTitle,

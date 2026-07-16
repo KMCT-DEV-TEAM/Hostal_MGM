@@ -21,7 +21,7 @@ export default function StudentLeavesMobileView({
     ];
 
     return (
-        <div className="w-full h-full p-4 overflow-y-auto bg-background-secondary pb-24">
+        <div className="w-full h-full p-4 overflow-y-auto bg-background-secondary">
             <MobileListContainer
                 tabs={tabs}
                 showSearch={true}
