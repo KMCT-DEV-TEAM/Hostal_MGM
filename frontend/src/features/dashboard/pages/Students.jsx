@@ -39,7 +39,7 @@ export default function Students() {
   const [pendingConfirm, setPendingConfirm] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [filters, setFilters] = useState({
     search: "",
     courseId: "",
@@ -106,9 +106,10 @@ export default function Students() {
     setActiveModal("student");
   };
 
-  const handleSelectAll = () => {
+  const handleSelectAll = (customIds) => {
+    const idsToSelect = Array.isArray(customIds) ? customIds : students.map(getStudentId);
     setSelectedIds(
-      selectedIds.length === students.length ? [] : students.map(getStudentId),
+      selectedIds.length === idsToSelect.length ? [] : idsToSelect,
     );
   };
 
@@ -313,148 +314,97 @@ export default function Students() {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-      <StudentsHeader
-        selectedIds={selectedIds}
-        students={students}
-        canEdit={canEdit}
-        canDelete={canDelete}
-        onEdit={handleEditClick}
-        onActivateSelected={handleActivateSelected}
-        onDeactivateSelected={handleDeactivateSelected}
-      />
-
-      <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-        <StudentsTable
-          canCreate={canCreate}
-          searchValue={filters.search}
-          onSearch={handleSearch}
-          onFilterClick={() => setIsFilterModalOpen(true)}
-          onExport={handleExport}
-          onAddClick={handleAddClick}
-          onActivateSelected={handleActivateSelected}
-          onDeactivateSelected={handleDeactivateSelected}
+    <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+      <div className="p-4 md:p-6 flex-1 flex flex-col">
+        <StudentsHeader
+          selectedIds={selectedIds}
           students={students}
-          loading={loading}
-          error={error}
           canEdit={canEdit}
           canDelete={canDelete}
-          showOrganizationColumn={role === ROLES.SUPER_ADMIN}
-          selectedIds={selectedIds}
-          onSelectAll={handleSelectAll}
-          onSelectRow={handleSelectRow}
-          onViewClick={handleViewClick}
-          onEditClick={handleEditClick}
-          onDeleteClick={handleDeleteRow}
-          onStatusChange={handleStatusChange}
-          statusLoadingIds={statusLoadingIds}
+          onEdit={handleEditClick}
+          onActivateSelected={handleActivateSelected}
+          onDeactivateSelected={handleDeactivateSelected}
         />
 
-
-        <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-          <div>
-            <span className="hidden sm:inline">Showing </span>
-            {pagination.totalRecords === 0 ? 0 : (page - 1) * limit + 1}
-            <span className="hidden sm:inline"> to </span>
-            <span className="sm:hidden">-</span>
-            {Math.min(page * limit, pagination.totalRecords)} of {pagination.totalRecords}
-            <span className="hidden sm:inline"> entries</span>
-          </div>
-
-          <div className="flex items-center gap-1 flex-wrap">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {(() => {
-              let startPage = Math.max(1, page - 1);
-              let endPage = Math.min(pagination.totalPages, page + 1);
-
-              if (endPage - startPage < 2) {
-                if (startPage === 1) {
-                  endPage = Math.min(pagination.totalPages, 3);
-                } else if (endPage === pagination.totalPages) {
-                  startPage = Math.max(1, pagination.totalPages - 2);
-                }
-              }
-
-              const visiblePages = [];
-              for (let i = startPage; i <= endPage; i++) {
-                visiblePages.push(i);
-              }
-
-              return visiblePages.map((pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => setPage(pageNum)}
-                  className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
-                    ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                    : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                    } cursor-pointer`}
-                >
-                  {pageNum}
-                </button>
-              ));
-            })()}
-            <button
-              disabled={!pagination.hasNextPage}
-              onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
-              className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
+          <StudentsTable
+            canCreate={canCreate}
+            searchValue={filters.search}
+            onSearch={handleSearch}
+            onFilterClick={() => setIsFilterModalOpen(true)}
+            onExport={handleExport}
+            onAddClick={handleAddClick}
+            onActivateSelected={handleActivateSelected}
+            onDeactivateSelected={handleDeactivateSelected}
+            students={students}
+            loading={loading}
+            error={error}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            showOrganizationColumn={role === ROLES.SUPER_ADMIN}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelectRow={handleSelectRow}
+            onViewClick={handleViewClick}
+            onEditClick={handleEditClick}
+            onDeleteClick={handleDeleteRow}
+            onStatusChange={handleStatusChange}
+            statusLoadingIds={statusLoadingIds}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={pagination.totalRecords}
+            totalPages={pagination.totalPages}
+          />
         </div>
-      </div>
 
-      {activeModal === "student" && (
-        <StudentFormModal
-          editingStudent={editingStudent}
-          onClose={() => {
-            setActiveModal(null);
-            setEditingStudent(null);
+        {activeModal === "student" && (
+          <StudentFormModal
+            editingStudent={editingStudent}
+            onClose={() => {
+              setActiveModal(null);
+              setEditingStudent(null);
+            }}
+            onSave={handleSaveStudent}
+          />
+        )}
+
+        {isFilterModalOpen && (
+          <StudentFilterModal
+            initialFilters={filters}
+            onClose={() => setIsFilterModalOpen(false)}
+            onApply={handleApplyFilter}
+          />
+        )}
+
+        <StudentExportFilterModal
+          isOpen={isExportConfirmOpen}
+          onClose={() => setIsExportConfirmOpen(false)}
+          onExport={confirmExport}
+          isExporting={isExporting}
+          role={role}
+        />
+
+        <ConfirmationModal
+          isOpen={!!pendingConfirm}
+          onClose={() => setPendingConfirm(null)}
+          onConfirm={async () => {
+            setIsConfirming(true);
+            try {
+              await pendingConfirm?.confirmAction?.();
+            } finally {
+              setIsConfirming(false);
+              setPendingConfirm(null);
+            }
           }}
-          onSave={handleSaveStudent}
+          isSubmitting={isConfirming}
+          title={pendingConfirm?.title}
+          message={pendingConfirm?.message}
+          confirmText={pendingConfirm?.confirmText}
+          cancelText="Cancel"
         />
-      )}
-
-      {isFilterModalOpen && (
-        <StudentFilterModal
-          initialFilters={filters}
-          onClose={() => setIsFilterModalOpen(false)}
-          onApply={handleApplyFilter}
-        />
-      )}
-
-      <StudentExportFilterModal
-        isOpen={isExportConfirmOpen}
-        onClose={() => setIsExportConfirmOpen(false)}
-        onExport={confirmExport}
-        isExporting={isExporting}
-        role={role}
-      />
-
-      <ConfirmationModal
-        isOpen={!!pendingConfirm}
-        onClose={() => setPendingConfirm(null)}
-        onConfirm={async () => {
-          setIsConfirming(true);
-          try {
-            await pendingConfirm?.confirmAction?.();
-          } finally {
-            setIsConfirming(false);
-            setPendingConfirm(null);
-          }
-        }}
-        isSubmitting={isConfirming}
-        title={pendingConfirm?.title}
-        message={pendingConfirm?.message}
-        confirmText={pendingConfirm?.confirmText}
-        cancelText="Cancel"
-      />
+      </div>
     </div>
   );
 }

@@ -1,34 +1,13 @@
 import React from 'react';
 
-export default function ParentsHeader({ selectedIds, onActivateSelected, onDeactivateSelected, canEdit, canDelete }) {
+export default function ParentsHeader() {
     return (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4 flex-shrink-0">
             <div>
-                <h1 className="text-2xl font-bold ">Parents</h1>
-                <p className="text-xs text-text-secondary mt-1">Manage all Parents</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Parents</h1>
+                <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all Parents</p>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-
-                {selectedIds.length > 0 && (
-                    <div className="flex items-center gap-2">
-                        {canEdit && (
-                            <button
-                                onClick={onActivateSelected}
-                                className="px-4 py-2 bg-white border border-success text-success rounded-lg hover:bg-[#E9F6F0] transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
-                            >
-                                Active ({selectedIds.length})
-                            </button>
-                        )}
-                        {canDelete && (
-                            <button
-                                onClick={onDeactivateSelected}
-                                className="px-4 py-2 bg-white border border-danger text-danger rounded-lg hover:bg-[#FCECEB] transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
-                            >
-                                Inactive ({selectedIds.length})
-                            </button>
-                        )}
-                    </div>
-                )}
             </div>
         </div>
     );

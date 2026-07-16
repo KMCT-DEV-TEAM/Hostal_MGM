@@ -10,7 +10,9 @@ export default function Dropdown({
     minWidth = "min-w-[120px]",
     triggerClassName = "",
     placement = "bottom",
-    error
+    error,
+    hideChevron = false,
+    mobileIcon = null
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [dynamicPlacement, setDynamicPlacement] = useState(placement);
@@ -47,7 +49,7 @@ export default function Dropdown({
                 const rect = dropdownRef.current.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const dropdownHeight = 200; // estimated max height based on max-h-48 (192px)
-                
+
                 let spaceBelowParent = spaceBelow;
                 let scrollParent = dropdownRef.current.parentElement;
                 while (scrollParent) {
@@ -78,8 +80,9 @@ export default function Dropdown({
                 onClick={handleToggle}
                 className={`flex items-center justify-between w-full border rounded-lg outline-none transition-colors ${triggerClassName || 'px-3 py-2 text-sm bg-white border-gray-200 focus:border-secondary'}`}
             >
-                <span className="truncate mr-2 font-inherit text-inherit">{displayValue}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                {mobileIcon && <span className="lg:hidden flex items-center justify-center w-full">{mobileIcon}</span>}
+                <span className={`truncate font-inherit text-inherit ${mobileIcon ? 'hidden lg:inline' : ''}`}>{displayValue}</span>
+                {!hideChevron && <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${mobileIcon ? 'hidden lg:block' : ''} ${isOpen ? 'rotate-180' : ''}`} />}
             </button>
 
             {isOpen && (
@@ -90,12 +93,14 @@ export default function Dropdown({
                         options.map((opt, idx) => {
                             const val = typeof opt === 'object' ? opt.value : opt;
                             const label = typeof opt === 'object' ? opt.label : opt;
+                            const isDisabled = typeof opt === 'object' ? opt.disabled : false;
                             return (
                                 <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => handleSelect(opt)}
-                                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50 whitespace-normal break-words cursor-pointer ${value === val ? 'bg-blue-50/50 text-[#0A437A] font-medium' : 'text-gray-700'}`}
+                                    onClick={() => !isDisabled && handleSelect(opt)}
+                                    disabled={isDisabled}
+                                    className={`w-full text-left px-3 py-2 text-sm transition-colors whitespace-normal break-words ${isDisabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:bg-gray-50'} ${value === val ? 'bg-blue-50/50 text-[#0A437A] font-medium' : 'text-gray-700'}`}
                                 >
                                     {label}
                                 </button>
