@@ -90,12 +90,14 @@ export default function Dropdown({
                         options.map((opt, idx) => {
                             const val = typeof opt === 'object' ? opt.value : opt;
                             const label = typeof opt === 'object' ? opt.label : opt;
+                            const isDisabled = typeof opt === 'object' ? opt.disabled : false;
                             return (
                                 <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => handleSelect(opt)}
-                                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50 whitespace-normal break-words cursor-pointer ${value === val ? 'bg-blue-50/50 text-[#0A437A] font-medium' : 'text-gray-700'}`}
+                                    onClick={() => !isDisabled && handleSelect(opt)}
+                                    disabled={isDisabled}
+                                    className={`w-full text-left px-3 py-2 text-sm transition-colors whitespace-normal break-words ${isDisabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:bg-gray-50'} ${value === val ? 'bg-blue-50/50 text-[#0A437A] font-medium' : 'text-gray-700'}`}
                                 >
                                     {label}
                                 </button>
