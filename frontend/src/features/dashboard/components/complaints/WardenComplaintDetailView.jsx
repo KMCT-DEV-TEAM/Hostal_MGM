@@ -6,11 +6,14 @@ import {
   Tag,
   Clock,
   Home,
-  Loader2
+  Loader2,
+  Pencil
 } from "lucide-react";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import ComplaintService from "@/services/complaint.service";
 import { useAuthStore } from "@/store/useAuthStore";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import Dropdown from "@/components/ui/Dropdown";
 
 import InfoRow from "@/components/ui/InfoRow";
 
@@ -24,6 +27,23 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   const [isProcessing, setIsProcessing] = useState(false);
   const [showAllNotes, setShowAllNotes] = useState(false);
   const [showAllUpdates, setShowAllUpdates] = useState(false);
+
+  const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState(complaint.priority || 'Medium');
+  const [showPriorityConfirm, setShowPriorityConfirm] = useState(false);
+
+  const handlePriorityChange = async (newPriority) => {
+    try {
+      setIsProcessing(true);
+      await ComplaintService.updateComplaint(complaint._id || complaint.id, { priority: newPriority });
+      showSuccessToast('Success', `Priority updated to ${newPriority}`);
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      showErrorToast('Error', 'Failed to update priority');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleAddInternalNote = async () => {
     if (!internalNote.trim()) {
@@ -173,10 +193,27 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
               <InfoRow label="Category">{complaint.category}</InfoRow>
               <InfoRow label="Date">{complaint.date}</InfoRow>
               <InfoRow label="Priority">
-                <span className="inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium text-danger ">
-                  <span className="w-1.5 h-1.5 rounded-full bg-danger"></span>
-                  {complaint.priority || 'High'}
-                </span>
+                <div className="flex items-center justify-between w-full">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium ${complaint.priority === 'High' ? 'text-danger' : complaint.priority === 'Medium' ? 'text-warning' : 'text-gray-600'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${complaint.priority === 'High' ? 'bg-danger' : complaint.priority === 'Medium' ? 'bg-warning' : 'bg-gray-600'}`}></span>
+                    {complaint.priority || 'Medium'}
+                  </span>
+                  
+                  {user?.role !== 'maintenance_staff' && (
+                  <div className="w-8">
+                    <button
+                        onClick={() => {
+                            setSelectedPriority(complaint.priority || 'Medium');
+                            setIsPriorityModalOpen(true);
+                        }}
+                        className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-center border-none shadow-none bg-transparent"
+                        disabled={isProcessing}
+                    >
+                        <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  )}
+                </div>
               </InfoRow>
               <InfoRow label="Status">
                 <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-black">
@@ -467,15 +504,74 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                       {new Date(update.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(update.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).toLowerCase()}
                     </span>
                   </div>
-                  <span className="text-[12px] text-gray-400">by {update.by}</span>
+          <span className="text-[12px] text-gray-400">by {update.by}</span>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
-
       </div>
+
+      {/* Priority Update Modal */}
+      {isPriorityModalOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsPriorityModalOpen(false)}
+          title="Update Priority"
+          subtitle="Change the priority level of this complaint"
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">Select Priority</label>
+            <div className="relative">
+              <Dropdown
+                options={[
+                  { value: 'High', label: 'High' },
+                  { value: 'Medium', label: 'Medium' },
+                  { value: 'Low', label: 'Low' }
+                ]}
+                value={selectedPriority}
+                onChange={(val) => setSelectedPriority(val)}
+                triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
+                menuClassName="w-full"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setIsPriorityModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setIsPriorityModalOpen(false);
+                  setShowPriorityConfirm(true);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#0A437A] hover:bg-[#0A437A]/90 rounded-lg transition-colors shadow-sm cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showPriorityConfirm}
+        onClose={() => setShowPriorityConfirm(false)}
+        onConfirm={() => {
+            setShowPriorityConfirm(false);
+            handlePriorityChange(selectedPriority);
+        }}
+        title="Confirm Priority Change"
+        message={`Are you sure you want to change the priority to ${selectedPriority}?`}
+        confirmText="Confirm"
+        type="warning"
+      />
+
     </Modal>
   );
 };

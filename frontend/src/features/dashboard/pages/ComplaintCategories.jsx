@@ -117,13 +117,18 @@ const ComplaintCategories = () => {
             setEditingId(category._id);
             setFormData({
                 name: category.name || '',
-                description: category.description || ''
+                description: category.description || '',
+                status: category.isActive ? 'Active' : 'Inactive',
+                isActive: category.isActive,
+                originalIsActive: category.isActive
             });
         } else {
             setEditingId(null);
             setFormData({
                 name: '',
-                description: ''
+                description: '',
+                status: 'Active',
+                isActive: true
             });
         }
         setIsModalOpen(true);
@@ -144,6 +149,9 @@ const ComplaintCategories = () => {
             setIsSubmitting(true);
             if (isEditMode && editingId) {
                 await ComplaintCategoryService.updateComplaintCategory(editingId, formData);
+                if (formData.isActive !== formData.originalIsActive) {
+                    await ComplaintCategoryService.toggleStatus(editingId);
+                }
                 showSuccessToast('Category Updated', 'Category details saved successfully');
             } else {
                 await ComplaintCategoryService.createComplaintCategory(formData);

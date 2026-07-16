@@ -1,6 +1,6 @@
 import React from 'react';
 import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Hash } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -39,8 +39,8 @@ const CourseMobileList = ({
             titleFn={(o) => o.name}
             subtitleFn={(o) => (
                 <>
-                    <span className="font-semibold text-gray-500">Code:</span>
-                    <span>{o.code || 'N/A'}</span>
+                    <Hash className="w-3 h-3 text-gray-400" />
+                    <span className="truncate max-w-[80px]">{o.code || 'N/A'}</span>
                 </>
             )}
             rightTopFn={(o) => o.batchesCount ? (
