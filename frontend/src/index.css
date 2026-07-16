@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -21,6 +22,7 @@
 
     /* Typography */
     --font-sans: "Noto Sans", sans-serif;
+    --font-mobile: "Plus Jakarta Sans", sans-serif;
 
     /* Animations */
     --animate-slide-up: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
