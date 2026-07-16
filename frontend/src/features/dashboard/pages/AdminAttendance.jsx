@@ -13,8 +13,9 @@ const AdminAttendance = () => {
 
     if (windowId) {
         return (
-            <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-                <div className="mb-6">
+            <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+                <div className="p-4 md:p-6 flex-1 flex flex-col">
+                    <div className="mb-6">
 
                     <PageHeader
                         title="Attendance Records"
@@ -22,21 +23,24 @@ const AdminAttendance = () => {
                         actionButton={<BackButton text="Back to Windows" onClick={() => navigate('/dashboard/attendance')} />}
                     />
                 </div>
-                <div className="flex-1 md:min-h-0 flex flex-col">
-                    <AttendanceRecordsTable windowId={windowId} />
+                    <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
+                        <AttendanceRecordsTable windowId={windowId} />
+                    </div>
                 </div>
             </div>
         );
     }
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-            <AttendanceHeader />
-            <div className="mt-8 flex-1 md:min-h-0 flex flex-col">
-                <AttendanceWindowsTable
-                    showHostel={true}
-                    showWarden={true}
-                    onRowClick={(window) => navigate(`/dashboard/attendance/${window._id || window.id}`)}
-                />
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <AttendanceHeader />
+                <div className="mt-8 bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
+                    <AttendanceWindowsTable
+                        showHostel={true}
+                        showWarden={true}
+                        onRowClick={(window) => navigate(`/dashboard/attendance/${window._id || window.id}`)}
+                    />
+                </div>
             </div>
         </div>
     );

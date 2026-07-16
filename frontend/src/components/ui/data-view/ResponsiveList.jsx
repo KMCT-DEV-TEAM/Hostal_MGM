@@ -95,6 +95,7 @@ export default function ResponsiveList({
                     };
                 }).filter(f => f.value) : [];
                 const status = cardConfig.status ? cardConfig.status(item) : null;
+                const stats = cardConfig.stats ? cardConfig.stats(item) : [];
 
                 const card = (
                     <InfoCard
@@ -102,6 +103,7 @@ export default function ResponsiveList({
                         avatar={avatar}
                         title={title}
                         fields={fields}
+                        stats={stats}
                         status={status}
                         onEdit={cardConfig.onEdit ? () => cardConfig.onEdit(item) : undefined}
                         onClick={onRowClick ? () => onRowClick(item) : undefined}

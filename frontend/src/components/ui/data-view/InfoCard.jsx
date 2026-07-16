@@ -9,13 +9,15 @@ export default function InfoCard({
     avatar,        // String (initials) or React Node
     title,         // String
     fields = [],   // Array of { icon: Component, value: String }
+    stats = [],    // Array of { label: String, value: React Node }
     status,        // Object { text: String, color: String (e.g. 'green', 'red') }
     onEdit,        // Function
     onClick,       // Function
     selected = false,
     canSelect = false,
     selectionMode = false,
-    onSelect
+    onSelect,
+    isLoading = false
 }) {
     const timerRef = useRef(null);
 
@@ -30,6 +32,24 @@ export default function InfoCard({
     const handleTouchEndOrMove = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
     };
+
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex gap-4 animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0" />
+                <div className="flex-1 min-w-0 flex flex-col justify-between mt-1">
+                    <div className="h-4 bg-gray-200 rounded w-1/3 mb-3" />
+                    <div className="flex flex-col gap-2">
+                        <div className="h-3 bg-gray-200 rounded w-2/3" />
+                        <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                    <div className="flex justify-end mt-3">
+                        <div className="h-6 bg-gray-200 rounded w-16" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -90,6 +110,17 @@ export default function InfoCard({
                                     </div>
                                 );
                             })}
+                        </div>
+                    )}
+
+                    {stats && stats.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-50">
+                            {stats.map((stat, idx) => (
+                                <div key={idx} className="flex flex-col text-center">
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">{stat.label}</span>
+                                    <span className="text-sm font-semibold text-gray-700">{stat.value}</span>
+                                </div>
+                            ))}
                         </div>
                     )}
 

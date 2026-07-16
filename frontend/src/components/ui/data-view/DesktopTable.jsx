@@ -12,9 +12,10 @@ export default function DesktopTable({
     onSelectAll,
     onSelectRow,
     canSelect = false,
-    pageScrollMode = false
+    pageScrollMode = false,
+    loading = false
 }) {
-    if (!data || data.length === 0) return null;
+    if ((!data || data.length === 0) && !loading) return null;
 
     const isAllSelected = data.length > 0 && selectedIds.length === data.length;
 
@@ -58,8 +59,38 @@ export default function DesktopTable({
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700 relative">
-                    {data.map((item, index) => {
-                        const rowId = item._id || item.id || index;
+                    {loading && (!data || data.length === 0) ? (
+                        Array.from({ length: 5 }).map((_, rowIndex) => (
+                            <tr key={`skeleton-${rowIndex}`} className="animate-pulse bg-gray-50/30">
+                                {canSelect && (
+                                    <td className="p-4 text-center align-middle">
+                                        <div className="w-4 h-4 bg-gray-200 rounded mx-auto" />
+                                    </td>
+                                )}
+                                {columns.map((col, i) => {
+                                    if (col.hiddenOnDesktop) return null;
+                                    const alignClass = col.align === 'center' ? 'mx-auto' : col.align === 'right' ? 'ml-auto' : '';
+                                    return (
+                                        <td key={`skeleton-col-${i}`} className="p-4 align-middle">
+                                            {col.type === 'user' ? (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
+                                                    <div className="flex flex-col gap-1.5 flex-1">
+                                                        <div className="h-4 bg-gray-200 rounded w-24" />
+                                                        <div className="h-2.5 bg-gray-200 rounded w-16" />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className={`h-4 bg-gray-200 rounded w-20 ${alignClass}`} />
+                                            )}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))
+                    ) : (
+                        data.map((item, index) => {
+                            const rowId = item._id || item.id || index;
                         const isSelected = selectedIds.includes(rowId);
 
                         return (
@@ -124,8 +155,7 @@ export default function DesktopTable({
                                                 {text || '-'}
                                             </div>
                                         );
-                                    } els
-                                    e if (col.type === 'user') {
+                                    } else if (col.type === 'user') {
                                         const title = col.titleAccessor ? col.titleAccessor(item) : (typeof value === 'string' ? value : '');
                                         const subtitle = col.subtitleAccessor ? col.subtitleAccessor(item) : null;
                                         const avatarStr = col.avatarAccessor ? col.avatarAccessor(item) : title;
@@ -168,7 +198,8 @@ export default function DesktopTable({
                                 })}
                             </tr>
                         );
-                    })}
+                        })
+                    )}
                 </tbody>
             </table>
         </div>
