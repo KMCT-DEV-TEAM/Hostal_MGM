@@ -14,7 +14,8 @@ export default function ResponsiveList({
     page = 1,
     totalPages = 1,
     onLoadMore,
-    loading = false
+    loading = false,
+    pageScrollMode = false
 }) {
     const [accumulatedData, setAccumulatedData] = useState([]);
 
@@ -53,9 +54,9 @@ export default function ResponsiveList({
     if (!accumulatedData || accumulatedData.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-3 mt-4 md:hidden bg-gray-50/50">
+        <div className={`flex flex-col gap-3 mt-4 md:hidden bg-gray-50/50 ${pageScrollMode ? '' : 'flex-1 overflow-y-auto'}`}>
             {canSelect && accumulatedData.length > 0 && selectedIds.length > 0 && (
-                <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm mb-1">
+                <div className={`z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm mb-1 ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
                     <button
                         type="button"
                         onClick={() => onSelectAll?.(accumulatedData.map(item => item._id || item.id))}

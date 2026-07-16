@@ -248,6 +248,7 @@ export default function StudentsTable({
 
   return (
     <DataView
+      pageScrollMode={true}
       data={students}
       columns={columns}
       cardConfig={cardConfig}

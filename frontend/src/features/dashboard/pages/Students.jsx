@@ -314,95 +314,97 @@ export default function Students() {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-      <StudentsHeader
-        selectedIds={selectedIds}
-        students={students}
-        canEdit={canEdit}
-        canDelete={canDelete}
-        onEdit={handleEditClick}
-        onActivateSelected={handleActivateSelected}
-        onDeactivateSelected={handleDeactivateSelected}
-      />
-
-      <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-        <StudentsTable
-          canCreate={canCreate}
-          searchValue={filters.search}
-          onSearch={handleSearch}
-          onFilterClick={() => setIsFilterModalOpen(true)}
-          onExport={handleExport}
-          onAddClick={handleAddClick}
-          onActivateSelected={handleActivateSelected}
-          onDeactivateSelected={handleDeactivateSelected}
+    <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+      <div className="p-4 md:p-6 flex-1 flex flex-col">
+        <StudentsHeader
+          selectedIds={selectedIds}
           students={students}
-          loading={loading}
-          error={error}
           canEdit={canEdit}
           canDelete={canDelete}
-          showOrganizationColumn={role === ROLES.SUPER_ADMIN}
-          selectedIds={selectedIds}
-          onSelectAll={handleSelectAll}
-          onSelectRow={handleSelectRow}
-          onViewClick={handleViewClick}
-          onEditClick={handleEditClick}
-          onDeleteClick={handleDeleteRow}
-          onStatusChange={handleStatusChange}
-          statusLoadingIds={statusLoadingIds}
-          page={page}
-          setPage={setPage}
-          limit={limit}
-          setLimit={setLimit}
-          totalItems={pagination.totalRecords}
-          totalPages={pagination.totalPages}
+          onEdit={handleEditClick}
+          onActivateSelected={handleActivateSelected}
+          onDeactivateSelected={handleDeactivateSelected}
+        />
+
+        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
+          <StudentsTable
+            canCreate={canCreate}
+            searchValue={filters.search}
+            onSearch={handleSearch}
+            onFilterClick={() => setIsFilterModalOpen(true)}
+            onExport={handleExport}
+            onAddClick={handleAddClick}
+            onActivateSelected={handleActivateSelected}
+            onDeactivateSelected={handleDeactivateSelected}
+            students={students}
+            loading={loading}
+            error={error}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            showOrganizationColumn={role === ROLES.SUPER_ADMIN}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelectRow={handleSelectRow}
+            onViewClick={handleViewClick}
+            onEditClick={handleEditClick}
+            onDeleteClick={handleDeleteRow}
+            onStatusChange={handleStatusChange}
+            statusLoadingIds={statusLoadingIds}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={pagination.totalRecords}
+            totalPages={pagination.totalPages}
+          />
+        </div>
+
+        {activeModal === "student" && (
+          <StudentFormModal
+            editingStudent={editingStudent}
+            onClose={() => {
+              setActiveModal(null);
+              setEditingStudent(null);
+            }}
+            onSave={handleSaveStudent}
+          />
+        )}
+
+        {isFilterModalOpen && (
+          <StudentFilterModal
+            initialFilters={filters}
+            onClose={() => setIsFilterModalOpen(false)}
+            onApply={handleApplyFilter}
+          />
+        )}
+
+        <StudentExportFilterModal
+          isOpen={isExportConfirmOpen}
+          onClose={() => setIsExportConfirmOpen(false)}
+          onExport={confirmExport}
+          isExporting={isExporting}
+          role={role}
+        />
+
+        <ConfirmationModal
+          isOpen={!!pendingConfirm}
+          onClose={() => setPendingConfirm(null)}
+          onConfirm={async () => {
+            setIsConfirming(true);
+            try {
+              await pendingConfirm?.confirmAction?.();
+            } finally {
+              setIsConfirming(false);
+              setPendingConfirm(null);
+            }
+          }}
+          isSubmitting={isConfirming}
+          title={pendingConfirm?.title}
+          message={pendingConfirm?.message}
+          confirmText={pendingConfirm?.confirmText}
+          cancelText="Cancel"
         />
       </div>
-
-      {activeModal === "student" && (
-        <StudentFormModal
-          editingStudent={editingStudent}
-          onClose={() => {
-            setActiveModal(null);
-            setEditingStudent(null);
-          }}
-          onSave={handleSaveStudent}
-        />
-      )}
-
-      {isFilterModalOpen && (
-        <StudentFilterModal
-          initialFilters={filters}
-          onClose={() => setIsFilterModalOpen(false)}
-          onApply={handleApplyFilter}
-        />
-      )}
-
-      <StudentExportFilterModal
-        isOpen={isExportConfirmOpen}
-        onClose={() => setIsExportConfirmOpen(false)}
-        onExport={confirmExport}
-        isExporting={isExporting}
-        role={role}
-      />
-
-      <ConfirmationModal
-        isOpen={!!pendingConfirm}
-        onClose={() => setPendingConfirm(null)}
-        onConfirm={async () => {
-          setIsConfirming(true);
-          try {
-            await pendingConfirm?.confirmAction?.();
-          } finally {
-            setIsConfirming(false);
-            setPendingConfirm(null);
-          }
-        }}
-        isSubmitting={isConfirming}
-        title={pendingConfirm?.title}
-        message={pendingConfirm?.message}
-        confirmText={pendingConfirm?.confirmText}
-        cancelText="Cancel"
-      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export function DataToolbar({
     if (!hasToolbarContent) return null;
 
     return (
-        <div className="px-4 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 bg-white">
+        <div className="px-4 py-3 flex flex-col md:flex-row items-start md:items-center rounded-xl md:rounded-t-xl justify-between gap-4   bg-white ">
             <div className="flex w-full md:w-auto items-center gap-3">
                 {onSearchChange && (
                     <div className="relative flex-1 md:w-80 shrink-0">
@@ -44,12 +44,13 @@ export function DesktopPagination({
     limit,
     setLimit,
     totalItems,
-    totalPages
+    totalPages,
+    pageScrollMode = false
 }) {
     if (!page || !setPage) return null;
 
     return (
-        <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
+        <div className={`hidden md:flex flex-row p-0 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto ${pageScrollMode ? 'sticky bottom-0 z-30' : ''}`}>
             <div className="flex items-center gap-3">
                 {setLimit && (
                     <div className="flex items-center gap-2">
@@ -172,7 +173,8 @@ export default function DataView({
 
     // UI states
     emptyText = 'No records found',
-    className = ''
+    className = '',
+    pageScrollMode = false
 }) {
     const handleLoadMore = useCallback(() => {
         if (loading) return;
@@ -188,9 +190,9 @@ export default function DataView({
     const isLoadingMore = loading && page > 1;
 
     return (
-        <div className={`flex flex-col h-full bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-200 md:shadow-sm overflow-hidden ${className}`}>
+        <div className={`flex flex-col   ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
 
-            <div className="relative z-10">
+            <div className={pageScrollMode ? "relative z-30 sticky top-0 rounded-xl   shadow-sm" : "relative z-10 "}>
                 <DataToolbar
                     searchQuery={searchQuery}
                     onSearchChange={onSearchChange}
@@ -200,17 +202,17 @@ export default function DataView({
                 />
             </div>
 
-            <div className="flex-1 relative overflow-auto bg-gray-50/50 md:bg-white min-h-0 w-full">
+            <div className={`flex-1 relative flex flex-col w-full ${pageScrollMode ? 'bg-gray-50/50 md:bg-white' : 'overflow-hidden bg-gray-50/50 md:bg-white min-h-0'}`}>
                 {error ? (
-                    <div className="flex h-full items-center justify-center">
+                    <div className="flex-1 flex items-center justify-center">
                         <ErrorState message={error} />
                     </div>
                 ) : loading && !data?.length ? (
-                    <div className="flex h-full items-center justify-center">
+                    <div className="flex-1 flex items-center justify-center">
                         <LoadingState message="Loading data..." />
                     </div>
                 ) : data?.length === 0 ? (
-                    <div className="flex h-full items-center justify-center">
+                    <div className="flex-1 flex items-center justify-center">
                         <EmptyState message={emptyText} />
                     </div>
                 ) : (
@@ -222,6 +224,7 @@ export default function DataView({
                         )}
 
                         <DesktopTable
+                            pageScrollMode={pageScrollMode}
                             data={data}
                             columns={columns}
                             onRowClick={onRowClick}
@@ -233,6 +236,7 @@ export default function DataView({
 
                         {cardConfig && (
                             <ResponsiveList
+                                pageScrollMode={pageScrollMode}
                                 data={data}
                                 cardConfig={cardConfig}
                                 onRowClick={onRowClick}
@@ -251,6 +255,7 @@ export default function DataView({
             </div>
 
             <DesktopPagination
+                pageScrollMode={pageScrollMode}
                 page={page}
                 setPage={setPage}
                 limit={limit}

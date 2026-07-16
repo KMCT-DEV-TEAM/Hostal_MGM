@@ -11,16 +11,17 @@ export default function DesktopTable({
     selectedIds = [],
     onSelectAll,
     onSelectRow,
-    canSelect = false
+    canSelect = false,
+    pageScrollMode = false
 }) {
     if (!data || data.length === 0) return null;
 
     const isAllSelected = data.length > 0 && selectedIds.length === data.length;
 
     return (
-        <div className="flex-1 overflow-auto bg-white relative hidden md:block">
+        <div className={`bg-white relative hidden md:block w-full ${pageScrollMode ? '' : 'flex-1 overflow-auto'}`}>
             <table className="w-full text-start relative table-fixed min-w-full">
-                <thead className="sticky top-0 z-10 bg-gray-50/90 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                <thead className={`z-20 bg-gray-50/90 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
                     <tr className="text-gray-600 text-xs uppercase tracking-wider font-semibold">
                         {canSelect && (
                             <th className="p-4 w-12 text-center align-middle">
