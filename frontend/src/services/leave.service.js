@@ -15,6 +15,11 @@ export async function getMyLeaves(params) {
   return response.data;
 }
 
+export async function getUnifiedPasses(params) {
+  const response = await leaveApi.getUnifiedPasses(params);
+  return response.data;
+}
+
 export async function getLeaveById(id) {
   const response = await leaveApi.getLeaveById(id);
   return response.data;
@@ -194,6 +199,7 @@ export const rejectPass = createRoleResolver(REJECT_FETCHERS, 'reject pass');
 const leaveService = {
   createLeave,
   getMyLeaves,
+  getUnifiedPasses,
   getLeaveById,
   updateLeave,
   cancelLeave,

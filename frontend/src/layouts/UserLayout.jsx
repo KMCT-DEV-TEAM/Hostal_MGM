@@ -26,16 +26,17 @@ const UserLayout = () => {
                 </div>
             )}
 
-            <div className="flex flex-1 overflow-hidden relative">
+            <div className={`flex-1 flex overflow-hidden relative ${!isMobile ? 'h-[calc(100vh-82px)]' : ''}`}>
                 {/* Sidebar */}
                 {!isMobile && (
-                    <div className="shrink-0">
-                        <Sidebar isOpen={isSidebarOpen} />
-                    </div>
+                    <>
+                        <div className="hidden lg:block w-[250px] shrink-0"></div>
+                        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+                    </>
                 )}
-
+                
                 {/* Main Content Area */}
-                <main className="flex-1 relative w-full max-w-full min-w-0 flex flex-col overflow-hidden">
+                <main className="flex-1 overflow-y-auto w-full relative">
                     <Outlet />
                 </main>
             </div>
