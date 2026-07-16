@@ -21,7 +21,7 @@ const getStatusConfig = (status) => {
         variant = 'warning';
     }
     // Primary mappings
-    else if (['allocated', 'checked in'].includes(normalized)) {
+    else if (['allocated', 'checked in', 'open'].includes(normalized)) {
         variant = 'primary';
     }
     // Neutral mappings

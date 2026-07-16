@@ -111,14 +111,13 @@ export default function InfoCard({
                             <div className={`
                                 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
                                 ${status.color === 'green' ? 'bg-green-50 text-green-700' : ''}
-                                ${status.color === 'orange' ? 'bg-orange-50 text-orange-700' : ''}
                                 ${status.color === 'red' ? 'bg-red-50 text-red-700' : ''}
                                 ${status.color === 'gray' ? 'bg-gray-100 text-gray-700' : ''}
-                                
-                                ${!['green', 'red', 'gray'].includes(status.color) ? 'bg-gray-50 text-gray-700' : ''}
+
+                                ${!['green', 'red', 'gray',].includes(status.color) ? `bg-${status.color}-50 text-${status.color}-700` : ''}
                             `}>
                                 <div className={`w-1.5 h-1.5 rounded-full ${status.color === 'green' ? 'bg-green-500' :
-                                    status.color === 'red' ? 'bg-red-500' : 'bg-gray-400'
+                                    status.color === 'red' ? 'bg-red-500' : ` bg-${status.color}-500`
                                     }`} />
                                 {status.text}
                             </div>

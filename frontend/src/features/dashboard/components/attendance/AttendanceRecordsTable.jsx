@@ -100,7 +100,7 @@ export default function AttendanceRecordsTable({ windowId }) {
         title: (item) => item.student?.name || 'Unknown',
         status: (item) => ({
             text: item.status || 'pending',
-            color: item.status === 'present' ? 'green' : item.status === 'absent' ? 'red' : item.status === 'on_leave' ? 'orenge' : 'default'
+            color: item.status === 'present' ? 'green' : item.status === 'absent' ? 'red' : item.status === 'on_leave' ? 'orange' : 'default'
         }),
         fields: [
             { icon: Users, accessor: (item) => item.student?.name || 'Unknown' },

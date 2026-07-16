@@ -50,7 +50,7 @@ export function DesktopPagination({
     if (!page || !setPage) return null;
 
     return (
-        <div className={`hidden md:flex flex-row p-0 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto ${pageScrollMode ? 'sticky bottom-0 z-30' : ''}`}>
+        <div className={`hidden md:flex flex-row p-0 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto ${pageScrollMode ? '-0 z-30' : ''}`}>
             <div className="flex items-center gap-3">
                 {setLimit && (
                     <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export default function DataView({
     return (
         <div className={`flex flex-col   ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
 
-            <div className={pageScrollMode ? "relative z-30 sticky top-0 rounded-xl   shadow-sm" : "relative z-10 "}>
+            <div className={pageScrollMode ? "relative z-20 sticky top-2 rounded-xl   shadow-sm" : "relative z-10 "}>
                 <DataToolbar
                     searchQuery={searchQuery}
                     onSearchChange={onSearchChange}
