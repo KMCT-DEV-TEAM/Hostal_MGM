@@ -1,9 +1,12 @@
 import React from 'react';
 import { Pencil } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { formatDateReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 
 const LeaveCard = ({ data, onEdit }) => {
+    const navigate = useNavigate();
+
     // Determine if it's Home Pass or Out Pass
     const isHomePass = data.passType === 'home_pass' || data.fromDate;
 
@@ -32,7 +35,10 @@ const LeaveCard = ({ data, onEdit }) => {
     if (data.status === 'rejected' || data.status === 'cancelled') progressStep = -1; // Hide or show red
 
     return (
-        <div className="bg-white rounded-2xl p-5 border border-gray-50 shadow-sm flex flex-col gap-4">
+        <div 
+            onClick={() => navigate(`/dashboard/leaves/details/${data._id}`)}
+            className="bg-white rounded-2xl p-5 border border-gray-50 shadow-sm flex flex-col gap-4 active:scale-[0.98] transition-transform cursor-pointer"
+        >
             {/* Header */}
             <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
