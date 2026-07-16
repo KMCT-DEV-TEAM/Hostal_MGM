@@ -2,10 +2,14 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Search, Filter, Loader2, Plus } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
+import MobileStatsCard from './MobileStatsCard';
 
 export default function MobileListContainer({
     // Tabs (Route-based)
     tabs = [], // [{ label: 'My Requests', path: '/leaves/my-requests' }, ...]
+
+    // Stats (Optional)
+    stats, // Array of stat objects
 
     // Search & Filter
     showSearch = false,
@@ -82,6 +86,11 @@ export default function MobileListContainer({
                         );
                     })}
                 </div>
+            )}
+
+            {/* Optional Stats Card */}
+            {stats && stats.length > 0 && (
+                <MobileStatsCard stats={stats} />
             )}
 
             {/* Conditional Search and Filter */}

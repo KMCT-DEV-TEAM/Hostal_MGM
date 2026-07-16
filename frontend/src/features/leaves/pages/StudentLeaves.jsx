@@ -67,7 +67,7 @@ export default function StudentLeaves() {
             } else {
                 // Mobile: New Unified API (/passes)
                 payload.mode = isRequestsTab ? 'requests' : 'history';
-                
+
                 // If the user has explicitly selected a status filter, it overrides mode in the API.
                 // We don't need to manually string together "pending_parent,pending_warden" anymore.
                 // The backend handles mode=requests and mode=history perfectly!
@@ -90,9 +90,11 @@ export default function StudentLeaves() {
             setTotalPages(pagination.totalPages || 1);
 
             setStatsData({
-                total: pagination.totalRecords || pagination.total || 0,
-                approved: passesArray.filter(r => r.status === 'approved').length,
-                pending: passesArray.filter(r => r.status.includes('pending')).length
+                total: res.summary?.total ?? 0,
+                approved: res.summary?.approved ?? 0,
+                pending: res.summary?.pending ?? 0,
+                completed: res.summary?.completed ?? 0,
+                rejected: res.summary?.rejected ?? 0,
             });
         } catch (err) {
             console.error(err);
