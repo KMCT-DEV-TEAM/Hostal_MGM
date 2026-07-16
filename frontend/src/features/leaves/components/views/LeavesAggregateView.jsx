@@ -1,6 +1,5 @@
 import React from 'react';
-import DataTable from '@/components/ui/DataTable';
-import InfoCard from '@/components/ui/InfoCard';
+import DataView from '@/components/ui/data-view/DataView';
 
 export default function LeavesAggregateView({
     hostelData,
@@ -12,57 +11,65 @@ export default function LeavesAggregateView({
     setPage,
     pagination
 }) {
-    const tableHeaders = ["Hostel", "Total Request", "Pending", "Approved", "Rejected"];
+    const columns = [
+        {
+            key: "hostel",
+            header: "Hostel",
+            type: "user",
+            titleAccessor: (item) => item.hostel || item.name,
+            avatarAccessor: (item) => item.hostel || item.name,
+        },
+        {
+            key: "total",
+            header: "Total Request",
+            accessor: (item) => item.leaves || ((item.pending || 0) + (item.approved || 0) + (item.rejected || 0)) || 0,
+        },
+        {
+            key: "pending",
+            header: "Pending",
+            accessor: (item) => item.pending || 0,
+        },
+        {
+            key: "approved",
+            header: "Approved",
+            accessor: (item) => item.approved || 0,
+        },
+        {
+            key: "rejected",
+            header: "Rejected",
+            accessor: (item) => item.rejected || 0,
+        }
+    ];
+
+    const cardConfig = {
+        avatar: (item) => (item.hostel || item.name)?.substring(0, 2).toUpperCase() || 'HO',
+        title: (item) => item.hostel || item.name,
+        stats: (item) => [
+            { label: "Total", value: item.leaves || ((item.pending || 0) + (item.approved || 0) + (item.rejected || 0)) || 0 },
+            { label: "Pending", value: item.pending || 0 },
+            { label: "Approved", value: item.approved || 0 },
+            { label: "Rejected", value: item.rejected || 0 }
+        ]
+    };
 
     return (
-        <DataTable
+        <DataView
+            pageScrollMode={true}
+            className="h-full border-none shadow-none"
+            data={hostelData}
+            columns={columns}
+            cardConfig={cardConfig}
+            loading={loading}
             searchQuery={searchQuery}
             onSearchChange={(e) => setSearchQuery(e.target.value)}
             searchPlaceholder="Search hostels..."
-            loading={loading}
-            onRowClick={(r) => onHostelClick(r._id || r.id)}
-            headers={tableHeaders}
-            items={hostelData}
-            canSelect={false}
-            emptyText="No hostels found."
-            renderRow={(r) => (
-                <>
-                    <td className="p-4 text-text-secondary font-medium">
-                        {r.hostel || r.name}
-                    </td>
-                    <td className="p-4 text-text-secondary text-center sm:text-left">
-                        {r.leaves || (r.pending + r.approved + r.rejected) || 0}
-                    </td>
-                    <td className="p-4 text-text-secondary text-center sm:text-left">
-                        {r.pending || 0}
-                    </td>
-                    <td className="p-4 text-text-secondary text-center sm:text-left">
-                        {r.approved || 0}
-                    </td>
-                    <td className="p-4 text-text-secondary text-center sm:text-left">
-                        {r.rejected || 0}
-                    </td>
-                </>
-            )}
-            renderMobileItem={(r) => (
-                <div className="mb-2">
-                    <InfoCard
-                        title={r.hostel || r.name}
-                        stats={[
-                            // { label: "Total", value: r.leaves || (r.pending + r.approved + r.rejected) || 0 },
-                            { label: "Pending", value: r.pending || 0 },
-                            { label: "Approved", value: r.approved || 0 },
-                            { label: "Rejected", value: r.rejected || 0 }
-                        ]}
-                        onClick={() => onHostelClick(r._id || r.id)}
-                    />
-                </div>
-            )}
+            onRowClick={(item) => onHostelClick(item._id || item.id)}
             page={page}
             setPage={setPage}
             limit={10}
             totalItems={pagination?.totalRecords || hostelData?.length || 0}
             totalPages={pagination?.totalPages || 1}
+            emptyText="No hostels found."
         />
     );
 }

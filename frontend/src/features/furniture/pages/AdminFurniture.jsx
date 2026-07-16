@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Download, Edit2, Box, PackageCheck, PackageOpen } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
-import DataTable from '@/components/ui/DataTable';
-import InfoCard from '@/components/ui/InfoCard';
+import DataView from '@/components/ui/data-view/DataView';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -29,7 +28,7 @@ export default function AdminFurniture() {
     const urlSearchQuery = searchParams.get('search') || '';
     const statusFilter = searchParams.get('isActive') || 'All';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const [searchInput, setSearchInput] = useState(urlSearchQuery);
     const debouncedSearch = useDebounce(searchInput, 500);
@@ -227,17 +226,104 @@ export default function AdminFurniture() {
     const pageTitle = 'Manage Furniture';
     const pageSubtitle = 'Manage all furnitures';
 
-    const tableHeaders = [
-        { key: 'name', label: 'Furniture' },
-        { key: 'organization', label: 'Organization' },
-        { key: 'hostel', label: 'Hostel' },
-        { key: 'total', label: 'Quantity' },
-        { key: 'allocated', label: 'Assigned' },
-        { key: 'available', label: 'Available' },
+    const columns = [
+        {
+            key: 'name',
+            header: 'Furniture',
+            type: 'user',
+            titleAccessor: (item) => item.name,
+            avatarAccessor: (item) => item.name,
+        },
+        { key: 'organization', header: 'Organization', accessor: (item) => item.organization?.name || "--" },
+        { key: 'hostel', header: 'Hostel', accessor: (item) => item.hostel?.name || "--" },
+        { key: 'total', header: 'Quantity', accessor: (item) => item.total || item.assets?.total || 0, align: 'center' },
+        { key: 'allocated', header: 'Assigned', accessor: (item) => item.allocated || item.assets?.allocated || 0, align: 'center' },
+        { key: 'available', header: 'Available', accessor: (item) => item.available || item.assets?.available || 0, align: 'center' },
     ];
+
     if (isAdmin) {
-        tableHeaders.push({ key: 'actions', label: 'Action', align: 'center' });
+        columns.push({
+            key: 'actions',
+            header: 'Action',
+            align: 'center',
+            renderCell: (item) => (
+                <div onClick={(e) => e.stopPropagation()} className="flex justify-center">
+                    <Button
+                        variant="ghost"
+                        fullWidth={false}
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedType(item);
+                            setIsAddModalOpen(true);
+                        }}
+                        title="Edit"
+                    >
+                        <Edit2 className="w-4 h-4" />
+                    </Button>
+                </div>
+            )
+        });
     }
+
+    const cardConfig = {
+        avatar: (item) => item.name?.substring(0, 2).toUpperCase(),
+        title: (item) => item.name,
+        subtitle: (item) => item.organization?.name || "No Organization",
+        fields: [
+            { icon: Box, accessor: (item) => item.hostel?.name || "--" }
+        ],
+        stats: (item) => [
+            { label: "Quantity", value: item.total || item.assets?.total || 0 },
+            { label: "Assigned", value: item.allocated || item.assets?.allocated || 0 },
+            { label: "Available", value: item.available || item.assets?.available || 0 }
+        ],
+        onEdit: isAdmin ? (item) => {
+            setSelectedType(item);
+            setIsAddModalOpen(true);
+        } : undefined
+    };
+
+    const toolbarEndSlot = (
+        <div className="flex items-center gap-2">
+
+            <Dropdown
+                options={[
+                    { label: 'All Status', value: 'All' },
+                    { label: 'Active', value: 'true' },
+                    { label: 'Inactive', value: 'false' }
+                ]}
+                value={statusFilter}
+                onChange={(val) => updateSearchParams({ isActive: val, page: 1 })}
+                placeholder="All Status"
+                minWidth="w-[140px]"
+            />
+            <Button
+                variant='outline'
+                fullWidth={false}
+                size="md"
+                onClick={() => setIsExportConfirmOpen(true)}
+            >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export</span>
+            </Button>
+
+            {isAdmin && (
+                <Button
+                    variant="primary"
+                    fullWidth={false}
+                    size="md"
+                    onClick={() => {
+                        setSelectedType(null);
+                        setIsAddModalOpen(true);
+                    }}
+                >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add New</span>
+                </Button>
+            )}
+        </div>
+    );
 
     const handleRowClick = (item) => {
         setSelectedType(item);
@@ -249,239 +335,132 @@ export default function AdminFurniture() {
     const availableFurnitures = dashboardStats?.available || 0;
 
     return (
-        <div className="w-full h-full  p-4 md:p-6 flex flex-col bg-background-secondary">
-            {/* Header */}
-            <div className="mb-6 shrink-0">
-                <PageHeader title={pageTitle} subtitle={pageSubtitle} />
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                {/* Header */}
+                <div className="mb-6 shrink-0">
+                    <PageHeader title={pageTitle} subtitle={pageSubtitle} />
+                </div>
 
-            {/* Stat Cards */}
-            <div className="md:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <StatsCard
-                    label="TOTAL FURNITURES"
-                    value={totalFurnitures}
-                    icon={<Box className="w-5 h-5" />}
-                    iconBg="bg-secondary/10 text-secondary"
-                    borderColor='border-t-2 border-t-secondary/70'
-                />
-                <StatsCard
-                    label="ASSIGNED FURNITURES"
-                    value={assignedFurnitures}
-                    icon={<PackageCheck className="w-5 h-5" />}
-                    iconBg="bg-success/10 text-success"
-                    borderColor='border-t-2 border-t-success/70'
-                />
-                <StatsCard
-                    label="AVAILABLE FURNITURES"
-                    value={availableFurnitures}
-                    icon={<PackageOpen className="w-5 h-5" />}
-                    iconBg="bg-secondary/10 text-secondary/70"
-                    borderColor='border-t-2 border-t-secondary/70'
-                />
-            </div>
+                {/* Stat Cards */}
+                <div className="md:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+                    <StatsCard
+                        label="TOTAL FURNITURES"
+                        value={totalFurnitures}
+                        icon={<Box className="w-5 h-5" />}
+                        iconBg="bg-secondary/10 text-secondary"
+                        borderColor='border-t-2 border-t-secondary/70'
+                    />
+                    <StatsCard
+                        label="ASSIGNED FURNITURES"
+                        value={assignedFurnitures}
+                        icon={<PackageCheck className="w-5 h-5" />}
+                        iconBg="bg-success/10 text-success"
+                        borderColor='border-t-2 border-t-success/70'
+                    />
+                    <StatsCard
+                        label="AVAILABLE FURNITURES"
+                        value={availableFurnitures}
+                        icon={<PackageOpen className="w-5 h-5" />}
+                        iconBg="bg-secondary/10 text-secondary/70"
+                        borderColor='border-t-2 border-t-secondary/70'
+                    />
+                </div>
 
-            <DataTable
-                toolbarActions={
-                    <>
-                        {isAdmin && selectedIds.length > 0 && (
-                            <Button
-                                variant="outline"
-                                fullWidth={false}
-                                size="md"
-                                onClick={() => setConfirmModal({ isOpen: true, type: 'deleteSelected' })}
-                                className="border-red-200 text-danger bg-red-50 hover:bg-red-100"
-                            >
-                                Delete ({selectedIds.length})
-                            </Button>
-                        )}
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: 'All' },
-                                { label: 'Active', value: 'true' },
-                                { label: 'Inactive', value: 'false' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => updateSearchParams({ isActive: val, page: 1 })}
-                            placeholder="All Status"
-                            minWidth="w-[140px]"
-                        />
-                        <Button
-                            variant='outline'
-                            fullWidth={false}
-                            size="md"
-                            onClick={() => setIsExportConfirmOpen(true)}
-                        >
-                            <Download className="w-4 h-4" />
-                            Export
-                        </Button>
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
+                    <DataView
+                        pageScrollMode={true}
+                        className="h-full border-none shadow-none"
+                        toolbarEndSlot={toolbarEndSlot}
+                        searchQuery={searchInput}
+                        onSearchChange={(e) => setSearchInput(e.target.value)}
+                        searchPlaceholder="Search furniture types..."
+                        columns={columns}
+                        cardConfig={cardConfig}
+                        data={types}
+                        canSelect={isAdmin}
+                        selectedIds={selectedIds}
+                        onSelectAll={handleSelectAll}
+                        onSelectRow={handleSelect}
+                        onRowClick={handleRowClick}
+                        emptyText="No furniture types found."
+                        loading={loading}
+                        page={page}
+                        setLimit={setLimit}
+                        setPage={(p) => updateSearchParams({ page: p })}
+                        limit={limit}
+                        totalItems={pagination.totalRecords}
+                        totalPages={pagination.totalPages}
+                    />
+                </div>
 
-                        {isAdmin && (
-                            <Button
-                                variant="primary"
-                                fullWidth={false}
-                                size="md"
-                                onClick={() => {
-                                    setSelectedType(null);
-                                    setIsAddModalOpen(true);
-                                }}
-                            >
-                                <Plus className="w-4 h-4" />
-                                Add New
-                            </Button>
-                        )}
-                    </>
-                }
-                searchQuery={searchInput}
-                onSearchChange={(e) => setSearchInput(e.target.value)}
-                searchPlaceholder="Search furniture types..."
-                headers={tableHeaders}
-                items={types}
-                canSelect={isAdmin}
-                selectedIds={selectedIds}
-                onSelectAll={handleSelectAll}
-                onSelect={handleSelect}
-                onRowClick={handleRowClick}
-                emptyText="No furniture types found."
-                loading={loading}
-                renderRow={(item) => (
-                    <>
-                        <td className="p-4 flex items-center gap-3 font-bold text-gray-700">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-sm shrink-0">
-                                <Box className="w-4 h-4" />
-                            </div>
-                            <span className="text-sm font-semibold">{item.name}</span>
-                        </td>
-                        <td className="p-4 text-text-secondary font-medium">
-                            {item.organization?.name || "--"}
-                        </td>
-                        <td className="p-4 text-text-secondary font-medium">
-                            {item.hostel?.name || "--"}
-                        </td>
-                        <td className="p-4 text-text-secondary">
-                            {item.total || item.assets?.total || 0}
-                        </td>
-                        <td className="p-4 text-text-secondary">
-                            {item.allocated || item.assets?.allocated || 0}
-                        </td>
-                        <td className="p-4 text-text-secondary">
-                            {item.available || item.assets?.available || 0}
-                        </td>
-                        {isAdmin && (
-                            <td className="p-4 text-center">
-                                <Button
-                                    variant="ghost"
-                                    fullWidth={false}
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedType(item);
-                                        setIsAddModalOpen(true);
-                                    }}
-                                    title="Edit"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </Button>
-                            </td>
-                        )}
-                    </>
+                {isAddModalOpen && isAdmin && (
+                    <AddFurnitureModal
+                        isOpen={isAddModalOpen}
+                        onClose={() => {
+                            setIsAddModalOpen(false);
+                            setSelectedType(null);
+                        }}
+                        onSave={handleSaveType}
+                        initialData={selectedType}
+                    />
                 )}
-                page={page}
-                setPage={(p) => updateSearchParams({ page: p })}
-                limit={limit}
-                totalItems={pagination.totalRecords}
-                totalPages={pagination.totalPages}
-                renderMobileItem={(item) => (
-                    <div className="mb-2">
-                        <InfoCard
-                            avatar={item.name}
-                            title={item.name}
-                            subtitle={item.organization?.name || "No Organization"}
-                            fields={[
-                                { label: "Hostel", value: item.hostel?.name || "--" },
 
-                            ]}
-                            stats={[
-                                { label: "Quantity", value: item.total || item.assets?.total || 0 },
-                                { label: "Assigned", value: item.allocated || item.assets?.allocated || 0 },
-                                { label: "Available", value: item.available || item.assets?.available || 0 }
-                            ]}
-                            editable={isAdmin}
-                            onEdit={isAdmin ? () => {
-                                setSelectedType(item);
-                                setIsAddModalOpen(true);
-                            } : undefined}
-                            onClick={() => handleRowClick(item)}
-                        />
-                    </div>
+                {isDetailsModalOpen && selectedType && (
+                    <AdminFurnitureDetailsModal
+                        isOpen={isDetailsModalOpen}
+                        onClose={() => {
+                            setIsDetailsModalOpen(false);
+                            setSelectedType(null);
+                        }}
+                        item={selectedType}
+                        onViewList={(item) => navigate(`/dashboard/furniture/${item._id}`)}
+                        onUpdateSuccess={handleAdjustStock}
+                    />
                 )}
-            />
 
-            {isAddModalOpen && isAdmin && (
-                <AddFurnitureModal
-                    isOpen={isAddModalOpen}
-                    onClose={() => {
-                        setIsAddModalOpen(false);
-                        setSelectedType(null);
-                    }}
-                    onSave={handleSaveType}
-                    initialData={selectedType}
+                <ExportFilterModal
+                    isOpen={isExportConfirmOpen}
+                    onClose={() => setIsExportConfirmOpen(false)}
+                    onExport={confirmExport}
+                    isExporting={isExporting}
+                    fields={exportFields}
+                    title="Export Furniture Options"
                 />
-            )}
 
-            {isDetailsModalOpen && selectedType && (
-                <AdminFurnitureDetailsModal
-                    isOpen={isDetailsModalOpen}
-                    onClose={() => {
-                        setIsDetailsModalOpen(false);
-                        setSelectedType(null);
-                    }}
-                    item={selectedType}
-                    onViewList={(item) => navigate(`/dashboard/furniture/${item._id}`)}
-                    onUpdateSuccess={handleAdjustStock}
+                {isStatusModalOpen && (
+                    <ChangeAssetStatusModal
+                        isOpen={isStatusModalOpen}
+                        onClose={() => {
+                            setIsStatusModalOpen(false);
+                            setSelectedAsset(null);
+                        }}
+                        onSave={handleStatusChange}
+                        asset={selectedAsset}
+                    />
+                )}
+                {isAllocateModalOpen && (
+                    <AllocateAssetModal
+                        isOpen={isAllocateModalOpen}
+                        onClose={() => {
+                            setIsAllocateModalOpen(false);
+                            setSelectedAsset(null);
+                        }}
+                        onAllocate={handleAllocate}
+                        asset={selectedAsset}
+                    />
+                )}
+                <ConfirmationModal
+                    isOpen={confirmModal.isOpen}
+                    onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null })}
+                    onConfirm={handleDeleteSelected}
+                    isSubmitting={isConfirmSubmitting}
+                    title="Delete Furniture Types"
+                    message={`Are you sure you want to delete ${selectedIds.length} selected furniture types? This action cannot be undone.`}
+                    confirmText="Delete"
+                    confirmButtonVariant="danger"
                 />
-            )}
-
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                fields={exportFields}
-                title="Export Furniture Options"
-            />
-
-            {isStatusModalOpen && (
-                <ChangeAssetStatusModal
-                    isOpen={isStatusModalOpen}
-                    onClose={() => {
-                        setIsStatusModalOpen(false);
-                        setSelectedAsset(null);
-                    }}
-                    onSave={handleStatusChange}
-                    asset={selectedAsset}
-                />
-            )}
-            {isAllocateModalOpen && (
-                <AllocateAssetModal
-                    isOpen={isAllocateModalOpen}
-                    onClose={() => {
-                        setIsAllocateModalOpen(false);
-                        setSelectedAsset(null);
-                    }}
-                    onAllocate={handleAllocate}
-                    asset={selectedAsset}
-                />
-            )}
-            <ConfirmationModal
-                isOpen={confirmModal.isOpen}
-                onClose={() => !isConfirmSubmitting && setConfirmModal({ isOpen: false, type: null })}
-                onConfirm={handleDeleteSelected}
-                isSubmitting={isConfirmSubmitting}
-                title="Delete Furniture Types"
-                message={`Are you sure you want to delete ${selectedIds.length} selected furniture types? This action cannot be undone.`}
-                confirmText="Delete"
-                confirmButtonVariant="danger"
-            />
+            </div>
         </div>
     );
 }

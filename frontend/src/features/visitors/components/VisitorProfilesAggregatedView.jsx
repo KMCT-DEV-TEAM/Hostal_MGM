@@ -1,61 +1,52 @@
 import React from 'react';
-import DataTable from '@/components/ui/DataTable';
-import InfoCard from '@/components/ui/InfoCard';
+import DataView from '@/components/ui/data-view/DataView';
 
-const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick }) => {
+const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick, limit, setLimit }) => {
 
-    const headers = [
-        { key: 'hostel', label: 'Hostel Name' },
-        { key: 'hostelCode', label: 'Hostel Code' },
-        { key: 'totalVisitors', label: 'Total Visitors' },
-        { key: 'approvedVisitors', label: 'Approved' },
-        { key: 'pendingApprovals', label: 'Pending' }
+    const columns = [
+        {
+            key: 'hostel',
+            header: 'Hostel Name',
+            type: 'user',
+            titleAccessor: (item) => item.hostelName || '--',
+            avatarAccessor: (item) => item.hostelName || 'H'
+        },
+        { key: 'hostelCode', header: 'Hostel Code', accessor: (item) => item.hostelCode || '--' },
+        { key: 'totalVisitors', header: 'Total Visitors', accessor: (item) => item.totalVisitors || 0 },
+        { key: 'approvedVisitors', header: 'Approved', renderCell: (item) => <span className="text-success font-medium">{item.approvedVisitors || 0}</span> },
+        { key: 'pendingApprovals', header: 'Pending', renderCell: (item) => <span className="text-secondary font-medium">{item.pendingApprovals || 0}</span> }
     ];
 
-    const renderRow = (visitor) => (
-        <>
-            <td className="p-4 font-bold text-gray-700 text-sm">{visitor.hostelName || '--'}</td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.hostelCode || '--'}</td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.totalVisitors || 0}</td>
-            <td className="p-4 text-success font-medium">{visitor.approvedVisitors || 0}</td>
-            <td className="p-4 text-secondary font-medium">{visitor.pendingApprovals || 0}</td>
-        </>
-    );
-
-    const renderMobileItem = (visitor) => (
-        <div className="mb-2">
-            <InfoCard
-                title={visitor.hostelName || '--'}
-                subtitle={visitor.hostelCode || '--'}
-                onClick={() => onRowClick && onRowClick({ id: visitor.hostelId, name: visitor.hostelName })}
-                stats={[
-                    { label: "Total", value: visitor.totalVisitors || 0 },
-                    { label: "Approved", value: <span className="text-success">{visitor.approvedVisitors || 0}</span> },
-                    { label: "Pending", value: <span className="text-secondary">{visitor.pendingApprovals || 0}</span> }
-                ]}
-            />
-        </div>
-    );
+    const cardConfig = {
+        avatar: (item) => item.hostelName?.substring(0, 2) || 'H',
+        title: (item) => item.hostelName || '--',
+        subtitle: (item) => item.hostelCode || '--',
+        stats: (item) => [
+            { label: "Total", value: item.totalVisitors || 0 },
+            { label: "Approved", value: <span className="text-success">{item.approvedVisitors || 0}</span> },
+            { label: "Pending", value: <span className="text-secondary">{item.pendingApprovals || 0}</span> }
+        ]
+    };
 
     return (
-        <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none">
-            <DataTable
-                searchQuery={searchQuery}
-                headers={headers}
-                items={visitors}
-                loading={loading}
-                emptyText="No visitors found"
-                onSearchChange={(e) => onSearch(e.target.value)}
-                renderRow={renderRow}
-                renderMobileItem={renderMobileItem}
-                onRowClick={(item) => onRowClick && onRowClick({ id: item.hostelId, name: item.hostelName })}
-                page={1}
-                setPage={() => { }}
-                limit={10}
-                totalItems={visitors?.length}
-                totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
-            />
-        </div>
+        <DataView
+            pageScrollMode={true}
+            className="h-full border-none shadow-none bg-transparent"
+            searchQuery={searchQuery}
+            onSearchChange={(e) => onSearch(e.target.value)}
+            columns={columns}
+            cardConfig={cardConfig}
+            data={visitors}
+            loading={loading}
+            emptyText="No visitors found"
+            onRowClick={(item) => onRowClick && onRowClick({ id: item.hostelId, name: item.hostelName })}
+            page={1}
+            setPage={() => { }}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={visitors?.length || 0}
+            totalPages={Math.max(1, Math.ceil((visitors?.length || 0) / limit))}
+        />
     );
 };
 

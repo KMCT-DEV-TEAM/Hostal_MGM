@@ -13,7 +13,7 @@ const getStatusConfig = (status) => {
         variant = 'success';
     }
     // Danger mappings
-    else if (['rejected', 'absent', 'left', 'left (pending return)', 'returned (late)', 'lost'].includes(normalized)) {
+    else if (['rejected', 'absent', 'left', 'Inactive', 'left (pending return)', 'returned (late)', 'lost', 'Inactive'].includes(normalized)) {
         variant = 'danger';
     }
     // Warning mappings

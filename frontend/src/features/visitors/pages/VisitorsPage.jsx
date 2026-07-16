@@ -35,6 +35,7 @@ const VisitorsPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
     const [stats, setStats] = useState(null);
 
@@ -94,7 +95,7 @@ const VisitorsPage = () => {
                 search: debouncedSearch || undefined,
                 status: statusFilter || undefined,
                 page,
-                limit: 10
+                limit
             };
 
             let res;
@@ -115,7 +116,7 @@ const VisitorsPage = () => {
             const visitorsData = res?.data || [];
 
             const totalItems = res?.total || visitorsData.length || 0;
-            const totalPages = res?.totalPages || Math.ceil(visitorsData.length / 10) || 1;
+            const totalPages = res?.totalPages || Math.ceil(visitorsData.length / limit) || 1;
 
             setVisitors(visitorsData);
             setPagination({ totalPages, totalItems });
@@ -138,7 +139,7 @@ const VisitorsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, statusFilter, page, isParent, isStudent, showAggregatedView, selectedHostel]);
+    }, [debouncedSearch, statusFilter, page, limit, isParent, isStudent, showAggregatedView, selectedHostel]);
 
     useEffect(() => {
         fetchVisitors();
@@ -265,7 +266,8 @@ const VisitorsPage = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 md:bg-gray-50/50 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto md:overflow-hidden">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
             {/* Header Section */}
             <div className="mb-6 shrink-0 flex items-center gap-4">
 
@@ -291,6 +293,7 @@ const VisitorsPage = () => {
             )}
 
             {/* Table View */}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
             {showAggregatedView ? (
                 <VisitorProfilesAggregatedView
                     visitors={visitors}
@@ -306,6 +309,8 @@ const VisitorsPage = () => {
                     canExport={canExport}
                     onExportClick={handleExport}
                     userRole={user?.role}
+                    limit={limit}
+                    setLimit={setLimit}
                 />
             ) : (
                 <VisitorListTableView
@@ -329,11 +334,14 @@ const VisitorsPage = () => {
                     onDelete={handleDelete}
                     page={page}
                     setPage={setPage}
+                    limit={limit}
+                    setLimit={setLimit}
                     pagination={pagination}
                     onRowClick={handleRowClick}
                     userRole={user?.role}
                 />
             )}
+            </div>
 
             <RegisterVisitorModal
                 isOpen={showCheckInModal}
@@ -401,6 +409,7 @@ const VisitorsPage = () => {
                 }
                 isSubmitting={isConfirmSubmitting}
             />
+        </div>
         </div>
     );
 };
