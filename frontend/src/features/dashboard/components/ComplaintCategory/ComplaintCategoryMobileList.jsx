@@ -1,6 +1,6 @@
 import React from 'react';
 import MobileList, { MobileRow, MobileCardStatusBadge } from '@/components/ui/MobileList';
-import { Tag } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -28,8 +28,7 @@ const ComplaintCategoryMobileList = ({
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
             onSelect={handleSelectRow}
-            onEdit={(c) =
-            {...rest}> openModal('edit', c)}
+            onEdit={(c) => openModal('edit', c)}
             canSelect={true}
             canEdit={true}
             emptyText={t('no_records_found')}
@@ -41,8 +40,8 @@ const ComplaintCategoryMobileList = ({
             titleFn={(c) => c.name}
             subtitleFn={(c) => (
                 <>
-                    <Tag className="w-3 h-3" />
-                    <span className="truncate max-w-[120px]">{c.description || 'Category'}</span>
+                    <FileText className="w-3 h-3 shrink-0" />
+                    <span className="truncate max-w-[180px]">{c.description || 'No description'}</span>
                 </>
             )}
             statusBadgeFn={(c) => (

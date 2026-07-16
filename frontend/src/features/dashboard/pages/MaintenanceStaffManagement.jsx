@@ -1169,14 +1169,6 @@ export default function MaintenanceStaffManagement() {
                 title="Add Maintenance Staff"
                 message="Are you sure you want to add this new maintenance staff member?"
             />
-
-
-            {view === 'detail' && (
-                <MaintenanceStaffDetailView
-                    selectedStaffDetail={selectedStaffDetail}
-                    setView={setView}
-                />
-            )}
         </div>
     );
 }

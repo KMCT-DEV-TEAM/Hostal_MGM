@@ -35,6 +35,7 @@ export default function MobileList({
     subtitleFn,
     iconFn,
     rightTopFn,
+    leftBottomFn,
     statusBadgeFn,
     isSelectableFn,
     renderBody,
@@ -252,25 +253,32 @@ export default function MobileList({
                                 </div>
 
                                 {/* Bottom Action Bar: Status & Edit */}
-                                {(statusBadgeFn || canEdit) && (
-                                    <div className="flex justify-end items-center gap-3 mt-auto pt-2">
-                                        {statusBadgeFn && (
-                                            <div>
-                                                {statusBadgeFn(item)}
+                                {(leftBottomFn || statusBadgeFn || canEdit) && (
+                                    <div className={`flex ${leftBottomFn ? 'justify-between' : 'justify-end'} items-center gap-3 mt-auto pt-2`}>
+                                        {leftBottomFn && (
+                                            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500">
+                                                {leftBottomFn(item)}
                                             </div>
                                         )}
-                                        {((typeof canEdit === 'function' ? canEdit(item) : canEdit) && onEdit) ? (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                                                className="text-blue-400 hover:text-primary cursor-pointer shrink-0 z-10 p-1"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        ) : (canEdit === true || (typeof canEdit === 'function')) && onEdit ? (
-                                            <div className="shrink-0 z-10 p-1">
-                                                <Pencil className="w-4 h-4 text-gray-300 cursor-not-allowed" />
-                                            </div>
-                                        ) : null}
+                                        <div className="flex justify-end items-center gap-3">
+                                            {statusBadgeFn && (
+                                                <div>
+                                                    {statusBadgeFn(item)}
+                                                </div>
+                                            )}
+                                            {((typeof canEdit === 'function' ? canEdit(item) : canEdit) && onEdit) ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                                                    className="text-blue-400 hover:text-primary cursor-pointer shrink-0 z-10 p-1"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                            ) : (canEdit === true || (typeof canEdit === 'function')) && onEdit ? (
+                                                <div className="shrink-0 z-10 p-1">
+                                                    <Pencil className="w-4 h-4 text-gray-300 cursor-not-allowed" />
+                                                </div>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 )}
                             </div>

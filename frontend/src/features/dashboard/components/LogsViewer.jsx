@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useClickOutside } from '@/hooks/useClickOutside';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal, Eye, MoreVertical } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal, Eye, MoreVertical, Mail, ShieldCheck, Activity } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
 import ListTable from "@/components/ui/ListTable";
 import MobileList, { MobileRow, MobileCardStatusBadge } from "@/components/ui/MobileList";
@@ -291,14 +291,21 @@ const LogsViewer = ({ entityType }) => {
                 loading={isLoading}
                 canSelect={false}
                 emptyText="No logs found matching your criteria."
-                iconFn={(log) => (
-                    <div className="w-10 h-10 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-sm uppercase">
-                        {log.action ? log.action.substring(0, 2) : 'NA'}
-                    </div>
+                iconFn={(log) => {
+                    const email = log.user?.email || 'Unknown';
+                    return (
+                        <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                            {email !== 'Unknown' ? email.substring(0, 2) : 'NA'}
+                        </div>
+                    );
+                }}
+                titleFn={(log) => log.user?.email || 'Unknown Email'}
+                subtitleFn={(log) => (
+                    <>
+                        <Activity className="w-3 h-3 text-gray-400 shrink-0" />
+                        <span className="truncate max-w-[200px]">{log.action || 'Unknown Action'}</span>
+                    </>
                 )}
-                titleFn={(log) => log.action}
-                subtitleFn={(log) => log.user?.name || log.user?.email || 'Unknown'}
-                rightTopFn={(log) => `${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                 statusBadgeFn={(log) => {
                     let dotColor = 'bg-gray-500', bgColor = 'bg-gray-50', textColor = 'text-gray-600';
                     if (log.status === 'success') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
@@ -314,20 +321,6 @@ const LogsViewer = ({ entityType }) => {
                     );
                 }}
                 onViewDetails={(log) => setSelectedLog(log)}
-                renderBody={(log) => (
-                    <>
-                        <MobileRow label="Status" value={
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${getStatusStyles(log.status)}`}>
-                                {log.status}
-                            </span>
-                        } />
-                        <MobileRow label="User" value={log.user?.name || log.user?.email || 'Unknown'} />
-                        <MobileRow label="Time" value={`${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
-                        <MobileRow label="Details" value={
-                            <span className="break-words">{log.details}</span>
-                        } />
-                    </>
-                )}
             />
 
             {!isLoading && pagination.totalPages > 0 && (

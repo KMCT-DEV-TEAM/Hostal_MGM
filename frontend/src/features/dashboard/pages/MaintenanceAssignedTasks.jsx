@@ -9,6 +9,7 @@ import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 import Dropdown from '@/components/ui/Dropdown';
 import { useDebounce } from '@/hooks/useDebounce';
 import MaintenanceAssignedTasksMobileList from '../components/complaints/MaintenanceAssignedTasksMobileList';
+import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
 
 export default function MaintenanceAssignedTasks() {
     const { user } = useAuthStore();
@@ -23,6 +24,7 @@ export default function MaintenanceAssignedTasks() {
     const [resolveModalOpen, setResolveModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
+    const [viewingTask, setViewingTask] = useState(null);
 
     useEffect(() => {
         fetchTasks();
@@ -32,7 +34,29 @@ export default function MaintenanceAssignedTasks() {
         setLoading(true);
         try {
             const res = await ComplaintService.getAssignedComplaints();
-            setTasks(res.data || []);
+            const rawData = res.data || [];
+            const formatted = rawData.map(c => ({
+                id: c._id,
+                _id: c._id,
+                student: c.studentId?.name || 'Unknown',
+                roomNo: c.roomNo || 'N/A',
+                category: c.category?.name || 'Unknown',
+                categoryId: c.category?._id,
+                subject: c.subject,
+                description: c.description,
+                date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                createdAt: c.createdAt,
+                priority: c.priority || 'Medium',
+                status: c.status,
+                hostelId: c.hostelId,
+                hostelName: c.hostelId?.name || 'Unknown Hostel',
+                assignedStaff: c.assignedStaff,
+                timeline: c.timeline || [],
+                internalNotes: c.internalNotes || [],
+                materialsUsed: c.materialsUsed,
+                resolutionNotes: c.resolutionNotes
+            }));
+            setTasks(formatted);
         } catch (error) {
             showErrorToast('Error', 'Failed to load assigned tasks');
         } finally {
@@ -54,7 +78,7 @@ export default function MaintenanceAssignedTasks() {
 
     const filteredTasks = tasks.filter(task => {
         const matchesSearch = task.roomNo?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            task.category?.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            task.category?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
             task.subject?.toLowerCase().includes(debouncedSearch.toLowerCase());
         const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -206,11 +230,11 @@ export default function MaintenanceAssignedTasks() {
                                 <tr><td colSpan="6" className="text-center p-8 text-gray-500">No tasks found.</td></tr>
                             ) : (
                                 paginatedTasks.map((task) => (
-                                    <tr key={task._id} className="hover:bg-gray-50/40 transition-colors">
+                                    <tr key={task._id} onClick={() => setViewingTask(task)} className="hover:bg-gray-50/40 transition-colors cursor-pointer">
                                         <td className="p-4 pl-8 text-start text-gray-500 font-medium">{task.roomNo}</td>
-                                        <td className="p-4 text-start text-gray-500">{task.category?.name || 'N/A'}</td>
+                                        <td className="p-4 text-start text-gray-500">{task.category || 'N/A'}</td>
                                         <td className="p-4 text-start text-gray-500">{task.subject}</td>
-                                        <td className="p-4 text-start text-gray-500">{new Date(task.createdAt).toLocaleDateString()}</td>
+                                        <td className="p-4 text-start text-gray-500">{task.date}</td>
                                         <td className="p-4 text-center">
                                             <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${getStatusStyle(task.status)}`}>
                                                 {task.status || 'Pending'}
@@ -249,6 +273,7 @@ export default function MaintenanceAssignedTasks() {
                     handleResolveClick={handleResolveClick}
                     handleRejectClick={handleRejectClick}
                     getStatusStyle={getStatusStyle}
+                    onViewClick={(task) => setViewingTask(task)}
                 />
 
                 {/* Pagination */}
@@ -326,6 +351,14 @@ export default function MaintenanceAssignedTasks() {
                 complaint={selectedTask}
                 onRejected={fetchTasks}
             />
+
+            {viewingTask && (
+                <WardenComplaintDetailView
+                    complaint={viewingTask}
+                    onClose={() => setViewingTask(null)}
+                    onRefresh={fetchTasks}
+                />
+            )}
         </div>
     );
 }
