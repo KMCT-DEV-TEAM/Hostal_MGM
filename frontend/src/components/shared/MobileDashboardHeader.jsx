@@ -5,7 +5,12 @@ import { Link } from 'react-router-dom';
 
 const MobileDashboardHeader = () => {
     const { user } = useAuthStore();
-    const initials = user?.name?.substring(0, 2).toUpperCase() || 'ST';
+
+    const capitalizeWords = (str = "") =>
+        str.replace(/\b\w/g, char => char.toUpperCase());
+
+    const userName = capitalizeWords(user.name || user.parentName || "");
+    const initials = userName.substring(0, 2).toUpperCase() || "ST";
 
     return (
         <div className="pt-8 pb-4 px-4 bg-background-secondary">
@@ -14,7 +19,7 @@ const MobileDashboardHeader = () => {
                     {user?.profileImage ? (
                         <img
                             src={user.profileImage}
-                            alt={user?.name}
+                            alt={userName}
                             className="w-11 h-11 rounded-full object-cover"
                         />
                     ) : (
@@ -24,7 +29,7 @@ const MobileDashboardHeader = () => {
                     )}
                     <div className="flex flex-col">
                         <span className="text-[15px] font-semibold text-text-primary leading-tight">
-                            {user?.name || 'Student'}
+                            {userName}
                         </span>
                         <div className="flex items-center text-text-secondary gap-1 mt-0.5">
                             <MapPin className="w-3 h-3" />

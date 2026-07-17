@@ -11,7 +11,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { formatDateReadable, formatDay } from '@/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
 import InfoCard from '@/components/ui/InfoCard';
-
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+import AttendanceMobileView from '../views/AttendanceMobileView';
 const ParentAttendance = () => {
     const pageTitle = "Attendance";
     const pageSubtitle = "Track your child's attendance records and view attendance history.";
@@ -75,6 +76,18 @@ const ParentAttendance = () => {
     }, [fetchHistory]);
 
     const tableHeaders = ["Date", "Day", "Time ", "Status"];
+
+    const { isMobile } = useBreakpoint();
+
+    if (isMobile) {
+        return (
+            <AttendanceMobileView 
+                todayStats={todayStats} 
+                student={studentInfo} 
+                userRole={user?.role} 
+            />
+        );
+    }
 
     return (
         <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">

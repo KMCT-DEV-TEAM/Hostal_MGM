@@ -1,12 +1,18 @@
 import React from 'react';
-import { CheckCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import StudentMonthlyCalendar from '../components/StudentMonthlyCalendar';
 import { useAuthStore } from '@/store/useAuthStore';
 
-const StudentAttendanceMobileView = ({
+const AttendanceMobileView = ({
     todayStats,
+    student,
+    userRole
 }) => {
-    const { user } = useAuthStore();
+    const { user: authUser } = useAuthStore();
+    
+    // Fallback to authenticated user if not provided (for student view)
+    const activeStudent = student || authUser;
+    const activeRole = userRole || authUser?.role;
 
     return (
         <div className="w-full h-full p-4 flex flex-col bg-background-secondary gap-4 overflow-y-auto">
@@ -28,9 +34,9 @@ const StudentAttendanceMobileView = ({
             </div>
 
             {/* Self-Fetching Calendar Component (Grid + Stats) */}
-            <StudentMonthlyCalendar student={user} userRole={user?.role} />
+            <StudentMonthlyCalendar student={activeStudent} userRole={activeRole} />
         </div>
     );
 };
 
-export default StudentAttendanceMobileView;
+export default AttendanceMobileView;

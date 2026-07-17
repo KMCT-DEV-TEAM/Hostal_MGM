@@ -1,5 +1,4 @@
 import { ROLES } from '@/constants/roles';
-
 import DashboardOverview from '@/features/dashboard/pages/DashboardOverview';
 import Administrator from '@/features/dashboard/pages/Administrator';
 import WardenManagement from '@/features/dashboard/pages/WardenManagement';
@@ -18,6 +17,7 @@ import Profile from '@/features/dashboard/pages/Profile';
 import Settings from '@/features/dashboard/pages/Settings';
 import PasswordRequests from '@/features/dashboard/pages/PasswordRequests';
 import Leaves from '@/features/leaves/pages/Leaves';
+import LeaveDetails from '@/features/leaves/pages/LeaveDetails';
 import Complaints from '@/features/dashboard/pages/Complaints';
 import ComplaintCategories from '@/features/dashboard/pages/ComplaintCategories';
 import MaintenanceStaffManagement from '@/features/dashboard/pages/MaintenanceStaffManagement';
@@ -228,7 +228,6 @@ export const dashboardRoutes = [
         element: PasswordRequests
     },
     {
-
         path: 'leaves',
         roles: [
             ROLES.SUPER_ADMIN,
@@ -238,6 +237,14 @@ export const dashboardRoutes = [
             ROLES.PARENT
         ],
         element: Leaves
+    },
+    {
+        path: 'leaves/details/:id',
+        roles: [
+            ROLES.STUDENT,
+            ROLES.PARENT
+        ],
+        element: LeaveDetails
     },
     {
         path: 'leaves/:passType',

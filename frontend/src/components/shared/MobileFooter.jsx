@@ -1,12 +1,19 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Calendar, FileEdit, Tag } from 'lucide-react';
 
 const MobileFooter = () => {
+    const location = useLocation();
+
     const navItems = [
         { path: '/dashboard', icon: Home, end: true },
         { path: '/dashboard/attendance', icon: Calendar },
-        { path: '/dashboard/leaves', icon: FileEdit },
+        { 
+            path: '/dashboard/leaves/requests', // Point directly to the default tab
+            icon: FileEdit,
+            // Custom match: remain active for any leaves sub-route (requests or history)
+            isActive: () => location.pathname.startsWith('/dashboard/leaves')
+        },
         { path: '/dashboard/complaints', icon: Tag }
     ];
 
@@ -15,21 +22,28 @@ const MobileFooter = () => {
             <div className="bg-white rounded-[32px] p-2 flex items-center justify-between shadow-sm border border-gray-50">
                 {navItems.map((item) => {
                     const Icon = item.icon;
+                    
+                    // Determine if the item is active
+                    // Use custom isActive function if provided, otherwise fallback to React Router's internal match
+                    const isCustomActive = item.isActive ? item.isActive() : null;
+
                     return (
                         <NavLink
                             key={item.path}
                             to={item.path}
                             end={item.end}
-                            className={({ isActive }) =>
-                                `relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${isActive
+                            className={({ isActive: isRouterActive }) => {
+                                const active = isCustomActive !== null ? isCustomActive : isRouterActive;
+                                return `relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${active
                                     ? 'bg-primary text-white shadow-md'
                                     : 'text-text-secondary hover:text-gray-600 hover:bg-gray-50'
-                                }`
-                            }
+                                }`;
+                            }}
                         >
-                            {({ isActive }) => (
-                                <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2 : 1.5} />
-                            )}
+                            {({ isActive: isRouterActive }) => {
+                                const active = isCustomActive !== null ? isCustomActive : isRouterActive;
+                                return <Icon className="w-[22px] h-[22px]" strokeWidth={active ? 2 : 1.5} />;
+                            }}
                         </NavLink>
                     );
                 })}
