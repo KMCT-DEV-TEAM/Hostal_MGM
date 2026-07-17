@@ -9,8 +9,9 @@ import {
 import ComplaintCategoryService from '../../../services/complaintCategory.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
+import ComplaintCategoryHeader from '../components/complaintCategory/ComplaintCategoryHeader';
 import ComplaintCategoryTable from '../components/ComplaintCategory/ComplaintCategoryTable';
-import ComplaintCategoryMobileList from '../components/ComplaintCategory/ComplaintCategoryMobileList';
+
 import ComplaintCategoryDetailView from '../components/ComplaintCategory/ComplaintCategoryDetailView';
 import ComplaintCategoryFormModal from '../components/ComplaintCategory/ComplaintCategoryFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -48,6 +49,7 @@ const ComplaintCategories = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: ''
+    });
     const [limit, setLimit] = useState(10);
 
     const fetchCategories = async () => {
@@ -276,97 +278,38 @@ const ComplaintCategories = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Complaint Categories</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all complaint categories</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <ComplaintCategoryHeader />
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
-                <ComplaintCategoryTable
-                    complaintCategories={complaintCategories}
-                    loading={loading}
-                    error={error}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    setSelectedCategoryDetail={setSelectedCategoryDetail}
-                    setView={setView}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    openModal={openModal}
-                    page={page}
-                    setPage={setPage}
-                    limit={limit}
-                    setLimit={setLimit}
-                    totalPages={totalPages}
-                    totalItems={totalCategories}
-                    searchValue={searchQuery}
-                    onSearchChange={(e) => setSearchQuery(e.target.value)}
-                    toolbarStartSlot={
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: 'All' },
-                                { label: 'Active', value: 'Active' },
-                                { label: 'Inactive', value: 'Inactive' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => {
-                                setStatusFilter(val);
-                                setPage(1);
-                            }}
-                            placeholder="Select Status"
-                            minWidth="w-32"
-                            triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer h-full"
-                        />
-                    }
-                    toolbarEndSlot={
-                        <>
-                            <button
-                                onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" /> Export
-                            </button>
-                            <div className="relative h-full" ref={bulkMenuRef}>
-                                <button
-                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
-                                >
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {isBulkMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                        </button>
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            <button
-                                onClick={() => openModal('add')}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
-                            >
-                                <Plus className="w-4 h-4" /> Add New
-                            </button>
-                        </>
-                    }
-                />
-            </div>
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                    <ComplaintCategoryTable
+                        complaintCategories={complaintCategories}
+                        loading={loading}
+                        error={error}
+                        searchValue={searchQuery}
+                        onSearch={(val) => { setSearchQuery(val); setPage(1); }}
+                        statusFilter={statusFilter}
+                        onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
+                        onExport={initiateExport}
+                        onAddClick={() => openModal('add')}
+                        onActivateSelected={() => handleBulkStatusClick(true)}
+                        onDeactivateSelected={() => handleBulkStatusClick(false)}
+                        selectedIds={selectedIds}
+                        handleSelectAll={handleSelectAll}
+                        handleSelectRow={handleSelectRow}
+                        setSelectedCategoryDetail={setSelectedCategoryDetail}
+                        setView={setView}
+                        handleStatusChangeClick={handleStatusChangeClick}
+                        openModal={openModal}
+                        page={page}
+                        setPage={setPage}
+                        limit={limit}
+                        setLimit={setLimit}
+                        totalPages={totalPages}
+                        totalItems={totalCategories}
+                    />
+                </div>
 
             <ComplaintCategoryFormModal
                 isModalOpen={isModalOpen}
@@ -512,6 +455,7 @@ const ComplaintCategories = () => {
                     setView={setView}
                 />
             )}
+            </div>
         </div>
     );
 };

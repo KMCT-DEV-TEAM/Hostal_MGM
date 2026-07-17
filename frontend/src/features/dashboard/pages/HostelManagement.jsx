@@ -35,7 +35,7 @@ import * as XLSX from 'xlsx';
 import HostelHeader from '../components/Hostel/HostelHeader';
 import HostelToolbar from '../components/Hostel/HostelToolbar';
 import HostelTable from '../components/Hostel/HostelTable';
-import HostelMobileList from '../components/Hostel/HostelMobileList';
+
 import HostelFormModal from '../components/Hostel/HostelFormModal';
 import HostelDetailView from '../components/Hostel/HostelDetailView';
 import HostelPagination from '../components/Hostel/HostelPagination';
@@ -463,14 +463,9 @@ export default function HostelManagement() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col relative">
-
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-black">Hostel</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all Hostels</p>
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <HostelHeader />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <HostelTable
@@ -649,6 +644,7 @@ export default function HostelManagement() {
 
 
             {view === 'detail' && renderDetailView()}
+            </div>
         </div>
     );
 }

@@ -23,8 +23,9 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
+import CourseHeader from '../components/course/CourseHeader';
 import CourseTable from '../components/course/CourseTable';
-import CourseMobileList from '../components/course/CourseMobileList';
+
 import CourseDetailView from '../components/course/CourseDetailView';
 import CourseFormModal from '../components/course/CourseFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -360,16 +361,9 @@ const CourseManagement = () => {
 
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col relative">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-black">Course</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all Courses</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <CourseHeader />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <CourseTable
@@ -514,7 +508,7 @@ const CourseManagement = () => {
                 title="Add Course"
                 message="Are you sure you want to add this new course?"
             />
-
+            </div>
         </div>
     );
 };

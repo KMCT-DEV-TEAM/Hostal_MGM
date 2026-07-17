@@ -22,8 +22,9 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
+import OrganizationHeader from '../components/organization/OrganizationHeader';
 import OrganizationTable from '../components/organization/OrganizationTable';
-import OrganizationMobileList from '../components/organization/OrganizationMobileList';
+
 import OrganizationDetailView from '../components/organization/OrganizationDetailView';
 import OrganizationFormModal from '../components/organization/OrganizationFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -340,16 +341,9 @@ const OrganizationManagement = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col relative">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('org_management')}</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all organizations</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <OrganizationHeader />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <OrganizationTable
@@ -493,7 +487,7 @@ const OrganizationManagement = () => {
                 title="Add Organization"
                 message="Are you sure you want to add this new organization?"
             />
-
+            </div>
         </div>
     );
 };

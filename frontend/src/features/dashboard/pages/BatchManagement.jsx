@@ -24,8 +24,9 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
+import BatchHeader from '../components/batch/BatchHeader';
 import BatchTable from '../components/batch/BatchTable';
-import BatchMobileList from '../components/batch/BatchMobileList';
+
 import BatchDetailView from '../components/batch/BatchDetailView';
 import BatchFormModal from '../components/batch/BatchFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -359,16 +360,9 @@ const BatchManagement = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col relative">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-black">Batch</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all Batchs</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <BatchHeader />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <BatchTable
@@ -512,7 +506,7 @@ const BatchManagement = () => {
                 title="Add Batch"
                 message="Are you sure you want to add this new batch?"
             />
-
+            </div>
         </div>
     );
 };

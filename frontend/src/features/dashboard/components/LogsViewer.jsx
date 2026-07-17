@@ -9,7 +9,6 @@ import LogsFilterModal from "./LogsFilterModal";
 import LogDetailView from "./LogDetailView";
 import authApi from "@/features/auth/api/authApi";
 import { exportToExcel } from "@/utils/exportUtils";
-import { exportToExcel } from "@/utils/exportUtils";
 import { logApi } from "@/features/dashboard/api/logApi";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { initSocket } from '@/services/socket.service';

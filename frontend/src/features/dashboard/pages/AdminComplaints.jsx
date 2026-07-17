@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SuperAdminComplaintsTable from '../components/complaints/SuperAdminComplaintsTable';
-import AdminComplaintsMobileList from '../components/complaints/AdminComplaintsMobileList';
+
 import ComplaintsToolbar from '../components/complaints/ComplaintsToolbar';
 import WardenComplaints from './WardenComplaints';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -123,8 +123,8 @@ export default function AdminComplaints() {
     const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 md:px-8 text-black flex flex-col">
-
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6 w-full text-left">
                 <div>
@@ -135,7 +135,7 @@ export default function AdminComplaints() {
                 <div className="hidden md:flex items-center self-end sm:self-auto">
                     <button
                         onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                         {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
                     </button>
@@ -205,6 +205,7 @@ export default function AdminComplaints() {
             </div>
 
 
+            </div>
         </div>
     );
 }

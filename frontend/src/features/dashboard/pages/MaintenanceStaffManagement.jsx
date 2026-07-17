@@ -6,8 +6,9 @@ import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import MaintenanceStaffHeader from '../components/maintenanceStaff/MaintenanceStaffHeader';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
-import MaintenanceStaffMobileList from '../components/maintenanceStaff/MaintenanceStaffMobileList';
+
 import MaintenanceStaffFormModal from '../components/maintenanceStaff/MaintenanceStaffFormModal';
 import MaintenanceStaffDetailView from '../components/maintenanceStaff/MaintenanceStaffDetailView';
 import Dropdown from '@/components/ui/Dropdown';
@@ -494,27 +495,9 @@ export default function MaintenanceStaffManagement() {
     const totalPendingTasks = staff.reduce((acc, curr) => acc + (curr.taskPendingCount || 0), 0);
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-
-            {/* HEADER ACTION SECTION */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('Maintenance Staff')}</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">{t('Manage maintenance staff responsible for handling repair tasks.')}</p>
-                </div>
-
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-
-                <div className="hidden md:flex items-center self-end sm:self-auto mt-4 sm:mt-0">
-                    <button
-                        onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-                    >
-                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                    </button>
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <MaintenanceStaffHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
 
             {/* KPI CARDS SECTION */}
             {showKPIs && (
@@ -1029,6 +1012,7 @@ export default function MaintenanceStaffManagement() {
                 title="Add Maintenance Staff"
                 message="Are you sure you want to add this new maintenance staff member?"
             />
+            </div>
         </div>
     );
 }

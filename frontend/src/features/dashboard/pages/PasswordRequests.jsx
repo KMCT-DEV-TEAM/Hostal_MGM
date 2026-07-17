@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
-
+import PasswordRequestsHeader from "../components/PasswordRequestsHeader";
 import PasswordRequestsFilterModal from "../components/PasswordRequestsFilterModal";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
@@ -296,15 +296,9 @@ const PasswordRequests = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4 shrink-0">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Password Requests</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage password reset requests from users</p>
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <PasswordRequestsHeader />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
                 <DataView
@@ -455,6 +449,7 @@ const PasswordRequests = () => {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 };

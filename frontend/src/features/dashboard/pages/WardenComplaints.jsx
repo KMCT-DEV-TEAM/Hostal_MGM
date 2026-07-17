@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import WardenComplaintsTable from '../components/complaints/WardenComplaintsTable';
-import WardenComplaintsMobileList from '../components/complaints/WardenComplaintsMobileList';
+
 import WardenComplaintsToolbar from '../components/complaints/WardenComplaintsToolbar';
 import WardenComplaintsFilterModal from '../components/complaints/WardenComplaintsFilterModal';
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
@@ -234,18 +234,10 @@ export default function WardenComplaints({ hostel, onBack }) {
     const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
                 <div>
-                    {/* {onBack && (
-                        <BackButton text="Back to Organizations" onClick={onBack} />
-                    )}
-                    <h1 className="text-2xl font-bold text-black">
-                        {hostel ? `${hostel} Complaints` : 'Complaints'}
-                    </h1>
-                    <p className="text-sm text-text-secondary mt-1">
-                        {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
-                    </p> */}
                     <PageHeader
                         title="Complaints"
                         subtitle="Manage and resolve student complaints in your hostel."
@@ -256,7 +248,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 <div className="hidden md:flex items-center self-end sm:self-auto">
                     <button
                         onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                         {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
                     </button>
@@ -489,8 +481,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
                 confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
             />
-
-
+            </div>
         </div>
     );
 }

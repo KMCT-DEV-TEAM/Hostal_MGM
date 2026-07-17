@@ -23,8 +23,9 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
+import DepartmentHeader from '../components/Department/DepartmentHeader';
 import DepartmentTable from '../components/Department/DepartmentTable';
-import DepartmentMobileList from '../components/Department/DepartmentMobileList';
+
 import DepartmentDetailView from '../components/Department/DepartmentDetailView';
 import DepartmentFormModal from '../components/Department/DepartmentFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -355,16 +356,9 @@ const DepartmentManagement = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col relative">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-black">Department</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all Departments</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <DepartmentHeader />
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <DepartmentTable
@@ -509,7 +503,7 @@ const DepartmentManagement = () => {
                 title="Add Department"
                 message="Are you sure you want to add this new department?"
             />
-
+            </div>
         </div>
     );
 };

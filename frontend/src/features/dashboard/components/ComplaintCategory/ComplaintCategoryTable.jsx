@@ -1,13 +1,22 @@
-import React from 'react';
-import { Pencil, AlignLeft, Tag } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pencil, AlignLeft, Tag, Plus, Download, MoreVertical } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
 import DataView from '@/components/ui/data-view/DataView';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 const ComplaintCategoryTable = ({
     complaintCategories,
     loading,
     error,
+    searchValue,
+    onSearch,
+    statusFilter,
+    onStatusFilterChange,
+    onExport,
+    onAddClick,
+    onActivateSelected,
+    onDeactivateSelected,
     selectedIds,
     handleSelectAll,
     handleSelectRow,
@@ -15,10 +24,6 @@ const ComplaintCategoryTable = ({
     setView,
     handleStatusChangeClick,
     openModal,
-    searchValue,
-    onSearchChange,
-    toolbarStartSlot,
-    toolbarEndSlot,
     page,
     setPage,
     limit,
@@ -27,6 +32,8 @@ const ComplaintCategoryTable = ({
     totalItems
 }) => {
     const { t } = useTranslation();
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
 
     const columns = [
         {
@@ -88,6 +95,64 @@ const ComplaintCategoryTable = ({
         ]
     };
 
+    const toolbarStartSlot = (
+        <Dropdown
+            options={[
+                { label: 'All Status', value: 'All' },
+                { label: 'Active', value: 'Active' },
+                { label: 'Inactive', value: 'Inactive' }
+            ]}
+            value={statusFilter}
+            onChange={onStatusFilterChange}
+            placeholder="Select Status"
+            minWidth="w-32"
+            triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer h-full"
+        />
+    );
+
+    const toolbarEndSlot = (
+        <>
+            <button
+                onClick={onExport}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+            >
+                <Download className="w-4 h-4" /> Export
+            </button>
+            <div className="relative h-full" ref={bulkMenuRef}>
+                <button
+                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                >
+                    <MoreVertical className="w-4 h-4" />
+                </button>
+                {isBulkMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                        <button
+                            onClick={() => { setIsBulkMenuOpen(false); onActivateSelected(); }}
+                            disabled={selectedIds.length === 0}
+                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                        </button>
+                        <button
+                            onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected(); }}
+                            disabled={selectedIds.length === 0}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                        </button>
+                    </div>
+                )}
+            </div>
+            <button
+                onClick={onAddClick}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+            >
+                <Plus className="w-4 h-4" /> Add New
+            </button>
+        </>
+    );
+
     return (
         <DataView
             pageScrollMode={true}
@@ -98,7 +163,7 @@ const ComplaintCategoryTable = ({
             error={error}
             searchPlaceholder="Search categories..."
             searchQuery={searchValue}
-            onSearchChange={onSearchChange}
+            onSearchChange={(e) => onSearch(e.target.value)}
             toolbarStartSlot={toolbarStartSlot}
             toolbarEndSlot={toolbarEndSlot}
             emptyText={t('no_records_found')}
@@ -130,4 +195,5 @@ const ComplaintCategoryTable = ({
 };
 
 export default ComplaintCategoryTable;
+
 

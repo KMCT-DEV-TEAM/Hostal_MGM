@@ -4,7 +4,7 @@ import StudentComplaintsHeader from '../components/complaints/StudentComplaintsH
 import StudentComplaintsToolbar from '../components/complaints/StudentComplaintsToolbar';
 import StudentComplaintFormModal from '../components/complaints/StudentComplaintFormModal';
 import StudentComplaintDetailModal from '../components/complaints/StudentComplaintDetailModal';
-import StudentComplaintsMobileList from '../components/complaints/StudentComplaintsMobileList';
+
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -264,8 +264,9 @@ export default function StudentComplaints() {
     const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
             
             {/* Stat Cards Section */}
             {showKPIs && (
@@ -516,6 +517,7 @@ export default function StudentComplaints() {
                 loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
                 confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
             />
+            </div>
         </div>
     );
 }

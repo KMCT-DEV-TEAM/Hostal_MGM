@@ -2,9 +2,10 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import WardenTable from '../components/Warden/WardenTable';
-import WardenMobileList from '../components/Warden/WardenMobileList';
+
 import WardenDetailView from '../components/Warden/WardenDetailView';
 import WardenFormModal from '../components/Warden/WardenFormModal';
+import WardenHeader from '../components/Warden/WardenHeader';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
 import { Pencil, X, ArrowLeft, Check, Loader2, SlidersHorizontal, ChevronDown, MoreVertical, Plus, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
@@ -529,15 +530,7 @@ export default function WardenManagement() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                {/* ==========================================
-                 HEADER ACTION SECTION
-                 ========================================== */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Wardens</h1>
-                        <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all registered hostel wardens</p>
-                    </div>
-                </div>
+                <WardenHeader />
 
                 <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                     <WardenTable
@@ -569,7 +562,6 @@ export default function WardenManagement() {
                         totalPages={totalPages}
                     />
                 </div>
-            </div>
 
             <WardenFormModal
                 activeModal={activeModal}
@@ -985,6 +977,7 @@ export default function WardenManagement() {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }
