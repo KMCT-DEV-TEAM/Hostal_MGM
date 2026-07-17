@@ -1,6 +1,17 @@
 import React from 'react';
 import DataView from '@/components/ui/data-view/DataView';
-import { Building2, Home, User, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
+import {
+    Building2,
+    Home,
+    User,
+    AlertTriangle,
+    Clock,
+    Loader2,
+    CheckCircle,
+    Building,
+    Loader,
+    FileText
+} from "lucide-react";
 
 export default function SuperAdminComplaintsTable({
     complaints,
@@ -69,7 +80,7 @@ export default function SuperAdminComplaintsTable({
         title: (o) => o.organization || "N/A",
         subtitle: (o) => o.hostel || "N/A",
         fields: [
-            ...(showWarden ? [{ label: "Warden", value: (o) => o.warden || "N/A" }] : []),
+            ...(showWarden ? [{ icon: FileText, value: (o) => o.warden || "N/A" }] : []),
             { label: "Total", value: (o) => o.totalComplaints || 0 },
             { label: "Pending", value: (o) => o.pending || 0 },
             { label: "In progress", value: (o) => o.inProgress || 0 },
@@ -85,6 +96,12 @@ export default function SuperAdminComplaintsTable({
             cardConfig={cardConfig}
             loading={loading}
             onRowClick={(o) => onRowClick && onRowClick(o)}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             emptyText="No records found"
             hideSearch={false}
             searchPlaceholder="Search complaints..."

@@ -59,7 +59,8 @@ export default function AdminsTable({
 
   useEffect(() => {
     onSearch?.(debouncedSearchTerm);
-  }, [debouncedSearchTerm, onSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm]);
 
   const getAdminId = (a) => a._id ?? a.id;
 
@@ -158,11 +159,23 @@ export default function AdminsTable({
       text: Boolean(a.isActive) ? t("active") : t("inactive"),
       color: Boolean(a.isActive) ? "green" : "red"
     }),
-    fields: columns.filter(c => c.accessor && c.icon),
-    onEdit: onEditClick
+    fields: [
+      { icon: Phone, value: (a) => a.phone || "-" },
+      { icon: Building2, value: (a) => typeof a.organization === 'object' ? a.organization?.name : a.organization || "-" }
+    ]
   };
 
   // 3. Toolbar Configuration
+  const addNewButton = canCreate && (
+    <button
+      onClick={onAddClick}
+      className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+    >
+      <Plus className="w-4 h-4" />
+      <span className="hidden sm:inline">Add New</span>
+    </button>
+  );
+
   const toolbarStartSlot = null;
 
   const toolbarEndSlot = (
@@ -221,20 +234,12 @@ export default function AdminsTable({
           )}
         </div>
       )}
-      {canCreate && (
-        <button
-          onClick={onAddClick}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          Add New
-        </button>
-      )}
     </>
   );
 
   return (
     <DataView
+      addButton={addNewButton}
       pageScrollMode={true}
       data={admins}
       columns={columns}

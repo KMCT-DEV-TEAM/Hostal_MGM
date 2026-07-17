@@ -85,8 +85,9 @@ const DepartmentManagement = () => {
             });
             if (res && res.data) {
                 setDepartments(res.data);
-                setTotalDepartments(res.totalCount || 0);
-                setTotalPages(res.totalPages || 1);
+                const total = res.totalCount || 0;
+                setTotalDepartments(total);
+                setTotalPages(res.totalPages || Math.ceil(total / limit) || 1);
             }
         } catch (err) {
             console.error("Failed to fetch Departments:", err);

@@ -29,6 +29,7 @@ const PasswordRequests = () => {
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, totalDocs: 0 });
 
     const [selectedRequests, setSelectedRequests] = useState([]);
 
@@ -364,18 +365,13 @@ const PasswordRequests = () => {
                         getItemId: (o) => o._id,
                         isSelectable: (o) => o.status === 'pending'
                     }}
-                    pagination={{
-                        currentPage: pagination.page,
-                        totalPages: pagination.totalPages,
-                        onPageChange: (p) => fetchRequests(p),
-                        limit: limit,
-                        onLimitChange: (l) => { setLimit(l); fetchRequests(1); },
-                        totalItems: pagination.totalDocs,
-                    }}
-                    mobilePagination={{
-                        hasMore: pagination.page < pagination.totalPages,
-                        onLoadMore: () => fetchRequests(pagination.page + 1),
-                    }}
+                    page={pagination.page}
+                    setPage={(p) => fetchRequests(p)}
+                    limit={limit}
+                    setLimit={(l) => { setLimit(l); fetchRequests(1); }}
+                    totalItems={pagination.totalDocs}
+                    totalPages={pagination.totalPages}
+                    fetchMore={() => fetchRequests(pagination.page + 1)}
                     getItemId={(o) => o._id}
                 />
             </div>

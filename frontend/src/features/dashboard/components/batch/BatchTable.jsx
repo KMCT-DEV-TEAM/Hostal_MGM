@@ -7,7 +7,8 @@ import {
     Users,
     MoreVertical,
     Plus,
-    Download
+    Download,
+    Building
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import Dropdown from "@/components/ui/Dropdown";
@@ -54,8 +55,9 @@ export default function BatchTable({
     }, [searchValue]);
 
     useEffect(() => {
-        onSearch?.(debouncedSearchTerm);
-    }, [debouncedSearchTerm, onSearch]);
+    onSearch?.(debouncedSearchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm]);
 
     // 1. Column Configuration
     const columns = [
@@ -141,14 +143,23 @@ export default function BatchTable({
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { label: t("department"), value: (o) => o.departmentId?.name || "-" },
-            { label: t("num_students"), value: (o) => o.studentsCount || 0 }
+            { icon: Building2, value: (o) => o.departmentId?.name || "-" },
+            { icon: FileText, value: (o) => o.studentsCount || 0 }
         ],
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
 
     // 3. Toolbar Slots
-    const toolbarStartSlot = null;
+    const addNewButton = onAddClick && (
+                <button
+                    onClick={onAddClick}
+                    className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add New</span></button>
+            );
+
+  const toolbarStartSlot = null;
 
     const toolbarEndSlot = (
         <>
@@ -199,20 +210,13 @@ export default function BatchTable({
                     </div>
                 )}
             </div>
-            {onAddClick && (
-                <button
-                    onClick={onAddClick}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add New
-                </button>
-            )}
+            
         </>
     );
 
     return (
         <DataView
+            addButton={addNewButton}
             pageScrollMode={true}
             data={batches}
             columns={columns}
@@ -228,6 +232,12 @@ export default function BatchTable({
             onSelectAll={handleSelectAll}
             onSelect={handleSelectRow}
             canSelect={true}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             emptyText={t('no_records_found')}
             onRowClick={(o) => {
                 setSelectedBatchDetail?.(o);

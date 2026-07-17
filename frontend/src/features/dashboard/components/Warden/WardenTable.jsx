@@ -6,7 +6,8 @@ import {
     Phone,
     MoreVertical,
     Plus,
-    Download
+    Download,
+    Building
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import Dropdown from "@/components/ui/Dropdown";
@@ -153,13 +154,23 @@ export default function WardenTable({
             color: Boolean(w.isActive) || w.status === 'Active' ? "green" : "red"
         }),
         fields: [
-            { label: t("phone"), value: (w) => w.phone || "-" },
-            { label: t("hostel_name"), value: (w) => w.hostel?.name || w.hostel || "Not Assigned" }
+            { icon: Phone, value: (w) => w.phone || "-" },
+            { icon: Building, value: (w) => w.hostel?.name || w.hostel || "Not Assigned" }
         ],
         onStatusChange: (w, isActive) => handleStatusChangeClick?.(w.id, w.status),
     };
 
     // 3. Toolbar Slots
+    const addNewButton = onAddClick && (
+        <button
+            onClick={onAddClick}
+            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+        >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add New</span>
+        </button>
+    );
+
     const toolbarStartSlot = null;
 
     const toolbarEndSlot = (
@@ -180,9 +191,10 @@ export default function WardenTable({
             {onExport && (
                 <button
                     onClick={onExport}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
                 >
-                    <Download className="w-4 h-4" /> Export
+                    <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+                    <span className="hidden lg:inline">Export</span>
                 </button>
             )}
             <div className="relative" ref={bulkMenuRef}>
@@ -211,20 +223,12 @@ export default function WardenTable({
                     </div>
                 )}
             </div>
-            {onAddClick && (
-                <button
-                    onClick={onAddClick}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add New
-                </button>
-            )}
         </>
     );
 
     return (
         <DataView
+            addButton={addNewButton}
             pageScrollMode={true}
             data={wardens}
             columns={columns}

@@ -63,8 +63,9 @@ const ComplaintCategories = () => {
             });
             if (res && res.data) {
                 setComplaintCategories(res.data);
-                setTotalCategories(res.totalCount || 0);
-                setTotalPages(res.totalPages || 1);
+                const total = res.totalCount || 0;
+                setTotalCategories(total);
+                setTotalPages(res.totalPages || Math.ceil(total / limit) || 1);
             }
         } catch (err) {
             console.error("Failed to fetch complaint categories:", err);

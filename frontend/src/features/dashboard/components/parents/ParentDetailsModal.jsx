@@ -4,6 +4,7 @@ import { Pencil } from 'lucide-react';
 import ChangeEmailModal from '../students/ChangeEmailModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { changeParentEmail } from '@/services/parent.service';
+import InfoRow from '@/components/ui/InfoRow';
 
 export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
     const role = useAuthStore((s) => s.user?.role);
@@ -45,31 +46,27 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                         <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
                         <p className="text-xs text-gray-400 mb-6">Basic contact information of the Parent</p>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Full Name</span> <span className="col-span-2 font-medium text-gray-900">: {parent.parentName}</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-gray-500">Phone No</span> <span className="col-span-2 font-medium text-gray-900">: {parent.phone}</span></div>
-                            <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Email</span>
-
-                                <span className="col-span-2 font-medium text-gray-900 flex items-center justify-between">
-                                    <span>: {parent.email}</span>
-
+                        <div className="space-y-1">
+                            <InfoRow label="Full Name">{parent.parentName}</InfoRow>
+                            <InfoRow label="Phone No">{parent.phone}</InfoRow>
+                            <InfoRow label="Email">
+                                <div className="flex items-center justify-between w-full">
+                                    <span>{parent.email}</span>
                                     <button
                                         type="button"
                                         className="ml-2 p-1 rounded text-text-secondary hover:text-primary transition cursor-pointer"
                                         onClick={() => setIsEmailModalOpen(true)}
                                     >
-                                        <Pencil size={16} className="" />
+                                        <Pencil size={16} />
                                     </button>
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-3 text-sm">
-                                <span className="text-gray-500">Status</span>
-                                <span className="col-span-2 font-medium text-gray-900 flex items-center">:
-                                    <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
+                                </div>
+                            </InfoRow>
+                            <InfoRow label="Status">
+                                <span className="flex items-center">
+                                    <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
                                     {parent.isActive === true ? 'Active' : 'Inactive'}
                                 </span>
-                            </div>
+                            </InfoRow>
                         </div>
                     </div>
 
@@ -77,11 +74,11 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                         <h3 className="text-lg font-semibold text-primary mb-1">Linked Student Information</h3>
                         <p className="text-xs text-gray-400 mb-6">Information of the linked Student</p>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Full Name</span> <span className="col-span-2 font-medium text-gray-900">: {parent.student.name}</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Assigned Hostel</span> <span className="col-span-2 font-medium text-gray-900">: Kmct Engineering Hostel</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Email</span> <span className="col-span-2 font-medium text-gray-900">: {typeof parent.student === 'object' ? parent.student?.email || 'N/A' : 'student@gmail.com'}</span></div>
-                            <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Full Address</span> <span className="col-span-2 font-medium text-gray-900 leading-relaxed">: Abc street, saojini nagar india</span></div>
+                        <div className="space-y-1">
+                            <InfoRow label="Full Name">{parent.student.name}</InfoRow>
+                            <InfoRow label="Assigned Hostel">Kmct Engineering Hostel</InfoRow>
+                            <InfoRow label="Email">{typeof parent.student === 'object' ? parent.student?.email || 'N/A' : 'student@gmail.com'}</InfoRow>
+                            <InfoRow label="Full Address">Abc street, saojini nagar india</InfoRow>
                         </div>
                     </div>
                 </div>
@@ -89,18 +86,17 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
                 {/* Right Summary Sidebar */}
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
                     <h3 className="text-lg font-semibold text-primary mb-4">Parent Summary</h3>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Full Name</span> <span className="col-span-2 font-medium text-gray-900">: {parent.parentName}</span></div>
-                        <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Relation</span> <span className="col-span-2 font-medium text-gray-900">: {parent.relationship}</span></div>
-                        <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Student Name</span> <span className="col-span-2 font-medium text-gray-900">: {typeof parent.student === 'object' ? parent.student?.name : parent.student}</span></div>
-                        <div className="grid grid-cols-3 text-sm"><span className="text-text-secondary">Hostel</span> <span className="col-span-2 font-medium text-gray-900">: Kmct Engineering Hostel</span></div>
-                        <div className="grid grid-cols-3 text-sm">
-                            <span className="text-text-secondary">Status</span>
-                            <span className="col-span-2 font-medium text-gray-900 flex items-center">:
-                                <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mx-2`}></span>
+                    <div className="space-y-1">
+                        <InfoRow label="Full Name">{parent.parentName}</InfoRow>
+                        <InfoRow label="Relation">{parent.relationship}</InfoRow>
+                        <InfoRow label="Student Name">{typeof parent.student === 'object' ? parent.student?.name : parent.student}</InfoRow>
+                        <InfoRow label="Hostel">Kmct Engineering Hostel</InfoRow>
+                        <InfoRow label="Status">
+                            <span className="flex items-center">
+                                <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
                                 {parent.isActive === true ? 'Active' : 'Inactive'}
                             </span>
-                        </div>
+                        </InfoRow>
                     </div>
                 </div>
             </div>

@@ -86,8 +86,9 @@ const BatchManagement = () => {
             });
             if (res && res.data) {
                 setbatches(res.data);
-                setTotalbatches(res.totalCount || 0);
-                setTotalPages(res.totalPages || 1);
+                const total = res.totalCount || 0;
+                setTotalbatches(total);
+                setTotalPages(res.totalPages || Math.ceil(total / limit) || 1);
             }
         } catch (err) {
             console.error("Failed to fetch Batchs:", err);
