@@ -12,6 +12,7 @@ import { initSocket } from '@/services/socket.service';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import ProfileDesktopView from '../views/ProfileDesktopView';
 import ProfileMobileView from '../views/ProfileMobileView';
+import { ROLES } from '@/constants/roles';
 export default function Profile() {
     const { t } = useTranslation();
     const { user, updateUser } = useAuthStore();
@@ -37,8 +38,8 @@ export default function Profile() {
     React.useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await authService.getProfile();
-                updateUser(response.user);
+                const response = await authService.getFullProfile();
+                updateUser({ ...response.user, ...response.roleData });
             } catch (error) {
                 console.error("Failed to fetch profile", error);
             } finally {
@@ -184,7 +185,7 @@ export default function Profile() {
 
     return (
         <>
-            {isMobile ? (
+            {isMobile && (user?.role === ROLES.STUDENT || user?.role === ROLES.PARENT) ? (
                 <ProfileMobileView {...viewProps} />
             ) : (
                 <ProfileDesktopView {...viewProps} />

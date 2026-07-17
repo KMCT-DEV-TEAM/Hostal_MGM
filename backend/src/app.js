@@ -23,6 +23,7 @@ import logRoutes from "./modules/logs/log.routes.js";
 import pushRoutes from "./modules/push/push.routes.js";
 import visitorRoutes from "./modules/visitor/visitor.routes.js";
 import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.js";
+import profileRoutes from "./modules/profile/profile.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -62,6 +63,7 @@ if (process.env.NODE_ENV !== "production") {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.use("/api/super-admin", userRoutes);
 app.use("/api/super-admin/dashboard", dashboardRoutes);

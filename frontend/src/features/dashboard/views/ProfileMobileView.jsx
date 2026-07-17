@@ -1,12 +1,21 @@
 import React from 'react';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
-import { User, Users, GraduationCap, Building2, Settings, Globe, LogOut, Phone, Mail, FileText, Pencil } from 'lucide-react';
+import { User, Users, GraduationCap, Building2, Settings, Globe, LogOut, Phone, Mail, FileText, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatDateReadable } from '@/utils/formatters';
 
 const ProfileMobileView = ({
     user,
+    formatRole,
+    editingField,
+    editValue,
+    setEditValue,
+    isSaving,
+    errors,
+    setErrors,
     handleEditClick,
+    handleCancelEdit,
+    handleOpenConfirm
 }) => {
     const { logout } = useAuthStore();
 
@@ -21,18 +30,18 @@ const ProfileMobileView = ({
         }
     });
 
-    const admissionNumber = user?.studentId || 'No value';
-    const course = user?.courseId?.name || 'No value';
-    const batch = user?.batchId?.name || 'No value';
-    const year = user?.academicYear || 'No value';
-    const organization = user?.organizationId?.name || 'No value';
+    const admissionNumber = user?.admissionNumber || 'No value';
+    const course = user?.course || 'No value';
+    const batch = user?.batch || 'No value';
+    const year = user?.currentYear || 'No value';
+    const organization = user?.organization || 'No value';
     const contactEmail = user?.email || 'No value';
     const contactNumber = user?.phone || 'No value';
-    const hostel = user?.hostelId?.name || 'No value';
-    const block = user?.hostelId?.block || 'No value';
-    const room = user?.roomNumber || 'No value';
-    const checkInDate = user?.joiningDate ? formatDateReadable(user.joiningDate) : 'No value';
-    const warden = 'No value';
+    const hostel = user?.hostel?.name || 'No value';
+    const block = user?.hostel?.code || 'No value'; // mapped code to block
+    const room = user?.room || 'No value';
+    const checkInDate = user?.checkIn ? formatDateReadable(user.checkIn) : 'No value';
+    const warden = user?.warden || 'No value';
 
     return (
         <div className="w-full min-h-full bg-background-secondary p-4 flex flex-col gap-4">
@@ -49,9 +58,7 @@ const ProfileMobileView = ({
                             )}
                         </div>
                         {/* Edit profile picture icon (decorative for now, or you can add a handler later) */}
-                        <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                            <Pencil className="w-2.5 h-2.5" />
-                        </div>
+
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -105,25 +112,130 @@ const ProfileMobileView = ({
 
                         <div className="flex items-start gap-3">
                             <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <div>
-                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
-                                <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                            <div className="flex-1 flex justify-between items-center">
+                                {editingField === 'email' ? (
+                                    <div className="flex flex-col gap-1 w-full mt-1">
+                                        <div className="flex items-center gap-2 w-full">
+                                            <input
+                                                type="email"
+                                                value={editValue}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const cleanVal = val.replace(/\s/g, '');
+                                                    if (val !== cleanVal) {
+                                                        setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                    } else {
+                                                        setErrors(prev => ({ ...prev, email: '' }));
+                                                    }
+                                                    setEditValue(cleanVal);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === ' ') {
+                                                        e.preventDefault();
+                                                        setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                    }
+                                                }}
+                                                className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                autoFocus
+                                                disabled={isSaving}
+                                                placeholder="Enter new email"
+                                            />
+                                            <button
+                                                onClick={() => handleOpenConfirm('email')}
+                                                disabled={isSaving || (editValue && editValue.trim() === '')}
+                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                            >
+                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                            </button>
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                disabled={isSaving}
+                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
+                                            <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                                        </div>
+                                        {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                            <button
+                                                onClick={() => handleEditClick('email', user?.email)}
+                                                className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
 
                         <div className="flex items-start gap-3">
                             <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                             <div className="flex-1 flex justify-between items-center">
-                                <div>
-                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
-                                    <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
-                                </div>
-                                <button
-                                    onClick={() => handleEditClick('phone', user?.phone)}
-                                    className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
-                                >
-                                    <Pencil className="w-4 h-4" />
-                                </button>
+                                {editingField === 'phone' ? (
+                                    <div className="flex flex-col gap-1 w-full mt-1">
+                                        <div className="flex items-center gap-2 w-full">
+                                            <input
+                                                type="text"
+                                                value={editValue}
+                                                maxLength={10}
+                                                pattern="[0-9]{10}"
+                                                title="Please enter exactly 10 digits"
+                                                onChange={(e) => {
+                                                    const originalVal = e.target.value;
+                                                    const val = originalVal.replace(/\D/g, '');
+                                                    if (originalVal !== val) {
+                                                        setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
+                                                    } else {
+                                                        setErrors(prev => ({ ...prev, phone: '' }));
+                                                    }
+                                                    if (val.length <= 10) {
+                                                        setEditValue(val);
+                                                    }
+                                                }}
+                                                className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                autoFocus
+                                                disabled={isSaving}
+                                                placeholder="Enter 10 digit number"
+                                            />
+                                            <button
+                                                onClick={() => handleOpenConfirm('phone')}
+                                                disabled={isSaving || (editValue && editValue.length !== 10)}
+                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                            >
+                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                            </button>
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                disabled={isSaving}
+                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
+                                            <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleEditClick('phone', user?.phone)}
+                                            className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -181,25 +293,130 @@ const ProfileMobileView = ({
 
                             <div className="flex items-start gap-3">
                                 <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
-                                    <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                                <div className="flex-1 flex justify-between items-center">
+                                    {editingField === 'email' ? (
+                                        <div className="flex flex-col gap-1 w-full mt-1">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="email"
+                                                    value={editValue}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        const cleanVal = val.replace(/\s/g, '');
+                                                        if (val !== cleanVal) {
+                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, email: '' }));
+                                                        }
+                                                        setEditValue(cleanVal);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                        }
+                                                    }}
+                                                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                    placeholder="Enter new email"
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('email')}
+                                                    disabled={isSaving || (editValue && editValue.trim() === '')}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
+                                                <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                                            </div>
+                                            {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                                <button
+                                                    onClick={() => handleEditClick('email', user?.email)}
+                                                    className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="flex items-start gap-3">
                                 <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                                 <div className="flex-1 flex justify-between items-center">
-                                    <div>
-                                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
-                                        <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleEditClick('phone', user?.phone)}
-                                        className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
+                                    {editingField === 'phone' ? (
+                                        <div className="flex flex-col gap-1 w-full mt-1">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="text"
+                                                    value={editValue}
+                                                    maxLength={10}
+                                                    pattern="[0-9]{10}"
+                                                    title="Please enter exactly 10 digits"
+                                                    onChange={(e) => {
+                                                        const originalVal = e.target.value;
+                                                        const val = originalVal.replace(/\D/g, '');
+                                                        if (originalVal !== val) {
+                                                            setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, phone: '' }));
+                                                        }
+                                                        if (val.length <= 10) {
+                                                            setEditValue(val);
+                                                        }
+                                                    }}
+                                                    className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                    placeholder="Enter 10 digit number"
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('phone')}
+                                                    disabled={isSaving || (editValue && editValue.length !== 10)}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
+                                                <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleEditClick('phone', user?.phone)}
+                                                className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
