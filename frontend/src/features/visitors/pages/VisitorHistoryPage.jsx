@@ -192,102 +192,66 @@ const VisitorHistoryPage = () => {
                     onEdit={undefined}
                 />
             ) : (
-                <><div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 bg-background-secondary flex flex-col">
-                    <div className="mb-6 shrink-0 flex items-center gap-4">
-                        {/* {selectedHostel && isSuperAdmin && (
-                            <button
-                                onClick={() => {
-                                    const newParams = new URLSearchParams(searchParams);
-                                    newParams.delete('hostelId');
-                                    newParams.delete('hostelName');
-                                    setSearchParams(newParams);
-                                }}
-                                className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0"
-                            >
-                                <ArrowLeft className="w-5 h-5" />
-                            </button>
-                        )} */}
-                        <PageHeader
-                            actionButton={
-                                <BackButton
-                                    text='Back To Dashboard'
-
-                                />
-                            }
-                            title={selectedHostel ? `Visitors History - ${selectedHostel.name}` : "Visitors History"}
-                            subtitle={showAggregatedView ? "Overview of past visitors across all hostels" : "View historical visitors"} />
-                    </div>
-
-                    {/* Shared Stats Component */}
-                    {['super_admin', 'admin', 'warden'].includes(user?.role) && stats && (
-                        <div className="shrink-0">
-                            <VisitorStats stats={stats} />
+                <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary relative">
+                    <div className="p-4 md:p-6 flex flex-col min-h-full">
+                        <div className="mb-6 shrink-0 flex items-center gap-4">
+                            <PageHeader
+                                actionButton={
+                                    <BackButton
+                                        text='Back To Dashboard'
+                                    />
+                                }
+                                title={selectedHostel ? `Visitors History - ${selectedHostel.name}` : "Visitors History"}
+                                subtitle={showAggregatedView ? "Overview of past visitors across all hostels" : "View historical visitors"}
+                            />
                         </div>
-                    )}
 
-                    {/* Table View */}
-                    {showAggregatedView ? (
-                        <VisitorHistoryAggregatedView
-                            visitors={visitors}
-                            loading={loading}
-                            searchQuery={searchQuery}
-                            filters={filters}
-                            onSearch={handleSearch}
-                            onHostelFilter={(hostel) => handleFilter({ hostel })}
-                            onRowClick={(hostelObj) => {
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.set('hostelId', hostelObj.id);
-                                newParams.set('hostelName', hostelObj.name || '');
-                                setSearchParams(newParams);
-                            }}
-                            canExport={canExport}
-                            onExportClick={handleExport}
-                            userRole={user?.role} />
-                    ) : (
-                        <VisitorDetailedView
-                            visitors={visitors}
-                            loading={loading}
-                            searchQuery={searchQuery}
-                            filters={filters}
-                            onSearch={handleSearch}
-                            onFilter={handleFilter}
-                            onRefresh={() => fetchVisitors(false)}
-                            canExport={canExport}
-                            onExportClick={handleExport}
-                            userRole={user?.role}
+                        {/* Shared Stats Component */}
+                        {['super_admin', 'admin', 'warden'].includes(user?.role) && stats && (
+                            <div className="shrink-0 mb-4 md:mb-6">
+                                <VisitorStats stats={stats} />
+                            </div>
+                        )}
 
-                            limit={limit}
-                            setLimit={setLimit} />
-                    )}
-                </div><ExportFilterModal
-                        isOpen={isExportConfirmOpen}
-                        onClose={() => setIsExportConfirmOpen(false)}
-                        onExport={confirmExport}
-                        isExporting={isExporting}
-                        title="Export Visitor History"
-                        subtitle="Select filters to apply before downloading visitor history records"
-                        fields={[
-                            {
-                                name: "status",
-                                label: "Status",
-                                options: [
-                                    { label: 'All Status', value: '' },
-                                    { label: 'Checked In', value: 'Checked In' },
-                                    { label: 'Completed', value: 'Completed' },
-                                ]
-                            },
-                            {
-                                name: "fromDate",
-                                label: "From Date",
-                                type: "date"
-                            },
-                            {
-                                name: "toDate",
-                                label: "To Date",
-                                type: "date"
-                            }
-                        ]} />
-                </>
+                        {/* Table View */}
+                        <div className="bg-transparent flex flex-col relative z-0">
+                            {showAggregatedView ? (
+                                <VisitorHistoryAggregatedView
+                                    visitors={visitors}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    filters={filters}
+                                    onSearch={handleSearch}
+                                    onHostelFilter={(hostel) => handleFilter({ hostel })}
+                                    onRowClick={(hostelObj) => {
+                                        const newParams = new URLSearchParams(searchParams);
+                                        newParams.set('hostelId', hostelObj.id);
+                                        newParams.set('hostelName', hostelObj.name || '');
+                                        setSearchParams(newParams);
+                                    }}
+                                    canExport={canExport}
+                                    onExportClick={handleExport}
+                                    userRole={user?.role}
+                                />
+                            ) : (
+                                <VisitorDetailedView
+                                    visitors={visitors}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    filters={filters}
+                                    onSearch={handleSearch}
+                                    onFilter={handleFilter}
+                                    onRefresh={() => fetchVisitors(false)}
+                                    canExport={canExport}
+                                    onExportClick={handleExport}
+                                    userRole={user?.role}
+                                    limit={limit}
+                                    setLimit={setLimit}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             <ExportFilterModal

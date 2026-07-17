@@ -290,71 +290,81 @@ const VisitorsPage = () => {
                     onEdit={isParent ? handleEdit : undefined}
                 />
             ) : (
-                <div className="flex flex-col h-full bg-gray-50 md:bg-gray-50/50 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto md:overflow-hidden">
-                    {/* Header Section */}
-                    <div className="mb-6 shrink-0 flex items-center gap-4">
-                        <PageHeader
-                            title={selectedHostel ? `Visitors - ${selectedHostel.name}` : "Visitors"}
-                            actionButton={
-                                selectedHostel && isSuperAdmin && (
-                                    <BackButton text="Back to All" />
-                                )
-                            }
-                            subtitle={showAggregatedView ? "Overview of visitors across all hostels" : "Manage visitor requests and profiles"}
-                        />
-                    </div>
-
-                    {/* Shared Stats Component */}
-                    {['super_admin', 'admin', 'warden'].includes(role) && stats && (
-                        <div className="shrink-0">
-                            <VisitorStats stats={stats} />
+                <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary relative">
+                    <div className="p-4 md:p-6 flex flex-col min-h-full">
+                        {/* Header Section */}
+                        <div className="mb-6 shrink-0 flex items-center gap-4">
+                            <PageHeader
+                                title={selectedHostel ? `Visitors - ${selectedHostel.name}` : "Visitors"}
+                                actionButton={
+                                    selectedHostel && isSuperAdmin && (
+                                        <BackButton text="Back to All" />
+                                    )
+                                }
+                                subtitle={showAggregatedView ? "Overview of visitors across all hostels" : "Manage visitor requests and profiles"}
+                            />
                         </div>
-                    )}
 
-                    {/* Table View */}
-                    {showAggregatedView ? (
-                        <VisitorProfilesAggregatedView
-                            visitors={visitors}
-                            loading={loading}
-                            searchQuery={searchQuery}
-                            onSearch={setSearchQuery}
-                            onRowClick={(hostelObj) => {
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.set('hostelId', hostelObj.id);
-                                newParams.set('hostelName', hostelObj.name || '');
-                                setSearchParams(newParams);
-                            }}
-                            canExport={canExport}
-                            onExportClick={handleExport}
-                            userRole={user?.role}
-                        />
-                    ) : (
-                        <VisitorListTableView
-                            visitors={visitors}
-                            loading={loading}
-                            searchQuery={searchQuery}
-                            onSearch={setSearchQuery}
-                            statusFilter={statusFilter}
-                            onStatusFilterChange={(val) => {
-                                setStatusFilter(val);
-                                setPage(1);
-                            }}
-                            onExportClick={handleExport}
-                            canApproveReject={canApproveReject}
-                            canExport={canExport}
-                            canRegister={isParent}
-                            onRegisterClick={() => setShowCheckInModal(true)}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            page={page}
-                            setPage={setPage}
-                            pagination={pagination}
-                            onRowClick={handleRowClick}
-                            userRole={user?.role}
-                        />
-                    )}
+                        {/* Shared Stats Component */}
+                        {['super_admin', 'admin', 'warden'].includes(role) && stats && (
+                            <div className="shrink-0 mb-4 md:mb-6">
+                                <VisitorStats stats={stats} />
+                            </div>
+                        )}
+
+                        {/* Table View */}
+                        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex flex-col relative z-0">
+                            {showAggregatedView ? (
+                                <VisitorProfilesAggregatedView
+                                    visitors={visitors}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    onSearch={setSearchQuery}
+                                    onRowClick={(hostelObj) => {
+                                        const newParams = new URLSearchParams(searchParams);
+                                        newParams.set('hostelId', hostelObj.id);
+                                        newParams.set('hostelName', hostelObj.name || '');
+                                        setSearchParams(newParams);
+                                    }}
+                                    limit={limit}
+                                    page={page}
+                                    canExport={canExport}
+                                    setLimit={setLimit}
+                                    setPage={setPage}
+                                    onExportClick={handleExport}
+                                    userRole={user?.role}
+                                />
+                            ) : (
+                                <VisitorListTableView
+                                    visitors={visitors}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    onSearch={setSearchQuery}
+                                    statusFilter={statusFilter}
+                                    onStatusFilterChange={(val) => {
+                                        setStatusFilter(val);
+                                        setPage(1);
+                                    }}
+                                    onExportClick={handleExport}
+                                    canApproveReject={canApproveReject}
+                                    canExport={canExport}
+                                    canRegister={isParent}
+                                    onRegisterClick={() => setShowCheckInModal(true)}
+                                    onApprove={handleApprove}
+                                    onReject={handleReject}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDelete}
+                                    page={page}
+                                    limit={limit}
+                                    setPage={setPage}
+                                    setLimit={setLimit}
+                                    pagination={pagination}
+                                    onRowClick={handleRowClick}
+                                    userRole={user?.role}
+                                />
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
             <>
