@@ -3,6 +3,7 @@ import { Lock, KeyRound } from "lucide-react";
 import authApi from "@/features/auth/api/authApi";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import LogsViewer from "../components/LogsViewer";
+import LogsHeader from "../components/LogsHeader";
 
 const Logs = () => {
     // Password lock states
@@ -78,14 +79,11 @@ const Logs = () => {
     }
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">System Logs</h1>
-                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">View application activity and audit trails</p>
-                </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <LogsHeader />
+                <LogsViewer />
             </div>
-            <LogsViewer />
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Tag, Home, Info, Calendar } from 'lucide-react';
+import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
-import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
 
 export default function StudentComplaintsTable({
     loading,
@@ -9,101 +9,141 @@ export default function StudentComplaintsTable({
     categories = [],
     handleCategoryChange,
     openEditModal,
-    onViewDetail
+    onViewDetail,
+    searchValue,
+    onSearchChange,
+    toolbarStartSlot,
+    toolbarEndSlot,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalPages,
+    totalItems
 }) {
-    // Transform categories into Dropdown options format
     const categoryOptions = categories.map(cat => ({
         value: cat._id,
         label: cat.name
     }));
 
-    return (
-        <div className="hidden md:block flex-1 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
-                        <th className="p-4 w-12 text-center normal-case text-sm font-semibold text-[#222222]">#</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Category</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Room No</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Subject</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Date</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Status</th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">Action</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                    {loading ? (
-                        <TableSkeletonLoader columns={7} />
-                    ) : complaints.length === 0 ? (
-                        <tr>
-                            <td colSpan="7" className="p-8 text-center text-gray-400">No complaints found</td>
-                        </tr>
+    const columns = [
+        {
+            key: "category",
+            header: "Category",
+            icon: Tag,
+            renderCell: (o) => (
+                <div className="relative w-full max-w-[120px]" onClick={e => e.stopPropagation()}>
+                    {o.status === 'Pending' ? (
+                        <Dropdown
+                            minWidth=""
+                            options={categoryOptions.length > 0 ? categoryOptions : [{ value: o.categoryId || o.category, label: o.category }]}
+                            value={o.categoryId || o.category}
+                            onChange={(val) => handleCategoryChange(o.id, val)}
+                            triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-text-primary hover:border-gray-300 transition-colors cursor-pointer"
+                        />
                     ) : (
-                        complaints.map((complaint, index) => (
-                            <tr
-                                key={complaint.id}
-                                className="hover:bg-gray-50/40 transition-colors cursor-pointer"
-                                onClick={() => onViewDetail && onViewDetail(complaint)}
-                            >
-                                <td className="p-4 text-center text-[#777777]">{index + 1}</td>
-                                <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className="relative w-full max-w-[120px]">
-                                        {complaint.status === 'Pending' ? (
-                                            <Dropdown
-                                                minWidth=""
-                                                options={categoryOptions.length > 0 ? categoryOptions : [{ value: complaint.categoryId || complaint.category, label: complaint.category }]}
-                                                value={complaint.categoryId || complaint.category}
-                                                onChange={(val) => handleCategoryChange(complaint.id, val)}
-                                                triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-text-primary hover:border-gray-300 transition-colors cursor-pointer"
-                                            />
-                                        ) : (
-                                            <span className="px-3 py-1.5 text-xs font-regular text-text-secondary bg-gray-50 border border-gray-200 rounded-lg inline-block w-full">
-                                                {complaint.category}
-                                            </span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="p-4 text-start text-gray-500">
-                                    {complaint.roomNo}
-                                </td>
-                                <td className="p-4 text-start font-medium text-[#777777]">
-                                    <span className="font-medium hover:text-[#0A437A] transition-colors">{complaint.subject}</span>
-                                </td>
-                                <td className="p-4 text-start text-gray-500">
-                                    {complaint.date}
-                                </td>
-                                <td className="p-4 text-start">
-                                    <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
-                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
-                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
-                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
-                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
-                                        complaint.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
-                                        'bg-blue-50 text-blue-600 border-blue-200'
-                                    }`}>
-                                        {complaint.status || 'Pending'}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-center" onClick={e => e.stopPropagation()}>
-                                    <div className="flex items-center justify-center gap-3 text-gray-400">
-                                        {complaint.status === 'Pending' ? (
-                                            <button
-                                                onClick={() => openEditModal && openEditModal(complaint)}
-                                                className="text-secondary cursor-pointer transition-colors hover:text-blue-600"
-                                                title="Edit complaint"
-                                            >
-                                                <Pencil className="w-4 h-4 mx-auto" strokeWidth={1.5} />
-                                            </button>
-                                        ) : (
-                                            <Pencil className="w-4 h-4 mx-auto opacity-30 cursor-not-allowed" strokeWidth={1.5} title="Cannot edit non-pending complaints" />
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))
+                        <span className="px-3 py-1.5 text-xs font-regular text-text-secondary bg-gray-50 border border-gray-200 rounded-lg inline-block w-full">
+                            {o.category}
+                        </span>
                     )}
-                </tbody>
-            </table>
-        </div>
+                </div>
+            )
+        },
+        {
+            key: "roomNo",
+            header: "Room No",
+            icon: Home,
+            accessor: (o) => o.roomNo || "N/A"
+        },
+        {
+            key: "subject",
+            header: "Subject",
+            icon: Info,
+            truncate: true,
+            accessor: (o) => o.subject
+        },
+        {
+            key: "date",
+            header: "Date",
+            icon: Calendar,
+            accessor: (o) => o.date
+        },
+        {
+            key: "status",
+            header: "Status",
+            align: "center",
+            renderCell: (o) => (
+                <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
+                    o.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
+                    o.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
+                    o.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                    o.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
+                    o.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
+                    'bg-blue-50 text-blue-600 border-blue-200'
+                }`}>
+                    {o.status || 'Pending'}
+                </span>
+            )
+        },
+        {
+            key: "action",
+            header: "Action",
+            align: "center",
+            renderCell: (o) => (
+                <div className="flex items-center justify-center gap-3 text-gray-400" onClick={e => e.stopPropagation()}>
+                    {o.status === 'Pending' ? (
+                        <button
+                            onClick={() => openEditModal && openEditModal(o)}
+                            className="text-secondary cursor-pointer transition-colors hover:text-blue-600"
+                            title="Edit complaint"
+                        >
+                            <Pencil className="w-4 h-4 mx-auto" strokeWidth={1.5} />
+                        </button>
+                    ) : (
+                        <Pencil className="w-4 h-4 mx-auto opacity-30 cursor-not-allowed" strokeWidth={1.5} title="Cannot edit non-pending complaints" />
+                    )}
+                </div>
+            )
+        }
+    ];
+
+    const cardConfig = {
+        title: (o) => o.subject,
+        subtitle: (o) => o.category,
+        fields: [
+            { label: "Room", value: (o) => o.roomNo || "N/A" },
+            { label: "Date", value: (o) => o.date },
+            { label: "Status", value: (o) => o.status }
+        ]
+    };
+
+    return (
+        <DataView
+            pageScrollMode={true}
+            data={complaints}
+            columns={columns}
+            cardConfig={cardConfig}
+            loading={loading}
+            searchPlaceholder="Search complaints..."
+            searchQuery={searchValue}
+            onSearchChange={onSearchChange}
+            toolbarStartSlot={toolbarStartSlot}
+            toolbarEndSlot={toolbarEndSlot}
+            emptyText="No complaints found"
+            onRowClick={(o) => onViewDetail && onViewDetail(o)}
+            pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+                limit: limit,
+                onLimitChange: setLimit,
+                totalItems: totalItems,
+            }}
+            mobilePagination={{
+                hasMore: page < totalPages,
+                onLoadMore: () => setPage?.(prev => prev + 1),
+            }}
+            getItemId={(o) => o.id}
+        />
     );
 }

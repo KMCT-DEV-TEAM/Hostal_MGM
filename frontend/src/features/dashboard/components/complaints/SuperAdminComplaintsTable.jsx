@@ -1,68 +1,109 @@
 import React from 'react';
-import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import DataView from '@/components/ui/data-view/DataView';
+import { Building2, Home, User, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
 
 export default function SuperAdminComplaintsTable({
     complaints,
     loading,
     onRowClick,
-    showWarden = false
+    showWarden = false,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalPages,
+    totalItems,
+    searchQuery,
+    onSearchChange
 }) {
+    const columns = [
+        {
+            key: "organization",
+            header: "Organization",
+            icon: Building2,
+            accessor: (o) => o.organization || "N/A"
+        },
+        {
+            key: "hostel",
+            header: "Hostel",
+            icon: Home,
+            accessor: (o) => o.hostel || "N/A"
+        },
+        ...(showWarden ? [{
+            key: "warden",
+            header: "Warden",
+            icon: User,
+            accessor: (o) => o.warden || "N/A"
+        }] : []),
+        {
+            key: "totalComplaints",
+            header: "Total Complaints",
+            align: "center",
+            icon: AlertTriangle,
+            accessor: (o) => o.totalComplaints || 0
+        },
+        {
+            key: "pending",
+            header: "Pending",
+            align: "center",
+            icon: Clock,
+            accessor: (o) => o.pending || 0
+        },
+        {
+            key: "inProgress",
+            header: "In progress",
+            align: "center",
+            icon: Loader2,
+            accessor: (o) => o.inProgress || 0
+        },
+        {
+            key: "resolved",
+            header: "Resolved",
+            align: "center",
+            icon: CheckCircle,
+            accessor: (o) => o.resolved || 0
+        }
+    ];
+
+    const cardConfig = {
+        title: (o) => o.organization || "N/A",
+        subtitle: (o) => o.hostel || "N/A",
+        fields: [
+            ...(showWarden ? [{ label: "Warden", value: (o) => o.warden || "N/A" }] : []),
+            { label: "Total", value: (o) => o.totalComplaints || 0 },
+            { label: "Pending", value: (o) => o.pending || 0 },
+            { label: "In progress", value: (o) => o.inProgress || 0 },
+            { label: "Resolved", value: (o) => o.resolved || 0 },
+        ]
+    };
+
     return (
-        <div className="flex-1 h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full text-start relative">
-                <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
-                        <th className="p-4 px-6 text-start normal-case text-sm font-semibold text-[#222222]">Organization</th>
-                        <th className="p-4 px-6 text-start normal-case text-sm font-semibold text-[#222222]">Hostel</th>
-                        {showWarden && <th className="p-4 px-6 text-start normal-case text-sm font-semibold text-[#222222]">Warden</th>}
-                        <th className="p-4 px-6 text-center normal-case text-sm font-semibold text-[#222222]">Total Complaints</th>
-                        <th className="p-4 px-6 text-center normal-case text-sm font-semibold text-[#222222]">Pending</th>
-                        <th className="p-4 px-6 text-center normal-case text-sm font-semibold text-[#222222]">In progress</th>
-                        <th className="p-4 px-6 text-center normal-case text-sm font-semibold text-[#222222]">Resolved</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                    {loading ? (
-                        <TableSkeletonLoader columns={showWarden ? 7 : 6} />
-                    ) : complaints.length === 0 ? (
-                        <tr>
-                            <td colSpan={showWarden ? "7" : "6"} className="p-8 text-center text-gray-400">No records found</td>
-                        </tr>
-                    ) : (
-                        complaints.map((complaint, index) => (
-                            <tr 
-                                key={complaint.id} 
-                                className="hover:bg-gray-50/40 transition-colors cursor-pointer"
-                                onClick={() => onRowClick && onRowClick(complaint)}
-                            >
-                                <td className="p-4 px-6 text-start font-medium text-text-secondary">
-                                    {complaint.organization}
-                                </td>
-                                <td className="p-4 px-6 text-start text-text-secondary">
-                                    {complaint.hostel}
-                                </td>
-                                {showWarden && (
-                                    <td className="p-4 px-6 text-start text-text-secondary">
-                                        {complaint.warden}
-                                    </td>
-                                )}
-                                <td className="p-4 px-6 text-center text-text-secondary">
-                                    {complaint.totalComplaints}
-                                </td>
-                                <td className="p-4 px-6 text-center text-text-secondary">
-                                    {complaint.pending}
-                                </td>
-                                <td className="p-4 px-6 text-center text-text-secondary">
-                                    {complaint.inProgress}
-                                </td>
-                                <td className="p-4 px-6 text-center text-text-secondary">
-                                    {complaint.resolved}
-                                </td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
-        </div>
+        <DataView
+            pageScrollMode={true}
+            data={complaints}
+            columns={columns}
+            cardConfig={cardConfig}
+            loading={loading}
+            onRowClick={(o) => onRowClick && onRowClick(o)}
+            emptyText="No records found"
+            hideSearch={false}
+            searchPlaceholder="Search complaints..."
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            hidePagination={!page}
+            pagination={page ? {
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+                limit: limit,
+                onLimitChange: setLimit,
+                totalItems: totalItems,
+            } : undefined}
+            mobilePagination={page ? {
+                hasMore: page < totalPages,
+                onLoadMore: () => setPage?.(prev => prev + 1),
+            } : undefined}
+            getItemId={(o) => o.id}
+        />
     );
 }

@@ -23,8 +23,9 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
+import DepartmentHeader from '../components/Department/DepartmentHeader';
 import DepartmentTable from '../components/Department/DepartmentTable';
-import DepartmentMobileList from '../components/Department/DepartmentMobileList';
+
 import DepartmentDetailView from '../components/Department/DepartmentDetailView';
 import DepartmentFormModal from '../components/Department/DepartmentFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
@@ -71,7 +72,7 @@ const DepartmentManagement = () => {
         code: '',
         courseId: ''
     });
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const fetchDepartments = async () => {
         try {
@@ -105,7 +106,7 @@ const DepartmentManagement = () => {
 
     useEffect(() => {
         fetchDepartments();
-    }, [page, debouncedSearch, statusFilter]);
+    }, [page, limit, debouncedSearch, statusFilter]);
 
     useEffect(() => {
         const socket = initSocket();
@@ -355,100 +356,23 @@ const DepartmentManagement = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-black">Department</h1>
-                    <p className="text-xs text-[#777777] mt-1">Manage all Departments</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <DepartmentHeader />
 
-            {/* Filter and Action Bar */}
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
-                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                        <div className="relative w-full">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                placeholder="Search Department..."
-                                value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                            />
-                        </div>
-                        <button onClick={() => openModal('add')} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
-
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { label: 'All Status', value: 'All' },
-                                    { label: 'Active', value: 'Active' },
-                                    { label: 'Inactive', value: 'Inactive' }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => {
-                                    setStatusFilter(val);
-                                    setPage(1);
-                                }}
-                                placeholder="Select Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
-
-                            <button
-                                onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" /> Export
-                            </button>
-
-                            <div className="relative" ref={bulkMenuRef}>
-                                <button
-                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
-                                >
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {isBulkMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                        </button>
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => openModal('add')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap">
-                            <Plus className="w-4 h-4" /> Add New
-                        </button>
-                    </div>
-                </div>
-
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <DepartmentTable
                     Departments={Departments}
                     loading={loading}
                     error={error}
+                    searchValue={searchQuery}
+                    onSearch={(val) => { setSearchQuery(val); setPage(1); }}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
+                    onExport={initiateExport}
+                    onAddClick={() => openModal('add')}
+                    onActivateSelected={() => handleBulkStatusClick(true)}
+                    onDeactivateSelected={() => handleBulkStatusClick(false)}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
@@ -456,84 +380,13 @@ const DepartmentManagement = () => {
                     setView={setView}
                     handleStatusChangeClick={handleStatusChangeClick}
                     openModal={openModal}
-                />
-
-                <DepartmentMobileList
-                    Departments={Departments}
-                    loading={loading}
-                    error={error}
-                    openModal={openModal}
-                    setSelectedDepartmentDetail={setSelectedDepartmentDetail}
-                    setView={setView}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    currentPage={page}
+                    page={page}
+                    setPage={setPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalItems={totalDepartments}
                     totalPages={totalPages}
-                    hasMore={page < totalPages}
-                    onLoadMore={() => setPage(prev => prev + 1)}
                 />
-
-                {/* PAGINATION BAR FOOTER */}
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div className="hidden sm:block">
-                        Showing {totalDepartments === 0 ? 0 : (page - 1) * limit + 1} to{" "}
-                        {Math.min(page * limit, totalDepartments)} of {totalDepartments} entries
-                    </div>
-                    <div className="sm:hidden">
-                        {totalDepartments === 0 ? 0 : (page - 1) * limit + 1}-{Math.min(page * limit, totalDepartments)} of {totalDepartments}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={page === 1}
-                            onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, page - 1);
-                            let endPage = Math.min(totalPages, page + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={page === totalPages || totalPages === 0}
-                            onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <DepartmentFormModal
@@ -650,7 +503,7 @@ const DepartmentManagement = () => {
                 title="Add Department"
                 message="Are you sure you want to add this new department?"
             />
-
+            </div>
         </div>
     );
 };
