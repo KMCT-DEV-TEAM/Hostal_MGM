@@ -31,6 +31,7 @@ import FurnitureDetails from '@/features/furniture/pages/FurnitureDetails';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import VisitorsPage from '@/features/visitors/pages/VisitorsPage';
 import VisitorHistoryPage from '@/features/visitors/pages/VisitorHistoryPage';
+import AnnouncementManagement from '@/features/dashboard/pages/AnnouncementManagement';
 
 export const dashboardRoutes = [
 
@@ -345,5 +346,27 @@ export const dashboardRoutes = [
             ROLES.WARDEN
         ],
         element: MaintenanceAssignedTasks
+    },
+    {
+        path: 'announcements',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
+        ],
+        element: AnnouncementManagement
+    },
+    {
+        path: 'announcements/:tab',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.STUDENT,
+            ROLES.PARENT
+        ],
+        element: AnnouncementManagement
     }
 ];
