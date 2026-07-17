@@ -35,10 +35,9 @@ import cors from 'cors';
 import cookieParser from "cookie-parser";
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);

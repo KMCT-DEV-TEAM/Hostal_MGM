@@ -73,14 +73,13 @@ export default function StudentComplaintsTable({
             header: "Status",
             align: "center",
             renderCell: (o) => (
-                <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
-                    o.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
-                    o.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
-                    o.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
-                    o.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
-                    o.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
-                    'bg-blue-50 text-blue-600 border-blue-200'
-                }`}>
+                <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${o.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
+                        o.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
+                            o.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                                o.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
+                                    o.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
+                                        'bg-blue-50 text-blue-600 border-blue-200'
+                    }`}>
                     {o.status || 'Pending'}
                 </span>
             )
