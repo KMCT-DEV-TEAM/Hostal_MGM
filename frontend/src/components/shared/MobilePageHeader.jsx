@@ -8,7 +8,7 @@ const MobilePageHeader = () => {
     const showBack = useLayoutStore((state) => state.header.showBack);
 
     return (
-        <div className="pt-8 pb-4 px-4 bg- shrink-0">
+        <div className="pt-8 pb-4 px-4 bg-background-secondary shrink-0">
             <div className="bg-white rounded-full py-4 px-4 flex items-center justify-between shadow-sm border border-gray-50">
 
                 {/* Left Action (Back) */}
