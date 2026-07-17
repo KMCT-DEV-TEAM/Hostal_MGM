@@ -249,6 +249,12 @@ export default function WardenTable({
                 setSelectedWardenDetail?.(warden);
                 setView?.('detail');
             }}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             pagination={{
                 currentPage: page,
                 totalPages: totalPages,

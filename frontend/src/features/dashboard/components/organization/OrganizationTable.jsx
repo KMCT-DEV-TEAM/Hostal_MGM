@@ -254,6 +254,12 @@ export default function OrganizationTable({
                 setSelectedOrganizationDetail?.(o);
                 setView?.('detail');
             }}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             pagination={{
                 currentPage: page,
                 totalPages: totalPages,

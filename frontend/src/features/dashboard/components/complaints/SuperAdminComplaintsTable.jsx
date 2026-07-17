@@ -25,7 +25,10 @@ export default function SuperAdminComplaintsTable({
     totalPages,
     totalItems,
     searchQuery,
-    onSearchChange
+    onSearchChange,
+    addButton,
+    toolbarStartSlot,
+    toolbarEndSlot
 }) {
     const columns = [
         {
@@ -77,10 +80,11 @@ export default function SuperAdminComplaintsTable({
     ];
 
     const cardConfig = {
+        avatar: (o) => o.organization?.substring(0, 2)?.toUpperCase() || "NA",
         title: (o) => o.organization || "N/A",
         subtitle: (o) => o.hostel || "N/A",
         fields: [
-            ...(showWarden ? [{ icon: FileText, value: (o) => o.warden || "N/A" }] : []),
+            ...(showWarden ? [{ label: "Warden", icon: FileText, value: (o) => o.warden || "N/A" }] : []),
             { label: "Total", value: (o) => o.totalComplaints || 0 },
             { label: "Pending", value: (o) => o.pending || 0 },
             { label: "In progress", value: (o) => o.inProgress || 0 },
@@ -107,6 +111,9 @@ export default function SuperAdminComplaintsTable({
             searchPlaceholder="Search complaints..."
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
+            addButton={addButton}
+            toolbarStartSlot={toolbarStartSlot}
+            toolbarEndSlot={toolbarEndSlot}
             hidePagination={!page}
             pagination={page ? {
                 currentPage: page,

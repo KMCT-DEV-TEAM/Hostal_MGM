@@ -179,9 +179,10 @@ export default function BatchTable({
             {onExport && (
                 <button
                     onClick={onExport}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
                 >
-                    <Download className="w-4 h-4" /> Export
+                    <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+                    <span className="hidden lg:inline">Export</span>
                 </button>
             )}
             <div className="relative" ref={bulkMenuRef}>

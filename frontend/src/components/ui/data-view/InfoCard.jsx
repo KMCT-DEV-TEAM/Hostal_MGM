@@ -104,16 +104,16 @@ export default function InfoCard({
                 <div className="flex flex-wrap items-center gap-2 ml-auto">
                     {status && (
                         <>
-                            {status.text && (
+                            {(status.text || status.label) && (
                                 <div className={clsx(
-                                    'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md shrink-0',
-                                    statusColorClasses[status.color] || statusColorClasses.gray
+                                    'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md shrink-0 capitalize',
+                                    status.bgClass && status.textClass ? `${status.bgClass} ${status.textClass} border border-current/20` : (statusColorClasses[status.color] || statusColorClasses.gray)
                                 )}>
                                     <div className={clsx(
                                         'w-1.5 h-1.5 rounded-full',
-                                        statusDotClasses[status.color] || statusDotClasses.gray
+                                        status.dotClass ? status.dotClass : (statusDotClasses[status.color] || statusDotClasses.gray)
                                     )} />
-                                    {status.text}
+                                    {status.text || status.label}
                                 </div>
                             )}
 
@@ -251,12 +251,24 @@ export default function InfoCard({
                             {fields.map((field, idx) => {
                                 const Icon = field.icon;
                                 return (
-                                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                                        {Icon && <Icon className="w-4 h-4 flex-shrink-0 text-gray-400" />}
-                                        <span className="truncate">
-                                            {field.label && <span className="font-medium mr-1.5">{field.label}:</span>}
-                                            {field.value || '-'}
-                                        </span>
+                                    <div key={idx} className="flex items-start text-sm text-gray-600 py-0.5">
+                                        {field.label ? (
+                                            <>
+                                                <div className="flex items-center gap-2 w-28 shrink-0 text-gray-500 font-medium">
+                                                    {Icon && <Icon className="w-4 h-4 shrink-0 text-gray-400" />}
+                                                    <span className="truncate">{field.label}</span>
+                                                </div>
+                                                <span className="text-gray-400 shrink-0 px-1.5 font-semibold">:</span>
+                                                <span className="flex-1 min-w-0 text-gray-800 font-medium truncate">
+                                                    {field.value || '-'}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center gap-2 truncate">
+                                                {Icon && <Icon className="w-4 h-4 shrink-0 text-gray-400" />}
+                                                <span className="truncate font-medium text-gray-800">{field.value || '-'}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -274,11 +286,11 @@ export default function InfoCard({
                             ))}
                         </div>
                     )}
-
-                    {/* Footer */}
-                    {renderFooterContent()}
                 </div>
             </div>
+
+            {/* Footer across full width of card */}
+            {renderFooterContent()}
         </div>
     );
 }

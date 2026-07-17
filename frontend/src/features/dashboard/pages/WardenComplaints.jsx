@@ -317,8 +317,26 @@ export default function WardenComplaints({ hostel, onBack }) {
                     totalItems={totalComplaints}
                     searchValue={searchQuery}
                     onSearchChange={(e) => setSearchQuery(e.target.value)}
+                    toolbarStartSlot={
+                        <div className="flex md:hidden items-center gap-2">
+                            <button
+                                onClick={() => setIsFilterModalOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer shadow-sm h-full"
+                                title="Filter Complaints"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sliders-horizontal"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+                            </button>
+                            <button
+                                onClick={() => setIsExportConfirmOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 text-[#777777] rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                                title="Export Complaints"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download text-gray-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            </button>
+                        </div>
+                    }
                     toolbarEndSlot={
-                        <>
+                        <div className="hidden md:flex items-center gap-2 h-full">
                             <button
                                 onClick={() => setIsFilterModalOpen(true)}
                                 className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer shadow-sm h-full"
@@ -328,11 +346,12 @@ export default function WardenComplaints({ hostel, onBack }) {
                             </button>
                             <button
                                 onClick={() => setIsExportConfirmOpen(true)}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                                className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 text-[#777777] rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download text-gray-500 lg:text-inherit"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                <span className="hidden lg:inline">Export</span>
                             </button>
-                        </>
+                        </div>
                     }
                 />
             </div>

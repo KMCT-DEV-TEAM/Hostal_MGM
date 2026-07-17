@@ -428,96 +428,97 @@ export default function StudentComplaints() {
                     </div>
                 )}
 
-                {isWithdrawConfirmOpen && (
-                    <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                        <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                            <h3 className="text-sm font-bold text-text-primary">Withdraw Complaint</h3>
-                            <p className="text-xs text-text-secondary mt-1 mb-6">
-                                Are you sure you want to withdraw this complaint? This action cannot be undone.
-                            </p>
-                            <div className="flex gap-2 justify-end">
-                                <button
-                                    onClick={() => setIsWithdrawConfirmOpen(false)}
-                                    disabled={isSubmitting}
-                                    className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmWithdraw}
-                                    disabled={isSubmitting}
-                                    className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Withdraw'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                {selectedDetailComplaint && (
-                    <StudentComplaintDetailModal
-                        complaint={selectedDetailComplaint}
-                        onClose={() => setSelectedDetailComplaint(null)}
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                    <StudentComplaintsTable
+                        loading={loading}
+                        complaints={paginatedComplaints}
+                        categories={categories}
+                        handleCategoryChange={handleCategoryChange}
+                        openEditModal={handleEdit}
+                        onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
+                        page={currentPage}
+                        setPage={setCurrentPage}
+                        limit={limit}
+                        setLimit={setLimit}
+                        totalPages={totalPages}
+                        totalItems={totalComplaints}
+                        searchValue={searchQuery}
+                        onSearchChange={(e) => setSearchQuery(e.target.value)}
+                        addButton={
+                            <button
+                                onClick={handleAdd}
+                                className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                <span className="hidden sm:inline">Add New</span>
+                            </button>
+                        }
+                        toolbarStartSlot={null}
+                        toolbarEndSlot={
+                            <>
+                                <Dropdown
+                                    className="flex-1 sm:flex-none"
+                                    options={[
+                                        { label: 'All Status', value: 'All' },
+                                        { label: 'Pending', value: 'Pending' },
+                                        { label: 'Awaiting', value: 'Awaiting' },
+                                        { label: 'In progress', value: 'In progress' },
+                                        { label: 'Rejected', value: 'Rejected' },
+                                        { label: 'Incomplete', value: 'Incomplete' },
+                                        { label: 'Resolved', value: 'Resolved' }
+                                    ]}
+                                    value={statusFilter}
+                                    onChange={(val) => {
+                                        setStatusFilter(val);
+                                        setCurrentPage(1);
+                                    }}
+                                    placeholder="All Status"
+                                    minWidth="w-32"
+                                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+                                />
+                                <button
+                                    onClick={() => setIsExportConfirmOpen(true)}
+                                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download text-gray-500 lg:text-inherit"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+                                    <span className="hidden lg:inline">Export</span>
+                                </button>
+                            </>
+                        }
                     />
-                )}
 
-                <ExportFilterModal
-                    isOpen={isExportConfirmOpen}
-                    onClose={() => setIsExportConfirmOpen(false)}
-                    onExport={confirmExport}
-                    isExporting={isExporting}
-                    title="Export Complaints Data"
-                    fields={[
-                        { name: 'startDate', label: 'Start Date', type: 'date' },
-                        { name: 'endDate', label: 'End Date', type: 'date' },
-                        {
-                            name: "status",
-                            label: "Complaint Status",
-                            options: [
-                                { label: 'All Status', value: '' },
-                                { label: 'Pending', value: 'Pending' },
-                                { label: 'Awaiting', value: 'Awaiting' },
-                                { label: 'In progress', value: 'In progress' },
-                                { label: 'Rejected', value: 'Rejected' },
-                                { label: 'Incomplete', value: 'Incomplete' },
-                                { label: 'Resolved', value: 'Resolved' }
-                            ],
-                            defaultValue: statusFilter === 'All' ? '' : statusFilter
-                        }
-                    ]}
-                />
-
-                <ConfirmationModal
-                    isOpen={confirmCategoryChange.isOpen}
-                    onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null })}
-                    onConfirm={async () => {
-                        try {
-                            setIsSubmittingCategory(true);
-                            await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, {
-                                category: confirmCategoryChange.newCategoryId
-                            });
-                            setComplaints(complaints.map(c =>
-                                c.id === confirmCategoryChange.complaintId
-                                    ? { ...c, category: confirmCategoryChange.newCategoryName, categoryId: confirmCategoryChange.newCategoryId }
-                                    : c
-                            ));
-                            showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategoryName}`);
-                        } catch (error) {
-                            console.error('Failed to update category:', error);
-                            showErrorToast('Error', error?.response?.data?.message || 'Failed to update category');
-                        } finally {
-                            setIsSubmittingCategory(false);
-                            setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null });
-                        }
-                    }}
-                    title="Confirm Category Change"
-                    message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategoryName}?`}
-                    confirmText="Change"
-                    isSubmitting={isSubmittingCategory}
-                    loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
-                    confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
-                />
+                    <ConfirmationModal
+                        isOpen={confirmCategoryChange.isOpen}
+                        onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null })}
+                        onConfirm={async () => {
+                            try {
+                                setIsSubmittingCategory(true);
+                                await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, {
+                                    category: confirmCategoryChange.newCategoryId
+                                });
+                                setComplaints(complaints.map(c =>
+                                    c.id === confirmCategoryChange.complaintId
+                                        ? { ...c, category: confirmCategoryChange.newCategoryName, categoryId: confirmCategoryChange.newCategoryId }
+                                        : c
+                                ));
+                                showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategoryName}`);
+                            } catch (error) {
+                                console.error('Failed to update category:', error);
+                                showErrorToast('Error', error?.response?.data?.message || 'Failed to update category');
+                            } finally {
+                                setIsSubmittingCategory(false);
+                                setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null });
+                            }
+                        }}
+                        title="Confirm Category Change"
+                        message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategoryName}?`}
+                        confirmText="Change"
+                        isSubmitting={isSubmittingCategory}
+                        loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                        confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
+                    />
+                </div>
             </div>
         </div>
     );

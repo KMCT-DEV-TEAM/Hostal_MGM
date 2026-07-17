@@ -37,7 +37,7 @@ export function DataToolbar({
                 )}
                 {startSlot}
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end empty:hidden has-[.hidden.md\:flex:only-child]:hidden md:has-[.hidden.md\:flex:only-child]:flex has-[.hidden.md\:block:only-child]:hidden md:has-[.hidden.md\:block:only-child]:block">
                 {endSlot}
                 {addButton && (
                     <div className="hidden md:block">
@@ -178,8 +178,12 @@ export default function DataView({
     totalItems,
     totalPages,
 
+    // Pagination (Object fallback)
+    pagination,
+
     // Pagination (Mobile Infinite Scroll)
     fetchMore, // Optional: if provided, called instead of setPage(page + 1)
+    mobilePagination,
 
     // Action Slots
     toolbarStartSlot,
@@ -194,18 +198,26 @@ export default function DataView({
     className = '',
     pageScrollMode = false
 }) {
+    const resolvedPage = page !== undefined ? page : (pagination?.currentPage ?? pagination?.page);
+    const resolvedSetPage = setPage !== undefined ? setPage : (pagination?.onPageChange ?? pagination?.setPage);
+    const resolvedLimit = limit !== undefined ? limit : pagination?.limit;
+    const resolvedSetLimit = setLimit !== undefined ? setLimit : (pagination?.onLimitChange ?? pagination?.setLimit);
+    const resolvedTotalItems = totalItems !== undefined ? totalItems : pagination?.totalItems;
+    const resolvedTotalPages = totalPages !== undefined ? totalPages : pagination?.totalPages;
+    const resolvedFetchMore = fetchMore || mobilePagination?.onLoadMore;
+
     const handleLoadMore = useCallback(() => {
         if (loading) return;
-        if (fetchMore) {
-            fetchMore();
-        } else if (setPage && page < totalPages) {
-            setPage(page + 1);
+        if (resolvedFetchMore) {
+            resolvedFetchMore();
+        } else if (resolvedSetPage && resolvedPage < resolvedTotalPages) {
+            resolvedSetPage(resolvedPage + 1);
         }
-    }, [loading, fetchMore, setPage, page, totalPages]);
+    }, [loading, resolvedFetchMore, resolvedSetPage, resolvedPage, resolvedTotalPages]);
 
 
-    const hasMore = page < totalPages;
-    const isLoadingMore = loading && page > 1;
+    const hasMore = resolvedPage < resolvedTotalPages;
+    const isLoadingMore = loading && resolvedPage > 1;
 
     return (
         <div className={`flex flex-col flex-1 ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
@@ -256,8 +268,8 @@ export default function DataView({
                                 canSelect={canSelect}
                                 onSelectAll={onSelectAll}
                                 onSelectRow={onSelectRow}
-                                page={page}
-                                totalPages={totalPages}
+                                page={resolvedPage}
+                                totalPages={resolvedTotalPages}
                                 loading={loading}
                                 onLoadMore={handleLoadMore}
                             />
@@ -268,12 +280,12 @@ export default function DataView({
 
             <DesktopPagination
                 pageScrollMode={pageScrollMode}
-                page={page}
-                setPage={setPage}
-                limit={limit}
-                setLimit={setLimit}
-                totalItems={totalItems}
-                totalPages={totalPages}
+                page={resolvedPage}
+                setPage={resolvedSetPage}
+                limit={resolvedLimit}
+                setLimit={resolvedSetLimit}
+                totalItems={resolvedTotalItems}
+                totalPages={resolvedTotalPages}
             />
 
         </div>
