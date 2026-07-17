@@ -78,7 +78,7 @@ export default function HostelManagement() {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [limit, setLimit] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
     const [totalHostels, setTotalHostels] = useState(0);
 
@@ -108,7 +108,7 @@ export default function HostelManagement() {
             setLoading(true);
             const res = await hostelService.getHostels({
                 page: currentPage,
-                limit: itemsPerPage,
+                limit: limit,
                 search: debouncedSearch,
                 status: statusFilter
             });
@@ -135,7 +135,7 @@ export default function HostelManagement() {
 
     React.useEffect(() => {
         fetchHostels();
-    }, [currentPage, statusFilter, debouncedSearch]);
+    }, [currentPage, limit, statusFilter, debouncedSearch]);
 
     React.useEffect(() => {
         const socket = initSocket();
@@ -463,33 +463,28 @@ export default function HostelManagement() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col relative">
 
-            <HostelHeader
-                selectedIds={selectedIds}
-                handleBulkStatusClick={handleBulkStatusClick}
-            />
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-6 gap-2 sm:gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-black">Hostel</h1>
+                    <p className="text-xs text-[#777777] mt-1">Manage all Hostels</p>
+                </div>
+            </div>
 
-            {/* ==========================================
-             FILTER & UTILITY TOOLBAR
-             ========================================== */}
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                <HostelToolbar
-                    statusFilter={statusFilter}
-                    setStatusFilter={setStatusFilter}
-                    setCurrentPage={setCurrentPage}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    initiateExport={initiateExport}
-                    openAddHostelModal={openAddHostelModal}
-                    selectedIds={selectedIds}
-                    handleBulkStatusClick={handleBulkStatusClick}
-                />
-
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                 <HostelTable
                     hostels={hostels}
                     loading={loading}
                     error={error}
+                    searchValue={searchQuery}
+                    onSearch={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+                    onExport={initiateExport}
+                    onAddClick={openAddHostelModal}
+                    onActivateSelected={() => handleBulkStatusClick(true)}
+                    onDeactivateSelected={() => handleBulkStatusClick(false)}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
@@ -497,32 +492,12 @@ export default function HostelManagement() {
                     setView={setView}
                     handleStatusChangeClick={handleStatusChangeClick}
                     openEditHostelModal={openEditHostelModal}
-                    tableContainerRef={tableContainerRef}
-                />
-
-                <HostelMobileList
-                    currentPage={currentPage}
+                    page={currentPage}
+                    setPage={setCurrentPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalItems={totalHostels}
                     totalPages={totalPages}
-                    hasMore={currentPage < totalPages}
-                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
-                    hostels={hostels}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    setSelectedHostelDetail={setSelectedHostelDetail}
-                    setView={setView}
-                    openEditHostelModal={openEditHostelModal}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    loading={loading}
-                    error={error}
-                />
-
-                <HostelPagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalHostels={totalHostels}
-                    itemsPerPage={itemsPerPage}
-                    handlePageChange={handlePageChange}
                 />
             </div>
 

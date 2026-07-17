@@ -21,7 +21,7 @@ export default function AdminComplaints() {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedHostel, setSelectedHostel] = useState(null);
     const [showKPIs, setShowKPIs] = useState(false);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const fetchComplaints = async () => {
         try {
@@ -187,94 +187,21 @@ export default function AdminComplaints() {
             </div>
             )}
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
-                {/* Toolbar Section */}
-                <ComplaintsToolbar
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                />
-
-                {/* Table Section */}
-                <div className="hidden md:block flex-1 min-h-0">
-                    <SuperAdminComplaintsTable
-                        complaints={paginatedComplaints}
-                        loading={loading}
-                        onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}
-                        showWarden={true}
-                    />
-                </div>
-
-                <AdminComplaintsMobileList
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    hasMore={currentPage < totalPages}
-                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                <SuperAdminComplaintsTable
                     complaints={paginatedComplaints}
                     loading={loading}
                     onRowClick={(complaint) => setSelectedHostel(complaint.hostel)}
                     showWarden={true}
+                    page={currentPage}
+                    setPage={setCurrentPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalPages={totalPages}
+                    totalItems={totalComplaintsCount}
+                    searchQuery={searchQuery}
+                    onSearchChange={(e) => setSearchQuery(e.target.value)}
                 />
-
-                {/* PAGINATION BAR FOOTER */}
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div>
-                        <span className="hidden sm:inline">Showing </span>
-                        {totalComplaintsCount === 0 ? 0 : (currentPage - 1) * limit + 1}
-                        <span className="hidden sm:inline"> to </span>
-                        <span className="sm:hidden">-</span>
-                        {Math.min(currentPage * limit, totalComplaintsCount)} of {totalComplaintsCount}
-                        <span className="hidden sm:inline"> entries</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, currentPage - 1);
-                            let endPage = Math.min(totalPages, currentPage + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
 

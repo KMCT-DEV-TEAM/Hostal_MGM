@@ -2,16 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, User, Info, Download, SlidersHorizontal, Eye, MoreVertical, Mail, ShieldCheck, Activity } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
-import ListTable from "@/components/ui/ListTable";
-import MobileList, { MobileRow, MobileCardStatusBadge } from "@/components/ui/MobileList";
 import DateInput from "@/components/ui/DateInput";
+import DataView from '@/components/ui/data-view/DataView';
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import LogsFilterModal from "./LogsFilterModal";
 import LogDetailView from "./LogDetailView";
 import authApi from "@/features/auth/api/authApi";
 import { exportToExcel } from "@/utils/exportUtils";
-import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
-import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
+import { exportToExcel } from "@/utils/exportUtils";
 import { logApi } from "@/features/dashboard/api/logApi";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { initSocket } from '@/services/socket.service';
@@ -28,10 +26,7 @@ const LogsViewer = ({ entityType }) => {
     const [isExportFilterModalOpen, setIsExportFilterModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const mobileMenuRef = useClickOutside(() => setIsMobileMenuOpen(false));
-    const [expandedIds, setExpandedIds] = useState([]);
+    const [limit, setLimit] = useState(10);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -46,7 +41,7 @@ const LogsViewer = ({ entityType }) => {
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
             const res = await logApi.getLogs({
                 page,
-                limit: 10,
+                limit: limit,
                 status: apiStatus,
                 search: debouncedSearch,
                 startDate,
@@ -62,7 +57,7 @@ const LogsViewer = ({ entityType }) => {
             setLogs(fetchedLogs);
             setPagination({
                 page: responseData.currentPage || 1,
-                limit: 10,
+                limit: limit,
                 totalPages: responseData.totalPages || 1,
                 totalDocs: responseData.totalCount || responseData.totalLogs || responseData.totalRecords || responseData.totalDocs || responseData.total || 0
             });
@@ -101,6 +96,7 @@ const LogsViewer = ({ entityType }) => {
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
             const res = await logApi.getLogs({
                 limit: 100000,
+                page: 1,
                 status: apiStatus,
                 search: debouncedSearch,
                 startDate: exportStartDate,
@@ -145,244 +141,130 @@ const LogsViewer = ({ entityType }) => {
         }
     };
 
-    const getStatusStyles = (status) => {
-        switch (status) {
-            case 'success':
-                return 'bg-green-50 text-success border-green-200';
-            case 'error':
-                return 'bg-red-50 text-danger border-red-200';
-            case 'warning':
-                return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-            default:
-                return 'bg-gray-50 text-gray-700 border-gray-200';
+    const columns = [
+        {
+            key: "action",
+            header: "Action",
+            type: "user",
+            titleAccessor: (o) => o.action,
+            subtitleAccessor: (o) => "",
+            avatarAccessor: (o) => o.action?.substring(0, 2)?.toUpperCase() || "NA",
+        },
+        {
+            key: "timestamp",
+            header: "Timestamp",
+            icon: Clock,
+            accessor: (o) => `${new Date(o.createdAt).toLocaleDateString()} ${new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        },
+        {
+            key: "user",
+            header: "User",
+            icon: User,
+            renderCell: (o) => (
+                <div className="flex items-center gap-1.5">
+                    <User size={14} className="text-gray-400" />
+                    <span>{o.user?.name || o.user?.email || 'Unknown'} <span className="text-[10px] text-gray-400 ml-1">({o.userRole})</span></span>
+                </div>
+            )
+        },
+        {
+            key: "details",
+            header: "Details",
+            truncate: true,
+            accessor: (o) => o.details
+        },
+        {
+            key: "view",
+            header: "Action",
+            align: "center",
+            renderCell: (o) => (
+                <div className="flex gap-3 items-center justify-center" onClick={e => e.stopPropagation()}>
+                    <button
+                        onClick={() => setSelectedLog(o)}
+                        className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                    >
+                        <Eye className="w-4 h-4 text-secondary" />
+                    </button>
+                </div>
+            )
         }
-    };
+    ];
 
-    const toggleExpand = (e, id) => {
-        e.stopPropagation();
-        setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    const cardConfig = {
+        avatar: (o) => {
+            const email = o.user?.email || 'Unknown';
+            return email !== 'Unknown' ? email.substring(0, 2).toUpperCase() : 'NA';
+        },
+        title: (o) => o.user?.email || 'Unknown Email',
+        subtitle: (o) => o.action || 'Unknown Action',
+        status: (o) => {
+            let dotColor = 'bg-gray-500', bgColor = 'bg-gray-50', textColor = 'text-gray-600';
+            if (o.status === 'success') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+            else if (o.status === 'error') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+            else if (o.status === 'warning') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+            return {
+                label: o.status || 'Unknown',
+                dotClass: dotColor,
+                bgClass: bgColor,
+                textClass: textColor
+            };
+        },
+        fields: [
+            { label: "Timestamp", value: (o) => `${new Date(o.createdAt).toLocaleDateString()} ${new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` },
+            { label: "Role", value: (o) => o.userRole },
+        ]
     };
 
     return (
         <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm md:overflow-hidden flex flex-col min-h-0 flex-1">
 
-            {/* Toolbar */}
-            <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                    <div className="relative w-full">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Search logs..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setIsLoading(true);
-                                setPagination(p => ({ ...p, page: 1 }));
-                            }}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
-                        />
-                    </div>
-                    {/* Mobile More Options Button */}
-                    <div className="sm:hidden relative" ref={mobileMenuRef}>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px]"
-                        >
-                            <MoreVertical className="w-5 h-5" />
-                        </button>
-                        {isMobileMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                <button
-                                    onClick={() => {
-                                        setIsMobileMenuOpen(false);
-                                        setIsFilterModalOpen(true);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-                                >
-                                    <SlidersHorizontal className="w-4 h-4" /> Filter
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setIsMobileMenuOpen(false);
-                                        setIsExportFilterModalOpen(true);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-                                >
-                                    <Download className="w-4 h-4" /> Export
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="hidden sm:flex items-center gap-3 w-full sm:w-auto justify-end">
-                    {/* Desktop Buttons */}
-                    <button
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px] w-[38px]"
-                        title="Filter"
-                    >
-                        <SlidersHorizontal className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={() => setIsExportFilterModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                    >
-                        <Download size={16} /> Export
-                    </button>
-                </div>
-            </div>
-
-            <ListTable
-                headers={['Action', 'Timestamp', 'User', 'Details', { label: 'Action', align: 'center' }]}
-                items={logs}
-                loading={isLoading}
-                canSelect={false}
-                emptyText="No logs found matching your criteria."
-                renderRow={(log, index) => (
-                    <>
-                        <td className="p-4 font-medium text-[#777777]">
-                            <div
-                                className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-                                onClick={() => setSelectedLog(log)}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2 min-h-0">
+                <DataView
+                    pageScrollMode={true}
+                    data={logs}
+                    columns={columns}
+                    cardConfig={cardConfig}
+                    loading={isLoading}
+                    searchPlaceholder="Search logs..."
+                    searchQuery={searchQuery}
+                    onSearchChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setPagination(p => ({ ...p, page: 1 }));
+                    }}
+                    toolbarEndSlot={
+                        <>
+                            <button
+                                onClick={() => setIsFilterModalOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                                title="Filter"
                             >
-                                <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                                    {log.action ? log.action.substring(0, 2) : 'NA'}
-                                </div>
-                                <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{log.action}</span>
-                            </div>
-                        </td>
-                        <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                            <div className="flex items-center justify-start gap-1.5">
-                                <Clock size={14} className="text-gray-400" />
-                                <span>{new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                        </td>
-                        <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                            <div className="flex items-center justify-start gap-1.5">
-                                <User size={14} className="text-gray-400" />
-                                <span>{log.user?.name || log.user?.email || 'Unknown'} <span className="text-[10px] text-gray-400 ml-1">({log.userRole})</span></span>
-                            </div>
-                        </td>
-                        <td className="p-4 text-start text-gray-500 max-w-md truncate">
-                            {log.details}
-                        </td>
-                        <td className="p-4">
-                            <div className="flex gap-3 items-center justify-center">
-                                <button
-                                    onClick={() => setSelectedLog(log)}
-                                    className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                >
-                                    <Eye className="w-4 h-4 text-secondary" />
-                                </button>
-                            </div>
-                        </td>
-                    </>
-                )}
-            />
-
-            <MobileList
-                currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                hasMore={pagination.page < pagination.totalPages}
-                onLoadMore={() => fetchLogs(pagination.page + 1)}
-                items={logs}
-                loading={isLoading}
-                canSelect={false}
-                emptyText="No logs found matching your criteria."
-                iconFn={(log) => {
-                    const email = log.user?.email || 'Unknown';
-                    return (
-                        <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
-                            {email !== 'Unknown' ? email.substring(0, 2) : 'NA'}
-                        </div>
-                    );
-                }}
-                titleFn={(log) => log.user?.email || 'Unknown Email'}
-                subtitleFn={(log) => (
-                    <>
-                        <Activity className="w-3 h-3 text-gray-400 shrink-0" />
-                        <span className="truncate max-w-[200px]">{log.action || 'Unknown Action'}</span>
-                    </>
-                )}
-                statusBadgeFn={(log) => {
-                    let dotColor = 'bg-gray-500', bgColor = 'bg-gray-50', textColor = 'text-gray-600';
-                    if (log.status === 'success') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
-                    else if (log.status === 'error') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
-                    else if (log.status === 'warning') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
-                    return (
-                        <MobileCardStatusBadge
-                            status={log.status || 'Unknown'}
-                            dotColorClass={dotColor}
-                            bgColorClass={bgColor}
-                            textColorClass={textColor}
-                        />
-                    );
-                }}
-                onViewDetails={(log) => setSelectedLog(log)}
-            />
-
-            {!isLoading && pagination.totalPages > 0 && (
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div>
-                        <span className="hidden sm:inline">Showing </span>
-                        {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}
-                        <span className="hidden sm:inline"> to </span>
-                        <span className="sm:hidden">-</span>
-                        {Math.min(pagination.page * pagination.limit, pagination.totalDocs || pagination.totalRecords || 0)} of {pagination.totalDocs || pagination.totalRecords || 0}
-                        <span className="hidden sm:inline"> entries</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={pagination.page <= 1}
-                            onClick={() => fetchLogs(pagination.page - 1)}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, pagination.page - 1);
-                            let endPage = Math.min(pagination.totalPages, pagination.page + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(pagination.totalPages, 3);
-                                } else if (endPage === pagination.totalPages) {
-                                    startPage = Math.max(1, pagination.totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => fetchLogs(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${pagination.page === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={pagination.page >= pagination.totalPages || pagination.totalPages === 0}
-                            onClick={() => fetchLogs(pagination.page + 1)}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
+                                <SlidersHorizontal className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setIsExportFilterModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                            >
+                                <Download size={16} /> Export
+                            </button>
+                        </>
+                    }
+                    emptyText="No logs found matching your criteria."
+                    onRowClick={(o) => setSelectedLog(o)}
+                    pagination={{
+                        currentPage: pagination.page,
+                        totalPages: pagination.totalPages,
+                        onPageChange: (p) => fetchLogs(p),
+                        limit: limit,
+                        onLimitChange: (l) => { setLimit(l); fetchLogs(1); },
+                        totalItems: pagination.totalDocs,
+                    }}
+                    mobilePagination={{
+                        hasMore: pagination.page < pagination.totalPages,
+                        onLoadMore: () => fetchLogs(pagination.page + 1),
+                    }}
+                    getItemId={(o) => o._id}
+                />
+            </div>
 
             <ExportFilterModal
                 isOpen={isExportFilterModalOpen}

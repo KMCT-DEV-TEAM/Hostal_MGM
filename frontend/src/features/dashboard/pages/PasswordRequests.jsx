@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Check, X, Search, Mail, Clock, ShieldCheck, Download, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Square, CheckSquare, MoreVertical, SlidersHorizontal, Key } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
-import ListTable from "@/components/ui/ListTable";
-import MobileList, { MobileRow, MobileCardStatusBadge } from "@/components/ui/MobileList";
+import DataView from '@/components/ui/data-view/DataView';
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import { passwordRequestApi } from "@/features/dashboard/api/passwordRequestApi";
 import { exportToExcel } from '@/utils/exportUtils';
@@ -11,8 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
 import ExportFilterModal from "@/components/ui/ExportFilterModal";
-import TableSkeletonLoader from "@/components/ui/TableSkeletonLoader";
-import MobileSkeletonLoader from "@/components/ui/MobileSkeletonLoader";
+
 import PasswordRequestsFilterModal from "../components/PasswordRequestsFilterModal";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
@@ -22,8 +20,7 @@ const PasswordRequests = () => {
     const [statusFilter, setStatusFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
-    const [selectedRequests, setSelectedRequests] = useState([]);
+    const [limit, setLimit] = useState(10);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const mobileMenuRef = useClickOutside(() => setIsMobileMenuOpen(false));
     const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
@@ -33,12 +30,11 @@ const PasswordRequests = () => {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
+    const [selectedRequests, setSelectedRequests] = useState([]);
+
     const handleSelectAll = (mobileIds) => {
         let pendingIds = requests.filter(req => req.status === 'pending').map(req => req._id);
         if (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') {
-            // For mobile, we would need to filter mobileIds by pending status, but we don't have the full object here.
-            // But since mobileIds comes from displayItems, we can filter displayItems in MobileList.
-            // For now, let's just use mobileIds (assuming only pending can be selected anyway, or just accept the array).
             pendingIds = mobileIds; 
         }
 
@@ -70,7 +66,7 @@ const PasswordRequests = () => {
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
             const res = await passwordRequestApi.getPasswordRequests({
                 page,
-                limit: 10,
+                limit: limit,
                 status: apiStatus,
                 search: debouncedSearch
             });
@@ -182,6 +178,123 @@ const PasswordRequests = () => {
         }
     };
 
+    const columns = [
+        {
+            key: "user",
+            header: "User",
+            type: "user",
+            titleAccessor: (o) => o.user?.name,
+            subtitleAccessor: (o) => "",
+            avatarAccessor: (o) => o.user?.name ? o.user.name.substring(0, 2).toUpperCase() : 'NA'
+        },
+        {
+            key: "email",
+            header: "Email",
+            icon: Mail,
+            accessor: (o) => o.user?.email
+        },
+        {
+            key: "role",
+            header: "Role",
+            icon: ShieldCheck,
+            accessor: (o) => o.userRole || o.user?.role,
+            renderCell: (o) => (
+                <div className="flex items-center justify-start gap-1.5 text-gray-500">
+                    <ShieldCheck size={14} className="text-gray-400" />
+                    <span className="capitalize">{o.userRole || o.user?.role}</span>
+                </div>
+            )
+        },
+        {
+            key: "requestedAt",
+            header: "Requested At",
+            icon: Clock,
+            accessor: (o) => `${new Date(o.createdAt).toLocaleDateString()} at ${new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        },
+        {
+            key: "status",
+            header: "Status",
+            renderCell: (o) => (
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize border ${
+                    o.status === 'approved' ? 'bg-success-50 text-success border-success' :
+                    o.status === 'rejected' ? 'bg-danger-50 text-danger border-danger' :
+                    'bg-transparent text-yellow-600 border-yellow-400'
+                }`}>
+                    {o.status}
+                </span>
+            )
+        },
+        {
+            key: "actions",
+            header: "Actions",
+            align: "center",
+            renderCell: (o) => (
+                <div className="text-center whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                    {o.status === 'pending' ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <button
+                                className="px-2.5 py-1.5 bg-success-50 text-success border border-success hover:bg-success-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
+                                onClick={() => openConfirmModal('approve', o._id)}
+                            >
+                                <Check className="w-3.5 h-3.5 mr-1" />
+                                Approve
+                            </button>
+                            <button
+                                className="px-2.5 py-1.5 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
+                                onClick={() => openConfirmModal('reject', o._id)}
+                            >
+                                <X className="w-3.5 h-3.5 mr-1" />
+                                Reject
+                            </button>
+                        </div>
+                    ) : (
+                        <span className="text-gray-400 text-xs italic">Processed</span>
+                    )}
+                </div>
+            )
+        }
+    ];
+
+    const cardConfig = {
+        avatar: (o) => o.user?.name ? o.user.name.substring(0, 2).toUpperCase() : 'NA',
+        title: (o) => o.user?.name || 'Unknown User',
+        subtitle: (o) => o.user?.email || 'N/A',
+        status: (o) => {
+            let dotColor = 'bg-yellow-500', bgColor = 'bg-yellow-50', textColor = 'text-yellow-600';
+            if (o.status === 'approved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+            else if (o.status === 'rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+            return {
+                label: o.status || 'Pending',
+                dotClass: dotColor,
+                bgClass: bgColor,
+                textClass: textColor
+            };
+        },
+        fields: [
+            { label: "Role", value: (o) => o.userRole || o.user?.role || 'User' },
+        ],
+        actionSlot: (o) => (
+            o.status === 'pending' && (
+                <div className="flex items-center gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
+                    <button
+                        className="px-2 py-1 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); openConfirmModal('approve', o._id); }}
+                    >
+                        <Check className="w-3 h-3 mr-0.5" />
+                        Approve
+                    </button>
+                    <button
+                        className="px-2 py-1 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); openConfirmModal('reject', o._id); }}
+                    >
+                        <X className="w-3 h-3 mr-0.5" />
+                        Reject
+                    </button>
+                </div>
+            )
+        )
+    };
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
 
@@ -193,322 +306,84 @@ const PasswordRequests = () => {
                 </div>
             </div>
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm md:overflow-hidden flex flex-col min-h-0 flex-1">
-                {/* Toolbar */}
-                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                        <div className="relative w-full">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => { 
-                                    setSearchQuery(e.target.value); 
-                                    setIsLoading(true);
-                                    setPagination(p => ({ ...p, page: 1 })); 
-                                }}
-                                placeholder="Search user or email..."
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none cursor-pointer"
-                            />
-                        </div>
-                        {/* Mobile More Options Button */}
-                        <div className="sm:hidden relative" ref={mobileMenuRef}>
-                            <button
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px]"
-                            >
-                                <MoreVertical className="w-5 h-5" />
-                            </button>
-                            {isMobileMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                    <button
-                                        onClick={() => { setIsMobileMenuOpen(false); openConfirmModal('bulkApprove'); }}
-                                        disabled={selectedRequests.length === 0}
-                                        className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                                    >
-                                        <Check className="w-4 h-4" /> Approve {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
-                                    </button>
-                                    <button
-                                        onClick={() => { setIsMobileMenuOpen(false); openConfirmModal('bulkReject'); }}
-                                        disabled={selectedRequests.length === 0}
-                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                                    >
-                                        <X className="w-4 h-4" /> Reject {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setIsMobileMenuOpen(false);
-                                            setIsExportConfirmOpen(true);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-                                    >
-                                        <Download className="w-4 h-4" /> Export
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setIsMobileMenuOpen(false);
-                                            setIsFilterModalOpen(true);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-                                    >
-                                        <SlidersHorizontal className="w-4 h-4" /> Filter
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="hidden sm:flex items-center gap-3 w-full sm:w-auto justify-end">
-                        {/* Desktop Buttons */}
-                        <button
-                            onClick={() => setIsFilterModalOpen(true)}
-                            className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px] w-[38px]"
-                            title="Filter"
-                        >
-                            <SlidersHorizontal className="w-5 h-5" />
-                        </button>
-                        <button
-                            onClick={() => setIsExportConfirmOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-[38px]"
-                        >
-                            <Download size={16} /> Export
-                        </button>
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
-                                className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-[38px]"
-                            >
-                                <MoreVertical className="w-5 h-5" />
-                            </button>
-                            {isDesktopMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                    <button
-                                        onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkApprove'); }}
-                                        disabled={selectedRequests.length === 0}
-                                        className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                                    >
-                                        <Check className="w-4 h-4" /> Approve {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
-                                    </button>
-                                    <button
-                                        onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkReject'); }}
-                                        disabled={selectedRequests.length === 0}
-                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                                    >
-                                        <X className="w-4 h-4" /> Reject {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <ListTable
-                    headers={[
-                        { label: 'User', align: 'left' },
-                        { label: 'Email', align: 'left' },
-                        { label: 'Role', align: 'left' },
-                        { label: 'Requested At', align: 'left' },
-                        { label: 'Status', align: 'left' },
-                        { label: 'Actions', align: 'center' }
-                    ]}
-                    items={requests}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
+                <DataView
+                    pageScrollMode={true}
+                    data={requests}
+                    columns={columns}
+                    cardConfig={cardConfig}
                     loading={isLoading}
-                    selectedIds={selectedRequests}
-                    onSelectAll={handleSelectAll}
-                    onSelect={handleSelectOne}
-                    canSelect={true}
-                    isSelectableFn={(item) => item.status === 'pending'}
-                    emptyText="No pending password requests found."
-                    renderRow={(request, index, isSelected) => (
-                        <>
-                            <td className="p-4 font-medium text-[#777777]">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                                        {request.user?.name ? request.user.name.substring(0, 2) : 'NA'}
-                                    </div>
-                                    <span className="font-medium text-[#777777]">{request.user?.name}</span>
-                                </div>
-                            </td>
-                            <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                                <div className="flex items-center justify-start gap-1.5 text-gray-500">
-                                    <Mail size={14} className="text-gray-400" />
-                                    <span>{request.user?.email}</span>
-                                </div>
-                            </td>
-                            <td className="p-4 text-start whitespace-nowrap">
-                                <div className="flex items-center justify-start gap-1.5 text-gray-500">
-                                    <ShieldCheck size={14} className="text-gray-400" />
-                                    <span className="capitalize">{request.userRole || request.user?.role}</span>
-                                </div>
-                            </td>
-                            <td className="p-4 text-start text-gray-500 whitespace-nowrap">
-                                <div className="flex items-center justify-start gap-1.5">
-                                    <Clock size={14} className="text-gray-400" />
-                                    <span>{new Date(request.createdAt).toLocaleDateString()} at {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                            </td>
-                            <td className="p-4 text-start whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize border ${
-                                    request.status === 'approved' ? 'bg-success-50 text-success border-success' :
-                                    request.status === 'rejected' ? 'bg-danger-50 text-danger border-danger' :
-                                    'bg-transparent text-yellow-600 border-yellow-400'
-                                }`}>
-                                    {request.status}
-                                </span>
-                            </td>
-                            <td className="p-4 text-center whitespace-nowrap">
-                                {request.status === 'pending' ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <button
-                                            className="px-2.5 py-1.5 bg-success-50 text-success border border-success hover:bg-success-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
-                                            onClick={() => openConfirmModal('approve', request._id)}
-                                        >
-                                            <Check className="w-3.5 h-3.5 mr-1" />
-                                            Approve
-                                        </button>
-                                        <button
-                                            className="px-2.5 py-1.5 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
-                                            onClick={() => openConfirmModal('reject', request._id)}
-                                        >
-                                            <X className="w-3.5 h-3.5 mr-1" />
-                                            Reject
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <span className="text-gray-400 text-xs italic">Processed</span>
-                                )}
-                            </td>
-                        </>
-                    )}
-                />
-
-                <MobileList
-                    currentPage={pagination.page}
-                    totalPages={pagination.totalPages}
-                    hasMore={pagination.page < pagination.totalPages}
-                    onLoadMore={() => fetchRequests(pagination.page + 1)}
-                    items={requests}
-                    loading={isLoading}
-                    selectedIds={selectedRequests}
-                    onSelectAll={handleSelectAll}
-                    onSelect={handleSelectOne}
-                    canSelect={true}
-                    isSelectableFn={(item) => item.status === 'pending'}
-                    emptyText="No pending password requests found."
-                    iconFn={(request) => (
-                        <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-bold text-sm uppercase">
-                            {request.user?.name ? request.user.name.substring(0, 2) : 'NA'}
-                        </div>
-                    )}
-                    titleFn={(request) => request.user?.name || 'Unknown User'}
-                    subtitleFn={(request) => (
-                        <>
-                            <Mail className="w-3 h-3 text-gray-400 shrink-0" />
-                            <span className="truncate max-w-[120px]">{request.user?.email || 'N/A'}</span>
-                        </>
-                    )}
-                    rightTopFn={(request) => (
-                        <>
-                            <ShieldCheck className="w-3 h-3 text-gray-400 shrink-0" />
-                            <span className="capitalize">{request.userRole || request.user?.role || 'User'}</span>
-                        </>
-                    )}
-                    statusBadgeFn={(request) => {
-                        let dotColor = 'bg-yellow-500', bgColor = 'bg-yellow-50', textColor = 'text-yellow-600';
-                        if (request.status === 'approved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
-                        else if (request.status === 'rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
-                        return (
-                            <div className="flex items-center gap-3">
-                                {request.status === 'pending' && (
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            className="px-2 py-1 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
-                                            onClick={(e) => { e.stopPropagation(); openConfirmModal('approve', request._id); }}
-                                        >
-                                            <Check className="w-3 h-3 mr-0.5" />
-                                            Approve
-                                        </button>
-                                        <button
-                                            className="px-2 py-1 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
-                                            onClick={(e) => { e.stopPropagation(); openConfirmModal('reject', request._id); }}
-                                        >
-                                            <X className="w-3 h-3 mr-0.5" />
-                                            Reject
-                                        </button>
-                                    </div>
-                                )}
-                                <MobileCardStatusBadge
-                                    status={request.status || 'Pending'}
-                                    dotColorClass={dotColor}
-                                    bgColorClass={bgColor}
-                                    textColorClass={textColor}
-                                />
-                            </div>
-                        );
+                    searchPlaceholder="Search user or email..."
+                    searchQuery={searchQuery}
+                    onSearchChange={(e) => { 
+                        setSearchQuery(e.target.value); 
+                        setPagination(p => ({ ...p, page: 1 })); 
                     }}
+                    toolbarEndSlot={
+                        <>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                                >
+                                    <MoreVertical className="w-5 h-5" />
+                                </button>
+                                {isDesktopMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                                        <button
+                                            onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkApprove'); }}
+                                            disabled={selectedRequests.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                        >
+                                            <Check className="w-4 h-4" /> Approve {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkReject'); }}
+                                            disabled={selectedRequests.length === 0}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                        >
+                                            <X className="w-4 h-4" /> Reject {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => setIsFilterModalOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
+                                title="Filter"
+                            >
+                                <SlidersHorizontal className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setIsExportConfirmOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                            >
+                                <Download size={16} /> Export
+                            </button>
+                        </>
+                    }
+                    emptyText="No pending password requests found."
+                    selection={{
+                        selectedIds: selectedRequests,
+                        onSelectAll: handleSelectAll,
+                        onSelectRow: handleSelectOne,
+                        getItemId: (o) => o._id,
+                        isSelectable: (o) => o.status === 'pending'
+                    }}
+                    pagination={{
+                        currentPage: pagination.page,
+                        totalPages: pagination.totalPages,
+                        onPageChange: (p) => fetchRequests(p),
+                        limit: limit,
+                        onLimitChange: (l) => { setLimit(l); fetchRequests(1); },
+                        totalItems: pagination.totalDocs,
+                    }}
+                    mobilePagination={{
+                        hasMore: pagination.page < pagination.totalPages,
+                        onLoadMore: () => fetchRequests(pagination.page + 1),
+                    }}
+                    getItemId={(o) => o._id}
                 />
-
-                {!isLoading && pagination.totalPages > 0 && (
-                    <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border-t border-gray-100 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                        <div>
-                            <span className="hidden sm:inline">Showing </span>
-                            {(!pagination.totalDocs && !pagination.totalRecords) ? 0 : (pagination.page - 1) * pagination.limit + 1}
-                            <span className="hidden sm:inline"> to </span>
-                            <span className="sm:hidden">-</span>
-                            {Math.min(pagination.page * pagination.limit, pagination.totalDocs || pagination.totalRecords || 0)} of {pagination.totalDocs || pagination.totalRecords || 0}
-                            <span className="hidden sm:inline"> entries</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button
-                                disabled={pagination.page <= 1}
-                                onClick={() => fetchRequests(pagination.page - 1)}
-                                className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-
-                            {(() => {
-                                let startPage = Math.max(1, pagination.page - 1);
-                                let endPage = Math.min(pagination.totalPages, pagination.page + 1);
-
-                                if (endPage - startPage < 2) {
-                                    if (startPage === 1) {
-                                        endPage = Math.min(pagination.totalPages, 3);
-                                    } else if (endPage === pagination.totalPages) {
-                                        startPage = Math.max(1, pagination.totalPages - 2);
-                                    }
-                                }
-
-                                const visiblePages = [];
-                                for (let i = startPage; i <= endPage; i++) {
-                                    visiblePages.push(i);
-                                }
-
-                                return visiblePages.map(pageNum => (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => fetchRequests(pageNum)}
-                                        className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${
-                                            pagination.page === pageNum
-                                                ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                                : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                ));
-                            })()}
-
-                            <button
-                                disabled={pagination.page >= pagination.totalPages || pagination.totalPages === 0}
-                                onClick={() => fetchRequests(pagination.page + 1)}
-                                className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
 
             <ExportFilterModal

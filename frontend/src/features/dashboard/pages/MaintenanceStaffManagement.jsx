@@ -77,7 +77,7 @@ export default function MaintenanceStaffManagement() {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [limit, setLimit] = useState(10);
 
     // Form State
     const [staffForm, setStaffForm] = useState({
@@ -148,7 +148,7 @@ export default function MaintenanceStaffManagement() {
             socket.off('userUpdated', handleStaffEvent);
             socket.off('userDeleted', handleStaffEvent);
         };
-    }, [currentPage]);
+    }, [currentPage, limit, debouncedSearch, statusFilter]);
 
     const fetchOrganizations = async () => {
         try {
@@ -441,7 +441,7 @@ export default function MaintenanceStaffManagement() {
     const confirmExport = async (exportFilters) => {
         setIsExporting(true);
         try {
-            const params = { limit: 100000 };
+            const params = { page: currentPage, limit: limit };
             if (searchQuery) params.search = searchQuery;
 
             // Allow export modal filter to override table filter completely
@@ -563,87 +563,21 @@ export default function MaintenanceStaffManagement() {
 
 
 
-            {/* TOOLBAR SECTION */}
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                        <div className="relative w-full">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                placeholder={t('Search Staff...')}
-                                value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                            />
-                        </div>
-                        <button onClick={openAddStaffModal} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
+            {/* DATA TABLE LAYOUT */}
 
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { value: "All Status", label: "All Status" },
-                                    { value: "Active", label: "Active" },
-                                    { value: "Inactive", label: "Inactive" }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => {
-                                    setStatusFilter(val);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="All Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
-
-                            <button
-                                onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" /> {t('export')}
-                            </button>
-                            <div className="relative" ref={bulkMenuRef}>
-                                <button
-                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
-                                >
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {isBulkMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Active
-                                        </button>
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Inactive
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <button
-                            onClick={openAddStaffModal}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> {t('Add New')}
-                        </button>
-                    </div>
-                </div>
-
-                {/* DATA TABLE LAYOUT */}
-
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4">
                 <MaintenanceStaffTable
                     paginatedStaff={staff}
+                    loading={loading}
+                    error={error}
+                    searchValue={searchQuery}
+                    onSearch={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+                    onExport={initiateExport}
+                    onAddClick={openAddStaffModal}
+                    onActivateSelected={() => handleBulkStatusClick(true)}
+                    onDeactivateSelected={() => handleBulkStatusClick(false)}
                     selectedIds={selectedIds}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
@@ -651,87 +585,13 @@ export default function MaintenanceStaffManagement() {
                     setView={setView}
                     handleStatusChangeClick={handleStatusChangeClick}
                     openEditStaffModal={openEditStaffModal}
-                    loading={loading}
-                    error={error}
-                />
-
-                <MaintenanceStaffMobileList
-                    currentPage={currentPage}
+                    page={currentPage}
+                    setPage={setCurrentPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalItems={totalStaff}
                     totalPages={totalPages}
-                    hasMore={currentPage < totalPages}
-                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
-                    paginatedStaff={staff}
-                    openEditStaffModal={openEditStaffModal}
-                    setSelectedStaffDetail={setSelectedStaffDetail}
-                    setView={setView}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    loading={loading}
-                    error={error}
                 />
-
-                {/* PAGINATION BAR FOOTER */}
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div>
-                        <span className="hidden sm:inline">Showing </span>
-                        {totalStaff === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
-                        <span className="hidden sm:inline"> to </span>
-                        <span className="sm:hidden">-</span>
-                        {Math.min(currentPage * itemsPerPage, totalStaff)} of {totalStaff}
-                        <span className="hidden sm:inline"> entries</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, currentPage - 1);
-                            let endPage = Math.min(totalPages, currentPage + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             {/* MODALS */}

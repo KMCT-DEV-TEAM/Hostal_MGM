@@ -5,18 +5,17 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import ResolveTaskModal from '../components/complaints/ResolveTaskModal';
 import RejectAssignedTaskModal from '../components/complaints/RejectAssignedTaskModal';
-import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
-import Dropdown from '@/components/ui/Dropdown';
-import { useDebounce } from '@/hooks/useDebounce';
-import MaintenanceAssignedTasksMobileList from '../components/complaints/MaintenanceAssignedTasksMobileList';
+import DataView from '@/components/ui/data-view/DataView';
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
+import { Droplet, Lightbulb, Wifi, Wrench, AlertCircle, FileText, Home as HomeIcon } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function MaintenanceAssignedTasks() {
     const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [statusFilter, setStatusFilter] = useState('All');
-    const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showKPIs, setShowKPIs] = useState(false);
@@ -66,13 +65,13 @@ export default function MaintenanceAssignedTasks() {
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'Resolved': return 'bg-success/10 text-success';
-            case 'In progress': return 'bg-blue-50 text-blue-600';
-            case 'Pending': return 'bg-warning-50 text-warning-600';
-            case 'Awaiting': return 'bg-warning-50 text-warning-600';
-            case 'Rejected': return 'bg-red-50 text-danger';
-            case 'Incomplete': return 'bg-primary/10 text-primary';
-            default: return 'bg-text-secondary-50 text-text-secondary';
+            case 'Resolved': return 'bg-success-50 text-success border-success';
+            case 'In progress': return 'bg-blue-50 text-blue-600 border-blue-200';
+            case 'Pending': return 'bg-warning-50 text-warning-600 border-warning-200';
+            case 'Awaiting': return 'bg-warning-50 text-warning-600 border-warning-200';
+            case 'Rejected': return 'bg-danger-50 text-danger border-danger';
+            case 'Incomplete': return 'bg-primary/10 text-primary border-primary/20';
+            default: return 'bg-gray-50 text-gray-600 border-gray-200';
         }
     };
 
@@ -84,11 +83,12 @@ export default function MaintenanceAssignedTasks() {
         return matchesSearch && matchesStatus;
     });
 
+    const [currentPage, setCurrentPage] = useState(1);
+    
     useEffect(() => {
         setCurrentPage(1);
-    }, [debouncedSearch, statusFilter]);
+    }, [debouncedSearch, statusFilter, limit]);
 
-    const limit = 10;
     const totalTasks = filteredTasks.length;
     const totalPages = Math.ceil(totalTasks / limit) || 1;
     const paginatedTasks = filteredTasks.slice((currentPage - 1) * limit, currentPage * limit);
@@ -107,6 +107,140 @@ export default function MaintenanceAssignedTasks() {
     const pendingAll = tasks.filter(t => t.status === 'Pending' || t.status === 'Awaiting').length;
     const inProgressAll = tasks.filter(t => t.status === 'In progress').length;
     const resolvedAll = tasks.filter(t => t.status === 'Resolved').length;
+
+    const getCategoryIcon = (category) => {
+        const cat = category?.toLowerCase() || '';
+        if (cat.includes('water') || cat.includes('plumb')) return <Droplet className="w-5 h-5 text-blue-500" />;
+        if (cat.includes('light') || cat.includes('electric')) return <Lightbulb className="w-5 h-5 text-orange-500" />;
+        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return <Wifi className="w-5 h-5 text-teal-500" />;
+        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return <Wrench className="w-5 h-5 text-gray-500" />;
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+    };
+
+    const getCategoryBgColor = (category) => {
+        const cat = category?.toLowerCase() || '';
+        if (cat.includes('water') || cat.includes('plumb')) return "bg-blue-50";
+        if (cat.includes('light') || cat.includes('electric')) return "bg-orange-50";
+        if (cat.includes('internet') || cat.includes('wifi') || cat.includes('network')) return "bg-teal-50";
+        if (cat.includes('clean') || cat.includes('housekeep') || cat.includes('maintain') || cat.includes('repair')) return "bg-gray-50";
+        return "bg-red-50";
+    };
+
+    const columns = [
+        {
+            key: "roomNo",
+            header: "Room",
+            renderCell: (o) => <span className="font-medium text-gray-500 pl-4">{o.roomNo}</span>
+        },
+        {
+            key: "category",
+            header: "Category",
+            accessor: (o) => o.category || 'N/A'
+        },
+        {
+            key: "subject",
+            header: "Subject",
+            accessor: (o) => o.subject
+        },
+        {
+            key: "assignedOn",
+            header: "Assigned On",
+            icon: Clock,
+            accessor: (o) => o.date
+        },
+        {
+            key: "status",
+            header: "Status",
+            align: "center",
+            renderCell: (o) => (
+                <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${getStatusStyle(o.status)}`}>
+                    {o.status || 'Pending'}
+                </div>
+            )
+        },
+        {
+            key: "action",
+            header: "Action",
+            align: "center",
+            renderCell: (o) => (
+                <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                    {o.status === 'In progress' ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => handleResolveClick(o)}
+                                className="px-3 py-1.5 bg-[#0A437A] text-white rounded text-xs font-medium hover:bg-primary-200 transition-colors cursor-pointer"
+                            >
+                                Resolve
+                            </button>
+                            <button
+                                onClick={() => handleRejectClick(o)}
+                                className="px-3 py-1.5 bg-danger-100 text-danger-700 rounded text-xs font-medium hover:bg-danger-200 transition-colors cursor-pointer"
+                            >
+                                Reject
+                            </button>
+                        </div>
+                    ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                    )}
+                </div>
+            )
+        }
+    ];
+
+    const cardConfig = {
+        customIcon: (o) => (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryBgColor(o.category)}`}>
+                {getCategoryIcon(o.category)}
+            </div>
+        ),
+        title: (o) => o.subject || 'Unknown Task',
+        subtitle: (o) => o.category || 'N/A',
+        status: (o) => {
+            let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
+            if (o.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+            else if (o.status === 'Pending' || o.status === 'Awaiting') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+            else if (o.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+            return {
+                label: o.status || 'Pending',
+                dotClass: dotColor,
+                bgClass: bgColor,
+                textClass: textColor
+            };
+        },
+        fields: [
+            {
+                label: "Room",
+                value: (o) => (
+                    <div className="flex items-center gap-1.5">
+                        <HomeIcon className="w-3 h-3 text-gray-400 shrink-0" />
+                        <span>Room: {o.roomNo || 'N/A'}</span>
+                    </div>
+                )
+            },
+            {
+                label: "Assigned On",
+                value: (o) => o.date
+            }
+        ],
+        actionSlot: (o) => (
+            o.status === 'In progress' && (
+                <div className="flex items-center w-full gap-3 mt-4 pt-4 border-t border-gray-50" onClick={e => e.stopPropagation()}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleResolveClick(o); }}
+                        className="flex-1 py-2.5 bg-[#0A437A] text-white rounded-lg text-sm font-semibold hover:bg-primary-200 transition-colors cursor-pointer text-center"
+                    >
+                        Resolve
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleRejectClick(o); }}
+                        className="flex-1 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors cursor-pointer text-center"
+                    >
+                        Reject
+                    </button>
+                </div>
+            )
+        )
+    };
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
@@ -172,170 +306,50 @@ export default function MaintenanceAssignedTasks() {
             </div>
             )}
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0">
-                {/* Toolbar */}
-                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0 mb-3 md:mb-0">
-                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                        <div className="relative w-full">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                placeholder="Search tasks..."
-                                value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { label: 'All Status', value: 'All' },
-                                    { label: 'Pending', value: 'Pending' },
-                                    { label: 'Awaiting', value: 'Awaiting' },
-                                    { label: 'In progress', value: 'In progress' },
-                                    { label: 'Rejected', value: 'Rejected' },
-                                    { label: 'Incomplete', value: 'Incomplete' },
-                                    { label: 'Resolved', value: 'Resolved' }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
-                                placeholder="All Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Table */}
-                <div className="hidden md:block overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <table className="w-full text-left border-collapse bg-white">
-                        <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                            <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-700 text-sm font-semibold">
-                                <th className="p-4 pl-8 text-start font-semibold">Room</th>
-                                <th className="p-4 text-start font-semibold">Category</th>
-                                <th className="p-4 text-start font-semibold">Subject</th>
-                                <th className="p-4 text-start font-semibold">Assigned On</th>
-                                <th className="p-4 text-center font-semibold">Status</th>
-                                <th className="p-4 text-center font-semibold">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 text-sm">
-                            {loading ? (
-                                <TableSkeletonLoader columns={6} />
-                            ) : paginatedTasks.length === 0 ? (
-                                <tr><td colSpan="6" className="text-center p-8 text-gray-500">No tasks found.</td></tr>
-                            ) : (
-                                paginatedTasks.map((task) => (
-                                    <tr key={task._id} onClick={() => setViewingTask(task)} className="hover:bg-gray-50/40 transition-colors cursor-pointer">
-                                        <td className="p-4 pl-8 text-start text-gray-500 font-medium">{task.roomNo}</td>
-                                        <td className="p-4 text-start text-gray-500">{task.category || 'N/A'}</td>
-                                        <td className="p-4 text-start text-gray-500">{task.subject}</td>
-                                        <td className="p-4 text-start text-gray-500">{task.date}</td>
-                                        <td className="p-4 text-center">
-                                            <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border-none ${getStatusStyle(task.status)}`}>
-                                                {task.status || 'Pending'}
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {task.status === 'In progress' ? (
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleResolveClick(task)}
-                                                        className="px-3 py-1.5 bg-[#0A437A] text-white rounded text-xs font-medium hover:bg-primary-200 transition-colors cursor-pointer"
-                                                    >
-                                                        Resolve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRejectClick(task)}
-                                                        className="px-3 py-1.5 bg-danger-100 text-danger-700 rounded text-xs font-medium hover:bg-danger-200 transition-colors cursor-pointer"
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs text-gray-400">-</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <MaintenanceAssignedTasksMobileList
-                    tasks={paginatedTasks}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col min-h-0">
+                <DataView
+                    pageScrollMode={true}
+                    data={paginatedTasks}
+                    columns={columns}
+                    cardConfig={cardConfig}
                     loading={loading}
-                    handleResolveClick={handleResolveClick}
-                    handleRejectClick={handleRejectClick}
-                    getStatusStyle={getStatusStyle}
-                    onViewClick={(task) => setViewingTask(task)}
+                    searchPlaceholder="Search tasks..."
+                    searchQuery={searchQuery}
+                    onSearchChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    toolbarEndSlot={
+                        <Dropdown
+                            options={[
+                                { value: "All", label: "All Status" },
+                                { value: "Pending", label: "Pending" },
+                                { value: "Awaiting", label: "Awaiting" },
+                                { value: "In progress", label: "In progress" },
+                                { value: "Rejected", label: "Rejected" },
+                                { value: "Incomplete", label: "Incomplete" },
+                                { value: "Resolved", label: "Resolved" }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+                            placeholder="All Status"
+                            minWidth="w-32"
+                            triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+                        />
+                    }
+                    emptyText="No tasks found."
+                    onRowClick={(task) => setViewingTask(task)}
+                    pagination={{
+                        currentPage: currentPage,
+                        totalPages: totalPages,
+                        onPageChange: setCurrentPage,
+                        limit: limit,
+                        onLimitChange: (l) => { setLimit(l); setCurrentPage(1); },
+                        totalItems: totalTasks
+                    }}
+                    mobilePagination={{
+                        hasMore: currentPage < totalPages,
+                        onLoadMore: () => setCurrentPage(prev => prev + 1)
+                    }}
+                    getItemId={(o) => o._id}
                 />
-
-                {/* Pagination */}
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div>
-                        <span className="hidden sm:inline">Showing </span>
-                        {totalTasks === 0 ? 0 : (currentPage - 1) * limit + 1}
-                        <span className="hidden sm:inline"> to </span>
-                        <span className="sm:hidden">-</span>
-                        {Math.min(currentPage * limit, totalTasks)} of {totalTasks}
-                        <span className="hidden sm:inline"> entries</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, currentPage - 1);
-                            let endPage = Math.min(totalPages, currentPage + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <ResolveTaskModal

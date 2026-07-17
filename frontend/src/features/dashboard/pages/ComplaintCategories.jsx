@@ -48,8 +48,7 @@ const ComplaintCategories = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: ''
-    });
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const fetchCategories = async () => {
         try {
@@ -287,52 +286,55 @@ const ComplaintCategories = () => {
                 </div>
             </div>
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
-                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                        <div className="relative w-full">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                placeholder="Search Categories..."
-                                value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                            />
-                        </div>
-                        <button onClick={() => openModal('add')} className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"><Plus className="w-4 h-4" /> Add</button>
-
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
-                        <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { label: 'All Status', value: 'All' },
-                                    { label: 'Active', value: 'Active' },
-                                    { label: 'Inactive', value: 'Inactive' }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => {
-                                    setStatusFilter(val);
-                                    setPage(1);
-                                }}
-                                placeholder="Select Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
-
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                <ComplaintCategoryTable
+                    complaintCategories={complaintCategories}
+                    loading={loading}
+                    error={error}
+                    selectedIds={selectedIds}
+                    handleSelectAll={handleSelectAll}
+                    handleSelectRow={handleSelectRow}
+                    setSelectedCategoryDetail={setSelectedCategoryDetail}
+                    setView={setView}
+                    handleStatusChangeClick={handleStatusChangeClick}
+                    openModal={openModal}
+                    page={page}
+                    setPage={setPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalPages={totalPages}
+                    totalItems={totalCategories}
+                    searchValue={searchQuery}
+                    onSearchChange={(e) => setSearchQuery(e.target.value)}
+                    toolbarStartSlot={
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Active', value: 'Active' },
+                                { label: 'Inactive', value: 'Inactive' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => {
+                                setStatusFilter(val);
+                                setPage(1);
+                            }}
+                            placeholder="Select Status"
+                            minWidth="w-32"
+                            triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer h-full"
+                        />
+                    }
+                    toolbarEndSlot={
+                        <>
                             <button
                                 onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
                             >
                                 <Download className="w-4 h-4" /> Export
                             </button>
-                            <div className="relative" ref={bulkMenuRef}>
+                            <div className="relative h-full" ref={bulkMenuRef}>
                                 <button
                                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
                                 >
                                     <MoreVertical className="w-4 h-4" />
                                 </button>
@@ -355,100 +357,15 @@ const ComplaintCategories = () => {
                                     </div>
                                 )}
                             </div>
-                        </div>
-                        <button
-                            onClick={() => openModal('add')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> Add New
-                        </button>
-                    </div>
-                </div>
-
-                <ComplaintCategoryTable
-                    complaintCategories={complaintCategories}
-                    loading={loading}
-                    error={error}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    setSelectedCategoryDetail={setSelectedCategoryDetail}
-                    setView={setView}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    openModal={openModal}
+                            <button
+                                onClick={() => openModal('add')}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                            >
+                                <Plus className="w-4 h-4" /> Add New
+                            </button>
+                        </>
+                    }
                 />
-
-                <ComplaintCategoryMobileList
-                    complaintCategories={complaintCategories}
-                    loading={loading}
-                    error={error}
-                    openModal={openModal}
-                    setSelectedCategoryDetail={setSelectedCategoryDetail}
-                    setView={setView}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                />
-
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div className="hidden sm:block">
-                        Showing {totalCategories === 0 ? 0 : (page - 1) * limit + 1} to{" "}
-                        {Math.min(page * limit, totalCategories)} of {totalCategories} entries
-                    </div>
-                    <div className="sm:hidden">
-                        {totalCategories === 0 ? 0 : (page - 1) * limit + 1}-{Math.min(page * limit, totalCategories)} of {totalCategories}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={page === 1}
-                            onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, page - 1);
-                            let endPage = Math.min(totalPages, page + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${page === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={page === totalPages || totalPages === 0}
-                            onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <ComplaintCategoryFormModal

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Pencil, AlignLeft } from 'lucide-react';
+import { Pencil, AlignLeft, Tag } from 'lucide-react';
 import Dropdown from '@/components/ui/Dropdown';
-import ListTable from '@/components/ui/ListTable';
+import DataView from '@/components/ui/data-view/DataView';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const ComplaintCategoryTable = ({
@@ -14,82 +14,120 @@ const ComplaintCategoryTable = ({
     setSelectedCategoryDetail,
     setView,
     handleStatusChangeClick,
-    openModal
+    openModal,
+    searchValue,
+    onSearchChange,
+    toolbarStartSlot,
+    toolbarEndSlot,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalPages,
+    totalItems
 }) => {
     const { t } = useTranslation();
 
-    const headers = [
-        'Category Name',
-        'Description',
-        t('status'),
-        { label: t('action'), align: 'center' }
-    ];
-
-    const renderRow = (c, index, isSelected, isLoading) => (
-        <>
-            <td className="p-4 font-medium text-[#777777]">
-                <div
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-                    onClick={() => {
-                        setSelectedCategoryDetail(c);
-                        setView('detail');
-                    }}
-                >
-                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                        {c.name ? c.name.substring(0, 2) : 'NA'}
-                    </div>
-                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{c.name}</span>
-                </div>
-            </td>
-            <td className="p-4 text-gray-500">
-                <div className="flex items-center gap-2">
-                    <AlignLeft className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="truncate max-w-[200px]">
-                        {c.description || 'No description'}
-                    </span>
-                </div>
-            </td>
-            <td className="p-4 text-start">
-                <div className="relative inline-block w-[105px]">
+    const columns = [
+        {
+            key: "name",
+            header: "Category Name",
+            type: "user",
+            titleAccessor: (o) => o.name,
+            subtitleAccessor: (o) => "",
+            avatarAccessor: (o) => o.name?.substring(0, 2)?.toUpperCase() || "NA",
+        },
+        {
+            key: "description",
+            header: "Description",
+            icon: AlignLeft,
+            truncate: true,
+            accessor: (o) => o.description || 'No description'
+        },
+        {
+            key: "status",
+            header: t('status'),
+            renderCell: (o) => (
+                <div className="relative inline-block w-[105px]" onClick={e => e.stopPropagation()}>
                     <Dropdown
                         minWidth=""
                         options={[
-                            { value: "Active", label: t('active') },
-                            { value: "Inactive", label: t('inactive') }
+                            { value: "Active", label: "Active" },
+                            { value: "Inactive", label: "Inactive" }
                         ]}
-                        value={c.isActive ? "Active" : "Inactive"}
-                        onChange={() => handleStatusChangeClick(c._id, c.isActive)}
-                        triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${c.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
+                        value={o.isActive ? "Active" : "Inactive"}
+                        onChange={() => handleStatusChangeClick(o._id, o.isActive)}
+                        triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${o.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                     />
                 </div>
-            </td>
-            <td className="p-4">
-                <div className="flex gap-3 items-center justify-center">
+            )
+        },
+        {
+            key: "action",
+            header: t('action'),
+            align: "center",
+            renderCell: (o) => (
+                <div className="flex gap-3 items-center justify-center" onClick={e => e.stopPropagation()}>
                     <button
-                        onClick={() => openModal('edit', c)}
+                        onClick={() => openModal('edit', o)}
                         className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                     >
                         <Pencil className="w-4 h-4 text-secondary" />
                     </button>
                 </div>
-            </td>
-        </>
-    );
+            )
+        }
+    ];
+
+    const cardConfig = {
+        avatar: (o) => o.name?.substring(0, 2)?.toUpperCase() || "NA",
+        title: (o) => o.name,
+        subtitle: (o) => o.description,
+        fields: [
+            { label: "Status", value: (o) => o.isActive ? "Active" : "Inactive" }
+        ]
+    };
 
     return (
-        <ListTable
-            headers={headers}
-            items={complaintCategories}
+        <DataView
+            pageScrollMode={true}
+            data={complaintCategories}
+            columns={columns}
+            cardConfig={cardConfig}
             loading={loading}
             error={error}
-            selectedIds={selectedIds}
-            onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
-            canSelect={true}
+            searchPlaceholder="Search categories..."
+            searchQuery={searchValue}
+            onSearchChange={onSearchChange}
+            toolbarStartSlot={toolbarStartSlot}
+            toolbarEndSlot={toolbarEndSlot}
             emptyText={t('no_records_found')}
-            renderRow={renderRow}
+            onRowClick={(o) => {
+                setSelectedCategoryDetail(o);
+                setView('detail');
+            }}
+            selection={{
+                selectedIds: selectedIds,
+                onSelectAll: handleSelectAll,
+                onSelectRow: handleSelectRow,
+                getItemId: (o) => o._id
+            }}
+            pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+                limit: limit,
+                onLimitChange: setLimit,
+                totalItems: totalItems,
+            }}
+            mobilePagination={{
+                hasMore: page < totalPages,
+                onLoadMore: () => setPage?.(prev => prev + 1),
+            }}
+            getItemId={(o) => o._id}
         />
     );
 };
 
 export default ComplaintCategoryTable;
+

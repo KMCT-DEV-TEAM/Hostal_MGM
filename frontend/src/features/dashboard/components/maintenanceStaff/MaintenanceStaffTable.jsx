@@ -1,156 +1,264 @@
-import React from 'react';
-import { Square, CheckSquare, Pencil, Phone } from 'lucide-react';
-import Dropdown from '@/components/ui/Dropdown';
-import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
-import { useTranslation } from '@/hooks/useTranslation';
+import React, { useState, useEffect } from "react";
+import { useClickOutside } from '@/hooks/useClickOutside';
+import {
+    Pencil,
+    Phone,
+    Briefcase,
+    MoreVertical,
+    Plus,
+    Download
+} from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
+import Dropdown from "@/components/ui/Dropdown";
+import DataView from "@/components/ui/data-view/DataView";
+import { useTranslation } from "@/hooks/useTranslation";
 
-const MaintenanceStaffTable = ({
+export default function MaintenanceStaffTable({
     paginatedStaff,
+    loading,
+    error,
+    searchValue,
+    onSearch,
+    statusFilter,
+    onStatusFilterChange,
+    onExport,
+    onAddClick,
+    onActivateSelected,
+    onDeactivateSelected,
     selectedIds,
     handleSelectAll,
     handleSelectRow,
     setSelectedStaffDetail,
     setView,
-    handleStatusChangeClick,
     openEditStaffModal,
-    loading,
-    error
-}) => {
+    handleStatusChangeClick,
+    // Pagination
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalItems,
+    totalPages,
+}) {
     const { t } = useTranslation();
 
-    return (
-        <div className="hidden md:block overflow-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
-                        <th className="p-4 w-12 text-center">
-                            <button onClick={handleSelectAll} className="focus:outline-none text-gray-300 hover:text-gray-500 cursor-pointer">
-                                {paginatedStaff.length > 0 && paginatedStaff.every(w => selectedIds.includes(w._id)) ? (
-                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                ) : (
-                                    <Square className="w-5 h-5" />
-                                )}
-                            </button>
-                        </th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('name')}
-                        </th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('specialization')}
-                        </th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('phone')}
-                        </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                            Assigned Count
-                        </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                            Resolved Count
-                        </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                            Pending Count
-                        </th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">
-                            {t('status')}
-                        </th>
-                        <th className="p-4 text-center normal-case text-sm font-semibold text-[#222222]">
-                            {t('action')}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                    {loading ? (
-                        <TableSkeletonLoader columns={9} />
-                    ) : error ? (
-                        <tr>
-                            <td colSpan="9" className="p-8 text-center text-danger">{error}</td>
-                        </tr>
-                    ) : paginatedStaff.length === 0 ? (
-                        <tr>
-                            <td colSpan="9" className="p-8 text-center text-gray-400">{t('no_records_found')}</td>
-                        </tr>
-                    ) : (
-                        paginatedStaff.map((staff) => {
-                            const isSelected = selectedIds.includes(staff._id);
-                            return (
-                                <tr key={staff._id} className={`hover:bg-gray-50/40 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
-                                    <td className="p-4 text-center">
-                                        <button onClick={() => handleSelectRow(staff._id)} className="focus:outline-none text-gray-300 cursor-pointer">
-                                            {isSelected ? (
-                                                <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                            ) : (
-                                                <Square className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </td>
-                                    <td className="p-4 font-medium text-[#777777]">
-                                        <div
-                                            className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-                                            onClick={() => {
-                                                setSelectedStaffDetail(staff);
-                                                setView('detail');
-                                            }}
-                                        >
-                                            <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                                                {staff.name ? staff.name.substring(0, 2) : 'NA'}
-                                            </div>
-                                            <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{staff.name}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-start text-gray-500">
-                                        {staff.specialization || 'N/A'}
-                                    </td>
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
 
-                                    <td className="p-4">
-                                        <div className="flex items-start justify-start gap-1.5 text-gray-500">
-                                            <Phone size={14} className="text-gray-400" />
-                                            <span>{staff.phone || 'N/A'}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex items-center justify-center">
-                                            <span className="text-sm font-medium text-gray-500">{staff.taskAssignedCount || 0}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex items-center justify-center">
-                                            <span className="text-sm font-medium text-gray-500">{staff.taskResolvedCount || 0}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex items-center justify-center">
-                                            <span className="text-sm font-medium text-gray-500">{staff.taskPendingCount || 0}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="relative w-[105px]">
-                                            <Dropdown
-                                                minWidth=""
-                                                options={[
-                                                    { value: "Active", label: t('active') },
-                                                    { value: "Inactive", label: t('inactive') }
-                                                ]}
-                                                value={staff.isActive ? "Active" : "Inactive"}
-                                                onChange={() => handleStatusChangeClick(staff._id, staff.isActive ? "Active" : "Inactive")}
-                                                triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${staff.isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
-                                            />
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-center gap-3 text-gray-400">
-                                            <button onClick={() => openEditStaffModal(staff)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })
-                    )}
-                </tbody>
-            </table>
-        </div>
+    const [searchTerm, setSearchTerm] = useState(searchValue || "");
+    const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
+    useEffect(() => {
+        setSearchTerm(searchValue || "");
+    }, [searchValue]);
+
+    useEffect(() => {
+        onSearch?.(debouncedSearchTerm);
+    }, [debouncedSearchTerm, onSearch]);
+
+    // 1. Column Configuration
+    const columns = [
+        {
+            key: "staffName",
+            header: t("name"),
+            type: "user",
+            truncate: true,
+            titleAccessor: (o) => o.name,
+            subtitleAccessor: (o) => "",
+            avatarAccessor: (o) => o.name,
+        },
+        {
+            key: "specialization",
+            header: t("specialization"),
+            icon: Briefcase,
+            accessor: (o) => o.specialization || "N/A"
+        },
+        {
+            key: "phone",
+            header: t("phone"),
+            icon: Phone,
+            accessor: (o) => o.phone || "N/A"
+        },
+        {
+            key: "assignedCount",
+            header: "Assigned Count",
+            align: "center",
+            accessor: (o) => o.taskAssignedCount || 0
+        },
+        {
+            key: "resolvedCount",
+            header: "Resolved Count",
+            align: "center",
+            accessor: (o) => o.taskResolvedCount || 0
+        },
+        {
+            key: "pendingCount",
+            header: "Pending Count",
+            align: "center",
+            accessor: (o) => o.taskPendingCount || 0
+        },
+        {
+            key: "status",
+            header: t("status"),
+            align: "center",
+            accessor: (o) => ({
+                text: Boolean(o.isActive) ? t("active") : t("inactive"),
+                color: Boolean(o.isActive) ? "green" : "red"
+            }),
+            renderCell: (o) => {
+                const isActive = Boolean(o.isActive);
+                return (
+                    <div className="relative inline-block w-[105px]" onClick={(e) => e.stopPropagation()}>
+                        <Dropdown
+                            minWidth=""
+                            options={[
+                                { value: "Active", label: t("active") },
+                                { value: "Inactive", label: t("inactive") },
+                            ]}
+                            value={isActive ? "Active" : "Inactive"}
+                            onChange={() => handleStatusChangeClick?.(o._id, isActive ? "Active" : "Inactive")}
+                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
+                        />
+                    </div>
+                );
+            }
+        },
+        {
+            key: "action",
+            header: t("action"),
+            align: "center",
+            renderCell: (o) => (
+                <div className="flex gap-3 items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                        onClick={() => openEditStaffModal?.(o)}
+                        className="p-1.5 text-gray-400 hover:text-[#0A437A] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Edit staff"
+                    >
+                        <Pencil className="w-4 h-4 text-secondary" />
+                    </button>
+                </div>
+            )
+        }
+    ];
+
+    // 2. Card Configuration for ResponsiveList
+    const cardConfig = {
+        avatar: (o) => o.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
+        title: (o) => o.name || "-",
+        subtitle: (o) => o.specialization || "N/A",
+        status: (o) => ({
+            text: Boolean(o.isActive) ? t("active") : t("inactive"),
+            color: Boolean(o.isActive) ? "green" : "red"
+        }),
+        fields: [
+            { label: t("phone"), value: (o) => o.phone || "N/A" },
+            { label: "Assigned", value: (o) => o.taskAssignedCount || 0 },
+            { label: "Resolved", value: (o) => o.taskResolvedCount || 0 },
+            { label: "Pending", value: (o) => o.taskPendingCount || 0 }
+        ],
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, isActive ? "Active" : "Inactive"),
+    };
+
+    // 3. Toolbar Slots
+    const toolbarStartSlot = null;
+
+    const toolbarEndSlot = (
+        <>
+            <Dropdown
+                className="flex-1 sm:flex-none"
+                options={[
+                    { value: "All Status", label: "All Status" },
+                    { value: "Active", label: "Active" },
+                    { value: "Inactive", label: "Inactive" }
+                ]}
+                value={statusFilter}
+                onChange={onStatusFilterChange}
+                placeholder={"All Status"}
+                minWidth="w-32"
+                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+            />
+            {onExport && (
+                <button
+                    onClick={onExport}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                >
+                    <Download className="w-4 h-4" /> Export
+                </button>
+            )}
+            <div className="relative" ref={bulkMenuRef}>
+                <button
+                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                >
+                    <MoreVertical className="w-4 h-4 text-gray-500" />
+                </button>
+                {isBulkMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                        <button
+                            onClick={() => { setIsBulkMenuOpen(false); onActivateSelected?.(); }}
+                            disabled={selectedIds.length === 0}
+                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                        </button>
+                        <button
+                            onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected?.(); }}
+                            disabled={selectedIds.length === 0}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                        </button>
+                    </div>
+                )}
+            </div>
+            {onAddClick && (
+                <button
+                    onClick={onAddClick}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add New
+                </button>
+            )}
+        </>
     );
-};
 
-export default MaintenanceStaffTable;
+    return (
+        <DataView
+            pageScrollMode={true}
+            data={paginatedStaff}
+            columns={columns}
+            cardConfig={cardConfig}
+            loading={loading}
+            error={error}
+            searchPlaceholder={t('Search Staff...')}
+            searchQuery={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            toolbarStartSlot={toolbarStartSlot}
+            toolbarEndSlot={toolbarEndSlot}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelect={handleSelectRow}
+            canSelect={true}
+            emptyText={t('no_records_found')}
+            onRowClick={(o) => {
+                setSelectedStaffDetail?.(o);
+                setView?.('detail');
+            }}
+            pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+                limit: limit,
+                onLimitChange: setLimit,
+                totalItems: totalItems,
+            }}
+            mobilePagination={{
+                hasMore: page < totalPages,
+                onLoadMore: () => setPage?.(prev => prev + 1),
+            }}
+            getItemId={(o) => o._id}
+        />
+    );
+}
+

@@ -59,7 +59,7 @@ const OrganizationMobileList = ({
             )}
             statusBadgeFn={(o) => (
                 <MobileCardStatusBadge
-                    status={o.isActive ? t('active') : t('inactive')}
+                    status={o.isActive ? "Active" : "Inactive"}
                     dotColorClass={o.isActive ? 'bg-green-500' : 'bg-red-500'}
                     bgColorClass={o.isActive ? 'bg-green-50' : 'bg-red-50'}
                     textColorClass={o.isActive ? 'text-green-600' : 'text-red-600'}
@@ -75,3 +75,4 @@ const OrganizationMobileList = ({
 };
 
 export default OrganizationMobileList;
+
