@@ -9,6 +9,7 @@ import VisitorDetailedView from '../components/VisitorDetailedView';
 import VisitorHistoryAggregatedView from '../components/VisitorHistoryAggregatedView';
 import { getSuperAdminHostelVisits, listVisitorVisits, getDashboardSummary } from '@/services/visitor.service';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import FilterModal from '../components/modals/FilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
@@ -25,6 +26,7 @@ const VisitorHistoryPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [filters, setFilters] = useState({ status: '', fromDate: '', toDate: '' });
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const { isMobile } = useBreakpoint();
     const [page, setPage] = useState(1);
@@ -183,6 +185,7 @@ const VisitorHistoryPage = () => {
                         setSearchQuery(val);
                         setPage(1);
                     }}
+                    onFilterClick={() => setIsFilterModalOpen(true)}
                     onAddClick={undefined}
                     onEdit={undefined}
                 />
@@ -279,6 +282,13 @@ const VisitorHistoryPage = () => {
                         type: "date"
                     }
                 ]}
+            />
+
+            <FilterModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                filters={filters}
+                onFilter={(f) => { handleFilter(f); setPage(1); }}
             />
         </>
     );

@@ -10,6 +10,7 @@ import VisitorListTableView from '../components/VisitorListTableView';
 import VisitorProfilesAggregatedView from '../components/VisitorProfilesAggregatedView';
 import RegisterVisitorModal from '../components/modals/RegisterVisitorModal';
 import VisitorDetailsModal from '../components/modals/VisitorDetailsModal';
+import FilterModal from '../components/modals/FilterModal';
 import {
     getAllVisitors,
     getParentVisitors,
@@ -71,6 +72,7 @@ const VisitorsPage = () => {
 
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedVisitorId, setSelectedVisitorId] = useState(null);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
     const handleRowClick = (visitor) => {
         setSelectedVisitorId(visitor._id || visitor.id || visitor.visitorId);
@@ -201,7 +203,12 @@ const VisitorsPage = () => {
         }
     };
 
-    const handleExport = () => {
+    const handleMobileFilter = (filters) => {
+        setStatusFilter(filters.status);
+        setPage(1);
+    };
+
+    const handleExportClick = () => {
         setIsExportConfirmOpen(true);
     };
 
@@ -284,6 +291,7 @@ const VisitorsPage = () => {
                         setSearchQuery(val);
                         setPage(1);
                     }}
+                    onFilterClick={() => setIsFilterModalOpen(true)}
                     onAddClick={isParent ? () => setShowCheckInModal(true) : undefined}
                     onEdit={isParent ? handleEdit : undefined}
                 />
@@ -323,7 +331,7 @@ const VisitorsPage = () => {
                                 setSearchParams(newParams);
                             }}
                             canExport={canExport}
-                            onExportClick={handleExport}
+                            onExportClick={handleExportClick}
                             userRole={user?.role}
                         />
                     ) : (
@@ -337,7 +345,7 @@ const VisitorsPage = () => {
                                 setStatusFilter(val);
                                 setPage(1);
                             }}
-                            onExportClick={handleExport}
+                            onExportClick={handleExportClick}
                             canApproveReject={canApproveReject}
                             canExport={canExport}
                             canRegister={isParent}
@@ -377,7 +385,32 @@ const VisitorsPage = () => {
                 isExporting={isExporting}
                 title="Export Visitors"
                 subtitle="Select filters to apply before downloading visitor records"
-                fields={exportFields}
+                filters={[
+                    {
+                        name: 'status',
+                        label: 'Status',
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Pending', value: 'Pending' },
+                            { label: 'Approved', value: 'Approved' },
+                            { label: 'Rejected', value: 'Rejected' }
+                        ]
+                    }
+                ]}
+            />
+
+            <FilterModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                filters={{ status: statusFilter }}
+                onFilter={handleMobileFilter}
+                showDateFilters={false}
+                statusOptions={[
+                    { label: 'All Status', value: '' },
+                    { label: 'Pending', value: 'Pending' },
+                    { label: 'Approved', value: 'Approved' },
+                    { label: 'Rejected', value: 'Rejected' },
+                ]}
             />
 
             <VisitorDetailsModal

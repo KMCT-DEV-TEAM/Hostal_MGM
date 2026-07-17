@@ -7,7 +7,9 @@ export default function FilterModal({
     isOpen,
     onClose,
     filters = {},
-    onFilter
+    onFilter,
+    statusOptions = null,
+    showDateFilters = true
 }) {
     const [localStatus, setLocalStatus] = useState('');
     const [localFromDate, setLocalFromDate] = useState('');
@@ -69,21 +71,25 @@ export default function FilterModal({
             }
         >
             <div className="grid grid-cols-2 gap-5">
-                <DateInput
-                    label="From Date"
-                    value={localFromDate}
-                    onChange={(e) => setLocalFromDate(e.target.value)}
-                />
-                <DateInput
-                    label="To Date"
-                    value={localToDate}
-                    onChange={(e) => setLocalToDate(e.target.value)}
-                />
+                {showDateFilters && (
+                    <>
+                        <DateInput
+                            label="From Date"
+                            value={localFromDate}
+                            onChange={(e) => setLocalFromDate(e.target.value)}
+                        />
+                        <DateInput
+                            label="To Date"
+                            value={localToDate}
+                            onChange={(e) => setLocalToDate(e.target.value)}
+                        />
+                    </>
+                )}
 
                 <div className="col-span-2">
                     <label className="block mb-1.5 text-xs font-medium">Status</label>
                     <Dropdown
-                        options={[
+                        options={statusOptions || [
                             { label: 'All Status', value: '' },
                             { label: 'Checked In', value: 'Checked In' },
                             { label: 'Completed', value: 'Completed' }
