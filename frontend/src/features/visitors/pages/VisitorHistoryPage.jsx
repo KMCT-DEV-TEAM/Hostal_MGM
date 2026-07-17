@@ -13,6 +13,8 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import BackButton from '@/components/ui/BackButton';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+import VisitorsMobileView from '../views/VisitorsMobileView';
 
 const VisitorHistoryPage = () => {
     const { user } = useAuthStore();
@@ -26,9 +28,14 @@ const VisitorHistoryPage = () => {
     const [filters, setFilters] = useState({ status: '', fromDate: '', toDate: '' });
     const [limit, setLimit] = useState(10);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
+    const { isMobile } = useBreakpoint();
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
 
     const isSuperAdmin = user?.role === 'super_admin';
     const canExport = ['super_admin', 'admin', 'warden'].includes(user?.role);
+    const isParent = user?.role === 'parent';
+    const isStudent = user?.role === 'student';
 
     const urlHostelId = searchParams.get('hostelId');
     const urlHostelName = searchParams.get('hostelName');
@@ -43,7 +50,8 @@ const VisitorHistoryPage = () => {
         try {
             setLoading(true);
             let res;
-            const params = { page: 1, limit };
+
+            const params = { page, limit: 10 };
             if (debouncedSearchQuery) params.search = debouncedSearchQuery;
             if (filters.status) params.status = filters.status;
             if (filters.fromDate) params.startDate = filters.fromDate;
@@ -56,7 +64,16 @@ const VisitorHistoryPage = () => {
                 res = await listVisitorVisits(params);
             }
 
-            setVisitors(res.data || []);
+            const visitorsData = res.data || [];
+            if (isMobile && page > 1) {
+                setVisitors(prev => [...prev, ...visitorsData]);
+            } else {
+                setVisitors(visitorsData);
+            }
+
+            const totalItems = res?.total || visitorsData.length || 0;
+            const totalPages = res?.totalPages || Math.ceil(visitorsData.length / 10) || 1;
+            setPagination({ totalPages, totalItems });
 
             // Fetch real stats from dashboard-summary if management role
             if (['super_admin', 'admin', 'warden'].includes(user?.role)) {
@@ -76,7 +93,8 @@ const VisitorHistoryPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [showAggregatedView, selectedHostel, debouncedSearchQuery, filters, limit]);
+
+    }, [showAggregatedView, selectedHostel, debouncedSearchQuery, filters, page, isMobile]);
 
     useEffect(() => {
         fetchVisitors();
@@ -157,26 +175,57 @@ const VisitorHistoryPage = () => {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
-            <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <div className="mb-6 shrink-0 flex items-center gap-4">
 
-                    <PageHeader
-                        actionButton={selectedHostel && isSuperAdmin && <BackButton text="Back to Students" />}
-                        title={selectedHostel ? `Visitors History - ${selectedHostel.name}` : "Visitors History"}
-                        subtitle={showAggregatedView ? "Overview of past visitors across all hostels" : "View historical visitors"}
-                    />
-                </div>
+        <>
+            {isMobile && (isParent || isStudent) ? (
+                <VisitorsMobileView
+                    visitors={visitors}
+                    loading={loading}
+                    hasMore={page < pagination.totalPages}
+                    onLoadMore={() => setPage(p => p + 1)}
+                    searchQuery={searchQuery}
+                    setSearchQuery={(val) => {
+                        setSearchQuery(val);
+                        setPage(1);
+                    }}
+                    onAddClick={undefined}
+                    onEdit={undefined}
+                />
+            ) : (
+                <><div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 bg-background-secondary flex flex-col">
+                    <div className="mb-6 shrink-0 flex items-center gap-4">
+                        {/* {selectedHostel && isSuperAdmin && (
+                            <button
+                                onClick={() => {
+                                    const newParams = new URLSearchParams(searchParams);
+                                    newParams.delete('hostelId');
+                                    newParams.delete('hostelName');
+                                    setSearchParams(newParams);
+                                }}
+                                className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                        )} */}
+                        <PageHeader
+                            actionButton={
+                                <BackButton
+                                    text='Back To Dashboard'
 
-                {/* Shared Stats Component */}
-                {['super_admin', 'admin', 'warden'].includes(user?.role) && stats && (
-                    <div className="shrink-0">
-                        <VisitorStats stats={stats} />
+                                />
+                            }
+                            title={selectedHostel ? `Visitors History - ${selectedHostel.name}` : "Visitors History"}
+                            subtitle={showAggregatedView ? "Overview of past visitors across all hostels" : "View historical visitors"} />
                     </div>
-                )}
 
-                {/* Role-Based Rendering */}
-                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
+                    {/* Shared Stats Component */}
+                    {['super_admin', 'admin', 'warden'].includes(user?.role) && stats && (
+                        <div className="shrink-0">
+                            <VisitorStats stats={stats} />
+                        </div>
+                    )}
+
+                    {/* Table View */}
                     {showAggregatedView ? (
                         <VisitorHistoryAggregatedView
                             visitors={visitors}
@@ -193,10 +242,7 @@ const VisitorHistoryPage = () => {
                             }}
                             canExport={canExport}
                             onExportClick={handleExport}
-                            userRole={user?.role}
-                            limit={limit}
-                            setLimit={setLimit}
-                        />
+                            userRole={user?.role} />
                     ) : (
                         <VisitorDetailedView
                             visitors={visitors}
@@ -209,43 +255,71 @@ const VisitorHistoryPage = () => {
                             canExport={canExport}
                             onExportClick={handleExport}
                             userRole={user?.role}
-                            limit={limit}
-                            setLimit={setLimit}
-                        />
-                    )}
-                </div>
 
-                <ExportFilterModal
-                    isOpen={isExportConfirmOpen}
-                    onClose={() => setIsExportConfirmOpen(false)}
-                    onExport={confirmExport}
-                    isExporting={isExporting}
-                    title="Export Visitor History"
-                    subtitle="Select filters to apply before downloading visitor history records"
-                    fields={[
-                        {
-                            name: "status",
-                            label: "Status",
-                            options: [
-                                { label: 'All Status', value: '' },
-                                { label: 'Checked In', value: 'Checked In' },
-                                { label: 'Completed', value: 'Completed' },
-                            ]
-                        },
-                        {
-                            name: "fromDate",
-                            label: "From Date",
-                            type: "date"
-                        },
-                        {
-                            name: "toDate",
-                            label: "To Date",
-                            type: "date"
-                        }
-                    ]}
-                />
-            </div>
-        </div>
+                            limit={limit}
+                            setLimit={setLimit} />
+                    )}
+                </div><ExportFilterModal
+                        isOpen={isExportConfirmOpen}
+                        onClose={() => setIsExportConfirmOpen(false)}
+                        onExport={confirmExport}
+                        isExporting={isExporting}
+                        title="Export Visitor History"
+                        subtitle="Select filters to apply before downloading visitor history records"
+                        fields={[
+                            {
+                                name: "status",
+                                label: "Status",
+                                options: [
+                                    { label: 'All Status', value: '' },
+                                    { label: 'Checked In', value: 'Checked In' },
+                                    { label: 'Completed', value: 'Completed' },
+                                ]
+                            },
+                            {
+                                name: "fromDate",
+                                label: "From Date",
+                                type: "date"
+                            },
+                            {
+                                name: "toDate",
+                                label: "To Date",
+                                type: "date"
+                            }
+                        ]} />
+                </>
+            )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Visitor History"
+                subtitle="Select filters to apply before downloading visitor history records"
+                fields={[
+                    {
+                        name: "status",
+                        label: "Status",
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Checked In', value: 'Checked In' },
+                            { label: 'Completed', value: 'Completed' },
+                        ]
+                    },
+                    {
+                        name: "fromDate",
+                        label: "From Date",
+                        type: "date"
+                    },
+                    {
+                        name: "toDate",
+                        label: "To Date",
+                        type: "date"
+                    }
+                ]}
+            />
+        </>
     );
 };
 

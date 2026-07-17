@@ -3,6 +3,7 @@ import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { User, Users, GraduationCap, Building2, Settings, Globe, LogOut, Phone, Mail, FileText, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatDateReadable } from '@/utils/formatters';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileMobileView = ({
     user,
@@ -18,6 +19,7 @@ const ProfileMobileView = ({
     handleOpenConfirm
 }) => {
     const { logout } = useAuthStore();
+    const navigate = useNavigate();
 
     useLayoutConfig({
         header: {
@@ -96,7 +98,7 @@ const ProfileMobileView = ({
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-4 border-b border-gray-50 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                            <User className="w-4 h-4 text-[#0A437A]" />
+                            <User className="w-4 h-4 text-primary" />
                         </div>
                         <h3 className="font-semibold text-text-primary text-sm">Basic Informations</h3>
                     </div>
@@ -251,10 +253,13 @@ const ProfileMobileView = ({
             ) : (
                 <>
                     {/* Visitors Button */}
-                    <button className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform">
+                    <button
+                        onClick={() => navigate('/dashboard/visitors')}
+                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform w-full"
+                    >
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-[#0A437A]" />
+                                <Users className="w-5 h-5 text-primary" />
                             </div>
                             <span className="font-semibold text-text-primary text-sm">Visitors</span>
                         </div>
@@ -269,7 +274,7 @@ const ProfileMobileView = ({
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-50 flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                                <GraduationCap className="w-4 h-4 text-[#0A437A]" />
+                                <GraduationCap className="w-4 h-4 text-primary" />
                             </div>
                             <h3 className="font-semibold text-text-primary text-sm">Academic Details</h3>
                         </div>
@@ -426,7 +431,7 @@ const ProfileMobileView = ({
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-50 flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                                <Building2 className="w-4 h-4 text-[#0A437A]" />
+                                <Building2 className="w-4 h-4 text-primary" />
                             </div>
                             <h3 className="font-semibold text-text-primary text-sm">Hostel Details</h3>
                         </div>
