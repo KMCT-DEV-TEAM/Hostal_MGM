@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Calendar, Clock, Building, User } from 'lucide-react';
+import { Filter, Calendar, Clock, Building, User, ArrowLeftToLine } from 'lucide-react';
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -121,14 +121,19 @@ export default function LeavesDetailView({
             renderCell: (r) => {
                 if (isAdmin && r.status === 'pending_admin') {
                     return (
-                        <div onClick={(e) => e.stopPropagation()}>
-                            <Dropdown
-                                options={statusOptions}
-                                value="Pending"
-                                onChange={(val) => setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'status' })}
-                                minWidth="w-[130px]"
-                                triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/30 text-warning hover:bg-warning/20 w-[130px]`}
-                            />
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                onClick={() => setConfirmModal({ isOpen: true, id: r._id || r.id, value: 'Approved', type: 'status' })}
+                                className="px-3 py-1.5 rounded-md text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors shadow-sm"
+                            >
+                                Approve
+                            </button>
+                            <button
+                                onClick={() => setConfirmModal({ isOpen: true, id: r._id || r.id, value: 'Rejected', type: 'status' })}
+                                className="px-3 py-1.5 rounded-md text-xs font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors shadow-sm"
+                            >
+                                Reject
+                            </button>
                         </div>
                     );
                 }
@@ -140,16 +145,16 @@ export default function LeavesDetailView({
             header: "Return",
             renderCell: (r) => {
                 if (isWarden && r.status === 'approved') {
+                    const currentReturnStatus = getReturnStatus(r);
+                    const isPendingReturn = currentReturnStatus === 'Left (Pending Return)';
                     return (
                         <div onClick={(e) => e.stopPropagation()}>
-                            <Dropdown
-                                options={getReturnOptions(getReturnStatus(r))}
-                                value=""
-                                placeholder={getReturnStatus(r)}
-                                onChange={(val) => setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'return' })}
-                                minWidth="w-[160px]"
-                                triggerClassName={`px-3 py-1.5 rounded-md text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50 w-[160px]`}
-                            />
+                            <button
+                                onClick={() => setConfirmModal({ isOpen: true, id: r._id || r.id, value: isPendingReturn ? 'Returned' : 'Left', type: 'return' })}
+                                className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-colors shadow-sm ${isPendingReturn ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`}
+                            >
+                                {isPendingReturn ? 'Mark Returned' : 'Mark Left'}
+                            </button>
                         </div>
                     );
                 }
@@ -162,33 +167,54 @@ export default function LeavesDetailView({
         avatar: (r) => getStudentName(r).substring(0, 2),
         title: (r) => getStudentName(r),
         subtitle: (r) => isRoomCol ? (r.studentInfo?.roomNumber || 'Room --') : (r.hostelInfo?.name || r.hostelId?.name || r.hostel),
-        status: (r) => ({
-            text: r.status ? r.status.replace('_', ' ') : 'pending',
-            color: r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : r.status === 'pending_admin' ? 'yellow' : 'orenge'
-        }),
+        status: (r) => {
+            if (isAdmin && r.status === 'pending_admin') {
+                return {
+                    text: 'Pending',
+                    color: 'yellow',
+                    actions: [
+                        {
+                            label: 'Approve',
+                            color: 'green',
+                            onClick: () => setConfirmModal({ isOpen: true, id: r._id || r.id, value: 'Approved', type: 'status' })
+                        },
+                        {
+                            label: 'Reject',
+                            color: 'red',
+                            onClick: () => setConfirmModal({ isOpen: true, id: r._id || r.id, value: 'Rejected', type: 'status' })
+                        }
+                    ]
+                };
+            }
+            if (isWarden && r.status === 'approved') {
+                const currentReturnStatus = getReturnStatus(r);
+                const isPendingReturn = currentReturnStatus === 'Left (Pending Return)';
+                return {
+                    text: r.status.replace('_', ' '),
+                    color: 'green',
+                    actions: [
+                        {
+                            label: isPendingReturn ? 'Mark Returned' : 'Mark Left',
+                            color: isPendingReturn ? 'green' : 'blue',
+                            onClick: () => setConfirmModal({ isOpen: true, id: r._id || r.id, value: isPendingReturn ? 'Returned' : 'Left', type: 'return' })
+                        }
+                    ]
+                };
+            }
+            return {
+                text: r.status ? r.status.replace('_', ' ') : 'pending',
+                color: r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : r.status === 'pending_admin' ? 'yellow' : 'orenge'
+            };
+        },
+        time: (r) => !isHomePass ? `${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}` : formatDateReadable(r.createdAt || r.date),
         fields: [
             { icon: Calendar, accessor: (r) => isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date) },
             { icon: User, accessor: (r) => isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : (r.type || r.outPassCategory) },
-            ...(!isHomePass ? [{ icon: Clock, accessor: (r) => `${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}` }] : []),
             {
-                icon: Building,
+                icon: ArrowLeftToLine,
                 accessor: (r) => {
                     if (!r.returnTracking?.returnStatus && !isWarden) return null;
-                    if (isWarden && r.status === 'approved') {
-                        return (
-                            <div onClick={(e) => e.stopPropagation()}>
-                                <Dropdown
-                                    options={getReturnOptions(getReturnStatus(r))}
-                                    value=""
-                                    placeholder={getReturnStatus(r)}
-                                    onChange={(val) => setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'return' })}
-                                    minWidth="w-32"
-                                    triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                                />
-                            </div>
-                        );
-                    }
-                    return <LeaveReturnBadge returnTracking={r.returnTracking} />;
+                    return getReturnStatus(r);
                 }
             }
         ]

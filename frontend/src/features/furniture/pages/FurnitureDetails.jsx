@@ -256,7 +256,7 @@ export default function FurnitureDetails() {
     ];
 
     const cardConfig = {
-        avatar: (item) => item.studentId?.name || titleName,
+        avatar: (item) => titleName.split(' ').map(n => n[0]).join('').toUpperCase(),
         title: (item) => item.furnitureId || "--",
         subtitle: (item) => titleName,
         status: (item) => ({
