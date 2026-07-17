@@ -7,6 +7,8 @@ import { Calendar, Clock, GraduationCap, CalendarCheck, Scan, Maximize, Search, 
 import ScanQRModal from '../components/ScanQRModal';
 import ConfirmStudentModal from '../components/ConfirmStudentModal';
 import AttendanceSuccessModal from '../components/attendance/AttendanceSuccessModal';
+import PageHeader from '@/components/ui/PageHeader';
+import BackButton from '@/components/ui/BackButton';
 
 // Using a basic fallback base64 decoder since jwt-decode wasn't installed
 const decodeJWT = (token) => {
@@ -172,16 +174,16 @@ export default function AttendanceScan() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="p-2 hover:bg-gray-200 rounded-full transition-colors shrink-0"
-                    >
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <div className="flex flex-col gap-1">
+
+                    {/* <div className="flex flex-col gap-1">
                         <h1 className="text-xl font-bold text-gray-900">Mark Attendance</h1>
                         <p className="text-sm text-gray-500 mt-1">Attendance &gt; Mark Attendance</p>
-                    </div>
+                    </div> */}
+                    <PageHeader
+                        title="Mark Attendance"
+                        subtitle=""
+                        actionButton={<BackButton text="Back to Attendance" />}
+                    />
                 </div>
 
                 <button

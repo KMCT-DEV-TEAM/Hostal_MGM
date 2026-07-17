@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, Box, PackageCheck, PackageOpen, Building2Icon, User } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
-import DataTable from '@/components/ui/DataTable';
-import InfoCard from '@/components/ui/InfoCard';
+import DataView from '@/components/ui/data-view/DataView';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import Dropdown from '@/components/ui/Dropdown';
@@ -23,7 +22,7 @@ export default function WardenFurniture() {
     const urlSearchQuery = searchParams.get('search') || '';
     const statusFilter = searchParams.get('status') || 'All';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const [searchInput, setSearchInput] = useState(urlSearchQuery);
     const debouncedSearch = useDebounce(searchInput, 500);
@@ -147,13 +146,60 @@ export default function WardenFurniture() {
     const pageTitle = 'Manage Furniture';
     const pageSubtitle = 'Manage all furnitures';
 
-    const tableHeaders = [
-        { key: 'furnitureId', label: 'Furniture Id' },
-        { key: 'furniture', label: 'Furniture' },
-        { key: 'organization', label: 'Organization' },
-        { key: 'assignedTo', label: 'Assigned To' },
-        { key: 'status', label: 'Status' }
+    const columns = [
+        {
+            key: 'furnitureId',
+            header: 'Furniture Id',
+            accessor: (r) => r.furnitureId || '--'
+        },
+        {
+            key: 'furniture',
+            header: 'Furniture',
+            accessor: (r) => r.typeInfo?.name || '--'
+        },
+        {
+            key: 'organization',
+            header: 'Organization',
+            accessor: (r) => r.organization?.name || '--'
+        },
+        {
+            key: 'assignedTo',
+            header: 'Assigned To',
+            renderCell: (r) => {
+                if (!r.studentId?.name) return <span>-</span>;
+                return (
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                            {r.studentId.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <span className="text-gray-900 font-medium">{r.studentId.name}</span>
+                    </div>
+                );
+            }
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            renderCell: (r) => <FurnitureStatusBadge status={r.status} />
+        }
     ];
+
+    const cardConfig = {
+        avatar: (r) => (r.typeInfo?.name || "F").substring(0, 2),
+        title: (r) => r.typeInfo?.name || "Unknown Furniture",
+        subtitle: (r) => r.furnitureId || "--",
+        status: (r) => ({
+            text: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : "Unknown",
+            color: r.status === 'available' ? 'green' :
+                r.status === 'allocated' ? 'blue' :
+                    r.status === 'maintenance' ? 'yellow' :
+                        (r.status === 'scrap' || r.status === 'lost') ? 'red' : 'gray'
+        }),
+        fields: [
+            { icon: Building2Icon, accessor: (r) => r.organization?.name || "--" },
+            { icon: User, accessor: (r) => r.studentId?.name || "Unassigned" }
+        ]
+    };
 
     const handleRowClick = (item) => {
         setSelectedAsset(item);
@@ -165,130 +211,111 @@ export default function WardenFurniture() {
     const availableFurnitures = dashboardStats?.available || 0;
 
     return (
-        <div className="w-full h-full overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col bg-background-secondary">
-            {/* Header */}
-            <div className="mb-6 shrink-0">
-                <PageHeader title={pageTitle} subtitle={pageSubtitle} />
-            </div>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                {/* Header */}
+                <div className="mb-6 shrink-0">
+                    <PageHeader title={pageTitle} subtitle={pageSubtitle} />
+                </div>
 
-            {/* Stat Cards */}
-            <div className="lg:grid  hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <StatsCard
-                    label="TOTAL FURNITURES"
-                    value={totalFurnitures}
-                    icon={<Box className="w-5 h-5" />}
-                    iconBg="bg-secondary/10 text-secondary"
-                    borderColor='border-t-2 border-t-secondary/70'
-                />
-                <StatsCard
-                    label="ASSIGNED FURNITURES"
-                    value={assignedFurnitures}
-                    icon={<PackageCheck className="w-5 h-5" />}
-                    iconBg="bg-success/10 text-success"
-                    borderColor='border-t-2 border-t-success/70'
-                />
-                <StatsCard
-                    label="AVAILABLE FURNITURES"
-                    value={availableFurnitures}
-                    icon={<PackageOpen className="w-5 h-5" />}
-                    iconBg="bg-secondary/10 text-secondary/70"
-                    borderColor='border-t-2 border-t-secondary/70'
-                />
-            </div>
+                {/* Stat Cards */}
+                <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+                    <StatsCard
+                        label="TOTAL FURNITURES"
+                        value={totalFurnitures}
+                        icon={<Box className="w-5 h-5" />}
+                        iconBg="bg-secondary/10 text-secondary"
+                        borderColor='border-t-2 border-t-secondary/70'
+                    />
+                    <StatsCard
+                        label="ASSIGNED FURNITURES"
+                        value={assignedFurnitures}
+                        icon={<PackageCheck className="w-5 h-5" />}
+                        iconBg="bg-success/10 text-success"
+                        borderColor='border-t-2 border-t-success/70'
+                    />
+                    <StatsCard
+                        label="AVAILABLE FURNITURES"
+                        value={availableFurnitures}
+                        icon={<PackageOpen className="w-5 h-5" />}
+                        iconBg="bg-secondary/10 text-secondary/70"
+                        borderColor='border-t-2 border-t-secondary/70'
+                    />
+                </div>
 
-            <DataTable
-                filterOptions={[
-                    { label: 'All Status', value: 'All' },
-                    { label: 'Available', value: 'available' },
-                    { label: 'Allocated', value: 'allocated' },
-                    { label: 'Maintenance', value: 'maintenance' },
-                    { label: 'Inactive', value: 'inactive' },
-                    { label: 'Lost', value: 'lost' },
-                    { label: 'Scrap', value: 'scrap' }
-                ]}
-                filterValue={statusFilter}
-                onFilterChange={(val) => updateSearchParams({ status: val, page: 1 })}
-                filterPlaceholder="All Status"
-                onExport={() => setIsExportConfirmOpen(true)}
-                searchQuery={searchInput}
-                onSearchChange={(e) => setSearchInput(e.target.value)}
-                searchPlaceholder="Search furniture assets..."
-                headers={tableHeaders}
-                items={assets}
-                canSelect={false}
-                onRowClick={handleRowClick}
-                emptyText="No furniture assets found."
-                loading={loading}
-                renderRow={(item) => (
-                    <>
-                        <td className="p-4 text-sm text-gray-900 font-medium">{item.furnitureId}</td>
-                        <td className="p-4 text-sm text-gray-500 font-medium">{item.typeInfo?.name || '--'}</td>
-                        <td className="p-4 text-sm text-gray-500">{item.organization?.name || '--'}</td>
-                        <td className="p-4 text-sm text-gray-500">
-                            {console.log('this is item: ', item)}
-                            {item.studentId?.name ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
-                                        {item.studentId.name.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <span className="text-gray-900 font-medium">{item.studentId.name}</span>
-                                </div>
-                            ) : '-'}
-                        </td>
-                        <td className="p-4">
-                            <FurnitureStatusBadge status={item.status} />
-                        </td>
-                    </>
-                )}
-                page={page}
-                setPage={(p) => updateSearchParams({ page: p })}
-                limit={limit}
-                totalItems={pagination.totalRecords}
-                totalPages={pagination.totalPages}
-                renderMobileItem={(item) => (
-                    <div >
-                        <InfoCard
-                            avatar={item.typeInfo?.name}
-                            title={item.typeInfo?.name || "Unknown Furniture"}
-                            subtitle={item.furnitureId || "--"}
-                            status={{
-                                text: item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : "Unknown",
-                                color: item.status === 'available' ? 'green' :
-                                    item.status === 'allocated' ? 'blue' :
-                                        item.status === 'maintenance' ? 'yellow' :
-                                            item.status === 'scrap' || item.status === 'lost' ? 'red' : 'gray'
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
+                    <DataView
+                        pageScrollMode={true}
+                        className="h-full border-none shadow-none"
+                        data={assets || []}
+                        columns={columns}
+                        cardConfig={cardConfig}
+                        loading={loading}
+                        searchQuery={searchInput}
+                        onSearchChange={(e) => setSearchInput(e.target.value)}
+                        searchPlaceholder="Search furniture assets..."
+                        toolbarEndSlot={
+                            <div className="flex items-center gap-2 w-full md:w-auto">
+                                <Dropdown
+                                    options={[
+                                        { label: 'All Status', value: 'All' },
+                                        { label: 'Available', value: 'available' },
+                                        { label: 'Allocated', value: 'allocated' },
+                                        { label: 'Maintenance', value: 'maintenance' },
+                                        { label: 'Inactive', value: 'inactive' },
+                                        { label: 'Lost', value: 'lost' },
+                                        { label: 'Scrap', value: 'scrap' }
+                                    ]}
+                                    value={statusFilter}
+                                    onChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                                    placeholder="All Status"
+                                    minWidth="w-[140px]"
+                                    triggerClassName="flex-1 md:flex-none px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-between transition-colors shadow-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExportConfirmOpen(true)}
+                                    className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 text-gray-700 bg-white rounded-xl hover:bg-gray-50 transition-colors shrink-0 text-sm font-semibold shadow-sm w-10 md:w-auto"
+                                    title="Export Furniture"
+                                >
+                                    <Download className="w-4 h-4 shrink-0" />
+                                    <span className="hidden md:inline">Export</span>
+                                </button>
+                            </div>
+                        }
+                        onRowClick={handleRowClick}
+                        page={page}
+                        setPage={(p) => updateSearchParams({ page: p })}
+                        limit={limit}
+                        setLimit={setLimit}
+                        totalItems={pagination?.totalRecords || 0}
+                        totalPages={pagination?.totalPages || 1}
+                        emptyText="No furniture assets found."
+                    />
+
+                    <ExportFilterModal
+                        isOpen={isExportConfirmOpen}
+                        onClose={() => setIsExportConfirmOpen(false)}
+                        onExport={confirmExport}
+                        isExporting={isExporting}
+                        fields={exportFields}
+                        title="Export Furniture Options"
+                    />
+
+                    {isAssetDetailsModalOpen && selectedAsset && (
+                        <AssetDetailsModal
+                            isOpen={isAssetDetailsModalOpen}
+                            onClose={() => {
+                                setIsAssetDetailsModalOpen(false);
+                                setSelectedAsset(null);
                             }}
-                            fields={[
-                                { label: "Organization", value: item.organization?.name || "--", icon: <Building2Icon /> },
-                                { label: "Assigned To", value: item.studentId?.name || "Unassigned", icon: <User /> }
-                            ]}
-                            onClick={() => handleRowClick(item)}
+                            assetId={selectedAsset._id || selectedAsset.id}
+                            organizationName={selectedAsset.furnitureTypeId?.organization?.name}
+                            hostelName={selectedAsset.hostelId?.name}
                         />
-                    </div>
-                )}
-            />
-
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                fields={exportFields}
-                title="Export Furniture Options"
-            />
-
-            {isAssetDetailsModalOpen && selectedAsset && (
-                <AssetDetailsModal
-                    isOpen={isAssetDetailsModalOpen}
-                    onClose={() => {
-                        setIsAssetDetailsModalOpen(false);
-                        setSelectedAsset(null);
-                    }}
-                    assetId={selectedAsset._id || selectedAsset.id}
-                    organizationName={selectedAsset.furnitureTypeId?.organization?.name}
-                    hostelName={selectedAsset.hostelId?.name}
-                />
-            )}
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Edit2, Archive, CheckCircle2, XCircle, AlertTriangle, Hammer, Hash, Box, PackageCheck, PackageOpen, Trash2, Filter, Download, User } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import furnitureApi from '@/features/furniture/api/furnitureApi';
-import DataTable from '@/components/ui/DataTable';
-import InfoCard from '@/components/ui/InfoCard';
+import DataView from '@/components/ui/data-view/DataView';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -45,7 +44,7 @@ export default function FurnitureDetails() {
     const [isExporting, setIsExporting] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const { data: assets, pagination, loading, refetch: fetchAssets } = useFurnitureAssets(id, {
         page,
@@ -115,12 +114,6 @@ export default function FurnitureDetails() {
         );
     };
 
-    const handleDeleteSelected = () => {
-        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} assets?`)) return;
-        showSuccessToast('Selected assets deleted successfully');
-        setSelectedIds([]);
-        // fetchDetails();
-    };
 
 
 
@@ -201,52 +194,91 @@ export default function FurnitureDetails() {
         }
     ];
 
-    const tableHeaders = [
-        { key: 'code', label: 'Furniture' },
-        { key: 'allocatedTo', label: 'Assigned To' },
-        { key: 'status', label: 'Status' },
-        { key: 'actions', label: 'Action' }
-    ];
-
     const titleName = details?.name || 'Furniture';
     const pageTitle = titleName;
     const pageSubtitle = `Manage all furnitures of ${titleName}`;
 
-    return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
-            {/* Header */}
-            <div className="mb-6 shrink-0 flex items-center gap-3">
-                <PageHeader title={pageTitle} subtitle={pageSubtitle} actionButton={<BackButton text="Back to List" onClick={() => navigate('/dashboard/furniture')} />} />
-            </div>
+    const columns = [
+        {
+            key: 'code',
+            header: 'Furniture',
+            renderCell: (item) => (
+                <div className="flex flex-col">
+                    <span className="text-gray-900 font-medium">{item.furnitureId}</span>
+                    <span className="text-xs text-gray-500">{titleName}</span>
+                </div>
+            )
+        },
+        {
+            key: 'allocatedTo',
+            header: 'Assigned To',
+            renderCell: (item) => {
+                if (item.studentId && item.studentId.name && typeof item.studentId.name === 'string') {
+                    return (
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                                {item.studentId.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <span className="text-gray-900 font-medium">{item.studentId.name}</span>
+                        </div>
+                    );
+                }
+                return <span className="text-gray-500">-</span>;
+            }
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            renderCell: (item) => <FurnitureStatusBadge status={item.status} />
+        },
+        {
+            key: 'actions',
+            header: 'Action',
+            align: 'right',
+            renderCell: (item) => (
+                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        fullWidth={false}
+                        className="text-gray-400 hover:text-gray-900"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAsset(item);
+                            setIsStatusModalOpen(true);
+                        }}
+                    >
+                        <Edit2 className="w-4 h-4" />
+                    </Button>
+                </div>
+            )
+        }
+    ];
 
-            {/* Stat Cards */}
-            <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                <StatsCard
-                    label="TOTAL FURNITURES"
-                    value={stats?.totalAssets || 0}
-                    icon={<Box className="w-5 h-5" />}
-                    iconBg="bg-blue-50 text-blue-500"
-                    borderColor='border-t-2 border-t-blue-500'
-                />
-                <StatsCard
-                    label="ASSIGNED FURNITURES"
-                    value={stats?.allocated || 0}
-                    icon={<PackageCheck className="w-5 h-5" />}
-                    iconBg="bg-success/10 text-success"
-                    borderColor='border-t-2 border-t-success/70'
-                />
-                <StatsCard
-                    label="AVAILABLE FURNITURES"
-                    value={stats?.available || 0}
-                    icon={<PackageOpen className="w-5 h-5" />}
-                    iconBg="bg-cyan-50 text-cyan-500"
-                    borderColor='border-t-2 border-t-cyan-500'
-                />
-            </div>
+    const cardConfig = {
+        avatar: (item) => titleName.split(' ').map(n => n[0]).join('').toUpperCase(),
+        title: (item) => item.furnitureId || "--",
+        subtitle: (item) => titleName,
+        status: (item) => ({
+            text: item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : "Unknown",
+            color: item.status === 'available' ? 'green' :
+                item.status === 'allocated' ? 'blue' :
+                    item.status === 'maintenance' ? 'yellow' :
+                        item.status === 'scrap' || item.status === 'lost' ? 'red' : 'gray'
+        }),
+        fields: [
+            { icon: User, accessor: (item) => item.studentId?.name || "Unassigned" }
+        ],
+        onEdit: () => setIsStatusModalOpen(true),
+        onClick: (item) => handleRowClick(item),
+        canSelect: false
+    };
 
-            <DataTable
-                onDeleteSelected={handleDeleteSelected}
-                filterOptions={[
+    const toolbarEndSlot = (
+        <div className="flex items-center gap-2">
+
+            <Dropdown
+                options={[
                     { label: 'All Status', value: 'All' },
                     { label: 'Available', value: 'available' },
                     { label: 'Allocated', value: 'allocated' },
@@ -254,131 +286,118 @@ export default function FurnitureDetails() {
                     { label: 'Lost', value: 'lost' },
                     { label: 'Scrap', value: 'scrap' }
                 ]}
-                filterValue={statusFilter}
-                onFilterChange={(val) => updateSearchParams({ status: val, page: 1 })}
-                filterPlaceholder="All Status"
-                onExport={handleExport}
-                searchQuery={searchInput}
-                onSearchChange={(e) => setSearchInput(e.target.value)}
-                searchPlaceholder="Search assets..."
-                headers={tableHeaders}
-                items={assets}
-                canSelect={true}
-                selectedIds={selectedIds}
-                onSelectAll={handleSelectAll}
-                onSelect={handleSelect}
-                onRowClick={handleRowClick}
-                emptyText="No assets found."
-                loading={loading}
-                renderMobileItem={(item) => {
-                    const titleName = details?.typeInfo?.name || "Furniture";
-                    return (
-                        <div>
-                            <InfoCard
-                                avatar={item.studentId?.name || titleName}
-                                title={item.furnitureId || "--"}
-                                subtitle={titleName}
-                                status={{
-                                    text: item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : "Unknown",
-                                    color: item.status === 'available' ? 'green' :
-                                        item.status === 'allocated' ? 'blue' :
-                                            item.status === 'maintenance' ? 'yellow' :
-                                                item.status === 'scrap' || item.status === 'lost' ? 'red' : 'gray'
-                                }}
-                                fields={[
-                                    { label: "Assigned To", value: item.studentId?.name || "Unassigned", icon: <User /> }
-                                ]}
-                                onClick={() => handleRowClick(item)}
-                            />
-                        </div>
-                    );
-                }}
-                renderRow={(item) => {
-                    return (
-                        <>
-                            <td className="p-4 text-sm text-gray-500 font-medium">
-                                <div className="flex flex-col">
-                                    <span className="text-gray-900">{item.furnitureId}</span>
-                                    <span className="text-xs">{titleName}</span>
-                                </div>
-                            </td>
-
-                            <td className="p-4 text-sm text-gray-500">
-                                {item.studentId && item.studentId.name && typeof item.studentId.name === 'string' ? (
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
-                                            {item.studentId.name.substring(0, 2).toUpperCase()}
-                                        </div>
-                                        <span className="text-gray-900 font-medium">{item.studentId.name}</span>
-                                    </div>
-                                ) : (
-                                    <span>-</span>
-                                )}
-                            </td>
-                            <td className="p-4">
-                                <FurnitureStatusBadge status={item.status} />
-                            </td>
-                            <td className="p-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        fullWidth={false}
-                                        className="text-gray-400 hover:text-gray-900"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedAsset(item);
-                                            setIsStatusModalOpen(true);
-                                        }}
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </td>
-                        </>
-                    );
-                }}
-                page={page}
-                setPage={(p) => updateSearchParams({ page: p })}
-                limit={limit}
-                totalItems={pagination.totalRecords}
-                totalPages={pagination.totalPages}
+                value={statusFilter}
+                onChange={(val) => updateSearchParams({ status: val, page: 1 })}
+                placeholder="All Status"
+                minWidth="w-[140px]"
             />
+            <Button
+                variant='outline'
+                fullWidth={false}
+                size="md"
+                onClick={handleExport}
+            >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export</span>
+            </Button>
+        </div>
+    );
 
-            {isStatusModalOpen && (
-                <ChangeAssetStatusModal
-                    isOpen={isStatusModalOpen}
-                    onClose={() => {
-                        setIsStatusModalOpen(false);
-                        setSelectedAsset(null);
-                    }}
-                    onSave={handleStatusChange}
-                    asset={selectedAsset}
+    return (
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                {/* Header */}
+                <div className="mb-6 shrink-0 flex items-center gap-3">
+                    <PageHeader title={pageTitle} subtitle={pageSubtitle} actionButton={<BackButton text="Back to List" onClick={() => navigate('/dashboard/furniture')} />} />
+                </div>
+
+                {/* Stat Cards */}
+                <div className="lg:grid hidden grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+                    <StatsCard
+                        label="TOTAL FURNITURES"
+                        value={stats?.totalAssets || 0}
+                        icon={<Box className="w-5 h-5" />}
+                        iconBg="bg-blue-50 text-blue-500"
+                        borderColor='border-t-2 border-t-blue-500'
+                    />
+                    <StatsCard
+                        label="ASSIGNED FURNITURES"
+                        value={stats?.allocated || 0}
+                        icon={<PackageCheck className="w-5 h-5" />}
+                        iconBg="bg-success/10 text-success"
+                        borderColor='border-t-2 border-t-success/70'
+                    />
+                    <StatsCard
+                        label="AVAILABLE FURNITURES"
+                        value={stats?.available || 0}
+                        icon={<PackageOpen className="w-5 h-5" />}
+                        iconBg="bg-cyan-50 text-cyan-500"
+                        borderColor='border-t-2 border-t-cyan-500'
+                    />
+                </div>
+
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
+                    <DataView
+                        pageScrollMode={true}
+                        className="h-full border-none shadow-none"
+                        toolbarEndSlot={toolbarEndSlot}
+                        searchQuery={searchInput}
+                        onSearchChange={(e) => setSearchInput(e.target.value)}
+                        searchPlaceholder="Search assets..."
+                        columns={columns}
+                        cardConfig={cardConfig}
+                        data={assets}
+                        canSelect={true}
+                        selectedIds={selectedIds}
+                        onSelectAll={handleSelectAll}
+                        onSelectRow={handleSelect}
+                        onRowClick={handleRowClick}
+                        emptyText="No assets found."
+                        loading={loading}
+                        page={page}
+                        setPage={(p) => updateSearchParams({ page: p })}
+                        limit={limit}
+                        setLimit={setLimit}
+                        totalItems={pagination?.totalRecords || 0}
+                        totalPages={pagination?.totalPages || 1}
+                    />
+                </div>
+
+                {isStatusModalOpen && (
+                    <ChangeAssetStatusModal
+                        isOpen={isStatusModalOpen}
+                        onClose={() => {
+                            setIsStatusModalOpen(false);
+                            setSelectedAsset(null);
+                        }}
+                        onSave={handleStatusChange}
+                        asset={selectedAsset}
+                    />
+                )}
+
+
+                {isAssetDetailsModalOpen && selectedAsset && (
+                    <AssetDetailsModal
+                        isOpen={isAssetDetailsModalOpen}
+                        onClose={() => {
+                            setIsAssetDetailsModalOpen(false);
+                            setSelectedAsset(null);
+                        }}
+                        assetId={selectedAsset._id || selectedAsset.id}
+                        organizationName={details?.organization?.name}
+                        hostelName={details?.hostel?.name}
+                    />
+                )}
+
+                <ExportFilterModal
+                    isOpen={isExportConfirmOpen}
+                    onClose={() => setIsExportConfirmOpen(false)}
+                    onExport={confirmExport}
+                    isExporting={isExporting}
+                    title="Export Furniture Assets"
+                    fields={exportFields}
                 />
-            )}
-
-
-            {isAssetDetailsModalOpen && selectedAsset && (
-                <AssetDetailsModal
-                    isOpen={isAssetDetailsModalOpen}
-                    onClose={() => {
-                        setIsAssetDetailsModalOpen(false);
-                        setSelectedAsset(null);
-                    }}
-                    assetId={selectedAsset._id || selectedAsset.id}
-                    organizationName={details?.organization?.name}
-                    hostelName={details?.hostel?.name}
-                />
-            )}
-
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                title="Export Furniture Assets"
-                fields={exportFields}
-            />
+            </div>
         </div>
     );
 }

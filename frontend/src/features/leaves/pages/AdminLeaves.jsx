@@ -313,8 +313,9 @@ export default function AdminLeaves() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden p-4 md:p-6 flex flex-col">
-            <div className="mb-6 shrink-0 flex items-center gap-3">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <div className="mb-6 shrink-0 flex items-center gap-3">
 
                 <PageHeader
                     title={selectedHostel ? `${isHomePass ? "Home Pass" : "Out Pass"}` : (isHomePass ? "Home Pass" : "Out Pass")}
@@ -327,41 +328,43 @@ export default function AdminLeaves() {
 
             <LeaveStatsCards stats={stats} isAdmin={true} />
 
-            {isDetailView ? (
-                <LeavesDetailView
-                    passesData={passesData}
-                    loading={passesLoading}
-                    searchQuery={searchInput}
-                    setSearchQuery={setSearchInput}
-                    statusFilter={statusFilter}
-                    setStatusFilter={(s) => updateSearchParams({ status: s, page: 1 })}
-                    isHomePass={isHomePass}
-                    isWarden={isWarden}
-                    isAdmin={isAdmin}
-                    passType={passType}
-                    selectedHostel={selectedHostel}
-                    onRowClick={(r) => setViewId(r._id || r.id)}
-                    onUpdateStatus={handleUpdateStatus}
-                    onUpdateReturn={handleUpdateReturn}
-                    onExport={handleExport}
-                    onFilterClick={() => setIsFilterModalOpen(true)}
-                    hasActiveFilters={hasActiveFilters}
-                    page={page}
-                    setPage={(p) => updateSearchParams({ page: p })}
-                    pagination={passesPagination}
-                />
-            ) : (
-                <LeavesAggregateView
-                    hostelData={hostelData}
-                    loading={hostelsLoading}
-                    searchQuery={searchInput}
-                    setSearchQuery={setSearchInput}
-                    onHostelClick={(id) => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(id)}`)}
-                    page={page}
-                    setPage={(p) => updateSearchParams({ page: p })}
-                    pagination={{ totalRecords: hostelData?.length || 0, totalPages: 1 }}
-                />
-            )}
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
+                    {isDetailView ? (
+                        <LeavesDetailView
+                            passesData={passesData}
+                            loading={passesLoading}
+                            searchQuery={searchInput}
+                            setSearchQuery={setSearchInput}
+                            statusFilter={statusFilter}
+                            setStatusFilter={(s) => updateSearchParams({ status: s, page: 1 })}
+                            isHomePass={isHomePass}
+                            isWarden={isWarden}
+                            isAdmin={isAdmin}
+                            passType={passType}
+                            selectedHostel={selectedHostel}
+                            onRowClick={(r) => setViewId(r._id || r.id)}
+                            onUpdateStatus={handleUpdateStatus}
+                            onUpdateReturn={handleUpdateReturn}
+                            onExport={handleExport}
+                            onFilterClick={() => setIsFilterModalOpen(true)}
+                            hasActiveFilters={hasActiveFilters}
+                            page={page}
+                            setPage={(p) => updateSearchParams({ page: p })}
+                            pagination={passesPagination}
+                        />
+                    ) : (
+                        <LeavesAggregateView
+                            hostelData={hostelData}
+                            loading={hostelsLoading}
+                            searchQuery={searchInput}
+                            setSearchQuery={setSearchInput}
+                            onHostelClick={(id) => navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(id)}`)}
+                            page={page}
+                            setPage={(p) => updateSearchParams({ page: p })}
+                            pagination={{ totalRecords: hostelData?.length || 0, totalPages: 1 }}
+                        />
+                    )}
+                </div>
 
             <LeaveDetailsModal
                 isOpen={!!viewId}
@@ -423,6 +426,7 @@ export default function AdminLeaves() {
                 title={`Export ${isHomePass ? 'Home Passes' : 'Out Passes'}`}
                 fields={exportFields}
             />
+            </div>
         </div>
     );
 }

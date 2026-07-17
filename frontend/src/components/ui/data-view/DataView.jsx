@@ -50,6 +50,7 @@ export function DesktopPagination({
     if (!page || !setPage) return null;
 
     return (
+
         <div className={`hidden md:block shrink-0 mt-auto ${pageScrollMode ? 'sticky bottom-[5px] z-30 -mb-[19px]' : ''}`}>
             {pageScrollMode && (
                 <div className="absolute -left-2 -right-2 top-0 h-[calc(100%+5px)] bg-[#F8FAFC] -z-10" />
@@ -196,7 +197,6 @@ export default function DataView({
 
     return (
         <div className={`flex flex-col   ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
-
             <div className={pageScrollMode ? "relative z-30 sticky top-[10px] rounded-t-xl shadow-sm" : "relative z-10 "}>
                 {pageScrollMode && (
                     <div className="absolute -left-2 -right-2 bottom-0 h-[calc(100%+10px)] bg-[#F8FAFC] -z-10" />

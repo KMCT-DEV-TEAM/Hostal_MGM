@@ -1,23 +1,31 @@
 import React, { useRef } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, TimerIcon } from 'lucide-react';
+import clsx from 'clsx';
 
 /**
- * InfoCard - Automatically builds a clean card layout from configuration.
- * Designed to exactly match the reference layout.
+ * InfoCard - A generic, data-driven card component for responsive list views.
  */
 export default function InfoCard({
-    avatar,        // String (initials) or React Node
-    title,         // String
-    fields = [],   // Array of { icon: Component, value: String }
-    stats = [],    // Array of { label: String, value: React Node }
-    status,        // Object { text: String, color: String (e.g. 'green', 'red') }
-    onEdit,        // Function
-    onClick,       // Function
+    avatar,
+    title,
+    subtitle,
+    fields = [],
+    stats = [],
+    status,
+    meta = [],
+    time,
+    actions,
+    footer,
+    editable = false,
+    onEdit,
+    onClick,
     selected = false,
     canSelect = false,
     selectionMode = false,
-    onSelect
+    onSelect,
+    className
 }) {
+
     const timerRef = useRef(null);
 
     const handleTouchStart = () => {
@@ -30,6 +38,126 @@ export default function InfoCard({
 
     const handleTouchEndOrMove = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
+    };
+
+    // Safe color mapping for Tailwind
+    const statusColorClasses = {
+        green: 'bg-green-50 text-green-700',
+        red: 'bg-red-50 text-red-700',
+        yellow: 'bg-yellow-50 text-yellow-700',
+        blue: 'bg-blue-50 text-blue-700',
+        purple: 'bg-purple-50 text-purple-700',
+        gray: 'bg-gray-100 text-gray-700',
+    };
+
+    const statusDotClasses = {
+        green: 'bg-green-500',
+        red: 'bg-red-500',
+        yellow: 'bg-yellow-500',
+        blue: 'bg-blue-500',
+        purple: 'bg-purple-500',
+        gray: 'bg-gray-500',
+    };
+
+    // Determine grid columns for stats
+    const getStatsGridCols = (length) => {
+        if (length === 1) return 'grid-cols-1';
+        if (length === 2) return 'grid-cols-2';
+        if (length === 3) return 'grid-cols-3';
+        if (length === 4) return 'grid-cols-2 md:grid-cols-4';
+        return 'grid-cols-2 md:grid-cols-3'; // fallback for 5+
+    };
+
+    const renderFooterContent = () => {
+        if (footer) return footer;
+
+        const hasMeta = meta && meta.length > 0;
+        const hasRightActions = status || actions || onEdit || editable;
+
+        if (!hasMeta && !hasRightActions && !time) return null;
+
+        return (
+            <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-gray-100 flex-wrap">
+                {/* LEFT: Meta Items & Time */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    {time && (
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                            {time.icon ? <time.icon className="w-3.5 h-3.5 text-gray-400 shrink-0" /> : (
+                                <TimerIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            )}
+                            <span>{typeof time === 'string' ? time : (time.value || time.label)}</span>
+                        </div>
+                    )}
+                    {meta.map((item, idx) => {
+                        const Icon = item.icon;
+                        return (
+                            <div key={idx} className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                                {Icon && <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
+                                <span>{item.value}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* RIGHT: Status & Actions */}
+                <div className="flex flex-wrap items-center gap-2 ml-auto">
+                    {status && (
+                        <>
+                            {status.text && (
+                                <div className={clsx(
+                                    'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md shrink-0',
+                                    statusColorClasses[status.color] || statusColorClasses.gray
+                                )}>
+                                    <div className={clsx(
+                                        'w-1.5 h-1.5 rounded-full',
+                                        statusDotClasses[status.color] || statusDotClasses.gray
+                                    )} />
+                                    {status.text}
+                                </div>
+                            )}
+                            
+                            {status.actions && (
+                                <div className="flex items-center gap-2 shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
+                                    {status.actions.map((btn, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={btn.onClick}
+                                            className={clsx(
+                                                'px-3 py-1.5 rounded-md text-xs font-bold border transition-colors shadow-sm',
+                                                btn.color === 'green' ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' :
+                                                    btn.color === 'red' ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
+                                                        btn.color === 'blue' ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' :
+                                                            'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                            )}
+                                        >
+                                            {btn.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {actions && (
+                        <div className="flex items-center gap-2 shrink-0">
+                            {actions}
+                        </div>
+                    )}
+
+                    {(onEdit || editable) && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit?.();
+                            }}
+                            className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -49,18 +177,19 @@ export default function InfoCard({
                     e.preventDefault();
                 }
             }}
-            className={`
-                relative bg-white rounded-xl border p-4 shadow-sm transition-all select-none
-                ${onClick || canSelect ? 'cursor-pointer hover:shadow-md hover:border-blue-100' : ''}
-                ${selected ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500/50' : 'border-gray-100'}
-            `}
+            className={clsx(
+                'relative bg-white rounded-xl border p-4 shadow-sm transition-all select-none',
+                (onClick || canSelect) ? 'cursor-pointer hover:shadow-md hover:border-primary/30' : '',
+                selected ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-gray-100',
+                className
+            )}
         >
             <div className="flex gap-4">
                 {/* Left Column: Avatar */}
                 {avatar && (
                     <div className="flex-shrink-0">
                         {typeof avatar === 'string' ? (
-                            <div className="w-10 h-10 rounded-full bg-[#0A437A] text-white flex items-center justify-center font-semibold text-sm uppercase shadow-sm">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm uppercase shadow-sm">
                                 {avatar}
                             </div>
                         ) : (
@@ -72,70 +201,52 @@ export default function InfoCard({
                 {/* Right Column: Content */}
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
 
-                    {/* Header: Title */}
-                    {title && (
-                        <h3 className="text-base font-bold text-[#0A437A] truncate mb-1.5">
-                            {title}
-                        </h3>
-                    )}
+                    {/* Header: Title & Subtitle */}
+                    <div className="mb-2">
+                        {title && (
+                            <h3 className="text-base font-bold text-gray-900 truncate leading-tight">
+                                {title}
+                            </h3>
+                        )}
+                        {subtitle && (
+                            <p className="text-sm font-medium text-gray-500 truncate mt-0.5">
+                                {subtitle}
+                            </p>
+                        )}
+                    </div>
 
                     {/* Middle: Icon Fields */}
-                    {fields.length > 0 && (
-                        <div className="flex flex-col gap-1.5 ">
+                    {fields && fields.length > 0 && (
+                        <div className="flex flex-col gap-1.5 mt-1">
                             {fields.map((field, idx) => {
                                 const Icon = field.icon;
                                 return (
-                                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-500">
-                                        {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0 text-gray-400" />}
-                                        <span className="truncate">{field.value || '-'}</span>
+                                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                                        {Icon && <Icon className="w-4 h-4 flex-shrink-0 text-gray-400" />}
+                                        <span className="truncate">
+                                            {field.label && <span className="font-medium mr-1.5">{field.label}:</span>}
+                                            {field.value || '-'}
+                                        </span>
                                     </div>
                                 );
                             })}
                         </div>
                     )}
 
+                    {/* Stats Grid */}
                     {stats && stats.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-50">
+                        <div className={clsx('grid gap-2 mt-3 pt-3 border-t border-gray-50', getStatsGridCols(stats.length))}>
                             {stats.map((stat, idx) => (
-                                <div key={idx} className="flex flex-col text-center">
-                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">{stat.label}</span>
-                                    <span className="text-sm font-semibold text-gray-700">{stat.value}</span>
+                                <div key={idx} className="flex flex-col text-center bg-gray-50/50 rounded-lg py-1.5 border border-gray-100">
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{stat.label}</span>
+                                    <span className="text-sm font-bold text-gray-900 mt-0.5">{stat.value}</span>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* Footer: Status & Actions */}
-                    <div className="flex items-center justify-end gap-3 mt-2">
-                        {status && (
-                            <div className={`
-                                inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
-                                ${status.color === 'green' ? 'bg-green-50 text-green-700' : ''}
-                                ${status.color === 'orange' ? 'bg-orange-50 text-orange-700' : ''}
-                                ${status.color === 'red' ? 'bg-red-50 text-red-700' : ''}
-                                ${status.color === 'gray' ? 'bg-gray-100 text-gray-700' : ''}
-                                
-                                ${!['green', 'red', 'gray'].includes(status.color) ? 'bg-gray-50 text-gray-700' : ''}
-                            `}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${status.color === 'green' ? 'bg-green-500' :
-                                    status.color === 'red' ? 'bg-red-500' : 'bg-gray-400'
-                                    }`} />
-                                {status.text}
-                            </div>
-                        )}
-
-                        {onEdit && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEdit();
-                                }}
-                                className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </button>
-                        )}
-                    </div>
+                    {/* Footer */}
+                    {renderFooterContent()}
                 </div>
             </div>
         </div>

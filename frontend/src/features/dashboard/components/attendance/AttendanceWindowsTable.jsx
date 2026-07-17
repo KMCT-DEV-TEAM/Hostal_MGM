@@ -6,6 +6,7 @@ import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import FilterWindowsModal from './FilterWindowsModal';
 import { Filter, Building, Users } from 'lucide-react';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function AttendanceWindowsTable({ showHostel = true, showWarden = true, onRowClick }) {
     const { user } = useAuthStore();
@@ -51,12 +52,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
     }, [fetchWindows]);
 
     const columns = [
-        {
-            key: "sno",
-            header: "#",
-            accessor: (_, index) => (page - 1) * limit + index + 1,
-            align: "center",
-        },
+
         {
             key: "date",
             header: "Date",
@@ -96,6 +92,11 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
             accessor: (item) => item.absentCount,
             align: "center",
         },
+        {
+            key: "status",
+            header: "Status",
+            renderCell: (item) => <StatusBadge status={item.status || 'pending'} className="w-[130px]" />
+        }
     ];
 
     const cardConfig = {

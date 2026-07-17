@@ -1,140 +1,141 @@
 import React, { useState } from 'react';
-import { Download, Filter } from 'lucide-react';
-import DataTable from '@/components/ui/DataTable';
+import { Download, Filter, Calendar, Users, Building, DoorOpen, LogIn, LogOut } from 'lucide-react';
+import DataView from '@/components/ui/data-view/DataView';
 import Button from '@/components/ui/Button';
 import FilterModal from './modals/FilterModal';
 import VisitDetailsModal from './modals/VisitDetailsModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
-import InfoCard from '@/components/ui/InfoCard';
-const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick, userRole }) => {
+
+const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick, userRole, limit, setLimit }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedVisitId, setSelectedVisitId] = useState(null);
 
-    const headers = React.useMemo(() => {
-        const baseCols = [
-            { key: 'date', label: 'Date' },
-            { key: 'visitorName', label: 'Visitors Name' }
-        ];
-
-        if (userRole !== 'student') {
-            baseCols.push({ key: 'visitingStudent', label: 'Visiting Student' });
+    const columns = [
+        { 
+            key: 'date', 
+            header: 'Date', 
+            accessor: (visitor) => formatDateReadable(visitor.checkInTime),
+            icon: Calendar 
+        },
+        { 
+            key: 'visitorName', 
+            header: 'Visitors Name', 
+            type: 'user', 
+            titleAccessor: (visitor) => visitor.visitorName || 'Unknown', 
+            avatarAccessor: (visitor) => visitor.visitorName ? visitor.visitorName.split(' ').map(n => n[0]).join('').toUpperCase() : 'V' 
+        },
+        ...(userRole !== 'student' ? [{ 
+            key: 'visitingStudent', 
+            header: 'Visiting Student', 
+            accessor: (visitor) => visitor.studentNames || '--',
+            icon: Users 
+        }] : []),
+        ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{ 
+            key: 'roomNo', 
+            header: 'Room NO', 
+            accessor: (visitor) => visitor.roomNumber || visitor.roomNo || '--',
+            icon: DoorOpen 
+        }] : []),
+        ...(['warden', 'super_admin'].includes(userRole) ? [{ 
+            key: 'organization', 
+            header: 'Organization', 
+            accessor: (visitor) => visitor.organizationName || '--',
+            icon: Building 
+        }] : []),
+        ...(['admin', 'parent'].includes(userRole) ? [{ 
+            key: 'hostel', 
+            header: 'Hostel', 
+            accessor: (visitor) => visitor.hostelName || '--',
+            icon: Building 
+        }] : []),
+        { 
+            key: 'checkIn', 
+            header: 'Check In', 
+            accessor: (visitor) => formatTime(visitor.checkInTime),
+            icon: LogIn 
+        },
+        { 
+            key: 'checkOut', 
+            header: 'Check Out', 
+            accessor: (visitor) => visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '--------',
+            icon: LogOut 
+        },
+        { 
+            key: 'status', 
+            header: 'Status', 
+            renderCell: (visitor) => <StatusBadge status={visitor.status} /> 
         }
+    ];
 
-        if (['super_admin', 'admin', 'warden'].includes(userRole)) {
-            baseCols.push({ key: 'roomNo', label: 'Room NO' });
-        }
-
-        if (['warden', 'super_admin'].includes(userRole)) {
-            baseCols.push({ key: 'organization', label: 'Organization' });
-        } else if (['admin', 'parent'].includes(userRole)) {
-            baseCols.push({ key: 'hostel', label: 'Hostel' });
-        }
-
-        baseCols.push(
-            { key: 'checkIn', label: 'Check In' },
-            { key: 'checkOut', label: 'Check Out' },
-            { key: 'status', label: 'Status' }
-        );
-
-        return baseCols;
-    }, [userRole]);
-
-    const renderRow = (visitor) => (
-        <>
-            <td className="p-4 text-text-secondary font-medium">{formatDateReadable(visitor.checkInTime)}</td>
-            <td className="p-4 flex items-center gap-3 text-gray-700">
-                <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
-                    {(visitor.visitorName || 'U').charAt(0)}
-                </div>
-                <span className="text-sm font-semibold">{visitor.visitorName || 'Unknown'}</span>
-            </td>
-
-            {userRole !== 'student' && (
-                <td className="p-4 text-text-secondary font-medium">{visitor.studentNames || '--'}</td>
-            )}
-
-            {['super_admin', 'admin', 'warden'].includes(userRole) && (
-                <td className="p-4 text-text-secondary font-medium">{visitor.roomNumber || visitor.roomNo || '--'}</td>
-            )}
-
-            {['warden', 'super_admin'].includes(userRole) && (
-                <td className="p-4 text-text-secondary font-medium">{visitor.organizationName || '--'}</td>
-            )}
-            {['admin', 'parent'].includes(userRole) && (
-                <td className="p-4 text-text-secondary font-medium">{visitor.hostelName || '--'}</td>
-            )}
-
-            <td className="p-4 text-text-secondary font-medium">{formatTime(visitor.checkInTime)}</td>
-            <td className="p-4 text-text-secondary font-medium">{visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '--------'}</td>
-            <td className="p-4">
-                <StatusBadge status={visitor.status} />
-            </td>
-        </>
-    );
-
+    const cardConfig = {
+        avatar: (visitor) => visitor.visitorName ? visitor.visitorName.split(' ').map(n => n[0]).join('').toUpperCase() : 'V',
+        title: (visitor) => visitor.visitorName || 'Unknown',
+        subtitle: (visitor) => formatDateReadable(visitor.checkInTime),
+        status: (visitor) => ({ text: visitor.status || 'Unknown', color: "green" }),
+        fields: [
+            { icon: LogIn, label: "In", accessor: (visitor) => formatTime(visitor.checkInTime) },
+            { icon: LogOut, label: "Out", accessor: (visitor) => visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '---' },
+            { icon: Users, label: "Visiting", accessor: (visitor) => `${visitor.visitingStudent || visitor.studentNames || '--'} (${visitor.roomNo || visitor.roomNumber || '--'})` }
+        ],
+        onClick: (visitor) => setSelectedVisitId(visitor.visitId || visitor._id || visitor.id)
+    };
 
     const hasActiveFilters = filters && (filters.status || filters.fromDate || filters.toDate);
 
-
+    const toolbarEndSlot = (
+        <div className="flex items-center gap-2 relative shrink-0">
+            <Button
+                variant={hasActiveFilters ? "primary" : "outline"}
+                size="md"
+                fullWidth={false}
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`!p-2.5 h-10 w-10 flex items-center justify-center ${hasActiveFilters ? '' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+            >
+                <Filter className="w-4 h-4" />
+            </Button>
+            {canExport && (
+                <Button
+                    variant="outline"
+                    size="md"
+                    fullWidth={false}
+                    onClick={onExportClick}
+                >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Export</span>
+                </Button>
+            )}
+            <FilterModal
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                filters={filters}
+                onFilter={onFilter}
+            />
+        </div>
+    );
 
     return (
-        <div className="flex flex-col flex-1 h-full min-h-0 bg-white md:bg-transparent rounded-xl md:rounded-none relative">
-            <DataTable
+        <div className="flex flex-col flex-1 h-full min-h-0 bg-transparent rounded-none relative">
+            <DataView
+                pageScrollMode={true}
+                className="h-full border-none shadow-none bg-transparent"
                 searchQuery={searchQuery}
-                headers={headers}
-                items={visitors}
+                onSearchChange={(e) => onSearch(e.target.value)}
+                searchPlaceholder="Search visitors..."
+                toolbarEndSlot={toolbarEndSlot}
+                columns={columns}
+                cardConfig={cardConfig}
+                data={visitors}
                 loading={loading}
                 emptyText="No visitors found"
-                onSearchChange={(e) => onSearch(e.target.value)}
-                onExport={canExport ? onExportClick : undefined}
-                renderRow={renderRow}
-                renderMobileItem={(visitor) => {
-                    const visitorName = visitor.visitorName || visitor.name || 'Unknown';
-                    return (
-                        <div className="mb-2">
-                            <InfoCard
-                                avatar={visitorName}
-                                title={visitorName}
-                                onClick={() => { setSelectedVisitId(visitor.visitId || visitor._id || visitor.id) }}
-                                subtitle={formatDateReadable(visitor.checkInTime)}
-                                status={{ text: visitor.status, color: "green" }}
-                                fields={[
-                                    { label: "In", value: formatTime(visitor.checkInTime) },
-                                    { label: "Out", value: visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '---' },
-                                    { label: "Visiting", value: `${visitor.visitingStudent || visitor.studentNames || '--'} (${visitor.roomNo || visitor.roomNumber || '--'})` },
-                                ]}
-                            />
-                        </div>
-                    );
-                }}
                 onRowClick={(row) => setSelectedVisitId(row.visitId || row._id || row.id)}
                 page={1}
                 setPage={() => { }}
-                limit={10}
-                totalItems={visitors?.length}
-                totalPages={Math.max(1, Math.ceil(visitors?.length / 10))}
-            >
-                {/* Custom Toolbar Actions */}
-                <div className="flex items-center gap-2 relative shrink-0">
-                    <Button
-                        variant={hasActiveFilters ? "primary" : "outline"}
-                        size="md"
-                        fullWidth={false}
-                        onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className="!p-2.5 shadow-sm md:shadow-none bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 h-10 w-10 flex items-center justify-center"
-                    >
-                        <Filter className="w-4 h-4" />
-                    </Button>
-
-                    <FilterModal
-                        isOpen={isFilterOpen}
-                        onClose={() => setIsFilterOpen(false)}
-                        filters={filters}
-                        onFilter={onFilter}
-                    />
-                </div>
-            </DataTable>
+                limit={limit}
+                setLimit={setLimit}
+                totalItems={visitors?.length || 0}
+                totalPages={Math.max(1, Math.ceil((visitors?.length || 0) / (limit || 10)))}
+            />
 
             <VisitDetailsModal
                 isOpen={!!selectedVisitId}
