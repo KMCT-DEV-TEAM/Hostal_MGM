@@ -85,8 +85,9 @@ const CourseManagement = () => {
             });
             if (res && res.data) {
                 setcourses(res.data);
-                setTotalcourses(res.totalCount || 0);
-                setTotalPages(res.totalPages || 1);
+                const total = res.totalCount || 0;
+                setTotalcourses(total);
+                setTotalPages(res.totalPages || Math.ceil(total / limit) || 1);
             }
         } catch (err) {
             console.error("Failed to fetch Courses:", err);

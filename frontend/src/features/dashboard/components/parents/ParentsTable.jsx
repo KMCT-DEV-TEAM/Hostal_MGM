@@ -148,6 +148,16 @@ export default function ParentsTable({
         onEdit: canEdit ? onEdit : undefined
     };
 
+    const addNewButton = canCreate && (
+        <button
+            onClick={onAddClick}
+            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] hover:bg-[#0A437A]/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm h-[42px]"
+        >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Parent</span>
+        </button>
+    );
+
     const toolbarEndSlot = (
         <div className="flex items-center gap-2 lg:gap-3 w-full sm:w-auto">
             {canEdit && (
@@ -218,21 +228,12 @@ export default function ParentsTable({
             >
                 <Download className="w-5 h-5" />
             </button>
-
-            {canCreate && (
-                <button
-                    onClick={onAddClick}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] hover:bg-[#0A437A]/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add Parent</span>
-                </button>
-            )}
         </div>
     );
 
     return (
         <DataView
+            addButton={addNewButton}
             pageScrollMode={true}
             data={parents}
             columns={columns}
@@ -255,7 +256,7 @@ export default function ParentsTable({
             setLimit={setLimit}
             totalItems={totalItems}
             totalPages={totalPages}
-            className="h-full border-none shadow-none"
+            className="flex-1 h-full border-none shadow-none"
         />
     );
 }

@@ -4,6 +4,7 @@ import {
   Pencil,
   Building2,
   Home,
+  BookOpen,
   SlidersHorizontal,
   MoreVertical,
   Plus,
@@ -91,6 +92,7 @@ export default function StudentsTable({
     {
       key: "course",
       header: "Course",
+      icon: BookOpen,
       accessor: (s) => s.course?.name || s.course || "-"
     },
     {

@@ -94,7 +94,7 @@ export default function MaintenanceStaffManagement() {
         try {
             const params = {
                 page: currentPage,
-                limit: itemsPerPage,
+                limit: limit,
                 search: debouncedSearch,
             };
             if (statusFilter !== 'All Status' && statusFilter !== 'All') {

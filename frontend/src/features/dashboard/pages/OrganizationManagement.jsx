@@ -90,8 +90,9 @@ const OrganizationManagement = () => {
             });
             if (res && res.data) {
                 setOrgs(res.data);
-                setTotalOrgs(res.totalCount || 0);
-                setTotalPages(res.totalPages || 1);
+                const total = res.totalCount || 0;
+                setTotalOrgs(total);
+                setTotalPages(res.totalPages || Math.ceil(total / limit) || 1);
             }
         } catch (err) {
             console.error("Failed to fetch organizations:", err);

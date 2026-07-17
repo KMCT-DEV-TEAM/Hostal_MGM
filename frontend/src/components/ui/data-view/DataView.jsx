@@ -10,9 +10,10 @@ export function DataToolbar({
     onSearchChange,
     searchPlaceholder = 'Search...',
     startSlot,
-    endSlot
+    endSlot,
+    addButton
 }) {
-    const hasToolbarContent = onSearchChange || startSlot || endSlot;
+    const hasToolbarContent = onSearchChange || startSlot || endSlot || addButton;
     if (!hasToolbarContent) return null;
 
     return (
@@ -29,10 +30,20 @@ export function DataToolbar({
                         />
                     </div>
                 )}
+                {addButton && (
+                    <div className="md:hidden flex-shrink-0">
+                        {addButton}
+                    </div>
+                )}
                 {startSlot}
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                 {endSlot}
+                {addButton && (
+                    <div className="hidden md:block">
+                        {addButton}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -173,6 +184,7 @@ export default function DataView({
     // Action Slots
     toolbarStartSlot,
     toolbarEndSlot,
+    addButton,
 
     // Row interactions
     onRowClick,
@@ -196,7 +208,7 @@ export default function DataView({
     const isLoadingMore = loading && page > 1;
 
     return (
-        <div className={`flex flex-col   ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
+        <div className={`flex flex-col flex-1 ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
             <div className={pageScrollMode ? "relative z-30 sticky top-[10px] rounded-t-xl shadow-sm" : "relative z-10 "}>
                 {pageScrollMode && (
                     <div className="absolute -left-2 -right-2 bottom-0 h-[calc(100%+10px)] bg-[#F8FAFC] -z-10" />
@@ -207,6 +219,7 @@ export default function DataView({
                     searchPlaceholder={searchPlaceholder}
                     startSlot={toolbarStartSlot}
                     endSlot={toolbarEndSlot}
+                    addButton={addButton}
                 />
             </div>
 

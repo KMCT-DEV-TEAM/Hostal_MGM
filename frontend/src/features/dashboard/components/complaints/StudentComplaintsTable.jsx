@@ -1,5 +1,13 @@
 import React from 'react';
-import { Pencil, Tag, Home, Info, Calendar } from 'lucide-react';
+import {
+    Pencil,
+    Tag,
+    Home,
+    Info,
+    Calendar,
+    Grid,
+    FileText
+} from "lucide-react";
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
 
@@ -111,9 +119,9 @@ export default function StudentComplaintsTable({
         title: (o) => o.subject,
         subtitle: (o) => o.category,
         fields: [
-            { label: "Room", value: (o) => o.roomNo || "N/A" },
-            { label: "Date", value: (o) => o.date },
-            { label: "Status", value: (o) => o.status }
+            { icon: Grid, value: (o) => o.roomNo || "N/A" },
+            { icon: Calendar, value: (o) => o.date },
+            { icon: FileText, value: (o) => o.status }
         ]
     };
 
@@ -129,6 +137,12 @@ export default function StudentComplaintsTable({
             onSearchChange={onSearchChange}
             toolbarStartSlot={toolbarStartSlot}
             toolbarEndSlot={toolbarEndSlot}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             emptyText="No complaints found"
             onRowClick={(o) => onViewDetail && onViewDetail(o)}
             pagination={{
