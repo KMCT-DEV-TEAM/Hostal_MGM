@@ -24,6 +24,7 @@ export default function WardenComplaintsTable({
     isViewOnly = false,
     searchValue,
     onSearchChange,
+    addButton,
     toolbarStartSlot,
     toolbarEndSlot,
     page,
@@ -128,17 +129,31 @@ export default function WardenComplaintsTable({
         avatar: (o) => o.student?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (o) => o.student || "-",
         subtitle: (o) => o.subject,
+        status: (o) => {
+            let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
+            if (o.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+            else if (o.status === 'Awaiting') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+            else if (o.status === 'Pending') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+            else if (o.status === 'Incomplete') { dotColor = 'bg-purple-500'; bgColor = 'bg-purple-50'; textColor = 'text-purple-600'; }
+            else if (o.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+            return {
+                label: o.status || 'Pending',
+                dotClass: dotColor,
+                bgClass: bgColor,
+                textClass: textColor
+            };
+        },
         fields: [
-            { icon: Grid, value: (o) => o.roomNo || "N/A" },
-            { icon: Tag, value: (o) => o.category },
-            { icon: Calendar, value: (o) => o.date },
-            { icon: Flag, value: (o) => o.priority },
-            { icon: FileText, value: (o) => o.status }
+            { label: "Room No", icon: Grid, value: (o) => o.roomNo || "N/A" },
+            { label: "Category", icon: Tag, value: (o) => o.category || "-" },
+            { label: "Date", icon: Calendar, value: (o) => o.date || "-" },
+            { label: "Priority", icon: Flag, value: (o) => o.priority || "Medium" }
         ]
     };
 
     return (
         <DataView
+            addButton={addButton}
             pageScrollMode={true}
             data={complaints}
             columns={columns}

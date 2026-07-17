@@ -329,34 +329,46 @@ export default function StudentComplaints() {
                     totalItems={totalComplaints}
                     searchValue={searchQuery}
                     onSearchChange={(e) => setSearchQuery(e.target.value)}
-                    toolbarStartSlot={
-                        <Dropdown
-                            options={[
-                                { label: 'All Status', value: 'All' },
-                                { label: 'Pending', value: 'Pending' },
-                                { label: 'Awaiting', value: 'Awaiting' },
-                                { label: 'In progress', value: 'In progress' },
-                                { label: 'Rejected', value: 'Rejected' },
-                                { label: 'Incomplete', value: 'Incomplete' },
-                                { label: 'Resolved', value: 'Resolved' }
-                            ]}
-                            value={statusFilter}
-                            onChange={(val) => {
-                                setStatusFilter(val);
-                                setCurrentPage(1);
-                            }}
-                            placeholder="All"
-                            minWidth="w-32"
-                            triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full font-medium"
-                        />
-                    }
-                    toolbarEndSlot={
+                    addButton={
                         <button
                             onClick={handleAdd}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add New
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            <span className="hidden sm:inline">Add New</span>
                         </button>
+                    }
+                    toolbarStartSlot={null}
+                    toolbarEndSlot={
+                        <>
+                            <Dropdown
+                                className="flex-1 sm:flex-none"
+                                options={[
+                                    { label: 'All Status', value: 'All' },
+                                    { label: 'Pending', value: 'Pending' },
+                                    { label: 'Awaiting', value: 'Awaiting' },
+                                    { label: 'In progress', value: 'In progress' },
+                                    { label: 'Rejected', value: 'Rejected' },
+                                    { label: 'Incomplete', value: 'Incomplete' },
+                                    { label: 'Resolved', value: 'Resolved' }
+                                ]}
+                                value={statusFilter}
+                                onChange={(val) => {
+                                    setStatusFilter(val);
+                                    setCurrentPage(1);
+                                }}
+                                placeholder="All Status"
+                                minWidth="w-32"
+                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+                            />
+                            <button
+                                onClick={() => setIsExportConfirmOpen(true)}
+                                className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download text-gray-500 lg:text-inherit"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                <span className="hidden lg:inline">Export</span>
+                            </button>
+                        </>
                     }
                 />
             </div>
