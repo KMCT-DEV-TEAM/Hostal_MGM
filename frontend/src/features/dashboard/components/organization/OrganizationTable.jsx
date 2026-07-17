@@ -166,6 +166,16 @@ export default function OrganizationTable({
     };
 
     // 3. Toolbar Slots
+    const addNewButton = onAddClick && (
+        <button
+            onClick={onAddClick}
+            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+        >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add New</span>
+        </button>
+    );
+
     const toolbarStartSlot = null;
 
     const toolbarEndSlot = !isAdmin && (
@@ -186,9 +196,10 @@ export default function OrganizationTable({
             {onExport && (
                 <button
                     onClick={onExport}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
                 >
-                    <Download className="w-4 h-4" /> Export
+                    <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+                    <span className="hidden lg:inline">Export</span>
                 </button>
             )}
             <div className="relative" ref={bulkMenuRef}>
@@ -217,20 +228,12 @@ export default function OrganizationTable({
                     </div>
                 )}
             </div>
-            {onAddClick && (
-                <button
-                    onClick={onAddClick}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add New
-                </button>
-            )}
         </>
     );
 
     return (
         <DataView
+            addButton={addNewButton}
             pageScrollMode={true}
             data={orgs}
             columns={columns}

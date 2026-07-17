@@ -1,7 +1,17 @@
 import React from 'react';
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
-import { User, Home, Tag, Calendar, AlertCircle, Info } from 'lucide-react';
+import {
+    User,
+    Home,
+    Tag,
+    Calendar,
+    AlertCircle,
+    Info,
+    Grid,
+    Flag,
+    FileText
+} from "lucide-react";
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function WardenComplaintsTable({
@@ -119,11 +129,11 @@ export default function WardenComplaintsTable({
         title: (o) => o.student || "-",
         subtitle: (o) => o.subject,
         fields: [
-            { label: "Room", value: (o) => o.roomNo || "N/A" },
-            { label: "Category", value: (o) => o.category },
-            { label: "Date", value: (o) => o.date },
-            { label: "Priority", value: (o) => o.priority },
-            { label: "Status", value: (o) => o.status }
+            { icon: Grid, value: (o) => o.roomNo || "N/A" },
+            { icon: Tag, value: (o) => o.category },
+            { icon: Calendar, value: (o) => o.date },
+            { icon: Flag, value: (o) => o.priority },
+            { icon: FileText, value: (o) => o.status }
         ]
     };
 
@@ -139,6 +149,12 @@ export default function WardenComplaintsTable({
             onSearchChange={onSearchChange}
             toolbarStartSlot={toolbarStartSlot}
             toolbarEndSlot={toolbarEndSlot}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             emptyText="No complaints found"
             onRowClick={(o) => onViewClick && onViewClick(o)}
             pagination={{

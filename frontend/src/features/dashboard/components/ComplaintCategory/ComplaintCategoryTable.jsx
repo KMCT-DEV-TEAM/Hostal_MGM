@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Pencil, AlignLeft, Tag, Plus, Download, MoreVertical } from 'lucide-react';
+import {
+    Pencil,
+    AlignLeft,
+    Tag,
+    Plus,
+    Download,
+    MoreVertical,
+    FileText
+} from "lucide-react";
 import Dropdown from '@/components/ui/Dropdown';
 import DataView from '@/components/ui/data-view/DataView';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -91,7 +99,7 @@ const ComplaintCategoryTable = ({
         title: (o) => o.name,
         subtitle: (o) => o.description,
         fields: [
-            { label: "Status", value: (o) => o.isActive ? "Active" : "Inactive" }
+            { icon: FileText, value: (o) => o.isActive ? "Active" : "Inactive" }
         ]
     };
 
@@ -166,6 +174,12 @@ const ComplaintCategoryTable = ({
             onSearchChange={(e) => onSearch(e.target.value)}
             toolbarStartSlot={toolbarStartSlot}
             toolbarEndSlot={toolbarEndSlot}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+            totalItems={totalItems}
+            totalPages={totalPages}
             emptyText={t('no_records_found')}
             onRowClick={(o) => {
                 setSelectedCategoryDetail(o);

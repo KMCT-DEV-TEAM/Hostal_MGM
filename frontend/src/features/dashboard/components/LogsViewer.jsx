@@ -26,6 +26,7 @@ const LogsViewer = ({ entityType }) => {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [limit, setLimit] = useState(10);
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, totalDocs: 0 });
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -215,55 +216,49 @@ const LogsViewer = ({ entityType }) => {
     };
 
     return (
-        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm md:overflow-hidden flex flex-col min-h-0 flex-1">
-
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2 min-h-0">
+        <>
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex flex-col min-h-0 flex-1 mt-2">
                 <DataView
-                    pageScrollMode={true}
-                    data={logs}
-                    columns={columns}
-                    cardConfig={cardConfig}
-                    loading={isLoading}
-                    searchPlaceholder="Search logs..."
-                    searchQuery={searchQuery}
-                    onSearchChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setPagination(p => ({ ...p, page: 1 }));
-                    }}
-                    toolbarEndSlot={
-                        <>
-                            <button
-                                onClick={() => setIsFilterModalOpen(true)}
-                                className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
-                                title="Filter"
-                            >
-                                <SlidersHorizontal className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => setIsExportFilterModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
-                            >
-                                <Download size={16} /> Export
-                            </button>
-                        </>
-                    }
-                    emptyText="No logs found matching your criteria."
-                    onRowClick={(o) => setSelectedLog(o)}
-                    pagination={{
-                        currentPage: pagination.page,
-                        totalPages: pagination.totalPages,
-                        onPageChange: (p) => fetchLogs(p),
-                        limit: limit,
-                        onLimitChange: (l) => { setLimit(l); fetchLogs(1); },
-                        totalItems: pagination.totalDocs,
-                    }}
-                    mobilePagination={{
-                        hasMore: pagination.page < pagination.totalPages,
-                        onLoadMore: () => fetchLogs(pagination.page + 1),
-                    }}
-                    getItemId={(o) => o._id}
-                />
-            </div>
+                pageScrollMode={true}
+                data={logs}
+                columns={columns}
+                cardConfig={cardConfig}
+                loading={isLoading}
+                searchPlaceholder="Search logs..."
+                searchQuery={searchQuery}
+                onSearchChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPagination(p => ({ ...p, page: 1 }));
+                }}
+                toolbarEndSlot={
+                    <>
+                        <button
+                            onClick={() => setIsFilterModalOpen(true)}
+                            className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                            title="Filter"
+                        >
+                            <SlidersHorizontal className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setIsExportFilterModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                        >
+                            <Download size={16} /> Export
+                        </button>
+                    </>
+                }
+                emptyText="No logs found matching your criteria."
+                onRowClick={(o) => setSelectedLog(o)}
+                page={pagination.page}
+                setPage={(p) => fetchLogs(p)}
+                limit={limit}
+                setLimit={(l) => { setLimit(l); fetchLogs(1); }}
+                totalItems={pagination.totalDocs}
+                totalPages={pagination.totalPages}
+                fetchMore={() => fetchLogs(pagination.page + 1)}
+                getItemId={(o) => o._id}
+            />
+        </div>
 
             <ExportFilterModal
                 isOpen={isExportFilterModalOpen}
@@ -293,7 +288,7 @@ const LogsViewer = ({ entityType }) => {
             )}
 
             <LogDetailView log={selectedLog} onClose={() => setSelectedLog(null)} />
-        </div>
+        </>
     );
 };
 

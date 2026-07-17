@@ -131,13 +131,17 @@ export default function Administrator() {
                 search: debouncedSearch,
                 status: statusFilter
             });
-            if (res && res.data) {
-                // Backend might wrap data in { data: [...], totalCount: ... } inside res.data
-                const dataPayload = res.data;
-                const adminList = dataPayload.data || dataPayload;
+            console.log('[Administrator] getAdmins response:', res);
+            
+            // Handle both { data: [...] } and { admins: [...] } or direct array
+            const adminList = res?.data?.data || res?.data || res?.admins || [];
+            const total = res?.data?.totalCount || res?.totalCount || 0;
+            const totalPgs = res?.data?.totalPages || res?.totalPages || Math.ceil(total / limit) || 1;
+            
+            if (adminList) {
                 setAdmins(Array.isArray(adminList) ? adminList : []);
-                setTotalAdmins(dataPayload.totalCount || res.totalCount || 0);
-                setTotalPages(dataPayload.totalPages || res.totalPages || 1);
+                setTotalAdmins(total);
+                setTotalPages(totalPgs);
             }
         } catch (err) {
             console.error("Failed to fetch admins:", err);

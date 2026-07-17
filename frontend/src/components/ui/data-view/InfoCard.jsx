@@ -23,7 +23,8 @@ export default function InfoCard({
     canSelect = false,
     selectionMode = false,
     onSelect,
-    className
+    className,
+    isLoading = false
 }) {
 
     const timerRef = useRef(null);
@@ -159,6 +160,35 @@ export default function InfoCard({
             </div>
         );
     };
+
+    if (isLoading) {
+        return (
+            <div className="relative bg-white rounded-xl border border-gray-100 p-4 shadow-sm animate-pulse">
+                <div className="flex gap-4">
+                    <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gray-200" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="mb-2">
+                            <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+                            <div className="h-3 bg-gray-200 rounded w-1/3 mt-0.5" />
+                        </div>
+                        <div className="flex flex-col gap-2 mt-2">
+                            <div className="h-3 bg-gray-200 rounded w-3/4" />
+                            <div className="h-3 bg-gray-200 rounded w-5/6" />
+                        </div>
+                        <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-gray-50 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <div className="h-3 bg-gray-200 rounded w-16" />
+                                <div className="h-3 bg-gray-200 rounded w-16" />
+                            </div>
+                            <div className="h-6 bg-gray-200 rounded w-20" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
