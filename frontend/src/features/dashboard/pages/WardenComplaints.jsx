@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import WardenComplaintsTable from '../components/complaints/WardenComplaintsTable';
-import WardenComplaintsMobileList from '../components/complaints/WardenComplaintsMobileList';
+
 import WardenComplaintsToolbar from '../components/complaints/WardenComplaintsToolbar';
 import WardenComplaintsFilterModal from '../components/complaints/WardenComplaintsFilterModal';
 import WardenComplaintDetailView from '../components/complaints/WardenComplaintDetailView';
@@ -116,7 +116,7 @@ export default function WardenComplaints({ hostel, onBack }) {
     });
     const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
     const [isSubmittingPriority, setIsSubmittingPriority] = useState(false);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     useEffect(() => {
         if (viewingComplaint) {
@@ -234,18 +234,10 @@ export default function WardenComplaints({ hostel, onBack }) {
     const resolvedAll = complaints.filter(c => c.status === 'Resolved').length;
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
                 <div>
-                    {/* {onBack && (
-                        <BackButton text="Back to Organizations" onClick={onBack} />
-                    )}
-                    <h1 className="text-2xl font-bold text-black">
-                        {hostel ? `${hostel} Complaints` : 'Complaints'}
-                    </h1>
-                    <p className="text-sm text-text-secondary mt-1">
-                        {hostel ? `Manage and resolve student complaints in ${hostel}.` : 'Manage and resolve student complaints in your hostel.'}
-                    </p> */}
                     <PageHeader
                         title="Complaints"
                         subtitle="Manage and resolve student complaints in your hostel."
@@ -256,7 +248,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 <div className="hidden md:flex items-center self-end sm:self-auto">
                     <button
                         onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                         {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
                     </button>
@@ -308,102 +300,42 @@ export default function WardenComplaints({ hostel, onBack }) {
                 </div>
             )}
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
-                {/* Toolbar Section */}
-                <WardenComplaintsToolbar
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    openFilterModal={() => setIsFilterModalOpen(true)}
-                    initiateExport={() => setIsExportConfirmOpen(true)}
-                />
-
-                {/* Table Section */}
-                <div className="hidden md:block flex-1 min-h-0">
-                    <WardenComplaintsTable
-                        loading={isLoading}
-                        complaints={paginatedComplaints}
-                        categories={categories}
-                        handleCategoryChange={handleCategoryChange}
-                        handlePriorityChange={handlePriorityChange}
-                        onViewClick={(c) => setViewingComplaint(c)}
-                        isViewOnly={isViewOnly}
-                    />
-                </div>
-
-                <WardenComplaintsMobileList
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    hasMore={currentPage < totalPages}
-                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                <WardenComplaintsTable
                     loading={isLoading}
                     complaints={paginatedComplaints}
                     categories={categories}
                     handleCategoryChange={handleCategoryChange}
                     handlePriorityChange={handlePriorityChange}
                     onViewClick={(c) => setViewingComplaint(c)}
+                    isViewOnly={isViewOnly}
+                    page={currentPage}
+                    setPage={setCurrentPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalPages={totalPages}
+                    totalItems={totalComplaints}
+                    searchValue={searchQuery}
+                    onSearchChange={(e) => setSearchQuery(e.target.value)}
+                    toolbarEndSlot={
+                        <>
+                            <button
+                                onClick={() => setIsFilterModalOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer shadow-sm h-full"
+                                title="Filter Complaints"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sliders-horizontal"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+                            </button>
+                            <button
+                                onClick={() => setIsExportConfirmOpen(true)}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Export
+                            </button>
+                        </>
+                    }
                 />
             </div>
-
-            {/* Pagination Section */}
-            <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                <div>
-                    <span className="hidden sm:inline">Showing </span>
-                    {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}
-                    <span className="hidden sm:inline"> to </span>
-                    <span className="sm:hidden">-</span>
-                    {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
-                    <span className="hidden sm:inline"> entries</span>
-                </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, currentPage - 1);
-                            let endPage = Math.min(totalPages, currentPage + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             {isFilterModalOpen && (
                 <WardenComplaintsFilterModal
                     initialRoomNo={roomNoFilter}
@@ -549,8 +481,7 @@ export default function WardenComplaints({ hostel, onBack }) {
                 loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
                 confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
             />
-
-
+            </div>
         </div>
     );
 }

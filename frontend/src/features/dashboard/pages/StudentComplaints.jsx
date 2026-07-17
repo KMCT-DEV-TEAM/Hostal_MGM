@@ -4,7 +4,7 @@ import StudentComplaintsHeader from '../components/complaints/StudentComplaintsH
 import StudentComplaintsToolbar from '../components/complaints/StudentComplaintsToolbar';
 import StudentComplaintFormModal from '../components/complaints/StudentComplaintFormModal';
 import StudentComplaintDetailModal from '../components/complaints/StudentComplaintDetailModal';
-import StudentComplaintsMobileList from '../components/complaints/StudentComplaintsMobileList';
+
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -23,7 +23,7 @@ export default function StudentComplaints() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
     const [showKPIs, setShowKPIs] = useState(false);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
     
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -264,8 +264,9 @@ export default function StudentComplaints() {
     const paginatedComplaints = filteredComplaints.slice((currentPage - 1) * limit, currentPage * limit);
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto md:overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
             
             {/* Stat Cards Section */}
             {showKPIs && (
@@ -312,19 +313,7 @@ export default function StudentComplaints() {
             </div>
             )}
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm flex-1 flex flex-col min-h-0 mt-2">
-                {/* Toolbar Section */}
-                <StudentComplaintsToolbar
-                    statusFilter={statusFilter}
-                    setStatusFilter={setStatusFilter}
-                    setCurrentPage={setCurrentPage}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    initiateExport={() => setIsExportConfirmOpen(true)}
-                    openAddComplaintModal={handleAdd}
-                />
-
-                {/* Table Section */}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
                 <StudentComplaintsTable
                     loading={loading}
                     complaints={paginatedComplaints}
@@ -332,81 +321,44 @@ export default function StudentComplaints() {
                     handleCategoryChange={handleCategoryChange}
                     openEditModal={handleEdit}
                     onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
+                    page={currentPage}
+                    setPage={setCurrentPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalPages={totalPages}
+                    totalItems={totalComplaints}
+                    searchValue={searchQuery}
+                    onSearchChange={(e) => setSearchQuery(e.target.value)}
+                    toolbarStartSlot={
+                        <Dropdown
+                            options={[
+                                { label: 'All Status', value: 'All' },
+                                { label: 'Pending', value: 'Pending' },
+                                { label: 'Awaiting', value: 'Awaiting' },
+                                { label: 'In progress', value: 'In progress' },
+                                { label: 'Rejected', value: 'Rejected' },
+                                { label: 'Incomplete', value: 'Incomplete' },
+                                { label: 'Resolved', value: 'Resolved' }
+                            ]}
+                            value={statusFilter}
+                            onChange={(val) => {
+                                setStatusFilter(val);
+                                setCurrentPage(1);
+                            }}
+                            placeholder="All"
+                            minWidth="w-32"
+                            triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full font-medium"
+                        />
+                    }
+                    toolbarEndSlot={
+                        <button
+                            onClick={handleAdd}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add New
+                        </button>
+                    }
                 />
-
-                {/* Mobile List Section */}
-            <StudentComplaintsMobileList
-                currentPage={currentPage}
-                totalPages={totalPages}
-                hasMore={currentPage < totalPages}
-                onLoadMore={() => setCurrentPage(prev => prev + 1)}
-                loading={loading}
-                complaints={paginatedComplaints}
-                categories={categories}
-                handleCategoryChange={handleCategoryChange}
-                openEditModal={handleEdit}
-                onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
-            />
-
-            {/* PAGINATION BAR FOOTER */}
-            <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-text-secondary rounded-b-xl shadow-sm shrink-0 mt-auto">
-                <div className="hidden sm:block">
-                        Showing {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1} to{" "}
-                        {Math.min(currentPage * limit, totalComplaints)} of {totalComplaints} entries
-                    </div>
-                    <div className="sm:hidden">
-                        {totalComplaints === 0 ? 0 : (currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalComplaints)} of {totalComplaints}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, currentPage - 1);
-                            let endPage = Math.min(totalPages, currentPage + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             {isModalOpen && (
@@ -565,6 +517,7 @@ export default function StudentComplaints() {
                 loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
                 confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
             />
+            </div>
         </div>
     );
 }

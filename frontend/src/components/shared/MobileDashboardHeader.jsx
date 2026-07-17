@@ -15,7 +15,7 @@ const MobileDashboardHeader = () => {
     return (
         <div className="pt-8 pb-4 px-4 bg-background-secondary">
             <div className="bg-white rounded-[24px] p-2 flex items-center justify-between shadow-sm border border-gray-50">
-                <div className="flex items-center gap-3 pl-1">
+                <Link to="/dashboard/profile" className="flex items-center gap-3 pl-1 hover:opacity-80 transition-opacity">
                     {user?.profileImage ? (
                         <img
                             src={user.profileImage}
@@ -36,7 +36,7 @@ const MobileDashboardHeader = () => {
                             <span className="text-xs">{user?.roomNumber || 'Room No'}</span>
                         </div>
                     </div>
-                </div>
+                </Link>
 
                 <div className="flex items-center gap-3 pr-3">
                     <button className="text-text-secondary hover:text-gray-600 transition-colors">

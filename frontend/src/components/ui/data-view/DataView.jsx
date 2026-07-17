@@ -16,7 +16,7 @@ export function DataToolbar({
     if (!hasToolbarContent) return null;
 
     return (
-        <div className="px-4 py-3 flex flex-col md:flex-row items-start md:items-center rounded-xl md:rounded-t-xl justify-between gap-4   bg-white ">
+        <div className="px-4 py-3 flex flex-col md:flex-row items-start md:items-center rounded-xl md:rounded-b-none justify-between gap-4   bg-white ">
             <div className="flex w-full md:w-auto items-center gap-3">
                 {onSearchChange && (
                     <div className="relative flex-1 md:w-80 shrink-0">
@@ -50,13 +50,18 @@ export function DesktopPagination({
     if (!page || !setPage) return null;
 
     return (
-        <div className={`hidden md:flex flex-row p-0 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto ${pageScrollMode ? '-0 z-30' : ''}`}>
-            <div className="flex items-center gap-3">
-                {setLimit && (
-                    <div className="flex items-center gap-2">
-                        <span className="hidden sm:inline">Rows per page:</span>
-                        <Dropdown
-                            options={[10, 25, 50, 100]}
+
+        <div className={`hidden md:block shrink-0 mt-auto ${pageScrollMode ? 'sticky bottom-[5px] z-30 -mb-[19px]' : ''}`}>
+            {pageScrollMode && (
+                <div className="absolute -left-2 -right-2 top-0 h-[calc(100%+5px)] bg-[#F8FAFC] -z-10" />
+            )}
+            <div className="flex flex-row p-0 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 shadow-sm rounded-b-xl">
+                <div className="flex items-center gap-3">
+                    {setLimit && (
+                        <div className="flex items-center gap-2">
+                            <span className="hidden sm:inline">Rows per page:</span>
+                            <Dropdown
+                                options={[10, 25, 50, 100]}
                             value={limit}
                             onChange={(val) => {
                                 setLimit(val);
@@ -125,6 +130,7 @@ export function DesktopPagination({
                 </button>
             </div>
         </div>
+        </div>
     );
 }
 
@@ -191,8 +197,10 @@ export default function DataView({
 
     return (
         <div className={`flex flex-col   ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
-
-            <div className={pageScrollMode ? "relative z-20 sticky top-2 rounded-xl   shadow-sm" : "relative z-10 "}>
+            <div className={pageScrollMode ? "relative z-30 sticky top-[10px] rounded-t-xl shadow-sm" : "relative z-10 "}>
+                {pageScrollMode && (
+                    <div className="absolute -left-2 -right-2 bottom-0 h-[calc(100%+10px)] bg-[#F8FAFC] -z-10" />
+                )}
                 <DataToolbar
                     searchQuery={searchQuery}
                     onSearchChange={onSearchChange}

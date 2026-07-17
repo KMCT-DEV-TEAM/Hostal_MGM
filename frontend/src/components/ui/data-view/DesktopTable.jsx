@@ -22,7 +22,7 @@ export default function DesktopTable({
     return (
         <div className={`bg-white relative hidden md:block   w-full ${pageScrollMode ? '' : 'flex-1 overflow-auto'}`}>
             <table className="w-full text-start relative table-fixed min-w-full">
-                <thead className={`z-20 bg-gray-50/90 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
+                <thead className={`z-20 bg-gray-50/90 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${pageScrollMode ? 'sticky top-[70px]' : 'sticky top-0'}`}>
                     <tr className="text-gray-600 text-xs uppercase tracking-wider font-semibold">
                         {canSelect && (
                             <th className="p-4 w-12 text-center align-middle">
