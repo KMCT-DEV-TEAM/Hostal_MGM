@@ -14,6 +14,7 @@ export default function VisitorsMobileView({
     onEdit,
 }) {
     const location = useLocation();
+    const isHistoryTab = location.pathname.includes('/history');
 
     const tabs = [
         { label: "Visitors", path: `/dashboard/visitors` },
@@ -39,6 +40,7 @@ export default function VisitorsMobileView({
                         key={item._id || item.id || Math.random()}
                         data={item}
                         onEdit={onEdit}
+                        isHistory={isHistoryTab}
                     />
                 )}
             />
