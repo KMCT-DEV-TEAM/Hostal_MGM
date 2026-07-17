@@ -24,8 +24,8 @@ import {
     MoreVertical
 } from 'lucide-react';
 
-import AdminTable from '../components/admin/AdminTable';
-import AdminMobileList from '../components/admin/AdminMobileList';
+import AdminsTable from '../components/admin/AdminsTable';
+import AdminsHeader from '../components/admin/AdminsHeader';
 import AdminFormModal from '../components/admin/AdminFormModal';
 import AdminDetailView from '../components/admin/AdminDetailView';
 import Dropdown from '@/components/ui/Dropdown';
@@ -108,8 +108,9 @@ export default function Administrator() {
     const [organizations, setOrganizations] = useState([]);
 
     // Pagination State
+    // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [limit, setLimit] = useState(10);
 
 
     // Form State for Adding / Editing Admin
@@ -126,7 +127,7 @@ export default function Administrator() {
         try {
             const res = await adminService.getAdmins({
                 page: currentPage,
-                limit: itemsPerPage,
+                limit: limit,
                 search: debouncedSearch,
                 status: statusFilter
             });
@@ -189,7 +190,7 @@ export default function Administrator() {
 
     useEffect(() => {
         fetchAdmins();
-    }, [currentPage, debouncedSearch, statusFilter]);
+    }, [currentPage, limit, debouncedSearch, statusFilter]);
 
     useEffect(() => {
         const socket = initSocket();
@@ -596,208 +597,42 @@ export default function Administrator() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-82px)] overflow-hidden bg-[#F8FAFC] p-4 md:p-6 text-black flex flex-col">
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
 
-            {/* ==========================================
-             HEADER ACTION SECTION
-             ========================================== */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-6 gap-2 sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admins</h1>
-                    <p className="text-[10px] sm:text-xs text-[#777777] mt-0.5 sm:mt-1">Manage all registered hostel administrators</p>
-                </div>
+            <AdminsHeader />
 
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                </div>
-            </div>
-
-            {/* ==========================================
-                TOOLBAR SECTION
-             ========================================== */}
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-hidden md:shadow-sm  flex-1 flex flex-col min-h-0">
-                <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-                    <div className="w-full sm:w-auto flex gap-2 flex-1 sm:max-w-xs">
-                        <div className="relative w-full">
-                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                placeholder="Search Admins..."
-                                value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                            />
-                        </div>
-                        <button
-                            onClick={openAddAdminModal}
-                            className="flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shrink-0 shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> Add
-                        </button>
-                    </div>
-
-                    <div className={`flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end`}>
-                        <div className="flex gap-3 w-full sm:w-auto">
-                            <Dropdown
-                                className="flex-1 sm:flex-none"
-                                options={[
-                                    { value: "All", label: "All Status" },
-                                    { value: "Active", label: "Active" },
-                                    { value: "Inactive", label: "Inactive" }
-                                ]}
-                                value={statusFilter}
-                                onChange={(val) => {
-                                    setStatusFilter(val);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="All Status"
-                                minWidth="w-32"
-                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer"
-                            />
-
-                            <button
-                                onClick={initiateExport}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                            >
-                                <Download className="w-4 h-4" /> Export
-                            </button>
-                            <div className="relative" ref={bulkMenuRef}>
-                                <button
-                                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm md:shadow-none cursor-pointer"
-                                >
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {isBulkMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(true); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                        </button>
-                                        <button
-                                            onClick={() => { setIsBulkMenuOpen(false); handleBulkStatusClick(false); }}
-                                            disabled={selectedIds.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                        >
-                                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <button
-                            onClick={openAddAdminModal}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors w-full sm:w-auto shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> Add New
-                        </button>
-                    </div>
-                </div>
-
-                {/* ==========================================
-                DATA TABLE LAYOUT
-                ========================================== */}
-
-                <AdminTable
-                    paginatedAdmins={admins}
+            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
+                <AdminsTable
+                    admins={admins}
                     organizations={organizations}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    setSelectedAdminDetail={setSelectedAdminDetail}
-                    setView={setView}
-                    handleOrganizationChange={handleOrganizationChange}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    handleDeleteAdmin={handleDeleteAdmin}
-                    openEditAdminModal={openEditAdminModal}
                     loading={loading}
                     error={error}
-                />
-
-                <AdminMobileList
-                    currentPage={currentPage}
+                    canCreate={true}
+                    canEdit={true}
+                    canDelete={true}
+                    searchValue={searchQuery}
+                    onSearch={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+                    onExport={initiateExport}
+                    onAddClick={openAddAdminModal}
+                    onActivateSelected={() => handleBulkStatusClick(true)}
+                    onDeactivateSelected={() => handleBulkStatusClick(false)}
+                    selectedIds={selectedIds}
+                    onSelectAll={handleSelectAll}
+                    onSelectRow={handleSelectRow}
+                    onViewClick={(admin) => { setSelectedAdminDetail(admin); setView('detail'); }}
+                    onEditClick={openEditAdminModal}
+                    onStatusChangeClick={(id, status) => handleStatusChangeClick(id, status)}
+                    onOrganizationChange={handleOrganizationChange}
+                    page={currentPage}
+                    setPage={setCurrentPage}
+                    limit={limit}
+                    setLimit={setLimit}
+                    totalItems={totalAdmins}
                     totalPages={totalPages}
-                    hasMore={currentPage < totalPages}
-                    onLoadMore={() => setCurrentPage(prev => prev + 1)}
-                    paginatedAdmins={admins}
-                    organizations={organizations}
-                    openEditAdminModal={openEditAdminModal}
-                    setSelectedAdminDetail={setSelectedAdminDetail}
-                    setView={setView}
-                    selectedIds={selectedIds}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    handleOrganizationChange={handleOrganizationChange}
-                    handleStatusChangeClick={handleStatusChangeClick}
-                    handleDeleteAdmin={handleDeleteAdmin}
-                    loading={loading}
-                    error={error}
                 />
-
-                {/* ==========================================
-                PAGINATION BAR FOOTER
-                ========================================== */}
-                <div className="hidden md:flex flex-row p-3 sm:p-4 bg-white border border-gray-50 items-center justify-between text-[10px] sm:text-xs font-medium text-gray-500 rounded-b-xl shadow-sm shrink-0 mt-auto">
-                    <div>
-                        <span className="hidden sm:inline">Showing </span>
-                        {totalAdmins === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
-                        <span className="hidden sm:inline"> to </span>
-                        <span className="sm:hidden">-</span>
-                        {Math.min(currentPage * itemsPerPage, totalAdmins)} of {totalAdmins}
-                        <span className="hidden sm:inline"> entries</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {(() => {
-                            let startPage = Math.max(1, currentPage - 1);
-                            let endPage = Math.min(totalPages, currentPage + 1);
-
-                            if (endPage - startPage < 2) {
-                                if (startPage === 1) {
-                                    endPage = Math.min(totalPages, 3);
-                                } else if (endPage === totalPages) {
-                                    startPage = Math.max(1, totalPages - 2);
-                                }
-                            }
-
-                            const visiblePages = [];
-                            for (let i = startPage; i <= endPage; i++) {
-                                visiblePages.push(i);
-                            }
-
-                            return visiblePages.map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${currentPage === pageNum
-                                        ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                        : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                        } cursor-pointer`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ));
-                        })()}
-
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             {/* ==========================================
@@ -1206,6 +1041,7 @@ export default function Administrator() {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }

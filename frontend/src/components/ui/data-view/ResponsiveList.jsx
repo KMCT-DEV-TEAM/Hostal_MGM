@@ -91,7 +91,7 @@ export default function ResponsiveList({
                     return {
                         label: f.label || f.header,
                         icon: Icon ? (typeof Icon === 'function' ? <Icon /> : Icon) : null,
-                        value: f.accessor(item)
+                        value: f.accessor ? f.accessor(item) : (typeof f.value === 'function' ? f.value(item) : f.value)
                     };
                 }).filter(f => f.value) : [];
                 const status = cardConfig.status ? cardConfig.status(item) : null;

@@ -206,7 +206,7 @@ function Sidebar({ isOpen, setIsOpen }) {
 
             <aside className={`fixed top-[82px] left-0 bottom-0 w-[250px] bg-white border-r border-[#EAEAEA] flex flex-col justify-between z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Scrollable Main Content */}
-                <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex-1 py-4 px-4 overflow-y-auto max-h-[calc(100vh-160px)] no-scrollbar">
 
 
                     {sections.map((section) => (

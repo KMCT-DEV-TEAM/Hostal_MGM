@@ -1,6 +1,8 @@
 import React from 'react';
+import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
-import TableSkeletonLoader from '@/components/ui/TableSkeletonLoader';
+import { User, Home, Tag, Calendar, AlertCircle, Info } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function WardenComplaintsTable({
     loading,
@@ -9,103 +11,149 @@ export default function WardenComplaintsTable({
     handleCategoryChange,
     handlePriorityChange,
     onViewClick,
-    isViewOnly = false
+    isViewOnly = false,
+    searchValue,
+    onSearchChange,
+    toolbarStartSlot,
+    toolbarEndSlot,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalPages,
+    totalItems
 }) {
+    const { t } = useTranslation();
+
     const categoryOptions = categories.map(cat => ({
         value: cat._id,
         label: cat.name
     }));
 
+    const columns = [
+        {
+            key: "student",
+            header: "Student",
+            type: "user",
+            truncate: true,
+            titleAccessor: (o) => o.student,
+            subtitleAccessor: (o) => "",
+            avatarAccessor: (o) => o.student,
+        },
+        {
+            key: "roomNo",
+            header: "Room No",
+            icon: Home,
+            accessor: (o) => o.roomNo || "N/A"
+        },
+        {
+            key: "category",
+            header: "Category",
+            icon: Tag,
+            renderCell: (o) => (
+                <div className="relative w-full max-w-[140px]" onClick={e => e.stopPropagation()}>
+                    <Dropdown
+                        minWidth=""
+                        options={categoryOptions.length > 0 ? categoryOptions : [{ value: o.categoryId || o.category, label: o.category }]}
+                        value={o.categoryId || o.category}
+                        onChange={(val) => handleCategoryChange && handleCategoryChange(o.id, val)}
+                        triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
+                    />
+                </div>
+            )
+        },
+        {
+            key: "subject",
+            header: "Subject",
+            icon: Info,
+            truncate: true,
+            accessor: (o) => o.subject
+        },
+        {
+            key: "date",
+            header: "Date",
+            icon: Calendar,
+            accessor: (o) => o.date
+        },
+        {
+            key: "priority",
+            header: "Priority",
+            icon: AlertCircle,
+            renderCell: (o) => (
+                <div className="relative w-full max-w-[120px]" onClick={e => e.stopPropagation()}>
+                    <Dropdown
+                        minWidth=""
+                        options={[
+                            { value: "High", label: "High" },
+                            { value: "Medium", label: "Medium" },
+                            { value: "Low", label: "Low" }
+                        ]}
+                        value={o.priority || 'Medium'}
+                        onChange={(val) => handlePriorityChange && handlePriorityChange(o.id, val)}
+                        triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border ${o.priority === 'High' ? 'bg-danger/10 text-danger hover:bg-danger/20 border-danger/20' : o.priority === 'Medium' ? 'bg-warning/10 text-warning hover:bg-warning/20 border-warning/20' : 'bg-gray-100 text-text-secondary hover:bg-gray-200 border-gray-200'}`}
+                    />
+                </div>
+            )
+        },
+        {
+            key: "status",
+            header: "Status",
+            align: "center",
+            renderCell: (o) => (
+                <div onClick={e => e.stopPropagation()} className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
+                    o.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
+                    o.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
+                    o.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                    o.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
+                    o.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
+                    'bg-blue-50 text-blue-600 border-blue-200'
+                }`}>
+                    {o.status || 'Pending'}
+                </div>
+            )
+        }
+    ];
+
+    const cardConfig = {
+        avatar: (o) => o.student?.split(' ').map(n => n[0]).join('').substring(0, 2),
+        title: (o) => o.student || "-",
+        subtitle: (o) => o.subject,
+        fields: [
+            { label: "Room", value: (o) => o.roomNo || "N/A" },
+            { label: "Category", value: (o) => o.category },
+            { label: "Date", value: (o) => o.date },
+            { label: "Priority", value: (o) => o.priority },
+            { label: "Status", value: (o) => o.status }
+        ]
+    };
+
     return (
-        <div className="flex-1 h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full text-start relative">
-                <thead className="sticky top-0 z-10 bg-[#FAFBFD] shadow-sm">
-                    <tr className="bg-[#FAFBFD] border-b border-gray-100 text-gray-400 text-xs tracking-wider uppercase font-semibold">
-                        <th className="p-4 w-12 text-center normal-case text-sm font-semibold text-[#222222]">#</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Student</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Room No</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Category</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Subject</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Date</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Priority</th>
-                        <th className="p-4 text-start normal-case text-sm font-semibold text-[#222222]">Status</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                    {loading ? (
-                        <TableSkeletonLoader columns={8} />
-                    ) : complaints.length === 0 ? (
-                        <tr>
-                            <td colSpan="8" className="p-8 text-center text-text-secondary">No complaints found</td>
-                        </tr>
-                    ) : (
-                        complaints.map((complaint, index) => (
-                            <tr
-                                key={complaint.id}
-                                onClick={() => onViewClick && onViewClick(complaint)}
-                                className="hover:bg-gray-50/40 transition-colors cursor-pointer"
-                            >
-                                <td className="p-4 text-center text-text-secondary font-medium">{index + 1}</td>
-                                <td className="p-4 text-start">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                                            {complaint.student.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                        <span className="text-text-secondary font-medium">{complaint.student}</span>
-                                    </div>
-                                </td>
-                                <td className="p-4 text-start text-text-secondary font-medium">
-                                    {complaint.roomNo}
-                                </td>
-                                <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className="relative w-full max-w-[140px]">
-                                        <Dropdown
-                                            minWidth=""
-                                            options={categoryOptions.length > 0 ? categoryOptions : [{ value: complaint.categoryId || complaint.category, label: complaint.category }]}
-                                            value={complaint.categoryId || complaint.category}
-                                            onChange={(val) => handleCategoryChange && handleCategoryChange(complaint.id, val)}
-                                            triggerClassName="px-3 py-1.5 text-xs font-medium text-start rounded-lg bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors cursor-pointer w-full flex justify-between items-center"
-                                        />
-                                    </div>
-                                </td>
-                                <td className="p-4 text-start text-text-secondary">
-                                    {complaint.subject}
-                                </td>
-                                <td className="p-4 text-start text-text-secondary">
-                                    {complaint.date}
-                                </td>
-                                <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className="relative w-full max-w-[120px]">
-                                        <Dropdown
-                                            minWidth=""
-                                            options={[
-                                                { value: "High", label: "High" },
-                                                { value: "Medium", label: "Medium" },
-                                                { value: "Low", label: "Low" }
-                                            ]}
-                                            value={complaint.priority || 'Medium'}
-                                            onChange={(val) => handlePriorityChange && handlePriorityChange(complaint.id, val)}
-                                            triggerClassName={`px-3 py-1.5 text-xs font-medium text-start rounded-md transition-colors cursor-pointer border ${complaint.priority === 'High' ? 'bg-danger/10 text-danger hover:bg-danger/20 border-danger/20' : complaint.priority === 'Medium' ? 'bg-warning/10 text-warning hover:bg-warning/20 border-warning/20' : 'bg-gray-100 text-text-secondary hover:bg-gray-200 border-gray-200'}`}
-                                        />
-                                    </div>
-                                </td>
-                                <td className="p-4 text-start" onClick={e => e.stopPropagation()}>
-                                    <div className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
-                                        complaint.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
-                                        complaint.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
-                                        complaint.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
-                                        complaint.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
-                                        complaint.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
-                                        'bg-blue-50 text-blue-600 border-blue-200'
-                                    }`}>
-                                        {complaint.status || 'Pending'}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
-        </div>
+        <DataView
+            pageScrollMode={true}
+            data={complaints}
+            columns={columns}
+            cardConfig={cardConfig}
+            loading={loading}
+            searchPlaceholder="Search complaints..."
+            searchQuery={searchValue}
+            onSearchChange={onSearchChange}
+            toolbarStartSlot={toolbarStartSlot}
+            toolbarEndSlot={toolbarEndSlot}
+            emptyText="No complaints found"
+            onRowClick={(o) => onViewClick && onViewClick(o)}
+            pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+                limit: limit,
+                onLimitChange: setLimit,
+                totalItems: totalItems,
+            }}
+            mobilePagination={{
+                hasMore: page < totalPages,
+                onLoadMore: () => setPage?.(prev => prev + 1),
+            }}
+            getItemId={(o) => o.id}
+        />
     );
 }

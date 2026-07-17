@@ -1,114 +1,264 @@
-import React from 'react';
-import { Pencil, Mail, Phone } from 'lucide-react';
-import Dropdown from '@/components/ui/Dropdown';
-import ListTable from '@/components/ui/ListTable';
-import { useTranslation } from '@/hooks/useTranslation';
+import React, { useState, useEffect } from "react";
+import { useClickOutside } from '@/hooks/useClickOutside';
+import {
+    Pencil,
+    Mail,
+    Phone,
+    MoreVertical,
+    Plus,
+    Download
+} from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
+import Dropdown from "@/components/ui/Dropdown";
+import DataView from "@/components/ui/data-view/DataView";
+import { useTranslation } from "@/hooks/useTranslation";
 
-const WardenTable = ({
-    paginatedWardens,
+export default function WardenTable({
+    wardens,
     availableHostels,
-    selectedIds,
-    handleSelectAll,
-    handleSelectRow,
-    setSelectedWardenDetail,
-    setView,
-    handleHostelChange,
-    handleStatusChangeClick,
-    openEditWardenModal,
     loading,
     error,
-}) => {
+    searchValue,
+    onSearch,
+    statusFilter,
+    onStatusFilterChange,
+    onExport,
+    onAddClick,
+    onActivateSelected,
+    onDeactivateSelected,
+    selectedIds,
+    onSelectAll,
+    onSelectRow,
+    setSelectedWardenDetail,
+    setView,
+    openEditWardenModal,
+    handleStatusChangeClick,
+    handleHostelChange,
+    // Pagination
+    page,
+    setPage,
+    limit,
+    setLimit,
+    totalItems,
+    totalPages,
+}) {
     const { t } = useTranslation();
 
-    const headers = [
-        t('name'),
-        t('email'),
-        t('phone'),
-        t('hostel_name'),
-        t('status'),
-        { label: t('actions'), align: 'center' }
-    ];
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+    const bulkMenuRef = useClickOutside(() => setIsBulkMenuOpen(false));
 
-    const renderRow = (warden, index, isSelected, isLoading) => (
-        <>
-            <td className="p-4 font-medium text-[#777777]">
-                <div
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#0A437A]"
-                    onClick={() => {
-                        setSelectedWardenDetail(warden);
-                        setView('detail');
-                    }}
-                >
-                    <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                        {warden.name ? warden.name.substring(0, 2) : 'NA'}
-                    </div>
-                    <span className="font-medium text-[#777777] hover:text-[#0A437A] transition-colors">{warden.name}</span>
-                </div>
-            </td>
-            <td className="p-4 text-start text-gray-500">
-                <div className="flex items-center justify-start gap-1.5 text-gray-500">
-                    <Mail size={14} className="text-gray-400" />
-                    <span>{warden.email}</span>
-                </div>
-            </td>
-            <td className="p-4 text-start">
-                <div className="flex items-center justify-start gap-1.5 text-gray-500">
-                    <Phone size={14} className="text-gray-400" />
-                    <span>{warden.phone}</span>
-                </div>
-            </td>
-            <td className="p-4 text-start">
-                <div className="relative w-[145px]">
+    const [searchTerm, setSearchTerm] = useState(searchValue || "");
+    const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
+    useEffect(() => {
+        setSearchTerm(searchValue || "");
+    }, [searchValue]);
+
+    useEffect(() => {
+        onSearch?.(debouncedSearchTerm);
+    }, [debouncedSearchTerm, onSearch]);
+
+    // 1. Column Configuration
+    const columns = [
+        {
+            key: "wardenName",
+            header: t("name"),
+            type: "user",
+            truncate: true,
+            titleAccessor: (w) => w.name,
+            subtitleAccessor: (w) => "",
+            avatarAccessor: (w) => w.name,
+        },
+        {
+            key: "email",
+            header: t("email"),
+            icon: Mail,
+            accessor: (w) => w.email || "-"
+        },
+        {
+            key: "phone",
+            header: t("phone"),
+            icon: Phone,
+            accessor: (w) => w.phone || "-"
+        },
+        {
+            key: "hostel_name",
+            header: t("hostel_name"),
+            renderCell: (w) => (
+                <div className="relative w-[145px]" onClick={(e) => e.stopPropagation()}>
                     <Dropdown
                         minWidth=""
                         options={[
                             { value: "Not Assigned", label: "Not Assigned" },
                             ...availableHostels.map(h => ({ value: h._id || h, label: h.name || h }))
                         ]}
-                        value={warden.hostel?._id || warden.hostel || 'Not Assigned'}
-                        onChange={(val) => handleHostelChange(warden.id, val)}
-                        triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-gray-300 transition-colors"
+                        value={w.hostel?._id || w.hostel || 'Not Assigned'}
+                        onChange={(val) => handleHostelChange?.(w.id, val)}
+                        triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 transition-colors"
                     />
                 </div>
-            </td>
-            <td className="p-4 text-start">
-                <div className="relative inline-block w-[105px]">
-                    <Dropdown
-                        minWidth=""
-                        options={[
-                            { value: "Active", label: t('active') },
-                            { value: "Inactive", label: t('inactive') }
-                        ]}
-                        value={warden.status}
-                        onChange={() => handleStatusChangeClick(warden.id, warden.status)}
-                        triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${warden.status === 'Active' ? 'bg-green-50 text-success border-green-200 hover:bg-green-100' : 'bg-red-50 text-danger border-red-200 hover:bg-red-100'}`}
-                    />
-                </div>
-            </td>
-            <td className="p-4 text-start">
-                <div className="flex items-center justify-center gap-3 text-gray-400">
-                    <button onClick={() => openEditWardenModal(warden)} className="text-secondary cursor-pointer transition-colors" title="Edit row item">
+            )
+        },
+        {
+            key: "status",
+            header: t("status"),
+            align: "center",
+            accessor: (w) => ({
+                text: Boolean(w.isActive) || w.status === 'Active' ? t("active") : t("inactive"),
+                color: Boolean(w.isActive) || w.status === 'Active' ? "green" : "red"
+            }),
+            renderCell: (w) => {
+                const isActive = Boolean(w.isActive) || w.status === 'Active';
+                return (
+                    <div className="relative inline-block w-[105px]" onClick={(e) => e.stopPropagation()}>
+                        <Dropdown
+                            minWidth=""
+                            options={[
+                                { value: "Active", label: t("active") },
+                                { value: "Inactive", label: t("inactive") },
+                            ]}
+                            value={isActive ? "Active" : "Inactive"}
+                            onChange={() => handleStatusChangeClick?.(w.id, isActive ? "Active" : "Inactive")}
+                            triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
+                        />
+                    </div>
+                );
+            }
+        },
+        {
+            key: "action",
+            header: t("actions"),
+            align: "center",
+            renderCell: (w) => (
+                <div className="flex gap-3 items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                        onClick={() => openEditWardenModal?.(w)}
+                        className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Edit warden"
+                    >
                         <Pencil className="w-4 h-4" />
                     </button>
                 </div>
-            </td>
+            )
+        }
+    ];
+
+    // 2. Card Configuration for ResponsiveList
+    const cardConfig = {
+        avatar: (w) => w.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
+        title: (w) => w.name || "-",
+        subtitle: (w) => w.email || "-",
+        status: (w) => ({
+            text: Boolean(w.isActive) || w.status === 'Active' ? t("active") : t("inactive"),
+            color: Boolean(w.isActive) || w.status === 'Active' ? "green" : "red"
+        }),
+        fields: [
+            { label: t("phone"), value: (w) => w.phone || "-" },
+            { label: t("hostel_name"), value: (w) => w.hostel?.name || w.hostel || "Not Assigned" }
+        ],
+        onStatusChange: (w, isActive) => handleStatusChangeClick?.(w.id, w.status),
+    };
+
+    // 3. Toolbar Slots
+    const toolbarStartSlot = null;
+
+    const toolbarEndSlot = (
+        <>
+            <Dropdown
+                className="flex-1 sm:flex-none"
+                options={[
+                    { value: "All", label: "All Status" },
+                    { value: "Active", label: "Active" },
+                    { value: "Inactive", label: "Inactive" }
+                ]}
+                value={statusFilter}
+                onChange={onStatusFilterChange}
+                placeholder={"All Status"}
+                minWidth="w-32"
+                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+            />
+            {onExport && (
+                <button
+                    onClick={onExport}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
+                >
+                    <Download className="w-4 h-4" /> Export
+                </button>
+            )}
+            <div className="relative" ref={bulkMenuRef}>
+                <button
+                    onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                >
+                    <MoreVertical className="w-4 h-4 text-gray-500" />
+                </button>
+                {isBulkMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                        <button
+                            onClick={() => { setIsBulkMenuOpen(false); onActivateSelected?.(); }}
+                            disabled={selectedIds.length === 0}
+                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                        </button>
+                        <button
+                            onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected?.(); }}
+                            disabled={selectedIds.length === 0}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                        </button>
+                    </div>
+                )}
+            </div>
+            {onAddClick && (
+                <button
+                    onClick={onAddClick}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add New
+                </button>
+            )}
         </>
     );
 
     return (
-        <ListTable
-            headers={headers}
-            items={paginatedWardens}
+        <DataView
+            pageScrollMode={true}
+            data={wardens}
+            columns={columns}
+            cardConfig={cardConfig}
             loading={loading}
             error={error}
+            searchPlaceholder="Search Wardens..."
+            searchQuery={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            toolbarStartSlot={toolbarStartSlot}
+            toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
-            onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectAll={onSelectAll}
+            onSelect={onSelectRow}
             canSelect={true}
             emptyText={t('no_records_found')}
-            renderRow={renderRow}
+            onRowClick={(warden) => {
+                setSelectedWardenDetail?.(warden);
+                setView?.('detail');
+            }}
+            pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+                limit: limit,
+                onLimitChange: setLimit,
+                totalItems: totalItems,
+            }}
+            mobilePagination={{
+                hasMore: page < totalPages,
+                onLoadMore: () => setPage?.(prev => prev + 1),
+            }}
+            getItemId={(w) => w.id}
         />
     );
-};
+}
 
-export default WardenTable;
