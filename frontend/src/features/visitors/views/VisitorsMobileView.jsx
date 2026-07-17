@@ -2,6 +2,8 @@ import React from 'react';
 import MobileListContainer from '@/components/MobileUi/MobileListContainer';
 import VisitorCard from '../components/cards/VisitorCard';
 import { useLocation } from 'react-router-dom';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 export default function VisitorsMobileView({
     visitors,
@@ -10,10 +12,24 @@ export default function VisitorsMobileView({
     onLoadMore,
     searchQuery,
     setSearchQuery,
+    onFilterClick,
     onAddClick,
     onEdit,
 }) {
     const location = useLocation();
+    const isHistoryTab = location.pathname.includes('/history');
+    const { user } = useAuthStore();
+    const isParent = user?.role === 'parent';
+
+    // Set mobile layout configuration dynamically based on role
+    useLayoutConfig({
+        header: isParent 
+            ? { variant: 'dashboard' } 
+            : { variant: 'page', title: 'Visitors', showBack: true },
+        footer: {
+            visible: isParent
+        }
+    });
 
     const tabs = [
         { label: "Visitors", path: `/dashboard/visitors` },
@@ -28,6 +44,7 @@ export default function VisitorsMobileView({
                 searchPlaceholder="Search visitors..."
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
+                onFilterClick={onFilterClick}
                 onAddClick={onAddClick}
                 data={visitors}
                 isLoading={loading}
@@ -39,6 +56,7 @@ export default function VisitorsMobileView({
                         key={item._id || item.id || Math.random()}
                         data={item}
                         onEdit={onEdit}
+                        isHistory={isHistoryTab}
                     />
                 )}
             />

@@ -28,6 +28,7 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { formatDateStandard } from '@/utils/formatters';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import BackButton from '@/components/ui/BackButton';
+import FilterModal from '../components/modals/FilterModal';
 
 const VisitorsPage = () => {
     const { user } = useAuthStore();
@@ -41,7 +42,7 @@ const VisitorsPage = () => {
     const [limit, setLimit] = useState(10);
     const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
     const [stats, setStats] = useState(null);
-
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
     const debouncedSearch = useDebounce(searchQuery, 500);
 
     const role = user?.role || ROLES.SUPER_ADMIN;
@@ -90,7 +91,10 @@ const VisitorsPage = () => {
             ]
         }
     ], []);
-
+    const handleMobileFilter = (filters) => {
+        setStatusFilter(filters.status);
+        setPage(1);
+    };
     const fetchVisitors = useCallback(async () => {
         try {
             setLoading(true);
@@ -380,6 +384,19 @@ const VisitorsPage = () => {
                         setEditVisitorData(null);
                         fetchVisitors();
                     }}
+                />
+                <FilterModal
+                    isOpen={isFilterModalOpen}
+                    onClose={() => setIsFilterModalOpen(false)}
+                    filters={{ status: statusFilter }}
+                    onFilter={handleMobileFilter}
+                    showDateFilters={false}
+                    statusOptions={[
+                        { label: 'All Status', value: '' },
+                        { label: 'Pending', value: 'Pending' },
+                        { label: 'Approved', value: 'Approved' },
+                        { label: 'Rejected', value: 'Rejected' },
+                    ]}
                 />
 
                 <ExportFilterModal
