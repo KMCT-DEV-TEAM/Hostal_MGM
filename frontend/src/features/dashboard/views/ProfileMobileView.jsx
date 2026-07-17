@@ -56,146 +56,210 @@ const ProfileMobileView = ({
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                            <h2 className="text-lg font-bold text-gray-900 truncate">{user?.name || 'No value'}</h2>
+                            <h2 className="text-lg font-bold text-text-primary truncate">{user?.name || 'No value'}</h2>
                             {user?.isActive !== false && (
                                 <span className="inline-flex px-2 py-0.5 rounded-full bg-green-50 text-success border border-green-200 text-[10px] font-bold uppercase tracking-wide">
                                     Active
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">{admissionNumber}</p>
-                    </div>
-                </div>
-
-                <div className="px-4 py-3 bg-gray-50/50 flex items-center justify-center text-xs font-medium text-gray-500 gap-2">
-                    <span>{course}</span>
-                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span>Batch {batch}</span>
-                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span>{year}</span>
-                </div>
-            </div>
-
-            {/* Visitors Button */}
-            <button className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                        <Users className="w-5 h-5 text-[#0A437A]" />
-                    </div>
-                    <span className="font-semibold text-gray-800 text-sm">Visitors</span>
-                </div>
-                <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </div>
-            </button>
-
-            {/* Academic Details Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-50 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                        <GraduationCap className="w-4 h-4 text-[#0A437A]" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 text-sm">Academic Details</h3>
-                </div>
-
-                <div className="p-4 flex flex-col gap-5">
-                    <div className="flex items-start gap-3">
-                        <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Admission Number</p>
-                            <p className="text-sm font-medium text-gray-900">{admissionNumber}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                        <Building2 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Organization</p>
-                            <p className="text-sm font-medium text-gray-900">{organization}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                        <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
-                            <p className="text-sm font-medium text-gray-900">{contactEmail}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                        <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 flex justify-between items-center">
-                            <div>
-                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
-                                <p className="text-sm font-medium text-gray-900">{contactNumber}</p>
+                        {user?.role === 'parent' ? (
+                            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-400">
+                                <User className="w-3.5 h-3.5" />
+                                <span>{user?.studentId?.name || 'No value'}</span>
                             </div>
-                            <button
-                                onClick={() => handleEditClick('phone', user?.phone)}
-                                className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </button>
-                        </div>
+                        ) : (
+                            <p className="text-xs text-gray-400 mt-0.5">{admissionNumber}</p>
+                        )}
                     </div>
                 </div>
+
+                {user?.role !== 'parent' && (
+                    <div className="px-4 py-3 bg-gray-50/50 flex items-center justify-center text-xs font-medium text-text-secondary gap-2">
+                        <span>{course}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                        <span>Batch {batch}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                        <span>{year}</span>
+                    </div>
+                )}
             </div>
 
-            {/* Hostel Details Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-50 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                        <Building2 className="w-4 h-4 text-[#0A437A]" />
+            {user?.role === 'parent' ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-4 border-b border-gray-50 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
+                            <User className="w-4 h-4 text-[#0A437A]" />
+                        </div>
+                        <h3 className="font-semibold text-text-primary text-sm">Basic Informations</h3>
                     </div>
-                    <h3 className="font-semibold text-gray-900 text-sm">Hostel Details</h3>
+
+                    <div className="p-4 flex flex-col gap-5">
+                        <div className="flex items-start gap-3">
+                            <GraduationCap className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Student</p>
+                                <p className="text-sm font-medium text-text-primary">{user?.studentId?.name || 'No value'}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                            <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
+                                <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                            <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
+                                    <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
+                                </div>
+                                <button
+                                    onClick={() => handleEditClick('phone', user?.phone)}
+                                    className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                            <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Relation</p>
+                                <p className="text-sm font-medium text-text-primary">Parent</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <div className="p-4">
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Hostel</p>
-                            <p className="text-sm font-semibold text-gray-900 truncate">{hostel}</p>
-                        </div>
-                        <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Block</p>
-                            <p className="text-sm font-semibold text-gray-900 truncate">{block}</p>
-                        </div>
-                        <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Room</p>
-                            <p className="text-sm font-semibold text-gray-900 truncate">{room}</p>
-                        </div>
-                        <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Check-in</p>
-                            <p className="text-sm font-semibold text-gray-900 truncate">{checkInDate}</p>
-                        </div>
-                    </div>
-
-                    <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50 flex justify-between items-center">
+            ) : (
+                <>
+                    {/* Visitors Button */}
+                    <button className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-                                <User className="w-4 h-4 text-gray-400" />
+                            <div className="w-10 h-10 rounded-lg bg-blue-50/50 flex items-center justify-center">
+                                <Users className="w-5 h-5 text-[#0A437A]" />
                             </div>
-                            <div>
-                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Warden</p>
-                                <p className="text-sm font-semibold text-gray-900">{warden}</p>
+                            <span className="font-semibold text-text-primary text-sm">Visitors</span>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </button>
+
+                    {/* Academic Details Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-50 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
+                                <GraduationCap className="w-4 h-4 text-[#0A437A]" />
+                            </div>
+                            <h3 className="font-semibold text-text-primary text-sm">Academic Details</h3>
+                        </div>
+
+                        <div className="p-4 flex flex-col gap-5">
+                            <div className="flex items-start gap-3">
+                                <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Admission Number</p>
+                                    <p className="text-sm font-medium text-text-primary">{admissionNumber}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <Building2 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Organization</p>
+                                    <p className="text-sm font-medium text-text-primary">{organization}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
+                                    <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 flex justify-between items-center">
+                                    <div>
+                                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
+                                        <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleEditClick('phone', user?.phone)}
+                                        className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <button className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
-                            <Phone className="w-4 h-4" />
-                        </button>
                     </div>
-                </div>
-            </div>
+
+                    {/* Hostel Details Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-50 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
+                                <Building2 className="w-4 h-4 text-[#0A437A]" />
+                            </div>
+                            <h3 className="font-semibold text-text-primary text-sm">Hostel Details</h3>
+                        </div>
+
+                        <div className="p-4">
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Hostel</p>
+                                    <p className="text-sm font-semibold text-text-primary truncate">{hostel}</p>
+                                </div>
+                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Block</p>
+                                    <p className="text-sm font-semibold text-text-primary truncate">{block}</p>
+                                </div>
+                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Room</p>
+                                    <p className="text-sm font-semibold text-text-primary truncate">{room}</p>
+                                </div>
+                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Check-in</p>
+                                    <p className="text-sm font-semibold text-text-primary truncate">{checkInDate}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100/50 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                        <User className="w-4 h-4 text-gray-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Warden</p>
+                                        <p className="text-sm font-semibold text-text-primary">{warden}</p>
+                                    </div>
+                                </div>
+                                <button className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                                    <Phone className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* Account Settings */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-4 border-b border-gray-50 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-gray-50/80 flex items-center justify-center">
-                        <Settings className="w-4 h-4 text-gray-500" />
+                        <Settings className="w-4 h-4 text-text-secondary" />
                     </div>
-                    <h3 className="font-semibold text-gray-900 text-sm">Account settings</h3>
+                    <h3 className="font-semibold text-text-primary text-sm">Account settings</h3>
                 </div>
 
                 <div className="flex flex-col">
@@ -203,7 +267,7 @@ const ProfileMobileView = ({
                         <div className="flex items-center gap-3">
                             <Globe className="w-4 h-4 text-gray-400" />
                             <div className="text-left">
-                                <p className="text-sm font-semibold text-gray-800">Language</p>
+                                <p className="text-sm font-semibold text-text-primary">Language</p>
                                 <p className="text-[10px] font-medium text-gray-400 mt-0.5">English (US)</p>
                             </div>
                         </div>
