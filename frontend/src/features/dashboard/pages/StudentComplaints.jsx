@@ -22,7 +22,6 @@ export default function StudentComplaints() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const [showKPIs, setShowKPIs] = useState(false);
     const [limit, setLimit] = useState(10);
     
     // Modal state
@@ -266,11 +265,10 @@ export default function StudentComplaints() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
+                <StudentComplaintsHeader />
             
             {/* Stat Cards Section */}
-            {showKPIs && (
-                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
+            <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
                     <div>
                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
@@ -311,7 +309,6 @@ export default function StudentComplaints() {
                     </div>
                 </div>
             </div>
-            )}
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
                 <StudentComplaintsTable

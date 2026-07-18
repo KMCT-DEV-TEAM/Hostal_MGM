@@ -9,7 +9,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle, LayoutGrid, List } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -26,7 +26,6 @@ export default function WardenComplaints({ hostel, onBack }) {
     const [complaints, setComplaints] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showKPIs, setShowKPIs] = useState(false);
     const [assignStaffModalState, setAssignStaffModalState] = useState({ isOpen: false, complaint: null });
 
     const fetchComplaints = async () => {
@@ -244,61 +243,50 @@ export default function WardenComplaints({ hostel, onBack }) {
                         actionButton={onBack && <BackButton text="Back to Organizations" onClick={onBack} />}
                     />
                 </div>
-
-                <div className="hidden md:flex items-center self-end sm:self-auto">
-                    <button
-                        onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                    </button>
-                </div>
             </div>
 
             {/* Stat Cards Section */}
-            {showKPIs && (
-                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
-                            <h3 className="text-xl font-bold text-gray-900">{totalAll}</h3>
-                        </div>
-                        <div className="p-1.5 bg-red-50 rounded text-red-400">
-                            <AlertTriangle className="w-4 h-4" />
-                        </div>
+            <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full shrink-0">
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalAll}</h3>
                     </div>
-
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
-                            <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
-                        </div>
-                        <div className="p-1.5 bg-orange-50 rounded text-orange-400">
-                            <Clock className="w-4 h-4" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
-                            <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
-                        </div>
-                        <div className="p-1.5 bg-blue-50 rounded text-blue-400">
-                            <Loader2 className="w-4 h-4" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
-                            <h3 className="text-xl font-bold text-gray-900">{resolvedAll}</h3>
-                        </div>
-                        <div className="p-1.5 bg-green-50 rounded text-green-500">
-                            <CheckCircle className="w-4 h-4" />
-                        </div>
+                    <div className="p-1.5 bg-red-50 rounded text-red-400">
+                        <AlertTriangle className="w-4 h-4" />
                     </div>
                 </div>
-            )}
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
+                        <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
+                    </div>
+                    <div className="p-1.5 bg-orange-50 rounded text-orange-400">
+                        <Clock className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
+                        <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
+                    </div>
+                    <div className="p-1.5 bg-blue-50 rounded text-blue-400">
+                        <Loader2 className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
+                        <h3 className="text-xl font-bold text-gray-900">{resolvedAll}</h3>
+                    </div>
+                    <div className="p-1.5 bg-green-50 rounded text-green-500">
+                        <CheckCircle className="w-4 h-4" />
+                    </div>
+                </div>
+            </div>
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
                 <WardenComplaintsTable

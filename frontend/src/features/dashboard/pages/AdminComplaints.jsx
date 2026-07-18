@@ -4,7 +4,7 @@ import SuperAdminComplaintsTable from '../components/complaints/SuperAdminCompla
 import ComplaintsToolbar from '../components/complaints/ComplaintsToolbar';
 import WardenComplaints from './WardenComplaints';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
@@ -20,7 +20,6 @@ export default function AdminComplaints() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedHostel, setSelectedHostel] = useState(null);
-    const [showKPIs, setShowKPIs] = useState(false);
     const [limit, setLimit] = useState(10);
 
     const fetchComplaints = async () => {
@@ -131,19 +130,9 @@ export default function AdminComplaints() {
                     <h1 className="text-2xl font-bold text-black">Complaints</h1>
                     <p className="text-sm text-gray-500 mt-1">Monitor complaint performance across organizations.</p>
                 </div>
-                
-                <div className="hidden md:flex items-center self-end sm:self-auto">
-                    <button
-                        onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                    </button>
-                </div>
             </div>
 
             {/* Stat Cards Section */}
-            {showKPIs && (
             <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
@@ -185,7 +174,6 @@ export default function AdminComplaints() {
                     </div>
                 </div>
             </div>
-            )}
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
                 <SuperAdminComplaintsTable
