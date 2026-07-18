@@ -347,7 +347,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
   ]);
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
+
   const thisYearAttendance = monthNames.map((month, index) => {
     const stat = thisYearAttendanceStats.find(s => s._id === index + 1);
     let value = 0;
@@ -380,14 +380,14 @@ const getAdminStats = asyncHandler(async (req, res) => {
         parentLastMonthCount: parentLastMonthCount[0]?.total || 0,
         pendingComplaints: pendingComplaintsCount || 0,
         leaveRequests: leaveRequestsCount[0]?.total || 0,
-        
+
         inactiveWardens: inactiveWardensCount,
         parentsMessages: 0,
         complaintsOverview: { total: totalComplaintsCount, unresolved: unresolvedComplaintsCount },
         leaveApproved: approvedLeaveRequestsCount[0]?.total || 0,
         attendance: {
-            thisYear: thisYearAttendance,
-            lastYear: lastYearAttendance
+          thisYear: thisYearAttendance,
+          lastYear: lastYearAttendance
         }
       },
     }
@@ -403,7 +403,7 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
   const now = new Date();
   let startOfRadial = new Date(now.getFullYear(), now.getMonth(), 1);
   let endOfRadial = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-  
+
   if (radialPeriod === "Last Month") {
     startOfRadial = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     endOfRadial = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
@@ -430,11 +430,11 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
   }
 
   const monthlyStats = await AttendanceRecord.aggregate([
-    { 
-      $match: { 
+    {
+      $match: {
         studentId: new mongoose.Types.ObjectId(studentId),
         createdAt: { $gte: startOfYear, $lte: endOfYear }
-      } 
+      }
     },
     {
       $group: {
@@ -492,7 +492,7 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
 const getParentDashboardStats = asyncHandler(async (req, res) => {
   const parentId = req.user.id;
   const parent = await Parent.findById(parentId).select('studentId');
-  
+
   if (!parent) {
     return sendError(res, 404, "Parent not found");
   }
@@ -504,7 +504,7 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
   const now = new Date();
   let startOfRadial = new Date(now.getFullYear(), now.getMonth(), 1);
   let endOfRadial = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-  
+
   if (radialPeriod === "Last Month") {
     startOfRadial = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     endOfRadial = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
@@ -533,11 +533,11 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
   }
 
   const monthlyStats = await AttendanceRecord.aggregate([
-    { 
-      $match: { 
+    {
+      $match: {
         studentId: new mongoose.Types.ObjectId(studentId),
         createdAt: { $gte: startOfYear, $lte: endOfYear }
-      } 
+      }
     },
     {
       $group: {
@@ -568,6 +568,15 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
     status: { $in: ["pending_parent", "pending_admin"] }
   });
 
+  const pendingParentLeaveRequests = await Pass.find({
+    studentId,
+    status: "pending_parent"
+  }).populate({
+    path: "studentId",
+    select: "firstName lastName admissionNo regNo"
+  });
+
+
   const recentVisitors = await Visitor.find({ students: studentId })
     .sort({ createdAt: -1 })
     .limit(5)
@@ -588,16 +597,17 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
       pendingLeaveRequestsCount,
       recentVisitors,
       recentLeaveRequests,
-      monthlyAttendance
+      monthlyAttendance,
+      pendingParentLeaveRequests
     }
   });
 });
 
 const getAttendanceOverview = asyncHandler(async (req, res) => {
-  const { period } = req.query; 
+  const { period } = req.query;
   const currentYear = new Date().getFullYear();
   const year = period === "Last Year" ? currentYear - 1 : currentYear;
-  
+
   const startOfYear = new Date(year, 0, 1);
   const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
@@ -620,7 +630,7 @@ const getAttendanceOverview = asyncHandler(async (req, res) => {
   ]);
 
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
+
   const dataMap = new Map();
   monthNames.forEach(m => dataMap.set(m, { present: 0, total: 0 }));
 
@@ -644,20 +654,20 @@ const getAttendanceOverview = asyncHandler(async (req, res) => {
   const avgRate = yearlyTotal > 0 ? Math.round((yearlyPresent / yearlyTotal) * 100) : 0;
 
   const currentActualMonth = new Date().getMonth();
-  
+
   let currentMonthRate = 0;
   let lastMonthRate = 0;
-  
+
   if (period === "Last Year") {
-     currentMonthRate = chartData[11].value;
-     lastMonthRate = chartData[10].value;
+    currentMonthRate = chartData[11].value;
+    lastMonthRate = chartData[10].value;
   } else {
-     currentMonthRate = chartData[currentActualMonth].value;
-     lastMonthRate = currentActualMonth > 0 ? chartData[currentActualMonth - 1].value : chartData[11].value;
+    currentMonthRate = chartData[currentActualMonth].value;
+    lastMonthRate = currentActualMonth > 0 ? chartData[currentActualMonth - 1].value : chartData[11].value;
   }
-  
+
   const vsLastMonth = currentMonthRate - lastMonthRate;
-  
+
   const cleanChartData = chartData.map(({ month, value }) => ({ month, value }));
 
   return sendSuccess(res, 200, "Attendance overview fetched successfully", {
