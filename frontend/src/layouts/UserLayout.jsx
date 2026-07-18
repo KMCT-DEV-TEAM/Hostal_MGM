@@ -17,6 +17,7 @@ const UserLayout = () => {
 
     return (
         <div className={`flex flex-col h-dvh bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
+
             {/* Header Area */}
             {isMobile ? (
                 headerVariant !== "none" && <MobileHeader />
