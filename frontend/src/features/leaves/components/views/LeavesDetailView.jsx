@@ -121,19 +121,22 @@ export default function LeavesDetailView({
             renderCell: (r) => {
                 if (isAdmin && r.status === 'pending_admin') {
                     return (
-                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                                onClick={() => setConfirmModal({ isOpen: true, id: r._id || r.id, value: 'Approved', type: 'status' })}
-                                className="px-3 py-1.5 rounded-md text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors shadow-sm"
-                            >
-                                Approve
-                            </button>
-                            <button
-                                onClick={() => setConfirmModal({ isOpen: true, id: r._id || r.id, value: 'Rejected', type: 'status' })}
-                                className="px-3 py-1.5 rounded-md text-xs font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors shadow-sm"
-                            >
-                                Reject
-                            </button>
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <Dropdown
+                                value=""
+                                placeholder="Take Action"
+                                onChange={(val) => {
+                                    if (val) {
+                                        setConfirmModal({ isOpen: true, id: r._id || r.id, value: val, type: 'status' });
+                                    }
+                                }}
+                                options={[
+                                    { value: 'Approved', label: 'Approve' },
+                                    { value: 'Rejected', label: 'Reject' }
+                                ]}
+                                minWidth="min-w-[110px]"
+                                triggerClassName="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm rounded-md"
+                            />
                         </div>
                     );
                 }

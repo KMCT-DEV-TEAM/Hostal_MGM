@@ -9,7 +9,7 @@ import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import StudentLeavesDesktopView from '../views/StudentLeavesDesktopView';
-import StudentLeavesMobileView from '../views/StudentLeavesMobileView';
+import LeavesMobileView from '../views/LeavesMobileView';
 
 export default function StudentLeaves() {
     const { passType } = useParams();
@@ -142,7 +142,7 @@ export default function StudentLeaves() {
     return (
         <>
             {isMobile ? (
-                <StudentLeavesMobileView {...viewProps} />
+                <LeavesMobileView {...viewProps} />
             ) : (
                 <StudentLeavesDesktopView {...viewProps} />
             )}

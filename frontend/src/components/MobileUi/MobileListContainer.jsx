@@ -88,11 +88,6 @@ export default function MobileListContainer({
                 </div>
             )}
 
-            {/* Optional Stats Card */}
-            {stats && stats.length > 0 && (
-                <MobileStatsCard stats={stats} />
-            )}
-
             {/* Conditional Search and Filter */}
             {showSearch && (
                 <div className="flex gap-3 shrink-0">
@@ -115,6 +110,11 @@ export default function MobileListContainer({
                         </button>
                     )}
                 </div>
+            )}
+
+            {/* Optional Stats Card */}
+            {stats && stats.length > 0 && (
+                <MobileStatsCard stats={stats} />
             )}
 
             {/* List Content */}

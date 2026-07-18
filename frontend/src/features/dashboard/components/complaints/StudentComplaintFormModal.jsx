@@ -66,37 +66,45 @@ export default function StudentComplaintFormModal({
             asForm={true}
             onSubmit={handleSubmit}
             footer={
-                <div className="flex justify-between items-center w-full">
-                    <div>
-                        {editingComplaint && (
+                <div className="flex justify-between items-center w-full gap-3">
+                    {editingComplaint ? (
+                        <>
                             <button
                                 type="button"
                                 onClick={() => {
                                     if (onWithdraw) onWithdraw();
                                 }}
-                                className="px-6 py-2.5 text-xs font-medium text-danger bg-danger/10 border border-danger/20 rounded-lg hover:bg-danger/20 transition-colors cursor-pointer"
+                                className="flex-1 px-4 py-2.5 text-[13px] font-medium text-[#0A437A] bg-white border border-[#0A437A] rounded-lg hover:bg-gray-50 transition-colors cursor-pointer text-center"
                             >
-                                Withdraw Complaint
+                                Withdraw
                             </button>
-                        )}
-                    </div>
-                    <div className="flex justify-end gap-3">
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="flex items-center justify-center min-w-[100px] px-6 py-2.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingComplaint ? 'Save Changes' : 'Save')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onCancel || onClose}
-                            disabled={isSubmitting}
-                            className="px-6 py-2.5 text-xs font-medium text-text-secondary bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-70"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="flex-1 flex items-center justify-center px-4 py-2.5 text-[13px] font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#073059] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed text-center"
+                            >
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={onCancel || onClose}
+                                disabled={isSubmitting}
+                                className="flex-1 px-4 py-2.5 text-[13px] font-medium text-[#0A437A] bg-white border border-[#0A437A] rounded-lg hover:bg-gray-50 transition-colors cursor-pointer text-center"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="flex-1 flex items-center justify-center px-4 py-2.5 text-[13px] font-medium text-white bg-[#0A437A] rounded-lg hover:bg-[#073059] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed text-center"
+                            >
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                            </button>
+                        </>
+                    )}
                 </div>
             }
         >

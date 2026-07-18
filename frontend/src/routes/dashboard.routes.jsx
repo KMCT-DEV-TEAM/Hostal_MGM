@@ -31,6 +31,7 @@ import FurnitureDetails from '@/features/furniture/pages/FurnitureDetails';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import VisitorsPage from '@/features/visitors/pages/VisitorsPage';
 import VisitorHistoryPage from '@/features/visitors/pages/VisitorHistoryPage';
+import VisitorDetails from '@/features/visitors/pages/VisitorDetails';
 import AnnouncementManagement from '@/features/dashboard/pages/AnnouncementManagement';
 
 export const dashboardRoutes = [
@@ -79,6 +80,17 @@ export const dashboardRoutes = [
             ROLES.STUDENT
         ],
         element: VisitorHistoryPage
+    },
+    {
+        path: 'visitors/:id',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.PARENT,
+            ROLES.STUDENT
+        ],
+        element: VisitorDetails
     },
 
     {

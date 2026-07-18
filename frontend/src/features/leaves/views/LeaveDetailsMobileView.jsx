@@ -4,14 +4,14 @@ import { formatDateReadable, formatDateTimeReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
 import TimelineStep from '@/components/ui/TimelineStep';
 import { CheckCircle2 } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
-export default function LeaveDetailsMobileView({ request, onBack }) {
+export default function LeaveDetailsMobileView({ request, onBack, userRole, onActionClick }) {
     useLayoutConfig({
         header: {
             variant: "page",
             title: "Leave Details",
-            showBack: true,
-            onBack: onBack
+            showBack: true
         },
         footer: {
             visible: false
@@ -193,7 +193,7 @@ export default function LeaveDetailsMobileView({ request, onBack }) {
                 </span>
 
                 <div className="relative pl-8 space-y-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-gray-100">
-                    
+
                     {/* Return Status */}
                     {renderProgressStep({
                         title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
@@ -228,6 +228,25 @@ export default function LeaveDetailsMobileView({ request, onBack }) {
                 </div>
             </div>
 
+            {userRole === 'parent' && request.status === 'pending_parent' && (
+                <div className="flex gap-3 z-10 py-3">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="border border-primary text-primary font-semibold"
+                        onClick={() => onActionClick('rejected')}
+                    >
+                        Reject
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size='sm'
+                        onClick={() => onActionClick('approved')}
+                    >
+                        Approve
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

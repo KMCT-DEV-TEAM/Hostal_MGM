@@ -3,9 +3,13 @@ import { Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDateReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
+import { useAuthStore } from '@/store/useAuthStore';
+import Button from '@/components/ui/Button';
 
 const LeaveCard = ({ data, onEdit }) => {
     const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const isParent = user?.role === 'parent';
 
     // Determine if it's Home Pass or Out Pass
     const isHomePass = data.passType === 'home_pass' || data.fromDate;
@@ -35,7 +39,7 @@ const LeaveCard = ({ data, onEdit }) => {
     if (data.status === 'rejected' || data.status === 'cancelled') progressStep = -1; // Hide or show red
 
     return (
-        <div 
+        <div
             onClick={() => navigate(`/dashboard/leaves/details/${data._id}`)}
             className="bg-white rounded-2xl p-5 border border-gray-50 shadow-sm flex flex-col gap-4 active:scale-[0.98] transition-transform cursor-pointer"
         >
@@ -81,20 +85,34 @@ const LeaveCard = ({ data, onEdit }) => {
                 <LeaveStatusBadge status={data.status} />
             </div>
 
-            {/* Progress Bar */}
-            {progressStep >= 0 && (
-                <div className="mt-2 flex flex-col gap-2">
-                    <div className="flex gap-1 h-1 w-full">
-                        <div className="flex-1 rounded-full bg-success"></div>
-                        <div className={`flex-1 rounded-full ${progressStep >= 1 ? 'bg-success' : 'bg-gray-100'}`}></div>
-                        <div className={`flex-1 rounded-full ${progressStep >= 2 ? 'bg-success' : 'bg-gray-100'}`}></div>
-                    </div>
-                    <div className="flex justify-between text-[10px] text-text-secondary font-medium px-2">
-                        <span>Applied</span>
-                        <span>Parent</span>
-                        <span>Warden</span>
-                    </div>
+            {/* Progress Bar or Action Button */}
+            {isParent && data.status === 'pending_parent' ? (
+                <div className="mt-3 w-full">
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/dashboard/leaves/details/${data._id}`);
+                        }}
+                        className="rounded-xl"
+                    >
+                        Review & Approve
+                    </Button>
                 </div>
+            ) : (
+                !isParent && progressStep >= 0 && (
+                    <div className="mt-2 flex flex-col gap-2">
+                        <div className="flex gap-1 h-1 w-full">
+                            <div className="flex-1 rounded-full bg-success"></div>
+                            <div className={`flex-1 rounded-full ${progressStep >= 1 ? 'bg-success' : 'bg-gray-100'}`}></div>
+                            <div className={`flex-1 rounded-full ${progressStep >= 2 ? 'bg-success' : 'bg-gray-100'}`}></div>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-text-secondary font-medium px-2">
+                            <span>Applied</span>
+                            <span>Parent</span>
+                            <span>Warden</span>
+                        </div>
+                    </div>
+                )
             )}
         </div>
     );

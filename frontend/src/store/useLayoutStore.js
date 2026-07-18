@@ -5,6 +5,7 @@ const defaultState = {
         variant: "dashboard",
         title: "",
         showBack: false,
+        onBack: null,
     },
     footer: {
         visible: true,
