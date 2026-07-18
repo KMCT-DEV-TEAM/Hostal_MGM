@@ -15,14 +15,18 @@ export default function ParentDashboard() {
     const [period, setPeriod] = useState('This Year');
     const [radialPeriod, setRadialPeriod] = useState('This Month');
     const [dashboardData, setDashboardData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
+            setIsLoading(true);
             try {
                 const res = await getParentDashboardStats({ period, radialPeriod });
                 setDashboardData(res?.data);
             } catch (err) {
                 console.error("Failed to fetch parent stats", err);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchStats();
@@ -36,6 +40,7 @@ export default function ParentDashboard() {
     const leaveRequests = dashboardData?.recentLeaveRequests || [];
     const visitors = dashboardData?.recentVisitors || [];
     const pendingParentLeaveRequests = dashboardData?.pendingParentLeaveRequests || [];
+    const recentAnnouncements = dashboardData?.recentAnnouncements || [];
 
     return isMobile ? (
         <ParentDashboardMobileView
@@ -50,7 +55,8 @@ export default function ParentDashboard() {
             leaveRequests={leaveRequests}
             visitors={visitors}
             pendingParentLeaveRequests={pendingParentLeaveRequests}
-
+            recentAnnouncements={recentAnnouncements}
+            isLoading={isLoading}
             onNavigate={navigate}
         />
     ) : (
@@ -65,6 +71,7 @@ export default function ParentDashboard() {
             radialData={radialData}
             leaveRequests={leaveRequests}
             visitors={visitors}
+            isLoading={isLoading}
             onNavigate={navigate}
         />
     );

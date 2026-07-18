@@ -89,6 +89,7 @@ const LeaveCard = ({ data, onEdit }) => {
             {isParent && data.status === 'pending_parent' ? (
                 <div className="mt-3 w-full">
                     <Button
+                        size='sm'
                         onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/dashboard/leaves/details/${data._id}`);

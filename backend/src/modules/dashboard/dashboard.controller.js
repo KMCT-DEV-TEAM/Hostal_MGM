@@ -10,6 +10,7 @@ import Pass from "../passes/pass.model.js";
 import Visitor from "../visitor/visitor.model.js";
 import { AttendanceRecord, AttendanceWindow } from "../attendance/attendance.model.js";
 import PasswordRequest from "../passwordRequests/passwordRequest.model.js";
+import Announcement from "../announcements/announcement.model.js";
 import mongoose from "mongoose";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
@@ -397,6 +398,11 @@ const getAdminStats = asyncHandler(async (req, res) => {
 
 const getStudentDashboardStats = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
+  const student = await Student.findById(studentId);
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
 
   const { period, radialPeriod } = req.query;
 
@@ -475,6 +481,18 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
     .limit(5)
     .lean();
 
+  const recentAnnouncements = await Announcement.find({
+    isActive: true,
+    $or: [
+      { targetType: "general" },
+      { targetType: "organization", targetOrganizations: student.organizationId },
+      { targetType: "hostel", targetHostels: student.hostelId }
+    ]
+  })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
+
   return sendSuccess(res, 200, "Student dashboard stats fetched successfully", {
     data: {
       attendanceRate,
@@ -484,6 +502,7 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
       pendingLeaveRequestsCount,
       recentComplaints,
       recentLeaveRequests,
+      recentAnnouncements,
       monthlyAttendance
     }
   });
@@ -498,6 +517,11 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
   }
 
   const studentId = parent.studentId;
+  const student = await Student.findById(studentId);
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
 
   const { period, radialPeriod } = req.query;
 
@@ -587,6 +611,18 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
     .limit(5)
     .lean();
 
+  const recentAnnouncements = await Announcement.find({
+    isActive: true,
+    $or: [
+      { targetType: "general" },
+      { targetType: "organization", targetOrganizations: student.organizationId },
+      { targetType: "hostel", targetHostels: student.hostelId }
+    ]
+  })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean();
+
   return sendSuccess(res, 200, "Parent dashboard stats fetched successfully", {
     data: {
       attendanceRate,
@@ -597,6 +633,7 @@ const getParentDashboardStats = asyncHandler(async (req, res) => {
       pendingLeaveRequestsCount,
       recentVisitors,
       recentLeaveRequests,
+      recentAnnouncements,
       monthlyAttendance,
       pendingParentLeaveRequests
     }
