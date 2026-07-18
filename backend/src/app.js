@@ -23,6 +23,7 @@ import logRoutes from "./modules/logs/log.routes.js";
 import pushRoutes from "./modules/push/push.routes.js";
 import visitorRoutes from "./modules/visitor/visitor.routes.js";
 import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.js";
+import announcementRoutes from "./modules/announcements/announcement.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -80,6 +81,7 @@ app.use("/api/batches", batchRoutes);
 app.use("/api/complaint-categories", complaintCategoryRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/furniture", furnitureRoutes);
+app.use("/api/announcements", announcementRoutes);
 
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/students", studentRoutes);
