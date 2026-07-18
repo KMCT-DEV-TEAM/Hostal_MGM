@@ -116,7 +116,7 @@ export default function InfoCard({
                                     {status.text || status.label}
                                 </div>
                             )}
-                            
+
                             {status.actions && (
                                 <div className="flex items-center gap-2 shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
                                     {status.actions.map((btn, i) => (

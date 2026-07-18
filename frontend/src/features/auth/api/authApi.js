@@ -25,7 +25,10 @@ const authApi = {
 
   getProfile: () =>
     api.get("/auth/me"),
-    
+
+  getFullProfile: () =>
+    api.get("/profile"),
+
   updateProfile: (payload) =>
     api.put("/auth/profile", payload),
 

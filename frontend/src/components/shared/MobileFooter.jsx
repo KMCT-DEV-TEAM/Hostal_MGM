@@ -1,20 +1,30 @@
-import React from 'react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Calendar, FileEdit, Tag } from 'lucide-react';
+import { Home, Calendar, FileEdit, Tag, Users } from 'lucide-react';
 
 const MobileFooter = () => {
+    const { user } = useAuthStore();
     const location = useLocation();
 
     const navItems = [
         { path: '/dashboard', icon: Home, end: true },
         { path: '/dashboard/attendance', icon: Calendar },
-        { 
+        {
             path: '/dashboard/leaves/requests', // Point directly to the default tab
             icon: FileEdit,
             // Custom match: remain active for any leaves sub-route (requests or history)
             isActive: () => location.pathname.startsWith('/dashboard/leaves')
         },
-        { path: '/dashboard/complaints', icon: Tag }
+        user?.role === ROLES.PARENT
+            ? {
+                path: '/dashboard/visitors',
+                icon: Users,
+            }
+            : {
+                path: '/dashboard/complaints',
+                icon: Tag,
+            }
     ];
 
     return (
@@ -22,7 +32,7 @@ const MobileFooter = () => {
             <div className="bg-white rounded-[32px] p-2 flex items-center justify-between shadow-sm border border-gray-50">
                 {navItems.map((item) => {
                     const Icon = item.icon;
-                    
+
                     // Determine if the item is active
                     // Use custom isActive function if provided, otherwise fallback to React Router's internal match
                     const isCustomActive = item.isActive ? item.isActive() : null;
@@ -37,7 +47,7 @@ const MobileFooter = () => {
                                 return `relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${active
                                     ? 'bg-primary text-white shadow-md'
                                     : 'text-text-secondary hover:text-gray-600 hover:bg-gray-50'
-                                }`;
+                                    }`;
                             }}
                         >
                             {({ isActive: isRouterActive }) => {

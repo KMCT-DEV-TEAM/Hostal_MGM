@@ -23,6 +23,8 @@ import logRoutes from "./modules/logs/log.routes.js";
 import pushRoutes from "./modules/push/push.routes.js";
 import visitorRoutes from "./modules/visitor/visitor.routes.js";
 import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.js";
+import profileRoutes from "./modules/profile/profile.routes.js";
+import announcementRoutes from "./modules/announcements/announcement.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -35,10 +37,9 @@ import cors from 'cors';
 import cookieParser from "cookie-parser";
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -63,6 +64,7 @@ if (process.env.NODE_ENV !== "production") {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.use("/api/super-admin", userRoutes);
 app.use("/api/super-admin/dashboard", dashboardRoutes);
@@ -80,6 +82,7 @@ app.use("/api/batches", batchRoutes);
 app.use("/api/complaint-categories", complaintCategoryRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/furniture", furnitureRoutes);
+app.use("/api/announcements", announcementRoutes);
 
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/students", studentRoutes);

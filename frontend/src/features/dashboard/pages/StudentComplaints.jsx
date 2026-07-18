@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, AlertTriangle, Clock, Loader2, CheckCircle }
 import ComplaintService from '@/services/complaint.service';
 import ComplaintCategoryService from '@/services/complaintCategory.service';
 import { initSocket, getSocket } from '@/services/socket.service';
+import Dropdown from '@/components/ui/Dropdown';
 
 export default function StudentComplaints() {
     const [complaints, setComplaints] = useState([]);
@@ -23,12 +24,12 @@ export default function StudentComplaints() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
     const [limit, setLimit] = useState(10);
-    
+
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingComplaint, setEditingComplaint] = useState(null);
     const [selectedDetailComplaint, setSelectedDetailComplaint] = useState(null);
-    
+
     // Confirmation modals state
     const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +83,7 @@ export default function StudentComplaints() {
 
         // Socket.IO real-time updates
         const socket = initSocket();
-        
+
         const handleComplaintEvent = () => {
             fetchComplaints();
         };
@@ -115,9 +116,9 @@ export default function StudentComplaints() {
     const handleCategoryChange = (id, newCategory) => {
         // Find category object to get name and ID
         const catObj = categories.find(c => c._id === newCategory || c.name === newCategory);
-        setConfirmCategoryChange({ 
-            isOpen: true, 
-            complaintId: id, 
+        setConfirmCategoryChange({
+            isOpen: true,
+            complaintId: id,
             newCategoryName: catObj ? catObj.name : newCategory,
             newCategoryId: catObj ? catObj._id : newCategory
         });
@@ -140,7 +141,7 @@ export default function StudentComplaints() {
 
     const confirmSaveComplaint = async () => {
         if (!pendingFormData) return;
-        
+
         setIsSubmitting(true);
         try {
             if (editingComplaint) {
@@ -198,15 +199,15 @@ export default function StudentComplaints() {
     let filteredComplaints = complaints.filter(c => {
         if (!debouncedSearchQuery) return true;
         const query = debouncedSearchQuery.toLowerCase();
-        
+
         // Check relevant string fields
         const searchableFields = [c.subject, c.category, c.description, c.roomNo, c.status, c.date];
-        
-        return searchableFields.some(val => 
+
+        return searchableFields.some(val =>
             val && String(val).toLowerCase().includes(query)
         );
     });
-    
+
     if (statusFilter !== 'All') {
         filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
     }
@@ -215,18 +216,18 @@ export default function StudentComplaints() {
         setIsExporting(true);
         try {
             let dataToExport = complaints;
-            
+
             if (exportFilters.status) {
                 dataToExport = dataToExport.filter(c => c.status === exportFilters.status);
             }
 
             if (exportFilters.startDate) {
-                const start = new Date(exportFilters.startDate).setHours(0,0,0,0);
-                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0,0,0,0) >= start);
+                const start = new Date(exportFilters.startDate).setHours(0, 0, 0, 0);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(0, 0, 0, 0) >= start);
             }
             if (exportFilters.endDate) {
-                const end = new Date(exportFilters.endDate).setHours(23,59,59,999);
-                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23,59,59,999) <= end);
+                const end = new Date(exportFilters.endDate).setHours(23, 59, 59, 999);
+                dataToExport = dataToExport.filter(c => new Date(c.createdAt).setHours(23, 59, 59, 999) <= end);
             }
 
             if (dataToExport && dataToExport.length > 0) {
@@ -239,7 +240,7 @@ export default function StudentComplaints() {
                 }));
 
                 const isSuccess = exportToExcel(exportData, "Student_Complaints_Export", "Complaints");
-                
+
                 if (isSuccess) {
                     showSuccessToast('Export Successful', 'Your complaints list has been downloaded.');
                 } else {
@@ -265,81 +266,71 @@ export default function StudentComplaints() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <StudentComplaintsHeader />
-            
-            {/* Stat Cards Section */}
-            <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{complaints.length}</h3>
-                    </div>
-                    <div className="p-1.5 bg-red-50 rounded text-danger">
-                        <AlertTriangle className="w-5 h-5" />
-                    </div>
-                </div>
+                <StudentComplaintsHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
 
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-warning shadow-sm border border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Pending').length}</h3>
-                    </div>
-                    <div className="p-1.5 bg-orange-50 rounded text-warning">
-                        <Clock className="w-5 h-5" />
-                    </div>
-                </div>
+                {/* Stat Cards Section */}
+                {showKPIs && (
+                    <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-2">
+                        <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
+                            <div>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
+                                <h3 className="text-2xl font-bold text-gray-900">{complaints.length}</h3>
+                            </div>
+                            <div className="p-1.5 bg-red-50 rounded text-danger">
+                                <AlertTriangle className="w-5 h-5" />
+                            </div>
+                        </div>
 
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-primary/80 flex justify-between items-start">
-                    <div>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'In progress').length}</h3>
-                    </div>
-                    <div className="p-1.5 bg-blue-50 rounded text-primary">
-                        <Loader2 className="w-5 h-5" />
-                    </div>
-                </div>
+                        <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-warning shadow-sm border border-gray-100 flex justify-between items-start">
+                            <div>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
+                                <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Pending').length}</h3>
+                            </div>
+                            <div className="p-1.5 bg-orange-50 rounded text-warning">
+                                <Clock className="w-5 h-5" />
+                            </div>
+                        </div>
 
-                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-success shadow-sm border border-gray-100 flex justify-between items-start">
-                    <div>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Resolved').length}</h3>
-                    </div>
-                    <div className="p-1.5 bg-green-50 rounded text-green-500">
-                        <CheckCircle className="w-5 h-5" />
-                    </div>
-                </div>
-            </div>
+                        <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-primary/80 flex justify-between items-start">
+                            <div>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
+                                <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'In progress').length}</h3>
+                            </div>
+                            <div className="p-1.5 bg-blue-50 rounded text-primary">
+                                <Loader2 className="w-5 h-5" />
+                            </div>
+                        </div>
 
-            <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
-                <StudentComplaintsTable
-                    loading={loading}
-                    complaints={paginatedComplaints}
-                    categories={categories}
-                    handleCategoryChange={handleCategoryChange}
-                    openEditModal={handleEdit}
-                    onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
-                    page={currentPage}
-                    setPage={setCurrentPage}
-                    limit={limit}
-                    setLimit={setLimit}
-                    totalPages={totalPages}
-                    totalItems={totalComplaints}
-                    searchValue={searchQuery}
-                    onSearchChange={(e) => setSearchQuery(e.target.value)}
-                    addButton={
-                        <button
-                            onClick={handleAdd}
-                            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                            <span className="hidden sm:inline">Add New</span>
-                        </button>
-                    }
-                    toolbarStartSlot={null}
-                    toolbarEndSlot={
-                        <>
+                        <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-success shadow-sm border border-gray-100 flex justify-between items-start">
+                            <div>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
+                                <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Resolved').length}</h3>
+                            </div>
+                            <div className="p-1.5 bg-green-50 rounded text-green-500">
+                                <CheckCircle className="w-5 h-5" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                    <StudentComplaintsTable
+                        loading={loading}
+                        complaints={paginatedComplaints}
+                        categories={categories}
+                        handleCategoryChange={handleCategoryChange}
+                        openEditModal={handleEdit}
+                        onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
+                        page={currentPage}
+                        setPage={setCurrentPage}
+                        limit={limit}
+                        setLimit={setLimit}
+                        totalPages={totalPages}
+                        totalItems={totalComplaints}
+                        searchValue={searchQuery}
+                        onSearchChange={(e) => setSearchQuery(e.target.value)}
+                        toolbarStartSlot={
                             <Dropdown
-                                className="flex-1 sm:flex-none"
                                 options={[
                                     { label: 'All Status', value: 'All' },
                                     { label: 'Pending', value: 'Pending' },
@@ -354,178 +345,179 @@ export default function StudentComplaints() {
                                     setStatusFilter(val);
                                     setCurrentPage(1);
                                 }}
-                                placeholder="All Status"
+                                placeholder="All"
                                 minWidth="w-32"
-                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+                                triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full font-medium"
                             />
+                        }
+                        toolbarEndSlot={
                             <button
-                                onClick={() => setIsExportConfirmOpen(true)}
-                                className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                                onClick={handleAdd}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download text-gray-500 lg:text-inherit"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                                <span className="hidden lg:inline">Export</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14" /><path d="M12 5v14" /></svg> Add New
                             </button>
-                        </>
-                    }
-                />
-            </div>
+                        }
+                    />
+                </div>
 
-            {isModalOpen && (
-                <StudentComplaintFormModal 
-                    editingComplaint={editingComplaint}
-                    isSubmitting={isSubmitting}
-                    onClose={() => {
-                        setIsModalOpen(false);
-                        setEditingComplaint(null);
-                    }}
-                    onSave={handleSaveComplaintClick}
-                    onCancel={() => setIsDiscardConfirmOpen(true)}
-                    onWithdraw={() => setIsWithdrawConfirmOpen(true)}
-                />
-            )}
+                {isModalOpen && (
+                    <StudentComplaintFormModal
+                        editingComplaint={editingComplaint}
+                        isSubmitting={isSubmitting}
+                        onClose={() => {
+                            setIsModalOpen(false);
+                            setEditingComplaint(null);
+                        }}
+                        onSave={handleSaveComplaintClick}
+                        onCancel={() => setIsDiscardConfirmOpen(true)}
+                        onWithdraw={() => setIsWithdrawConfirmOpen(true)}
+                    />
+                )}
 
-            {isSaveConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-text-primary">Save Changes</h3>
-                        <p className="text-xs text-text-secondary mt-1 mb-6">
-                            Are you sure you want to save these changes?
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsSaveConfirmOpen(false)}
-                                disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmSaveComplaint}
-                                disabled={isSubmitting}
-                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                            </button>
+                {isSaveConfirmOpen && (
+                    <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
+                            <h3 className="text-sm font-bold text-text-primary">Save Changes</h3>
+                            <p className="text-xs text-text-secondary mt-1 mb-6">
+                                Are you sure you want to save these changes?
+                            </p>
+                            <div className="flex gap-2 justify-end">
+                                <button
+                                    onClick={() => setIsSaveConfirmOpen(false)}
+                                    disabled={isSubmitting}
+                                    className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmSaveComplaint}
+                                    disabled={isSubmitting}
+                                    className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {isDiscardConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-text-primary">Discard Changes</h3>
-                        <p className="text-xs text-text-secondary mt-1 mb-6">
-                            Are you sure you want to discard your changes? Any unsaved edits will be lost.
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <button
-                                onClick={() => setIsDiscardConfirmOpen(false)}
-                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                                Continue Editing
-                            </button>
-                            <button
-                                onClick={confirmDiscard}
-                                className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
-                            >
-                                Discard
-                            </button>
+                {isDiscardConfirmOpen && (
+                    <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
+                            <h3 className="text-sm font-bold text-text-primary">Discard Changes</h3>
+                            <p className="text-xs text-text-secondary mt-1 mb-6">
+                                Are you sure you want to discard your changes? Any unsaved edits will be lost.
+                            </p>
+                            <div className="flex gap-2 justify-end">
+                                <button
+                                    onClick={() => setIsDiscardConfirmOpen(false)}
+                                    className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    Continue Editing
+                                </button>
+                                <button
+                                    onClick={confirmDiscard}
+                                    className="px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer"
+                                >
+                                    Discard
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {isWithdrawConfirmOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-text-primary">Withdraw Complaint</h3>
-                        <p className="text-xs text-text-secondary mt-1 mb-6">
-                            Are you sure you want to withdraw this complaint? This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2 justify-end">
+
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-2">
+                    <StudentComplaintsTable
+                        loading={loading}
+                        complaints={paginatedComplaints}
+                        categories={categories}
+                        handleCategoryChange={handleCategoryChange}
+                        openEditModal={handleEdit}
+                        onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
+                        page={currentPage}
+                        setPage={setCurrentPage}
+                        limit={limit}
+                        setLimit={setLimit}
+                        totalPages={totalPages}
+                        totalItems={totalComplaints}
+                        searchValue={searchQuery}
+                        onSearchChange={(e) => setSearchQuery(e.target.value)}
+                        addButton={
                             <button
-                                onClick={() => setIsWithdrawConfirmOpen(false)}
-                                disabled={isSubmitting}
-                                className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-70"
+                                onClick={handleAdd}
+                                className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
                             >
-                                Cancel
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                <span className="hidden sm:inline">Add New</span>
                             </button>
-                            <button
-                                onClick={confirmWithdraw}
-                                disabled={isSubmitting}
-                                className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Withdraw'}
-                            </button>
-                        </div>
-                    </div>
+                        }
+                        toolbarStartSlot={null}
+                        toolbarEndSlot={
+                            <>
+                                <Dropdown
+                                    className="flex-1 sm:flex-none"
+                                    options={[
+                                        { label: 'All Status', value: 'All' },
+                                        { label: 'Pending', value: 'Pending' },
+                                        { label: 'Awaiting', value: 'Awaiting' },
+                                        { label: 'In progress', value: 'In progress' },
+                                        { label: 'Rejected', value: 'Rejected' },
+                                        { label: 'Incomplete', value: 'Incomplete' },
+                                        { label: 'Resolved', value: 'Resolved' }
+                                    ]}
+                                    value={statusFilter}
+                                    onChange={(val) => {
+                                        setStatusFilter(val);
+                                        setCurrentPage(1);
+                                    }}
+                                    placeholder="All Status"
+                                    minWidth="w-32"
+                                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+                                />
+                                <button
+                                    onClick={() => setIsExportConfirmOpen(true)}
+                                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download text-gray-500 lg:text-inherit"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+                                    <span className="hidden lg:inline">Export</span>
+                                </button>
+                            </>
+                        }
+                    />
+
+                    <ConfirmationModal
+                        isOpen={confirmCategoryChange.isOpen}
+                        onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null })}
+                        onConfirm={async () => {
+                            try {
+                                setIsSubmittingCategory(true);
+                                await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, {
+                                    category: confirmCategoryChange.newCategoryId
+                                });
+                                setComplaints(complaints.map(c =>
+                                    c.id === confirmCategoryChange.complaintId
+                                        ? { ...c, category: confirmCategoryChange.newCategoryName, categoryId: confirmCategoryChange.newCategoryId }
+                                        : c
+                                ));
+                                showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategoryName}`);
+                            } catch (error) {
+                                console.error('Failed to update category:', error);
+                                showErrorToast('Error', error?.response?.data?.message || 'Failed to update category');
+                            } finally {
+                                setIsSubmittingCategory(false);
+                                setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null });
+                            }
+                        }}
+                        title="Confirm Category Change"
+                        message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategoryName}?`}
+                        confirmText="Change"
+                        isSubmitting={isSubmittingCategory}
+                        loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
+                        confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
+                    />
                 </div>
-            )}
-
-            {selectedDetailComplaint && (
-                <StudentComplaintDetailModal 
-                    complaint={selectedDetailComplaint} 
-                    onClose={() => setSelectedDetailComplaint(null)} 
-                />
-            )}
-
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                title="Export Complaints Data"
-                fields={[
-                    { name: 'startDate', label: 'Start Date', type: 'date' },
-                    { name: 'endDate', label: 'End Date', type: 'date' },
-                    {
-                        name: "status",
-                        label: "Complaint Status",
-                        options: [
-                            { label: 'All Status', value: '' },
-                            { label: 'Pending', value: 'Pending' },
-                            { label: 'Awaiting', value: 'Awaiting' },
-                            { label: 'In progress', value: 'In progress' },
-                            { label: 'Rejected', value: 'Rejected' },
-                            { label: 'Incomplete', value: 'Incomplete' },
-                            { label: 'Resolved', value: 'Resolved' }
-                        ],
-                        defaultValue: statusFilter === 'All' ? '' : statusFilter
-                    }
-                ]}
-            />
-
-            <ConfirmationModal
-                isOpen={confirmCategoryChange.isOpen}
-                onClose={() => setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null })}
-                onConfirm={async () => {
-                    try {
-                        setIsSubmittingCategory(true);
-                        await ComplaintService.updateComplaint(confirmCategoryChange.complaintId, { 
-                            category: confirmCategoryChange.newCategoryId 
-                        });
-                        setComplaints(complaints.map(c =>
-                            c.id === confirmCategoryChange.complaintId 
-                                ? { ...c, category: confirmCategoryChange.newCategoryName, categoryId: confirmCategoryChange.newCategoryId } 
-                                : c
-                        ));
-                        showSuccessToast('Category Updated', `Complaint category changed to ${confirmCategoryChange.newCategoryName}`);
-                    } catch (error) {
-                        console.error('Failed to update category:', error);
-                        showErrorToast('Error', error?.response?.data?.message || 'Failed to update category');
-                    } finally {
-                        setIsSubmittingCategory(false);
-                        setConfirmCategoryChange({ isOpen: false, complaintId: null, newCategoryName: null, newCategoryId: null });
-                    }
-                }}
-                title="Confirm Category Change"
-                message={`Are you sure you want to change the category to ${confirmCategoryChange.newCategoryName}?`}
-                confirmText="Change"
-                isSubmitting={isSubmittingCategory}
-                loadingText={<Loader2 size={14} className="animate-spin mx-auto" />}
-                confirmButtonClass="bg-primary text-white hover:bg-secondary min-w-[100px]"
-            />
             </div>
         </div>
     );
