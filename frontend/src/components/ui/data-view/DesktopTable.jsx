@@ -12,12 +12,14 @@ export default function DesktopTable({
     onSelectAll,
     onSelectRow,
     canSelect = false,
+    isSelectableFn,
     pageScrollMode = false,
     loading = false
 }) {
     if ((!data || data.length === 0) && !loading) return null;
 
-    const isAllSelected = data.length > 0 && selectedIds.length === data.length;
+    const selectableData = isSelectableFn ? data.filter(item => isSelectableFn(item)) : data;
+    const isAllSelected = selectableData.length > 0 && selectableData.every(item => selectedIds.includes(item._id || item.id));
 
     return (
         <div className={`bg-white relative hidden md:block   w-full ${pageScrollMode ? '' : 'flex-1 overflow-auto'}`}>
@@ -100,7 +102,7 @@ export default function DesktopTable({
                                     className={`transition-colors group ${onRowClick ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50/50'
                                         } ${isSelected ? 'bg-blue-50/30' : ''}`}
                                 >
-                                    {canSelect && (
+                                    {canSelect && (!isSelectableFn || isSelectableFn(item)) ? (
                                         <td className="p-4 text-center align-middle" onClick={(e) => e.stopPropagation()}>
                                             <button
                                                 type="button"
@@ -114,6 +116,10 @@ export default function DesktopTable({
                                                 )}
                                             </button>
                                         </td>
+                                    ) : (
+                                        canSelect && (
+                                            <td className="p-4 text-center align-middle"></td>
+                                        )
                                     )}
 
                                     {columns.map((col, i) => {

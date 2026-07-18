@@ -104,9 +104,10 @@ const ComplaintCategoryTable = ({
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { label: "Description", icon: AlignLeft, value: (o) => o.description || 'No description' },
-            { label: "Created At", icon: Clock, value: (o) => o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'N/A' }
+            { icon: AlignLeft, value: (o) => o.description || 'No description' },
+            { icon: Clock, value: (o) => o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'N/A' }
         ],
+        onEdit: (o) => openModal?.('edit', o),
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
 
@@ -200,12 +201,10 @@ const ComplaintCategoryTable = ({
                 setSelectedCategoryDetail(o);
                 setView('detail');
             }}
-            selection={{
-                selectedIds: selectedIds,
-                onSelectAll: handleSelectAll,
-                onSelectRow: handleSelectRow,
-                getItemId: (o) => o._id
-            }}
+            selectedIds={selectedIds}
+            onSelectAll={handleSelectAll}
+            onSelectRow={handleSelectRow}
+            canSelect={true}
             pagination={{
                 currentPage: page,
                 totalPages: totalPages,

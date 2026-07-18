@@ -91,14 +91,14 @@ input[type='number'] {
 
     /* Hide scrollbar for Chrome, Safari and Opera */
     .no-scrollbar::-webkit-scrollbar {
-        display: none;
+        display: none !important;
     }
 
     /* Hide scrollbar for IE, Edge and Firefox */
     .no-scrollbar {
-        -ms-overflow-style: none;
+        -ms-overflow-style: none !important;
         /* IE and Edge */
-        scrollbar-width: none;
+        scrollbar-width: none !important;
         /* Firefox */
     }
 }

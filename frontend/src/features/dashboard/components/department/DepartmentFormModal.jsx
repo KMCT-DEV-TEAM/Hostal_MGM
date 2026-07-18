@@ -26,7 +26,15 @@ const DepartmentFormModal = ({
             title={isEditMode ? t('edit_department') : t('add_department')}
             subtitle={isEditMode ? t('edit_department_desc') : t('add_department_desc')}
             asForm={true}
-            onSubmit={handleSubmit}
+            onSubmit={(e) => {
+                e.preventDefault();
+                if (!formData.courseId) {
+                    setErrors(prev => ({ ...prev, courseId: 'Course is not selected' }));
+                    return;
+                }
+                setErrors({});
+                handleSubmit(e);
+            }}
             maxWidth="max-w-xl"
             bottomSheetOnMobile={true}
             footer={
@@ -60,13 +68,13 @@ const DepartmentFormModal = ({
                             <input
                                 name="name"
                                 value={formData.name}
-                                pattern="[A-Za-z]+"
-                                title="Only letters are allowed"
+                                pattern="[A-Za-z\s]+"
+                                title="Only letters and spaces are allowed"
                                 onChange={(e) => {
                                     const originalVal = e.target.value;
-                                    const cleanVal = originalVal.replace(/[^a-zA-Z]/g, '');
+                                    const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
                                     if (originalVal !== cleanVal) {
-                                        setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
+                                        setErrors(prev => ({ ...prev, name: 'Only letters and spaces are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, name: '' }));
                                     }
@@ -108,11 +116,15 @@ const DepartmentFormModal = ({
                                     value: course._id
                                 })) : []}
                                 value={formData.courseId}
-                                onChange={(val) => handleInputChange({ target: { name: 'courseId', value: val } })}
+                                onChange={(val) => {
+                                    setErrors(prev => ({ ...prev, courseId: '' }));
+                                    handleInputChange({ target: { name: 'courseId', value: val } });
+                                }}
                                 placeholder="Select Course"
                                 minWidth="w-full"
-                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.courseId ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs text-[#777777] focus:border-[#0A437A]`}
                             />
+                            {errors.courseId && <p className="text-red-500 text-[10px] mt-1">{errors.courseId}</p>}
                         </div>
                         {isEditMode && (
                             <div className="col-span-1 sm:col-span-2">

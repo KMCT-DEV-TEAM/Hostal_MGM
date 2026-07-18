@@ -8,7 +8,8 @@ import {
     MoreVertical,
     Plus,
     Download,
-    Building
+    Building,
+    GraduationCap
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import Dropdown from "@/components/ui/Dropdown";
@@ -138,13 +139,15 @@ export default function BatchTable({
         avatar: (o) => o.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (o) => o.name || "-",
         subtitle: (o) => o.code || "-",
+        onEdit: (o) => openModal?.('edit', o),
         status: (o) => ({
             text: Boolean(o.isActive) ? t("active") : t("inactive"),
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
+            { icon: Building, value: (o) => o.departmentId?.courseId?.organizationId?.name || "-" },
             { icon: Building2, value: (o) => o.departmentId?.name || "-" },
-            { icon: FileText, value: (o) => o.studentsCount || 0 }
+            { icon: GraduationCap, value: (o) => o.studentsCount || 0 }
         ],
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
@@ -231,7 +234,7 @@ export default function BatchTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectRow={handleSelectRow}
             canSelect={true}
             page={page}
             setPage={setPage}

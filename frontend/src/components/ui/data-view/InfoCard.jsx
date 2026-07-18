@@ -24,6 +24,7 @@ export default function InfoCard({
     selectionMode = false,
     onSelect,
     className,
+    statsGridClass,
     isLoading = false
 }) {
 
@@ -107,7 +108,8 @@ export default function InfoCard({
                             {(status.text || status.label) && (
                                 <div className={clsx(
                                     'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md shrink-0 capitalize',
-                                    status.bgClass && status.textClass ? `${status.bgClass} ${status.textClass} border border-current/20` : (statusColorClasses[status.color] || statusColorClasses.gray)
+                                    status.bgClass && status.textClass ? `${status.bgClass} ${status.textClass} border border-current/20` : (statusColorClasses[status.color] || statusColorClasses.gray),
+                                    status.className
                                 )}>
                                     <div className={clsx(
                                         'w-1.5 h-1.5 rounded-full',
@@ -145,17 +147,6 @@ export default function InfoCard({
                         </div>
                     )}
 
-                    {(onEdit || editable) && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit?.();
-                            }}
-                            className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
-                        >
-                            <Pencil className="w-4 h-4" />
-                        </button>
-                    )}
                 </div>
             </div>
         );
@@ -214,6 +205,17 @@ export default function InfoCard({
                 className
             )}
         >
+            {(onEdit || editable) && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit?.();
+                    }}
+                    className="absolute top-4 right-4 p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                >
+                    <Pencil className="w-4 h-4" />
+                </button>
+            )}
             <div className="flex gap-4">
                 {/* Left Column: Avatar */}
                 {avatar && (
@@ -232,15 +234,15 @@ export default function InfoCard({
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
 
                     {/* Header: Title & Subtitle */}
-                    <div className="mb-2">
+                    <div className="mb-2 pr-8">
                         {title && (
                             <h3 className="text-base font-bold text-gray-900 truncate leading-tight">
-                                {title}
+                                {title === '-' || !title ? 'N/A' : title}
                             </h3>
                         )}
                         {subtitle && (
                             <p className="text-sm font-medium text-gray-500 truncate mt-0.5">
-                                {subtitle}
+                                {subtitle === '-' || !subtitle ? 'N/A' : subtitle}
                             </p>
                         )}
                     </div>
@@ -260,13 +262,13 @@ export default function InfoCard({
                                                 </div>
                                                 <span className="text-gray-400 shrink-0 px-1.5 font-semibold">:</span>
                                                 <span className="flex-1 min-w-0 text-gray-800 font-medium truncate">
-                                                    {field.value || '-'}
+                                                    {field.value === 0 ? 0 : (field.value === '-' || !field.value ? 'N/A' : field.value)}
                                                 </span>
                                             </>
                                         ) : (
                                             <div className="flex items-center gap-2 truncate">
                                                 {Icon && <Icon className="w-4 h-4 shrink-0 text-gray-400" />}
-                                                <span className="truncate font-medium text-gray-800">{field.value || '-'}</span>
+                                                <span className="truncate font-medium text-gray-800">{field.value === 0 ? 0 : (field.value === '-' || !field.value ? 'N/A' : field.value)}</span>
                                             </div>
                                         )}
                                     </div>
@@ -275,19 +277,20 @@ export default function InfoCard({
                         </div>
                     )}
 
-                    {/* Stats Grid */}
-                    {stats && stats.length > 0 && (
-                        <div className={clsx('grid gap-2 mt-3 pt-3 border-t border-gray-50', getStatsGridCols(stats.length))}>
-                            {stats.map((stat, idx) => (
-                                <div key={idx} className="flex flex-col text-center bg-gray-50/50 rounded-lg py-1.5 border border-gray-100">
-                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{stat.label}</span>
-                                    <span className="text-sm font-bold text-gray-900 mt-0.5">{stat.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
+
+            {/* Stats Grid (Full Width) */}
+            {stats && stats.length > 0 && (
+                <div className={clsx('grid gap-2 mt-3 pt-3 border-t border-gray-50', statsGridClass || getStatsGridCols(stats.length))}>
+                    {stats.map((stat, idx) => (
+                        <div key={idx} className={clsx("flex flex-col text-center bg-gray-50/50 rounded-lg py-1.5 border border-gray-100", stat.className)}>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{stat.label}</span>
+                            <span className="text-sm font-bold text-gray-900 mt-0.5">{stat.value}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Footer across full width of card */}
             {renderFooterContent()}

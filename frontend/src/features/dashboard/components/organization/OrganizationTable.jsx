@@ -152,15 +152,16 @@ export default function OrganizationTable({
     const cardConfig = {
         avatar: (o) => o.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (o) => o.name || "-",
-        subtitle: (o) => o.email || "-",
+        subtitle: (o) => o.code || "-",
+        onEdit: (o) => openModal?.('edit', o),
         status: (o) => ({
             text: Boolean(o.isActive) ? t("active") : t("inactive"),
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { label: t("phone"), value: (o) => o.phone || "-" },
-            { label: t("address"), value: (o) => o.address || "-" },
-            { label: "Students", value: (o) => o.studentsCount || 0 }
+            { icon: Phone, value: (o) => o.phone || "-" },
+            { icon: MapPin, value: (o) => o.address || "-" },
+            { icon: Users, value: (o) => o.studentsCount || 0 }
         ],
         onStatusChange: isAdmin ? undefined : (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
@@ -247,7 +248,7 @@ export default function OrganizationTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectRow={handleSelectRow}
             canSelect={!isAdmin}
             emptyText={t('no_org_found')}
             onRowClick={(o) => {
