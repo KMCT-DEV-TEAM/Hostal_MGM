@@ -139,13 +139,17 @@ export default function DepartmentTable({
         avatar: (o) => o.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (o) => o.name || "-",
         subtitle: (o) => o.code || "-",
+        onEdit: (o) => openModal?.('edit', o),
         status: (o) => ({
             text: Boolean(o.isActive) ? t("active") : t("inactive"),
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { icon: BookOpen, value: (o) => o.courseId?.name || "-" },
-            { icon: Layers, value: (o) => o.batchesCount || 0 }
+            { icon: BookOpen, value: (o) => o.courseId?.name || "-" }
+        ],
+        stats: (o) => [
+            { label: t("students"), value: o.studentsCount || 0 },
+            { label: t("num_batches"), value: o.batchesCount || 0 }
         ],
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
@@ -232,7 +236,7 @@ export default function DepartmentTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectRow={handleSelectRow}
             canSelect={true}
             page={page}
             setPage={setPage}

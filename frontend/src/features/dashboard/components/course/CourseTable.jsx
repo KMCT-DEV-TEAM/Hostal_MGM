@@ -139,13 +139,17 @@ export default function CourseTable({
         avatar: (o) => o.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (o) => o.name || "-",
         subtitle: (o) => o.code || "-",
+        onEdit: (o) => openModal?.('edit', o),
         status: (o) => ({
             text: Boolean(o.isActive) ? t("active") : t("inactive"),
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { icon: FileText, value: (o) => o.departmentsCount || 0 },
-            { icon: Layers, value: (o) => o.batchesCount || 0 }
+            { icon: Building, value: (o) => o.organizationId?.name || "-" }
+        ],
+        stats: (o) => [
+            { label: t("departments"), value: o.departmentsCount === 0 ? 0 : (o.departmentsCount || 0) },
+            { label: t("batches"), value: o.batchesCount === 0 ? 0 : (o.batchesCount || 0) }
         ],
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
@@ -232,7 +236,7 @@ export default function CourseTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectRow={handleSelectRow}
             canSelect={true}
             page={page}
             setPage={setPage}

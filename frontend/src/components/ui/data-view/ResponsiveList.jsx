@@ -11,6 +11,7 @@ export default function ResponsiveList({
     canSelect = false,
     onSelectAll,
     onSelectRow,
+    isSelectableFn,
     page = 1,
     totalPages = 1,
     onLoadMore,
@@ -73,24 +74,29 @@ export default function ResponsiveList({
                 ))
             ) : (
                 <>
-                    {canSelect && accumulatedData.length > 0 && selectedIds.length > 0 && (
-                        <div className={`z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm mb-1 ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
-                            <button
-                                type="button"
-                                onClick={() => onSelectAll?.(accumulatedData.map(item => item._id || item.id))}
-                                className="flex items-center gap-3 focus:outline-none cursor-pointer group"
-                            >
-                                {selectedIds.length === accumulatedData.length ? (
-                                    <CheckSquare className="w-5 h-5 text-[#0A437A]" />
-                                ) : (
-                                    <Square className="w-5 h-5 text-gray-300 group-hover:text-gray-400" />
-                                )}
-                                <span className="text-sm font-medium text-gray-700">
-                                    Select All ({selectedIds.length}/{accumulatedData.length})
-                                </span>
-                            </button>
-                        </div>
-                    )}
+                    {canSelect && accumulatedData.length > 0 && selectedIds.length > 0 && (() => {
+                        const selectableItems = isSelectableFn ? accumulatedData.filter(item => isSelectableFn(item)) : accumulatedData;
+                        if (selectableItems.length === 0) return null;
+                        
+                        return (
+                            <div className={`z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm mb-1 ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
+                                <button
+                                    type="button"
+                                    onClick={() => onSelectAll?.(selectableItems.map(item => item._id || item.id))}
+                                    className="flex items-center gap-3 focus:outline-none cursor-pointer group"
+                                >
+                                    {selectedIds.length === selectableItems.length ? (
+                                        <CheckSquare className="w-5 h-5 text-[#0A437A]" />
+                                    ) : (
+                                        <Square className="w-5 h-5 text-gray-300 group-hover:text-gray-400" />
+                                    )}
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Select All ({selectedIds.length}/{selectableItems.length})
+                                    </span>
+                                </button>
+                            </div>
+                        );
+                    })()}
 
                     {accumulatedData.map((item, index) => {
                         const isSelected = selectedIds.includes(item._id || item.id || index);
@@ -105,10 +111,11 @@ export default function ResponsiveList({
                                 icon: Icon ? (typeof Icon === 'function' ? <Icon /> : Icon) : null,
                                 value: f.accessor ? f.accessor(item) : (typeof f.value === 'function' ? f.value(item) : f.value)
                             };
-                        }).filter(f => f.value) : [];
+                        }).filter(f => f.value !== undefined && f.value !== null && f.value !== '') : [];
                         const status = cardConfig.status ? cardConfig.status(item) : null;
                         const stats = cardConfig.stats ? cardConfig.stats(item) : [];
                         const actionSlot = cardConfig.actionSlot ? cardConfig.actionSlot(item) : (cardConfig.actions ? cardConfig.actions(item) : null);
+                        const itemCanSelect = canSelect && (!isSelectableFn || isSelectableFn(item));
 
                         const card = (
                             <div
@@ -120,12 +127,13 @@ export default function ResponsiveList({
                                     title={title}
                                     fields={fields}
                                     stats={stats}
+                                    statsGridClass={cardConfig.statsGridClass}
                                     status={status}
                                     footer={actionSlot}
                                     onEdit={cardConfig.onEdit ? () => cardConfig.onEdit(item) : undefined}
                                     onClick={onRowClick ? () => onRowClick(item) : undefined}
                                     selected={isSelected}
-                                    canSelect={canSelect}
+                                    canSelect={itemCanSelect}
                                     selectionMode={selectedIds.length > 0}
                                     onSelect={() => onSelectRow?.(item._id || item.id || index)}
                                 />

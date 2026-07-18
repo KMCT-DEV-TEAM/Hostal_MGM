@@ -26,7 +26,15 @@ const BatchFormModal = ({
             title={isEditMode ? t('edit_batch') : t('add_batch')}
             subtitle={isEditMode ? t('edit_batch_desc') : t('add_batch_desc')}
             asForm={true}
-            onSubmit={handleSubmit}
+            onSubmit={(e) => {
+                e.preventDefault();
+                if (!formData.departmentId) {
+                    setErrors(prev => ({ ...prev, departmentId: 'department is not selected' }));
+                    return;
+                }
+                setErrors({});
+                handleSubmit(e);
+            }}
             maxWidth="max-w-xl"
             bottomSheetOnMobile={true}
             footer={
@@ -108,11 +116,15 @@ const BatchFormModal = ({
                                     value: dep._id
                                 })) : []}
                                 value={formData.departmentId}
-                                onChange={(val) => handleInputChange({ target: { name: 'departmentId', value: val } })}
+                                onChange={(val) => {
+                                    setErrors(prev => ({ ...prev, departmentId: '' }));
+                                    handleInputChange({ target: { name: 'departmentId', value: val } });
+                                }}
                                 placeholder="Select Department"
                                 minWidth="w-full"
-                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.departmentId ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs text-[#777777] focus:border-[#0A437A]`}
                             />
+                            {errors.departmentId && <p className="text-red-500 text-[10px] mt-1">{errors.departmentId}</p>}
                         </div>
                         {isEditMode && (
                             <div className="col-span-1 sm:col-span-2">

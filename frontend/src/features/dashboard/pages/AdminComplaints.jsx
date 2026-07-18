@@ -3,6 +3,7 @@ import SuperAdminComplaintsTable from '../components/complaints/SuperAdminCompla
 
 import ComplaintsToolbar from '../components/complaints/ComplaintsToolbar';
 import WardenComplaints from './WardenComplaints';
+import PageHeader from '@/components/ui/PageHeader';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { AlertTriangle, Clock, Loader2, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ComplaintService from '@/services/complaint.service';
@@ -20,6 +21,7 @@ export default function AdminComplaints() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedHostel, setSelectedHostel] = useState(null);
+    const [viewMode, setViewMode] = useState('hostel'); // 'hostel' or 'all'
     const [limit, setLimit] = useState(10);
 
     const fetchComplaints = async () => {
@@ -115,6 +117,29 @@ export default function AdminComplaints() {
         return <WardenComplaints hostel={selectedHostel} onBack={() => setSelectedHostel(null)} />;
     }
 
+    const renderToggle = () => (
+        <div className="flex shrink-0 mt-2 sm:mt-0 w-full sm:w-80">
+            <div className="flex p-1 bg-gray-100/80 rounded-lg w-full border border-gray-200/50">
+                <button
+                    onClick={() => setViewMode('hostel')}
+                    className={`flex-1 px-4 py-2 text-sm font-bold rounded-md transition-all ${viewMode === 'hostel' ? 'bg-white text-[#0A437A] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Hostel Wise
+                </button>
+                <button
+                    onClick={() => setViewMode('all')}
+                    className={`flex-1 px-4 py-2 text-sm font-bold rounded-md transition-all ${viewMode === 'all' ? 'bg-white text-[#0A437A] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    All Complaints
+                </button>
+            </div>
+        </div>
+    );
+
+    if (viewMode === 'all') {
+        return <WardenComplaints headerActions={renderToggle()} />;
+    }
+
     // Top cards aggregate
     const totalAll = complaints.length;
     const pendingAll = complaints.filter(c => c.status === 'Pending').length;
@@ -125,11 +150,15 @@ export default function AdminComplaints() {
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6 w-full text-left">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 w-full text-left">
                 <div>
-                    <h1 className="text-2xl font-bold text-black">Complaints</h1>
-                    <p className="text-sm text-gray-500 mt-1">Monitor complaint performance across organizations.</p>
+                    <PageHeader 
+                        title="Complaints" 
+                        subtitle="Manage and resolve student complaints." 
+                    />
                 </div>
+                
+                {renderToggle()}
             </div>
 
             {/* Stat Cards Section */}
@@ -172,6 +201,26 @@ export default function AdminComplaints() {
                     <div className="p-1.5 bg-green-50 rounded text-green-500">
                         <CheckCircle className="w-4 h-4" />
                     </div>
+                </div>
+            </div>
+
+            {/* MOBILE KPI CARDS */}
+            <div className="md:hidden flex items-center justify-between px-3 py-4 mb-3 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-red-500">{totalAll < 10 && totalAll > 0 ? `0${totalAll}` : totalAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Total</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-orange-500">{pendingAll < 10 && pendingAll > 0 ? `0${pendingAll}` : pendingAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Pending</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-blue-500">{inProgressAll < 10 && inProgressAll > 0 ? `0${inProgressAll}` : inProgressAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">In Progress</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-green-600">{resolvedAll < 10 && resolvedAll > 0 ? `0${resolvedAll}` : resolvedAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Resolved</span>
                 </div>
             </div>
 

@@ -155,6 +155,7 @@ export default function AdminsTable({
     avatar: (a) => a.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
     title: (a) => a.name || "-",
     subtitle: (a) => a.email || "-",
+    onEdit: onEditClick,
     status: (a) => ({
       text: Boolean(a.isActive) ? t("active") : t("inactive"),
       color: Boolean(a.isActive) ? "green" : "red"

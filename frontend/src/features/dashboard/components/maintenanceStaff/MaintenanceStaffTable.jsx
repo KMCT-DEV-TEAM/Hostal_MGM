@@ -153,11 +153,14 @@ export default function MaintenanceStaffTable({
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { icon: Phone, value: (o) => o.phone || "N/A" },
-            { icon: FileText, value: (o) => o.taskAssignedCount || 0 },
-            { icon: FileText, value: (o) => o.taskResolvedCount || 0 },
-            { icon: FileText, value: (o) => o.taskPendingCount || 0 }
+            { icon: Phone, value: (o) => o.phone || "N/A" }
         ],
+        stats: (o) => [
+            { label: 'Assigned', value: o.taskAssignedCount || 0 },
+            { label: 'Resolved', value: o.taskResolvedCount || 0 },
+            { label: 'Pending', value: o.taskPendingCount || 0 }
+        ],
+        onEdit: (o) => openEditStaffModal?.(o),
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, isActive ? "Active" : "Inactive"),
     };
 
@@ -243,7 +246,7 @@ export default function MaintenanceStaffTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectRow={handleSelectRow}
             canSelect={true}
             page={page}
             setPage={setPage}

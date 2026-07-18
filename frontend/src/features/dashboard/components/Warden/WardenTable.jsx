@@ -149,6 +149,7 @@ export default function WardenTable({
         avatar: (w) => w.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (w) => w.name || "-",
         subtitle: (w) => w.email || "-",
+        onEdit: openEditWardenModal,
         status: (w) => ({
             text: Boolean(w.isActive) || w.status === 'Active' ? t("active") : t("inactive"),
             color: Boolean(w.isActive) || w.status === 'Active' ? "green" : "red"
@@ -242,7 +243,7 @@ export default function WardenTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={onSelectAll}
-            onSelect={onSelectRow}
+            onSelectRow={onSelectRow}
             canSelect={true}
             emptyText={t('no_records_found')}
             onRowClick={(warden) => {
