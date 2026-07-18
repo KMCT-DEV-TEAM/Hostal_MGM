@@ -2,6 +2,8 @@ import Department from "./department.model.js";
 import Course from "../courses/course.model.js";
 import { updateBatchesStatusByQuery } from "../batches/batch.service.js";
 import { updateStudentsStatusByQuery } from "../students/student.service.js";
+import Student from "../students/student.model.js";
+import Batch from "../batches/batch.model.js";
 
 const checkExistingDepartmentCodeDb = async (code) => {
   return await Department.findOne({ code });
@@ -16,7 +18,7 @@ const createDepartmentDb = async (data) => {
 };
 
 const getPaginatedDepartmentsDb = async (query, skip, limit, sort) => {
-  return await Department.find(query)
+  const departments = await Department.find(query)
     .populate({
       path: "courseId",
       select: "name code",
@@ -28,11 +30,18 @@ const getPaginatedDepartmentsDb = async (query, skip, limit, sort) => {
     .sort(sort)
     .skip(skip)
     .limit(limit)
-    .select("-__v");
+    .select("-__v")
+    .lean();
+    
+  return await Promise.all(departments.map(async (dept) => {
+    const studentsCount = await Student.countDocuments({ departmentId: dept._id });
+    const batchesCount = await Batch.countDocuments({ departmentId: dept._id });
+    return { ...dept, studentsCount, batchesCount };
+  }));
 };
 
 const getAllDepartmentsDb = async (query, sort) => {
-  return await Department.find(query)
+  const departments = await Department.find(query)
     .populate({
       path: "courseId",
       select: "name code",
@@ -42,7 +51,14 @@ const getAllDepartmentsDb = async (query, sort) => {
       }
     })
     .sort(sort)
-    .select("-__v");
+    .select("-__v")
+    .lean();
+    
+  return await Promise.all(departments.map(async (dept) => {
+    const studentsCount = await Student.countDocuments({ departmentId: dept._id });
+    const batchesCount = await Batch.countDocuments({ departmentId: dept._id });
+    return { ...dept, studentsCount, batchesCount };
+  }));
 };
 
 const getDepartmentByIdDb = async (id) => {

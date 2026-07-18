@@ -133,7 +133,15 @@ export const getAllComplaintsDb = async (query = {}) => {
     const filter = {};
     if (query.organizationId) filter.organizationId = query.organizationId;
     if (query.hostelId) filter.hostelId = query.hostelId;
-    if (query.status) filter.status = query.status;
+    if (query.status) {
+        if (typeof query.status === 'string' && query.status.includes(',')) {
+            filter.status = { $in: query.status.split(',') };
+        } else if (Array.isArray(query.status)) {
+            filter.status = { $in: query.status };
+        } else {
+            filter.status = query.status;
+        }
+    }
     if (query.assignedStaff) filter.assignedStaff = query.assignedStaff;
     if (query._id !== undefined) filter._id = query._id;
 

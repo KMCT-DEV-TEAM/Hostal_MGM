@@ -186,6 +186,7 @@ function Sidebar({ isOpen, setIsOpen }) {
     }, [user?.role]);
 
     const handleLogout = () => {
+        setIsOpen(false);
         setIsLogoutModalOpen(true);
     };
 

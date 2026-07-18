@@ -96,7 +96,7 @@ const LeaveCard = ({ data, onEdit }) => {
                         }}
                         className="rounded-xl"
                     >
-                        Review
+                        Review & Approve
                     </Button>
                 </div>
             ) : (

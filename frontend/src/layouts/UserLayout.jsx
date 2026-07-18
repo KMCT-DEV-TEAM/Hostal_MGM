@@ -7,6 +7,7 @@ import MobileHeader from "@/components/shared/MobileHeader";
 import MobileFooter from "@/components/shared/MobileFooter";
 import { Outlet } from "react-router-dom";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
+import AttendanceQRModal from "@/features/dashboard/components/attendance/AttendanceQRModal";
 
 const UserLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -17,6 +18,7 @@ const UserLayout = () => {
 
     return (
         <div className={`flex flex-col h-dvh bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
+
 
             {/* Header Area */}
             {isMobile ? (
@@ -44,6 +46,9 @@ const UserLayout = () => {
 
             {/* Footer Area */}
             {isMobile && footerVisible && <MobileFooter />}
+
+            {/* Global Modals */}
+            <AttendanceQRModal />
         </div>
     );
 };

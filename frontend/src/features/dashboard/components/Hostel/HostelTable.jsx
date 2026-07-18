@@ -8,7 +8,8 @@ import {
     MoreVertical,
     Plus,
     Download,
-    FileText
+    FileText,
+    GraduationCap
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import Dropdown from "@/components/ui/Dropdown";
@@ -84,13 +85,13 @@ export default function HostelTable({
             key: "email",
             header: t("email"),
             icon: Mail,
-            accessor: (o) => o.email || "-"
+            accessor: (o) => o.email || "N/A"
         },
         {
             key: "phone",
             header: t("phone"),
             icon: Phone,
-            accessor: (o) => o.phone || "-"
+            accessor: (o) => o.phone || "N/A"
         },
         {
             key: "capacity",
@@ -170,14 +171,19 @@ export default function HostelTable({
     const cardConfig = {
         avatar: (o) => o.name?.split(' ').map(n => n[0]).join('').substring(0, 2),
         title: (o) => o.name || "-",
-        subtitle: (o) => o.email || "-",
+        subtitle: (o) => o.code || "-",
+        onEdit: openEditHostelModal,
         status: (o) => ({
             text: Boolean(o.isActive) ? t("active") : t("inactive"),
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { icon: FileText, value: (o) => o.capacity || 0 },
-            { icon: FileText, value: (o) => o.studentsCount || 0 }
+            { icon: Mail, value: (o) => o.email || "N/A" },
+            { icon: Phone, value: (o) => o.phone || "N/A" }
+        ],
+        stats: (o) => [
+            { label: t("capacity"), value: o.capacity || 0 },
+            { label: t("students"), value: o.studentsCount || 0 }
         ],
         onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
@@ -264,7 +270,7 @@ export default function HostelTable({
             toolbarEndSlot={toolbarEndSlot}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
-            onSelect={handleSelectRow}
+            onSelectRow={handleSelectRow}
             isSelectableFn={canEditFn}
             canSelect={true}
             page={page}

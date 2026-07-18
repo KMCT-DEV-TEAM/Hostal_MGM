@@ -18,7 +18,7 @@ import { initSocket, getSocket } from '@/services/socket.service';
 import BackButton from '@/components/ui/BackButton';
 import PageHeader from '@/components/ui/PageHeader';
 
-export default function WardenComplaints({ hostel, onBack }) {
+export default function WardenComplaints({ hostel, onBack, headerActions }) {
     const { user } = useAuthStore();
     const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
     const isAdmin = user?.role === ROLES.ADMIN;
@@ -235,14 +235,19 @@ export default function WardenComplaints({ hostel, onBack }) {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <div>
                     <PageHeader
                         title="Complaints"
-                        subtitle="Manage and resolve student complaints in your hostel."
+                        subtitle="Manage and resolve student complaints."
                         actionButton={onBack && <BackButton text="Back to Organizations" onClick={onBack} />}
                     />
                 </div>
+                {headerActions && (
+                    <div className="flex shrink-0">
+                        {headerActions}
+                    </div>
+                )}
             </div>
 
             {/* Stat Cards Section */}
@@ -285,6 +290,26 @@ export default function WardenComplaints({ hostel, onBack }) {
                     <div className="p-1.5 bg-green-50 rounded text-green-500">
                         <CheckCircle className="w-4 h-4" />
                     </div>
+                </div>
+            </div>
+
+            {/* MOBILE KPI CARDS */}
+            <div className="md:hidden flex items-center justify-between px-3 py-4 mb-3 bg-white rounded-xl shadow-sm border border-gray-100 shrink-0">
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-red-500">{totalAll < 10 && totalAll > 0 ? `0${totalAll}` : totalAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Total</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-orange-500">{pendingAll < 10 && pendingAll > 0 ? `0${pendingAll}` : pendingAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Pending</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-blue-500">{inProgressAll < 10 && inProgressAll > 0 ? `0${inProgressAll}` : inProgressAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">In Progress</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-green-600">{resolvedAll < 10 && resolvedAll > 0 ? `0${resolvedAll}` : resolvedAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Resolved</span>
                 </div>
             </div>
 

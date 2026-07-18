@@ -8,6 +8,7 @@ import AttendanceQRModal from '../components/attendance/AttendanceQRModal';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import StudentAttendanceDesktopView from '../views/StudentAttendanceDesktopView';
 import AttendanceMobileView from '../views/AttendanceMobileView';
+import { useQRModalStore } from '@/store/useQRModalStore';
 
 const StudentAttendanceContainer = () => {
     const pageTitle = "My Attendance";
@@ -20,7 +21,7 @@ const StudentAttendanceContainer = () => {
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({});
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+    const { openModal } = useQRModalStore();
     const [pagination, setPagination] = useState({ totalRecords: 0, totalPages: 1 });
 
     const fetchDashboardStats = useCallback(async () => {
@@ -79,7 +80,7 @@ const StudentAttendanceContainer = () => {
         filters,
         pagination,
         setIsFilterModalOpen,
-        setIsQRModalOpen
+        setIsQRModalOpen: openModal // Map the existing prop to the global openModal function
     };
 
     return (
@@ -105,12 +106,6 @@ const StudentAttendanceContainer = () => {
                     setPage(1);
                     setIsFilterModalOpen(false);
                 }}
-            />
-
-            <AttendanceQRModal
-                isOpen={isQRModalOpen}
-                onClose={() => setIsQRModalOpen(false)}
-                qrToken={user?.qrToken}
             />
         </>
     );

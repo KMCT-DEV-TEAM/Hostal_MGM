@@ -3,6 +3,7 @@ import { Search, ChevronDown, Download, ChevronLeft, ChevronRight, AlertTriangle
 import ComplaintService from '@/services/complaint.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useDebounce } from '@/hooks/useDebounce';
 import ResolveTaskModal from '../components/complaints/ResolveTaskModal';
 import RejectAssignedTaskModal from '../components/complaints/RejectAssignedTaskModal';
 import DataView from '@/components/ui/data-view/DataView';
@@ -24,15 +25,20 @@ export default function MaintenanceAssignedTasks() {
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [viewingTask, setViewingTask] = useState(null);
+    const [viewMode, setViewMode] = useState('tasks'); // 'tasks' or 'history'
 
     useEffect(() => {
         fetchTasks();
-    }, []);
+    }, [viewMode]);
 
     const fetchTasks = async () => {
         setLoading(true);
         try {
-            const res = await ComplaintService.getAssignedComplaints();
+            const params = {};
+            if (viewMode === 'history') {
+                params.status = 'Resolved,Rejected,Incomplete,Awaiting';
+            }
+            const res = await ComplaintService.getAssignedComplaints(params);
             const rawData = res.data || [];
             const formatted = rawData.map(c => ({
                 id: c._id,
@@ -80,14 +86,20 @@ export default function MaintenanceAssignedTasks() {
             task.category?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
             task.subject?.toLowerCase().includes(debouncedSearch.toLowerCase());
         const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        
+        let matchesViewMode = true;
+        if (viewMode === 'tasks') {
+            matchesViewMode = !['Resolved', 'Rejected', 'Incomplete'].includes(task.status);
+        }
+
+        return matchesSearch && matchesStatus && matchesViewMode;
     });
 
     const [currentPage, setCurrentPage] = useState(1);
     
     useEffect(() => {
         setCurrentPage(1);
-    }, [debouncedSearch, statusFilter, limit]);
+    }, [debouncedSearch, statusFilter, limit, viewMode]);
 
     const totalTasks = filteredTasks.length;
     const totalPages = Math.ceil(totalTasks / limit) || 1;
@@ -104,8 +116,8 @@ export default function MaintenanceAssignedTasks() {
     };
 
     const totalAll = tasks.length;
-    const pendingAll = tasks.filter(t => t.status === 'Pending' || t.status === 'Awaiting').length;
-    const inProgressAll = tasks.filter(t => t.status === 'In progress').length;
+    const pendingAll = viewMode === 'history' ? tasks.filter(t => t.status === 'Awaiting' || t.status === 'Incomplete').length : tasks.filter(t => t.status === 'Pending' || t.status === 'Awaiting').length;
+    const inProgressAll = viewMode === 'history' ? tasks.filter(t => t.status === 'Rejected').length : tasks.filter(t => t.status === 'In progress').length;
     const resolvedAll = tasks.filter(t => t.status === 'Resolved').length;
 
     const getCategoryIcon = (category) => {
@@ -130,7 +142,7 @@ export default function MaintenanceAssignedTasks() {
         {
             key: "roomNo",
             header: "Room",
-            renderCell: (o) => <span className="font-medium text-gray-500 pl-4">{o.roomNo}</span>
+            renderCell: (o) => <span className="font-medium text-gray-500">{o.roomNo}</span>
         },
         {
             key: "category",
@@ -162,6 +174,7 @@ export default function MaintenanceAssignedTasks() {
             key: "action",
             header: "Action",
             align: "center",
+            width: "200px",
             renderCell: (o) => (
                 <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                     {o.status === 'In progress' ? (
@@ -174,7 +187,7 @@ export default function MaintenanceAssignedTasks() {
                             </button>
                             <button
                                 onClick={() => handleRejectClick(o)}
-                                className="px-3 py-1.5 bg-danger-100 text-danger-700 rounded text-xs font-medium hover:bg-danger-200 transition-colors cursor-pointer"
+                                className="px-3 py-1.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer"
                             >
                                 Reject
                             </button>
@@ -210,15 +223,12 @@ export default function MaintenanceAssignedTasks() {
         fields: [
             {
                 label: "Room",
-                value: (o) => (
-                    <div className="flex items-center gap-1.5">
-                        <HomeIcon className="w-3 h-3 text-gray-400 shrink-0" />
-                        <span>Room: {o.roomNo || 'N/A'}</span>
-                    </div>
-                )
+                icon: HomeIcon,
+                value: (o) => o.roomNo || 'N/A'
             },
             {
                 label: "Assigned On",
+                icon: Clock,
                 value: (o) => o.date
             }
         ],
@@ -233,7 +243,7 @@ export default function MaintenanceAssignedTasks() {
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); handleRejectClick(o); }}
-                        className="w-full py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors cursor-pointer text-center truncate"
+                        className="w-full py-2.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors cursor-pointer text-center truncate"
                     >
                         Reject
                     </button>
@@ -245,7 +255,7 @@ export default function MaintenanceAssignedTasks() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <MaintenanceAssignedTasksHeader />
+                <MaintenanceAssignedTasksHeader viewMode={viewMode} setViewMode={setViewMode} />
 
             {/* Stat Cards Section */}
             <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full shrink-0">
@@ -261,7 +271,7 @@ export default function MaintenanceAssignedTasks() {
 
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{viewMode === 'history' ? 'Awaiting' : 'Pending'}</p>
                         <h3 className="text-xl font-bold text-gray-900">{pendingAll}</h3>
                     </div>
                     <div className="p-1.5 bg-orange-50 rounded text-orange-400">
@@ -271,7 +281,7 @@ export default function MaintenanceAssignedTasks() {
 
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{viewMode === 'history' ? 'Rejected' : 'In Progress'}</p>
                         <h3 className="text-xl font-bold text-gray-900">{inProgressAll}</h3>
                     </div>
                     <div className="p-1.5 bg-blue-50 rounded text-blue-400">
@@ -290,6 +300,26 @@ export default function MaintenanceAssignedTasks() {
                 </div>
             </div>
 
+            {/* MOBILE KPI CARDS */}
+            <div className="md:hidden flex items-center justify-between px-3 py-4 mb-3 bg-white rounded-xl shadow-sm border border-gray-100 shrink-0">
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-red-500">{totalAll < 10 && totalAll > 0 ? `0${totalAll}` : totalAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Total</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-orange-500">{pendingAll < 10 && pendingAll > 0 ? `0${pendingAll}` : pendingAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">{viewMode === 'history' ? 'Awaiting' : 'Pending'}</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-blue-500">{inProgressAll < 10 && inProgressAll > 0 ? `0${inProgressAll}` : inProgressAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">{viewMode === 'history' ? 'Rejected' : 'In Progress'}</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-green-600">{resolvedAll < 10 && resolvedAll > 0 ? `0${resolvedAll}` : resolvedAll}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center leading-tight">Resolved</span>
+                </div>
+            </div>
+
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col min-h-0">
                 <DataView
                     pageScrollMode={true}
@@ -300,7 +330,7 @@ export default function MaintenanceAssignedTasks() {
                     searchPlaceholder="Search tasks..."
                     searchQuery={searchQuery}
                     onSearchChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                    toolbarEndSlot={
+                    toolbarStartSlot={
                         <Dropdown
                             options={[
                                 { value: "All", label: "All Status" },

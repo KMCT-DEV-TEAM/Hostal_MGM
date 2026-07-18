@@ -84,11 +84,14 @@ export default function SuperAdminComplaintsTable({
         title: (o) => o.organization || "N/A",
         subtitle: (o) => o.hostel || "N/A",
         fields: [
-            ...(showWarden ? [{ label: "Warden", icon: FileText, value: (o) => o.warden || "N/A" }] : []),
-            { label: "Total", value: (o) => o.totalComplaints || 0 },
-            { label: "Pending", value: (o) => o.pending || 0 },
-            { label: "In progress", value: (o) => o.inProgress || 0 },
-            { label: "Resolved", value: (o) => o.resolved || 0 },
+            ...(showWarden ? [{ label: "Warden", icon: FileText, value: (o) => o.warden || "N/A" }] : [])
+        ],
+        statsGridClass: "grid-cols-2",
+        stats: (o) => [
+            { label: "Total", value: o.totalComplaints || 0 },
+            { label: "Pending", value: o.pending || 0 },
+            { label: "In progress", value: o.inProgress || 0 },
+            { label: "Resolved", value: o.resolved || 0 }
         ]
     };
 
