@@ -839,14 +839,7 @@ function DashboardOverview() {
 
                 {/* Right Section */}
                 <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
-                    {user?.role === ROLES.ADMIN && (
-                        <button
-                            onClick={() => setIsHostelModalOpen(true)}
-                            className="px-4 py-2 rounded-md bg-primary text-white font-medium text-sm hover:bg-[#1565B3] transition-colors cursor-pointer w-full md:w-auto"
-                        >
-                            + Add Hostel
-                        </button>
-                    )}
+
                 </div>
             </div>
 

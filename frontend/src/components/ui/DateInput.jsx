@@ -97,17 +97,22 @@ const DateInput = forwardRef(({ label, error, className, min, max, value, onChan
                 {/* Popover */}
                 {isOpen && typeof document !== 'undefined' && createPortal(
                     <div
-                        ref={popoverRef}
-                        className="fixed z-[9999] animate-in fade-in zoom-in-95 duration-100 shadow-xl rounded-xl"
-                        style={{ top: popoverCoords.top, left: popoverCoords.left }}
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 backdrop-blur-[2px]"
+                        onMouseDown={() => setIsOpen(false)}
                     >
-                        <Calendar
-                            selectedDate={displayValue}
-                            onSelect={handleSelect}
-                            min={min}
-                            max={max}
-                        />
+                        <div
+                            ref={popoverRef}
+                            className="bg-white shadow-2xl rounded-xl animate-in fade-in zoom-in-95 duration-200"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Calendar
+                                selectedDate={displayValue}
+                                onSelect={handleSelect}
+                                min={min}
+                                max={max}
+                            />
+                        </div>
                     </div>,
                     document.body
                 )}

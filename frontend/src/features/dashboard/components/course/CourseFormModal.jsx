@@ -19,6 +19,22 @@ const CourseFormModal = ({
     const selectedOrg = (organizations || []).find(o => o._id === formData.organizationId);
     const orgCode = selectedOrg ? `${selectedOrg.code}-` : '';
 
+    const onSubmit = (e) => {
+        e.preventDefault();
+        const newErrors = {};
+        
+        if (!formData.organizationId) {
+            newErrors.organizationId = t('org_not_selected', 'Organization is not selected');
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(prev => ({ ...prev, ...newErrors }));
+            return;
+        }
+        
+        handleSubmit(e);
+    };
+
     return (
         <Modal
             isOpen={isModalOpen}
@@ -26,7 +42,7 @@ const CourseFormModal = ({
             title={isEditMode ? t('edit_course') : t('add_course')}
             subtitle={isEditMode ? t('edit_course_desc') : t('add_course_desc')}
             asForm={true}
-            onSubmit={handleSubmit}
+            onSubmit={onSubmit}
             maxWidth="max-w-xl"
             bottomSheetOnMobile={true}
             footer={
@@ -61,12 +77,16 @@ const CourseFormModal = ({
                                 <Dropdown
                                     options={(organizations || []).map(org => ({ value: org._id, label: org.name }))}
                                     value={formData.organizationId || ''}
-                                    onChange={(val) => handleInputChange({ target: { name: 'organizationId', value: val } })}
+                                    onChange={(val) => {
+                                        setErrors(prev => ({ ...prev, organizationId: undefined }));
+                                        handleInputChange({ target: { name: 'organizationId', value: val } });
+                                    }}
                                     placeholder="Select Organization"
                                     minWidth="w-full"
-                                    triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                    triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.organizationId ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs text-[#777777] focus:border-[#0A437A]`}
                                 />
                             </div>
+                            {errors.organizationId && <p className="text-red-500 text-[10px] mt-1">{errors.organizationId}</p>}
                         </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('course_name')} <span className="text-red-500">*</span></label>

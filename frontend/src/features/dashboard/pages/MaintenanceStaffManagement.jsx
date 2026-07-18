@@ -541,7 +541,25 @@ export default function MaintenanceStaffManagement() {
                 </div>
             </div>
 
-
+            {/* MOBILE KPI CARDS */}
+            <div className="md:hidden flex items-center justify-between px-3 py-4 mb-3 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-[#0A437A]">{totalStaff < 10 ? `0${totalStaff}` : totalStaff}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center">Total Staff</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-blue-500">{totalAssignedTasks < 10 ? `0${totalAssignedTasks}` : totalAssignedTasks}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center">Assigned</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-green-600">{totalResolvedTasks < 10 ? `0${totalResolvedTasks}` : totalResolvedTasks}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center">Resolved</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                    <span className="text-xl font-bold text-orange-500">{totalPendingTasks < 10 ? `0${totalPendingTasks}` : totalPendingTasks}</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-1 capitalize text-center">Pending</span>
+                </div>
+            </div>
 
             {/* DATA TABLE LAYOUT */}
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "@/features/dashboard/components/Navbar";
 import Sidebar from "@/features/dashboard/components/Sidebar";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { ScanLine, Loader2 } from "lucide-react";
@@ -12,7 +12,13 @@ const DashboardLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { user } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isCreatingAttendance, setIsCreatingAttendance] = useState(false);
+
+    // Automatically close sidebar when route changes on mobile
+    React.useEffect(() => {
+        setIsSidebarOpen(false);
+    }, [location.pathname]);
 
     const handleFABClick = async () => {
         try {
@@ -39,8 +45,14 @@ const DashboardLayout = () => {
 
     return (
         <div className="h-screen bg-[#F8FAFC]">
-            <div className="h-[82px]">
+            <div className="h-[82px] relative z-50">
                 <Navbar onMenuClick={() => setIsSidebarOpen(prev => !prev)} />
+                {isSidebarOpen && (
+                    <div 
+                        className="fixed top-0 left-0 right-0 h-[82px] z-[60] lg:hidden bg-transparent" 
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
             </div>
             <div className="h-[calc(100vh-82px)] flex relative">
                 <div className="hidden lg:block w-[250px] shrink-0"></div>

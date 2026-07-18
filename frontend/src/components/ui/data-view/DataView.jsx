@@ -169,6 +169,7 @@ export default function DataView({
     selectedIds = [],
     onSelectAll,
     onSelectRow,
+    isSelectableFn,
 
     // Pagination (Desktop)
     page,
@@ -255,6 +256,7 @@ export default function DataView({
                             onSelectAll={onSelectAll}
                             onSelectRow={onSelectRow}
                             canSelect={canSelect}
+                            isSelectableFn={isSelectableFn}
                             loading={loading}
                         />
 
@@ -266,6 +268,7 @@ export default function DataView({
                                 onRowClick={onRowClick}
                                 selectedIds={selectedIds}
                                 canSelect={canSelect}
+                                isSelectableFn={isSelectableFn}
                                 onSelectAll={onSelectAll}
                                 onSelectRow={onSelectRow}
                                 page={resolvedPage}

@@ -13,6 +13,7 @@ import ExportFilterModal from "@/components/ui/ExportFilterModal";
 import PasswordRequestsHeader from "../components/PasswordRequestsHeader";
 import PasswordRequestsFilterModal from "../components/PasswordRequestsFilterModal";
 import { useClickOutside } from "@/hooks/useClickOutside";
+import Modal from "@/components/ui/Modal";
 
 const PasswordRequests = () => {
     const [requests, setRequests] = useState([]);
@@ -32,6 +33,7 @@ const PasswordRequests = () => {
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, totalDocs: 0 });
 
     const [selectedRequests, setSelectedRequests] = useState([]);
+    const [selectedRequestDetail, setSelectedRequestDetail] = useState(null);
 
     const handleSelectAll = (mobileIds) => {
         let pendingIds = requests.filter(req => req.status === 'pending').map(req => req._id);
@@ -325,6 +327,13 @@ const PasswordRequests = () => {
                                 >
                                     <Download size={16} /> Export
                                 </button>
+                                <button
+                                    onClick={() => setIsFilterModalOpen(true)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
+                                    title="Filter"
+                                >
+                                    <SlidersHorizontal className="w-5 h-5" />
+                                </button>
                                 <div className="relative">
                                     <button
                                         onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
@@ -351,17 +360,17 @@ const PasswordRequests = () => {
                                         </div>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => setIsFilterModalOpen(true)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
-                                    title="Filter"
-                                >
-                                    <SlidersHorizontal className="w-5 h-5" />
-                                </button>
                             </div>
 
                             {/* Desktop Layout */}
                             <div className="hidden md:flex items-center gap-2 h-full">
+                                <button
+                                    onClick={() => setIsFilterModalOpen(true)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
+                                    title="Filter"
+                                >
+                                    <SlidersHorizontal className="w-5 h-5" />
+                                </button>
                                 <div className="relative">
                                     <button
                                         onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
@@ -389,13 +398,6 @@ const PasswordRequests = () => {
                                     )}
                                 </div>
                                 <button
-                                    onClick={() => setIsFilterModalOpen(true)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
-                                    title="Filter"
-                                >
-                                    <SlidersHorizontal className="w-5 h-5" />
-                                </button>
-                                <button
                                     onClick={() => setIsExportConfirmOpen(true)}
                                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
                                 >
@@ -405,13 +407,12 @@ const PasswordRequests = () => {
                         </>
                     }
                     emptyText="No pending password requests found."
-                    selection={{
-                        selectedIds: selectedRequests,
-                        onSelectAll: handleSelectAll,
-                        onSelectRow: handleSelectOne,
-                        getItemId: (o) => o._id,
-                        isSelectable: (o) => o.status === 'pending'
-                    }}
+                    selectedIds={selectedRequests}
+                    onSelectAll={handleSelectAll}
+                    onSelectRow={handleSelectOne}
+                    onRowClick={(o) => setSelectedRequestDetail(o)}
+                    isSelectableFn={(o) => o.status === 'pending'}
+                    canSelect={true}
                     page={pagination.page}
                     setPage={(p) => fetchRequests(p)}
                     limit={limit}
@@ -491,6 +492,57 @@ const PasswordRequests = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {selectedRequestDetail && (
+                <Modal
+                    isOpen={true}
+                    onClose={() => setSelectedRequestDetail(null)}
+                    title="Password Request Details"
+                    subtitle={`Request from ${selectedRequestDetail.user?.name || 'N/A'}`}
+                    maxWidth="max-w-md"
+                >
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                            <span className="text-xs text-gray-500 font-medium">User Name</span>
+                            <span className="text-sm text-gray-900">{selectedRequestDetail.user?.name || 'N/A'}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                            <span className="text-xs text-gray-500 font-medium">Email Address</span>
+                            <span className="text-sm text-gray-900">{selectedRequestDetail.user?.email || 'N/A'}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                            <span className="text-xs text-gray-500 font-medium">Role</span>
+                            <span className="text-sm text-gray-900 capitalize">{selectedRequestDetail.userRole || selectedRequestDetail.user?.role || 'N/A'}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                            <span className="text-xs text-gray-500 font-medium">Status</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize w-max border ${
+                                selectedRequestDetail.status === 'approved' ? 'bg-success-50 text-success border-success' :
+                                selectedRequestDetail.status === 'rejected' ? 'bg-danger-50 text-danger border-danger' :
+                                'bg-yellow-50 text-yellow-600 border-yellow-400'
+                            }`}>
+                                {selectedRequestDetail.status}
+                            </span>
+                        </div>
+                        <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                            <span className="text-xs text-gray-500 font-medium">Requested At</span>
+                            <span className="text-sm text-gray-900">{new Date(selectedRequestDetail.createdAt).toLocaleString()}</span>
+                        </div>
+                        {selectedRequestDetail.resolvedAt && (
+                            <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                                <span className="text-xs text-gray-500 font-medium">Resolved At</span>
+                                <span className="text-sm text-gray-900">{new Date(selectedRequestDetail.resolvedAt).toLocaleString()}</span>
+                            </div>
+                        )}
+                        {selectedRequestDetail.processedBy && (
+                            <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
+                                <span className="text-xs text-gray-500 font-medium">Processed By</span>
+                                <span className="text-sm text-gray-900">{selectedRequestDetail.processedBy?.name || selectedRequestDetail.processedBy?.email || 'N/A'}</span>
+                            </div>
+                        )}
+                    </div>
+                </Modal>
             )}
             </div>
         </div>

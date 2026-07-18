@@ -130,7 +130,8 @@ export default function StudentComplaintsTable({
                 label: o.status || 'Pending',
                 dotClass: dotColor,
                 bgClass: bgColor,
-                textClass: textColor
+                textClass: textColor,
+                className: 'w-[105px] justify-center'
             };
         },
         fields: [
