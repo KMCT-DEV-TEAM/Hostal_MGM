@@ -4,7 +4,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 import leaveService from '@/services/leave.service';
 import LeaveDetailsMobileView from '../views/LeaveDetailsMobileView';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
-import { showErrorToast } from '@/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import LeaveActionModal from '../components/modals/LeaveActionModal';
 
 export default function LeaveDetails() {
     const { id } = useParams();
@@ -13,24 +14,57 @@ export default function LeaveDetails() {
 
     const [request, setRequest] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [actionModalConfig, setActionModalConfig] = useState({ isOpen: false, actionType: '' });
+    const [isActionSubmitting, setIsActionSubmitting] = useState(false);
+
+    const fetchLeaveDetails = async () => {
+        if (!id) return;
+        setIsLoading(true);
+        try {
+            const res = await leaveService.getLeaveDetails(user?.role, id);
+            setRequest(res.data || res);
+        } catch (err) {
+            console.error("Failed to fetch leave details:", err);
+            showErrorToast("Failed to load details");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchLeaveDetails = async () => {
-            if (!id) return;
-            setIsLoading(true);
-            try {
-                const res = await leaveService.getLeaveDetails(user?.role, id);
-                setRequest(res.data || res);
-            } catch (err) {
-                console.error("Failed to fetch leave details:", err);
-                showErrorToast("Failed to load details");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchLeaveDetails();
     }, [id, user?.role]);
+
+    const handleActionClick = (actionType) => {
+        setActionModalConfig({ isOpen: true, actionType });
+    };
+
+    const handleConfirmAction = async (remarks) => {
+        if (!request) return;
+
+        try {
+            setIsActionSubmitting(true);
+            const { actionType } = actionModalConfig;
+            const payload = {
+                remarks: remarks,
+                revision: request.revision ?? request.__v ?? 0
+            };
+
+            if (actionType === 'approved') {
+                await leaveService.approveLeaveByParent(request._id, payload);
+            } else if (actionType === 'rejected') {
+                await leaveService.rejectLeaveByParent(request._id, payload);
+            }
+
+            showSuccessToast(`Pass ${actionType} successfully`);
+            setActionModalConfig({ isOpen: false, actionType: '' });
+            fetchLeaveDetails(); // Refresh details to show new status
+        } catch (err) {
+            showErrorToast(err.message || `Failed to ${actionModalConfig.actionType} pass`);
+        } finally {
+            setIsActionSubmitting(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -49,5 +83,22 @@ export default function LeaveDetails() {
         );
     }
 
-    return <LeaveDetailsMobileView request={request} onBack={() => navigate(-1)} />;
+    return (
+        <>
+            <LeaveDetailsMobileView 
+                request={request} 
+                onBack={() => navigate(-1)} 
+                userRole={user?.role}
+                onActionClick={handleActionClick}
+            />
+            
+            <LeaveActionModal
+                isOpen={actionModalConfig.isOpen}
+                onClose={() => setActionModalConfig({ isOpen: false, actionType: '' })}
+                actionType={actionModalConfig.actionType}
+                onSubmit={handleConfirmAction}
+                isSubmitting={isActionSubmitting}
+            />
+        </>
+    );
 }
