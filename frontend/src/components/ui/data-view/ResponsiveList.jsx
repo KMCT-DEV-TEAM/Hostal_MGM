@@ -96,7 +96,7 @@ export default function ResponsiveList({
                         const isSelected = selectedIds.includes(item._id || item.id || index);
 
                         // Evaluate config accessors
-                        const avatar = cardConfig.avatar ? cardConfig.avatar(item) : null;
+                        const avatar = cardConfig.avatar ? cardConfig.avatar(item) : (cardConfig.customIcon ? cardConfig.customIcon(item) : null);
                         const title = cardConfig.title ? cardConfig.title(item) : null;
                         const fields = cardConfig.fields ? cardConfig.fields.map(f => {
                             const Icon = f.icon;
@@ -108,6 +108,7 @@ export default function ResponsiveList({
                         }).filter(f => f.value) : [];
                         const status = cardConfig.status ? cardConfig.status(item) : null;
                         const stats = cardConfig.stats ? cardConfig.stats(item) : [];
+                        const actionSlot = cardConfig.actionSlot ? cardConfig.actionSlot(item) : (cardConfig.actions ? cardConfig.actions(item) : null);
 
                         const card = (
                             <div
@@ -120,6 +121,7 @@ export default function ResponsiveList({
                                     fields={fields}
                                     stats={stats}
                                     status={status}
+                                    footer={actionSlot}
                                     onEdit={cardConfig.onEdit ? () => cardConfig.onEdit(item) : undefined}
                                     onClick={onRowClick ? () => onRowClick(item) : undefined}
                                     selected={isSelected}

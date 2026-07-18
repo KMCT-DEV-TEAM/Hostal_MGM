@@ -37,7 +37,7 @@ export function DataToolbar({
                 )}
                 {startSlot}
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end empty:hidden has-[.hidden.md\:flex:only-child]:hidden md:has-[.hidden.md\:flex:only-child]:flex has-[.hidden.md\:block:only-child]:hidden md:has-[.hidden.md\:block:only-child]:block">
                 {endSlot}
                 {addButton && (
                     <div className="hidden md:block">
@@ -73,74 +73,74 @@ export function DesktopPagination({
                             <span className="hidden sm:inline">Rows per page:</span>
                             <Dropdown
                                 options={[10, 25, 50, 100]}
-                            value={limit}
-                            onChange={(val) => {
-                                setLimit(val);
-                                setPage(1);
-                            }}
-                            minWidth="w-[70px]"
-                            triggerClassName="px-2 py-1 text-xs bg-white 0 focus:border-secondary shadow-sm"
-                            placement="top"
-                        />
+                                value={limit}
+                                onChange={(val) => {
+                                    setLimit(val);
+                                    setPage(1);
+                                }}
+                                minWidth="w-[70px]"
+                                triggerClassName="px-2 py-1 text-xs bg-white 0 focus:border-secondary shadow-sm"
+                                placement="top"
+                            />
+                        </div>
+                    )}
+                    <div>
+                        <span className="hidden sm:inline">Showing </span>
+                        {totalItems === 0 ? 0 : (page - 1) * limit + 1}
+                        <span className="hidden sm:inline"> to </span>
+                        <span className="sm:hidden">-</span>
+                        {Math.min(page * limit, totalItems)} of {totalItems}
+                        <span className="hidden sm:inline"> entries</span>
                     </div>
-                )}
-                <div>
-                    <span className="hidden sm:inline">Showing </span>
-                    {totalItems === 0 ? 0 : (page - 1) * limit + 1}
-                    <span className="hidden sm:inline"> to </span>
-                    <span className="sm:hidden">-</span>
-                    {Math.min(page * limit, totalItems)} of {totalItems}
-                    <span className="hidden sm:inline"> entries</span>
+                </div>
+
+                <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(Math.max(page - 1, 1))}
+                        className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {(() => {
+                        let startPage = Math.max(1, page - 1);
+                        let endPage = Math.min(totalPages, page + 1);
+
+                        if (endPage - startPage < 2) {
+                            if (startPage === 1) {
+                                endPage = Math.min(totalPages, 3);
+                            } else if (endPage === totalPages) {
+                                startPage = Math.max(1, totalPages - 2);
+                            }
+                        }
+
+                        const visiblePages = [];
+                        for (let i = startPage; i <= endPage; i++) {
+                            visiblePages.push(i);
+                        }
+
+                        return visiblePages.map((pageNum) => (
+                            <button
+                                key={pageNum}
+                                onClick={() => setPage(pageNum)}
+                                className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
+                                    ? 'bg-[#0A437A] text-white shadow-sm font-bold'
+                                    : 'border border-transparent text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {pageNum}
+                            </button>
+                        ));
+                    })()}
+                    <button
+                        disabled={page >= totalPages}
+                        onClick={() => setPage(Math.min(page + 1, totalPages))}
+                        className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
-
-            <div className="flex items-center gap-1 flex-wrap">
-                <button
-                    disabled={page === 1}
-                    onClick={() => setPage(Math.max(page - 1, 1))}
-                    className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                </button>
-                {(() => {
-                    let startPage = Math.max(1, page - 1);
-                    let endPage = Math.min(totalPages, page + 1);
-
-                    if (endPage - startPage < 2) {
-                        if (startPage === 1) {
-                            endPage = Math.min(totalPages, 3);
-                        } else if (endPage === totalPages) {
-                            startPage = Math.max(1, totalPages - 2);
-                        }
-                    }
-
-                    const visiblePages = [];
-                    for (let i = startPage; i <= endPage; i++) {
-                        visiblePages.push(i);
-                    }
-
-                    return visiblePages.map((pageNum) => (
-                        <button
-                            key={pageNum}
-                            onClick={() => setPage(pageNum)}
-                            className={`w-7 h-7 rounded flex items-center justify-center transition-all cursor-pointer ${page === pageNum
-                                ? 'bg-[#0A437A] text-white shadow-sm font-bold'
-                                : 'border border-transparent text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            {pageNum}
-                        </button>
-                    ));
-                })()}
-                <button
-                    disabled={page >= totalPages}
-                    onClick={() => setPage(Math.min(page + 1, totalPages))}
-                    className="p-1.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
-                >
-                    <ChevronRight className="w-4 h-4" />
-                </button>
-            </div>
-        </div>
         </div>
     );
 }
@@ -178,8 +178,12 @@ export default function DataView({
     totalItems,
     totalPages,
 
+    // Pagination (Object fallback)
+    pagination,
+
     // Pagination (Mobile Infinite Scroll)
     fetchMore, // Optional: if provided, called instead of setPage(page + 1)
+    mobilePagination,
 
     // Action Slots
     toolbarStartSlot,
@@ -194,18 +198,26 @@ export default function DataView({
     className = '',
     pageScrollMode = false
 }) {
+    const resolvedPage = page !== undefined ? page : (pagination?.currentPage ?? pagination?.page);
+    const resolvedSetPage = setPage !== undefined ? setPage : (pagination?.onPageChange ?? pagination?.setPage);
+    const resolvedLimit = limit !== undefined ? limit : pagination?.limit;
+    const resolvedSetLimit = setLimit !== undefined ? setLimit : (pagination?.onLimitChange ?? pagination?.setLimit);
+    const resolvedTotalItems = totalItems !== undefined ? totalItems : pagination?.totalItems;
+    const resolvedTotalPages = totalPages !== undefined ? totalPages : pagination?.totalPages;
+    const resolvedFetchMore = fetchMore || mobilePagination?.onLoadMore;
+
     const handleLoadMore = useCallback(() => {
         if (loading) return;
-        if (fetchMore) {
-            fetchMore();
-        } else if (setPage && page < totalPages) {
-            setPage(page + 1);
+        if (resolvedFetchMore) {
+            resolvedFetchMore();
+        } else if (resolvedSetPage && resolvedPage < resolvedTotalPages) {
+            resolvedSetPage(resolvedPage + 1);
         }
-    }, [loading, fetchMore, setPage, page, totalPages]);
+    }, [loading, resolvedFetchMore, resolvedSetPage, resolvedPage, resolvedTotalPages]);
 
 
-    const hasMore = page < totalPages;
-    const isLoadingMore = loading && page > 1;
+    const hasMore = resolvedPage < resolvedTotalPages;
+    const isLoadingMore = loading && resolvedPage > 1;
 
     return (
         <div className={`flex flex-col flex-1 ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
@@ -256,8 +268,8 @@ export default function DataView({
                                 canSelect={canSelect}
                                 onSelectAll={onSelectAll}
                                 onSelectRow={onSelectRow}
-                                page={page}
-                                totalPages={totalPages}
+                                page={resolvedPage}
+                                totalPages={resolvedTotalPages}
                                 loading={loading}
                                 onLoadMore={handleLoadMore}
                             />
@@ -268,12 +280,12 @@ export default function DataView({
 
             <DesktopPagination
                 pageScrollMode={pageScrollMode}
-                page={page}
-                setPage={setPage}
-                limit={limit}
-                setLimit={setLimit}
-                totalItems={totalItems}
-                totalPages={totalPages}
+                page={resolvedPage}
+                setPage={resolvedSetPage}
+                limit={resolvedLimit}
+                setLimit={resolvedSetLimit}
+                totalItems={resolvedTotalItems}
+                totalPages={resolvedTotalPages}
             />
 
         </div>

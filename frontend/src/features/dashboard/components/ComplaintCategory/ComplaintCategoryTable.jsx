@@ -6,7 +6,8 @@ import {
     Plus,
     Download,
     MoreVertical,
-    FileText
+    FileText,
+    Clock
 } from "lucide-react";
 import Dropdown from '@/components/ui/Dropdown';
 import DataView from '@/components/ui/data-view/DataView';
@@ -97,41 +98,60 @@ const ComplaintCategoryTable = ({
     const cardConfig = {
         avatar: (o) => o.name?.substring(0, 2)?.toUpperCase() || "NA",
         title: (o) => o.name,
-        subtitle: (o) => o.description,
+        subtitle: (o) => "",
+        status: (o) => ({
+            text: Boolean(o.isActive) ? t("active") : t("inactive"),
+            color: Boolean(o.isActive) ? "green" : "red"
+        }),
         fields: [
-            { icon: FileText, value: (o) => o.isActive ? "Active" : "Inactive" }
-        ]
+            { label: "Description", icon: AlignLeft, value: (o) => o.description || 'No description' },
+            { label: "Created At", icon: Clock, value: (o) => o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'N/A' }
+        ],
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
     };
 
-    const toolbarStartSlot = (
-        <Dropdown
-            options={[
-                { label: 'All Status', value: 'All' },
-                { label: 'Active', value: 'Active' },
-                { label: 'Inactive', value: 'Inactive' }
-            ]}
-            value={statusFilter}
-            onChange={onStatusFilterChange}
-            placeholder="Select Status"
-            minWidth="w-32"
-            triggerClassName="w-full sm:w-auto px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm cursor-pointer h-full"
-        />
+    const addNewButton = onAddClick && (
+        <button
+            onClick={onAddClick}
+            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+        >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add New</span>
+        </button>
     );
+
+    const toolbarStartSlot = null;
 
     const toolbarEndSlot = (
         <>
-            <button
-                onClick={onExport}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
-            >
-                <Download className="w-4 h-4" /> Export
-            </button>
-            <div className="relative h-full" ref={bulkMenuRef}>
+            <Dropdown
+                className="flex-1 sm:flex-none"
+                options={[
+                    { label: 'All Status', value: 'All' },
+                    { label: 'Active', value: 'Active' },
+                    { label: 'Inactive', value: 'Inactive' }
+                ]}
+                value={statusFilter}
+                onChange={onStatusFilterChange}
+                placeholder="All Status"
+                minWidth="w-32"
+                triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+            />
+            {onExport && (
+                <button
+                    onClick={onExport}
+                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                >
+                    <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+                    <span className="hidden lg:inline">Export</span>
+                </button>
+            )}
+            <div className="relative" ref={bulkMenuRef}>
                 <button
                     onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
                 >
-                    <MoreVertical className="w-4 h-4" />
+                    <MoreVertical className="w-4 h-4 text-gray-500" />
                 </button>
                 {isBulkMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
@@ -152,17 +172,12 @@ const ComplaintCategoryTable = ({
                     </div>
                 )}
             </div>
-            <button
-                onClick={onAddClick}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shadow-sm cursor-pointer h-full whitespace-nowrap"
-            >
-                <Plus className="w-4 h-4" /> Add New
-            </button>
         </>
     );
 
     return (
         <DataView
+            addButton={addNewButton}
             pageScrollMode={true}
             data={complaintCategories}
             columns={columns}

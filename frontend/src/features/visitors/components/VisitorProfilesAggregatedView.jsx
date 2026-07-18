@@ -1,7 +1,7 @@
 import React from 'react';
 import DataView from '@/components/ui/data-view/DataView';
 
-const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick, limit, setLimit }) => {
+const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearch, onRowClick, limit, setLimit, page, setPage }) => {
 
     const columns = [
         {
@@ -40,8 +40,8 @@ const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearc
             loading={loading}
             emptyText="No visitors found"
             onRowClick={(item) => onRowClick && onRowClick({ id: item.hostelId, name: item.hostelName })}
-            page={1}
-            setPage={() => { }}
+            page={page}
+            setPage={setPage}
             limit={limit}
             setLimit={setLimit}
             totalItems={visitors?.length || 0}

@@ -232,19 +232,39 @@ const LogsViewer = ({ entityType }) => {
                 }}
                 toolbarEndSlot={
                     <>
-                        <button
-                            onClick={() => setIsFilterModalOpen(true)}
-                            className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
-                            title="Filter"
-                        >
-                            <SlidersHorizontal className="w-5 h-5" />
-                        </button>
-                        <button
-                            onClick={() => setIsExportFilterModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
-                        >
-                            <Download size={16} /> Export
-                        </button>
+                        {/* Mobile Layout: Export button on left side taking available/empty width (flex-1), filter beside */}
+                        <div className="flex md:hidden items-center gap-2 w-full">
+                            <button
+                                onClick={() => setIsExportFilterModalOpen(true)}
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full font-medium"
+                            >
+                                <Download size={16} /> Export
+                            </button>
+                            <button
+                                onClick={() => setIsFilterModalOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer shrink-0 h-full"
+                                title="Filter"
+                            >
+                                <SlidersHorizontal className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Desktop Layout: Standard right-aligned buttons */}
+                        <div className="hidden md:flex items-center gap-2">
+                            <button
+                                onClick={() => setIsFilterModalOpen(true)}
+                                className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                                title="Filter"
+                            >
+                                <SlidersHorizontal className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setIsExportFilterModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full font-medium"
+                            >
+                                <Download size={16} /> Export
+                            </button>
+                        </div>
                     </>
                 }
                 emptyText="No logs found matching your criteria."

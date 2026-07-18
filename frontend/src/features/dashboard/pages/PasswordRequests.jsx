@@ -272,24 +272,25 @@ const PasswordRequests = () => {
             };
         },
         fields: [
-            { label: "Role", value: (o) => o.userRole || o.user?.role || 'User' },
+            { label: "Role", icon: ShieldCheck, value: (o) => o.userRole || o.user?.role || 'User' },
+            { label: "Requested At", icon: Clock, value: (o) => o.createdAt ? `${new Date(o.createdAt).toLocaleDateString()} at ${new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'N/A' }
         ],
         actionSlot: (o) => (
             o.status === 'pending' && (
-                <div className="flex items-center gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
+                <div className="grid grid-cols-2 w-full gap-3 mt-4 pt-4 border-t border-gray-50" onClick={e => e.stopPropagation()}>
                     <button
-                        className="px-2 py-1 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
+                        className="w-full py-2.5 bg-[#0A437A] text-white rounded-lg text-sm font-semibold hover:bg-primary-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                         onClick={(e) => { e.stopPropagation(); openConfirmModal('approve', o._id); }}
                     >
-                        <Check className="w-3 h-3 mr-0.5" />
-                        Approve
+                        <Check className="w-4 h-4 shrink-0" />
+                        <span className="truncate">Approve</span>
                     </button>
                     <button
-                        className="px-2 py-1 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded text-[10px] font-medium transition-colors flex items-center cursor-pointer"
+                        className="w-full py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                         onClick={(e) => { e.stopPropagation(); openConfirmModal('reject', o._id); }}
                     >
-                        <X className="w-3 h-3 mr-0.5" />
-                        Reject
+                        <X className="w-4 h-4 shrink-0" />
+                        <span className="truncate">Reject</span>
                     </button>
                 </div>
             )
@@ -316,45 +317,91 @@ const PasswordRequests = () => {
                     }}
                     toolbarEndSlot={
                         <>
-                            <div className="relative">
+                            {/* Mobile Layout: Export button on left side with increased width (flex-1), 3 dots and filter beside */}
+                            <div className="flex md:hidden items-center gap-2 w-full">
                                 <button
-                                    onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
-                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                                    onClick={() => setIsExportConfirmOpen(true)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full font-medium"
                                 >
-                                    <MoreVertical className="w-5 h-5" />
+                                    <Download size={16} /> Export
                                 </button>
-                                {isDesktopMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                                        <button
-                                            onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkApprove'); }}
-                                            disabled={selectedRequests.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                                        >
-                                            <Check className="w-4 h-4" /> Approve {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
-                                        </button>
-                                        <button
-                                            onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkReject'); }}
-                                            disabled={selectedRequests.length === 0}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                                        >
-                                            <X className="w-4 h-4" /> Reject {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
-                                        </button>
-                                    </div>
-                                )}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                                        className="flex items-center justify-center p-2 bg-white border border-gray-100 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                                    >
+                                        <MoreVertical className="w-5 h-5" />
+                                    </button>
+                                    {isDesktopMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                                            <button
+                                                onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkApprove'); }}
+                                                disabled={selectedRequests.length === 0}
+                                                className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                            >
+                                                <Check className="w-4 h-4" /> Approve {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
+                                            </button>
+                                            <button
+                                                onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkReject'); }}
+                                                disabled={selectedRequests.length === 0}
+                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                            >
+                                                <X className="w-4 h-4" /> Reject {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setIsFilterModalOpen(true)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
+                                    title="Filter"
+                                >
+                                    <SlidersHorizontal className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setIsFilterModalOpen(true)}
-                                className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
-                                title="Filter"
-                            >
-                                <SlidersHorizontal className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => setIsExportConfirmOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
-                            >
-                                <Download size={16} /> Export
-                            </button>
+
+                            {/* Desktop Layout */}
+                            <div className="hidden md:flex items-center gap-2 h-full">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                                        className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                                    >
+                                        <MoreVertical className="w-5 h-5" />
+                                    </button>
+                                    {isDesktopMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                                            <button
+                                                onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkApprove'); }}
+                                                disabled={selectedRequests.length === 0}
+                                                className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                            >
+                                                <Check className="w-4 h-4" /> Approve {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
+                                            </button>
+                                            <button
+                                                onClick={() => { setIsDesktopMenuOpen(false); openConfirmModal('bulkReject'); }}
+                                                disabled={selectedRequests.length === 0}
+                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                            >
+                                                <X className="w-4 h-4" /> Reject {selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setIsFilterModalOpen(true)}
+                                    className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full w-[38px]"
+                                    title="Filter"
+                                >
+                                    <SlidersHorizontal className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => setIsExportConfirmOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 lg:border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                                >
+                                    <Download size={16} /> Export
+                                </button>
+                            </div>
                         </>
                     }
                     emptyText="No pending password requests found."

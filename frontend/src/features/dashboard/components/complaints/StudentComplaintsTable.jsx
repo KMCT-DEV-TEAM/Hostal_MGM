@@ -20,6 +20,7 @@ export default function StudentComplaintsTable({
     onViewDetail,
     searchValue,
     onSearchChange,
+    addButton,
     toolbarStartSlot,
     toolbarEndSlot,
     page,
@@ -81,14 +82,13 @@ export default function StudentComplaintsTable({
             header: "Status",
             align: "center",
             renderCell: (o) => (
-                <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${
-                    o.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
-                    o.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
-                    o.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
-                    o.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
-                    o.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
-                    'bg-blue-50 text-blue-600 border-blue-200'
-                }`}>
+                <span className={`inline-flex items-center justify-center w-[105px] px-3 py-1.5 text-xs font-medium rounded-md border ${o.status === 'Resolved' ? 'bg-success/10 text-success border-success/20' :
+                        o.status === 'Awaiting' ? 'bg-warning/10 text-warning border-warning/20' :
+                            o.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                                o.status === 'Incomplete' ? 'bg-primary/10 text-primary border-primary/20' :
+                                    o.status === 'Rejected' ? 'bg-red-50 text-danger border-red-200' :
+                                        'bg-blue-50 text-blue-600 border-blue-200'
+                    }`}>
                     {o.status || 'Pending'}
                 </span>
             )
@@ -116,17 +116,32 @@ export default function StudentComplaintsTable({
     ];
 
     const cardConfig = {
-        title: (o) => o.subject,
-        subtitle: (o) => o.category,
+        avatar: (o) => o.subject?.substring(0, 2)?.toUpperCase() || "NA",
+        title: (o) => o.subject || "-",
+        subtitle: (o) => o.category || "-",
+        status: (o) => {
+            let dotColor = 'bg-blue-500', bgColor = 'bg-blue-50', textColor = 'text-blue-600';
+            if (o.status === 'Resolved') { dotColor = 'bg-green-500'; bgColor = 'bg-green-50'; textColor = 'text-green-600'; }
+            else if (o.status === 'Awaiting') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+            else if (o.status === 'Pending') { dotColor = 'bg-yellow-500'; bgColor = 'bg-yellow-50'; textColor = 'text-yellow-600'; }
+            else if (o.status === 'Incomplete') { dotColor = 'bg-purple-500'; bgColor = 'bg-purple-50'; textColor = 'text-purple-600'; }
+            else if (o.status === 'Rejected') { dotColor = 'bg-red-500'; bgColor = 'bg-red-50'; textColor = 'text-red-600'; }
+            return {
+                label: o.status || 'Pending',
+                dotClass: dotColor,
+                bgClass: bgColor,
+                textClass: textColor
+            };
+        },
         fields: [
-            { icon: Grid, value: (o) => o.roomNo || "N/A" },
-            { icon: Calendar, value: (o) => o.date },
-            { icon: FileText, value: (o) => o.status }
+            { label: "Room No", icon: Grid, value: (o) => o.roomNo || "N/A" },
+            { label: "Date", icon: Calendar, value: (o) => o.date || "-" }
         ]
     };
 
     return (
         <DataView
+            addButton={addButton}
             pageScrollMode={true}
             data={complaints}
             columns={columns}

@@ -74,10 +74,18 @@ export async function logout() {
 }
 
 /**
- * Fetches the currently authenticated user's profile info.
+ * Fetches the currently authenticated user's profile info (basic).
  */
 export async function getProfile() {
   const response = await authApi.getProfile();
+  return response.data;
+}
+
+/**
+ * Fetches the user's detailed profile including role-specific data.
+ */
+export async function getFullProfile() {
+  const response = await authApi.getFullProfile();
   return response.data;
 }
 
@@ -119,6 +127,7 @@ const authService = {
   requestEmailChange,
   verifyEmailChange,
   verifyPassword,
+  getFullProfile,
 };
 
 export default authService;
