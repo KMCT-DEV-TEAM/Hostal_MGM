@@ -121,6 +121,11 @@ export async function getLeavesByParent(params) {
   return response.data;
 }
 
+export async function getUnifiedPassesParent(params) {
+  const response = await leaveApi.getUnifiedPassesParent(params);
+  return response.data;
+}
+
 export async function approveLeaveByParent(id, payload) {
   const response = await leaveApi.approveLeaveByParent(id, payload);
   return response.data;
@@ -206,6 +211,7 @@ const leaveService = {
   getLeavesByAdmin,
   updateLeaveStatusByAdmin,
   getLeavesByParent,
+  getUnifiedPassesParent,
   approveLeaveByParent,
   rejectLeaveByParent,
   approveLeaveByAdmin,

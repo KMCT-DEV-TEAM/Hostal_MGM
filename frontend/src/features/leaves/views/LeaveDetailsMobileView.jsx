@@ -4,8 +4,9 @@ import { formatDateReadable, formatDateTimeReadable } from '@/utils/formatters';
 import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
 import TimelineStep from '@/components/ui/TimelineStep';
 import { CheckCircle2 } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
-export default function LeaveDetailsMobileView({ request, onBack }) {
+export default function LeaveDetailsMobileView({ request, onBack, userRole, onActionClick }) {
     useLayoutConfig({
         header: {
             variant: "page",
@@ -227,6 +228,25 @@ export default function LeaveDetailsMobileView({ request, onBack }) {
                 </div>
             </div>
 
+            {userRole === 'parent' && request.status === 'pending_parent' && (
+                <div className="flex gap-3 z-10 py-3">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="border border-primary text-primary font-semibold"
+                        onClick={() => onActionClick('rejected')}
+                    >
+                        Reject
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size='sm'
+                        onClick={() => onActionClick('approved')}
+                    >
+                        Approve
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

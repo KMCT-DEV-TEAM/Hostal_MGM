@@ -2,8 +2,10 @@ import React from 'react';
 import MobileListContainer from '@/components/MobileUi/MobileListContainer';
 import LeaveCard from '../components/cards/LeaveCard';
 import { useLocation } from 'react-router-dom';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
-export default function StudentLeavesMobileView({
+export default function LeavesMobileView({
     requests,
     loading,
     hasMore,
@@ -17,6 +19,17 @@ export default function StudentLeavesMobileView({
 }) {
     const location = useLocation();
     const isHistoryTab = location.pathname.includes('/history');
+    const { user } = useAuthStore();
+    const isParent = user?.role === 'parent';
+
+    useLayoutConfig({
+        header: isParent 
+            ? { variant: 'dashboard' } 
+            : { variant: 'page', title: 'Leaves', showBack: true },
+        footer: {
+            visible: isParent
+        }
+    });
 
     const tabs = [
         { label: "Requests", path: `/dashboard/leaves/requests` },

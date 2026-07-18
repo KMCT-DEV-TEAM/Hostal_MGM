@@ -15,7 +15,7 @@ const leaveApi = {
   getLeavesByAdmin: (params) => {
     const { hostelId, ...rest } = params;
     if (hostelId) {
-        return api.get(`/admin/passes/hostels/${hostelId}/passes`, { params: rest });
+      return api.get(`/admin/passes/hostels/${hostelId}/passes`, { params: rest });
     }
     return api.get("/admin/passes", { params: rest });
   },
@@ -35,6 +35,7 @@ const leaveApi = {
   cancelLeaveBySuperAdmin: (id, payload) => api.put(`/super-admin/passes/${id}/cancel`, payload),
 
   getLeavesByParent: (params) => api.get("/parent/passes", { params }),
+  getUnifiedPassesParent: (params) => api.get("/parent/passes/passes", { params }),
   getLeaveByIdParent: (id) => api.get(`/parent/passes/${id}`),
   approveLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/approve`, payload),
   rejectLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/reject`, payload),

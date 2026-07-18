@@ -1,9 +1,11 @@
 import React from 'react';
 import { Pencil, Calendar, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
 
 const VisitorCard = ({ data, onEdit, isHistory }) => {
+    const navigate = useNavigate();
     // Shared data extraction
     const visitorName = data?.visitorName || data?.visitor?.name || data?.name || 'Unknown';
     const relation = data?.relationship || data?.visitor?.relation || data?.relation || 'Visitor';
@@ -17,8 +19,21 @@ const VisitorCard = ({ data, onEdit, isHistory }) => {
     const timeValue = data?.checkInTime ? formatTime(data.checkInTime) : '--';
     const purpose = data?.purpose || data?.reason || 'No values'; // Default fallback
 
+    const handleCardClick = () => {
+        const id = isHistory ? (data?.visitId || data?._id) : (data?._id || data?.id || data?.visitorId);
+        console.log("Card clicked! ID:", id, "Data:", data);
+        if (id) {
+            navigate(`/dashboard/visitors/${id}`, { state: { isHistory } });
+        } else {
+            console.error("NO ID FOUND FOR NAVIGATION");
+        }
+    };
+
     return (
-        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col mb-3 active:scale-[0.99] transition-transform w-full">
+        <div 
+            onClick={handleCardClick}
+            className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col mb-3 active:scale-[0.99] transition-transform w-full cursor-pointer"
+        >
             {/* Top Row: Avatar, Name, Relationship, and Status/Edit (Right Aligned) */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -39,7 +54,10 @@ const VisitorCard = ({ data, onEdit, isHistory }) => {
                     {/* Edit Pencil icon (only for parents on requests tab) */}
                     {onEdit && !isHistory && (
                         <button
-                            onClick={() => onEdit(data)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(data);
+                            }}
                             className="p-1.5 text-primary hover:bg-blue-50 rounded-lg transition-colors shrink-0"
                         >
                             <Pencil className="w-4 h-4" />
