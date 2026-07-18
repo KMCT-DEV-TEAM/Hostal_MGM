@@ -17,7 +17,8 @@ import {
     Tags,
     Wrench,
     ClipboardList,
-    Armchair
+    Armchair,
+    Megaphone
 } from 'lucide-react';
 
 import { ROLES } from '@/constants/roles';
@@ -33,6 +34,15 @@ export const DASHBOARD_NAV = {
                     icon: LayoutGrid,
                     label: 'Dashboard',
                     path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements',
+                    subItems: [
+                        { label: 'Latest Announcement', path: '/dashboard/announcements/latest' },
+                        { label: 'Announcement History', path: '/dashboard/announcements/history' }
+                    ]
                 }
             ]
         },
@@ -211,6 +221,11 @@ export const DASHBOARD_NAV = {
                     icon: LayoutGrid,
                     label: 'Dashboard',
                     path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements'
                 }
             ]
         },
@@ -366,6 +381,11 @@ export const DASHBOARD_NAV = {
                     icon: LayoutGrid,
                     label: 'Dashboard',
                     path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements'
                 }
             ]
         },
@@ -467,6 +487,11 @@ export const DASHBOARD_NAV = {
                     icon: LayoutGrid,
                     label: 'Dashboard',
                     path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements'
                 }
             ]
         },
@@ -520,6 +545,11 @@ export const DASHBOARD_NAV = {
                     icon: LayoutGrid,
                     label: 'Dashboard',
                     path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements'
                 }
             ]
         },
