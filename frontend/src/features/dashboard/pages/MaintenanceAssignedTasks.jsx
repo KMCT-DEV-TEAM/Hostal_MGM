@@ -19,7 +19,6 @@ export default function MaintenanceAssignedTasks() {
     const [limit, setLimit] = useState(10);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showKPIs, setShowKPIs] = useState(false);
 
     const [resolveModalOpen, setResolveModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -246,10 +245,9 @@ export default function MaintenanceAssignedTasks() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <MaintenanceAssignedTasksHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
+                <MaintenanceAssignedTasksHeader />
 
             {/* Stat Cards Section */}
-            {showKPIs && (
             <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full shrink-0">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
@@ -291,7 +289,6 @@ export default function MaintenanceAssignedTasks() {
                     </div>
                 </div>
             </div>
-            )}
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col min-h-0">
                 <DataView

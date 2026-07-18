@@ -23,7 +23,6 @@ export default function StudentComplaints() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const [showKPIs, setShowKPIs] = useState(false);
     const [limit, setLimit] = useState(10);
 
     // Modal state

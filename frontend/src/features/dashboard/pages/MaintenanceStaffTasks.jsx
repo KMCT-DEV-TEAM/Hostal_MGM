@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, Download, ChevronLeft, ChevronRight, ArrowLeft, AlertTriangle, Clock, Loader2, CheckCircle, LayoutGrid, List } from 'lucide-react';
+import { Search, ChevronDown, Download, ChevronLeft, ChevronRight, ArrowLeft, AlertTriangle, Clock, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import ComplaintService from '@/services/complaint.service';
 import { showErrorToast } from '@/utils/toast';
@@ -19,7 +19,6 @@ export default function MaintenanceStaffTasks() {
     const [currentPage, setCurrentPage] = useState(1);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showKPIs, setShowKPIs] = useState(false);
 
     useEffect(() => {
         fetchTasks();
@@ -104,19 +103,9 @@ export default function MaintenanceStaffTasks() {
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{staffName}</h1>
                     <p className="text-xs text-gray-500 mt-0.5">Current maintenance tasks assigned to this staff.</p>
                 </div>
-                
-                <div className="flex items-center self-end sm:self-auto">
-                    <button
-                        onClick={() => setShowKPIs(!showKPIs)}
-                        className="flex items-center gap-2 p-2 text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-                    >
-                        {showKPIs ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                    </button>
-                </div>
             </div>
 
             {/* Stat Cards Section */}
-            {showKPIs && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full shrink-0">
                 <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-red-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
                     <div>
@@ -158,7 +147,6 @@ export default function MaintenanceStaffTasks() {
                     </div>
                 </div>
             </div>
-            )}
 
             <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:overflow-visible md:shadow-sm flex-1 flex flex-col min-h-0">
                 {/* Toolbar */}

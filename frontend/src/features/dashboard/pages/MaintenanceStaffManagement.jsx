@@ -74,7 +74,6 @@ export default function MaintenanceStaffManagement() {
     const [loading, setLoading] = useState(true);
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [organizations, setOrganizations] = useState([]);
-    const [showKPIs, setShowKPIs] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -497,52 +496,50 @@ export default function MaintenanceStaffManagement() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <MaintenanceStaffHeader showKPIs={showKPIs} setShowKPIs={setShowKPIs} />
+                <MaintenanceStaffHeader />
 
             {/* KPI CARDS SECTION */}
-            {showKPIs && (
-                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Staff</p>
-                            <h3 className="text-xl font-bold text-gray-900">{totalStaff}</h3>
-                        </div>
-                        <div className="p-1.5 bg-purple-50 rounded text-purple-400">
-                            <Users className="w-4 h-4" />
-                        </div>
+            <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-purple-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Staff</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalStaff}</h3>
                     </div>
-
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned Tasks</p>
-                            <h3 className="text-xl font-bold text-gray-900">{totalAssignedTasks}</h3>
-                        </div>
-                        <div className="p-1.5 bg-blue-50 rounded text-blue-400">
-                            <ClipboardList className="w-4 h-4" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved Tasks</p>
-                            <h3 className="text-xl font-bold text-gray-900">{totalResolvedTasks}</h3>
-                        </div>
-                        <div className="p-1.5 bg-green-50 rounded text-green-400">
-                            <CheckCircle className="w-4 h-4" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
-                        <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending Tasks</p>
-                            <h3 className="text-xl font-bold text-gray-900">{totalPendingTasks}</h3>
-                        </div>
-                        <div className="p-1.5 bg-orange-50 rounded text-orange-400">
-                            <Clock className="w-4 h-4" />
-                        </div>
+                    <div className="p-1.5 bg-purple-50 rounded text-purple-400">
+                        <Users className="w-4 h-4" />
                     </div>
                 </div>
-            )}
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-blue-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned Tasks</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalAssignedTasks}</h3>
+                    </div>
+                    <div className="p-1.5 bg-blue-50 rounded text-blue-400">
+                        <ClipboardList className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-green-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved Tasks</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalResolvedTasks}</h3>
+                    </div>
+                    <div className="p-1.5 bg-green-50 rounded text-green-400">
+                        <CheckCircle className="w-4 h-4" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-orange-300 shadow-sm border-x border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pending Tasks</p>
+                        <h3 className="text-xl font-bold text-gray-900">{totalPendingTasks}</h3>
+                    </div>
+                    <div className="p-1.5 bg-orange-50 rounded text-orange-400">
+                        <Clock className="w-4 h-4" />
+                    </div>
+                </div>
+            </div>
 
 
 
