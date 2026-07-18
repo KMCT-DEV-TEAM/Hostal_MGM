@@ -69,9 +69,9 @@ const VerifyOtp = () => {
             rightSideClassName="w-full lg:w-1/2 flex flex-col relative bg-background lg:bg-transparent overflow-hidden"
         >
             <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8">
-                <div className="w-full max-w-[480px] flex flex-col items-center">
+                <div className="w-full max-w-[480px] flex flex-col items-center my-auto">
                     {/* Logo */}
-                    <AuthLogo />
+                    <AuthLogo isCentered={true} mobileImage="lock" />
 
                     {/* Stepper */}
                     <AuthStepper currentStep={2} />
@@ -81,10 +81,10 @@ const VerifyOtp = () => {
                         title="Enter the code"
                         subtitle={
                             <>
-                                <p className="text-gray-500 text-[13px] lg:text-sm text-center mb-1 max-w-[280px] leading-relaxed">
+                                <p className="text-text-secondary text-[13px] lg:text-sm text-center mb-1 leading-relaxed">
                                     A 6-digit code was sent to <span className="text-primary font-medium">{email || 'your email'}</span>
                                 </p>
-                                <p className="text-red-500 text-[13px] text-center">
+                                <p className="text-primary md:text-danger text-[13px] text-center">
                                     Expires in 10 minutes
                                 </p>
                             </>
