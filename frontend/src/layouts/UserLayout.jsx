@@ -16,7 +16,7 @@ const UserLayout = () => {
     const footerVisible = useLayoutStore((state) => state.footer.visible);
 
     return (
-        <div className={`flex flex-col h-screen bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
+        <div className={`flex flex-col h-screen bg-background-secondary ${isMobile ? 'font-mobile' : 'font-sans'}`}>
             {/* Header Area */}
             {isMobile ? (
                 headerVariant !== "none" && <MobileHeader />
@@ -34,7 +34,7 @@ const UserLayout = () => {
                         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
                     </>
                 )}
-                
+
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto w-full relative">
                     <Outlet />
