@@ -232,19 +232,19 @@ export default function LeaveDetailsMobileView({ request, onBack, userRole, onAc
             {userRole === 'parent' && request.status === 'pending_parent' && (
                 <div className="flex gap-3 z-10 py-3">
                     <Button
-                        variant="primary"
-                        size='sm'
-                        onClick={() => onActionClick('approved')}
-                    >
-                        Approve
-                    </Button>
-                    <Button
                         variant="outline"
                         size="sm"
                         className="border border-primary text-primary font-semibold"
                         onClick={() => onActionClick('rejected')}
                     >
                         Reject
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size='sm'
+                        onClick={() => onActionClick('approved')}
+                    >
+                        Approve
                     </Button>
                 </div>
             )}
