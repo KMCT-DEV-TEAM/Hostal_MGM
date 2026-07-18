@@ -17,7 +17,7 @@ const getStatusConfig = (status) => {
         variant = 'danger';
     }
     // Warning mappings
-    else if (normalized.includes('pending') || ['maintenance', 'on_leave', 'on leave'].includes(normalized)) {
+    else if (normalized.includes('pending') || ['maintenance', 'on_leave', 'on leave', 'in Progress'].includes(normalized)) {
         variant = 'warning';
     }
     // Primary mappings
@@ -47,7 +47,7 @@ const StatusBadge = ({ status, className = '', displayOverride = null }) => {
 
     return (
         <span
-            className={`px-2.5 py-1 rounded-md text-xs border inline-flex items-center justify-center gap-1.5 capitalize font-semibold w-fit min-w-[80px] ${styleClass} ${className}`}
+            className={`px-2.5 py-1 rounded-md text-xs  inline-flex items-center justify-center gap-1.5 capitalize font-semibold w-fit min-w-[80px] ${styleClass} ${className}`}
         >
             {displayStatus}
         </span>

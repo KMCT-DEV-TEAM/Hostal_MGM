@@ -10,6 +10,7 @@ export function useLayoutConfig(config = {}) {
     const headerVariant = config.header?.variant ?? "dashboard";
     const headerTitle = config.header?.title ?? "";
     const headerShowBack = config.header?.showBack ?? false;
+    const headerOnBack = config.header?.onBack ?? null;
     const footerVisible = config.footer?.visible ?? true;
 
     useEffect(() => {
@@ -18,6 +19,7 @@ export function useLayoutConfig(config = {}) {
                 variant: headerVariant,
                 title: headerTitle,
                 showBack: headerShowBack,
+                onBack: headerOnBack,
             });
         }
         
@@ -33,6 +35,7 @@ export function useLayoutConfig(config = {}) {
         headerVariant,
         headerTitle,
         headerShowBack,
+        headerOnBack,
         footerVisible,
         setHeader,
         setFooter,

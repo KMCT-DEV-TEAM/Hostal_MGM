@@ -6,6 +6,7 @@ const MobilePageHeader = () => {
     const navigate = useNavigate();
     const title = useLayoutStore((state) => state.header.title);
     const showBack = useLayoutStore((state) => state.header.showBack);
+    const onBack = useLayoutStore((state) => state.header.onBack);
 
     return (
         <div className="pt-8 pb-4 px-4 bg-background-secondary shrink-0">
@@ -15,7 +16,7 @@ const MobilePageHeader = () => {
                 <div className="w-8 flex items-center justify-start">
                     {showBack && (
                         <button
-                            onClick={() => navigate(-1)}
+                            onClick={() => onBack ? onBack() : navigate(-1)}
                             className="text-text-secondary hover:text-text-primary transition-colors active:scale-95 p-1 -ml-1"
                         >
                             <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />

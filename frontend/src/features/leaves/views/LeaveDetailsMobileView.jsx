@@ -10,8 +10,7 @@ export default function LeaveDetailsMobileView({ request, onBack }) {
         header: {
             variant: "page",
             title: "Leave Details",
-            showBack: true,
-            onBack: onBack
+            showBack: true
         },
         footer: {
             visible: false
@@ -193,7 +192,7 @@ export default function LeaveDetailsMobileView({ request, onBack }) {
                 </span>
 
                 <div className="relative pl-8 space-y-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-gray-100">
-                    
+
                     {/* Return Status */}
                     {renderProgressStep({
                         title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
