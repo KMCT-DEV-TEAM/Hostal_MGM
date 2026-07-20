@@ -67,9 +67,9 @@ export default function ListToolbar({
                     {onAdd && (
                         <button
                             onClick={onAdd}
-                            className={`flex items-center justify-center bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors shadow-sm md:shadow-none cursor-pointer whitespace-nowrap shrink-0 ${addButtonLabel ? 'gap-2 px-4 py-2 text-sm' : 'p-2 w-[38px] h-[38px]'}`}
+                            className="sm:hidden flex items-center justify-center bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors shadow-sm cursor-pointer shrink-0 p-2 w-[38px] h-[38px]"
                         >
-                            <Plus className={addButtonLabel ? "w-4 h-4" : "w-5 h-5"} /> {addButtonLabel && <span>{addButtonLabel}</span>}
+                            <Plus className="w-5 h-5" />
                         </button>
                     )}
                 </div>
@@ -109,5 +109,6 @@ export default function ListToolbar({
                 </div >
             </div >
         </div >
+
     );
 }
