@@ -4,7 +4,7 @@ import StatsCard from '@/components/ui/StatsCard';
 
 export default function LeaveStatsCards({ stats, isAdmin = false, isStudent = false }) {
     return (
-        <div className={`md:grid  hidden grid-cols-1 sm:grid-cols-3 ${isAdmin ? 'lg:grid-cols-4' : ''} gap-6 mb-8 shrink-0`}>
+        <div className={`md:grid  hidden grid-cols-1 sm:grid-cols-4 ${isAdmin ? 'lg:grid-cols-4' : ''} gap-6 mb-8 shrink-0`}>
             {/* Super Admin gets a Total Requests card, others do too except maybe if custom layout */}
             <StatsCard
                 label="TOTAL REQUESTS"
