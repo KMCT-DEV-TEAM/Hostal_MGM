@@ -48,33 +48,32 @@ export default function ListToolbar({
 
     return (
         <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
-            <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
-                {onSearchChange && (
-                    <div className="relative w-full">
-                        <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder={searchPlaceholder}
-                            value={localSearch}
-                            onChange={(e) => setLocalSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
-                        />
-                    </div>
-                )}
-                {/* Mobile Expand Toggle - only show if there are actions/filters */}
-                {(onStatusFilterChange || onExport || onAdd || extraFilters || children) && (
-                    <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                        <button 
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
+            <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-md">
+                <div className="flex gap-2 w-full">
+                    {onSearchChange && (
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                placeholder={searchPlaceholder}
+                                value={localSearch}
+                                onChange={(e) => setLocalSearch(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm shadow-sm md:shadow-none focus:outline-none placeholder-gray-400 cursor-pointer"
+                            />
+                        </div>
+                    )}
+                    {onAdd && (
+                        <button
+                            onClick={onAdd}
+                            className={`flex items-center justify-center bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors shadow-sm md:shadow-none cursor-pointer whitespace-nowrap shrink-0 ${addButtonLabel ? 'gap-2 px-4 py-2 text-sm' : 'p-2 w-[38px] h-[38px]'}`}
                         >
-                            <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                            <Plus className={addButtonLabel ? "w-4 h-4" : "w-5 h-5"} /> {addButtonLabel && <span>{addButtonLabel}</span>}
                         </button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
-            <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
+            <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end flex`}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-stretch sm:items-center">
                     {extraFilters}
                     
@@ -102,15 +101,6 @@ export default function ListToolbar({
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Download className="w-4 h-4" /> Export
-                        </button>
-                    )}
-                    
-                    {onAdd && (
-                        <button
-                            onClick={onAdd}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-                        >
-                            <Plus className="w-4 h-4" /> {addButtonLabel}
                         </button>
                     )}
                 </div>

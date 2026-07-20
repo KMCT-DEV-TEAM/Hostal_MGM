@@ -40,8 +40,8 @@ export const DASHBOARD_NAV = {
                     label: 'Announcements',
                     path: '/dashboard/announcements',
                     subItems: [
-                        { label: 'Latest Announcement', path: '/dashboard/announcements/latest' },
-                        { label: 'Announcement History', path: '/dashboard/announcements/history' }
+                        { label: 'Announcement', path: '/dashboard/announcements/latest' },
+                        { label: 'History', path: '/dashboard/announcements/history' }
                     ]
                 }
             ]

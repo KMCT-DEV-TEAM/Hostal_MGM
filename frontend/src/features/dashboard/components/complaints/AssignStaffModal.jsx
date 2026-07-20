@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
+import Dropdown from '@/components/ui/Dropdown';
 import { getMaintenanceStaff } from '@/services/maintenanceStaff.service';
 import { getWardens } from '@/services/warden.service';
 import ComplaintService from '@/services/complaint.service';
@@ -122,19 +123,20 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
                     <label className="block text-sm font-medium text-text-primary mb-1">
                         Select {assigneeType === 'warden' ? 'Warden' : 'Staff'} <span className="text-danger">*</span>
                     </label>
-                    <select
+                    <Dropdown
+                        options={[
+                            { value: "", label: `Select ${assigneeType === 'warden' ? 'Warden' : 'Maintenance Staff'}...` },
+                            ...staffList.map((staff) => ({
+                                value: staff._id,
+                                label: `${staff.name} ${staff.specialization ? `(${staff.specialization})` : ''}`
+                            }))
+                        ]}
                         value={selectedStaff}
-                        onChange={(e) => setSelectedStaff(e.target.value)}
+                        onChange={(val) => setSelectedStaff(val)}
                         disabled={loading || assigning}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary disabled:bg-gray-50"
-                    >
-                        <option value="">Select {assigneeType === 'warden' ? 'Warden' : 'Maintenance Staff'}...</option>
-                        {staffList.map((staff) => (
-                            <option key={staff._id} value={staff._id}>
-                                {staff.name} {staff.specialization ? `(${staff.specialization})` : ''}
-                            </option>
-                        ))}
-                    </select>
+                        triggerClassName="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white text-left flex justify-between items-center focus:outline-none focus:border-primary disabled:bg-gray-50"
+                        menuClassName="w-full"
+                    />
                     {loading && (
                         <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
                             <Loader2 className="w-3 h-3 animate-spin" /> Loading list...
