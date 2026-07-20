@@ -2,6 +2,7 @@ import React from 'react';
 import { Bell, FileEdit, Wifi, Utensils, User } from 'lucide-react';
 import LeaveCard from '@/features/leaves/components/cards/LeaveCard';
 import Button from '@/components/ui/Button';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 export default function ParentDashboardMobileView({
     user,
@@ -19,6 +20,8 @@ export default function ParentDashboardMobileView({
     isLoading,
     onNavigate
 }) {
+    useLayoutConfig();
+
     const attendanceRate = dashboardData?.attendanceRate || 0;
     const pendingLeaveCount = dashboardData?.pendingLeaveRequestsCount || 0;
     const visitorsCount = dashboardData?.recentVisitors?.length || 0;

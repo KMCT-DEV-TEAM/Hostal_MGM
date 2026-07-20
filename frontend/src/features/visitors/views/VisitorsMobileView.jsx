@@ -13,6 +13,7 @@ export default function VisitorsMobileView({
     searchQuery,
     setSearchQuery,
     onFilterClick,
+    isFilterApplied,
     onAddClick,
     onEdit,
 }) {
@@ -45,6 +46,7 @@ export default function VisitorsMobileView({
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
                 onFilterClick={onFilterClick}
+                isFilterApplied={isFilterApplied}
                 onAddClick={onAddClick}
                 data={visitors}
                 isLoading={loading}

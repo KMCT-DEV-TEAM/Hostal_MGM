@@ -3,6 +3,7 @@ import MobileListContainer from '@/components/MobileUi/MobileListContainer';
 import { Droplet, Lightbulb, Wifi, PenSquare, Wrench } from 'lucide-react';
 import { formatTimeAgo } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 const ComplaintMobileView = ({
   loading,
@@ -16,6 +17,18 @@ const ComplaintMobileView = ({
   activeTab = 'My complaints',
   onTabChange,
 }) => {
+
+  useLayoutConfig();
+
+  const [activeTab, setActiveTab] = useState('My complaints');
+
+  // Filter based on selected tab
+  const filteredComplaints = complaints.filter(c => {
+    if (activeTab === 'History') {
+      return c.status === 'Resolved' || c.status === 'Rejected';
+    }
+    return c.status !== 'Resolved' && c.status !== 'Rejected';
+  });
 
   // Generate a consistent color variant based on the category name
   const getColorVariant = (str) => {

@@ -2,12 +2,15 @@ import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import StudentMonthlyCalendar from '../components/StudentMonthlyCalendar';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 const AttendanceMobileView = ({
   todayStats,
   student,
   userRole
 }) => {
+  useLayoutConfig();
+
   const { user: authUser } = useAuthStore();
 
   // Fallback to authenticated user if not provided (for student view)

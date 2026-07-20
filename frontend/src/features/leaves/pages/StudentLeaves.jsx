@@ -133,6 +133,7 @@ export default function StudentLeaves() {
         hasMore: page < totalPages,
         onLoadMore: () => setPage(p => p + 1),
         onFilterClick: () => setIsFilterModalOpen(true),
+        isFilterApplied: !!(filters.status || filters.category || filters.fromDate || filters.toDate),
         onAddClick: () => {
             setEditData(null);
             setIsApplyModalOpen(true);

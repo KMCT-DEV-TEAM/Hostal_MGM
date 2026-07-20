@@ -30,7 +30,7 @@ const ProfileMobileView = ({
             showBack: true
         },
         footer: {
-            visible: true
+            visible: false
         }
     });
 
