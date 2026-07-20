@@ -191,6 +191,7 @@ const VisitorHistoryPage = () => {
                         setPage(1);
                     }}
                     onFilterClick={() => setIsFilterModalOpen(true)}
+                    isFilterApplied={!!(filters.status || filters.fromDate || filters.toDate)}
                     onAddClick={undefined}
                     onEdit={undefined}
                 />

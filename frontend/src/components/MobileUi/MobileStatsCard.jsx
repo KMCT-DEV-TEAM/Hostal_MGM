@@ -8,19 +8,24 @@ import React from 'react';
  * @param {string} stats[].value - The large text value (e.g., "90%", "01")
  * @param {string} stats[].label - The small text label (e.g., "Attendance")
  * @param {string} [stats[].valueColor] - Optional Tailwind text color class (e.g., "text-blue-600")
+ * @param {boolean} [isLoading] - Whether the data is currently loading.
  */
-export default function MobileStatsCard({ stats = [] }) {
+export default function MobileStatsCard({ stats = [], isLoading = false }) {
     if (!stats || stats.length === 0) return null;
 
     return (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-50 flex items-center justify-around w-full">
             {stats.map((stat, index) => (
                 <div key={index} className="flex flex-col items-center justify-center text-center flex-1">
-                    <span
-                        className={`text-lg font-bold mb-1 ${stat.valueColor || 'text-text-primary'}`}
-                    >
-                        {stat.value}
-                    </span>
+                    {isLoading ? (
+                        <div className="h-6 w-10 bg-gray-200 rounded animate-pulse mb-1" />
+                    ) : (
+                        <span
+                            className={`text-lg font-bold mb-1 ${stat.valueColor || 'text-text-primary'}`}
+                        >
+                            {stat.value}
+                        </span>
+                    )}
                     <span className="text-[11px] text-gray-500 font-medium tracking-wide">
                         {stat.label}
                     </span>

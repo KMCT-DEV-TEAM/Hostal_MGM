@@ -1,5 +1,7 @@
 import React from 'react';
 import { Wifi, Utensils, FileEdit, Tag } from 'lucide-react';
+import { AnnouncementCard } from '../components/announcements/AnnouncementList';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 export default function StudentDashboardMobileView({
     user,
@@ -16,6 +18,8 @@ export default function StudentDashboardMobileView({
     isLoading,
     onNavigate
 }) {
+    useLayoutConfig();
+
     const attendanceRate = dashboardData?.attendanceRate || 0;
     const leavePendingCount = dashboardData?.pendingLeaveRequestsCount || 0;
     const complaintsOpenCount = dashboardData?.openComplaintsCount || 0;
@@ -178,7 +182,7 @@ export default function StudentDashboardMobileView({
                 <div className="space-y-4 pt-2">
                     <div className="flex justify-between items-center px-1">
                         <h2 className="text-[17px] font-semibold text-[#1A1F36]">Recent Announcements</h2>
-                        <button className="text-[14px] text-[#2563EB] font-medium">See All</button>
+                        <button onClick={() => onNavigate('/dashboard/announcements')} className="text-[14px] text-[#2563EB] font-medium">See All</button>
                     </div>
 
                     <div
@@ -186,25 +190,13 @@ export default function StudentDashboardMobileView({
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {recentAnnouncements.length > 0 ? (
-                            recentAnnouncements.map((ann, idx) => {
-                                const themes = [
-                                    { bg: 'bg-[#EEF2FF]', iconColor: 'text-[#4F46E5]', Icon: Wifi },
-                                    { bg: 'bg-[#FFF7ED]', iconColor: 'text-[#C2410C]', Icon: Utensils },
-                                    { bg: 'bg-[#ECFDF5]', iconColor: 'text-[#10B981]', Icon: Tag },
-                                    { bg: 'bg-[#F3E8FF]', iconColor: 'text-[#9333EA]', Icon: FileEdit }
-                                ];
-                                const { bg, iconColor, Icon } = themes[idx % themes.length];
-
-                                return (
-                                    <div key={ann._id || idx} className="bg-white rounded-[24px] p-5 min-w-[260px] w-[260px] shrink-0 snap-start shadow-sm border border-gray-50">
-                                        <div className={`w-[46px] h-[46px] rounded-[14px] ${bg} flex items-center justify-center mb-5`}>
-                                            <Icon className={`w-[22px] h-[22px] ${iconColor}`} strokeWidth={1.5} />
-                                        </div>
-                                        <h3 className="text-[15px] font-semibold text-[#1A1F36] mb-2">{ann.title}</h3>
-                                        <p className="text-[13px] text-gray-500 leading-snug line-clamp-2">{ann.message}</p>
-                                    </div>
-                                );
-                            })
+                            recentAnnouncements.map((ann, idx) => (
+                                <AnnouncementCard
+                                    key={ann._id || idx}
+                                    announcement={ann}
+                                    className="min-w-[300px] w-[300px] h-[120px]  max-h-[130px] min-h-[130px] shrink-0 snap-start"
+                                />
+                            ))
                         ) : (
                             <div className="bg-white rounded-[24px] p-5 text-center text-sm text-gray-500 shadow-sm border border-gray-50 flex-1">
                                 No recent announcements.
@@ -237,7 +229,7 @@ export default function StudentDashboardMobileView({
                                                 </div>
                                             </div>
                                             <span className={`px-3 py-1 text-[11px] font-semibold rounded-full ${req.status === 'approved' || req.status === 'completed' ? 'bg-[#ECFDF5] text-[#10B981]' :
-                                                    req.status === 'rejected' ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFFBEB] text-[#D97706]'
+                                                req.status === 'rejected' ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFFBEB] text-[#D97706]'
                                                 }`}>
                                                 {req.status === 'approved' || req.status === 'completed' ? 'Approved' :
                                                     req.status === 'rejected' ? 'Rejected' : 'Pending'}
@@ -261,7 +253,7 @@ export default function StudentDashboardMobileView({
                                                 </div>
                                             </div>
                                             <span className={`px-3 py-1 text-[11px] font-semibold rounded-full ${req.status === 'Resolved' || req.status === 'Closed' ? 'bg-[#ECFDF5] text-[#10B981]' :
-                                                    req.status === 'In Progress' ? 'bg-[#EFF6FF] text-[#3B82F6]' : 'bg-[#F3E8FF] text-[#9333EA]'
+                                                req.status === 'In Progress' ? 'bg-[#EFF6FF] text-[#3B82F6]' : 'bg-[#F3E8FF] text-[#9333EA]'
                                                 }`}>
                                                 {req.status === 'Resolved' || req.status === 'Closed' ? 'Resolved' :
                                                     req.status === 'In Progress' ? 'In Progress' : req.status === 'Assigned' ? 'Assigned' : 'Open'}

@@ -6,7 +6,7 @@ export default function ListToolbar({
     searchQuery = "",
     onSearchChange,
     searchPlaceholder = "Search...",
-    
+
     // Status filter props
     statusFilter,
     onStatusFilterChange,
@@ -16,17 +16,18 @@ export default function ListToolbar({
         { value: "Inactive", label: "Inactive" }
     ],
     statusPlaceholder = "All Status",
-    
+
     // Action buttons
     onExport,
     onAdd,
     addButtonLabel = "Add New",
-    
+
     // Any extra filters (like Role, Hostel, etc) passed as JSX
     extraFilters,
-    
+
     // Any extra actions (like Bulk Menu) passed as JSX
-    children
+    children,
+    isStudentOrParent
 }) {
     const [localSearch, setLocalSearch] = useState(searchQuery);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function ListToolbar({
                 onSearchChange(localSearch);
             }
         }, 500); // 500ms debounce
-        
+
         return () => clearTimeout(timer);
     }, [localSearch, searchQuery, onSearchChange]);
 
@@ -76,7 +77,7 @@ export default function ListToolbar({
             <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end flex`}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-stretch sm:items-center">
                     {extraFilters}
-                    
+
                     {onStatusFilterChange && (
                         <div className="flex-1 sm:flex-none">
                             <Dropdown

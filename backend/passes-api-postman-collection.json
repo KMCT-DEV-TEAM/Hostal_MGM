@@ -1,0 +1,942 @@
+{
+  "info": {
+    "name": "Hostel Management - Passes API",
+    "description": "Postman collection for testing the Passes module workflow in the Hostel Management System.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "studentToken",
+      "value": "your_student_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "parentToken",
+      "value": "your_parent_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "wardenToken",
+      "value": "your_warden_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "your_admin_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "superAdminToken",
+      "value": "your_super_admin_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "passId",
+      "value": "660c1...",
+      "type": "string"
+    },
+    {
+      "key": "hostelId",
+      "value": "660c2...",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Student",
+      "item": [
+        {
+          "name": "Create Home Pass",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"passType\": \"home_pass\",\n  \"reason\": \"Family function\",\n  \"fromDate\": \"2026-08-01\",\n  \"toDate\": \"2026-08-05\",\n  \"totalDays\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create Out Pass",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"passType\": \"out_pass\",\n  \"reason\": \"Buy groceries\",\n  \"date\": \"2026-07-21\",\n  \"outTime\": \"10:00\",\n  \"expectedReturnTime\": \"14:00\",\n  \"outPassCategory\": \"out_house\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Passes Unified",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes/passes?mode=requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes",
+                "passes"
+              ],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "requests"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes/my-passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes",
+                "my-passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pass Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes",
+                "{{passId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Pass",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes",
+                "{{passId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Updated reason for leave\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancel Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/student/passes/{{passId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "passes",
+                "{{passId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parent",
+      "item": [
+        {
+          "name": "Get Passes Unified",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes/passes?mode=requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes",
+                "passes"
+              ],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "requests"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pass Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes",
+                "{{passId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes/{{passId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes",
+                "{{passId}}",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes/{{passId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes",
+                "{{passId}}",
+                "reject"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Cannot allow right now.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Pass",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes",
+                "{{passId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Parent updated reason\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancel Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parent/passes/{{passId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parent",
+                "passes",
+                "{{passId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Warden",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wardenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warden/passes/dashboard-stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warden",
+                "passes",
+                "dashboard-stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wardenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warden/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warden",
+                "passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pass Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wardenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warden/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warden",
+                "passes",
+                "{{passId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Left",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wardenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warden/passes/{{passId}}/mark-left",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warden",
+                "passes",
+                "{{passId}}",
+                "mark-left"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Returned",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wardenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warden/passes/{{passId}}/mark-returned",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warden",
+                "passes",
+                "{{passId}}",
+                "mark-returned"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin Cancel Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wardenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warden/passes/{{passId}}/admin-cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warden",
+                "passes",
+                "{{passId}}",
+                "admin-cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Cancelled by warden.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get All Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Hostels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/hostels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "hostels"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Hostel Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/hostels/{{hostelId}}/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "hostels",
+                "{{hostelId}}",
+                "passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pass Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "{{passId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/{{passId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "{{passId}}",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Pass",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/{{passId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "{{passId}}",
+                "reject"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Admin rejected due to policy.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancel Pass",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/passes/{{passId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "passes",
+                "{{passId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Super Admin",
+      "item": [
+        {
+          "name": "Get All Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/super-admin/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "super-admin",
+                "passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/super-admin/passes/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "super-admin",
+                "passes",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Organizations Hostels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/super-admin/passes/hostels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "super-admin",
+                "passes",
+                "hostels"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Hostel Passes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/super-admin/passes/hostels/{{hostelId}}/passes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "super-admin",
+                "passes",
+                "hostels",
+                "{{hostelId}}",
+                "passes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pass Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/super-admin/passes/{{passId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "super-admin",
+                "passes",
+                "{{passId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Pass",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/super-admin/passes/{{passId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "super-admin",
+                "passes",
+                "{{passId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

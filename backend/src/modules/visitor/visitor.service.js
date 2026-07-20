@@ -1239,7 +1239,6 @@ export const listVisitorVisits = async (query, user) => {
  */
 export const getVisitDetails = async (visitId, user) => {
     const visit = await visitorRepository.getVisitDetailsById(visitId);
-
     if (!visit) {
         const error = new Error('Visit not found.');
         error.status = 404;
@@ -1283,14 +1282,14 @@ export const getVisitDetails = async (visitId, user) => {
 
     // 2. Field-Level Security (ID Proof Masking)
     let maskedIdProofNumber = null;
-    if (visit.visitorId && visit.visitorId.idProofNumber) {
+    if (visit.visitor && visit.visitor.refId.idProofNumber) {
         const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
 
         if (isSuperAdminOrAdmin) {
-            maskedIdProofNumber = visit.visitorId.idProofNumber;
+            maskedIdProofNumber = visit.visitor.refId.idProofNumber;
         } else {
             // Mask all but last 4 characters
-            const num = visit.visitorId.idProofNumber;
+            const num = visit.visitor.refId.idProofNumber;
             if (num.length > 4) {
                 maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
             } else {
@@ -1313,10 +1312,10 @@ export const getVisitDetails = async (visitId, user) => {
     const formattedStudents = visit.students.map(s => ({
         studentId: s._id,
         studentName: s.name,
-        studentIdNumber: s.studentIdNumber,
-        roomNumber: s.roomId ? s.roomId.roomNumber : null,
-        department: s.department,
-        course: s.course
+        studentIdNumber: s.studentId,
+        roomNumber: s.roomNumber || null,
+        department: s.department || null,
+        course: s.course || null
     }));
 
     // Calculate Visit Duration if checked out
@@ -1334,7 +1333,7 @@ export const getVisitDetails = async (visitId, user) => {
     }
 
     const studentNames = formattedStudents.map(s => s.studentName).join(', ');
-    const visitorName = visit.visitorId ? visit.visitorId.name : 'Unknown';
+    const visitorName = visit.visitor ? visit.visitor.refId.name : 'Unknown';
 
     return {
         // Quick Summary
@@ -1348,13 +1347,13 @@ export const getVisitDetails = async (visitId, user) => {
         },
 
         // Visitor Information
-        visitorInformation: visit.visitorId ? {
-            visitorId: visit.visitorId._id,
-            visitorName: visit.visitorId.name,
-            phone: visit.visitorId.phone,
-            relationship: visit.visitorId.relationship,
-            address: visit.visitorId.address,
-            idProofType: visit.visitorId.idProofType,
+        visitorInformation: visit.visitor ? {
+            visitorId: visit.visitor.refId._id,
+            visitorName: visit.visitor.refId.name,
+            phone: visit.visitor.refId.phone,
+            relationship: visit.visitor.refId.relationship,
+            address: visit.visitor.refId.address,
+            idProofType: visit.visitor.refId.idProofType,
             idProofNumber: maskedIdProofNumber
         } : null,
 

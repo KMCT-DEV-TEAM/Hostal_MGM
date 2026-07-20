@@ -3,16 +3,23 @@ import MobileListContainer from '@/components/MobileUi/MobileListContainer';
 import { Droplet, Lightbulb, Wifi, PenSquare, Wrench } from 'lucide-react';
 import { formatTimeAgo } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 const ComplaintMobileView = ({
   loading,
   complaints,
+  totalMobileStats,
   categories,
   openEditModal,
   onViewDetail,
   searchValue,
   onSearchChange,
+  activeTab = 'My complaints',
+  onTabChange,
 }) => {
+
+  useLayoutConfig();
+
   const [activeTab, setActiveTab] = useState('My complaints');
 
   // Filter based on selected tab
@@ -50,7 +57,11 @@ const ComplaintMobileView = ({
     return { icon: <Wrench className={`w-5 h-5 ${text}`} />, bg };
   };
 
-
+  const listStats = activeTab === 'History' && totalMobileStats ? [
+    { value: String(totalMobileStats.total).padStart(2, '0'), label: 'Total', valueColor: 'text-[#0A437A]' },
+    { value: String(totalMobileStats.resolved).padStart(2, '0'), label: 'Resolved', valueColor: 'text-green-500' },
+    { value: String(totalMobileStats.pending).padStart(2, '0'), label: 'Pending', valueColor: 'text-orange-500' }
+  ] : null;
 
   const renderItem = (complaint) => {
     const iconInfo = getIconInfo(complaint.category);
@@ -105,7 +116,7 @@ const ComplaintMobileView = ({
 
         <div className="bg-white rounded-[14px] p-1 flex shadow-sm border border-gray-50">
           <button
-            onClick={() => setActiveTab('My complaints')}
+            onClick={() => onTabChange('My complaints')}
             className={`flex-1 text-center py-2.5 text-[13px] font-semibold rounded-[10px] transition-all duration-200 ${activeTab === 'My complaints'
               ? 'bg-[#0A437A] text-white shadow-md'
               : 'text-gray-500 hover:bg-gray-50'
@@ -114,7 +125,7 @@ const ComplaintMobileView = ({
             My complaints
           </button>
           <button
-            onClick={() => setActiveTab('History')}
+            onClick={() => onTabChange('History')}
             className={`flex-1 text-center py-2.5 text-[13px] font-semibold rounded-[10px] transition-all duration-200 ${activeTab === 'History'
               ? 'bg-[#0A437A] text-white shadow-md'
               : 'text-gray-500 hover:bg-gray-50'
@@ -125,6 +136,8 @@ const ComplaintMobileView = ({
         </div>
       </div>
 
+
+
       <div className="flex-1 overflow-y-auto px-5 pb-24">
         <MobileListContainer
           showSearch={true}
@@ -134,8 +147,9 @@ const ComplaintMobileView = ({
             if (onSearchChange) onSearchChange({ target: { value: val } });
           }}
           onAddClick={() => openEditModal(null)}
-          data={filteredComplaints}
+          data={complaints}
           renderItem={renderItem}
+          stats={listStats}
           isLoading={loading}
           emptyMessage={`No ${activeTab === 'History' ? 'historical' : 'active'} complaints found.`}
         />

@@ -34,7 +34,7 @@ const StudentComplaintsDesktopView = ({
         <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-danger shadow-sm border border-gray-100 flex justify-between items-start">
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Complaints</p>
-            <h3 className="text-2xl font-bold text-gray-900">{complaints.length}</h3>
+            {loading && complaints.length === 0 ? <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" /> : <h3 className="text-2xl font-bold text-gray-900">{complaints.length}</h3>}
           </div>
           <div className="p-1.5 bg-red-50 rounded text-danger">
             <AlertTriangle className="w-5 h-5" />
@@ -43,7 +43,7 @@ const StudentComplaintsDesktopView = ({
         <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-warning shadow-sm border border-gray-100 flex justify-between items-start">
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pending</p>
-            <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Pending').length}</h3>
+            {loading && complaints.length === 0 ? <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" /> : <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Pending').length}</h3>}
           </div>
           <div className="p-1.5 bg-orange-50 rounded text-warning">
             <Clock className="w-5 h-5" />
@@ -52,7 +52,7 @@ const StudentComplaintsDesktopView = ({
         <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-primary/80 flex justify-between items-start">
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">In Progress</p>
-            <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'In progress').length}</h3>
+            {loading && complaints.length === 0 ? <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" /> : <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'In progress').length}</h3>}
           </div>
           <div className="p-1.5 bg-blue-50 rounded text-primary">
             <Loader2 className="w-5 h-5" />
@@ -61,7 +61,7 @@ const StudentComplaintsDesktopView = ({
         <div className="bg-white rounded-lg p-5 border-t-[2px] border-t-success shadow-sm border border-gray-100 flex justify-between items-start">
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Resolved</p>
-            <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Resolved').length}</h3>
+            {loading && complaints.length === 0 ? <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" /> : <h3 className="text-2xl font-bold text-gray-900">{complaints.filter(c => c.status === 'Resolved').length}</h3>}
           </div>
           <div className="p-1.5 bg-green-50 rounded text-green-500">
             <CheckCircle className="w-5 h-5" />

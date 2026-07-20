@@ -4,8 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "dev": "nodemon --env-file=.env src/server.js",
     "start": "node --env-file=.env src/server.js",
     "server": "nodemon --env-file=.env src/server.js"
   },

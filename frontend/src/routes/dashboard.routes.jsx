@@ -292,6 +292,16 @@ export const dashboardRoutes = [
         element: Complaints
     },
     {
+        path: 'complaints/:tab',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN,
+            ROLES.WARDEN,
+            ROLES.STUDENT
+        ],
+        element: Complaints
+    },
+    {
         path: 'maintenance-staff',
         roles: [
             ROLES.SUPER_ADMIN,

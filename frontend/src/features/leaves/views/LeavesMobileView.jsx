@@ -13,6 +13,7 @@ export default function LeavesMobileView({
     searchQuery,
     setSearchQuery,
     onFilterClick,
+    isFilterApplied,
     onAddClick,
     openEditModal,
     statsData
@@ -58,6 +59,7 @@ export default function LeavesMobileView({
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
                 onFilterClick={onFilterClick}
+                isFilterApplied={isFilterApplied}
                 onAddClick={onAddClick}
                 data={requests}
                 isLoading={loading}
