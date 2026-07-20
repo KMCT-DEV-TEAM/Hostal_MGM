@@ -237,7 +237,7 @@ export default function StudentDashboardMobileView({
                                                 </div>
                                             </div>
                                             <span className={`px-3 py-1 text-[11px] font-semibold rounded-full ${req.status === 'approved' || req.status === 'completed' ? 'bg-[#ECFDF5] text-[#10B981]' :
-                                                    req.status === 'rejected' ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFFBEB] text-[#D97706]'
+                                                req.status === 'rejected' ? 'bg-[#FEF2F2] text-[#EF4444]' : 'bg-[#FFFBEB] text-[#D97706]'
                                                 }`}>
                                                 {req.status === 'approved' || req.status === 'completed' ? 'Approved' :
                                                     req.status === 'rejected' ? 'Rejected' : 'Pending'}
@@ -261,7 +261,7 @@ export default function StudentDashboardMobileView({
                                                 </div>
                                             </div>
                                             <span className={`px-3 py-1 text-[11px] font-semibold rounded-full ${req.status === 'Resolved' || req.status === 'Closed' ? 'bg-[#ECFDF5] text-[#10B981]' :
-                                                    req.status === 'In Progress' ? 'bg-[#EFF6FF] text-[#3B82F6]' : 'bg-[#F3E8FF] text-[#9333EA]'
+                                                req.status === 'In Progress' ? 'bg-[#EFF6FF] text-[#3B82F6]' : 'bg-[#F3E8FF] text-[#9333EA]'
                                                 }`}>
                                                 {req.status === 'Resolved' || req.status === 'Closed' ? 'Resolved' :
                                                     req.status === 'In Progress' ? 'In Progress' : req.status === 'Assigned' ? 'Assigned' : 'Open'}

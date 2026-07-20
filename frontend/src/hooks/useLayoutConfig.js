@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useLayoutStore } from "@/store/useLayoutStore";
 
 export function useLayoutConfig(config = {}) {
@@ -13,7 +13,7 @@ export function useLayoutConfig(config = {}) {
     const headerOnBack = config.header?.onBack ?? null;
     const footerVisible = config.footer?.visible ?? true;
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (config.header) {
             setHeader({
                 variant: headerVariant,
@@ -22,7 +22,7 @@ export function useLayoutConfig(config = {}) {
                 onBack: headerOnBack,
             });
         }
-        
+
         if (config.footer !== undefined) {
             setFooter({ visible: footerVisible });
         }

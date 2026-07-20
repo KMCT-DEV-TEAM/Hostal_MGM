@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Search, Filter, Loader2, Plus } from 'lucide-react';
+import { Search, Filter, Plus } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import MobileStatsCard from './MobileStatsCard';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
@@ -76,6 +76,7 @@ export default function MobileListContainer({
                             <NavLink
                                 key={tab.path}
                                 to={tab.path}
+                                replace
                                 className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-colors ${isActive
                                     ? 'bg-primary text-white shadow-sm'
                                     : 'text-text-secondary hover:bg-gray-50'
@@ -106,11 +107,10 @@ export default function MobileListContainer({
                     {onFilterClick && (
                         <button
                             onClick={onFilterClick}
-                            className={`w-12 h-12 rounded-[14px] flex items-center justify-center shadow-sm active:scale-95 transition-all ${
-                                isFilterApplied 
-                                    ? 'bg-primary border-primary text-white' 
+                            className={`w-12 h-12 rounded-[14px] flex items-center justify-center shadow-sm active:scale-95 transition-all ${isFilterApplied
+                                    ? 'bg-primary border-primary text-white'
                                     : 'bg-white border border-gray-100 text-gray-600'
-                            }`}
+                                }`}
                         >
                             <Filter className="w-5 h-5" />
                         </button>
