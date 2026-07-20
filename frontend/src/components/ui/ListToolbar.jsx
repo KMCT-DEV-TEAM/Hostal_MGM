@@ -48,7 +48,10 @@ export default function ListToolbar({
     }, [searchQuery]);
 
     return (
+<<<<<<< HEAD
 
+=======
+>>>>>>> 48b791fdbe1cf167b6c0d3af0aef57c740e8f44f
         <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
             <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-md">
                 <div className="flex gap-2 w-full">
@@ -109,6 +112,7 @@ export default function ListToolbar({
                 </div >
             </div >
         </div >
+
 
     );
 }
