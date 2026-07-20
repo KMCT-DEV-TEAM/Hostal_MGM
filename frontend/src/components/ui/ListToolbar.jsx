@@ -6,7 +6,7 @@ export default function ListToolbar({
     searchQuery = "",
     onSearchChange,
     searchPlaceholder = "Search...",
-    
+
     // Status filter props
     statusFilter,
     onStatusFilterChange,
@@ -16,17 +16,18 @@ export default function ListToolbar({
         { value: "Inactive", label: "Inactive" }
     ],
     statusPlaceholder = "All Status",
-    
+
     // Action buttons
     onExport,
     onAdd,
     addButtonLabel = "Add New",
-    
+
     // Any extra filters (like Role, Hostel, etc) passed as JSX
     extraFilters,
-    
+
     // Any extra actions (like Bulk Menu) passed as JSX
-    children
+    children,
+    isStudentOrParent
 }) {
     const [localSearch, setLocalSearch] = useState(searchQuery);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function ListToolbar({
                 onSearchChange(localSearch);
             }
         }, 500); // 500ms debounce
-        
+
         return () => clearTimeout(timer);
     }, [localSearch, searchQuery, onSearchChange]);
 
@@ -47,9 +48,9 @@ export default function ListToolbar({
     }, [searchQuery]);
 
     return (
-        <div className="p-0 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
+        <div className="p-0 px-3  md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:border-b md:border-gray-50 shrink-0">
             <div className="w-full sm:w-auto flex flex-col gap-2 flex-1 sm:max-w-xs">
-                {onSearchChange && (
+                {onSearchChange && !isStudentOrParent && (
                     <div className="relative w-full">
                         <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
@@ -64,8 +65,8 @@ export default function ListToolbar({
                 {/* Mobile Expand Toggle - only show if there are actions/filters */}
                 {(onStatusFilterChange || onExport || onAdd || extraFilters || children) && (
                     <div className="flex justify-center sm:hidden -mt-1 -mb-2">
-                        <button 
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer focus:outline-none"
                         >
                             <ChevronDown className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
@@ -77,7 +78,7 @@ export default function ListToolbar({
             <div className={`flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end ${isMobileMenuOpen ? 'flex' : 'hidden sm:flex'}`}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-stretch sm:items-center">
                     {extraFilters}
-                    
+
                     {onStatusFilterChange && (
                         <div className="flex-1 sm:flex-none">
                             <Dropdown
@@ -104,7 +105,7 @@ export default function ListToolbar({
                             <Download className="w-4 h-4" /> Export
                         </button>
                     )}
-                    
+
                     {onAdd && (
                         <button
                             onClick={onAdd}

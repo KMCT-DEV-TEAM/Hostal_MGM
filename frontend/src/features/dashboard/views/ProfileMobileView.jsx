@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
-import { User, Users, GraduationCap, Building2, Settings, Globe, LogOut, Phone, Mail, FileText, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { User, Users, GraduationCap, Building2, Settings, Globe, LogOut, Phone, Mail, FileText, Pencil, Check, X, Loader2, ArrowBigRight, ArrowRight, ArrowRightCircle, ChevronRight, Megaphone } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatDateReadable } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
@@ -97,161 +97,179 @@ const ProfileMobileView = ({
             </div>
 
             {user?.role === 'parent' ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 border-b border-gray-50 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
-                            <User className="w-4 h-4 text-primary" />
-                        </div>
-                        <h3 className="font-semibold text-text-primary text-sm">Basic Informations</h3>
-                    </div>
-
-                    <div className="p-4 flex flex-col gap-5">
-                        <div className="flex items-start gap-3">
-                            <GraduationCap className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <div>
-                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Student</p>
-                                <p className="text-sm font-medium text-text-primary">{user?.studentId?.name || 'No value'}</p>
+                <>
+                    {/* Announcements Button */}
+                    <button
+                        onClick={() => navigate('/dashboard/announcements')}
+                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform w-full"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-50/50 flex items-center justify-center">
+                                <Megaphone className="w-5 h-5 text-orange-500" />
                             </div>
+                            <span className="font-semibold text-text-primary text-sm">Announcements</span>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center">
+                            <ChevronRight className="w-4 h-4 text-primary" />
+                        </div>
+                    </button>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-4">
+                        <div className="p-4 border-b border-gray-50 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center">
+                                <User className="w-4 h-4 text-primary" />
+                            </div>
+                            <h3 className="font-semibold text-text-primary text-sm">Basic Informations</h3>
                         </div>
 
-                        <div className="flex items-start gap-3">
-                            <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <div className="flex-1 flex justify-between items-center">
-                                {editingField === 'email' ? (
-                                    <div className="flex flex-col gap-1 w-full mt-1">
-                                        <div className="flex items-center gap-2 w-full">
-                                            <input
-                                                type="email"
-                                                value={editValue}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    const cleanVal = val.replace(/\s/g, '');
-                                                    if (val !== cleanVal) {
-                                                        setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                                    } else {
-                                                        setErrors(prev => ({ ...prev, email: '' }));
-                                                    }
-                                                    setEditValue(cleanVal);
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === ' ') {
-                                                        e.preventDefault();
-                                                        setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                                    }
-                                                }}
-                                                className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
-                                                autoFocus
-                                                disabled={isSaving}
-                                                placeholder="Enter new email"
-                                            />
-                                            <button
-                                                onClick={() => handleOpenConfirm('email')}
-                                                disabled={isSaving || (editValue && editValue.trim() === '')}
-                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
-                                            >
-                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
+                        <div className="p-4 flex flex-col gap-5">
+                            <div className="flex items-start gap-3">
+                                <GraduationCap className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Student</p>
+                                    <p className="text-sm font-medium text-text-primary">{user?.studentId?.name || 'No value'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 flex justify-between items-center">
+                                    {editingField === 'email' ? (
+                                        <div className="flex flex-col gap-1 w-full mt-1">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="email"
+                                                    value={editValue}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        const cleanVal = val.replace(/\s/g, '');
+                                                        if (val !== cleanVal) {
+                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, email: '' }));
+                                                        }
+                                                        setEditValue(cleanVal);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
+                                                        }
+                                                    }}
+                                                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                    placeholder="Enter new email"
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('email')}
+                                                    disabled={isSaving || (editValue && editValue.trim() === '')}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
                                         </div>
-                                        {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div>
-                                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
-                                            <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
+                                                <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
+                                            </div>
+                                            {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                                <button
+                                                    onClick={() => handleEditClick('email', user?.email)}
+                                                    className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 flex justify-between items-center">
+                                    {editingField === 'phone' ? (
+                                        <div className="flex flex-col gap-1 w-full mt-1">
+                                            <div className="flex items-center gap-2 w-full">
+                                                <input
+                                                    type="text"
+                                                    value={editValue}
+                                                    maxLength={10}
+                                                    pattern="[0-9]{10}"
+                                                    title="Please enter exactly 10 digits"
+                                                    onChange={(e) => {
+                                                        const originalVal = e.target.value;
+                                                        const val = originalVal.replace(/\D/g, '');
+                                                        if (originalVal !== val) {
+                                                            setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
+                                                        } else {
+                                                            setErrors(prev => ({ ...prev, phone: '' }));
+                                                        }
+                                                        if (val.length <= 10) {
+                                                            setEditValue(val);
+                                                        }
+                                                    }}
+                                                    className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    autoFocus
+                                                    disabled={isSaving}
+                                                    placeholder="Enter 10 digit number"
+                                                />
+                                                <button
+                                                    onClick={() => handleOpenConfirm('phone')}
+                                                    disabled={isSaving || (editValue && editValue.length !== 10)}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
                                         </div>
-                                        {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
+                                                <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
+                                            </div>
                                             <button
-                                                onClick={() => handleEditClick('email', user?.email)}
+                                                onClick={() => handleEditClick('phone', user?.phone)}
                                                 className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
                                             >
                                                 <Pencil className="w-4 h-4" />
                                             </button>
-                                        )}
-                                    </>
-                                )}
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="flex items-start gap-3">
-                            <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <div className="flex-1 flex justify-between items-center">
-                                {editingField === 'phone' ? (
-                                    <div className="flex flex-col gap-1 w-full mt-1">
-                                        <div className="flex items-center gap-2 w-full">
-                                            <input
-                                                type="text"
-                                                value={editValue}
-                                                maxLength={10}
-                                                pattern="[0-9]{10}"
-                                                title="Please enter exactly 10 digits"
-                                                onChange={(e) => {
-                                                    const originalVal = e.target.value;
-                                                    const val = originalVal.replace(/\D/g, '');
-                                                    if (originalVal !== val) {
-                                                        setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
-                                                    } else {
-                                                        setErrors(prev => ({ ...prev, phone: '' }));
-                                                    }
-                                                    if (val.length <= 10) {
-                                                        setEditValue(val);
-                                                    }
-                                                }}
-                                                className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
-                                                autoFocus
-                                                disabled={isSaving}
-                                                placeholder="Enter 10 digit number"
-                                            />
-                                            <button
-                                                onClick={() => handleOpenConfirm('phone')}
-                                                disabled={isSaving || (editValue && editValue.length !== 10)}
-                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
-                                            >
-                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                disabled={isSaving}
-                                                className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                        {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div>
-                                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Number</p>
-                                            <p className="text-sm font-medium text-text-primary">{contactNumber}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleEditClick('phone', user?.phone)}
-                                            className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                            <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <div>
-                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Relation</p>
-                                <p className="text-sm font-medium text-text-primary">Parent</p>
+                            <div className="flex items-start gap-3">
+                                <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Relation</p>
+                                    <p className="text-sm font-medium text-text-primary">Parent</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </>
             ) : (
                 <>
                     {/* Visitors Button */}
@@ -266,9 +284,23 @@ const ProfileMobileView = ({
                             <span className="font-semibold text-text-primary text-sm">Visitors</span>
                         </div>
                         <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
+                            <ChevronRight className="w-4 h-4 text-primary" />
+                        </div>
+                    </button>
+
+                    {/* Announcements Button */}
+                    <button
+                        onClick={() => navigate('/dashboard/announcements')}
+                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform w-full mt-4"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-50/50 flex items-center justify-center">
+                                <Megaphone className="w-5 h-5 text-orange-500" />
+                            </div>
+                            <span className="font-semibold text-text-primary text-sm">Announcements</span>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center">
+                            <ChevronRight className="w-4 h-4 text-primary" />
                         </div>
                     </button>
 
