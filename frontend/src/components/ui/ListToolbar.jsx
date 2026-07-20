@@ -105,6 +105,15 @@ export default function ListToolbar({
                         </button>
                     )}
 
+                    {onAdd && (
+                        <button
+                            onClick={onAdd}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" /> {addButtonLabel}
+                        </button>
+                    )}
+
                 </div >
             </div >
         </div >
