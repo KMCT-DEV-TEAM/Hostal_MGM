@@ -107,7 +107,7 @@ const AnnouncementManagement = () => {
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
-            <div className="p-0 md:p-6 flex-1 flex flex-col">
+            <div className="p-4 md:p-6 flex-1 flex flex-col">
                 {!isStudentOrParent && (
                     <PageHeader
                         title="Announcements"
@@ -120,15 +120,9 @@ const AnnouncementManagement = () => {
                     <div className="flex w-full border-b border-gray-200 mt-4">
                         <button
                             onClick={() => navigate('/dashboard/announcements/latest')}
-<<<<<<< HEAD
-
-                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'latest'
-                                ? 'border-[#0A437A] text-[#0A437A]'
-=======
                             className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
                                 currentTab === 'latest'
                                 ? 'border-[#0A437A] text-[#0A437A]'
->>>>>>> 48b791fdbe1cf167b6c0d3af0aef57c740e8f44f
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -145,14 +139,9 @@ const AnnouncementManagement = () => {
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/announcements/history')}
-<<<<<<< HEAD
-                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'history'
-                                ? 'border-[#0A437A] text-[#0A437A]'
-=======
                             className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
                                 currentTab === 'history'
                                 ? 'border-[#0A437A] text-[#0A437A]'
->>>>>>> 48b791fdbe1cf167b6c0d3af0aef57c740e8f44f
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
