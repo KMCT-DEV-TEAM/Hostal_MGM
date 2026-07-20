@@ -147,7 +147,7 @@ const AnnouncementManagement = () => {
                         onSearchChange={setSearchQuery}
                         searchPlaceholder="Search announcements..."
                         onAdd={canCreate ? () => { setSelectedAnnouncement(null); setIsModalOpen(true); } : undefined}
-                        addButtonLabel=""
+                        addButtonLabel="Announcement"
                     />
                     
                     {loading ? (

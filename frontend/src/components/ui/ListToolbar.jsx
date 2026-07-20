@@ -65,9 +65,9 @@ export default function ListToolbar({
                     {onAdd && (
                         <button
                             onClick={onAdd}
-                            className={`flex items-center justify-center bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors shadow-sm md:shadow-none cursor-pointer whitespace-nowrap shrink-0 ${addButtonLabel ? 'gap-2 px-4 py-2 text-sm' : 'p-2 w-[38px] h-[38px]'}`}
+                            className="sm:hidden flex items-center justify-center bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors shadow-sm cursor-pointer shrink-0 p-2 w-[38px] h-[38px]"
                         >
-                            <Plus className={addButtonLabel ? "w-4 h-4" : "w-5 h-5"} /> {addButtonLabel && <span>{addButtonLabel}</span>}
+                            <Plus className="w-5 h-5" />
                         </button>
                     )}
                 </div>
@@ -101,6 +101,15 @@ export default function ListToolbar({
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
                         >
                             <Download className="w-4 h-4" /> Export
+                        </button>
+                    )}
+                    
+                    {onAdd && (
+                        <button
+                            onClick={onAdd}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
+                        >
+                            <Plus className="w-4 h-4" /> {addButtonLabel}
                         </button>
                     )}
                 </div>

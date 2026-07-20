@@ -26,7 +26,7 @@ const AnnouncementList = ({ announcements, onAnnouncementClick }) => {
     }
 
     return (
-        <div className="py-4 md:p-4 flex flex-col gap-4">
+        <div className="py-4 md:p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             {announcements.map((announcement) => (
                 <div 
                     key={announcement._id} 
