@@ -3,14 +3,14 @@ import {
     Megaphone,
     Wifi,
     WifiOff,
-    CalendarCheck,
     UtensilsCrossed,
     AlertTriangle,
     CheckCircle,
     Bell,
     User,
     Target,
-    DoorOpen
+    DoorOpen,
+    Calendar
 } from 'lucide-react';
 
 import { formatTimeAgoShort } from '@/utils/formatters';
@@ -62,13 +62,13 @@ const getIconAndStyle = (title) => {
 export const AnnouncementCard = ({ announcement, className = "" }) => {
     const { Icon, bg, text } = getIconAndStyle(announcement.title);
     return (
-        <div 
+        <div
             className={`bg-white rounded-[20px] md:border md:border-gray-100 shadow-[0_2px_12px_rgb(0,0,0,0.03)] md:shadow-sm md:hover:shadow-md transition-all p-[18px] flex gap-[16px] h-full ${className}`}
         >
             <div className={`w-[52px] h-[52px] shrink-0 flex items-center justify-center rounded-[16px] ${bg}`}>
                 <Icon className={`w-6 h-6 ${text}`} strokeWidth={1.25} />
             </div>
-            
+
             <div className="flex-1 min-w-0 flex flex-col">
                 <div className="flex justify-between items-start gap-2">
                     <h3 className="font-semibold text-[16px] text-[#2C3238] leading-tight truncate" title={announcement.title}>
@@ -78,11 +78,11 @@ export const AnnouncementCard = ({ announcement, className = "" }) => {
                         {formatTimeAgoShort(announcement.createdAt)}
                     </span>
                 </div>
-                
+
                 <p className="text-[14px] text-[#6B7280] leading-[1.6] line-clamp-3 mt-1.5 flex-1 pr-1">
                     {announcement.message}
                 </p>
-                
+
                 {/* Desktop only footer for additional details */}
                 <div className="hidden md:flex mt-auto pt-3 border-t border-gray-50 items-center justify-between text-[11px] text-gray-500">
                     <div className="flex items-center gap-1.5">
@@ -125,12 +125,11 @@ const AnnouncementList = ({ announcements, onAnnouncementClick }) => {
     return (
         <div className="py-4 md:p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             {announcements.map((announcement) => (
-                <div 
-                    key={announcement._id} 
+                <div
+                    key={announcement._id}
                     onClick={() => onAnnouncementClick && onAnnouncementClick(announcement)}
-                    className={`bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col h-full transition-all ${
-                        onAnnouncementClick ? 'cursor-pointer hover:shadow-md hover:border-primary/30' : 'hover:shadow-md'
-                    }`}
+                    className={`bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col h-full transition-all ${onAnnouncementClick ? 'cursor-pointer hover:shadow-md hover:border-primary/30' : 'hover:shadow-md'
+                        }`}
                 >
                     <div className="flex justify-between items-start mb-3 gap-3">
                         <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -155,16 +154,15 @@ const AnnouncementList = ({ announcements, onAnnouncementClick }) => {
                             </div>
                         </div>
                         {announcement.status && (
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
-                                announcement.status === 'active' ? 'bg-green-100 text-green-700' :
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${announcement.status === 'active' ? 'bg-green-100 text-green-700' :
                                 announcement.status === 'scheduled' ? 'bg-orange-100 text-orange-700' :
-                                'bg-gray-100 text-gray-700'
-                            }`}>
+                                    'bg-gray-100 text-gray-700'
+                                }`}>
                                 {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
                             </span>
                         )}
                     </div>
-                    
+
                     <div className="flex-1 text-sm text-gray-600 mb-4 line-clamp-3 break-all">
                         {announcement.message}
                     </div>

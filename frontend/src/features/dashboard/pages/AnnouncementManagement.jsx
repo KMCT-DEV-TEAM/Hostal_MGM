@@ -120,9 +120,15 @@ const AnnouncementManagement = () => {
                     <div className="flex w-full border-b border-gray-200 mt-4">
                         <button
                             onClick={() => navigate('/dashboard/announcements/latest')}
+<<<<<<< HEAD
+
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'latest'
+                                ? 'border-[#0A437A] text-[#0A437A]'
+=======
                             className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
-                                currentTab === 'latest' 
-                                ? 'border-[#0A437A] text-[#0A437A]' 
+                                currentTab === 'latest'
+                                ? 'border-[#0A437A] text-[#0A437A]'
+>>>>>>> 48b791fdbe1cf167b6c0d3af0aef57c740e8f44f
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -130,19 +136,23 @@ const AnnouncementManagement = () => {
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/announcements/scheduled')}
-                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
-                                currentTab === 'scheduled' 
-                                ? 'border-[#0A437A] text-[#0A437A]' 
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'scheduled'
+                                ? 'border-[#0A437A] text-[#0A437A]'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
-                            }`}
+                                }`}
                         >
                             Scheduled
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/announcements/history')}
+<<<<<<< HEAD
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'history'
+                                ? 'border-[#0A437A] text-[#0A437A]'
+=======
                             className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
-                                currentTab === 'history' 
-                                ? 'border-[#0A437A] text-[#0A437A]' 
+                                currentTab === 'history'
+                                ? 'border-[#0A437A] text-[#0A437A]'
+>>>>>>> 48b791fdbe1cf167b6c0d3af0aef57c740e8f44f
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -166,8 +176,8 @@ const AnnouncementManagement = () => {
                             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                         </div>
                     ) : (
-                        <AnnouncementList 
-                            announcements={displayAnnouncements} 
+                        <AnnouncementList
+                            announcements={displayAnnouncements}
                             onAnnouncementClick={(announcement) => {
                                 setSelectedAnnouncement(announcement);
                                 setIsDetailModalOpen(true);
