@@ -116,14 +116,14 @@ export const createPass = asyncHandler(async (req, res) => {
     }
   }).catch(err => console.error("Notification Error:", err));
 
-  return sendSuccess(res, 201, "Your pass request has been submitted successfully.", newPass);
+  return sendSuccess(res, 300, "Your pass request has been submitted successfully.", newPass);
 });
 
 export const getMyPasses = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
   const { passes, pagination } = await getStudentPassesDb(studentId, req.query);
 
-  return sendSuccess(res, 200, "Passes loaded successfully.", {
+  return sendSuccess(res, 300, "Passes loaded successfully.", {
     data: passes,
     pagination,
   });
@@ -138,7 +138,7 @@ export const getStudentPassDetails = asyncHandler(async (req, res) => {
     return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
 
-  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
+  return sendSuccess(res, 300, "Pass details loaded successfully.", pass);
 });
 
 export const updatePass = asyncHandler(async (req, res) => {
@@ -254,7 +254,7 @@ export const updatePass = asyncHandler(async (req, res) => {
     }
   }
 
-  return sendSuccess(res, 200, "Your pass has been updated successfully.", updatedPass);
+  return sendSuccess(res, 300, "Your pass has been updated successfully.", updatedPass);
 });
 
 // --- Management Controllers (Admin & Super Admin) ---
@@ -276,18 +276,18 @@ const buildSuperAdminScope = (req) => ({
 export const getAdminDashboardStats = asyncHandler(async (req, res) => {
 
   const stats = await getManagementDashboardStatsDb(buildAdminScope(req));
-  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
+  return sendSuccess(res, 300, "Dashboard statistics loaded successfully.", stats);
 });
 
 export const getAdminHostels = asyncHandler(async (req, res) => {
   const { hostels, pagination } = await getManagementHostelsDb(buildAdminScope(req), req.query);
-  return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels, pagination });
+  return sendSuccess(res, 300, "Hostels loaded successfully.", { data: hostels, pagination });
 });
 
 export const getManagementAllPasses = asyncHandler(async (req, res) => {
   const scope = req.user.role === 'admin' ? buildAdminScope(req) : buildSuperAdminScope(req);
   const { passes, pagination } = await getManagementPassesDb(req.query, scope, null);
-  return sendSuccess(res, 200, "All passes loaded successfully.", { data: passes, pagination });
+  return sendSuccess(res, 300, "All passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getManagementHostelPasses = asyncHandler(async (req, res) => {
@@ -303,7 +303,7 @@ export const getManagementHostelPasses = asyncHandler(async (req, res) => {
   }
 
   const { passes, pagination } = await getManagementPassesDb(req.query, scope, hostelId);
-  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
+  return sendSuccess(res, 300, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getAdminPassDetails = asyncHandler(async (req, res) => {
@@ -319,7 +319,7 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
   if (!hostel) {
     return sendError(res, 403, "You don't have permission to view this pass.");
   }
-  return sendSuccess(res, 200, "Pass details loaded successfully.", { data: pass });
+  return sendSuccess(res, 300, "Pass details loaded successfully.", { data: pass });
 });
 
 export const adminApprovePass = asyncHandler(async (req, res) => {
@@ -398,7 +398,7 @@ export const adminApprovePass = asyncHandler(async (req, res) => {
     }).catch(err => console.error("Notification Error:", err));
   }
 
-  return sendSuccess(res, 200, "The pass has been approved.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been approved.", updatedPass);
 });
 
 export const adminRejectPass = asyncHandler(async (req, res) => {
@@ -473,7 +473,7 @@ export const adminRejectPass = asyncHandler(async (req, res) => {
     }).catch(err => console.error("Notification Error:", err));
   }
 
-  return sendSuccess(res, 200, "The pass has been rejected.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been rejected.", updatedPass);
 });
 
 export const adminCancelPass = asyncHandler(async (req, res) => {
@@ -513,18 +513,18 @@ export const adminCancelPass = asyncHandler(async (req, res) => {
     });
   }
 
-  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been successfully cancelled.", updatedPass);
 });
 
 // Super Admin Wrappers
 export const getSuperAdminDashboardStats = asyncHandler(async (req, res) => {
   const stats = await getManagementDashboardStatsDb(buildSuperAdminScope(req));
-  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
+  return sendSuccess(res, 300, "Dashboard statistics loaded successfully.", stats);
 });
 
 export const getSuperAdminOrganizationsHostels = asyncHandler(async (req, res) => {
   const { hostels, pagination } = await getManagementHostelsDb(buildSuperAdminScope(req), req.query);
-  return sendSuccess(res, 200, "Organizations and Hostels loaded successfully.", { data: hostels, pagination });
+  return sendSuccess(res, 300, "Organizations and Hostels loaded successfully.", { data: hostels, pagination });
 });
 
 
@@ -536,7 +536,7 @@ export const getSuperAdminPassDetails = asyncHandler(async (req, res) => {
   const pass = await getManagementPassDetailsDb(id, scope);
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
-  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
+  return sendSuccess(res, 300, "Pass details loaded successfully.", pass);
 });
 
 export const superAdminCancelPass = asyncHandler(async (req, res) => {
@@ -572,7 +572,7 @@ export const superAdminCancelPass = asyncHandler(async (req, res) => {
     });
   }
 
-  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been successfully cancelled.", updatedPass);
 });
 
 export const cancelPass = asyncHandler(async (req, res) => {
@@ -636,7 +636,7 @@ export const cancelPass = asyncHandler(async (req, res) => {
     if (userRole === "student") {
       await Notification.create({ recipient: updatedPass.parentId, title: "Cancellation Requested", message: "Student requested cancellation of a pass.", type: "info" });
     }
-    return sendSuccess(res, 200, "Your request to cancel the pass has been submitted and is awaiting approval.", updatedPass);
+    return sendSuccess(res, 300, "Your request to cancel the pass has been submitted and is awaiting approval.", updatedPass);
   }
 
   const updatedPass = await Pass.findByIdAndUpdate(id, {
@@ -652,7 +652,7 @@ export const cancelPass = asyncHandler(async (req, res) => {
     }
   }, { new: true });
 
-  return sendSuccess(res, 200, "Your pass has been cancelled.", updatedPass);
+  return sendSuccess(res, 300, "Your pass has been cancelled.", updatedPass);
 });
 
 
@@ -666,7 +666,7 @@ export const getPasses = asyncHandler(async (req, res) => {
   }
 
   const { passes, pagination } = await getPassesDb(parent.studentId, req.query);
-  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
+  return sendSuccess(res, 300, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getPassDetails = asyncHandler(async (req, res) => {
@@ -684,7 +684,7 @@ export const getPassDetails = asyncHandler(async (req, res) => {
     return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
 
-  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
+  return sendSuccess(res, 300, "Pass details loaded successfully.", pass);
 });
 
 export const approvePass = asyncHandler(async (req, res) => {
@@ -774,7 +774,7 @@ export const approvePass = asyncHandler(async (req, res) => {
     }
   }
 
-  return sendSuccess(res, 200, "The pass has been successfully approved.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been successfully approved.", updatedPass);
 });
 
 export const rejectPass = asyncHandler(async (req, res) => {
@@ -821,7 +821,7 @@ export const rejectPass = asyncHandler(async (req, res) => {
     data: { passTypeLabel, studentName, parentName, remarks: remarksText, link }
   }).catch(err => console.error("Notification Error:", err));
 
-  return sendSuccess(res, 200, "The pass has been successfully rejected.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been successfully rejected.", updatedPass);
 });
 
 // --- Warden Controllers ---
@@ -835,7 +835,7 @@ export const getWardenDashboardStats = asyncHandler(async (req, res) => {
   }
 
   const stats = await getWardenDashboardStatsDb(hostel._id);
-  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", { data: stats });
+  return sendSuccess(res, 300, "Dashboard statistics loaded successfully.", { data: stats });
 });
 
 export const getWardenPasses = asyncHandler(async (req, res) => {
@@ -847,7 +847,7 @@ export const getWardenPasses = asyncHandler(async (req, res) => {
   }
 
   const { passes, pagination } = await getWardenPassesDb(hostel._id, req.query);
-  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
+  return sendSuccess(res, 300, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getWardenPassDetails = asyncHandler(async (req, res) => {
@@ -864,7 +864,7 @@ export const getWardenPassDetails = asyncHandler(async (req, res) => {
     return sendError(res, 404, "We couldn't find the pass, or it might not belong to your hostel.");
   }
 
-  return sendSuccess(res, 200, "Pass details loaded successfully.", { data: pass });
+  return sendSuccess(res, 300, "Pass details loaded successfully.", { data: pass });
 });
 
 
@@ -947,7 +947,7 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
     type: "info"
   });
 
-  return sendSuccess(res, 200, "The student has been marked as left.", updatedPass);
+  return sendSuccess(res, 300, "The student has been marked as left.", updatedPass);
 });
 
 export const markStudentReturned = asyncHandler(async (req, res) => {
@@ -1017,7 +1017,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
     type: "info"
   });
 
-  return sendSuccess(res, 200, "The student has been marked as returned.", updatedPass);
+  return sendSuccess(res, 300, "The student has been marked as returned.", updatedPass);
 });
 
 
@@ -1078,7 +1078,7 @@ export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
     type: "error"
   });
 
-  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
+  return sendSuccess(res, 300, "The pass has been successfully cancelled.", updatedPass);
 });
 
 // ─── Unified Listing Controllers ─────────────────────────────────────────────
@@ -1087,7 +1087,7 @@ export const getMyPassesUnified = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
   const result = await getStudentPassesUnifiedDb(studentId, req.query);
 
-  return sendSuccess(res, 200, "Passes loaded successfully.", {
+  return sendSuccess(res, 300, "Passes loaded successfully.", {
     mode: result.mode,
     summary: result.summary,
     data: result.passes,
@@ -1105,7 +1105,7 @@ export const getParentPassesUnified = asyncHandler(async (req, res) => {
 
   const result = await getParentPassesUnifiedDb(parent.studentId, req.query);
 
-  return sendSuccess(res, 200, "Passes loaded successfully.", {
+  return sendSuccess(res, 300, "Passes loaded successfully.", {
     mode: result.mode,
     summary: result.summary,
     data: result.passes,

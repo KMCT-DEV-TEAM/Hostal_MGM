@@ -7,7 +7,6 @@ import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
-import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import leaveService, { getLeaves, getAdminDashboardStats, getWardenDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
@@ -56,24 +55,23 @@ export default function AdminLeaves() {
     const hasActiveFilters = Boolean(statusFilter || categoryFilter || fromDateFilter || toDateFilter || (orgFilter !== 'All'));
 
     const [searchInput, setSearchInput] = useState(urlSearchQuery);
-    const debouncedInput = useDebounce(searchInput, 500);
 
     useEffect(() => {
         setSearchInput(urlSearchQuery);
     }, [urlSearchQuery]);
 
     useEffect(() => {
-        if (debouncedInput !== urlSearchQuery) {
+        if (searchInput !== urlSearchQuery) {
             const newParams = new URLSearchParams(searchParams);
-            if (!debouncedInput) {
+            if (!searchInput) {
                 newParams.delete('search');
             } else {
-                newParams.set('search', debouncedInput);
+                newParams.set('search', searchInput);
             }
             newParams.set('page', 1);
             setSearchParams(newParams);
         }
-    }, [debouncedInput, urlSearchQuery, searchParams, setSearchParams]);
+    }, [searchInput, urlSearchQuery, searchParams, setSearchParams]);
 
     const exportFields = useMemo(() => [
         {
@@ -120,7 +118,7 @@ export default function AdminLeaves() {
             outPassCategory: categoryFilter,
             startDate: fromDateFilter,
             endDate: toDateFilter,
-            search: debouncedInput,
+            search: searchInput,
             page,
             limit
         },
@@ -130,7 +128,7 @@ export default function AdminLeaves() {
 
     const { data: hostelData, loading: hostelsLoading } = useLeaves({
         passType: isHomePass ? 'home_pass' : 'out_pass',
-        search: debouncedInput,
+        search: searchInput,
         organization: orgFilter !== 'All' ? orgFilter : undefined,
     }, true, { enabled: isSuperAdmin && !selectedHostel });
 
@@ -237,7 +235,7 @@ export default function AdminLeaves() {
             const params = {
                 passType: passTypeFilter,
                 hostelId: selectedHostel,
-                search: debouncedInput,
+                search: searchInput,
                 status: exportFilters.status || statusFilter,
                 outPassCategory: categoryFilter,
                 organization: orgFilter !== 'All' ? orgFilter : undefined,

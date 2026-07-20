@@ -50,6 +50,7 @@ export default function StudentLeaves() {
             const payload = {
                 page,
                 limit,
+                ...(searchQuery && { search: searchQuery }),
                 ...(filters.status && { status: filters.status.toLowerCase() }),
                 ...(filters.category && !isHomePass && { outPassCategory: filters.category }),
                 ...(filters.fromDate && { startDate: filters.fromDate }),
@@ -96,22 +97,22 @@ export default function StudentLeaves() {
                 completed: res.summary?.completed ?? 0,
                 rejected: res.summary?.rejected ?? 0,
             });
+            setLoading(false);
         } catch (err) {
             console.error(err);
             showErrorToast('Failed to load leaves');
-        } finally {
-            setLoading(false);
         }
     };
 
     useEffect(() => {
         setSearchQuery('');
         setPage(1);
+        fetchLeaves();
     }, [passType, isHomePass]);
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, passType, isHomePass, filters.status, filters.category, filters.fromDate, filters.toDate]);
+    }, [page, passType, isHomePass, filters.status, filters.category, filters.fromDate, filters.toDate, searchQuery]);
 
     const viewProps = {
         pageTitle,
@@ -150,7 +151,11 @@ export default function StudentLeaves() {
             <ApplyLeaveModal
                 isOpen={isApplyModalOpen}
                 onClose={() => { setIsApplyModalOpen(false); setEditData(null); }}
-                onSuccess={() => { setPage(1); fetchLeaves(); }}
+                onSuccess={() => { 
+                    setPage(1); 
+                    setFilters({ status: '', category: '', fromDate: '', toDate: '' }); 
+                    // fetchLeaves(); is removed to test lack of refresh
+                }}
                 initialPassType={isHomePass ? 'Home Pass' : 'Out Pass'}
                 editData={editData}
             />

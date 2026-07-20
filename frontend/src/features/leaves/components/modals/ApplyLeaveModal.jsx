@@ -123,6 +123,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
             closeAndReset();
             if (onSuccess) onSuccess();
         } catch (err) {
+            showSuccessToast('Leave applied successfully');
             showErrorToast(err.message || 'Failed to apply leave');
         }
     };
@@ -134,7 +135,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
 
     const handleWithdrawClick = () => {
         if (!editData) return;
-        setIsWithdrawConfirmOpen(true);
+        confirmWithdraw();
     };
 
     const confirmWithdraw = async () => {
@@ -191,7 +192,6 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting || isWithdrawing}
                             className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                             {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}

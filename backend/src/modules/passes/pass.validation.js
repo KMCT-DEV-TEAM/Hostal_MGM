@@ -24,7 +24,7 @@ export const validateCreatePass = async (req, res, next) => {
       });
     }
 
-    if (!reason || reason.trim() === "") {
+    if (!reason || reason === "") {
       return res.status(400).json({
         success: false,
         message: "Please provide a reason for your leave.",
@@ -78,12 +78,12 @@ export const validateCreatePass = async (req, res, next) => {
         toDate: { $gte: start },
       });
 
-      if (overlappingPass) {
-        return res.status(400).json({
-          success: false,
-          message: "You already have another home pass requested or approved during these dates.",
-        });
-      }
+      // if (overlappingPass) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "You already have another home pass requested or approved during these dates.",
+      //   });
+      // }
     }
 
     if (passType === "out_pass") {
