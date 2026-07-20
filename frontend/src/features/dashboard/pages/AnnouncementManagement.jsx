@@ -73,11 +73,8 @@ const AnnouncementManagement = () => {
         } else if (currentTab === 'scheduled') {
             return a.status === 'scheduled';
         }
-<<<<<<< HEAD
-        return true;
-=======
+
         return a.status !== 'active' && a.status !== 'scheduled'; // History shows expired and deleted
->>>>>>> b58bddc29f4e293a34635eff013a12b172518f4b
     });
 
     const handleEdit = (announcement) => {
@@ -144,8 +141,8 @@ const AnnouncementManagement = () => {
                         <button
                             onClick={() => navigate('/dashboard/announcements/history')}
                             className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'history'
-                                    ? 'border-[#0A437A] text-[#0A437A]'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                                ? 'border-[#0A437A] text-[#0A437A]'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             History

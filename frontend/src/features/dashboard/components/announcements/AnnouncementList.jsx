@@ -3,14 +3,14 @@ import {
     Megaphone,
     Wifi,
     WifiOff,
-    CalendarCheck,
     UtensilsCrossed,
     AlertTriangle,
     CheckCircle,
     Bell,
     User,
     Target,
-    DoorOpen
+    DoorOpen,
+    Calendar
 } from 'lucide-react';
 
 import { formatTimeAgoShort } from '@/utils/formatters';
@@ -155,8 +155,8 @@ const AnnouncementList = ({ announcements, onAnnouncementClick }) => {
                         </div>
                         {announcement.status && (
                             <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${announcement.status === 'active' ? 'bg-green-100 text-green-700' :
-                                    announcement.status === 'scheduled' ? 'bg-orange-100 text-orange-700' :
-                                        'bg-gray-100 text-gray-700'
+                                announcement.status === 'scheduled' ? 'bg-orange-100 text-orange-700' :
+                                    'bg-gray-100 text-gray-700'
                                 }`}>
                                 {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
                             </span>

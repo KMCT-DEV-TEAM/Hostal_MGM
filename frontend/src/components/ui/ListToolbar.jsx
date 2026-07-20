@@ -105,20 +105,7 @@ export default function ListToolbar({
                             <Download className="w-4 h-4" /> Export
                         </button>
                     )}
-<<<<<<< HEAD
 
-    {
-        onAdd && (
-            <button
-                onClick={onAdd}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm hover:bg-secondary transition-colors flex-1 sm:flex-none shadow-sm md:shadow-none cursor-pointer whitespace-nowrap"
-            >
-                <Plus className="w-4 h-4" /> {addButtonLabel}
-            </button>
-        )
-    }
-=======
->>>>>>> b58bddc29f4e293a34635eff013a12b172518f4b
                 </div >
             </div >
         </div >
