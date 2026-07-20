@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Search, Filter, Loader2, Plus } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import MobileStatsCard from './MobileStatsCard';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 export default function MobileListContainer({
     // Tabs (Route-based)
@@ -17,6 +18,7 @@ export default function MobileListContainer({
     searchValue = "",
     onSearchChange,
     onFilterClick, // If provided, shows the filter button
+    isFilterApplied = false, // If true, highlights the filter button
     onAddClick, // If provided, shows a floating action button
 
     // List & Pagination
@@ -104,7 +106,11 @@ export default function MobileListContainer({
                     {onFilterClick && (
                         <button
                             onClick={onFilterClick}
-                            className="w-12 h-12 bg-white border border-gray-100 rounded-[14px] flex items-center justify-center text-gray-600 shadow-sm active:scale-95 transition-transform"
+                            className={`w-12 h-12 rounded-[14px] flex items-center justify-center shadow-sm active:scale-95 transition-all ${
+                                isFilterApplied 
+                                    ? 'bg-primary border-primary text-white' 
+                                    : 'bg-white border border-gray-100 text-gray-600'
+                            }`}
                         >
                             <Filter className="w-5 h-5" />
                         </button>
@@ -133,8 +139,8 @@ export default function MobileListContainer({
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                    <div className="flex justify-center py-6">
-                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    <div className="py-2">
+                        <MobileSkeletonLoader rows={data.length === 0 ? 5 : 1} />
                     </div>
                 )}
 
@@ -142,9 +148,9 @@ export default function MobileListContainer({
                 {!isLoading && data.length === 0 && (
                     <div className="bg-white rounded-[24px] p-8 text-center border border-gray-50 shadow-sm flex flex-col items-center justify-center">
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                            <Search className="w-6 h-6 text-gray-400" />
+                            <Search className="w-6 h-6 text-text-secondary" />
                         </div>
-                        <p className="text-gray-500 font-medium">{emptyMessage}</p>
+                        <p className="text-text-secondary font-medium">{emptyMessage}</p>
                     </div>
                 )}
             </div>

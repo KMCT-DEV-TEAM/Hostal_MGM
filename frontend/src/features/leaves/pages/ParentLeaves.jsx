@@ -178,6 +178,7 @@ export default function ParentLeaves() {
             setPage(1);
         },
         onFilterClick: () => setIsFilterModalOpen(true),
+        isFilterApplied: !!(filters.status || filters.category || filters.fromDate || filters.toDate),
         onAddClick: undefined,
         openEditModal: undefined,
         statsData

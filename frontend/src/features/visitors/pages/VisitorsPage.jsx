@@ -290,6 +290,8 @@ const VisitorsPage = () => {
                         setSearchQuery(val);
                         setPage(1);
                     }}
+                    onFilterClick={() => setIsFilterModalOpen(true)}
+                    isFilterApplied={!!statusFilter}
                     onAddClick={isParent ? () => setShowCheckInModal(true) : undefined}
                     onEdit={isParent ? handleEdit : undefined}
                 />
