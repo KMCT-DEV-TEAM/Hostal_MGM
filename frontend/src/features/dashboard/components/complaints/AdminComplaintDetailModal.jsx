@@ -2,11 +2,12 @@ import React from "react";
 import Modal from "@/components/ui/Modal";
 import { User, Calendar, Tag, Clock, Home, Info, MoreHorizontal, Bell } from "lucide-react";
 import { showSuccessToast } from "@/utils/toast";
-import SendNotificationModal from "./SendNotificationModal";
 import { useState } from "react";
+import AssignStaffModal from './AssignStaffModal';
 
 export default function AdminComplaintDetailModal({ complaint, onClose }) {
     const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+    const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
     const [isEditingStatus, setIsEditingStatus] = useState(false);
     const [status, setStatus] = useState('In progress');
     const [note, setNote] = useState('Issue verified and food quality improved.');
@@ -188,12 +189,22 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                                     Save
                                 </button>
                             ) : (
-                                <button
-                                    onClick={() => setIsEditingStatus(true)}
-                                    className="px-3 py-1.5 text-xs font-medium text-white bg-[#0A437A] rounded-md hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer"
-                                >
-                                    Update Status
-                                </button>
+                                <div className="flex gap-2">
+                                    {complaint.status === 'Pending' && (
+                                        <button
+                                            onClick={() => setIsAssignStaffModalOpen(true)}
+                                            className="px-3 py-1.5 text-xs font-medium text-white bg-[#0A437A] rounded-md hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer"
+                                        >
+                                            Assign Task
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setIsEditingStatus(true)}
+                                        className="px-3 py-1.5 text-xs font-medium text-white bg-[#0A437A] rounded-md hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer"
+                                    >
+                                        Update Status
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -326,6 +337,18 @@ export default function AdminComplaintDetailModal({ complaint, onClose }) {
                     setIsNotificationModalOpen(false);
                     showSuccessToast("Notification Sent", "Admin has been notified about this complaint.");
                     onClose();
+                }}
+            />
+
+            <AssignStaffModal
+                isOpen={isAssignStaffModalOpen}
+                onClose={() => setIsAssignStaffModalOpen(false)}
+                complaint={complaint}
+                onAssigned={(staff, updateData) => {
+                    // Update state or trigger refresh here if needed
+                    showSuccessToast("Task Assigned", `Task successfully assigned to ${staff.name}`);
+                    setIsAssignStaffModalOpen(false);
+                    onClose(); // Optional: close the detail modal after assigning
                 }}
             />
         </Modal>

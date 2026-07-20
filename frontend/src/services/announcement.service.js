@@ -18,6 +18,24 @@ class AnnouncementService {
             throw error.response?.data || error.message;
         }
     }
+
+    async updateAnnouncement(id, data) {
+        try {
+            const response = await api.put(`/announcements/${id}`, data);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    }
+
+    async deleteAnnouncement(id) {
+        try {
+            const response = await api.delete(`/announcements/${id}`);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    }
 }
 
 export default new AnnouncementService();

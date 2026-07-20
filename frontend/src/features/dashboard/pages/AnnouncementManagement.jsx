@@ -7,7 +7,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 import AnnouncementService from '@/services/announcement.service';
 import AnnouncementList from '../components/announcements/AnnouncementList';
 import AnnouncementFormModal from '../components/announcements/AnnouncementFormModal';
+import AnnouncementDetailModal from '../components/announcements/AnnouncementDetailModal';
 import ListToolbar from '@/components/ui/ListToolbar';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { ROLES } from '@/constants/roles';
@@ -20,6 +22,8 @@ const AnnouncementManagement = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const isStudentOrParent = [ROLES.STUDENT, ROLES.PARENT].includes(user?.role);
@@ -65,10 +69,41 @@ const AnnouncementManagement = () => {
 
         if (!isSuperAdmin) return true;
         if (currentTab === 'latest') {
-            return a.isActive;
+            return a.status === 'active';
+        } else if (currentTab === 'scheduled') {
+            return a.status === 'scheduled';
         }
-        return true;
+        return a.status !== 'active' && a.status !== 'scheduled'; // History shows expired and deleted
     });
+
+    const handleEdit = (announcement) => {
+        setSelectedAnnouncement(announcement);
+        setIsModalOpen(true);
+    };
+
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [announcementToDelete, setAnnouncementToDelete] = useState(null);
+
+    const handleDelete = (announcement) => {
+        setAnnouncementToDelete(announcement);
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!announcementToDelete) return;
+        try {
+            await AnnouncementService.deleteAnnouncement(announcementToDelete._id);
+            showSuccessToast("Announcement deleted successfully");
+            fetchAnnouncements();
+            setIsDetailModalOpen(false); // Close detail modal if open
+        } catch (err) {
+            console.error("Delete failed", err);
+            showErrorToast("Failed to delete announcement");
+        } finally {
+            setDeleteConfirmOpen(false);
+            setAnnouncementToDelete(null);
+        }
+    };
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
@@ -82,24 +117,36 @@ const AnnouncementManagement = () => {
                 )}
 
                 {isSuperAdmin && (
-                    <div className="flex border-b border-gray-200 mt-4">
+                    <div className="flex w-full border-b border-gray-200 mt-4">
                         <button
                             onClick={() => navigate('/dashboard/announcements/latest')}
-                            className={`py-3 px-6 text-sm font-medium border-b-2 ${currentTab === 'latest'
-                                ? 'border-[#0A437A] text-[#0A437A]'
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
+                                currentTab === 'latest' 
+                                ? 'border-[#0A437A] text-[#0A437A]' 
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
-                            Latest Announcements
+                            Announcement
+                        </button>
+                        <button
+                            onClick={() => navigate('/dashboard/announcements/scheduled')}
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
+                                currentTab === 'scheduled' 
+                                ? 'border-[#0A437A] text-[#0A437A]' 
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            Scheduled
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/announcements/history')}
-                            className={`py-3 px-6 text-sm font-medium border-b-2 ${currentTab === 'history'
-                                ? 'border-[#0A437A] text-[#0A437A]'
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
+                                currentTab === 'history' 
+                                ? 'border-[#0A437A] text-[#0A437A]' 
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
-                            Announcement History
+                            History
                         </button>
                     </div>
                 )}
@@ -110,8 +157,8 @@ const AnnouncementManagement = () => {
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         searchPlaceholder="Search announcements..."
-                        onAdd={canCreate ? () => setIsModalOpen(true) : undefined}
-                        addButtonLabel="Create Announcement"
+                        onAdd={canCreate ? () => { setSelectedAnnouncement(null); setIsModalOpen(true); } : undefined}
+                        addButtonLabel=""
                     />
 
                     {loading ? (
@@ -119,19 +166,55 @@ const AnnouncementManagement = () => {
                             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                         </div>
                     ) : (
-                        <AnnouncementList announcements={displayAnnouncements} />
+                        <AnnouncementList 
+                            announcements={displayAnnouncements} 
+                            onAnnouncementClick={(announcement) => {
+                                setSelectedAnnouncement(announcement);
+                                setIsDetailModalOpen(true);
+                            }}
+                        />
                     )}
                 </div>
 
                 <AnnouncementFormModal
                     isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedAnnouncement(null);
+                    }}
                     onSuccess={() => {
                         setIsModalOpen(false);
+                        setSelectedAnnouncement(null);
                         fetchAnnouncements();
                     }}
+                    announcementToEdit={selectedAnnouncement}
+                />
+
+                <AnnouncementDetailModal
+                    isOpen={isDetailModalOpen}
+                    onClose={() => {
+                        setIsDetailModalOpen(false);
+                        setSelectedAnnouncement(null);
+                    }}
+                    announcement={selectedAnnouncement}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                 />
             </div>
+
+            <ConfirmationModal
+                isOpen={deleteConfirmOpen}
+                onClose={() => {
+                    setDeleteConfirmOpen(false);
+                    setAnnouncementToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Announcement"
+                message="Are you sure you want to delete this announcement? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+            />
         </div>
     );
 };

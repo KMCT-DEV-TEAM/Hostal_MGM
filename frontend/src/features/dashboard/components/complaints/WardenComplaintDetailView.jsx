@@ -432,7 +432,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
                     {showAllUpdates ? 'View less' : 'View all'}
                   </button>
                 )}
-                {user?.role === 'admin' && !complaint.assignedStaff && (
+                {(user?.role === 'admin' || user?.role === 'super_admin') && !complaint.assignedStaff && (
                   <button
                     onClick={() => onOpenAssignStaff && onOpenAssignStaff(complaint)}
                     className="px-4 py-1.5 text-[11px] font-medium text-white bg-primary rounded-md hover:bg-primary/80 transition-colors cursor-pointer"
