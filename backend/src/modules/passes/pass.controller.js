@@ -312,8 +312,6 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
 
   const pass = await getManagementPassDetailsDb(id, scope);
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
-  console.log(pass)
-  console.log(scope, "scop");
 
   const hostel = await Hostel.findOne({ _id: pass.hostelId?._id, organizations: scope.organizationId });
   if (!hostel) {

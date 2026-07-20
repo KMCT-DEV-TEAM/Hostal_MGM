@@ -17,7 +17,9 @@ const UserLayout = () => {
     const footerVisible = useLayoutStore((state) => state.footer.visible);
 
     return (
-        <div className={`flex flex-col h-dvh bg-background-secondary ${isMobile ? 'font-mobile' : 'font-sans'}`}>
+        <div className={`flex flex-col h-dvh bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
+
+
             {/* Header Area */}
             {isMobile ? (
                 headerVariant !== "none" && <MobileHeader />
