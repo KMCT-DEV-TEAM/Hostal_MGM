@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const BackToSignIn = ({ 
     to, 
     onClick, 
-    className = "flex items-center gap-2 text-primary hover:opacity-80 transition-opacity text-[13px] font-medium mt-6 lg:mt-10",
+    className = "hidden md:flex items-center gap-2 text-primary hover:opacity-80 transition-opacity text-[13px] font-medium mt-6 lg:mt-10",
     iconSizeClassName = "w-4 h-4",
     strokeWidth = 2
 }) => {

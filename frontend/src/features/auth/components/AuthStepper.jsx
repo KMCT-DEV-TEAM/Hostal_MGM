@@ -9,7 +9,7 @@ const AuthStepper = ({ currentStep = 1 }) => {
     ];
 
     return (
-        <div className="flex items-start justify-between w-full max-w-xs mb-5 relative">
+        <div className="hidden md:flex items-start justify-between w-full max-w-xs mb-5 relative">
             {/* Connecting Line Background */}
             <div className="absolute top-[17px] left-6 right-6 h-px bg-gray-300 z-0">
                 <div 
