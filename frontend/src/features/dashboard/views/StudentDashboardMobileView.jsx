@@ -1,5 +1,6 @@
 import React from 'react';
 import { Wifi, Utensils, FileEdit, Tag } from 'lucide-react';
+import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 
 export default function StudentDashboardMobileView({
     user,
@@ -16,6 +17,8 @@ export default function StudentDashboardMobileView({
     isLoading,
     onNavigate
 }) {
+    useLayoutConfig();
+
     const attendanceRate = dashboardData?.attendanceRate || 0;
     const leavePendingCount = dashboardData?.pendingLeaveRequestsCount || 0;
     const complaintsOpenCount = dashboardData?.openComplaintsCount || 0;

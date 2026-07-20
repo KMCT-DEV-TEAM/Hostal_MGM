@@ -14,22 +14,15 @@ export function useLayoutConfig(config = {}) {
     const footerVisible = config.footer?.visible ?? true;
 
     useLayoutEffect(() => {
-        if (config.header) {
-            setHeader({
-                variant: headerVariant,
-                title: headerTitle,
-                showBack: headerShowBack,
-                onBack: headerOnBack,
-            });
-        }
+        setHeader({
+            variant: headerVariant,
+            title: headerTitle,
+            showBack: headerShowBack,
+            onBack: headerOnBack,
+        });
 
-        if (config.footer !== undefined) {
-            setFooter({ visible: footerVisible });
-        }
+        setFooter({ visible: footerVisible });
 
-        return () => {
-            resetLayout();
-        };
 
     }, [
         headerVariant,
