@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { User, Users, GraduationCap, Building2, Settings, Globe, LogOut, Phone, Mail, FileText, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatDateReadable } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const ProfileMobileView = ({
     user,
@@ -20,6 +21,7 @@ const ProfileMobileView = ({
 }) => {
     const { logout } = useAuthStore();
     const navigate = useNavigate();
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     useLayoutConfig({
         header: {
@@ -499,7 +501,7 @@ const ProfileMobileView = ({
                     </button>
 
                     <button
-                        onClick={() => logout()}
+                        onClick={() => setIsLogoutModalOpen(true)}
                         className="flex items-center justify-between p-4 active:bg-gray-50 transition-colors"
                     >
                         <div className="flex items-center gap-3">
@@ -512,6 +514,19 @@ const ProfileMobileView = ({
                     </button>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={() => {
+                    setIsLogoutModalOpen(false);
+                    logout();
+                }}
+                title="Confirm Logout"
+                message="Are you sure you want to logout from your account?"
+                confirmText="Logout"
+                confirmButtonClass="bg-danger text-white hover:bg-danger/90"
+            />
 
         </div>
     );

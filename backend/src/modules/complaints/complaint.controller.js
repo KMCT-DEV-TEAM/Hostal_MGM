@@ -66,7 +66,7 @@ export const deleteComplaint = async (req, res) => {
 // @access  Private (Student)
 export const getMyComplaints = async (req, res) => {
     try {
-        const complaints = await complaintService.getStudentComplaintsDb(req.user.id);
+        const complaints = await complaintService.getStudentComplaintsDb(req.user.id, req.query.type);
         res.status(200).json({
             success: true,
             data: complaints

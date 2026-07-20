@@ -19,9 +19,11 @@ import StudentComplaintsDesktopView from '../views/StudentComplaintsDesktopView'
 import Button from '@/components/ui/Button';
 import ComplaintMobileView from '../views/ComplaintMobileView';
 import ComplaintDetailsMobileView from '../views/ComplaintDetailsMobileView';
+import { useParams, useNavigate } from 'react-router-dom';
 
 export default function StudentComplaints() {
     const [complaints, setComplaints] = useState([]);
+    const [apiStats, setApiStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +32,18 @@ export default function StudentComplaints() {
     const [currentPage, setCurrentPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const { isMobile } = useBreakpoint();
+    const { tab } = useParams();
+    const navigate = useNavigate();
+
+    const activeTab = tab === 'history' ? 'History' : 'My complaints';
+
+    const handleTabChange = (newTab) => {
+        if (newTab === 'History') {
+            navigate('/dashboard/complaints/history');
+        } else {
+            navigate('/dashboard/complaints');
+        }
+    };
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,12 +65,20 @@ export default function StudentComplaints() {
     });
     const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
-    const fetchComplaints = async () => {
+    const fetchComplaints = async (clearData = false) => {
         try {
+            if (clearData) setComplaints([]);
             setLoading(true);
-            const response = await ComplaintService.getMyComplaints();
+            const typeParam = isMobile ? (activeTab === 'History' ? 'history' : 'current') : 'all';
+            const response = await ComplaintService.getMyComplaints(typeParam);
+            
+            const fetchedComplaints = response.data?.complaints || response.data || [];
+            if (response.data?.stats) {
+                setApiStats(response.data.stats);
+            }
+
             // Transform to UI format
-            const formatted = (response.data || []).map(c => ({
+            const formatted = fetchedComplaints.map(c => ({
                 id: c._id,
                 category: c.category?.name || 'Unknown',
                 categoryId: c.category?._id,
@@ -81,7 +103,7 @@ export default function StudentComplaints() {
     };
 
     useEffect(() => {
-        fetchComplaints();
+        fetchComplaints(true);
         // Load categories for the dropdown in the table
         ComplaintCategoryService.getComplaintCategories().then(res => {
             setCategories(res.data || []);
@@ -91,7 +113,7 @@ export default function StudentComplaints() {
         const socket = initSocket();
 
         const handleComplaintEvent = () => {
-            fetchComplaints();
+            fetchComplaints(false);
         };
 
         socket.on('complaintCreated', handleComplaintEvent);
@@ -103,7 +125,7 @@ export default function StudentComplaints() {
             socket.off('complaintUpdated', handleComplaintEvent);
             socket.off('complaintDeleted', handleComplaintEvent);
         };
-    }, []);
+    }, [isMobile, activeTab]);
 
     useEffect(() => {
         if (selectedDetailComplaint) {
@@ -201,7 +223,6 @@ export default function StudentComplaints() {
         }
     };
 
-    // Apply filtering
     let filteredComplaints = complaints.filter(c => {
         if (!debouncedSearchQuery) return true;
         const query = debouncedSearchQuery.toLowerCase();
@@ -214,9 +235,19 @@ export default function StudentComplaints() {
         );
     });
 
-    if (statusFilter !== 'All') {
-        filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
+    if (isMobile) {
+        // Mobile filtering is now handled by the backend
+    } else {
+        if (statusFilter !== 'All') {
+            filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
+        }
     }
+
+    const totalMobileStats = apiStats || {
+        total: complaints.length,
+        resolved: complaints.filter(c => c.status === 'Resolved').length,
+        pending: complaints.filter(c => c.status !== 'Resolved' && c.status !== 'Rejected').length
+    };
 
     const confirmExport = async (exportFilters) => {
         setIsExporting(true);
@@ -286,8 +317,11 @@ export default function StudentComplaints() {
                 <ComplaintMobileView
                     loading={loading}
                     complaints={paginatedComplaints}
+                    totalMobileStats={totalMobileStats}
                     categories={categories}
                     handleCategoryChange={handleCategoryChange}
+                    activeTab={activeTab}
+                    onTabChange={handleTabChange}
                     openEditModal={handleEdit}
                     onViewDetail={(complaint) => setSelectedDetailComplaint(complaint)}
                     page={currentPage}

@@ -17,7 +17,7 @@ export const createComplaintDb = async (complaintData, user) => {
         hostelId: student.hostelId,
         organizationId: student.organizationId,
         category: complaintData.category,
-        roomNo: complaintData.roomNo,
+        roomNo: student.roomNumber,
         subject: complaintData.subject,
         description: complaintData.description,
         status: 'Pending',
@@ -36,14 +36,30 @@ export const createComplaintDb = async (complaintData, user) => {
 };
 
 // Get complaints for a specific student
-export const getStudentComplaintsDb = async (userId) => {
+export const getStudentComplaintsDb = async (userId, type = 'all') => {
     const student = await Student.findById(userId);
     if (!student) throw new Error("Student not found.");
 
-    return await Complaint.find({ studentId: student._id })
+    const query = { studentId: student._id };
+
+    if (type === 'history') {
+        query.status = { $in: ['Resolved', 'Rejected', 'Incomplete'] };
+    } else if (type === 'current' || type === 'active') {
+        query.status = { $nin: ['Resolved', 'Rejected', 'Incomplete'] };
+    }
+
+    const stats = {
+        total: await Complaint.countDocuments({ studentId: student._id }),
+        resolved: await Complaint.countDocuments({ studentId: student._id, status: { $in: ['Resolved', 'Rejected'] } }),
+        pending: await Complaint.countDocuments({ studentId: student._id, status: { $nin: ['Resolved', 'Rejected'] } })
+    };
+
+    const complaints = await Complaint.find(query)
         .populate('category', 'name')
         .populate('hostelId', 'name')
         .sort({ createdAt: -1 });
+
+    return { complaints, stats };
 };
 
 // Get complaints for a specific warden based on hostelId
@@ -63,7 +79,7 @@ export const updateComplaintDb = async (complaintId, user, updateData) => {
     if (!complaint) {
         throw new Error("Complaint not found.");
     }
-    
+
     // Ensure the complaint belongs to the student trying to update it, unless it's an admin/warden
     if (user.role === 'student') {
         const student = await Student.findById(user.id);
@@ -94,8 +110,8 @@ export const updateComplaintDb = async (complaintId, user, updateData) => {
         if (staff) updaterName = staff.name;
     }
 
-    const byRole = user.role === 'student' ? 'Student' : 
-                  (user.role === 'warden' ? 'Warden' : 'Admin');
+    const byRole = user.role === 'student' ? 'Student' :
+        (user.role === 'warden' ? 'Warden' : 'Admin');
 
     complaint.timeline.push({
         status: complaint.status,
@@ -220,23 +236,23 @@ export const getComplaintSummaryDb = async (query = {}) => {
             }
         }
     ]);
-    
+
 
     const categories = result[0].byCategory || [];
     let statuses = result[0].byStatus || [];
     const totalCount = result[0].totalCount.length > 0 ? result[0].totalCount[0].total : 0;
-    
+
     const allStatuses = ['Pending', 'In progress', 'Awaiting', 'Resolved', 'Rejected', 'Incomplete'];
     const existingStatuses = new Set(statuses.map(s => s.name));
-    
+
     allStatuses.forEach(status => {
         if (!existingStatuses.has(status)) {
             statuses.push({ name: status, count: 0 });
         }
     });
-    
+
     statuses.sort((a, b) => b.count - a.count);
-    
+
     return {
         total: totalCount,
         categories: categories,
@@ -250,7 +266,7 @@ export const updateComplaintStatusDb = async (complaintId, newStatus, userRole, 
     if (!complaint) throw new Error("Complaint not found.");
 
     complaint.status = newStatus;
-    
+
     // Add to timeline
     complaint.timeline.push({
         status: newStatus,
@@ -272,7 +288,7 @@ export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) =
 
     complaint.assignedStaff = staffId;
     complaint.status = 'In progress';
-    
+
     const roleName = staff.role === 'warden' ? 'Warden' : 'maintenance user';
 
     // Add to timeline
@@ -290,7 +306,7 @@ export const assignStaffToComplaintDb = async (complaintId, staffId, userRole) =
 export const submitComplaintResolutionDb = async (complaintId, staffId, materialsUsed, resolutionNotes) => {
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
-    
+
     if (complaint.assignedStaff?.toString() !== staffId.toString()) {
         throw new Error("You are not assigned to this complaint.");
     }
@@ -301,10 +317,10 @@ export const submitComplaintResolutionDb = async (complaintId, staffId, material
     complaint.status = isWarden ? 'Resolved' : 'Awaiting';
     complaint.materialsUsed = materialsUsed;
     complaint.resolutionNotes = resolutionNotes;
-    
+
     complaint.timeline.push({
         status: isWarden ? 'Resolved' : 'Awaiting',
-        message: isWarden 
+        message: isWarden
             ? 'Warden submitted resolution and resolved the complaint directly.'
             : 'Maintenance staff submitted resolution and is awaiting approval.',
         by: isWarden ? 'Warden' : 'Maintenance Staff',
@@ -324,7 +340,7 @@ export const approveComplaintResolutionDb = async (complaintId, userRole) => {
     }
 
     complaint.status = 'Resolved';
-    
+
     complaint.timeline.push({
         status: 'Resolved',
         message: 'Resolution approved and complaint marked as resolved.',
@@ -345,7 +361,7 @@ export const rejectComplaintResolutionDb = async (complaintId, userRole, rejectN
     }
 
     complaint.status = 'In progress';
-    
+
     complaint.timeline.push({
         status: 'In progress',
         message: `Resolution rejected. Note: ${rejectNote}`,
@@ -360,7 +376,7 @@ export const rejectComplaintResolutionDb = async (complaintId, userRole, rejectN
 export const rejectAssignedTaskDb = async (complaintId, staffId, rejectNote) => {
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) throw new Error("Complaint not found.");
-    
+
     if (complaint.assignedStaff?.toString() !== staffId.toString()) {
         throw new Error("You are not assigned to this complaint.");
     }
@@ -370,7 +386,7 @@ export const rejectAssignedTaskDb = async (complaintId, staffId, rejectNote) => 
 
     complaint.status = 'Rejected';
     // Keeping assignedStaff so it shows up in their table
-    
+
     complaint.timeline.push({
         status: 'Rejected',
         message: `Assigned task rejected by ${isWarden ? 'Warden' : 'maintenance staff'}. Note: ${rejectNote}`,

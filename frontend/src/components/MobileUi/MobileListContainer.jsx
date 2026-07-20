@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Search, Filter, Loader2, Plus } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import MobileStatsCard from './MobileStatsCard';
+import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 
 export default function MobileListContainer({
     // Tabs (Route-based)
@@ -114,7 +115,7 @@ export default function MobileListContainer({
 
             {/* Optional Stats Card */}
             {stats && stats.length > 0 && (
-                <MobileStatsCard stats={stats} />
+                <MobileStatsCard stats={stats} isLoading={isLoading && data.length === 0} />
             )}
 
             {/* List Content */}
@@ -131,8 +132,13 @@ export default function MobileListContainer({
                     );
                 })}
 
-                {/* Loading Indicator */}
-                {isLoading && (
+                {/* Initial Loading Skeleton */}
+                {isLoading && data.length === 0 && (
+                    <MobileSkeletonLoader rows={4} />
+                )}
+
+                {/* Loading More Indicator */}
+                {isLoading && data.length > 0 && (
                     <div className="flex justify-center py-6">
                         <Loader2 className="w-6 h-6 text-primary animate-spin" />
                     </div>

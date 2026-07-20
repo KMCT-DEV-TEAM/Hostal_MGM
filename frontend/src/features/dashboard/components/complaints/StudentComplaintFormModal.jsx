@@ -13,7 +13,6 @@ export default function StudentComplaintFormModal({
     onWithdraw
 }) {
     const [formData, setFormData] = useState({
-        roomNo: '',
         category: '',
         subject: '',
         description: ''
@@ -42,7 +41,6 @@ export default function StudentComplaintFormModal({
     useEffect(() => {
         if (editingComplaint) {
             setFormData({
-                roomNo: editingComplaint.roomNo || '',
                 // Use categoryId from the formatted complaint, or fallback to first category's ID
                 category: editingComplaint.categoryId || editingComplaint.category?._id || (categories.length > 0 ? categories[0]._id : ''),
                 subject: editingComplaint.subject || '',
@@ -112,19 +110,7 @@ export default function StudentComplaintFormModal({
                 <section>
                     <div className="border-b border-gray-100 mb-4" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="col-span-1">
-                            <label className="block text-[10px] font-medium text-text-primary mb-1">Room No <span className="text-danger">*</span></label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50 focus-within:border-primary">
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="101"
-                                    value={formData.roomNo}
-                                    onChange={(e) => setFormData({ ...formData, roomNo: e.target.value })}
-                                    className="w-full px-3 py-2 outline-none bg-transparent text-xs text-text-primary"
-                                />
-                            </div>
-                        </div>
+
 
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-text-primary mb-1">Category <span className="text-danger">*</span></label>
