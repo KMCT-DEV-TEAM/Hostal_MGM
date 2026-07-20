@@ -70,9 +70,9 @@ const UserPortalLogin = () => {
 
     return (
         <AuthLayout leftPanel={<AuthSidebarFeatures />}>
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md mx-auto">
                 {/* Logo */}
-                <AuthLogo isCentered={true} />
+                <AuthLogo isCentered={true} mobileImage="login" />
 
                 {/* Login Card */}
                 <AuthCard

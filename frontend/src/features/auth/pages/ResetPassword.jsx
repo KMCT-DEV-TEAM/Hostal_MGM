@@ -50,9 +50,9 @@ const ResetPassword = () => {
             rightSideClassName="w-full lg:w-1/2 flex flex-col relative bg-background lg:bg-transparent overflow-hidden"
         >
             <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8">
-                <div className="w-full max-w-[480px] flex flex-col items-center">
+                <div className="w-full max-w-[480px] flex flex-col items-center my-auto">
                     {/* Logo */}
-                    <AuthLogo />
+                    <AuthLogo isCentered={true} mobileImage="lock" />
 
                     {/* Stepper */}
                     <AuthStepper currentStep={3} />
