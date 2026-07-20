@@ -42,6 +42,17 @@ const announcementSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ['scheduled', 'active', 'expired', 'deleted'],
+      default: 'active',
+    },
+    scheduledAt: {
+      type: Date,
+    },
+    expiresAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
