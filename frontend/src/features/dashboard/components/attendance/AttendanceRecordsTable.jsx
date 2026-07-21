@@ -120,7 +120,7 @@ export default function AttendanceRecordsTable({ windowId }) {
         );
     }
 
-    const toolbarEndSlot = (
+    const addButton = (
         <button
             onClick={() => setIsFilterModalOpen(true)}
             className={`p-2 rounded-lg transition-colors shadow-sm md:shadow-none flex items-center justify-center shrink-0 ${Object.keys(filters).length > 0 ? 'bg-[#0A437A] text-white hover:bg-[#0A437A]/90' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
@@ -150,7 +150,7 @@ export default function AttendanceRecordsTable({ windowId }) {
                         setIsModalOpen(true);
                     }
                 }}
-                toolbarEndSlot={toolbarEndSlot}
+                addButton={addButton}
                 page={page}
                 setPage={setPage}
                 limit={limit}

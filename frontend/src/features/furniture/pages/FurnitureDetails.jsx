@@ -291,17 +291,19 @@ export default function FurnitureDetails() {
                 placeholder="All Status"
                 minWidth="w-[140px]"
             />
-            <Button
-                variant='outline'
-                fullWidth={false}
-                size="md"
-                onClick={handleExport}
-            >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Export</span>
-            </Button>
+
         </div>
     );
+
+    const addButton = <Button
+        variant='outline'
+        fullWidth={false}
+        size="md"
+        onClick={handleExport}
+    >
+        <Download className="w-4 h-4" />
+        <span className="hidden sm:inline">Export</span>
+    </Button>
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
@@ -349,6 +351,7 @@ export default function FurnitureDetails() {
                         data={assets}
                         canSelect={true}
                         selectedIds={selectedIds}
+                        addButton={addButton}
                         onSelectAll={handleSelectAll}
                         onSelectRow={handleSelect}
                         onRowClick={handleRowClick}
