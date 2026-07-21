@@ -112,7 +112,7 @@ const formatDate = (dateString) => {
         hour12: true
     });
 };
-const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loadingMore, observerRef }) => {
+const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loadingMore, observerRef, isStudentOrParent }) => {
     if (!loading && !announcements?.length) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-gray-500">
@@ -190,8 +190,8 @@ const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loading
                             </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
 
             {(loading || loadingMore) && Array.from({ length: 4 }).map((_, i) => (
                 <AnnouncementSkeleton key={`skeleton-${i}`} />

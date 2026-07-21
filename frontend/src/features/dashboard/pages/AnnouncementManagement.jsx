@@ -184,6 +184,7 @@ const AnnouncementManagement = () => {
                             setSelectedAnnouncement(announcement);
                             setIsDetailModalOpen(true);
                         }}
+                        isStudentOrParent={isStudentOrParent}
                     />
                 </div>
 
