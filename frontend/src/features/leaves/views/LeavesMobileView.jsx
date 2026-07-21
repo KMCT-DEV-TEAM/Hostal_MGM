@@ -23,14 +23,7 @@ export default function LeavesMobileView({
     const { user } = useAuthStore();
     const isParent = user?.role === 'parent';
 
-    // useLayoutConfig({
-    //     header: isParent 
-    //         ? { variant: 'dashboard' } 
-    //         : { variant: 'page', title: 'Leaves', showBack: true },
-    //     footer: {
-    //         visible: isParent
-    //     }
-    // });
+    useLayoutConfig();
 
     const tabs = [
         { label: "Requests", path: `/dashboard/leaves/requests` },
