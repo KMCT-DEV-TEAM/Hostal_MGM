@@ -21,21 +21,21 @@ function Navbar({ onMenuClick }) {
     const navigate = useNavigate();
     const [isProfileOpen, setIsProfileOpen] = React.useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
-    
+
     // Lifted notification state
-    const { 
-        notifications, 
-        loading, 
-        unreadCount, 
-        latestNotification, 
-        clearLatestNotification, 
-        markAllAsRead, 
-        markAsRead 
+    const {
+        notifications,
+        loading,
+        unreadCount,
+        latestNotification,
+        clearLatestNotification,
+        markAllAsRead,
+        markAsRead
     } = useNotifications();
 
     const dropdownRef = React.useRef(null);
     const notificationRef = React.useRef(null);
-    const role = user?.role.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const role = user?.role?.split('_').map(word => word?.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
     React.useEffect(() => {
         const handleClickOutside = (event) => {
@@ -102,12 +102,12 @@ function Navbar({ onMenuClick }) {
                             </span>
                         )}
                     </button>
-                    
+
                     {/* Latest Notification Popover */}
                     {!isNotificationOpen && latestNotification && (
-                        <LatestNotificationPopup 
-                            notification={latestNotification} 
-                            onClose={clearLatestNotification} 
+                        <LatestNotificationPopup
+                            notification={latestNotification}
+                            onClose={clearLatestNotification}
                         />
                     )}
 
