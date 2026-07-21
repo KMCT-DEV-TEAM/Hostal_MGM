@@ -12,7 +12,7 @@ import { DoorOpen, Filter, Users, Calendar } from 'lucide-react';
 export default function AttendanceRecordsTable({ windowId }) {
     const { user } = useAuthStore();
     const [records, setRecords] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
@@ -26,7 +26,10 @@ export default function AttendanceRecordsTable({ windowId }) {
     });
 
     const fetchRecords = useCallback(async () => {
-        if (!user?.role || !windowId) return;
+        if (!user?.role || !windowId) {
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
             const params = {

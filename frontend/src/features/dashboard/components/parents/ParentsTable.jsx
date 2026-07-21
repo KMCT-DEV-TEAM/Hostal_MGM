@@ -163,7 +163,7 @@ export default function ParentsTable({
         <>
             {canEdit && (
                 <Dropdown
-                    className="flex-1 "
+                    className=" "
                     options={statusOptions}
                     value={statusFilter}
                     onChange={(val) => {
@@ -180,7 +180,7 @@ export default function ParentsTable({
             )}
             {role === ROLES.SUPER_ADMIN && (
                 <Dropdown
-                    className="flex-1 "
+                    className="flex-1  "
                     options={organizationOptions}
                     value={organizationFilter}
                     onChange={(val) => {
@@ -198,7 +198,7 @@ export default function ParentsTable({
                     onClick={onExport}
                     className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
                 >
-                    <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+                    <Download className="w-8 h-4 text-gray-500 lg:text-inherit" />
                     <span className="hidden lg:inline">Export</span>
                 </button>
             )}
@@ -209,7 +209,7 @@ export default function ParentsTable({
                         onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
                         className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
                     >
-                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                        <MoreVertical className="w-8 h-4 text-gray-500" />
                     </button>
                     {isBulkMenuOpen && (
                         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
