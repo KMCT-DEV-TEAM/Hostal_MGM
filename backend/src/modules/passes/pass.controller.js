@@ -741,7 +741,7 @@ export const approvePass = asyncHandler(async (req, res) => {
       }
     },
     { new: true }
-  ).populate("studentId", "name admissionNo roomNumber");
+  ).populate("studentId", "name studentId roomNumber");
 
   const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
   const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
@@ -927,7 +927,7 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
     },
     $push: {
       timeline: {
-        action: "updated",
+        action: 'warder_marked_out',
         actorId: wardenId,
         actorRole: "warden",
         remarks: "Student left the hostel.",
@@ -997,7 +997,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
     },
     $push: {
       timeline: {
-        action: "returned",
+        action: "warder_marked_returned",
         actorId: wardenId,
         actorRole: "warden",
         remarks: `Student returned ${returnStatus.replace("_", " ")}.`,

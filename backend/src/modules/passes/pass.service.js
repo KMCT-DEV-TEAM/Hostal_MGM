@@ -225,7 +225,7 @@ export const getPassesDb = async (studentId, query) => {
 
 export const getPassDetailsDb = async (passId, studentId) => {
   return await Pass.findOne({ _id: passId, studentId })
-    .populate("studentId", "name admissionNo roomNumber")
+    .populate("studentId", "name studentId roomNumber")
     .populate("hostelId", "name")
     .lean();
 };
@@ -257,7 +257,7 @@ export const updatePassApprovalDb = async (passId, parentId, action, remarks) =>
       }
     },
     { new: true }
-  ).populate("studentId", "name admissionNo roomNumber");
+  ).populate("studentId", "name studentId roomNumber");
 };
 
 export const getParentDb = async (parentId) => {
@@ -333,7 +333,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } }
   ];
 
-  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo"]);
+  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.studentId", "studentInfo"]);
   if (searchMatch) pipeline.push(searchMatch);
 
   const projectStage = {
@@ -353,7 +353,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
-      admissionNo: "$studentInfo.admissionNo",
+      studentId: "$studentInfo.studentId",
       roomNumber: "$studentInfo.roomNumber"
     },
     parentInfo: {
@@ -628,7 +628,7 @@ export const getManagementPassesDb = async (
 
   const searchMatch = buildSearchMatch(query.search, [
     "studentInfo.name",
-    "studentInfo.admissionNo",
+    "studentInfo.studentId",
     "studentInfo.roomNumber",
     "hostelInfo.name",
   ]);
@@ -698,7 +698,7 @@ export const getManagementPassesDb = async (
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
-      admissionNo: "$studentInfo.admissionNo",
+      studentId: "$studentInfo.studentId",
       roomNumber: "$studentInfo.roomNumber",
     },
 
@@ -846,7 +846,7 @@ export const updateWardenPassWorkflowDb = async (passId, hostelId, updateQuery) 
     { _id: passId, hostelId },
     updateQuery,
     { new: true }
-  ).populate("studentId", "name admissionNo");
+  ).populate("studentId", "name studentId");
 };
 
 // ─── Unified Pass Listing ────────────────────────────────────────────────────
@@ -1110,7 +1110,7 @@ export const getParentPassesUnifiedDb = async (studentId, query) => {
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
-      admissionNo: "$studentInfo.admissionNo",
+      studentId: "$studentInfo.studentId",
       roomNumber: "$studentInfo.roomNumber"
     }
   };

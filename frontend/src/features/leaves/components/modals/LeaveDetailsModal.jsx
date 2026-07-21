@@ -5,6 +5,46 @@ import leaveService from '@/services/leave.service';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
+import TimelineStep from '@/components/ui/TimelineStep';
+
+const getTimelineConfig = (action) => {
+    switch (action) {
+        // Success / Positive
+        case 'parent_approved':
+        case 'admin_approved':
+            return { label: 'Approved', color: 'text-green-600', bg: 'bg-green-50', nodeColor: 'bg-green-500' };
+        case 'warden_marked_out':
+            return { label: 'Left Hostel', color: 'text-blue-600', bg: 'bg-blue-50', nodeColor: 'bg-blue-500' };
+        case 'warden_marked_returned':
+        case 'returned':
+            return { label: 'Returned', color: 'text-green-600', bg: 'bg-green-50', nodeColor: 'bg-green-500' };
+        case 'completed':
+            return { label: 'Completed', color: 'text-green-600', bg: 'bg-green-50', nodeColor: 'bg-green-500' };
+
+        // Danger / Negative
+        case 'parent_rejected':
+        case 'admin_rejected':
+            return { label: 'Rejected', color: 'text-red-600', bg: 'bg-red-50', nodeColor: 'bg-red-500' };
+        case 'admin_cancelled':
+        case 'student_cancelled_request':
+        case 'parent_cancelled_request':
+        case 'cancelled':
+            return { label: 'Cancelled', color: 'text-red-600', bg: 'bg-red-50', nodeColor: 'bg-red-500' };
+
+        // Neutral / Info
+        case 'created':
+            return { label: 'Created', color: 'text-blue-600', bg: 'bg-blue-50', nodeColor: 'bg-blue-500' };
+        case 'updated':
+        case 'student_edited_leave':
+        case 'parent_edited_leave':
+            return { label: 'Updated', color: 'text-orange-600', bg: 'bg-orange-50', nodeColor: 'bg-orange-500' };
+        case 'approval_reset':
+            return { label: 'Reset', color: 'text-gray-600', bg: 'bg-gray-100', nodeColor: 'bg-gray-500' };
+
+        default:
+            return { label: 'Activity', color: 'text-gray-600', bg: 'bg-gray-100', nodeColor: 'bg-gray-400' };
+    }
+};
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -136,97 +176,53 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         </span>
     );
 
-    const getInitials = (name) => {
-        if (!name || name === 'user' || name === 'Admin' || name === 'Parent' || name === 'Student') return name[0].toUpperCase();
-        const parts = name.split(' ');
-        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-        return name.substring(0, 2).toUpperCase();
+    const getProgressConfig = (status) => {
+        if (status === 'approved' || status === 'returned' || status === 'on_time') {
+            return {
+                label: (status === 'returned' || status === 'on_time') ? 'Returned' : 'Approved',
+                color: 'var(--color-success)',
+                bg: '#ECFDF5',
+                nodeColor: 'var(--color-success)',
+                avatarBg: '#1E3A8A',
+                avatarColor: '#FFFFFF'
+            };
+        } else if (status === 'rejected' || status === 'cancelled' || status === 'late' || status === 'left') {
+            return {
+                label: status === 'cancelled' ? 'Cancelled' : (status === 'late' ? 'Returned (Late)' : (status === 'left' ? 'Left' : 'Rejected')),
+                color: '#EF4444',
+                bg: '#FEF2F2',
+                nodeColor: '#EF4444',
+                avatarBg: '#1E3A8A',
+                avatarColor: '#FFFFFF'
+            };
+        } else if (status === 'submitted') {
+            return {
+                label: 'Submitted',
+                color: '#3B82F6',
+                bg: '#EFF6FF',
+                nodeColor: '#3B82F6',
+                avatarBg: '#1E3A8A',
+                avatarColor: '#FFFFFF'
+            };
+        }
+        return {
+            label: 'Pending',
+            color: '#6B7280',
+            bg: '#F3F4F6',
+            nodeColor: '#D1D5DB',
+            avatarBg: '#E5E7EB',
+            avatarColor: '#6B7280'
+        };
     };
 
-    const renderProgressStep = ({ title, subtitle, status, date }) => {
-        let nodeColor = '#D1D5DB'; // gray-300 for pending
-        let badgeColor = '#6B7280'; // text-gray-500
-        let badgeBg = '#F3F4F6'; // bg-gray-100
-        let badgeLabel = 'Pending';
-        let avatarBg = '#E5E7EB'; // gray-200 for pending user
-        let avatarColor = '#6B7280';
-
-        if (status === 'approved' || status === 'returned' || status === 'on_time') {
-            nodeColor = 'var(--color-success)';
-            badgeColor = 'var(--color-success)';
-            badgeBg = '#ECFDF5'; // success-50
-            badgeLabel = (status === 'returned' || status === 'on_time') ? 'Returned' : 'Approved';
-            avatarBg = '#1E3A8A'; // Dark blue avatar for actors who acted
-            avatarColor = '#FFFFFF';
-        } else if (status === 'rejected' || status === 'cancelled' || status === 'late' || status === 'left') {
-            nodeColor = '#EF4444'; // text-red-500
-            badgeColor = '#EF4444';
-            badgeBg = '#FEF2F2'; // bg-red-50
-            badgeLabel = status === 'cancelled' ? 'Cancelled' : (status === 'late' ? 'Returned (Late)' : (status === 'left' ? 'Left' : 'Rejected'));
-            avatarBg = '#1E3A8A';
-            avatarColor = '#FFFFFF';
-        } else if (status === 'submitted') {
-            nodeColor = '#3B82F6'; // text-blue-500
-            badgeColor = '#3B82F6';
-            badgeBg = '#EFF6FF'; // bg-blue-50
-            badgeLabel = 'Submitted';
-            avatarBg = '#1E3A8A';
-            avatarColor = '#FFFFFF';
+    const formatProgressDate = (date) => {
+        if (!date) return '-----';
+        const rawDate = formatDateTimeReadable(date);
+        const lastCommaIndex = rawDate.lastIndexOf(',');
+        if (lastCommaIndex !== -1) {
+            return rawDate.substring(0, lastCommaIndex) + ' |' + rawDate.substring(lastCommaIndex + 1);
         }
-
-        // Parse subtitle to get name for avatar (e.g. "Nila Mohan - warden" -> "Nila Mohan")
-        const actorName = (subtitle || '').split('-')[0].trim();
-
-        // Fix date string (e.g. "Jul 1, 2026, 10:27 AM" -> "Jul 1, 2026 | 10:27 AM")
-        let formattedDate = '-----';
-        if (date) {
-            const rawDate = formatDateTimeReadable(date);
-            const lastCommaIndex = rawDate.lastIndexOf(',');
-            if (lastCommaIndex !== -1) {
-                formattedDate = rawDate.substring(0, lastCommaIndex) + ' |' + rawDate.substring(lastCommaIndex + 1);
-            } else {
-                formattedDate = rawDate;
-            }
-        }
-
-        return (
-            <div className="relative flex items-center justify-between group">
-                <div className="flex items-start gap-5 w-full">
-                    {/* Node on the timeline */}
-                    <div
-                        className="absolute left-[-24.5px] top-1.5 w-[9px] h-[9px] rounded-full ring-2 ring-white z-10"
-                        style={{ backgroundColor: nodeColor }}
-                    ></div>
-
-                    <div className="flex-1 space-y-1.5">
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-1.5 font-semibold text-[10px] px-2 py-0.5 rounded-sm" style={{ color: badgeColor, backgroundColor: badgeBg }}>
-                            <span className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: badgeColor }}></span>
-                            {badgeLabel}
-                        </div>
-
-                        {/* Title */}
-                        <h4 className="text-[13px] font-medium text-gray-700 capitalize">{title}</h4>
-
-                        {/* Actor info */}
-                        <div className="flex items-center gap-2 mt-1">
-                            <div
-                                className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold"
-                                style={{ backgroundColor: avatarBg, color: avatarColor }}
-                            >
-                                {getInitials(actorName)}
-                            </div>
-                            <span className="text-[11px] text-gray-400 font-medium capitalize">{subtitle}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Date on the right */}
-                <div className="text-[10px] text-gray-400 font-medium whitespace-nowrap self-end mb-1">
-                    {formattedDate}
-                </div>
-            </div>
-        );
+        return rawDate;
     };
 
     const handleApprove = async () => {
@@ -290,7 +286,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             <div className="text-gray-500">Student</div>
                             <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.name || '--'}</span></div>
 
-                            <div className="text-gray-500">Admission No</div>
+                            <div className="text-gray-500">Student ID</div>
                             <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.studentId || '--'}</span></div>
 
 
@@ -361,36 +357,47 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         <p className="text-xs text-gray-400 mb-6">Track the live approval status of this request.</p>
 
                         <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
-                            {console.log('modal details response: ', request)}
-                            {/* Return Status */}
-                            {renderProgressStep({
-                                title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
-                                subtitle: request.studentId.name,
-                                status: returnStatus,
-                            })}
-
-                            {/* Admin Approval */}
-                            {renderProgressStep({
-                                title: isAdminApproved ? `Approved by ${request.adminApproval?.actorRole || 'admin'}` : (isAdminRejected ? `Rejected by ${request.adminApproval?.actorRole || 'admin'}` : 'Admin Approval'),
-                                subtitle: request.adminApproval?.actorName ? `${request.adminApproval.actorName} - ${request.adminApproval.actorRole || 'admin'}` : 'Admin',
-                                status: adminStatus,
-                                date: request.adminApproval?.actionAt,
-                            })}
-
-                            {/* Parent Approval */}
-                            {renderProgressStep({
-                                title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval'),
-                                subtitle: request.parentApproval?.actorName ? `${request.parentApproval.actorName} - Parent` : 'Parent',
-                                status: parentStatus,
-                                date: request.parentApproval?.actionAt,
-                            })}
-
-                            {/* Submitted */}
-                            {renderProgressStep({
-                                title: 'Request submitted',
-                                subtitle: request.studentId?.name || request.studentInfo?.name || request.studentName || 'Student',
-                                status: 'submitted',
-                                date: request.createdAt,
+                            {[
+                                {
+                                    status: returnStatus,
+                                    title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
+                                    subtitle: request.studentId.name,
+                                    date: null
+                                },
+                                {
+                                    status: adminStatus,
+                                    title: isAdminApproved ? `Approved by ${request.adminApproval?.actorRole || 'admin'}` : (isAdminRejected ? `Rejected by ${request.adminApproval?.actorRole || 'admin'}` : 'Admin Approval'),
+                                    subtitle: request.adminApproval?.actorName ? `${request.adminApproval.actorName} - ${request.adminApproval.actorRole || 'admin'}` : 'Admin',
+                                    date: request.adminApproval?.actionAt
+                                },
+                                {
+                                    status: parentStatus,
+                                    title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval'),
+                                    subtitle: request.parentApproval?.actorName ? `${request.parentApproval.actorName} - Parent` : 'Parent',
+                                    date: request.parentApproval?.actionAt
+                                },
+                                {
+                                    status: 'submitted',
+                                    title: 'Request submitted',
+                                    subtitle: request.studentId?.name || request.studentInfo?.name || request.studentName || 'Student',
+                                    date: request.createdAt
+                                }
+                            ].filter(Boolean).map((step, idx) => {
+                                const cfg = getProgressConfig(step.status);
+                                return (
+                                    <TimelineStep
+                                        key={idx}
+                                        title={step.title}
+                                        subtitle={step.subtitle}
+                                        formattedDate={formatProgressDate(step.date)}
+                                        badgeLabel={cfg.label}
+                                        badgeColor={cfg.color}
+                                        badgeBg={cfg.bg}
+                                        nodeColor={cfg.nodeColor}
+                                        avatarBg={cfg.avatarBg}
+                                        avatarColor={cfg.avatarColor}
+                                    />
+                                );
                             })}
 
                         </div>
@@ -428,7 +435,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                     {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-[130px_1fr] items-center">
                                 <div className="text-gray-400 flex items-center gap-2">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -439,7 +446,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                     {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-[130px_1fr] items-center">
                                 <div className="text-gray-400 flex items-center gap-2">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -473,17 +480,25 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         <h3 className="text-primary font-semibold text-sm mb-1">Recent Activity</h3>
                         <p className="text-xs text-gray-400 mb-4">Recent Activity about the {isHomePass ? 'home pass' : 'out pass'}</p>
 
-                        <div className="space-y-3">
+                        <div className="relative pl-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-gray-200 space-y-6 mt-4">
                             {timeline.length > 0 ? (
-                                [...timeline].reverse().map((t, idx) => (
-                                    <div key={idx} className="border border-gray-100 rounded-lg p-3">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xs font-medium text-gray-700 capitalize">{t.remarks || t.action.replace('_', ' ')}</span>
-                                            <span className="text-[10px] text-gray-400">{formatDateReadable(t.timestamp)}</span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-500 capitalize">by {t.actorRole}</div>
-                                    </div>
-                                ))
+                                [...timeline].reverse().map((t, idx) => {
+                                    const config = getTimelineConfig(t.action);
+                                    return (
+                                        <TimelineStep
+                                            key={idx}
+                                            title={t.remarks || t.action.replace(/_/g, ' ')}
+                                            subtitle={t.actorRole || 'System'}
+                                            formattedDate={formatDateReadable(t.timestamp)}
+                                            badgeLabel={config.label}
+                                            badgeColor={config.color}
+                                            badgeBg={config.bg}
+                                            nodeColor={config.nodeColor}
+                                            avatarBg={config.bg}
+                                            avatarColor={config.color}
+                                        />
+                                    );
+                                })
                             ) : (
                                 <div className="border border-gray-100 rounded-lg p-3 text-center text-xs text-gray-400">
                                     No activity recorded yet.

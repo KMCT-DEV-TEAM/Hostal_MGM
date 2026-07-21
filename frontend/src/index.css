@@ -72,16 +72,20 @@ input[type='number'] {
     width: 6px;
     height: 6px;
 }
+
 ::-webkit-scrollbar-track {
     background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background-color: #CBD5E1;
     border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background-color: #94A3B8;
 }
+
 * {
     scrollbar-width: thin;
     scrollbar-color: #CBD5E1 transparent;
@@ -171,4 +175,23 @@ input[type='number'] {
 /* Reduce stroke width for all lucide icons */
 .lucide {
     stroke-width: 1.5 !important;
+}
+
+/* globals.css */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+td,
+th,
+li,
+a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
