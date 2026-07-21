@@ -66,7 +66,16 @@ export const deleteComplaint = async (req, res) => {
 // @access  Private (Student)
 export const getMyComplaints = async (req, res) => {
     try {
-        const complaints = await complaintService.getStudentComplaintsDb(req.user.id, req.query.type);
+        let pagination = null;
+        if (req.query.page && req.query.limit) {
+            pagination = {
+                page: parseInt(req.query.page, 10),
+                limit: parseInt(req.query.limit, 10),
+                skip: (parseInt(req.query.page, 10) - 1) * parseInt(req.query.limit, 10)
+            };
+        }
+
+        const complaints = await complaintService.getStudentComplaintsDb(req.user.id, req.query.type, pagination);
         res.status(200).json({
             success: true,
             data: complaints
@@ -84,6 +93,15 @@ export const getMyComplaints = async (req, res) => {
 // @access  Private (Admin/Warden/SuperAdmin)
 export const getAllComplaints = async (req, res) => {
     try {
+        let pagination = null;
+        if (req.query.page && req.query.limit) {
+            pagination = {
+                page: parseInt(req.query.page, 10),
+                limit: parseInt(req.query.limit, 10),
+                skip: (parseInt(req.query.page, 10) - 1) * parseInt(req.query.limit, 10)
+            };
+        }
+
         const query = {};
         
         // Scope based on role
@@ -113,11 +131,20 @@ export const getAllComplaints = async (req, res) => {
             query.assignedStaff = req.query.assignedStaff;
         }
 
-        const complaints = await complaintService.getAllComplaintsDb(query);
-        res.status(200).json({
-            success: true,
-            data: complaints
-        });
+        const complaints = await complaintService.getAllComplaintsDb(query, pagination);
+        
+        if (pagination) {
+            res.status(200).json({
+                success: true,
+                data: complaints.data,
+                pagination: complaints.pagination
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                data: complaints
+            });
+        }
     } catch (error) {
         res.status(400).json({
             success: false,
