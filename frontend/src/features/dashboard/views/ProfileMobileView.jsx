@@ -291,7 +291,7 @@ const ProfileMobileView = ({
                     {/* Announcements Button */}
                     <button
                         onClick={() => navigate('/dashboard/announcements')}
-                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform w-full mt-4"
+                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between active:scale-[0.99] transition-transform w-full "
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-orange-50/50 flex items-center justify-center">
