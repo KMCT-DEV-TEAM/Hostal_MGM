@@ -36,7 +36,7 @@ export const createComplaintDb = async (complaintData, user) => {
 };
 
 // Get complaints for a specific student
-export const getStudentComplaintsDb = async (userId, type = 'all') => {
+export const getStudentComplaintsDb = async (userId, type = 'all', pagination = null) => {
     const student = await Student.findById(userId);
     if (!student) throw new Error("Student not found.");
 
@@ -54,10 +54,30 @@ export const getStudentComplaintsDb = async (userId, type = 'all') => {
         pending: await Complaint.countDocuments({ studentId: student._id, status: { $nin: ['Resolved', 'Rejected'] } })
     };
 
-    const complaints = await Complaint.find(query)
+    let dbQuery = Complaint.find(query)
         .populate('category', 'name')
         .populate('hostelId', 'name')
         .sort({ createdAt: -1 });
+
+    if (pagination) {
+        dbQuery = dbQuery.skip(pagination.skip).limit(pagination.limit);
+    }
+
+    const complaints = await dbQuery;
+
+    if (pagination) {
+        const total = await Complaint.countDocuments(query);
+        return {
+            complaints,
+            stats,
+            pagination: {
+                total,
+                page: pagination.page,
+                totalPages: Math.ceil(total / pagination.limit),
+                hasMore: pagination.skip + complaints.length < total
+            }
+        };
+    }
 
     return { complaints, stats };
 };
@@ -144,7 +164,7 @@ export const deleteComplaintDb = async (complaintId, studentId) => {
 };
 
 // Get all complaints for admins/wardens
-export const getAllComplaintsDb = async (query = {}) => {
+export const getAllComplaintsDb = async (query = {}, pagination = null) => {
     // Query can include organizationId, hostelId based on the admin's scope
     const filter = {};
     if (query.organizationId) filter.organizationId = query.organizationId;
@@ -161,7 +181,7 @@ export const getAllComplaintsDb = async (query = {}) => {
     if (query.assignedStaff) filter.assignedStaff = query.assignedStaff;
     if (query._id !== undefined) filter._id = query._id;
 
-    return await Complaint.find(filter)
+    let dbQuery = Complaint.find(filter)
         .populate('category', 'name')
         .populate('studentId', 'name studentId')
         .populate({
@@ -175,6 +195,27 @@ export const getAllComplaintsDb = async (query = {}) => {
         .populate('organizationId', 'name')
         .populate('assignedStaff', 'name phone email specialization')
         .sort({ createdAt: -1 });
+
+    if (pagination) {
+        dbQuery = dbQuery.skip(pagination.skip).limit(pagination.limit);
+    }
+
+    const data = await dbQuery;
+
+    if (pagination) {
+        const total = await Complaint.countDocuments(filter);
+        return {
+            data,
+            pagination: {
+                total,
+                page: pagination.page,
+                totalPages: Math.ceil(total / pagination.limit),
+                hasMore: pagination.skip + data.length < total
+            }
+        };
+    }
+
+    return data;
 };
 
 // Get complaint summary by category

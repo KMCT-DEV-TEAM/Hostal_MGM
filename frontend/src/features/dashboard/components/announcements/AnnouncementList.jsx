@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { formatTimeAgoShort } from '@/utils/formatters';
+import AnnouncementSkeleton from './AnnouncementSkeleton';
 
 const getIconAndStyle = (title) => {
     const t = (title || '').toLowerCase();
@@ -111,9 +112,8 @@ const formatDate = (dateString) => {
         hour12: true
     });
 };
-
-const AnnouncementList = ({ announcements, onAnnouncementClick, isStudentOrParent }) => {
-    if (!announcements?.length) {
+const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loadingMore, observerRef, isStudentOrParent }) => {
+    if (!loading && !announcements?.length) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                 <Megaphone className="w-12 h-12 text-gray-300 mb-4" />
@@ -192,6 +192,13 @@ const AnnouncementList = ({ announcements, onAnnouncementClick, isStudentOrParen
                     </div>
                 );
             })}
+
+            {(loading || loadingMore) && Array.from({ length: 4 }).map((_, i) => (
+                <AnnouncementSkeleton key={`skeleton-${i}`} />
+            ))}
+
+            <div ref={observerRef} className="col-span-1 md:col-span-2 h-1 w-full" />
+
         </div>
     );
 };

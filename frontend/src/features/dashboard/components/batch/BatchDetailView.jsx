@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail } from 'lucide-react';
+import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 import Modal from '@/components/ui/Modal';
 
@@ -27,6 +27,8 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                             <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedBatchDetail.code}</InfoRow>
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedBatchDetail.name}</InfoRow>
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Dept</>}>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> Start Year</>}>{selectedBatchDetail.startYear || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> End Year</>}>{selectedBatchDetail.endYear || 'N/A'}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedBatchDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
@@ -65,6 +67,8 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                         <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedBatchDetail.name}</InfoRow>
                         <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Dept</>}>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</InfoRow>
                         <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedBatchDetail?.departmentId?.courseId?.organizationId?.name || 'N/A'}</InfoRow>
+                        <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> Start Year</>}>{selectedBatchDetail.startYear || 'N/A'}</InfoRow>
+                        <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> End Year</>}>{selectedBatchDetail.endYear || 'N/A'}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                             <span className="flex items-center">
                                 <span className={`w-2 h-2 rounded-full ${selectedBatchDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>

@@ -12,6 +12,7 @@ import ListToolbar from '@/components/ui/ListToolbar';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { ROLES } from '@/constants/roles';
 const AnnouncementManagement = () => {
     const { tab } = useParams();
@@ -21,6 +22,9 @@ const AnnouncementManagement = () => {
 
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
@@ -33,48 +37,62 @@ const AnnouncementManagement = () => {
         footer: { visible: true }
     } : {});
 
-    // For Super Admin tabs
     const currentTab = tab || 'latest';
     const isSuperAdmin = user?.role === 'super_admin';
+    const canManageTabs = ['super_admin', 'admin', 'warden'].includes(user?.role);
 
-    const fetchAnnouncements = async () => {
+    const fetchAnnouncements = async (pageNum = 1) => {
         try {
-            setLoading(true);
-            const res = await AnnouncementService.getAnnouncements({});
+            if (pageNum === 1) setLoading(true);
+            else setLoadingMore(true);
+
+            const apiStatus = canManageTabs ? (currentTab === 'latest' ? 'active' : currentTab) : 'active';
+
+            const res = await AnnouncementService.getAnnouncements({
+                page: pageNum,
+                limit: 10,
+                status: apiStatus,
+                search: searchQuery
+            });
+
             if (res && res.data) {
-                setAnnouncements(res.data);
+                if (pageNum === 1) {
+                    setAnnouncements(res.data);
+                } else {
+                    setAnnouncements(prev => {
+                        // Prevent duplicates by comparing IDs
+                        const existingIds = new Set(prev.map(a => a._id));
+                        const newItems = res.data.filter(a => !existingIds.has(a._id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                if (res.pagination) {
+                    setHasMore(res.pagination.hasMore);
+                    setPage(res.pagination.page);
+                }
             }
         } catch (err) {
             console.error("Failed to fetch announcements:", err);
             showErrorToast('Failed to load announcements');
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
     useEffect(() => {
-        fetchAnnouncements();
-    }, []);
+        setPage(1);
+        setHasMore(true);
+        fetchAnnouncements(1);
+    }, [currentTab, searchQuery]);
+
+    const setObserverRef = useIntersectionObserver(() => {
+        if (hasMore && !loadingMore && !loading) {
+            fetchAnnouncements(page + 1);
+        }
+    }, { threshold: 0.1 });
 
     const canCreate = ['super_admin', 'admin', 'warden'].includes(user?.role);
-
-    // Filter based on tab for Super Admin and search query
-    const displayAnnouncements = announcements.filter(a => {
-        let matchesSearch = true;
-        if (searchQuery) {
-            matchesSearch = a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                a.message?.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-        if (!matchesSearch) return false;
-
-        if (!isSuperAdmin) return true;
-        if (currentTab === 'latest') {
-            return a.status === 'active';
-        } else if (currentTab === 'scheduled') {
-            return a.status === 'scheduled';
-        }
-        return a.status !== 'active' && a.status !== 'scheduled'; // History shows expired and deleted
-    });
 
     const handleEdit = (announcement) => {
         setSelectedAnnouncement(announcement);
@@ -94,7 +112,8 @@ const AnnouncementManagement = () => {
         try {
             await AnnouncementService.deleteAnnouncement(announcementToDelete._id);
             showSuccessToast("Announcement deleted successfully");
-            fetchAnnouncements();
+            setPage(1);
+            fetchAnnouncements(1);
             setIsDetailModalOpen(false); // Close detail modal if open
         } catch (err) {
             console.error("Delete failed", err);
@@ -116,7 +135,7 @@ const AnnouncementManagement = () => {
                     />
                 )}
 
-                {isSuperAdmin && (
+                {canManageTabs && (
                     <div className="flex w-full border-b border-gray-200 mt-4">
                         <button
                             onClick={() => navigate('/dashboard/announcements/latest')}
@@ -156,21 +175,17 @@ const AnnouncementManagement = () => {
                         onAdd={canCreate ? () => { setSelectedAnnouncement(null); setIsModalOpen(true); } : undefined}
                         addButtonLabel="Announcement"
                     />}
-
-                    {loading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                        </div>
-                    ) : (
-                        <AnnouncementList
-                            announcements={displayAnnouncements}
-                            isStudentOrParent={isStudentOrParent}
-                            onAnnouncementClick={(announcement) => {
-                                setSelectedAnnouncement(announcement);
-                                setIsDetailModalOpen(true);
-                            }}
-                        />
-                    )}
+                    <AnnouncementList
+                        announcements={announcements}
+                        loading={loading}
+                        loadingMore={loadingMore}
+                        observerRef={setObserverRef}
+                        onAnnouncementClick={(announcement) => {
+                            setSelectedAnnouncement(announcement);
+                            setIsDetailModalOpen(true);
+                        }}
+                        isStudentOrParent={isStudentOrParent}
+                    />
                 </div>
 
                 <AnnouncementFormModal
@@ -182,7 +197,8 @@ const AnnouncementManagement = () => {
                     onSuccess={() => {
                         setIsModalOpen(false);
                         setSelectedAnnouncement(null);
-                        fetchAnnouncements();
+                        setPage(1);
+                        fetchAnnouncements(1);
                     }}
                     announcementToEdit={selectedAnnouncement}
                 />

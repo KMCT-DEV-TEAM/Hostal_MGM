@@ -14,14 +14,14 @@ import {
 } from "./batch.service.js";
 
 const createBatch = asyncHandler(async (req, res) => {
-  const { name, code, departmentId } = req.body;
+  const { name, code, departmentId, startYear, endYear } = req.body;
 
   const existingBatch = await checkExistingBatchCodeDb(code);
   if (existingBatch) {
     return sendError(res, 400, "Batch code already exists");
   }
 
-  const newBatch = await createBatchDb({ name, code, departmentId });
+  const newBatch = await createBatchDb({ name, code, departmentId, startYear, endYear });
 
   if (req.user) {
       await createLogDb({
@@ -100,7 +100,7 @@ const getBatchById = asyncHandler(async (req, res) => {
 
 const updateBatch = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, code, departmentId } = req.body;
+  const { name, code, departmentId, startYear, endYear } = req.body;
 
   if (code) {
     const existingCode = await checkExistingBatchCodeDb(code);
@@ -109,7 +109,7 @@ const updateBatch = asyncHandler(async (req, res) => {
     }
   }
 
-  const batch = await updateBatchDb(id, { name, code, departmentId });
+  const batch = await updateBatchDb(id, { name, code, departmentId, startYear, endYear });
 
   if (!batch) {
     return sendError(res, 404, "Batch not found");

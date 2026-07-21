@@ -220,6 +220,15 @@ export default function DataView({
     const hasMore = resolvedPage < resolvedTotalPages;
     const isLoadingMore = loading && resolvedPage > 1;
 
+    // Prevent flashing the EmptyState on initial render if loading hasn't been set to true yet by parent hooks
+    const [isInitialMount, setIsInitialMount] = useState(true);
+    useEffect(() => {
+        const timer = setTimeout(() => setIsInitialMount(false), 200);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const showAsLoading = loading || (isInitialMount && (!data || data.length === 0));
+
     return (
         <div className={`flex flex-col flex-1 ${pageScrollMode ? '' : 'h-full overflow-hidden'} ${className}`}>
             <div className={pageScrollMode ? "relative z-30 sticky top-[10px] rounded-t-xl shadow-sm" : "relative z-10 "}>
@@ -241,7 +250,7 @@ export default function DataView({
                     <div className="flex-1 flex items-center justify-center">
                         <ErrorState message={error} />
                     </div>
-                ) : data?.length === 0 && !loading ? (
+                ) : (!data || data.length === 0) && !showAsLoading ? (
                     <div className="flex-1 flex items-center justify-center">
                         <EmptyState message={emptyText} />
                     </div>
@@ -257,7 +266,7 @@ export default function DataView({
                             onSelectRow={onSelectRow}
                             canSelect={canSelect}
                             isSelectableFn={isSelectableFn}
-                            loading={loading}
+                            loading={showAsLoading}
                         />
 
                         {cardConfig && (
@@ -273,7 +282,7 @@ export default function DataView({
                                 onSelectRow={onSelectRow}
                                 page={resolvedPage}
                                 totalPages={resolvedTotalPages}
-                                loading={loading}
+                                loading={showAsLoading}
                                 onLoadMore={handleLoadMore}
                             />
                         )}

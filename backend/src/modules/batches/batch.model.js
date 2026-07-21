@@ -18,6 +18,14 @@ const batchSchema = new mongoose.Schema(
       ref: "Department",
       required: true,
     },
+    startYear: {
+      type: Number,
+      required: true,
+    },
+    endYear: {
+      type: Number,
+      required: true,
+    },
     studentsCount: {
       type: Number,
       default: 0,

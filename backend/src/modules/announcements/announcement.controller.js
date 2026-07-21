@@ -88,17 +88,47 @@ export const createAnnouncement = async (req, res, next) => {
 // Get Announcements
 export const getAnnouncements = async (req, res, next) => {
   try {
+    const { page = 1, limit = 10, status = "active", search = "" } = req.query;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
     const user = req.user;
     user._id = user.id || user._id;
-    let query = { status: "active" };
+    let queryConditions = [];
+
+    if (status === "all") {
+        // no status filter
+    } else if (status === "history") {
+        queryConditions.push({ status: { $in: ["expired", "deleted", "history"] } });
+    } else if (status === "active") {
+        queryConditions.push({ 
+            $or: [{ status: "active" }, { status: { $exists: false } }] 
+        });
+    } else {
+        queryConditions.push({ status: status });
+    }
+
+    if (search) {
+        queryConditions.push({
+            $or: [
+                { title: { $regex: search, $options: "i" } },
+                { message: { $regex: search, $options: "i" } }
+            ]
+        });
+    }
+
+    let query = queryConditions.length > 0 ? { $and: queryConditions } : {};
+
+    let roleQuery = {};
 
     if (user.role === "super_admin") {
       // Super admin sees all history or based on status if needed
-      query = {};
+      roleQuery = {};
     } else if (user.role === "admin") {
       // Admins see general + their org
       const dbUser = await User.findById(user._id);
-      query = {
+      roleQuery = {
         $or: [
           { targetType: "general" },
           { targetType: "organization", targetOrganizations: dbUser?.organization },
@@ -109,7 +139,7 @@ export const getAnnouncements = async (req, res, next) => {
       // Wardens see general + their hostels
       const hostels = await Hostel.find({ wardens: user._id });
       const hostelIds = hostels.map(h => h._id);
-      query = {
+      roleQuery = {
         $or: [
           { targetType: "general" },
           { targetType: "hostel", targetHostels: { $in: hostelIds } },
@@ -119,7 +149,7 @@ export const getAnnouncements = async (req, res, next) => {
     } else if (user.role === "student") {
        // Students see general + their org + their hostel
        const dbUser = await Student.findById(user._id);
-       query = {
+       roleQuery = {
           $or: [
              { targetType: "general" },
              { targetType: "organization", targetOrganizations: dbUser?.organizationId },
@@ -131,7 +161,7 @@ export const getAnnouncements = async (req, res, next) => {
        const dbUser = await Parent.findById(user._id);
        const parentStudent = await Student.findById(dbUser?.studentId);
        if (parentStudent) {
-           query = {
+           roleQuery = {
               $or: [
                  { targetType: "general" },
                  { targetType: "organization", targetOrganizations: parentStudent.organizationId },
@@ -139,19 +169,35 @@ export const getAnnouncements = async (req, res, next) => {
               ]
            };
        } else {
-           query = { targetType: "general" };
+           roleQuery = { targetType: "general" };
        }
     }
 
-    const announcements = await Announcement.find(query)
+    let finalQuery = query;
+    if (Object.keys(roleQuery).length > 0) {
+        finalQuery = { $and: [query, roleQuery] };
+    }
+
+    const total = await Announcement.countDocuments(finalQuery);
+    
+    const announcements = await Announcement.find(finalQuery)
       .populate("createdBy", "name role")
       .populate("targetOrganizations", "name")
       .populate("targetHostels", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
 
     return res.status(200).json({
       success: true,
       data: announcements,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+        hasMore: pageNum * limitNum < total
+      }
     });
   } catch (error) {
     next(error);

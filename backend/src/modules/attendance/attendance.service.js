@@ -379,7 +379,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
                 _id: "$studentInfo._id",
                 name: "$studentInfo.name",
                 studentId: "$studentInfo.studentId",
-                room: "$studentInfo.roomNo"
+                room: "$studentInfo.roomNumber"
               },
               scannedBy: {
                 _id: "$scannedByInfo._id",

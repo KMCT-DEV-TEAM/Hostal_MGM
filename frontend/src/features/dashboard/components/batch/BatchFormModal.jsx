@@ -68,11 +68,11 @@ const BatchFormModal = ({
                             <input
                                 name="name"
                                 value={formData.name}
-                                pattern="[A-Za-z]+"
-                                title="Only letters are allowed"
+                                pattern="[A-Za-z\s]+"
+                                title="Only letters and spaces are allowed"
                                 onChange={(e) => {
                                     const originalVal = e.target.value;
-                                    const cleanVal = originalVal.replace(/[^a-zA-Z]/g, '');
+                                    const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
                                     if (originalVal !== cleanVal) {
                                         setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
                                     } else {
@@ -107,6 +107,38 @@ const BatchFormModal = ({
                                     placeholder="BATCH1"
                                 />
                             </div>
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('start_year', 'Start Year')} <span className="text-red-500">*</span></label>
+                            <input
+                                type="number"
+                                name="startYear"
+                                value={formData.startYear || ''}
+                                onChange={(e) => {
+                                    handleInputChange({ target: { name: 'startYear', value: parseInt(e.target.value) || '' } });
+                                }}
+                                required
+                                min="1900"
+                                max="2100"
+                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                placeholder="e.g. 2024"
+                            />
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('end_year', 'End Year')} <span className="text-red-500">*</span></label>
+                            <input
+                                type="number"
+                                name="endYear"
+                                value={formData.endYear || ''}
+                                onChange={(e) => {
+                                    handleInputChange({ target: { name: 'endYear', value: parseInt(e.target.value) || '' } });
+                                }}
+                                required
+                                min="1900"
+                                max="2100"
+                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                placeholder="e.g. 2028"
+                            />
                         </div>
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('department')} <span className="text-red-500">*</span></label>

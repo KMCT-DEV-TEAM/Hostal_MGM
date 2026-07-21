@@ -46,7 +46,7 @@ export default function DesktopTable({
                         {columns.map((col, i) => {
                             if (col.hiddenOnDesktop) return null;
                             const alignClass = col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left';
-                            const widthStyle = col.width ? { width: col.width } : (col.key === 'action' || col.key === 'status' ? { width: '120px' } : {});
+                            const widthStyle = col.width ? { width: col.width } : (col.key === 'action' || col.key === 'status' ? { width: '160px' } : {});
                             return (
                                 <th
                                     key={col.key || i}
