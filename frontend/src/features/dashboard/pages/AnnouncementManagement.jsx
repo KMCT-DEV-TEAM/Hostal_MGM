@@ -139,8 +139,7 @@ const AnnouncementManagement = () => {
                     <div className="flex w-full border-b border-gray-200 mt-4">
                         <button
                             onClick={() => navigate('/dashboard/announcements/latest')}
-                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
-                                currentTab === 'latest'
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'latest'
                                 ? 'border-[#0A437A] text-[#0A437A]'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -158,8 +157,7 @@ const AnnouncementManagement = () => {
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/announcements/history')}
-                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${
-                                currentTab === 'history'
+                            className={`flex-1 py-3 px-2 md:px-6 text-xs md:text-sm font-medium border-b-2 text-center truncate ${currentTab === 'history'
                                 ? 'border-[#0A437A] text-[#0A437A]'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
@@ -169,16 +167,14 @@ const AnnouncementManagement = () => {
                     </div>
                 )}
 
-                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
-                    <ListToolbar
-                        isStudentOrParent={isStudentOrParent}
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col  md:mt-6">
+                    {!isStudentOrParent && <ListToolbar
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         searchPlaceholder="Search announcements..."
                         onAdd={canCreate ? () => { setSelectedAnnouncement(null); setIsModalOpen(true); } : undefined}
                         addButtonLabel="Announcement"
-                    />
-
+                    />}
                     <AnnouncementList
                         announcements={announcements}
                         loading={loading}
