@@ -73,14 +73,14 @@ const HostelFormModal = ({
                             <input
                                 type="text"
                                 required
-                                pattern="[A-Za-z]+"
-                                title="Only letters are allowed"
+                                pattern="[A-Za-z\s]+"
+                                title="Only letters and spaces are allowed"
                                 value={hostelForm.name}
                                 onChange={(e) => {
                                     const originalVal = e.target.value;
-                                    const cleanVal = originalVal.replace(/[^a-zA-Z]/g, '');
+                                    const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
                                     if (originalVal !== cleanVal) {
-                                        setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
+                                        setErrors(prev => ({ ...prev, name: 'Only letters and spaces are allowed' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, name: '' }));
                                     }

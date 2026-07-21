@@ -198,6 +198,8 @@ const dictionary = {
         edit_batch_desc: "Update the details for this Batch",
         add_batch_desc: "Fill in the details to manually create a new Batch",
         basic_batch_desc: "Basic details of the Batch",
+        start_year: "Start Year",
+        end_year: "End Year",
 
         maintenance: "Maintenance",
         settings: "Settings",
@@ -419,6 +421,8 @@ const dictionary = {
         edit_batch_desc: "ഈ ബാച്ചിന്റെ വിശദാംശങ്ങൾ പുതുക്കുക",
         add_batch_desc: "പുതിയ ബാച്ച് സ്വമേധയാ സൃഷ്ടിക്കാൻ വിശദാംശങ്ങൾ പൂരിപ്പിക്കുക",
         basic_batch_desc: "ബാച്ചിന്റെ അടിസ്ഥാന വിവരങ്ങൾ",
+        start_year: "ആരംഭിക്കുന്ന വർഷം",
+        end_year: "അവസാനിക്കുന്ന വർഷം",
 
         maintenance: "മെയിൻ്റനൻസ്",
         settings: "ക്രമീകരണങ്ങൾ",

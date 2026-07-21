@@ -70,51 +70,28 @@ const AdminFormModal = ({
                     <h5 className='text-xs text-[#777777] mb-4'>{t('admin_basic_info_desc')}</h5>
                     <div className="border-b border-gray-100 mb-4" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="col-span-1">
-                            <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
+                        <div className="col-span-1 sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('full_name', 'Full Name')} <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
                                 required
-                                pattern="[A-Za-z]+"
-                                title="Only letters are allowed"
-                                placeholder={t('first_name_placeholder')}
-                                value={adminForm.name ? adminForm.name.split(' ')[0] : ''}
+                                pattern="[A-Za-z\s]+"
+                                title="Only letters and spaces are allowed"
+                                placeholder="Full Name"
+                                value={adminForm.name || ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
+                                    const cleanVal = val.replace(/[^a-zA-Z\s]/g, '');
                                     if (val !== cleanVal) {
-                                        setErrors(prev => ({ ...prev, firstName: 'Only letters are allowed' }));
+                                        setErrors(prev => ({ ...prev, name: 'Only letters and spaces are allowed' }));
                                     } else {
-                                        setErrors(prev => ({ ...prev, firstName: '' }));
+                                        setErrors(prev => ({ ...prev, name: '' }));
                                     }
-                                    setAdminForm({ ...adminForm, name: `${cleanVal} ${adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') || '' : ''}`.trim() });
+                                    setAdminForm({ ...adminForm, name: cleanVal });
                                 }}
-                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.firstName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
-                            {errors.firstName && <p className="text-red-500 text-[10px] mt-1">{errors.firstName}</p>}
-                        </div>
-                        <div className="col-span-1">
-                            <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                required
-                                pattern="[A-Za-z]+"
-                                title="Only letters are allowed"
-                                placeholder={t('last_name_placeholder')}
-                                value={adminForm.name ? adminForm.name.split(' ').slice(1).join(' ') : ''}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    const cleanVal = val.replace(/[^a-zA-Z]/g, '');
-                                    if (val !== cleanVal) {
-                                        setErrors(prev => ({ ...prev, lastName: 'Only letters are allowed' }));
-                                    } else {
-                                        setErrors(prev => ({ ...prev, lastName: '' }));
-                                    }
-                                    setAdminForm({ ...adminForm, name: `${adminForm.name ? adminForm.name.split(' ')[0] : ''} ${cleanVal}`.trim() });
-                                }}
-                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.lastName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
-                            />
-                            {errors.lastName && <p className="text-red-500 text-[10px] mt-1">{errors.lastName}</p>}
+                            {errors.name && <p className="text-red-500 text-[10px] mt-1">{errors.name}</p>}
                         </div>
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>

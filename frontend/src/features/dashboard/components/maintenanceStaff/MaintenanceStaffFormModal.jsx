@@ -55,26 +55,20 @@ const MaintenanceStaffFormModal = ({
                     <h5 className='text-xs text-[#777777] mb-4'>{t('Enter the basic contact information for this staff member.')}</h5>
                     <div className="border-b border-gray-100 mb-4" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="col-span-1">
-                            <label className="block text-[10px] font-medium text-black mb-1">{t('first_name')} <span className="text-red-500">*</span></label>
+                        <div className="col-span-1 sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('full_name', 'Full Name')} <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
                                 required
-                                placeholder={t('Enter First Name')}
-                                value={staffForm.name ? staffForm.name.split(' ')[0] : ''}
-                                onChange={(e) => setStaffForm({ ...staffForm, name: `${e.target.value} ${staffForm.name ? staffForm.name.split(' ').slice(1).join(' ') : ''}`.trim() })}
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
-                            />
-                        </div>
-
-                        <div className="col-span-1">
-                            <label className="block text-[10px] font-medium text-black mb-1">{t('last_name')} <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                required
-                                placeholder={t('Enter Last Name')}
-                                value={staffForm.name ? staffForm.name.split(' ').slice(1).join(' ') : ''}
-                                onChange={(e) => setStaffForm({ ...staffForm, name: `${staffForm.name ? staffForm.name.split(' ')[0] : ''} ${e.target.value}`.trim() })}
+                                pattern="[A-Za-z\s]+"
+                                title="Only letters and spaces are allowed"
+                                placeholder="Full Name"
+                                value={staffForm.name || ''}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const cleanVal = val.replace(/[^a-zA-Z\s]/g, '');
+                                    setStaffForm({ ...staffForm, name: cleanVal });
+                                }}
                                 className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
                             />
                         </div>
