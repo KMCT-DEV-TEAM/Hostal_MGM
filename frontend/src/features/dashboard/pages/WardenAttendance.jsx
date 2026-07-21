@@ -16,10 +16,10 @@ const WardenAttendance = () => {
             <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-text-primary flex flex-col relative">
                 <div className="p-4 md:p-6 flex-1 flex flex-col">
                     <PageHeader
-                    title="Attendance Records"
-                    subtitle="Viewing student attendance for the selected window."
-                    actionButton={<BackButton text="Back to Windows" onClick={() => navigate('/dashboard/attendance')} />}
-                />
+                        title="Attendance Records"
+                        subtitle="Viewing student attendance for the selected window."
+                        actionButton={<BackButton text="Back to Windows" onClick={() => navigate('/dashboard/attendance')} />}
+                    />
                     <div className="mt-6 bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                         <AttendanceRecordsTable windowId={windowId} />
                     </div>
