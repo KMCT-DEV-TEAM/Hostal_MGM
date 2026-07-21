@@ -218,5 +218,96 @@ export default {
                 message: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
             }
         }
+    },
+
+    PASS_MODIFIED: {
+        parent: {
+            "in-app": {
+                title: "Pass Request Modified",
+                message: "A pass request for {{studentName}} was updated. {{message}}"
+            },
+            email: {
+                subject: "Update: Pass Request Modified",
+                html: `
+                    <p>Hello,</p>
+                    <p>A pass request for <strong>{{studentName}}</strong> has been updated.</p>
+                    <br/>
+                    <p>Please log in to the application to review the changes.</p>
+                `
+            }
+        },
+        admin: {
+            "in-app": {
+                title: "Pass Request Modified",
+                message: "A pass request for {{studentName}} was updated."
+            }
+        },
+        warden: {
+            "in-app": {
+                title: "Pass Request Modified",
+                message: "A pass request for {{studentName}} was updated."
+            }
+        }
+    },
+
+    PASS_ADMIN_CANCELLED: {
+        student: {
+            "in-app": {
+                title: "Pass Cancelled by Administration",
+                message: "Your pass has been cancelled by administration. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled",
+                body: "Your pass was cancelled by administration. Reason: {{reason}}"
+            },
+            email: {
+                subject: "Alert: Your Pass has been Cancelled",
+                html: `
+                    <p>Hello,</p>
+                    <p>We need to inform you that your pass has been cancelled by the administration.</p>
+                    <p><strong>Reason:</strong> {{reason}}</p>
+                `
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Pass Cancelled by Administration",
+                message: "A pass for {{studentName}} has been cancelled by administration. Reason: {{reason}}"
+            },
+            email: {
+                subject: "Alert: Ward's Pass Cancelled",
+                html: `
+                    <p>Hello,</p>
+                    <p>A pass for your ward, <strong>{{studentName}}</strong>, has been cancelled by the administration.</p>
+                    <p><strong>Reason:</strong> {{reason}}</p>
+                `
+            }
+        }
+    },
+
+    WARDEN_MARKED_OUT: {
+        student: {
+            "in-app": {
+                title: "Hostel Exit Registered",
+                message: "{{message}}"
+            },
+            push: {
+                title: "Hostel Exit",
+                body: "You have been marked as left the hostel. Have a safe trip!"
+            }
+        }
+    },
+
+    WARDEN_MARKED_RETURNED: {
+        student: {
+            "in-app": {
+                title: "Hostel Return Registered",
+                message: "{{message}}"
+            },
+            push: {
+                title: "Hostel Return",
+                body: "{{message}}"
+            }
+        }
     }
 };

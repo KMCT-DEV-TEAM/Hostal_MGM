@@ -42,7 +42,7 @@ export default function StudentLeaves() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({ status: '', category: '', fromDate: '', toDate: '' });
     const [page, setPage] = useState(1);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const fetchLeaves = async () => {
         try {
@@ -124,6 +124,8 @@ export default function StudentLeaves() {
         totalPages,
         page,
         setPage,
+        limit,
+        setLimit,
         filters,
         setIsFilterModalOpen,
         openEditModal,
@@ -141,7 +143,7 @@ export default function StudentLeaves() {
     };
 
     return (
-        <>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             {isMobile ? (
                 <LeavesMobileView {...viewProps} />
             ) : (
@@ -181,6 +183,6 @@ export default function StudentLeaves() {
                 onClose={() => setViewId(null)}
                 leaveId={viewId}
             />
-        </>
+        </div>
     );
 }

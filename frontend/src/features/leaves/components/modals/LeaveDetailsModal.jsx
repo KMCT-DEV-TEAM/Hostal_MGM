@@ -272,7 +272,31 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
             subtitle="Details about the leave request"
             maxWidth="max-w-5xl"
         >
-            <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
+            {request.status === 'rejected' && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm flex items-start gap-3 mt-4">
+                    <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <p className="font-bold">Request Rejected</p>
+                        <p className="opacity-90">{request.cancellationRequest?.remarks || request.timeline.find(t => t.action.includes('rejected'))?.remarks || 'No remarks provided.'}</p>
+                    </div>
+                </div>
+            )}
+            
+            {request.status === 'cancelled' && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm flex items-start gap-3 mt-4">
+                    <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <p className="font-bold">Request Cancelled</p>
+                        <p className="opacity-90">{request.cancellationRequest?.remarks || request.timeline.find(t => t.action.includes('cancelled'))?.remarks || 'Cancelled by user.'}</p>
+                    </div>
+                </div>
+            )}
+
+            <div className={`grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 ${request.status === 'rejected' || request.status === 'cancelled' ? 'mt-2' : 'mt-4'}`}>
 
                 {/* LEFT COLUMN */}
                 <div className="space-y-6">
@@ -358,31 +382,49 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
 
                         <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
                             {[
-                                {
+                                // Cancelled Step (only if cancelled)
+                                request.status === 'cancelled' ? {
+                                    status: 'cancelled',
+                                    title: 'Request Cancelled',
+                                    subtitle: 'The pass was cancelled.',
+                                    date: request.timeline.find(t => t.action.includes('cancelled'))?.timestamp || request.updatedAt
+                                } : null,
+
+                                // Return Step
+                                (['approved', 'completed', 'returned'].includes(request.status) || isReturned || returnStatus === 'left') ? {
                                     status: returnStatus,
-                                    title: isReturned ? 'Returned to Hostel' : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
-                                    subtitle: request.studentId.name,
-                                    date: null
-                                },
-                                {
+                                    title: isReturned ? (returnStatus === 'late' ? 'Returned (Late)' : 'Returned to Hostel') : (returnStatus === 'left' ? 'Left Hostel' : 'Return Status pending'),
+                                    subtitle: request.studentId?.name || 'Student',
+                                    date: request.returnTracking?.returnedAt || request.returnTracking?.leftHostelAt || null
+                                } : null,
+
+                                // Admin Step
+                                (isParentApproved || adminStatus !== 'pending') ? {
                                     status: adminStatus,
-                                    title: isAdminApproved ? `Approved by ${request.adminApproval?.actorRole || 'admin'}` : (isAdminRejected ? `Rejected by ${request.adminApproval?.actorRole || 'admin'}` : 'Admin Approval'),
+                                    title: isAdminApproved ? `Approved by ${request.adminApproval?.actorRole || 'admin'}` : (isAdminRejected ? `Rejected by ${request.adminApproval?.actorRole || 'admin'}` : 'Admin Approval pending'),
                                     subtitle: request.adminApproval?.actorName ? `${request.adminApproval.actorName} - ${request.adminApproval.actorRole || 'admin'}` : 'Admin',
                                     date: request.adminApproval?.actionAt
-                                },
+                                } : null,
+
+                                // Parent Step
                                 {
                                     status: parentStatus,
-                                    title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval'),
+                                    title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval pending'),
                                     subtitle: request.parentApproval?.actorName ? `${request.parentApproval.actorName} - Parent` : 'Parent',
                                     date: request.parentApproval?.actionAt
                                 },
+
+                                // Submitted Step
                                 {
                                     status: 'submitted',
                                     title: 'Request submitted',
                                     subtitle: request.studentId?.name || request.studentInfo?.name || request.studentName || 'Student',
                                     date: request.createdAt
                                 }
-                            ].filter(Boolean).map((step, idx) => {
+                            ]
+                            .filter(Boolean)
+                            .filter(step => !( (request.status === 'cancelled' || request.status === 'rejected') && step.status === 'pending' ))
+                            .map((step, idx) => {
                                 const cfg = getProgressConfig(step.status);
                                 return (
                                     <TimelineStep

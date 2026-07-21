@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
+import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
+import { Filter } from 'lucide-react';
 import { showSuccessToast } from '@/utils/toast';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import LeavesMobileView from '../views/LeavesMobileView';
@@ -157,146 +158,194 @@ export default function ParentLeaves() {
         return '--';
     };
 
-    const tableHeaders = isHomePass
-        ? ["Child", "Leave Period", "Days", "Return", "Status"]
-        : ["Child", "Date", "Type", "In", "Out", "Return", "Status"];
-
     const statusOptions = [
-        { label: 'Pending Parent', value: 'pending_parent' },
+        { label: 'Pending', value: 'pending_parent' },
         { label: 'Approve', value: 'approved' },
         { label: 'Reject', value: 'rejected' }
     ];
 
-    const viewProps = {
-        requests,
-        loading,
-        hasMore: page < totalPages,
-        onLoadMore: () => setPage(p => p + 1),
-        searchQuery,
-        setSearchQuery: (val) => {
-            setSearchQuery(val);
-            setPage(1);
+    const columns = isHomePass ? [
+        {
+            key: "child",
+            header: "Child",
+            renderCell: (r) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
+                        {getStudentName(r).split(' ').map(n => n[0]).join('').substring(0, 2)}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-700 whitespace-nowrap">{getStudentName(r)}</span>
+                        <span className="text-xs text-text-secondary">Applied: {formatDateReadable(r.createdAt)}</span>
+                    </div>
+                </div>
+            )
         },
-        onFilterClick: () => setIsFilterModalOpen(true),
-        isFilterApplied: !!(filters.status || filters.category || filters.fromDate || filters.toDate),
-        onAddClick: undefined,
-        openEditModal: undefined,
-        statsData
-    };
+        {
+            key: "leavePeriod",
+            header: "Leave Period",
+            renderCell: (r) => (
+                <span className="font-medium text-text-secondary text-sm">
+                    {formatDateReadable(r.fromDate)} - {formatDateReadable(r.toDate)}
+                </span>
+            )
+        },
+        {
+            key: "days",
+            header: "Days",
+            renderCell: (r) => (
+                <span className="text-text-secondary text-sm">
+                    {getDurationDays(r)} Days
+                </span>
+            )
+        },
+        {
+            key: "returnTracking",
+            header: "Return",
+            renderCell: (r) => <LeaveReturnBadge returnTracking={r.returnTracking} />
+        },
+        {
+            key: "status",
+            header: "Status",
+            renderCell: (r) => (
+                <div onClick={(e) => e.stopPropagation()}>
+                    {r.status === 'pending_parent' ? (
+                        <Dropdown
+                            options={statusOptions}
+                            value="pending_parent"
+                            onChange={(val) => openActionModal(r, val)}
+                            minWidth="w-28"
+                            triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
+                        />
+                    ) : (
+                        <LeaveStatusBadge status={r.status} />
+                    )}
+                </div>
+            )
+        }
+    ] : [
+        {
+            key: "child",
+            header: "Child",
+            renderCell: (r) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
+                        {getStudentName(r).split(' ').map(n => n[0]).join('').substring(0, 2)}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-700 whitespace-nowrap">{getStudentName(r)}</span>
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: "date",
+            header: "Date",
+            renderCell: (r) => (
+                <span className="font-medium text-text-secondary text-sm">
+                    {formatDateReadable(r.fromDate || r.date)}
+                </span>
+            )
+        },
+        {
+            key: "type",
+            header: "Type",
+            renderCell: (r) => (
+                <span className="text-text-secondary text-sm">
+                    {r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')}
+                </span>
+            )
+        },
+        {
+            key: "inTime",
+            header: "In",
+            renderCell: (r) => (
+                <span className="text-text-secondary text-sm">
+                    {r.expectedReturnTime || r.returnTime || '--'}
+                </span>
+            )
+        },
+        {
+            key: "outTime",
+            header: "Out",
+            renderCell: (r) => (
+                <span className="text-text-secondary text-sm">
+                    {r.outTime || '--'}
+                </span>
+            )
+        },
+        {
+            key: "returnTracking",
+            header: "Return",
+            renderCell: (r) => <LeaveReturnBadge returnTracking={r.returnTracking} />
+        },
+        {
+            key: "status",
+            header: "Status",
+            renderCell: (r) => (
+                <div onClick={(e) => e.stopPropagation()}>
+                    {r.status === 'pending_parent' ? (
+                        <Dropdown
+                            options={statusOptions}
+                            value="pending_parent"
+                            onChange={(val) => openActionModal(r, val)}
+                            minWidth="w-28"
+                            triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
+                        />
+                    ) : (
+                        <LeaveStatusBadge status={r.status} />
+                    )}
+                </div>
+            )
+        }
+    ];
+
+    const toolbarEndSlot = (
+        <button
+            type="button"
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`flex items-center justify-center p-2 rounded-xl transition-colors shadow-sm border h-full ${Object.values(filters).some(Boolean) ? 'bg-[#0A437A] text-white border-[#0A437A] hover:bg-[#0A437A]/90' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+        >
+            <Filter className="w-4 h-4" />
+        </button>
+    );
 
     return (
-        <>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             {isMobile ? (
                 <LeavesMobileView {...viewProps} />
             ) : (
-                <div className="w-full h-full overflow-y-auto p-4 md:p-6 flex flex-col bg-background-secondary">
-                    <div className="mb-6 shrink-0">
+                <div className="p-4 md:p-6 flex-1 flex flex-col">
+                    <div className="mb-6 shrink-0 hidden md:block">
                         <PageHeader title={pageTitle} subtitle={pageSubtitle} />
                     </div>
 
-                    <LeaveStatsCards stats={statsData} />
+                    <div className="hidden md:block">
+                        <LeaveStatsCards stats={statsData} />
+                    </div>
 
-                    <DataTable
-                        headers={tableHeaders}
-                        items={requests}
-                        canSelect={false}
-                        onRowClick={(item) => setViewId(item._id)}
-                        emptyText="No requests found."
-                        renderRow={(r) => (
-                            <>
-                                <td className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm shrink-0">
-                                            {getStudentName(r).split(' ').map(n => n[0]).join('').substring(0, 2)}
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-gray-700 whitespace-nowrap">{getStudentName(r)}</span>
-                                            {isHomePass && <span className="text-xs text-text-secondary">Applied: {formatDateReadable(r.createdAt)}</span>}
-                                        </div>
-                                    </div>
-                                </td>
-
-                                {isHomePass ? (
-                                    <>
-                                        <td className="p-4 text-text-secondary text-sm font-medium">
-                                            {formatDateReadable(r.fromDate)} - {formatDateReadable(r.toDate)}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {getDurationDays(r)} Days
-                                        </td>
-                                    </>
-                                ) : (
-                                    <>
-                                        <td className="p-4 text-text-secondary text-sm font-medium">
-                                            {formatDateReadable(r.fromDate || r.date)}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {r.expectedReturnTime || r.returnTime || '--'}
-                                        </td>
-                                        <td className="p-4 text-text-secondary text-sm">
-                                            {r.outTime || '--'}
-                                        </td>
-                                    </>
-                                )}
-                                <td className="p-4">
-                                    <LeaveReturnBadge returnTracking={r.returnTracking} />
-                                </td>
-                                <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                                    {r.status === 'pending_parent' ? (
-                                        <Dropdown
-                                            options={statusOptions}
-                                            value="pending_parent"
-                                            onChange={(val) => openActionModal(r, val)}
-                                            minWidth="w-28"
-                                            triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
-                                        />
-                                    ) : (
-                                        <LeaveStatusBadge status={r.status} />
-                                    )}
-                                </td>
-                            </>
-                        )}
-                        renderMobileItem={(r) => (
-                            <div className="mb-2">
-                                <InfoCard
-                                    avatar={getStudentName(r)}
-                                    title={getStudentName(r)}
-                                    subtitle={`Applied: ${formatDateReadable(r.createdAt)}`}
-                                    fields={[
-                                        { label: "Date", value: isHomePass ? `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}` : formatDateReadable(r.fromDate || r.date) },
-                                        { label: "Type/Duration", value: isHomePass ? `${getDurationDays(r)} Days` : (r.outPassCategory === 'in_house' ? 'In House' : (r.outPassCategory === 'out_house' ? 'Out House' : 'Out Pass')) },
-                                        !isHomePass && { label: "Outing Time", value: `${r.outTime || '--'} - ${r.expectedReturnTime || r.returnTime || '--'}` },
-                                        { label: "Return", value: <LeaveReturnBadge returnTracking={r.returnTracking} /> },
-                                        {
-                                            label: "Status",
-                                            value: r.status === 'pending_parent' ? (
-                                                <div onClick={(e) => e.stopPropagation()}>
-                                                    <Dropdown
-                                                        options={statusOptions}
-                                                        value="pending_parent"
-                                                        onChange={(val) => openActionModal(r, val)}
-                                                        minWidth="w-32"
-                                                        triggerClassName="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center justify-between gap-1.5 transition-colors bg-warning/10 border-warning/20 text-warning hover:bg-warning/20"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <LeaveStatusBadge status={r.status} />
-                                            )
-                                        }
-                                    ].filter(Boolean)}
-                                    onClick={() => setViewId(r._id)}
-                                />
-                            </div>
-                        )}
-                        page={page}
-                        setPage={setPage}
-                        limit={limit}
-                        totalItems={totalItems}
-                        totalPages={totalPages}
-                    />
+                    <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
+                        <DataView
+                            pageScrollMode={true}
+                            data={requests}
+                            columns={columns}
+                            loading={loading}
+                            error={null}
+                            searchQuery={searchQuery}
+                            onSearchChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                            searchPlaceholder="Search requests..."
+                            canSelect={false}
+                            onRowClick={(item) => setViewId(item._id)}
+                            toolbarEndSlot={toolbarEndSlot}
+                            page={page}
+                            setPage={setPage}
+                            limit={limit}
+                            setLimit={() => { }}
+                            totalItems={totalItems}
+                            totalPages={totalPages}
+                            emptyText="No leave records found matching your search."
+                            className="h-full border-none shadow-none"
+                        />
+                    </div>
                 </div>
             )}
 
@@ -331,6 +380,6 @@ export default function ParentLeaves() {
                 onClose={() => setViewId(null)}
                 leaveId={viewId}
             />
-        </>
+        </div>
     );
 }
