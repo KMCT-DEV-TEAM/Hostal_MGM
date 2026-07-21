@@ -11,7 +11,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 export default function AttendanceWindowsTable({ showHostel = true, showWarden = true, onRowClick }) {
     const { user } = useAuthStore();
     const [windows, setWindows] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
@@ -23,7 +23,10 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
     });
 
     const fetchWindows = useCallback(async () => {
-        if (!user?.role) return;
+        if (!user?.role) {
+            setLoading(false);
+            return;
+        }
 
         try {
             setLoading(true);
