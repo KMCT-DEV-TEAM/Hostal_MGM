@@ -12,59 +12,59 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
     const [selectedVisitId, setSelectedVisitId] = useState(null);
 
     const columns = [
-        { 
-            key: 'date', 
-            header: 'Date', 
+        {
+            key: 'date',
+            header: 'Date',
             accessor: (visitor) => formatDateReadable(visitor.checkInTime),
-            icon: Calendar 
+            icon: Calendar
         },
-        { 
-            key: 'visitorName', 
-            header: 'Visitors Name', 
-            type: 'user', 
-            titleAccessor: (visitor) => visitor.visitorName || 'Unknown', 
-            avatarAccessor: (visitor) => visitor.visitorName ? visitor.visitorName.split(' ').map(n => n[0]).join('').toUpperCase() : 'V' 
+        {
+            key: 'visitorName',
+            header: 'Visitors Name',
+            type: 'user',
+            titleAccessor: (visitor) => visitor.visitorName || 'Unknown',
+            avatarAccessor: (visitor) => visitor.visitorName ? visitor.visitorName.split(' ').map(n => n[0]).join('').toUpperCase() : 'V'
         },
-        ...(userRole !== 'student' ? [{ 
-            key: 'visitingStudent', 
-            header: 'Visiting Student', 
+        ...(userRole !== 'student' ? [{
+            key: 'visitingStudent',
+            header: 'Visiting Student',
             accessor: (visitor) => visitor.studentNames || '--',
-            icon: Users 
+            icon: Users
         }] : []),
-        ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{ 
-            key: 'roomNo', 
-            header: 'Room NO', 
+        ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{
+            key: 'roomNo',
+            header: 'Room NO',
             accessor: (visitor) => visitor.roomNumber || visitor.roomNo || '--',
-            icon: DoorOpen 
+            icon: DoorOpen
         }] : []),
-        ...(['warden', 'super_admin'].includes(userRole) ? [{ 
-            key: 'organization', 
-            header: 'Organization', 
+        ...(['warden', 'super_admin'].includes(userRole) ? [{
+            key: 'organization',
+            header: 'Organization',
             accessor: (visitor) => visitor.organizationName || '--',
-            icon: Building 
+            icon: Building
         }] : []),
-        ...(['admin', 'parent'].includes(userRole) ? [{ 
-            key: 'hostel', 
-            header: 'Hostel', 
+        ...(['admin', 'parent'].includes(userRole) ? [{
+            key: 'hostel',
+            header: 'Hostel',
             accessor: (visitor) => visitor.hostelName || '--',
-            icon: Building 
+            icon: Building
         }] : []),
-        { 
-            key: 'checkIn', 
-            header: 'Check In', 
+        {
+            key: 'checkIn',
+            header: 'Check In',
             accessor: (visitor) => formatTime(visitor.checkInTime),
-            icon: LogIn 
+            icon: LogIn
         },
-        { 
-            key: 'checkOut', 
-            header: 'Check Out', 
+        {
+            key: 'checkOut',
+            header: 'Check Out',
             accessor: (visitor) => visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '--------',
-            icon: LogOut 
+            icon: LogOut
         },
-        { 
-            key: 'status', 
-            header: 'Status', 
-            renderCell: (visitor) => <StatusBadge status={visitor.status} /> 
+        {
+            key: 'status',
+            header: 'Status',
+            renderCell: (visitor) => <StatusBadge status={visitor.status} />
         }
     ];
 
@@ -85,15 +85,7 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
 
     const toolbarEndSlot = (
         <div className="flex items-center gap-2 relative shrink-0">
-            <Button
-                variant={hasActiveFilters ? "primary" : "outline"}
-                size="md"
-                fullWidth={false}
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`!p-2.5 h-10 w-10 flex items-center justify-center ${hasActiveFilters ? '' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-            >
-                <Filter className="w-4 h-4" />
-            </Button>
+
             {canExport && (
                 <Button
                     variant="outline"
@@ -102,7 +94,7 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                     onClick={onExportClick}
                 >
                     <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Export</span>
+                    <span className="hidden ">Export</span>
                 </Button>
             )}
             <FilterModal
@@ -114,6 +106,16 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
         </div>
     );
 
+
+    const addButton = <Button
+        variant={hasActiveFilters ? "primary" : "outline"}
+        size="md"
+        fullWidth={false}
+        onClick={() => setIsFilterOpen(!isFilterOpen)}
+        className={`!p-2.5 h-10 w-10 flex items-center justify-center ${hasActiveFilters ? '' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+    >
+        <Filter className="w-8 h-4" />
+    </Button>
     return (
         <div className="flex flex-col flex-1 h-full min-h-0 bg-transparent rounded-none relative">
             <DataView
@@ -131,6 +133,7 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 onRowClick={(row) => setSelectedVisitId(row.visitId || row._id || row.id)}
                 page={1}
                 setPage={() => { }}
+                addButton={addButton}
                 limit={limit}
                 setLimit={setLimit}
                 totalItems={visitors?.length || 0}

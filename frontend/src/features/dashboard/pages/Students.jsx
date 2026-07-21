@@ -1,10 +1,6 @@
 "use client"
 import React, { useCallback, useMemo, useState } from "react";
-import PageHeader from '@/components/ui/PageHeader';
-import ListToolbar from '@/components/ui/ListToolbar';
-import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { getStudentPermissions } from "@/features/dashboard/config/studentPermissions";

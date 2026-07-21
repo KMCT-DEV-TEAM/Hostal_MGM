@@ -24,7 +24,7 @@ export default function StudentLeavesDesktopView({
     setViewId
 }) {
     const limit = 10;
-    
+
     const tableHeaders = isHomePass
         ? ["Leave Period", "Days", "Status", "Return", "Action"]
         : ["Date", "Type", "In", "Out", "Status", "Return", "Action"];

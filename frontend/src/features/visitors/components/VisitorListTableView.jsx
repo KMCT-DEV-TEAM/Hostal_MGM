@@ -156,20 +156,22 @@ const VisitorListTableView = ({
                     <span className="hidden sm:inline">Export</span>
                 </Button>
             )}
-            {canRegister && (
-                <Button
-                    variant="primary"
-                    fullWidth={false}
-                    size="md"
-                    onClick={onRegisterClick}
-                >
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Register</span>
-                </Button>
-            )}
+
         </div>
     );
 
+
+    const addButton = (
+        <Button
+            variant="primary"
+            fullWidth={false}
+            size="md"
+            onClick={onRegisterClick}
+        >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Register</span>
+        </Button>
+    )
     return (
         <DataView
             pageScrollMode={true}
@@ -183,6 +185,7 @@ const VisitorListTableView = ({
             data={visitors}
             loading={loading}
             emptyText="No visitors found."
+            addButton={canRegister ? addButton : null}
             onRowClick={onRowClick}
             page={page}
             setPage={setPage}

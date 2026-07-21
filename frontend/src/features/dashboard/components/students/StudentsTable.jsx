@@ -8,7 +8,9 @@ import {
   SlidersHorizontal,
   MoreVertical,
   Plus,
-  Download
+  Download,
+  Filter,
+  Building
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import Dropdown from "@/components/ui/Dropdown";
@@ -76,7 +78,6 @@ export default function StudentsTable({
     return organization.name ?? "-";
   };
 
-  const getInitials = (name = "") => name.trim().substring(0, 2).toUpperCase() || "NA";
 
   // 1. Column Configuration (No UI building outside of extremely custom cells)
   const columns = [
@@ -174,7 +175,11 @@ export default function StudentsTable({
       text: Boolean(s.isActive) ? t("active") : t("inactive"),
       color: Boolean(s.isActive) ? "green" : "red"
     }),
-    fields: columns.filter(c => c.accessor && c.icon),
+    fields: [
+      { accessor: (s) => s.course?.name || s.course || "-", icon: BookOpen },
+      { accessor: (s) => s.department?.name || s.department || "-", icon: Building },
+      ...(showOrganizationColumn ? [{ accessor: (s) => getOrganizationName(s.organization, s.organizationId), icon: Building2 }] : []),
+    ],
     onEdit: canManage ? onEditClick : undefined
   };
 
@@ -187,56 +192,73 @@ export default function StudentsTable({
         onClick={onFilterClick}
         className="flex items-center justify-center p-2 bg-white border border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
       >
-        <SlidersHorizontal className="w-4 h-4" />
+        <Filter className="w-8 h-4" />
       </button>
+
       {onExport && (
         <button
           onClick={onExport}
           className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
         >
-          <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+          <Download className="w-8 h-4 text-gray-500 lg:text-inherit" />
           <span className="hidden lg:inline">Export</span>
         </button>
       )}
+
       {(canEdit || canDelete) && (
-        <Dropdown
-          options={[
-            ...(canEdit ? [{
-              value: "active",
-              label: `Active ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`,
-              disabled: selectedIds.length === 0
-            }] : []),
-            ...(canDelete ? [{
-              value: "inactive",
-              label: `Inactive ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`,
-              disabled: selectedIds.length === 0
-            }] : [])
-          ]}
-          value={null}
-          placeholder={<MoreVertical className="w-4 h-4 text-gray-500" />}
-          hideChevron={true}
-          onChange={(val) => {
-            if (val === "active") onActivateSelected?.();
-            if (val === "inactive") onDeactivateSelected?.();
-          }}
-          minWidth="w-auto"
-          triggerClassName="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
-        />
+        <div className="relative" ref={bulkMenuRef}>
+          <button
+            onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+            className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+          >
+            <MoreVertical className="w-8 h-4 text-gray-500" />
+          </button>
+          {isBulkMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+              {canEdit && (
+                <button
+                  onClick={() => { setIsBulkMenuOpen(false); onActivateSelected?.(); }}
+                  disabled={selectedIds.length === 0}
+                  className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected?.(); }}
+                  disabled={selectedIds.length === 0}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
-      {canCreate && (
-        <button
-          onClick={onAddClick}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          Add New
-        </button>
-      )}
+
+
     </>
   );
 
+
+  const addButton = canCreate && (
+    <button
+      onClick={onAddClick}
+      className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] text-white rounded-xl text-sm font-medium hover:bg-[#0A437A]/90 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+    >
+      <Plus className="w-4 h-4" />
+      Add <span className="hidden sm:inline">
+        New
+      </span>
+    </button>
+  )
+
+
   return (
     <DataView
+      addButton={addButton}
       pageScrollMode={true}
       data={students}
       columns={columns}
