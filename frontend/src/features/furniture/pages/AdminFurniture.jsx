@@ -308,22 +308,23 @@ export default function AdminFurniture() {
                 <span className="hidden sm:inline">Export</span>
             </Button>
 
-            {isAdmin && (
-                <Button
-                    variant="primary"
-                    fullWidth={false}
-                    size="md"
-                    onClick={() => {
-                        setSelectedType(null);
-                        setIsAddModalOpen(true);
-                    }}
-                >
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add New</span>
-                </Button>
-            )}
+
         </div>
     );
+
+    const addButton = (
+        <Button
+            fullWidth={false}
+            size="md"
+            onClick={() => {
+                setSelectedType(null);
+                setIsAddModalOpen(true);
+            }}
+        >
+            <Plus className="w-4 h-4" /> Add
+            <span className="hidden sm:inline"> Furniture</span>
+        </Button>
+    )
 
     const handleRowClick = (item) => {
         setSelectedType(item);
@@ -378,6 +379,7 @@ export default function AdminFurniture() {
                         columns={columns}
                         cardConfig={cardConfig}
                         data={types}
+                        addButton={isAdmin ? addButton : null}
                         canSelect={isAdmin}
                         selectedIds={selectedIds}
                         onSelectAll={handleSelectAll}

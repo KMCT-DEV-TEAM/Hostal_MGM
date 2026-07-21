@@ -10,7 +10,7 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { createLeave, updateLeave, cancelLeave } from '@/services/leave.service';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
-export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass', editData }) {
+export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPassType = 'Home Pass', editData, allowTypeSelection = false }) {
     const { register, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset, watch, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
     });
@@ -26,6 +26,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     const outTimeVal = watch('outTime');
     const returnTimeVal = watch('returnTime');
     const outPassCategoryVal = watch('outPassCategory');
+    const passTypeVal = watch('passType') || initialPassType;
 
     const outPassCategoryOptions = [
         { label: 'In House', value: 'in_house' },
@@ -90,7 +91,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
         console.log('data:', data);
         try {
             let payload;
-            const actualPassType = editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType;
+            const actualPassType = data.passType || (editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType);
 
             if (actualPassType === 'Home Pass') {
                 payload = {
@@ -201,9 +202,44 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                 </div>
             }
         >
-            <input type="hidden" {...register('passType')} value={editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType} />
+            {allowTypeSelection && !editData ? (
+                <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setValue('passType', 'Home Pass');
+                            setValue('outTime', '');
+                            setValue('returnTime', '');
+                            setValue('outPassCategory', '');
+                        }}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                            passTypeVal === 'Home Pass'
+                                ? 'bg-white text-primary shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        Home Pass
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setValue('passType', 'Out Pass');
+                            setValue('fromDate', '');
+                            setValue('toDate', '');
+                        }}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                            passTypeVal === 'Out Pass'
+                                ? 'bg-white text-primary shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        Out Pass
+                    </button>
+                </div>
+            ) : null}
+            <input type="hidden" {...register('passType')} />
             <div className="grid grid-cols-2 gap-5">
-                {(editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType) === 'Home Pass' ? (
+                {passTypeVal === 'Home Pass' ? (
                     <>
                         <DateInput
                             label="From Date"

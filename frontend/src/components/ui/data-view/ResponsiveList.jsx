@@ -77,7 +77,7 @@ export default function ResponsiveList({
                     {canSelect && accumulatedData.length > 0 && selectedIds.length > 0 && (() => {
                         const selectableItems = isSelectableFn ? accumulatedData.filter(item => isSelectableFn(item)) : accumulatedData;
                         if (selectableItems.length === 0) return null;
-                        
+
                         return (
                             <div className={`z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm mb-1 ${pageScrollMode ? 'sticky top-[63px]' : 'sticky top-0'}`}>
                                 <button
@@ -107,7 +107,7 @@ export default function ResponsiveList({
                         const fields = cardConfig.fields ? cardConfig.fields.map(f => {
                             const Icon = f.icon;
                             return {
-                                label: f.label || f.header,
+                                label: f.label,
                                 icon: Icon ? (typeof Icon === 'function' ? <Icon /> : Icon) : null,
                                 value: f.accessor ? f.accessor(item) : (typeof f.value === 'function' ? f.value(item) : f.value)
                             };

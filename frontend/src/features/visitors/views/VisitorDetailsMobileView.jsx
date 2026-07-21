@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
+import TimelineStep from '@/components/ui/TimelineStep';
 
 export default function VisitorDetailsMobileView({ data, onBack }) {
     useLayoutConfig({
@@ -27,8 +28,8 @@ export default function VisitorDetailsMobileView({ data, onBack }) {
     let idType = 'N/A';
     let idNumber = 'N/A';
     let visitDate = '--';
-    let visitTime = '--';
     let purpose = '--';
+    let duration = 'N/A';
     let checkInTimeStr = null;
     let checkOutTimeStr = null;
 
@@ -45,27 +46,19 @@ export default function VisitorDetailsMobileView({ data, onBack }) {
         idNumber = vInfo?.idNumber || 'N/A';
 
         visitDate = viInfo?.checkInTime ? formatDateReadable(viInfo.checkInTime) : '--';
-        visitTime = viInfo?.checkInTime ? formatTime(viInfo.checkInTime) : '--';
         purpose = viInfo?.purpose || '--';
+        duration = viInfo?.visitDuration || '--';
 
         checkInTimeStr = viInfo?.checkInTime ? `${formatDateReadable(viInfo.checkInTime)} | ${formatTime(viInfo.checkInTime)}` : null;
         checkOutTimeStr = viInfo?.checkOutTime ? `${formatDateReadable(viInfo.checkOutTime)} | ${formatTime(viInfo.checkOutTime)}` : null;
     } else {
-        // Fallback for simple profile
-        const vData = data?.visitorId && typeof data.visitorId === 'object' ? data.visitorId : data?.visitor || data;
-        visitorName = vData?.name || data?.visitorName || data?.name || 'Unknown';
-        relation = vData?.relation || data?.relationship || data?.relation || 'N/A';
-        phone = vData?.phone || data?.phone || 'N/A';
-        email = vData?.email || data?.email || 'N/A';
-        idType = vData?.idProofType || data?.idProofType || 'N/A';
-        idNumber = vData?.idNumber || data?.idNumber || 'N/A';
-
-        visitDate = data?.checkInTime ? formatDateReadable(data.checkInTime) : '--';
-        visitTime = data?.checkInTime ? formatTime(data.checkInTime) : '--';
-        purpose = data?.purpose || data?.reason || '--';
-
-        checkInTimeStr = data?.checkInTime ? `${formatDateReadable(data.checkInTime)} | ${formatTime(data.checkInTime)}` : null;
-        checkOutTimeStr = data?.checkOutTime ? `${formatDateReadable(data.checkOutTime)} | ${formatTime(data.checkOutTime)}` : null;
+        // Fallback for simple profile based on flat JSON response
+        visitorName = data?.visitorName || 'Unknown';
+        relation = data?.relationship || 'N/A';
+        phone = data?.phone || 'N/A';
+        email = data?.email || 'N/A';
+        idType = data?.idProofType || 'N/A';
+        idNumber = data?.idProofNumber || 'N/A';
     }
 
     const renderField = (label, value) => (
@@ -93,58 +86,126 @@ export default function VisitorDetailsMobileView({ data, onBack }) {
             </div>
 
             {/* VISIT DETAILS CARD */}
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-                <h4 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase mb-4">
-                    Visit Details
-                </h4>
+            {isVisit && (
+                <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                    <h4 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase mb-4">
+                        Visit Details
+                    </h4>
 
-                <div className="flex items-center gap-6 mb-4">
-                    <div className="flex-1">
-                        <span className="block text-[11px] font-medium text-gray-400 mb-1">Date</span>
-                        <span className="block text-[13px] font-medium text-text-primary">{visitDate}</span>
+                    <div className="flex items-center gap-6 mb-4">
+                        <div className="flex-1">
+                            <span className="block text-[11px] font-medium text-gray-400 mb-1">Date</span>
+                            <span className="block text-[13px] font-medium text-text-primary">{visitDate}</span>
+                        </div>
+                        <div className="flex-1 border-l border-gray-100 pl-6">
+                            <span className="block text-[11px] font-medium text-gray-400 mb-1">Duration</span>
+                            <span className="block text-[13px] font-medium text-text-primary">{duration}</span>
+                        </div>
                     </div>
-                    <div className="flex-1 border-l border-gray-100 pl-6">
-                        <span className="block text-[11px] font-medium text-gray-400 mb-1">Time</span>
-                        <span className="block text-[13px] font-medium text-text-primary">{visitTime}</span>
+
+                    <div className="w-full h-px bg-gray-100 my-4"></div>
+
+                    <div className="flex flex-col">
+                        <span className="text-[11px] font-medium text-gray-400 mb-1">Purpose</span>
+                        <span className="text-[13px] font-medium text-text-primary">{purpose}</span>
                     </div>
                 </div>
-
-                <div className="w-full h-px bg-gray-100 my-4"></div>
-
-                <div className="flex flex-col">
-                    <span className="text-[11px] font-medium text-gray-400 mb-1">Purpose</span>
-                    <span className="text-[13px] font-medium text-text-primary">{purpose}</span>
-                </div>
-            </div>
+            )}
 
             {/* VISIT TIMELINE CARD */}
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-                <h4 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase mb-4">
-                    Visit Timeline
-                </h4>
+            {isVisit && (
+                <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                    <h4 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase mb-4">
+                        Visit Timeline
+                    </h4>
 
-                <div className="relative pl-6 space-y-6 before:absolute before:top-2 before:bottom-2 before:left-[7px] before:w-px before:bg-gray-100">
+                    <div className="relative pl-8 space-y-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-gray-100">
 
-                    {/* Check Out Step (Top, since it's the latest in reverse chron, or shown first) */}
-                    <div className="relative">
-                        <div className="absolute -left-6 top-1.5 w-[11px] h-[11px] bg-white border-2 border-danger rounded-full flex items-center justify-center z-10">
-                            <div className="w-1.5 h-1.5 bg-danger rounded-full"></div>
-                        </div>
-                        <h4 className="text-sm font-semibold text-text-primary mb-0.5">Check Out</h4>
-                        <p className="text-xs text-gray-400">{checkOutTimeStr || 'Pending'}</p>
+                        {/* Check Out Step */}
+                        <TimelineStep
+                            title="Check Out"
+                            subtitle={visitorName}
+                            formattedDate={checkOutTimeStr || 'Pending'}
+                            badgeLabel={checkOutTimeStr ? "Completed" : "Pending"}
+                            badgeColor={checkOutTimeStr ? "text-success" : "text-warning"}
+                            badgeBg={checkOutTimeStr ? "bg-success/10" : "bg-warning/10"}
+                            nodeColor={checkOutTimeStr ? "bg-success" : "bg-danger"}
+                            avatarBg="bg-gray-100"
+                            avatarColor="text-gray-600"
+                        />
+
+                        {/* Check In Step */}
+                        <TimelineStep
+                            title="Check In"
+                            subtitle={visitorName}
+                            formattedDate={checkInTimeStr || 'Pending'}
+                            badgeLabel={checkInTimeStr ? "Completed" : "Pending"}
+                            badgeColor={checkInTimeStr ? "text-success" : "text-warning"}
+                            badgeBg={checkInTimeStr ? "bg-success/10" : "bg-warning/10"}
+                            nodeColor="bg-success"
+                            avatarBg="bg-gray-100"
+                            avatarColor="text-gray-600"
+                        />
+
                     </div>
-
-                    {/* Check In Step */}
-                    <div className="relative">
-                        <div className="absolute -left-6 top-1.5 w-[11px] h-[11px] bg-white border-2 border-success rounded-full flex items-center justify-center z-10">
-                            <div className="w-1.5 h-1.5 bg-success rounded-full"></div>
-                        </div>
-                        <h4 className={`text-sm font-semibold mb-0.5 ${checkOutTimeStr ? 'text-gray-400' : 'text-text-primary'}`}>Check In</h4>
-                        <p className="text-xs text-gray-400">{checkInTimeStr || 'Pending'}</p>
-                    </div>
-
                 </div>
-            </div>
+            )}
+            {/* VISITOR TIMELINE CARD */}
+            {!isVisit && data?.timeline && data.timeline.length > 0 && (
+                <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                    <h4 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase mb-4">
+                        Status Timeline
+                    </h4>
+
+                    <div className="relative pl-8 space-y-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-gray-100">
+                        {data.timeline.map((item, idx) => {
+                            const isApproved = item.action === 'Approved';
+                            const isRejected = item.action === 'Rejected';
+                            const isWarning = item.action.includes('Re-approval') || item.action === 'Pending';
+
+                            let nodeColor = 'bg-primary';
+                            let badgeColor = 'text-primary';
+                            let badgeBg = 'bg-primary/10';
+
+                            if (isApproved) {
+                                nodeColor = 'bg-success';
+                                badgeColor = 'text-success';
+                                badgeBg = 'bg-success/10';
+                            } else if (isRejected) {
+                                nodeColor = 'bg-danger';
+                                badgeColor = 'text-danger';
+                                badgeBg = 'bg-danger/10';
+                            } else if (isWarning) {
+                                nodeColor = 'bg-warning';
+                                badgeColor = 'text-warning';
+                                badgeBg = 'bg-warning/10';
+                            }
+
+                            const roleStr = (item.role || '').replace('_', ' ');
+                            const subtitleStr = item.performedBy?.toLowerCase() === roleStr?.toLowerCase()
+                                ? item.performedBy
+                                : `${item.performedBy} - ${roleStr}`;
+
+                            const badgeStr = isApproved ? 'Approved' : isRejected ? 'Rejected' : isWarning ? 'Action Required' : 'Info';
+
+                            return (
+                                <TimelineStep
+                                    key={idx}
+                                    title={item.remarks || item.action}
+                                    subtitle={subtitleStr}
+                                    formattedDate={`${formatDateReadable(item.createdAt)} | ${formatTime(item.createdAt)}`}
+                                    badgeLabel={item.remarks ? item.action : badgeStr}
+                                    badgeColor={badgeColor}
+                                    badgeBg={badgeBg}
+                                    nodeColor={nodeColor}
+                                    avatarBg="bg-gray-100"
+                                    avatarColor="text-gray-600"
+                                />
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
         </div>
     );

@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Calendar, FileEdit, Tag, Users } from 'lucide-react';
+import { Home, Calendar, FileEdit, TriangleAlert, Users } from 'lucide-react';
 
 const MobileFooter = () => {
     const { user } = useAuthStore();
@@ -23,7 +23,7 @@ const MobileFooter = () => {
             }
             : {
                 path: '/dashboard/complaints',
-                icon: Tag,
+                icon: TriangleAlert,
             }
     ];
 

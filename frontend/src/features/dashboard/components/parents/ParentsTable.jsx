@@ -41,6 +41,7 @@ export default function ParentsTable({
     const debouncedSearchTerm = useDebounce(searchTerm, 400);
     const [statusFilter, setStatusFilter] = useState('');
     const [organizationFilter, setOrganizationFilter] = useState('');
+    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
     useEffect(() => {
         onSearch?.(debouncedSearchTerm);
@@ -151,18 +152,18 @@ export default function ParentsTable({
     const addNewButton = canCreate && (
         <button
             onClick={onAddClick}
-            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-[#0A437A] hover:bg-[#0A437A]/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm h-[42px]"
+            className="flex items-center justify-center gap-2 px-3 py-1 sm:px-4  bg-[#0A437A] hover:bg-[#0A437A]/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm py-2"
         >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Parent</span>
+            <span className="">Add <span className='hidden md:inline'>Parent </span></span>
         </button>
     );
 
     const toolbarEndSlot = (
-        <div className="flex items-center gap-2 lg:gap-3 w-full sm:w-auto">
+        <>
             {canEdit && (
                 <Dropdown
-                    className="flex-1 sm:flex-none"
+                    className="flex-1 "
                     options={statusOptions}
                     value={statusFilter}
                     onChange={(val) => {
@@ -173,14 +174,13 @@ export default function ParentsTable({
                         );
                     }}
                     placeholder="All Status"
-                    mobileIcon={<Filter className="w-4 h-4" />}
-                    minWidth="w-auto lg:w-32"
-                    triggerClassName="w-full flex items-center justify-center lg:justify-between px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                    minWidth="w-32"
+                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
                 />
             )}
             {role === ROLES.SUPER_ADMIN && (
                 <Dropdown
-                    className="flex-1 sm:flex-none"
+                    className="flex-1 "
                     options={organizationOptions}
                     value={organizationFilter}
                     onChange={(val) => {
@@ -188,47 +188,54 @@ export default function ParentsTable({
                         onFilterChange?.('organizationId', val);
                     }}
                     placeholder="All Organizations"
-                    mobileIcon={<Building className="w-4 h-4" />}
-                    minWidth="w-auto lg:w-40"
-                    triggerClassName="w-full flex items-center justify-center lg:justify-between px-3 py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] font-medium hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                    minWidth="w-40"
+                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
                 />
+            )}
+
+            {onExport && (
+                <button
+                    onClick={onExport}
+                    className="flex items-center justify-center lg:gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg text-sm text-[#777777] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap h-full"
+                >
+                    <Download className="w-4 h-4 text-gray-500 lg:text-inherit" />
+                    <span className="hidden lg:inline">Export</span>
+                </button>
             )}
 
             {(canEdit || canDelete) && (
-                <Dropdown
-                    className="flex-1 sm:flex-none"
-                    options={[
-                        ...(canEdit ? [{
-                            value: "active",
-                            label: `Active ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`,
-                            disabled: selectedIds.length === 0
-                        }] : []),
-                        ...(canDelete ? [{
-                            value: "inactive",
-                            label: `Inactive ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`,
-                            disabled: selectedIds.length === 0
-                        }] : [])
-                    ]}
-                    value={null}
-                    placeholder={<MoreVertical className="w-4 h-4 text-gray-500" />}
-                    hideChevron={true}
-                    onChange={(val) => {
-                        if (val === "active") onActivateSelected?.();
-                        if (val === "inactive") onDeactivateSelected?.();
-                    }}
-                    minWidth="w-auto"
-                    triggerClassName="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
-                />
+                <div className="relative">
+                    <button
+                        onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
+                        className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
+                    >
+                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                    </button>
+                    {isBulkMenuOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
+                            {canEdit && (
+                                <button
+                                    onClick={() => { setIsBulkMenuOpen(false); onActivateSelected?.(); }}
+                                    disabled={selectedIds.length === 0}
+                                    className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                </button>
+                            )}
+                            {canDelete && (
+                                <button
+                                    onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected?.(); }}
+                                    disabled={selectedIds.length === 0}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
             )}
-
-            <button
-                onClick={onExport}
-                className="flex items-center justify-center p-2 bg-gray-50 text-gray-600 hover:text-gray-900 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors tooltip-trigger"
-                title="Export Data"
-            >
-                <Download className="w-5 h-5" />
-            </button>
-        </div>
+        </>
     );
 
     return (

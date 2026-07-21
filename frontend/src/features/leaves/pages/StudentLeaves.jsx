@@ -154,6 +154,7 @@ export default function StudentLeaves() {
                 onSuccess={() => { setPage(1); fetchLeaves(); }}
                 initialPassType={isHomePass ? 'Home Pass' : 'Out Pass'}
                 editData={editData}
+                allowTypeSelection={isMobile}
             />
 
             <FilterLeavesModal

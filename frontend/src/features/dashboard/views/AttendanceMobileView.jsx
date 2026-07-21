@@ -27,12 +27,16 @@ const AttendanceMobileView = ({
           </div>
           <div className="flex flex-col">
             <span className="text-sm text-text-secondary">Today's Status</span>
-            <span className="text-lg font-semibold text-text-primary capitalize">{todayStats?.status || 'Pending'}</span>
+            <span className="text-sm font-semibold text-text-primary capitalize">{todayStats?.status || 'Pending'}</span>
           </div>
         </div>
         <div className="flex flex-col items-end shrink-0">
-          <span className="text-sm text-text-secondary">Marked on</span>
-          <span className="text-sm font-semibold text-text-primary">{todayStats?.markedAt || '--'}</span>
+          <span className="text-sm text-text-secondary mb-0.5">Marked on</span>
+          {todayStats?.markedAt ? (
+            <span className="text-xs font-semibold text-text-primary">{todayStats.markedAt}</span>
+          ) : (
+            <span className="mt-1 px-3 py-1 text-[11px] font-semibold rounded-md bg-warning/10 text-warning">Pending</span>
+          )}
         </div>
       </div>
 

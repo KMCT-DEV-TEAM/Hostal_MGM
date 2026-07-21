@@ -158,25 +158,28 @@ export default function StudentMonthlyCalendar({
 
                 {/* Calendar Grid */}
                 <div className="relative min-h-[220px]">
-                    {loading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
-                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    )}
                     <div className="grid grid-cols-7 gap-y-4 mb-2">
                         {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(d => (
                             <div key={d} className="text-center text-[10px] font-medium text-gray-400">
                                 {d}
                             </div>
                         ))}
-                        {days.map((d, idx) => {
-                            if (!d) return renderDay(null, null);
-                            const yStr = year;
-                            const mStr = String(month).padStart(2, '0');
-                            const dStr = String(d).padStart(2, '0');
-                            const fullDateStr = `${yStr}-${mStr}-${dStr}`;
-                            return renderDay(fullDateStr, d);
-                        })}
+                        {loading ? (
+                            Array.from({ length: 35 }).map((_, i) => (
+                                <div key={`skeleton-${i}`} className="flex justify-center">
+                                    <div className="w-8 h-8 bg-gray-200/60 rounded-full animate-pulse"></div>
+                                </div>
+                            ))
+                        ) : (
+                            days.map((d, idx) => {
+                                if (!d) return renderDay(null, null);
+                                const yStr = year;
+                                const mStr = String(month).padStart(2, '0');
+                                const dStr = String(d).padStart(2, '0');
+                                const fullDateStr = `${yStr}-${mStr}-${dStr}`;
+                                return renderDay(fullDateStr, d);
+                            })
+                        )}
                     </div>
                 </div>
 

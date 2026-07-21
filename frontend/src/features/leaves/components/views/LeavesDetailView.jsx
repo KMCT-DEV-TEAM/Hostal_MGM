@@ -223,7 +223,7 @@ export default function LeavesDetailView({
         ]
     };
 
-    const toolbarEndSlot = (
+    const addButton = (
         <button
             type="button"
             onClick={onFilterClick}
@@ -247,7 +247,7 @@ export default function LeavesDetailView({
                 onSearchChange={(e) => setSearchQuery(e.target.value)}
                 searchPlaceholder="Search records..."
                 onRowClick={(item) => onRowClick(item)}
-                toolbarEndSlot={toolbarEndSlot}
+                addButton={addButton}
                 page={page}
                 setPage={setPage}
                 limit={10}
