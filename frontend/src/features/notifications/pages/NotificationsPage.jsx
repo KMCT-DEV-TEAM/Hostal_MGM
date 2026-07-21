@@ -10,6 +10,7 @@ const NotificationsPage = () => {
         notifications, 
         loading, 
         markAsRead, 
+        markAllAsRead,
         fetchNextPage, 
         hasMore, 
         fetchingMore 
@@ -30,6 +31,7 @@ const NotificationsPage = () => {
         notifications,
         loading,
         markAsRead,
+        markAllAsRead,
         hasMore,
         fetchingMore,
         bottomRef

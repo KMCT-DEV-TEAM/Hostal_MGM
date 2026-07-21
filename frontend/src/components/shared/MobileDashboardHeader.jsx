@@ -3,10 +3,12 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useQRModalStore } from '@/store/useQRModalStore';
 import { MapPin, QrCode, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useNotifications } from '@/features/notifications/hooks/useNotifications';
 
 const MobileDashboardHeader = () => {
     const { user } = useAuthStore();
     const { openModal } = useQRModalStore();
+    const { unreadCount } = useNotifications();
 
     const capitalizeWords = (str = "") =>
         str.replace(/\b\w/g, char => char.toUpperCase());
@@ -51,8 +53,9 @@ const MobileDashboardHeader = () => {
                     )}
                     <Link to="/dashboard/notifications" className="text-text-secondary hover:text-gray-600 relative transition-colors">
                         <Bell className="w-[22px] h-[22px]" strokeWidth={1.5} />
-                        {/* We could use real unreadCount here from useNotificationStore later */}
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full border-2 border-white"></span>
+                        {unreadCount > 0 && (
+                            <span className="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full border-2 border-white"></span>
+                        )}
                     </Link>
                 </div>
             </div>
