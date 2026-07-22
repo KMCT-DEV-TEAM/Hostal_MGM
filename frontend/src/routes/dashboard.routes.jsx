@@ -33,7 +33,7 @@ import VisitorsPage from '@/features/visitors/pages/VisitorsPage';
 import VisitorHistoryPage from '@/features/visitors/pages/VisitorHistoryPage';
 import VisitorDetails from '@/features/visitors/pages/VisitorDetails';
 import AnnouncementManagement from '@/features/dashboard/pages/AnnouncementManagement';
-
+import Mentors from '@/features/dashboard/pages/Mentors';
 export const dashboardRoutes = [
 
     {
@@ -99,6 +99,14 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN
         ],
         element: Administrator
+    },
+    {
+        path: 'mentors',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: Mentors
     },
 
     {
