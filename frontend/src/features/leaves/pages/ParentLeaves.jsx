@@ -45,7 +45,7 @@ export default function ParentLeaves() {
     const [viewId, setViewId] = useState(null);
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [filters, setFilters] = useState({ status: '', category: '', fromDate: '', toDate: '' });
+    const [filters, setFilters] = useState({ status: '', category: '', passType: '', fromDate: '', toDate: '' });
     const [page, setPage] = useState(1);
     const limit = 10;
 
@@ -60,8 +60,9 @@ export default function ParentLeaves() {
                 ...(searchQuery && { search: searchQuery }),
                 ...(filters.status && { status: filters.status.toLowerCase() }),
                 ...(filters.category && !isHomePass && { outPassCategory: filters.category }),
-                ...(filters.fromDate && { startDate: filters.fromDate }),
-                ...(filters.toDate && { endDate: filters.toDate })
+                ...(filters.passType && { passType: filters.passType }),
+                ...(filters.fromDate && { fromDate: filters.fromDate }),
+                ...(filters.toDate && { toDate: filters.toDate })
             };
 
             let res;
@@ -111,7 +112,7 @@ export default function ParentLeaves() {
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, isHomePass, passType, filters, searchQuery]);
+    }, [page, passType, isHomePass, filters.status, filters.category, filters.passType, filters.fromDate, filters.toDate, searchQuery]);
 
     const openActionModal = (request, actionType) => {
         if (actionType === 'pending') return;
@@ -308,6 +309,12 @@ export default function ParentLeaves() {
             <Filter className="w-4 h-4" />
         </button>
     );
+//         onFilterClick: () => setIsFilterModalOpen(true),
+//         isFilterApplied: !!(filters.status || filters.category || filters.passType || filters.fromDate || filters.toDate),
+//         onAddClick: undefined,
+//         openEditModal: undefined,
+//         statsData
+//     };
 
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
@@ -354,6 +361,8 @@ export default function ParentLeaves() {
                 onClose={() => setIsFilterModalOpen(false)}
                 pageTitle={pageTitle}
                 isOutPass={!isHomePass}
+                isStudent={false}
+                isMobile={isMobile}
                 filters={filters}
                 onApply={(newFilters) => {
                     setFilters(newFilters);
@@ -361,7 +370,7 @@ export default function ParentLeaves() {
                     setIsFilterModalOpen(false);
                 }}
                 onReset={() => {
-                    setFilters({ status: '', category: '', fromDate: '', toDate: '' });
+                    setFilters({ status: '', category: '', passType: '', fromDate: '', toDate: '' });
                     setPage(1);
                     setIsFilterModalOpen(false);
                 }}

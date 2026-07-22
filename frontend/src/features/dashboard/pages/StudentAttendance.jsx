@@ -19,6 +19,7 @@ const StudentAttendanceContainer = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [filters, setFilters] = useState({});
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const { openModal } = useQRModalStore();
@@ -41,7 +42,7 @@ const StudentAttendanceContainer = () => {
             setLoading(true);
             const params = {
                 page,
-                limit: 10,
+                limit,
                 ...filters
             };
             const res = await attendanceService.getAttendanceHistoryByRole(user.role, params);
@@ -55,7 +56,7 @@ const StudentAttendanceContainer = () => {
         } finally {
             setLoading(false);
         }
-    }, [user?.role, page, filters]);
+    }, [user?.role, page, limit, filters]);
 
     useEffect(() => {
         fetchDashboardStats();
@@ -77,10 +78,12 @@ const StudentAttendanceContainer = () => {
         loading,
         page,
         setPage,
+        limit,
+        setLimit,
         filters,
         pagination,
         setIsFilterModalOpen,
-        setIsQRModalOpen: openModal // Map the existing prop to the global openModal function
+        setIsQRModalOpen: () => openModal('student_qr', { studentId: user.id }),
     };
 
     return (

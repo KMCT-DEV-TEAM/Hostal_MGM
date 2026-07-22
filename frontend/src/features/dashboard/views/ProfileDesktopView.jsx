@@ -211,7 +211,7 @@ const ProfileDesktopView = ({
                                                 />
                                                 <button
                                                     onClick={() => handleOpenConfirm('phone')}
-                                                    disabled={isSaving || (editValue && editValue.length !== 10)}
+                                                    disabled={isSaving}
                                                     className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
                                                 >
                                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}

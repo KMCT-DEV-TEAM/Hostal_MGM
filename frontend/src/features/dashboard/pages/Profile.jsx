@@ -78,7 +78,11 @@ export default function Profile() {
             return;
         }
 
-        if (field === 'phone' && editValue && editValue.trim() !== '') {
+        if (field === 'phone') {
+            if (!editValue || editValue.trim() === '') {
+                showErrorToast('Error', 'Phone number cannot be empty');
+                return;
+            }
             const phoneRegex = /^\d{10}$/;
             if (!phoneRegex.test(editValue)) {
                 showErrorToast('Invalid Phone', 'Phone number must be exactly 10 digits');
@@ -112,7 +116,7 @@ export default function Profile() {
         try {
             const payload = { [field]: editValue };
             const response = await authService.updateProfile(payload);
-            updateUser(response.user);
+            updateUser({ ...user, ...response.user });
             showSuccessToast('Success', 'Profile updated successfully');
             setEditingField(null);
             setConfirmConfig({ isOpen: false, field: null });
@@ -154,7 +158,7 @@ export default function Profile() {
         setOtpModalError('');
         try {
             const response = await authService.verifyEmailChange({ newEmail: editValue, otp });
-            updateUser(response.user);
+            updateUser({ ...user, ...response.user });
             showSuccessToast('Success', 'Email updated successfully');
             setEditingField(null);
             setIsEmailVerifyModalOpen(false);

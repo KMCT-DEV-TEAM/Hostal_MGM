@@ -2,12 +2,13 @@ import React from 'react';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import MobileNotificationCard from '../components/MobileNotificationCard';
 import NotificationSkeleton from '../components/NotificationSkeleton';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCheck } from 'lucide-react';
 
 const NotificationsMobileView = ({
     notifications,
     loading,
     markAsRead,
+    markAllAsRead,
     hasMore,
     fetchingMore,
     bottomRef
@@ -24,10 +25,24 @@ const NotificationsMobileView = ({
         }
     });
 
+    const hasUnread = notifications.some(n => !n.isRead);
+
     return (
         <div className="w-full h-full flex flex-col">
             {/* List */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+                {!loading && notifications.length > 0 && hasUnread && (
+                    <div className="flex justify-end mb-1">
+                        <button 
+                            onClick={markAllAsRead} 
+                            className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors bg-blue-50/50 px-3 py-1.5 rounded-full"
+                        >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            Mark all as read
+                        </button>
+                    </div>
+                )}
+
                 {loading && notifications.length === 0 ? (
                     <NotificationSkeleton rows={5} />
                 ) : notifications.length === 0 ? (
