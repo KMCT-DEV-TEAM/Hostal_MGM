@@ -37,6 +37,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
+    const [isApiLoading, setIsApiLoading] = useState(false);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting, isDirty }, reset } = useForm({
         resolver: zodResolver(registerSchema),
@@ -121,6 +122,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
 
     const executeSubmit = async () => {
         const data = pendingPayload;
+        setIsApiLoading(true);
         try {
             // Extract student ID correctly in case user.studentId is a populated object
             const extractStudentId = (student) => {
@@ -164,6 +166,8 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
         } catch (error) {
             console.error(`Failed to ${isEditMode ? 'update' : 'register'} visitor`, error);
             showErrorToast(error.message || `Failed to ${isEditMode ? 'update' : 'register'} visitor`);
+        } finally {
+            setIsApiLoading(false);
         }
     };
 
@@ -266,7 +270,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             title="Confirm Registration"
             message="Are you sure you want to register this visitor?"
             confirmText="Register"
-            isSubmitting={isSubmitting}
+            isSubmitting={isApiLoading}
         />
         <ConfirmationModal
             isOpen={isEditConfirmOpen}
@@ -275,7 +279,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             title="Confirm Update"
             message="Are you sure you want to update this visitor's details?"
             confirmText="Update"
-            isSubmitting={isSubmitting}
+            isSubmitting={isApiLoading}
         />
         <ConfirmationModal
             isOpen={isDiscardConfirmOpen}

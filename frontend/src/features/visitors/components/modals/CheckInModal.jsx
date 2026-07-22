@@ -33,6 +33,7 @@ const idProofOptions = [
 const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
+    const [isApiLoading, setIsApiLoading] = useState(false);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: zodResolver(checkInSchema),
@@ -55,6 +56,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
 
     const executeSubmit = async () => {
         const data = pendingPayload;
+        setIsApiLoading(true);
         try {
             const now = new Date();
             const [hours, minutes] = data.expectedExitTime.split(':');
@@ -79,6 +81,8 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
         } catch (error) {
             console.error("Failed to check in", error);
             showErrorToast('Failed to check in', error.message || 'Something went wrong');
+        } finally {
+            setIsApiLoading(false);
         }
     };
 
@@ -204,7 +208,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                 title="Confirm Check-In"
                 message="Are you sure you want to check in this visitor?"
                 confirmText="Check In"
-                isSubmitting={isSubmitting}
+                isSubmitting={isApiLoading}
             />
         </>
     );
