@@ -51,7 +51,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   // Admin portal → allow admin + warden
-  if (role === 'admin' && !['admin', 'warden'].includes(user.role)) {
+  if (role === 'admin' && !['admin', 'warden', 'mentor'].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login from here. Check URL");
   }
 
@@ -76,7 +76,7 @@ const login = asyncHandler(async (req, res) => {
   if (!isMatch) {
     const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
     let lockUntil = undefined;
-    
+
     if (newFailedAttempts >= 3) {
       lockUntil = Date.now() + 60 * 1000; // 1 minute lockout
     }

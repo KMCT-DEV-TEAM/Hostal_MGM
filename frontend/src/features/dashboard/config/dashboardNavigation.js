@@ -616,6 +616,59 @@ export const DASHBOARD_NAV = {
                 }
             ]
         }
+    ],
+
+    [ROLES.MENTOR]: [
+        {
+            section: 'MAIN',
+            items: [
+                {
+                    icon: LayoutGrid,
+                    label: 'Dashboard',
+                    path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements'
+                }
+            ]
+        },
+        {
+            section: 'USER MANAGEMENT',
+            items: [
+                {
+                    icon: GraduationCap,
+                    label: 'Students',
+                    path: '/dashboard/students'
+                },
+                {
+                    icon: Users,
+                    label: 'Parents',
+                    path: '/dashboard/parents'
+                }
+            ]
+        },
+        {
+            section: 'OPERATIONS',
+            items: [
+                {
+                    icon: Calendar,
+                    label: 'Attendance',
+                    path: '/dashboard/attendance'
+                },
+                {
+                    icon: CalendarX,
+                    label: 'Leave Requests',
+                    path: '/dashboard/leaves',
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ],
+                    badge: { count: 7, variant: 'warning' }
+                }
+            ]
+        }
     ]
 
 };
