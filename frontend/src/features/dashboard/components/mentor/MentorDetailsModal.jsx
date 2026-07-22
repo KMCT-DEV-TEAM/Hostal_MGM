@@ -30,7 +30,7 @@ export default function MentorDetailsModal({
                             onClose();
                             onEdit(mentor);
                         }}
-                        className="px-4 py-2 bg-[#0A437A] text-white rounded-lg text-sm font-medium hover:bg-[#0A437A]/90 transition-colors"
+                        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                         Edit Details
                     </button>
@@ -45,7 +45,7 @@ export default function MentorDetailsModal({
         >
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-                    <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold shrink-0">
                         {mentor.name?.split(' ').map(n => n[0]).join('').substring(0, 2)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ export default function MentorDetailsModal({
                                     <p className="font-medium text-gray-900 truncate">{mentor.specialization || "Not Specified"}</p>
                                 </div>
                             </div>
-                            
+
                             {role === ROLES.SUPER_ADMIN && (
                                 <div className="flex items-center gap-3 text-sm">
                                     <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 shrink-0">

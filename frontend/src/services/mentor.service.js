@@ -10,6 +10,11 @@ export async function getMentors(role, params) {
   return response.data;
 }
 
+export async function getMentorOrganizations(role, params) {
+  const response = await mentorApi.getMentorOrganizations(role, params);
+  return response.data;
+}
+
 export async function getMentorById(role, id) {
   const response = await mentorApi.getMentorById(role, id);
   return response.data;
@@ -33,6 +38,7 @@ export async function deleteMentor(role, id) {
 const mentorService = {
   createMentor,
   getMentors,
+  getMentorOrganizations,
   getMentorById,
   updateMentor,
   updateMentorStatus,
