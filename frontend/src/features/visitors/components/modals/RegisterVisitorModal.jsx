@@ -10,6 +10,7 @@ import Dropdown from '@/components/ui/Dropdown';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { registerSchema } from '@/features/visitors/validation/visitorSchema';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export const ID_PROOF_TYPES = {
     AADHAAR: 'Aadhaar',
@@ -31,8 +32,13 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     const { user } = useAuthStore()
     const isEditMode = !!initialData;
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+    
+    const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState(null);
 
-    const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset } = useForm({
+    const { register, handleSubmit, control, formState: { errors, isSubmitting, isDirty }, reset } = useForm({
         resolver: zodResolver(registerSchema),
         defaultValues: {
             idProofType: ID_PROOF_TYPES.AADHAAR
@@ -96,7 +102,25 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
 
     if (!isOpen) return null;
 
-    const onSubmit = async (data) => {
+    const handleCloseModal = () => {
+        if (isDirty) {
+            setIsDiscardConfirmOpen(true);
+        } else {
+            onClose();
+        }
+    };
+
+    const handleFormSubmit = (data) => {
+        setPendingPayload(data);
+        if (isEditMode) {
+            setIsEditConfirmOpen(true);
+        } else {
+            setIsCreateConfirmOpen(true);
+        }
+    };
+
+    const executeSubmit = async () => {
+        const data = pendingPayload;
         try {
             // Extract student ID correctly in case user.studentId is a populated object
             const extractStudentId = (student) => {
@@ -131,6 +155,9 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                 showSuccessToast("Visitor registered successfully!");
             }
 
+            setIsCreateConfirmOpen(false);
+            setIsEditConfirmOpen(false);
+            setPendingPayload(null);
             reset();
             onSuccess();
             onClose();
@@ -141,16 +168,17 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     };
 
     return (
+        <>
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
-            title={isEditMode ? "Edit Visitor" : "Register Visitor"}
+            onClose={handleCloseModal}
+            title={isEditMode ? "Edit Visitor Details" : "Register New Visitor"}
+            maxWidth="max-w-2xl"
             asForm
-            onSubmit={handleSubmit(onSubmit)}
-            maxWidth="max-w-xl"
+            onSubmit={handleSubmit(handleFormSubmit)}
             footer={
                 <>
-                    <Button variant="outline" onClick={onClose} fullWidth={false} size='sm' disabled={isLoadingDetails}>
+                    <Button variant="outline" onClick={handleCloseModal} fullWidth={false} size='sm' disabled={isLoadingDetails}>
                         Cancel
                     </Button>
                     <Button type="submit" fullWidth={false} size='sm' isLoading={isSubmitting || isLoadingDetails} disabled={isSubmitting || isLoadingDetails}>
@@ -230,6 +258,39 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                 </div>
             </div>
         </Modal>
+        
+        <ConfirmationModal
+            isOpen={isCreateConfirmOpen}
+            onClose={() => setIsCreateConfirmOpen(false)}
+            onConfirm={executeSubmit}
+            title="Confirm Registration"
+            message="Are you sure you want to register this visitor?"
+            confirmText="Register"
+            isSubmitting={isSubmitting}
+        />
+        <ConfirmationModal
+            isOpen={isEditConfirmOpen}
+            onClose={() => setIsEditConfirmOpen(false)}
+            onConfirm={executeSubmit}
+            title="Confirm Update"
+            message="Are you sure you want to update this visitor's details?"
+            confirmText="Update"
+            isSubmitting={isSubmitting}
+        />
+        <ConfirmationModal
+            isOpen={isDiscardConfirmOpen}
+            onClose={() => setIsDiscardConfirmOpen(false)}
+            onConfirm={() => {
+                setIsDiscardConfirmOpen(false);
+                onClose();
+            }}
+            title="Discard Changes"
+            message="Are you sure you want to discard your changes?"
+            confirmText="Discard"
+            cancelText="Continue Editing"
+            confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+        />
+        </>
     );
 };
 

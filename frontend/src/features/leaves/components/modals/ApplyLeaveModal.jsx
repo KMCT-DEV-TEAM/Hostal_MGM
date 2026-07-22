@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Modal from '@/components/ui/Modal';
@@ -14,13 +14,14 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     const { register, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset, watch, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
     });
-    const [isWithdrawing, setIsWithdrawing] = React.useState(false);
-    const [isApiLoading, setIsApiLoading] = React.useState(false);
-    
-    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = React.useState(false);
-    const [isEditConfirmOpen, setIsEditConfirmOpen] = React.useState(false);
-    const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = React.useState(false);
-    const [pendingPayload, setPendingPayload] = React.useState(null);
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [isApiLoading, setIsApiLoading] = useState(false);
+
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
+    const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState(null);
 
     const fromDateVal = watch('fromDate');
     const toDateVal = watch('toDate');
@@ -79,11 +80,11 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     };
 
     const handleFormSubmit = (data) => {
+        setPendingPayload(data);
         if (editData) {
-            setPendingPayload(data);
             setIsEditConfirmOpen(true);
         } else {
-            executeSubmit(data);
+            setIsCreateConfirmOpen(true);
         }
     };
 
@@ -216,11 +217,10 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                             setValue('returnTime', '');
                             setValue('outPassCategory', '');
                         }}
-                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                            passTypeVal === 'Home Pass'
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${passTypeVal === 'Home Pass'
                                 ? 'bg-white text-primary shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
-                        }`}
+                            }`}
                     >
                         Home Pass
                     </button>
@@ -231,11 +231,10 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                             setValue('fromDate', '');
                             setValue('toDate', '');
                         }}
-                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                            passTypeVal === 'Out Pass'
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${passTypeVal === 'Out Pass'
                                 ? 'bg-white text-primary shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
-                        }`}
+                            }`}
                     >
                         Out Pass
                     </button>
@@ -336,6 +335,15 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                 title="Confirm Update"
                 message="Are you sure you want to update this leave request?"
                 confirmText="Update Request"
+                isSubmitting={isApiLoading}
+            />
+            <ConfirmationModal
+                isOpen={isCreateConfirmOpen}
+                onClose={() => setIsCreateConfirmOpen(false)}
+                onConfirm={() => executeSubmit()}
+                title="Confirm Submission"
+                message="Are you sure you want to submit this leave request?"
+                confirmText="Submit Request"
                 isSubmitting={isApiLoading}
             />
             <ConfirmationModal

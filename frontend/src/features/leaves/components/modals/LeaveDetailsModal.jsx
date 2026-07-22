@@ -283,7 +283,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                     </div>
                 </div>
             )}
-            
+
             {request.status === 'cancelled' && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm flex items-start gap-3 mt-4">
                     <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -422,25 +422,25 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                     date: request.createdAt
                                 }
                             ]
-                            .filter(Boolean)
-                            .filter(step => !( (request.status === 'cancelled' || request.status === 'rejected') && step.status === 'pending' ))
-                            .map((step, idx) => {
-                                const cfg = getProgressConfig(step.status);
-                                return (
-                                    <TimelineStep
-                                        key={idx}
-                                        title={step.title}
-                                        subtitle={step.subtitle}
-                                        formattedDate={formatProgressDate(step.date)}
-                                        badgeLabel={cfg.label}
-                                        badgeColor={cfg.color}
-                                        badgeBg={cfg.bg}
-                                        nodeColor={cfg.nodeColor}
-                                        avatarBg={cfg.avatarBg}
-                                        avatarColor={cfg.avatarColor}
-                                    />
-                                );
-                            })}
+                                .filter(Boolean)
+                                .filter(step => !((request.status === 'cancelled' || request.status === 'rejected') && step.status === 'pending'))
+                                .map((step, idx) => {
+                                    const cfg = getProgressConfig(step.status);
+                                    return (
+                                        <TimelineStep
+                                            key={idx}
+                                            title={step.title}
+                                            subtitle={step.subtitle}
+                                            formattedDate={formatProgressDate(step.date)}
+                                            badgeLabel={cfg.label}
+                                            badgeColor={cfg.color}
+                                            badgeBg={cfg.bg}
+                                            nodeColor={cfg.nodeColor}
+                                            avatarBg={cfg.avatarBg}
+                                            avatarColor={cfg.avatarColor}
+                                        />
+                                    );
+                                })}
 
                         </div>
                     </div>
@@ -522,25 +522,17 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         <h3 className="text-primary font-semibold text-sm mb-1">Recent Activity</h3>
                         <p className="text-xs text-gray-400 mb-4">Recent Activity about the {isHomePass ? 'home pass' : 'out pass'}</p>
 
-                        <div className="relative pl-6 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-0.5 before:bg-gray-200 space-y-6 mt-4">
+                        <div className="space-y-3">
                             {timeline.length > 0 ? (
-                                [...timeline].reverse().map((t, idx) => {
-                                    const config = getTimelineConfig(t.action);
-                                    return (
-                                        <TimelineStep
-                                            key={idx}
-                                            title={t.remarks || t.action.replace(/_/g, ' ')}
-                                            subtitle={t.actorRole || 'System'}
-                                            formattedDate={formatDateReadable(t.timestamp)}
-                                            badgeLabel={config.label}
-                                            badgeColor={config.color}
-                                            badgeBg={config.bg}
-                                            nodeColor={config.nodeColor}
-                                            avatarBg={config.bg}
-                                            avatarColor={config.color}
-                                        />
-                                    );
-                                })
+                                [...timeline].reverse().map((t, idx) => (
+                                    <div key={idx} className="border border-gray-100 rounded-lg p-3">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-xs font-medium text-gray-700 capitalize">{t.remarks || t.action.replace('_', ' ')}</span>
+                                            <span className="text-[10px] text-gray-400">{formatDateReadable(t.timestamp)}</span>
+                                        </div>
+                                        <div className="text-[10px] text-gray-500 capitalize">by {t.actorRole}</div>
+                                    </div>
+                                ))
                             ) : (
                                 <div className="border border-gray-100 rounded-lg p-3 text-center text-xs text-gray-400">
                                     No activity recorded yet.
