@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-import MentorAssignment from "../../mentors/mentorAssignment.model.js";
-import User from "../../users/user.model.js";
-import Batch from "../../batches/batch.model.js";
-import { createLogDb } from "../../logs/log.service.js";
-import { orchestratorService } from "../../notifications/services/orchestrator.service.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import User from "../users/user.model.js";
+import Batch from "../batches/batch.model.js";
+import { createLogDb } from "../logs/log.service.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 
 const createError = (message, statusCode) => {
   const err = new Error(message);
@@ -145,7 +145,7 @@ export const getPaginatedAssignmentsDb = async (filters, options) => {
       role: "mentor",
       name: { $regex: search, $options: "i" }
     }).select("_id");
-    
+
     const matchingBatches = await Batch.find({
       name: { $regex: search, $options: "i" }
     }).select("_id");

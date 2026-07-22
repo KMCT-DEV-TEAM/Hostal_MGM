@@ -1,12 +1,12 @@
-import asyncHandler from "../../../utils/asyncHandler.js";
-import { sendSuccess, sendError } from "../../../utils/response.js";
+import asyncHandler from "../../utils/asyncHandler.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
 import {
   assignMentorDb,
   getPaginatedAssignmentsDb,
   getAssignmentByIdDb,
   updateAssignmentDb,
   transferMentorDb
-} from "../service/mentorAssignment.service.js";
+} from "./mentorAssignment.service.js";
 
 /**
  * POST /mentor-assignments

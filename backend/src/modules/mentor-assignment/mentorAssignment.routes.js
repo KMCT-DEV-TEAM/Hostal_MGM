@@ -1,6 +1,6 @@
 import express from "express";
-import authMiddleware from "../../../middlewares/auth.middleware.js";
-import roleMiddleware from "../../../middlewares/role.middleware.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
+import roleMiddleware from "../../middlewares/role.middleware.js";
 import {
   assignMentor,
   getAssignments,
@@ -8,14 +8,14 @@ import {
   updateAssignment,
   transferMentor,
   endAssignment
-} from "../controller/mentorAssignment.controller.js";
+} from "./mentorAssignment.controller.js";
 import {
   validateCreateAssignment,
   validateTransferMentor,
   validateUpdateAssignment,
   validateAssignmentIdParam,
   validateAssignmentPagination
-} from "../validation/mentorAssignment.validation.js";
+} from "./mentorAssignment.validation.js";
 
 const router = express.Router();
 
