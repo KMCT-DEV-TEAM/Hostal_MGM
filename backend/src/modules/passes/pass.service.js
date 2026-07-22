@@ -22,8 +22,9 @@ const applyDateRangeFilter = (filter, field, startDate, endDate) => {
   buildDateRangeFilter(filter, field, startDate, endDate);
 };
 
-export const createPassDb = async (passData) => {
-  return await Pass.create(passData);
+export const createPassDb = async (passData, session = null) => {
+  const result = await Pass.create([passData], { session: session || undefined });
+  return result[0];
 };
 
 export const getStudentPassesDb = async (studentId, query) => {
@@ -118,15 +119,15 @@ export const getPassByIdDb = async (passId) => {
   return await Pass.findById(passId);
 };
 
-export const updatePassDb = async (passId, updateData) => {
-  return await Pass.findByIdAndUpdate(passId, updateData, { new: true, runValidators: true });
+export const updatePassDb = async (passId, updateData, session = null) => {
+  return await Pass.findByIdAndUpdate(passId, updateData, { new: true, runValidators: true, session });
 };
 
-export const addTimelineEventDb = async (passId, timelineEvent) => {
+export const addTimelineEventDb = async (passId, timelineEvent, session = null) => {
   return await Pass.findByIdAndUpdate(
     passId,
     { $push: { timeline: timelineEvent } },
-    { new: true }
+    { new: true, session }
   );
 };
 
@@ -225,12 +226,12 @@ export const getPassesDb = async (studentId, query) => {
 
 export const getPassDetailsDb = async (passId, studentId) => {
   return await Pass.findOne({ _id: passId, studentId })
-    .populate("studentId", "name admissionNo roomNumber")
+    .populate("studentId", "name studentId roomNumber")
     .populate("hostelId", "name")
     .lean();
 };
 
-export const updatePassApprovalDb = async (passId, parentId, action, remarks) => {
+export const updatePassApprovalDb = async (passId, parentId, action, remarks, session = null) => {
   const statusUpdate = action === "approve" ? "pending_admin" : "rejected";
   const parentStatus = action === "approve" ? "approved" : "rejected";
   const timelineAction = action === "approve" ? "parent_approved" : "parent_rejected";
@@ -256,8 +257,8 @@ export const updatePassApprovalDb = async (passId, parentId, action, remarks) =>
         }
       }
     },
-    { new: true }
-  ).populate("studentId", "name admissionNo roomNumber");
+    { new: true, session }
+  ).populate("studentId", "name studentId roomNumber");
 };
 
 export const getParentDb = async (parentId) => {
@@ -333,7 +334,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     { $unwind: { path: "$studentInfo", preserveNullAndEmptyArrays: true } }
   ];
 
-  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.admissionNo", "studentInfo"]);
+  const searchMatch = buildSearchMatch(query.search, ["studentInfo.name", "studentInfo.studentId", "studentInfo"]);
   if (searchMatch) pipeline.push(searchMatch);
 
   const projectStage = {
@@ -353,7 +354,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
-      admissionNo: "$studentInfo.admissionNo",
+      studentId: "$studentInfo.studentId",
       roomNumber: "$studentInfo.roomNumber"
     },
     parentInfo: {
@@ -628,7 +629,7 @@ export const getManagementPassesDb = async (
 
   const searchMatch = buildSearchMatch(query.search, [
     "studentInfo.name",
-    "studentInfo.admissionNo",
+    "studentInfo.studentId",
     "studentInfo.roomNumber",
     "hostelInfo.name",
   ]);
@@ -698,7 +699,7 @@ export const getManagementPassesDb = async (
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
-      admissionNo: "$studentInfo.admissionNo",
+      studentId: "$studentInfo.studentId",
       roomNumber: "$studentInfo.roomNumber",
     },
 
@@ -808,7 +809,7 @@ export const getManagementPassDetailsDb = async (passId) => {
   return result[0] || null;
 };
 
-export const managementCancelPassDb = async (passId, reason, scope) => {
+export const managementCancelPassDb = async (passId, reason, scope, session = null) => {
   const updateQuery = {
     $set: { status: "cancelled" },
     $push: {
@@ -829,7 +830,7 @@ export const managementCancelPassDb = async (passId, reason, scope) => {
     "returnTracking.leftHostelAt": null
   };
 
-  return await Pass.findOneAndUpdate(filter, updateQuery, { new: true });
+  return await Pass.findOneAndUpdate(filter, updateQuery, { new: true, session });
 };
 
 export const getWardenPassDetailsDb = async (passId, hostelId) => {
@@ -841,12 +842,12 @@ export const getWardenPassDetailsDb = async (passId, hostelId) => {
     .lean();
 };
 
-export const updateWardenPassWorkflowDb = async (passId, hostelId, updateQuery) => {
+export const updateWardenPassWorkflowDb = async (passId, hostelId, updateQuery, session = null) => {
   return await Pass.findOneAndUpdate(
     { _id: passId, hostelId },
     updateQuery,
-    { new: true }
-  ).populate("studentId", "name admissionNo");
+    { new: true, session }
+  ).populate("studentId", "name studentId");
 };
 
 // ─── Unified Pass Listing ────────────────────────────────────────────────────
@@ -1110,7 +1111,7 @@ export const getParentPassesUnifiedDb = async (studentId, query) => {
     studentInfo: {
       _id: "$studentInfo._id",
       name: "$studentInfo.name",
-      admissionNo: "$studentInfo.admissionNo",
+      studentId: "$studentInfo.studentId",
       roomNumber: "$studentInfo.roomNumber"
     }
   };

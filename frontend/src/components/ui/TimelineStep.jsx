@@ -27,7 +27,7 @@ export default function TimelineStep({
     avatarColor
 }) {
     const actorName = (subtitle || '').split('-')[0].trim();
-    
+
     const nColorIsCss = isCssColor(nodeColor);
     const bColorIsCss = isCssColor(badgeColor);
     const bBgIsCss = isCssColor(badgeBg);
@@ -45,13 +45,13 @@ export default function TimelineStep({
 
                 <div className="flex-1 space-y-1.5">
                     {/* Badge */}
-                    <div className={`inline-flex items-center gap-1.5 font-semibold text-[10px] px-2 py-0.5 rounded-sm ${!bColorIsCss && badgeColor ? badgeColor : ''} ${!bBgIsCss && badgeBg ? badgeBg : ''}`} 
-                         style={{ 
-                             ...(bColorIsCss ? { color: badgeColor } : {}), 
-                             ...(bBgIsCss ? { backgroundColor: badgeBg } : {}) 
-                         }}>
-                        <span className={`w-[5px] h-[5px] rounded-full ${!bColorIsCss && badgeColor ? badgeColor.replace('text-', 'bg-') : ''}`} 
-                              style={bColorIsCss ? { backgroundColor: badgeColor } : {}}></span>
+                    <div className={`inline-flex items-center gap-1.5 font-semibold text-[10px] px-2 py-0.5 rounded-sm ${!bColorIsCss && badgeColor ? badgeColor : ''} ${!bBgIsCss && badgeBg ? badgeBg : ''}`}
+                        style={{
+                            ...(bColorIsCss ? { color: badgeColor } : {}),
+                            ...(bBgIsCss ? { backgroundColor: badgeBg } : {})
+                        }}>
+                        <span className={`w-[5px] h-[5px] rounded-full ${!bColorIsCss && badgeColor ? badgeColor.replace('text-', 'bg-') : ''}`}
+                            style={bColorIsCss ? { backgroundColor: badgeColor } : {}}></span>
                         {badgeLabel}
                     </div>
 
@@ -62,9 +62,9 @@ export default function TimelineStep({
                     <div className="flex items-center gap-2 mt-1">
                         <div
                             className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold ${!aBgIsCss && avatarBg ? avatarBg : ''} ${!aColorIsCss && avatarColor ? avatarColor : ''}`}
-                            style={{ 
-                                ...(aBgIsCss ? { backgroundColor: avatarBg } : {}), 
-                                ...(aColorIsCss ? { color: avatarColor } : {}) 
+                            style={{
+                                ...(aBgIsCss ? { backgroundColor: avatarBg } : {}),
+                                ...(aColorIsCss ? { color: avatarColor } : {})
                             }}
                         >
                             {getInitials(actorName)}
