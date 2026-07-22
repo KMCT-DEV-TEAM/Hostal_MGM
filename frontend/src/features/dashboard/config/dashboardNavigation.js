@@ -73,6 +73,12 @@ export const DASHBOARD_NAV = {
                     icon: Users,
                     label: 'Parents',
                     path: '/dashboard/parents'
+                },
+
+                {
+                    icon: ShieldUser, // We can reuse ShieldUser or Users
+                    label: 'Mentors',
+                    path: '/dashboard/mentors'
                 }
             ]
         },
@@ -250,6 +256,12 @@ export const DASHBOARD_NAV = {
                     icon: Users,
                     label: 'Parents',
                     path: '/dashboard/parents'
+                },
+
+                {
+                    icon: ShieldUser,
+                    label: 'Mentors',
+                    path: '/dashboard/mentors'
                 }
             ]
         },
