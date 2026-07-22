@@ -181,9 +181,6 @@ export const getPaginatedMentorsDb = async ({
   };
 };
 
-/**
- * Get Mentor By ID (Read-only operation - No transaction required)
- */
 export const getMentorByIdDb = async (mentorId, requesterUser) => {
   const query = { _id: mentorId, role: "mentor" };
 
@@ -201,6 +198,15 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
     error.statusCode = 404;
     throw error;
   }
+
+  const assignments = await MentorAssignment.find({ mentorId: mentor._id })
+    .populate("batchId", "name code")
+    .populate("organizationId", "name code")
+    .populate("assignedBy", "name email")
+    .sort({ assignedAt: -1 })
+    .lean();
+
+  mentor.assignments = assignments;
 
   return mentor;
 };

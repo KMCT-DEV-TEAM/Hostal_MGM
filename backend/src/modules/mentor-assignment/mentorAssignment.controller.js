@@ -29,7 +29,7 @@ export const getAssignments = asyncHandler(async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
-    const { status, search, mentorId, batchId, organizationId, startDate, endDate, sortBy, sortOrder } = req.query;
+    const { status, search, mentorId, batchId, organizationId, sortBy, sortOrder } = req.query;
 
     let targetMentorId = mentorId;
     if (req.user.role === "mentor") {
@@ -37,7 +37,7 @@ export const getAssignments = asyncHandler(async (req, res) => {
     }
 
     const result = await getPaginatedAssignmentsDb(
-      { page, limit, status, search, mentorId: targetMentorId, batchId, organizationId, startDate, endDate },
+      { page, limit, status, search, mentorId: targetMentorId, batchId, organizationId, },
       { sortBy, sortOrder }
     );
 
