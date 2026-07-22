@@ -1,3 +1,4 @@
+import PhoneInput from '@/components/ui/PhoneInput';
 import React from 'react';
 import { Loader2, Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -75,28 +76,14 @@ const MaintenanceStaffFormModal = ({
 
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
-                            <div className="flex border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#0A437A]">
-                                <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-gray-600 bg-gray-50/50">
-                                    <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
-                                    +91
-                                </div>
-                                <input
-                                    type="tel"
-                                    required
-                                    pattern="[0-9]{10}"
-                                    maxLength="10"
-                                    title="Please enter a valid 10-digit phone number"
-                                    value={staffForm.phone || ''}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/\D/g, '');
-                                        if (val.length <= 10) {
-                                            setStaffForm({ ...staffForm, phone: val });
-                                        }
-                                    }}
-                                    placeholder="0000000000"
-                                    className="w-full px-3 py-2 outline-none bg-transparent text-xs"
-                                />
-                            </div>
+                            <PhoneInput
+                                name="phone"
+                                value={staffForm.phone || ''}
+                                onChange={(val) => {
+                                    setStaffForm({ ...staffForm, phone: val });
+                                    setErrors(prev => ({ ...prev, phone: '' }));
+                                }}
+                            />
                         </div>
 
                         <div className="col-span-1 sm:col-span-2">

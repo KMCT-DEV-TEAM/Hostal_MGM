@@ -5,18 +5,18 @@ import { useTranslation } from '@/hooks/useTranslation';
 import Dropdown from '@/components/ui/Dropdown';
 import Modal from '@/components/ui/Modal';
 
-export default function WardenFormModal({
+export default function AssistantWardenFormModal({
     activeModal,
     setActiveModal,
-    editingWarden,
-    handleSaveWarden,
+    editingAssistantWarden,
+    handleSaveAssistantWarden,
     handleCancel,
     AVAILABLE_HOSTELS,
     isEmailVerified,
     setIsOtpModalOpen,
     setOtpSource,
-    wardenForm,
-    setWardenForm,
+    assistantWardenForm,
+    setAssistantWardenForm,
     handleVerifyClick,
     isSubmitting,
     isVerifying
@@ -26,22 +26,21 @@ export default function WardenFormModal({
 
     return (
         <Modal
-            isOpen={activeModal === 'warden'}
+            isOpen={activeModal === 'assistantWarden'}
             onClose={handleCancel}
-            title={editingWarden ? t('edit_warden') : t('add_warden')}
-            subtitle={t('add_warden_desc')}
+            title={editingAssistantWarden ? "Edit Assistant Warden" : "Add Assistant Warden"}
             asForm={true}
-            onSubmit={handleSaveWarden}
+            onSubmit={handleSaveAssistantWarden}
             maxWidth="max-w-xl"
             bottomSheetOnMobile={true}
             footer={
                 <>
                     <button
                         type="submit"
-                        disabled={(!isEmailVerified && !editingWarden) || isSubmitting || (wardenForm.phone?.length !== 10)}
+                        disabled={(!isEmailVerified && !editingAssistantWarden) || isSubmitting || (assistantWardenForm.phone?.length !== 10)}
                         className="flex items-center justify-center min-w-[100px] px-4 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingWarden ? t('save_changes') : t('save'))}
+                        {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingAssistantWarden ? t('save_changes') : t('save'))}
                     </button>
                     <button
                         type="button"
@@ -68,7 +67,7 @@ export default function WardenFormModal({
                                 pattern="[A-Za-z\s]+"
                                 title="Only letters and spaces are allowed"
                                 placeholder="Full Name"
-                                value={wardenForm.name || ''}
+                                value={assistantWardenForm.name || ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     const cleanVal = val.replace(/[^a-zA-Z\s]/g, '');
@@ -77,7 +76,7 @@ export default function WardenFormModal({
                                     } else {
                                         setErrors(prev => ({ ...prev, name: '' }));
                                     }
-                                    setWardenForm({ ...wardenForm, name: cleanVal });
+                                    setAssistantWardenForm({ ...assistantWardenForm, name: cleanVal });
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -87,16 +86,16 @@ export default function WardenFormModal({
                             <label className="block text-[10px] font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                             <PhoneInput
                                 name="phone"
-                                value={wardenForm.phone || ''}
+                                value={assistantWardenForm.phone || ''}
                                 onChange={(val) => {
-                                    setWardenForm({ ...wardenForm, phone: val });
+                                    setAssistantWardenForm({ ...assistantWardenForm, phone: val });
                                     setErrors(prev => ({ ...prev, phone: '' }));
                                 }}
                             />
                             {errors.phone && <p className="text-red-500 text-[10px] mt-1">{errors.phone}</p>}
                         </div>
 
-                        {!editingWarden && (
+                        {!editingAssistantWarden && (
                             <div className="col-span-1 sm:col-span-2 mt-2">
                                 <label className="block text-[10px] font-medium text-black mb-1">{t('email_address')} <span className="text-red-500">*</span></label>
                                 <div className="flex gap-2 items-center">
@@ -105,7 +104,7 @@ export default function WardenFormModal({
                                             type="email"
                                             required
                                             placeholder="email@gmail.com"
-                                            value={wardenForm.email || ''}
+                                            value={assistantWardenForm.email || ''}
                                             onChange={(e) => {
                                                 const val = e.target.value;
                                                 const cleanVal = val.replace(/\s/g, '');
@@ -114,7 +113,7 @@ export default function WardenFormModal({
                                                 } else {
                                                     setErrors(prev => ({ ...prev, email: '' }));
                                                 }
-                                                setWardenForm({ ...wardenForm, email: cleanVal });
+                                                setAssistantWardenForm({ ...assistantWardenForm, email: cleanVal });
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key === ' ') {
@@ -122,7 +121,7 @@ export default function WardenFormModal({
                                                     setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                                 }
                                             }}
-                                            disabled={editingWarden}
+                                            disabled={editingAssistantWarden}
                                             className={`w-full px-3 py-2.5 bg-gray-50/50 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs outline-none focus:border-[#0A437A] disabled:bg-gray-100 disabled:text-gray-500`}
                                         />
                                         {errors.email && <p className="text-red-500 text-[10px] mt-1">{errors.email}</p>}
@@ -135,8 +134,8 @@ export default function WardenFormModal({
                                     ) : (
                                         <button
                                             type="button"
-                                            onClick={() => handleVerifyClick(wardenForm.email, 'addWarden')}
-                                            disabled={!wardenForm.email || isVerifying || editingWarden}
+                                            onClick={() => handleVerifyClick(assistantWardenForm.email, 'addAssistantWarden')}
+                                            disabled={!assistantWardenForm.email || isVerifying || editingAssistantWarden}
                                             className="px-4 py-2.5 text-xs bg-[#0A437A] text-white hover:bg-secondary cursor-pointer font-medium rounded-lg shrink-0 flex items-center justify-center min-w-[70px]"
                                         >
                                             {isVerifying ? <Loader2 size={14} className="animate-spin" /> : t('verify')}
@@ -161,15 +160,15 @@ export default function WardenFormModal({
                             <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')} <span className="text-red-500">*</span></label>
                             <Dropdown
                                 options={AVAILABLE_HOSTELS.map(h => ({ value: h._id || h, label: h.name || h }))}
-                                value={wardenForm.hostel}
-                                onChange={(val) => setWardenForm({ ...wardenForm, hostel: val })}
+                                value={assistantWardenForm.hostel}
+                                onChange={(val) => setAssistantWardenForm({ ...assistantWardenForm, hostel: val })}
                                 placeholder={t('select_hostel')}
                                 minWidth="w-full"
                                 triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
                             />
                         </div>
 
-                        {editingWarden && (
+                        {editingAssistantWarden && (
                             <div>
                                 <label className="block text-[10px] font-medium text-black mb-1">{t('status')} <span className="text-red-500">*</span></label>
                                 <Dropdown
@@ -177,8 +176,8 @@ export default function WardenFormModal({
                                         { value: 'Active', label: 'Active' },
                                         { value: 'Inactive', label: 'Inactive' }
                                     ]}
-                                    value={wardenForm.status || (wardenForm.isActive !== undefined ? (wardenForm.isActive ? 'Active' : 'Inactive') : 'Active')}
-                                    onChange={(val) => setWardenForm({ ...wardenForm, status: val, isActive: val === 'Active' })}
+                                    value={assistantWardenForm.status || (assistantWardenForm.isActive !== undefined ? (assistantWardenForm.isActive ? 'Active' : 'Inactive') : 'Active')}
+                                    onChange={(val) => setAssistantWardenForm({ ...assistantWardenForm, status: val, isActive: val === 'Active' })}
                                     triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
                                 />
                             </div>

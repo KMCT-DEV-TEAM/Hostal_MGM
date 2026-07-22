@@ -39,14 +39,14 @@ const router = express.Router();
 router.get(
   "/types",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getFurnitureTypes
 );
 
 router.get(
   "/types/active",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getActiveFurnitureTypesList
 );
 
@@ -91,21 +91,21 @@ router.delete(
 router.get(
   "/types/:typeId/assets/active",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getAvailableFurnitureAssetsList
 );
 
 router.get(
   "/types/:typeId/assets",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getFurnitureAssetsByType
 );
 
 router.patch(
   "/assets/:assetId/status",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateManualStatusChange,
   changeAssetStatus
 );
@@ -113,7 +113,7 @@ router.patch(
 router.post(
   "/assets/allocate",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateAllocate,
   allocateFurniture
 );
@@ -121,7 +121,7 @@ router.post(
 router.post(
   "/students/:studentId/assets/:assetId/return",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateReturn,
   returnFurniture
 );
@@ -129,7 +129,7 @@ router.post(
 router.post(
   "/assets/:assetId/maintenance/start",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateStartMaintenance,
   startMaintenance
 );
@@ -137,7 +137,7 @@ router.post(
 router.post(
   "/assets/:assetId/maintenance/complete",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateCompleteMaintenance,
   completeMaintenance
 );
@@ -145,25 +145,25 @@ router.post(
 router.get(
   "/dashboard",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getDashboardSummary
 );
 router.get(
   "/assets-dashboard",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getAssetsDashboardSummary
 );
 router.get(
   "/assets",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getAllHostelFurnitureAssets
 );
 router.get(
   "/assets/:assetId",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   getFurnitureAssetDetails
 );
 

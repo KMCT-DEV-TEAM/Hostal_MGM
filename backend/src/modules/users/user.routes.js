@@ -18,6 +18,13 @@ import {
   updateWardenHostel,
   toggleWardenStatus,
   bulkToggleWardenStatus,
+  createAssistantWarden,
+  getAssistantWardens,
+  getAssistantWardenById,
+  updateAssistantWarden,
+  updateAssistantWardenHostel,
+  toggleAssistantWardenStatus,
+  bulkToggleAssistantWardenStatus,
   createMaintenanceStaff,
   getMaintenanceStaff,
   getMaintenanceStaffById,
@@ -37,6 +44,10 @@ import {
   validateUpdateWarden,
   validateUpdateWardenHostel,
   validateUpdateAdminOrganization,
+  validateCreateAssistantWarden,
+  validateAssistantWardenIdParam,
+  validateUpdateAssistantWarden,
+  validateUpdateAssistantWardenHostel,
   validateCreateMaintenanceStaff,
   validateMaintenanceStaffIdParam,
   validateUpdateMaintenanceStaff
@@ -167,6 +178,64 @@ router.post(
   authMiddleware,
   roleMiddleware("super_admin", "admin"),
   bulkToggleWardenStatus
+);
+
+// --- ASSISTANT WARDEN ROUTES ---
+
+router.post(
+  "/assistant-wardens",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateCreateAssistantWarden,
+  createAssistantWarden
+);
+
+router.get(
+  "/assistant-wardens",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  getAssistantWardens
+);
+
+router.get(
+  "/assistant-wardens/:id",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateAssistantWardenIdParam,
+  getAssistantWardenById
+);
+
+router.patch(
+  "/assistant-wardens/:id", 
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateAssistantWardenIdParam,
+  validateUpdateAssistantWarden,
+  updateAssistantWarden
+);
+
+router.patch(
+  "/assistant-wardens/:id/hostel",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateAssistantWardenIdParam,
+  validateUpdateAssistantWardenHostel,
+  updateAssistantWardenHostel
+);
+
+router.patch(
+  "/assistant-wardens/:id/toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateAssistantWardenIdParam,
+  toggleAssistantWardenStatus 
+);
+
+router.post(
+  "/assistant-wardens/bulk-toggle-status",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  bulkToggleAssistantWardenStatus
 );
 
 // --- MAINTENANCE STAFF ROUTES ---

@@ -36,7 +36,7 @@ export const createAnnouncement = async (req, res, next) => {
          return res.status(400).json({ success: false, message: "Admin is not assigned to an organization" });
       }
       actualOrganizations = [dbUser.organization];
-    } else if (user.role === "warden") {
+    } else if (user.role === "warden" || user.role === "assistant_warden") {
       actualTargetType = "hostel";
       // Fetch hostels managed by this warden
       const hostels = await Hostel.find({ wardens: user._id });
@@ -135,7 +135,7 @@ export const getAnnouncements = async (req, res, next) => {
           { createdBy: user._id }
         ]
       };
-    } else if (user.role === "warden") {
+    } else if (user.role === "warden" || user.role === "assistant_warden") {
       // Wardens see general + their hostels
       const hostels = await Hostel.find({ wardens: user._id });
       const hostelIds = hostels.map(h => h._id);

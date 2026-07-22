@@ -30,7 +30,7 @@ import {
 export const wardenAttendanceRouter = express.Router();
 
 wardenAttendanceRouter.use(authMiddleware);
-wardenAttendanceRouter.use(roleMiddleware("warden"));
+wardenAttendanceRouter.use(roleMiddleware("warden", "assistant_warden"));
 
 wardenAttendanceRouter.post("/windows", createAttendanceWindow);
 wardenAttendanceRouter.get("/stats", getDashboardStats);

@@ -1,17 +1,17 @@
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/useClickOutside';
-import WardenTable from '../components/Warden/WardenTable';
+import AssistantWardenTable from '../components/AssistantWarden/AssistantWardenTable';
 
-import WardenDetailView from '../components/Warden/WardenDetailView';
-import WardenFormModal from '../components/Warden/WardenFormModal';
-import WardenHeader from '../components/Warden/WardenHeader';
+import AssistantWardenDetailView from '../components/AssistantWarden/AssistantWardenDetailView';
+import AssistantWardenFormModal from '../components/AssistantWarden/AssistantWardenFormModal';
+import AssistantWardenHeader from '../components/AssistantWarden/AssistantWardenHeader';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
 import { Pencil, X, ArrowLeft, Check, Loader2, SlidersHorizontal, ChevronDown, MoreVertical, Plus, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import otpService from '../../../services/otp.service';
 import hostelService from '../../../services/hostel.service';
-import wardenService from '../../../services/warden.service';
+import assistantWardenService from '../../../services/assistantWarden.service';
 import authService from '../../../services/auth.service';
 import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -20,12 +20,12 @@ import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
 import * as XLSX from 'xlsx';
 
-export default function WardenManagement() {
+export default function AssistantWardenManagement() {
     // State management
-    const [wardens, setWardens] = useState([]);
+    const [assistantWardens, setAssistantWardens] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [totalWardens, setTotalWardens] = useState(0);
+    const [totalAssistantWardens, setTotalAssistantWardens] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
@@ -33,10 +33,10 @@ export default function WardenManagement() {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [availableHostels, setAvailableHostels] = useState([]);
-    const [activeModal, setActiveModal] = useState(null); // 'warden' | 'organization' | null
-    const [editingWarden, setEditingWarden] = useState(null); // Holds object being edited
+    const [activeModal, setActiveModal] = useState(null); // 'assistantWarden' | 'organization' | null
+    const [editingAssistantWarden, setEditingAssistantWarden] = useState(null); // Holds object being edited
     const [view, setView] = useState('list');
-    const [selectedWardenDetail, setSelectedWardenDetail] = useState(null);
+    const [selectedAssistantWardenDetail, setSelectedAssistantWardenDetail] = useState(null);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
@@ -51,7 +51,7 @@ export default function WardenManagement() {
     const [isHostelConfirmOpen, setIsHostelConfirmOpen] = useState(false);
     const [hostelChangeToConfirm, setHostelChangeToConfirm] = useState(null);
     const [isUpdatingHostel, setIsUpdatingHostel] = useState(false);
-    const [emailChangeWardenId, setEmailChangeWardenId] = useState(null);
+    const [emailChangeAssistantWardenId, setEmailChangeAssistantWardenId] = useState(null);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [newEmailForm, setNewEmailForm] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -69,8 +69,8 @@ export default function WardenManagement() {
     const [isChangingEmail, setIsChangingEmail] = useState(false);
     const [otpError, setOtpError] = useState('');
 
-    // Form State for Adding / Editing Warden
-    const [wardenForm, setWardenForm] = useState({
+    // Form State for Adding / Editing AssistantWarden
+    const [assistantWardenForm, setAssistantWardenForm] = useState({
         name: '',
         email: '',
         phone: '',
@@ -101,10 +101,10 @@ export default function WardenManagement() {
         return `${m}:${s}`;
     };
 
-    const fetchWardens = async () => {
+    const fetchAssistantWardens = async () => {
         try {
             setLoading(true);
-            const res = await wardenService.getWardens({
+            const res = await assistantWardenService.getAssistantWardens({
                 page: currentPage,
                 limit: limit,
                 search: searchQuery,
@@ -117,38 +117,38 @@ export default function WardenManagement() {
                     status: w.isActive ? 'Active' : 'Inactive',
                     hostel: w.hostel || 'Not Assigned'
                 }));
-                setWardens(formatted);
+                setAssistantWardens(formatted);
                 setTotalPages(res.totalPages || 1);
-                setTotalWardens(res.totalCount || 0);
+                setTotalAssistantWardens(res.totalCount || 0);
             }
         } catch (err) {
-            setError(err.message || 'Failed to fetch wardens');
+            setError(err.message || 'Failed to fetch assistantWardens');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchWardens();
+        fetchAssistantWardens();
     }, [currentPage, limit, searchQuery, statusFilter]);
 
     useEffect(() => {
         const socket = initSocket();
 
-        const handleWardenEvent = (data) => {
-            if (data?.role === 'warden' || data?.bulk) {
-                fetchWardens();
+        const handleAssistantWardenEvent = (data) => {
+            if (data?.role === 'assistantWarden' || data?.bulk) {
+                fetchAssistantWardens();
             }
         };
 
-        socket.on('userCreated', handleWardenEvent);
-        socket.on('userUpdated', handleWardenEvent);
-        socket.on('userDeleted', handleWardenEvent);
+        socket.on('userCreated', handleAssistantWardenEvent);
+        socket.on('userUpdated', handleAssistantWardenEvent);
+        socket.on('userDeleted', handleAssistantWardenEvent);
 
         return () => {
-            socket.off('userCreated', handleWardenEvent);
-            socket.off('userUpdated', handleWardenEvent);
-            socket.off('userDeleted', handleWardenEvent);
+            socket.off('userCreated', handleAssistantWardenEvent);
+            socket.off('userUpdated', handleAssistantWardenEvent);
+            socket.off('userDeleted', handleAssistantWardenEvent);
         };
     }, [currentPage]);
 
@@ -164,14 +164,14 @@ export default function WardenManagement() {
         fetchHostels();
     }, []);
 
-    // Since we are using backend pagination, the "paginatedWardens" is just the "wardens" array
-    const paginatedWardens = wardens;
+    // Since we are using backend pagination, the "paginatedAssistantWardens" is just the "assistantWardens" array
+    const paginatedAssistantWardens = assistantWardens;
 
     // ==========================================
     // SELECTION & ACTION HANDLERS
     // ==========================================
     const handleSelectAll = (mobileIds) => {
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : paginatedWardens.map(w => w.id);
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : paginatedAssistantWardens.map(w => w.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -199,15 +199,15 @@ export default function WardenManagement() {
         if (!statusToUpdate) return;
         try {
             setIsConfirming(true);
-            const res = await wardenService.toggleStatus(statusToUpdate.id);
+            const res = await assistantWardenService.toggleStatus(statusToUpdate.id);
             if (res && (res.success || res.data)) {
                 const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
-                setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus, isActive: newStatus === 'Active' } : w));
-                showSuccessToast('Status Updated', res?.message || `Warden status changed to ${newStatus}`);
+                setAssistantWardens(assistantWardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus, isActive: newStatus === 'Active' } : w));
+                showSuccessToast('Status Updated', res?.message || `AssistantWarden status changed to ${newStatus}`);
             }
         } catch (error) {
             console.error("Failed to update status:", error);
-            showErrorToast('Action Failed', error?.message || 'Failed to change warden status');
+            showErrorToast('Action Failed', error?.message || 'Failed to change assistantWarden status');
         } finally {
             setIsConfirming(false);
         }
@@ -225,8 +225,8 @@ export default function WardenManagement() {
         const { id, newHostel } = hostelChangeToConfirm;
         setIsUpdatingHostel(true);
         try {
-            const res = await wardenService.updateWardenHostel(id, { hostelId: newHostel });
-            fetchWardens();
+            const res = await assistantWardenService.updateAssistantWardenHostel(id, { hostelId: newHostel });
+            fetchAssistantWardens();
             showSuccessToast('Hostel Assigned', res?.message || 'Hostel assigned successfully');
         } catch (err) {
             console.error("Failed to update hostel:", err);
@@ -248,20 +248,20 @@ export default function WardenManagement() {
 
         try {
             setIsConfirming(true);
-            const res = await wardenService.bulkToggleStatus({
+            const res = await assistantWardenService.bulkToggleStatus({
                 ids: selectedIds,
                 isActive: bulkStatusToUpdate
             });
             if (res && (res.success || res.data)) {
                 const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
-                setWardens(wardens.map(w => {
+                setAssistantWardens(assistantWardens.map(w => {
                     if (selectedIds.includes(w.id)) {
                         return { ...w, status: newStatus, isActive: newStatus === 'Active' };
                     }
                     return w;
                 }));
                 const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
-                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} wardens`);
+                showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} assistantWardens`);
             }
         } catch (error) {
             console.error("Failed to bulk update status:", error);
@@ -271,13 +271,13 @@ export default function WardenManagement() {
             setIsBulkStatusConfirmOpen(false);
             setBulkStatusToUpdate(null);
             setIsConfirming(false);
-            fetchWardens();
+            fetchAssistantWardens();
         }
     };
 
-    const openChangeEmailModal = (warden) => {
-        setEmailChangeWardenId(warden.id);
-        setEmailChangeForm(warden.email);
+    const openChangeEmailModal = (assistantWarden) => {
+        setEmailChangeAssistantWardenId(assistantWarden.id);
+        setEmailChangeForm(assistantWarden.email);
         setNewEmailForm('');
         setPasswordConfirm('');
         setIsEmailVerified(false);
@@ -294,24 +294,24 @@ export default function WardenManagement() {
 
         try {
             setIsChangingEmail(true);
-            const res = await wardenService.updateEmail(emailChangeWardenId, {
+            const res = await assistantWardenService.updateEmail(emailChangeAssistantWardenId, {
                 oldEmail: emailChangeForm,
                 newEmail: newEmailForm,
                 password: passwordConfirm
             });
 
-            setWardens(wardens.map(w => w.id === emailChangeWardenId ? { ...w, email: newEmailForm } : w));
+            setAssistantWardens(assistantWardens.map(w => w.id === emailChangeAssistantWardenId ? { ...w, email: newEmailForm } : w));
 
-            if (selectedWardenDetail && selectedWardenDetail.id === emailChangeWardenId) {
-                setSelectedWardenDetail({ ...selectedWardenDetail, email: newEmailForm });
+            if (selectedAssistantWardenDetail && selectedAssistantWardenDetail.id === emailChangeAssistantWardenId) {
+                setSelectedAssistantWardenDetail({ ...selectedAssistantWardenDetail, email: newEmailForm });
             }
 
             setIsEmailChangeModalOpen(false);
             setIsEmailChangeSuccessModalOpen(true);
-            showSuccessToast('Email Updated', res?.message || 'Warden email updated successfully');
+            showSuccessToast('Email Updated', res?.message || 'AssistantWarden email updated successfully');
             setTimeout(() => {
                 setIsEmailChangeSuccessModalOpen(false);
-                setEmailChangeWardenId(null);
+                setEmailChangeAssistantWardenId(null);
                 setNewEmailForm('');
             }, 2500);
         } catch (error) {
@@ -324,21 +324,21 @@ export default function WardenManagement() {
     // ==========================================
     // MODAL OPEN / SUBMIT HANDLERS
     // ==========================================
-    const openAddWardenModal = () => {
-        setEditingWarden(null);
-        setWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?._id || '', status: 'Active' });
+    const openAddAssistantWardenModal = () => {
+        setEditingAssistantWarden(null);
+        setAssistantWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?._id || '', status: 'Active' });
         setIsEmailVerified(false);
-        setActiveModal('warden');
+        setActiveModal('assistantWarden');
     };
 
-    const openEditWardenModal = (warden) => {
-        setEditingWarden(warden);
-        setWardenForm({ ...warden, hostel: warden.hostel?._id || warden.hostel });
-        setIsEmailVerified(true); // Assuming editing an existing warden means email is verified
-        setActiveModal('warden');
+    const openEditAssistantWardenModal = (assistantWarden) => {
+        setEditingAssistantWarden(assistantWarden);
+        setAssistantWardenForm({ ...assistantWarden, hostel: assistantWarden.hostel?._id || assistantWarden.hostel });
+        setIsEmailVerified(true); // Assuming editing an existing assistantWarden means email is verified
+        setActiveModal('assistantWarden');
     };
 
-    const handleVerifyClick = async (email, source = 'addWarden') => {
+    const handleVerifyClick = async (email, source = 'addAssistantWarden') => {
         if (!email) {
             showErrorToast('Validation Error', 'Please enter an email first');
             return;
@@ -376,7 +376,7 @@ export default function WardenManagement() {
     const handleResendOtp = async () => {
         setIsVerifying(true);
         setOtpError('');
-        const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
+        const emailToVerify = otpSource === 'emailChange' ? newEmailForm : assistantWardenForm.email;
         try {
             await otpService.sendOtp(emailToVerify);
             setResendTimer(300);
@@ -389,76 +389,76 @@ export default function WardenManagement() {
         }
     };
 
-    const handleSaveWarden = async (e) => {
+    const handleSaveAssistantWarden = async (e) => {
         e.preventDefault();
-        if (!wardenForm.name || !wardenForm.email || !wardenForm.phone) {
+        if (!assistantWardenForm.name || !assistantWardenForm.email || !assistantWardenForm.phone) {
             showErrorToast('Validation Error', 'Please fill in all required fields');
             return;
         }
-        if (wardenForm.phone.length !== 10) {
+        if (assistantWardenForm.phone.length !== 10) {
             showErrorToast('Validation Error', 'Phone number must be exactly 10 digits');
             return;
         }
-        if (!isEmailVerified && !editingWarden) {
+        if (!isEmailVerified && !editingAssistantWarden) {
             showErrorToast('Validation Error', 'Please verify your email before saving');
             return;
         }
 
-        if (editingWarden) {
+        if (editingAssistantWarden) {
             setIsEditConfirmOpen(true);
         } else {
             setIsAddConfirmOpen(true);
         }
     };
 
-    const saveWarden = async () => {
+    const saveAssistantWarden = async () => {
         setIsSubmitting(true);
         try {
             const payload = {
-                name: wardenForm.name,
-                email: wardenForm.email,
-                phone: wardenForm.phone,
-                hostelId: wardenForm.hostel,
-                isActive: wardenForm.status === 'Active'
+                name: assistantWardenForm.name,
+                email: assistantWardenForm.email,
+                phone: assistantWardenForm.phone,
+                hostelId: assistantWardenForm.hostel,
+                isActive: assistantWardenForm.status === 'Active'
             };
 
-            if (editingWarden) {
+            if (editingAssistantWarden) {
                 // Update Existing Record
-                const res = await wardenService.updateWarden(editingWarden.id, {
-                    name: wardenForm.name,
-                    phone: wardenForm.phone
+                const res = await assistantWardenService.updateAssistantWarden(editingAssistantWarden.id, {
+                    name: assistantWardenForm.name,
+                    phone: assistantWardenForm.phone
                 });
 
-                let updatedWarden = { ...res.data };
+                let updatedAssistantWarden = { ...res.data };
 
-                const oldHostelId = typeof editingWarden.hostel === 'object' ? editingWarden.hostel?._id : editingWarden.hostel;
-                if (wardenForm.hostel !== oldHostelId) {
-                    await wardenService.updateWardenHostel(editingWarden.id, { hostelId: wardenForm.hostel });
-                    const newHostel = availableHostels.find(h => h._id === wardenForm.hostel);
-                    updatedWarden.hostel = newHostel ? newHostel : { _id: wardenForm.hostel };
+                const oldHostelId = typeof editingAssistantWarden.hostel === 'object' ? editingAssistantWarden.hostel?._id : editingAssistantWarden.hostel;
+                if (assistantWardenForm.hostel !== oldHostelId) {
+                    await assistantWardenService.updateAssistantWardenHostel(editingAssistantWarden.id, { hostelId: assistantWardenForm.hostel });
+                    const newHostel = availableHostels.find(h => h._id === assistantWardenForm.hostel);
+                    updatedAssistantWarden.hostel = newHostel ? newHostel : { _id: assistantWardenForm.hostel };
                 }
 
-                if (wardenForm.status !== editingWarden.status) {
-                    await wardenService.bulkToggleStatus({ ids: [editingWarden.id], isActive: wardenForm.status === 'Active' });
-                    updatedWarden.status = wardenForm.status;
+                if (assistantWardenForm.status !== editingAssistantWarden.status) {
+                    await assistantWardenService.bulkToggleStatus({ ids: [editingAssistantWarden.id], isActive: assistantWardenForm.status === 'Active' });
+                    updatedAssistantWarden.status = assistantWardenForm.status;
                 }
 
                 if (res && (res.success || res.data)) {
-                    setWardens(wardens.map(w => w.id === editingWarden.id ? { ...w, ...updatedWarden } : w));
-                    fetchWardens(); // Re-fetch to ensure sync
-                    showSuccessToast('Warden Updated', res?.message || 'Warden details saved successfully');
+                    setAssistantWardens(assistantWardens.map(w => w.id === editingAssistantWarden.id ? { ...w, ...updatedAssistantWarden } : w));
+                    await fetchAssistantWardens(); // Re-fetch to ensure sync
+                    showSuccessToast('AssistantWarden Updated', res?.message || 'AssistantWarden details saved successfully');
                 }
             } else {
                 // Create New Record
-                const res = await wardenService.createWarden(payload);
+                const res = await assistantWardenService.createAssistantWarden(payload);
                 if (res && (res.success || res.data)) {
-                    fetchWardens();
-                    showSuccessToast('Warden Added', res?.message || 'New warden registered successfully');
+                    fetchAssistantWardens();
+                    showSuccessToast('AssistantWarden Added', res?.message || 'New assistantWarden registered successfully');
                 }
             }
         } catch (error) {
-            console.error("Failed to save warden:", error);
-            showErrorToast('Action Failed', error?.message || 'Failed to save warden');
+            console.error("Failed to save assistantWarden:", error);
+            showErrorToast('Action Failed', error?.message || 'Failed to save assistantWarden');
         } finally {
             setActiveModal(null);
             setIsEditConfirmOpen(false);
@@ -491,27 +491,27 @@ export default function WardenManagement() {
                 delete params.status;
             }
 
-            const res = await wardenService.getWardens(params);
+            const res = await assistantWardenService.getAssistantWardens(params);
 
             // Handle different possible response structures
             const responseData = res?.data || res;
-            const allWardens = responseData?.data || responseData || [];
+            const allAssistantWardens = responseData?.data || responseData || [];
 
-            if (allWardens && allWardens.length > 0) {
-                const exportData = allWardens.map((warden, index) => ({
+            if (allAssistantWardens && allAssistantWardens.length > 0) {
+                const exportData = allAssistantWardens.map((assistantWarden, index) => ({
                     "SL No": index + 1,
-                    "Name": warden.name,
-                    "Email": warden.email,
-                    "Phone": warden.phone || 'N/A',
-                    "Hostel": warden.hostel?.name || warden.hostel || 'Not Assigned',
-                    "Status": warden.isActive ? 'Active' : 'Inactive',
-                    'Joined Date': new Date(warden.createdAt).toLocaleDateString()
+                    "Name": assistantWarden.name,
+                    "Email": assistantWarden.email,
+                    "Phone": assistantWarden.phone || 'N/A',
+                    "Hostel": assistantWarden.hostel?.name || assistantWarden.hostel || 'Not Assigned',
+                    "Status": assistantWarden.isActive ? 'Active' : 'Inactive',
+                    'Joined Date': new Date(assistantWarden.createdAt).toLocaleDateString()
                 }));
 
-                const isSuccess = exportToExcel(exportData, "Wardens_Export", "Wardens");
+                const isSuccess = exportToExcel(exportData, "AssistantWardens_Export", "AssistantWardens");
 
                 if (isSuccess) {
-                    showSuccessToast('Export Successful', 'The warden list has been downloaded.');
+                    showSuccessToast('Export Successful', 'The assistantWarden list has been downloaded.');
                 } else {
                     showErrorToast('Export Failed', 'Could not generate the Excel file.');
                 }
@@ -530,11 +530,11 @@ export default function WardenManagement() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <WardenHeader />
+                <AssistantWardenHeader />
 
                 <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
-                    <WardenTable
-                        wardens={wardens}
+                    <AssistantWardenTable
+                        assistantWardens={assistantWardens}
                         loading={loading}
                         error={error}
                         availableHostels={availableHostels}
@@ -543,38 +543,38 @@ export default function WardenManagement() {
                         statusFilter={statusFilter}
                         onStatusFilterChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
                         onExport={() => setIsExportConfirmOpen(true)}
-                        onAddClick={openAddWardenModal}
+                        onAddClick={openAddAssistantWardenModal}
                         onActivateSelected={() => handleBulkStatusClick(true)}
                         onDeactivateSelected={() => handleBulkStatusClick(false)}
                         selectedIds={selectedIds}
                         onSelectAll={handleSelectAll}
                         onSelectRow={handleSelectRow}
-                        setSelectedWardenDetail={setSelectedWardenDetail}
+                        setSelectedAssistantWardenDetail={setSelectedAssistantWardenDetail}
                         setView={setView}
-                        openEditWardenModal={openEditWardenModal}
+                        openEditAssistantWardenModal={openEditAssistantWardenModal}
                         handleStatusChangeClick={handleStatusChangeClick}
                         handleHostelChange={handleHostelChange}
                         page={currentPage}
                         setPage={setCurrentPage}
                         limit={limit}
                         setLimit={setLimit}
-                        totalItems={totalWardens}
+                        totalItems={totalAssistantWardens}
                         totalPages={totalPages}
                     />
                 </div>
 
-            <WardenFormModal
+            <AssistantWardenFormModal
                 activeModal={activeModal}
                 setActiveModal={setActiveModal}
-                editingWarden={editingWarden}
-                handleSaveWarden={handleSaveWarden}
+                editingAssistantWarden={editingAssistantWarden}
+                handleSaveAssistantWarden={handleSaveAssistantWarden}
                 handleCancel={handleCancel}
                 AVAILABLE_HOSTELS={availableHostels.filter(h => h.isActive)}
                 isEmailVerified={isEmailVerified}
                 setIsOtpModalOpen={setIsOtpModalOpen}
                 setOtpSource={setOtpSource}
-                wardenForm={wardenForm}
-                setWardenForm={setWardenForm}
+                assistantWardenForm={assistantWardenForm}
+                setAssistantWardenForm={setAssistantWardenForm}
                 handleVerifyClick={handleVerifyClick}
                 isSubmitting={isSubmitting}
                 isVerifying={isVerifying}
@@ -585,7 +585,7 @@ export default function WardenManagement() {
                 onClose={() => setIsExportConfirmOpen(false)}
                 onExport={confirmExport}
                 isExporting={isExporting}
-                title="Export Wardens Data"
+                title="Export AssistantWardens Data"
                 fields={[
                     {
                         name: "isActive",
@@ -615,7 +615,7 @@ export default function WardenManagement() {
                                 Cancel
                             </button>
                             <button
-                                onClick={saveWarden}
+                                onClick={saveAssistantWarden}
                                 disabled={isSubmitting}
                                 className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >
@@ -656,7 +656,7 @@ export default function WardenManagement() {
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this warden?
+                            Are you sure you want to change the status of this assistantWarden?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -685,7 +685,7 @@ export default function WardenManagement() {
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to set the status of {selectedIds.length} warden(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
+                            Are you sure you want to set the status of {selectedIds.length} assistantWarden(s) to <strong>{bulkStatusToUpdate ? 'Active' : 'Inactive'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -724,7 +724,7 @@ export default function WardenManagement() {
                         {/* Title */}
                         <h3 className="text-xl font-bold text-[#0A437A]">Change Email</h3>
                         <p className="text-sm text-gray-400 mt-1 mb-6">
-                            Change the email of {wardens.find(w => w.id === emailChangeWardenId)?.name || 'the warden'}
+                            Change the email of {assistantWardens.find(w => w.id === emailChangeAssistantWardenId)?.name || 'the assistantWarden'}
                         </p>
 
                         <hr className="border-gray-200 mb-6" />
@@ -802,7 +802,7 @@ export default function WardenManagement() {
                         setIsVerifyingOtp(true);
                         setOtpError('');
                         try {
-                            const emailToVerify = otpSource === 'emailChange' ? newEmailForm : wardenForm.email;
+                            const emailToVerify = otpSource === 'emailChange' ? newEmailForm : assistantWardenForm.email;
                             await otpService.verifyOtp(emailToVerify, code);
 
                             setIsOtpModalOpen(false);
@@ -844,7 +844,7 @@ export default function WardenManagement() {
                         {/* Title & Subtitle */}
                         <h3 className="text-[32px] font-bold text-[#0A437A] mb-4">Enter the code</h3>
                         <p className="text-gray-500 mb-3 text-[15px]">
-                            A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : wardenForm.email || '@usergmail.com'}</span>
+                            A 6-digit code was send to <span className="text-[#0A437A]">{otpSource === 'emailChange' ? newEmailForm : assistantWardenForm.email || '@usergmail.com'}</span>
                         </p>
 
 
@@ -913,8 +913,8 @@ export default function WardenManagement() {
             )}
 
             {view === 'detail' && (
-                <WardenDetailView
-                    selectedWardenDetail={selectedWardenDetail}
+                <AssistantWardenDetailView
+                    selectedAssistantWardenDetail={selectedAssistantWardenDetail}
                     setView={setView}
                     openChangeEmailModal={openChangeEmailModal}
                 />
@@ -925,7 +925,7 @@ export default function WardenManagement() {
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Hostel</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the hostel assignment for this warden?
+                            Are you sure you want to change the hostel assignment for this assistantWarden?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -950,13 +950,13 @@ export default function WardenManagement() {
                 </div>
             )}
 
-            {/* Confirm Add Warden Modal */}
+            {/* Confirm Add AssistantWarden Modal */}
             {isAddConfirmOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4">
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
-                        <h3 className="text-sm font-bold text-gray-900">Add Warden</h3>
+                        <h3 className="text-sm font-bold text-gray-900">Add AssistantWarden</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to add this new warden?
+                            Are you sure you want to add this new assistantWarden?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button
@@ -967,7 +967,7 @@ export default function WardenManagement() {
                                 Cancel
                             </button>
                             <button
-                                onClick={saveWarden}
+                                onClick={saveAssistantWarden}
                                 disabled={isSubmitting}
                                 className="flex items-center justify-center min-w-[80px] px-3 py-1.5 text-xs font-medium bg-[#0A437A] text-white rounded-lg hover:bg-secondary transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                             >

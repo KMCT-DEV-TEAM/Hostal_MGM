@@ -5,6 +5,7 @@ export const getDashboardRoute = (role) => {
         case ROLES.SUPER_ADMIN:
         case ROLES.ADMIN:
         case ROLES.WARDEN:
+        case ROLES.ASSISTANT_WARDEN:
         case ROLES.STUDENT:
         case ROLES.MAINTENANCE_STAFF:
             return '/dashboard';
