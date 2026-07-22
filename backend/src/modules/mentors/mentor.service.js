@@ -448,3 +448,78 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
     session.endSession();
   }
 };
+
+/**
+ * Gets organizations that have at least one mentor
+ */
+export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, search }) => {
+  const pipeline = [
+    {
+      $match: {
+        role: "mentor",
+        organization: { $ne: null }
+      }
+    },
+    {
+      $group: {
+        _id: "$organization",
+        mentorCount: { $sum: 1 }
+      }
+    },
+    {
+      $lookup: {
+        from: "organizations",
+        localField: "_id",
+        foreignField: "_id",
+        as: "org"
+      }
+    },
+    {
+      $unwind: "$org"
+    }
+  ];
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { "org.name": { $regex: search, $options: "i" } },
+          { "org.code": { $regex: search, $options: "i" } }
+        ]
+      }
+    });
+  }
+
+  pipeline.push({
+    $project: {
+      _id: "$org._id",
+      name: "$org.name",
+      code: "$org.code",
+      email: "$org.email",
+      mentorCount: 1
+    }
+  });
+
+  pipeline.push({ $sort: { name: 1 } });
+
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: [
+        { $skip: (page - 1) * limit },
+        { $limit: limit }
+      ]
+    }
+  });
+
+  const [result] = await User.aggregate(pipeline);
+  const totalCount = result.metadata[0]?.total || 0;
+  const data = result.data || [];
+
+  return {
+    data,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit)
+  };
+};
