@@ -31,8 +31,8 @@ const mentorAssignmentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["ACTIVE", "TRANSFERRED", "COMPLETED", "CANCELLED"],
-      default: "ACTIVE",
+      enum: ["active", "transferred", "completed", "cancelled"],
+      default: "active",
       required: true,
       index: true,
     },
@@ -61,7 +61,7 @@ mentorAssignmentSchema.index(
   { batchId: 1, status: 1 },
   {
     unique: true,
-    partialFilterExpression: { status: "ACTIVE" },
+    partialFilterExpression: { status: "active" },
     name: "unique_active_mentor_per_batch",
   }
 );

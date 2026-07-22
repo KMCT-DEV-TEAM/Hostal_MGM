@@ -87,10 +87,10 @@ export const validateUpdateAssignment = (req, res, next) => {
     });
   }
 
-  if (status && !["COMPLETED", "CANCELLED"].includes(status)) {
+  if (status && !["completed", "cancelled"].includes(status)) {
     return res.status(400).json({
       success: false,
-      message: "Status can only be updated to COMPLETED or CANCELLED",
+      message: "Status can only be updated to completed or cancelled",
     });
   }
 

@@ -109,7 +109,7 @@ export const transferMentor = asyncHandler(async (req, res) => {
 export const endAssignment = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await updateAssignmentDb(id, { status: "COMPLETED" }, req.user);
+    const result = await updateAssignmentDb(id, { status: "completed" }, req.user);
     return sendSuccess(res, 200, "Assignment ended/completed successfully", {
       data: result
     });

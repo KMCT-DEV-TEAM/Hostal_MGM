@@ -134,11 +134,7 @@ export const getPaginatedAssignmentsDb = async (filters, options) => {
     query.organizationId = organizationId;
   }
 
-  if (startDate || endDate) {
-    query.assignedAt = {};
-    if (startDate) query.assignedAt.$gte = new Date(new Date(startDate).setHours(0, 0, 0, 0));
-    if (endDate) query.assignedAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59, 999));
-  }
+
 
   if (search) {
     const matchingMentors = await User.find({

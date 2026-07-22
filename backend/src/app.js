@@ -96,8 +96,6 @@ app.use("/api/admin/parents", parentRoutes);
 app.use("/api/admin/passes", adminPassRouter);
 app.use("/api/admin/attendance", adminAttendanceRouter);
 
-
-
 app.use("/api/warden", wardenRoutes);
 app.use("/api/warden/students", studentRoutes);
 app.use("/api/warden/parents", parentRoutes);
