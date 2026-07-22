@@ -26,6 +26,7 @@ import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.
 import profileRoutes from "./modules/profile/profile.routes.js";
 import announcementRoutes from "./modules/announcements/announcement.routes.js";
 import mentorRoutes from "./modules/mentors/mentor.routes.js";
+import mentorAssignmentRoutes from "./modules/mentor-assignment/routes/mentorAssignment.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -87,6 +88,7 @@ app.use("/api/announcements", announcementRoutes);
 
 app.use("/api/super-admin/mentors", mentorRoutes);
 app.use("/api/admin/mentors", mentorRoutes);
+app.use("/api/mentor-assignments", mentorAssignmentRoutes);
 
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/students", studentRoutes);

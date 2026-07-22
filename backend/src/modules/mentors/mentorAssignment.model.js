@@ -31,7 +31,7 @@ const mentorAssignmentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["ACTIVE", "INACTIVE", "TRANSFERRED"],
+      enum: ["ACTIVE", "TRANSFERRED", "COMPLETED", "CANCELLED"],
       default: "ACTIVE",
       required: true,
       index: true,
@@ -40,6 +40,10 @@ const mentorAssignmentSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxLength: [500, "Remarks cannot exceed 500 characters"],
+      default: null,
+    },
+    endedAt: {
+      type: Date,
       default: null,
     },
   },
