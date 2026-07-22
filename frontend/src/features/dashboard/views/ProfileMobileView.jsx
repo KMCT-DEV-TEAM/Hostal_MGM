@@ -156,7 +156,7 @@ const ProfileMobileView = ({
                                                             setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                                         }
                                                     }}
-                                                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    className={`w-full border ${errors.email ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
                                                     autoFocus
                                                     disabled={isSaving}
                                                     placeholder="Enter new email"
@@ -164,7 +164,7 @@ const ProfileMobileView = ({
                                                 <button
                                                     onClick={() => handleOpenConfirm('email')}
                                                     disabled={isSaving || (editValue && editValue.trim() === '')}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                    className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
                                                 >
                                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                                 </button>
@@ -176,7 +176,7 @@ const ProfileMobileView = ({
                                                     <X className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
+                                            {errors.email && <p className="text-danger text-[10px]">{errors.email}</p>}
                                         </div>
                                     ) : (
                                         <>
@@ -221,15 +221,15 @@ const ProfileMobileView = ({
                                                             setEditValue(val);
                                                         }
                                                     }}
-                                                    className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    className={`w-full border ${errors.phone ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
                                                     autoFocus
                                                     disabled={isSaving}
                                                     placeholder="Enter 10 digit number"
                                                 />
                                                 <button
                                                     onClick={() => handleOpenConfirm('phone')}
-                                                    disabled={isSaving || (editValue && editValue.length !== 10)}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
                                                 >
                                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                                 </button>
@@ -241,7 +241,7 @@ const ProfileMobileView = ({
                                                     <X className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
+                                            {errors.phone && <p className="text-danger text-[10px]">{errors.phone}</p>}
                                         </div>
                                     ) : (
                                         <>
@@ -355,7 +355,7 @@ const ProfileMobileView = ({
                                                             setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
                                                         }
                                                     }}
-                                                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    className={`w-full border ${errors.email ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
                                                     autoFocus
                                                     disabled={isSaving}
                                                     placeholder="Enter new email"
@@ -363,7 +363,7 @@ const ProfileMobileView = ({
                                                 <button
                                                     onClick={() => handleOpenConfirm('email')}
                                                     disabled={isSaving || (editValue && editValue.trim() === '')}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                    className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
                                                 >
                                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                                 </button>
@@ -375,7 +375,7 @@ const ProfileMobileView = ({
                                                     <X className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
+                                            {errors.email && <p className="text-danger text-[10px]">{errors.email}</p>}
                                         </div>
                                     ) : (
                                         <>
@@ -420,15 +420,15 @@ const ProfileMobileView = ({
                                                             setEditValue(val);
                                                         }
                                                     }}
-                                                    className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
+                                                    className={`w-full border ${errors.phone ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
                                                     autoFocus
                                                     disabled={isSaving}
                                                     placeholder="Enter 10 digit number"
                                                 />
                                                 <button
                                                     onClick={() => handleOpenConfirm('phone')}
-                                                    disabled={isSaving || (editValue && editValue.length !== 10)}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
+                                                    disabled={isSaving}
+                                                    className="p-1.5 text-success hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
                                                 >
                                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                                 </button>
@@ -440,7 +440,7 @@ const ProfileMobileView = ({
                                                     <X className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
+                                            {errors.phone && <p className="text-danger text-[10px]">{errors.phone}</p>}
                                         </div>
                                     ) : (
                                         <>

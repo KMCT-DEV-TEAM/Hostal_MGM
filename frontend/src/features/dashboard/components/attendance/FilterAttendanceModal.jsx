@@ -101,7 +101,7 @@ export default function FilterAttendanceModal({
                             { label: 'All Status', value: '' },
                             { label: 'Present', value: 'present' },
                             { label: 'Absent', value: 'absent' },
-                            { label: 'Not Marked', value: 'not_marked' }
+                            { label: 'On Leave', value: 'on_leave' },
                         ]}
                         value={localStatus}
                         onChange={(val) => setLocalStatus(val)}

@@ -1,12 +1,14 @@
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLayoutStore } from '@/store/useLayoutStore';
+import { useNotifications } from '@/features/notifications/hooks/useNotifications';
 
 const MobilePageHeader = () => {
     const navigate = useNavigate();
     const title = useLayoutStore((state) => state.header.title);
     const showBack = useLayoutStore((state) => state.header.showBack);
     const onBack = useLayoutStore((state) => state.header.onBack);
+    const { unreadCount } = useNotifications();
 
     return (
         <div className="pt-8 pb-4 px-4 bg-background-secondary shrink-0">
@@ -33,8 +35,9 @@ const MobilePageHeader = () => {
                 <div className="w-8 flex items-center justify-end">
                     <Link to="/dashboard/notifications" className="text-text-secondary hover:text-gray-600 relative transition-colors active:scale-95 p-1 -mr-1">
                         <Bell className="w-5 h-5" strokeWidth={1.5} />
-                        {/* Red unread indicator dot */}
-                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-danger rounded-full border border-white"></span>
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-danger rounded-full border border-white"></span>
+                        )}
                     </Link>
                 </div>
 
