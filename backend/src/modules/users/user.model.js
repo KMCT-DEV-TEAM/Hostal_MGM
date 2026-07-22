@@ -30,7 +30,8 @@ const userSchema = new mongoose.Schema(
         "warden",
         "student",
         "parent",
-        "maintenance_staff"
+        "maintenance_staff",
+        "mentor"
       ],
       default: "student",
     },
