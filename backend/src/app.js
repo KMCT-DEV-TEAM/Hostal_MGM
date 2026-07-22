@@ -26,7 +26,6 @@ import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.
 import profileRoutes from "./modules/profile/profile.routes.js";
 import announcementRoutes from "./modules/announcements/announcement.routes.js";
 import mentorRoutes from "./modules/mentors/mentor.routes.js";
-import mentorAssignmentRoutes from "./modules/mentor-assignment/routes/mentorAssignment.routes.js";
 import {
   wardenAttendanceRouter,
   adminAttendanceRouter,
@@ -34,6 +33,7 @@ import {
   studentAttendanceRouter,
   parentAttendanceRouter
 } from "./modules/attendance/attendance.routes.js";
+import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment.routes.js'
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
