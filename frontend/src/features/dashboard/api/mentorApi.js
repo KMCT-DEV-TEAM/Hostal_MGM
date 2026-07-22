@@ -11,6 +11,9 @@ const mentorApi = {
     getMentors: (role, params) =>
         api.get(`${getPrefix(role)}/mentors`, { params }),
 
+    getMentorOrganizations: (role, params) =>
+        api.get(`${getPrefix(role)}/mentors/organizations`, { params }),
+
     getMentorById: (role, id) =>
         api.get(`${getPrefix(role)}/mentors/${id}`),
 

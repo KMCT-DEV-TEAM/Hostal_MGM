@@ -11,7 +11,7 @@ export default function MentorFormModal({
 }) {
   const isEdit = !!editingMentor;
   const role = useAuthStore((s) => s.user?.role);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -59,7 +59,7 @@ export default function MentorFormModal({
     if (!isEdit && !formData.email) newErrors.email = "Email is required";
     if (!formData.phone) newErrors.phone = "Phone is required";
     if (role === ROLES.SUPER_ADMIN && !isEdit && !formData.organizationId) {
-        newErrors.organizationId = "Organization is required";
+      newErrors.organizationId = "Organization is required";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -73,7 +73,7 @@ export default function MentorFormModal({
     try {
       await onSave(formData);
     } catch (error) {
-       // Error is handled by parent, we just stop spinning
+      // Error is handled by parent, we just stop spinning
     } finally {
       setIsSubmitting(false);
     }
@@ -81,7 +81,7 @@ export default function MentorFormModal({
 
   const ErrorMessage = ({ error }) => {
     if (!error) return null;
-    return <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error}</p>;
+    return <p className="text-danger text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{error}</p>;
   };
 
   return (
@@ -100,7 +100,7 @@ export default function MentorFormModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 bg-[#0A437A] text-white rounded-md text-xs font-medium hover:bg-[#0A437A]/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
             {isEdit ? "Save Changes" : "Save"}
@@ -109,7 +109,7 @@ export default function MentorFormModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-5 py-2 border border-gray-200 text-gray-600 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="px-5 py-2 border border-gray-200 text-text-secondary rounded-md text-xs font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -120,7 +120,7 @@ export default function MentorFormModal({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1 md:col-span-2">
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Name <span className="text-red-500">*</span>
+              Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -128,14 +128,14 @@ export default function MentorFormModal({
               value={formData.name}
               onChange={handleChange}
               placeholder="e.g. John Doe"
-              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.name ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A]'}`}
+              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.name ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
             />
             <ErrorMessage error={errors.name} />
           </div>
 
           <div className="col-span-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Email {isEdit ? "" : <span className="text-red-500">*</span>}
+              Email {isEdit ? "" : <span className="text-danger">*</span>}
             </label>
             <input
               type="email"
@@ -143,7 +143,7 @@ export default function MentorFormModal({
               value={formData.email}
               onChange={handleChange}
               placeholder="john.doe@example.com"
-              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A]'}`}
+              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.email ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
             />
             {isEdit && <p className="text-[10px] text-gray-500 mt-1">Leave empty to keep existing email.</p>}
             <ErrorMessage error={errors.email} />
@@ -151,7 +151,7 @@ export default function MentorFormModal({
 
           <div className="col-span-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Phone Number <span className="text-red-500">*</span>
+              Phone Number <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -159,7 +159,7 @@ export default function MentorFormModal({
               value={formData.phone}
               onChange={handleChange}
               placeholder="+91 9876543210"
-              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.phone ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A]'}`}
+              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.phone ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
             />
             <ErrorMessage error={errors.phone} />
           </div>
@@ -174,7 +174,7 @@ export default function MentorFormModal({
               value={formData.specialization}
               onChange={handleChange}
               placeholder="e.g. Computer Science"
-              className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] transition-colors"
+              className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
             />
             <ErrorMessage error={errors.specialization} />
           </div>
@@ -182,14 +182,14 @@ export default function MentorFormModal({
           {!isEdit && role === ROLES.SUPER_ADMIN && (
             <div className="col-span-1 md:col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Organization <span className="text-red-500">*</span>
+                Organization <span className="text-danger">*</span>
               </label>
               <select
                 name="organizationId"
                 value={formData.organizationId}
                 onChange={handleChange}
                 disabled={loadingOrgs}
-                className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.organizationId ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A]'}`}
+                className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.organizationId ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
               >
                 <option value="">{loadingOrgs ? 'Loading...' : 'Select Organization'}</option>
                 {organizations.map(org => (

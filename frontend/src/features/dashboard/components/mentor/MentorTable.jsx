@@ -217,7 +217,7 @@ export default function MentorTable({
             searchValue={searchTerm}
             // toolbarEndSlot={toolbarEndSlot}
             onRowClick={onView}
-            primaryAction={addNewButton}
+            addButton={addNewButton}
             bulkActions={canEdit ? [
                 {
                     label: 'Activate Selected',

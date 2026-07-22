@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
@@ -16,6 +18,12 @@ import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 export default function Mentors() {
     const role = useAuthStore((s) => s.user?.role);
+    const { orgId } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
+    
+    // We get orgName from navigation state if available
+    const orgName = location.state?.orgName || '';
 
     const canEdit = role === ROLES.SUPER_ADMIN || role === ROLES.ADMIN;
     const canCreate = role === ROLES.SUPER_ADMIN || role === ROLES.ADMIN;
@@ -26,10 +34,13 @@ export default function Mentors() {
     const [editingMentor, setEditingMentor] = useState(null);
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
+    
+    // Pagination & Filters for Mentors
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
-    const [filters, setFilters] = useState({ search: '', isActive: '', organizationId: '' });
-    const [organizations, setOrganizations] = useState([]);
+    const [filters, setFilters] = useState({ search: '', isActive: '', organizationId: orgId || '' });
+    
+    const [organizationsList, setOrganizationsList] = useState([]);
 
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
@@ -40,17 +51,22 @@ export default function Mentors() {
     useEffect(() => {
         if (role === ROLES.SUPER_ADMIN) {
             getOrganizations({ limit: 100, status: 'Active' })
-                .then(res => setOrganizations(res.data || []))
+                .then(res => setOrganizationsList(res.data || []))
                 .catch(err => console.error("Failed to fetch organizations", err));
         }
     }, [role]);
+
+    useEffect(() => {
+        // Ensure filters has the correct organizationId from params
+        setFilters(prev => ({ ...prev, organizationId: orgId || '' }));
+    }, [orgId]);
 
     const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
         setPage(1); 
     }, []);
 
-    const { mentors, setMentors, pagination, loading, error, refetch } = useMentors({
+    const { mentors, pagination: mentorPagination, loading: mentorLoading, error: mentorError, refetch: refetchMentors } = useMentors({
         ...filters,
         search: debouncedSearch,
         page,
@@ -85,7 +101,7 @@ export default function Mentors() {
                 try {
                     await updateMentorStatus(role, id, { isActive: newStatus });
                     showSuccessToast('Status updated successfully');
-                    refetch();
+                    refetchMentors();
                 } catch (error) {
                     showErrorToast(error?.response?.data?.message || 'Failed to update status');
                 } finally {
@@ -107,6 +123,10 @@ export default function Mentors() {
     };
 
     const handleSaveRequest = (payload) => {
+        // Auto-assign organization ID if we are drilled down
+        if (!editingMentor && orgId) {
+            payload.organizationId = orgId;
+        }
         setPendingPayload(payload);
         setIsEditConfirmOpen(true);
     };
@@ -122,7 +142,7 @@ export default function Mentors() {
                 showSuccessToast('Mentor created successfully');
             }
             setActiveModal(null);
-            refetch();
+            refetchMentors();
         } catch (error) {
             showErrorToast(error?.response?.data?.message || error?.message || `Failed to ${editingMentor ? 'update' : 'create'} mentor`);
             throw error; 
@@ -137,10 +157,20 @@ export default function Mentors() {
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-gray-50 flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
-                    <PageHeader 
-                        title="Mentors Management" 
-                        subtitle="Manage mentor accounts and details" 
-                    />
+                    <div className="flex items-center gap-4">
+                        {orgId && role === ROLES.SUPER_ADMIN && (
+                            <button 
+                                onClick={() => navigate('/dashboard/mentors')}
+                                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                            >
+                                <ArrowLeft className="w-5 h-5 text-gray-600" />
+                            </button>
+                        )}
+                        <PageHeader 
+                            title={orgName ? `Mentors - ${orgName}` : "Mentors Management"} 
+                            subtitle={orgId ? "Manage mentors for this organization" : "Manage mentor accounts and details"} 
+                        />
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
@@ -160,19 +190,19 @@ export default function Mentors() {
                     )}
                     <MentorTable
                         mentors={mentors}
-                        loading={loading}
-                        error={error}
+                        loading={mentorLoading}
+                        error={mentorError}
                         role={role}
                         canCreate={canCreate}
                         canEdit={canEdit}
                         canDelete={canDelete}
-                        organizations={organizations}
+                        organizations={organizationsList}
                         page={page}
                         setPage={setPage}
                         limit={limit}
                         setLimit={setLimit}
-                        totalItems={pagination.totalRecords}
-                        totalPages={pagination.totalPages}
+                        totalItems={mentorPagination.totalRecords}
+                        totalPages={mentorPagination.totalPages}
                         onAddClick={handleAddClick}
                         onEdit={handleEditClick}
                         onView={handleViewClick}
