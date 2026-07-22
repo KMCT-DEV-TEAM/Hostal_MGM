@@ -309,13 +309,28 @@ export default function ParentLeaves() {
             <Filter className="w-4 h-4" />
         </button>
     );
-//         onFilterClick: () => setIsFilterModalOpen(true),
-//         isFilterApplied: !!(filters.status || filters.category || filters.passType || filters.fromDate || filters.toDate),
-//         onAddClick: undefined,
-//         openEditModal: undefined,
-//         statsData
-//     };
-
+    //         onFilterClick: () => setIsFilterModalOpen(true),
+    //         isFilterApplied: !!(filters.status || filters.category || filters.passType || filters.fromDate || filters.toDate),
+    //         onAddClick: undefined,
+    //         openEditModal: undefined,
+    //         statsData
+    //     };
+    const viewProps = {
+        requests,
+        loading,
+        hasMore: page < totalPages,
+        onLoadMore: () => setPage(p => p + 1),
+        searchQuery,
+        setSearchQuery: (val) => {
+            setSearchQuery(val);
+            setPage(1);
+        },
+        onFilterClick: () => setIsFilterModalOpen(true),
+        isFilterApplied: !!(filters.status || filters.category || filters.fromDate || filters.toDate),
+        onAddClick: undefined,
+        openEditModal: undefined,
+        statsData
+    };
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             {isMobile ? (
