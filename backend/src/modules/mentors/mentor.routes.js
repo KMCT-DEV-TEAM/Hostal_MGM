@@ -21,8 +21,7 @@ const router = express.Router();
 
 // Enforce Auth & Admin / SuperAdmin Role Guards
 router.use(authMiddleware);
-router.get("/", roleMiddleware("super_admin"), getOrganizationsWithMentors);
-
+router.get("/organizations", roleMiddleware("super_admin"), getOrganizationsWithMentors);
 router.use(roleMiddleware("super_admin", "admin"));
 
 // RESTful API Routes
