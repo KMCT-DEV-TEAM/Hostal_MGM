@@ -12,7 +12,6 @@ export default function MentorTable({
     onExport,
     onAddClick,
     canCreate,
-    organizations = [],
     mentors,
     loading,
     error,
@@ -34,17 +33,11 @@ export default function MentorTable({
     const { t } = useTranslation();
 
     const [statusFilter, setStatusFilter] = useState('');
-    const [organizationFilter, setOrganizationFilter] = useState('');
 
     const statusOptions = [
         { label: 'All Status', value: '' },
         { label: 'Active', value: 'Active' },
         { label: 'Inactive', value: 'Inactive' }
-    ];
-
-    const organizationOptions = [
-        { label: 'All Organizations', value: '' },
-        ...organizations.map(org => ({ label: org.name, value: org._id }))
     ];
 
     const columns = [
@@ -164,20 +157,6 @@ export default function MentorTable({
                     }}
                     placeholder="All Status"
                     minWidth="w-32"
-                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
-                />
-            )}
-            {role === ROLES.SUPER_ADMIN && (
-                <Dropdown
-                    className="flex-1  "
-                    options={organizationOptions}
-                    value={organizationFilter}
-                    onChange={(val) => {
-                        setOrganizationFilter(val);
-                        onFilterChange?.('organizationId', val);
-                    }}
-                    placeholder="All Organizations"
-                    minWidth="w-40"
                     triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
                 />
             )}

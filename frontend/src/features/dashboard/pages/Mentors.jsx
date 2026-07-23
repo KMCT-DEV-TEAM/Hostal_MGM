@@ -1,14 +1,11 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import PageHeader from '@/components/ui/PageHeader';
-import ListToolbar from '@/components/ui/ListToolbar';
-import BulkActionMenu from '@/components/ui/BulkActionMenu';
+import BackButton from '@/components/ui/BackButton';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMentors } from '@/features/dashboard/hooks/mentor/useMentors';
 import { useDebounce } from '@/hooks/useDebounce';
 import { createMentor, updateMentorStatus, updateMentor } from '@/services/mentor.service';
-import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
 import MentorTable from '../components/mentor/MentorTable';
 import MentorFormModal from '../components/mentor/MentorFormModal';
@@ -31,7 +28,7 @@ export default function Mentors() {
 
     const [activeModal, setActiveModal] = useState(null);
     const [editingMentor, setEditingMentor] = useState(null);
-    const [pendingStatusChange, setPendingStatusChange] = useState(null);
+    const [confirmConfig, setConfirmConfig] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
 
     // Pagination & Filters for Mentors
@@ -39,26 +36,23 @@ export default function Mentors() {
     const [limit, setLimit] = useState(10);
     const [filters, setFilters] = useState({ search: '', isActive: '', organizationId: orgId || '' });
 
-    const [organizationsList, setOrganizationsList] = useState([]);
-
-    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
-    const [pendingPayload, setPendingPayload] = useState(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
     const debouncedSearch = useDebounce(filters.search, 500);
 
     useEffect(() => {
-        if (role === ROLES.SUPER_ADMIN) {
-            getOrganizations({ limit: 100, status: 'Active' })
-                .then(res => setOrganizationsList(res.data || []))
-                .catch(err => console.error("Failed to fetch organizations", err));
-        }
-    }, [role]);
-
-    useEffect(() => {
         // Ensure filters has the correct organizationId from params
         setFilters(prev => ({ ...prev, organizationId: orgId || '' }));
     }, [orgId]);
+
+    useEffect(() => {
+        if (location.state?.openAddModal) {
+            setActiveModal('edit');
+            setEditingMentor(null);
+            // Clear the state so it doesn't trigger again on reload
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
@@ -98,7 +92,7 @@ export default function Mentors() {
                     showErrorToast(error?.response?.data?.message || 'Failed to update status');
                 } finally {
                     setStatusLoadingIds(prev => prev.filter(i => i !== id));
-                    setPendingStatusChange(null);
+                    setConfirmConfig(null);
                 }
             }
         });
@@ -119,31 +113,35 @@ export default function Mentors() {
         if (!editingMentor && orgId) {
             payload.organizationId = orgId;
         }
-        setPendingPayload(payload);
-        setIsEditConfirmOpen(true);
+        
+        setConfirmConfig({
+            title: editingMentor ? "Confirm Update" : "Confirm Creation",
+            message: `Are you sure you want to ${editingMentor ? 'update this mentor' : 'create this mentor'}?`,
+            confirmText: editingMentor ? "Update Mentor" : "Create Mentor",
+            action: async () => {
+                setIsConfirming(true);
+                try {
+                    if (editingMentor) {
+                        await updateMentor(role, getMentorId(editingMentor), payload);
+                        showSuccessToast('Mentor updated successfully');
+                    } else {
+                        await createMentor(role, payload);
+                        showSuccessToast('Mentor created successfully');
+                    }
+                    setActiveModal(null);
+                    refetchMentors();
+                } catch (error) {
+                    showErrorToast(error?.response?.data?.message || error?.message || `Failed to ${editingMentor ? 'update' : 'create'} mentor`);
+                    throw error;
+                } finally {
+                    setIsConfirming(false);
+                    setConfirmConfig(null);
+                }
+            }
+        });
     };
 
-    const executeSave = async () => {
-        setIsConfirming(true);
-        try {
-            if (editingMentor) {
-                await updateMentor(role, getMentorId(editingMentor), pendingPayload);
-                showSuccessToast('Mentor updated successfully');
-            } else {
-                await createMentor(role, pendingPayload);
-                showSuccessToast('Mentor created successfully');
-            }
-            setActiveModal(null);
-            refetchMentors();
-        } catch (error) {
-            showErrorToast(error?.response?.data?.message || error?.message || `Failed to ${editingMentor ? 'update' : 'create'} mentor`);
-            throw error;
-        } finally {
-            setIsConfirming(false);
-            setIsEditConfirmOpen(false);
-            setPendingPayload(null);
-        }
-    };
+
 
     const handleSearchChange = useCallback((v) => {
         handleFilterChange('search', v);
@@ -152,29 +150,19 @@ export default function Mentors() {
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-gray-50 flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        {orgId && role === ROLES.SUPER_ADMIN && (
-                            <button
-                                onClick={() => navigate('/dashboard/mentors')}
-                                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                            >
-                                <ArrowLeft className="w-5 h-5 text-gray-600" />
-                            </button>
-                        )}
-                        <PageHeader
-                            title={orgName ? `Mentors - ${orgName}` : "Mentors Management"}
-                            subtitle={orgId ? "Manage mentors for this organization" : "Manage mentor accounts and details"}
-                        />
-                    </div>
+                <div className="mb-6">
+                    <PageHeader
+                        title={orgName ? `Mentors - ${orgName}` : "Mentors Management"}
+                        subtitle={orgId ? "Manage mentors for this organization" : "Manage mentor accounts and details"}
+                        actionButton={
+                            orgId && role === ROLES.SUPER_ADMIN ? (
+                                <BackButton text="Back to Organizations" onClick={() => navigate('/dashboard/mentors')} />
+                            ) : null
+                        }
+                    />
                 </div>
 
                 <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
-                    {/* <ListToolbar
-                        searchPlaceholder="Search mentors..."
-                        searchValue={filters.search}
-                        onSearchChange={(v) => handleFilterChange('search', v)}
-                    /> */}
 
                     <MentorTable
                         onSearch={handleSearchChange}
@@ -186,7 +174,6 @@ export default function Mentors() {
                         canCreate={canCreate}
                         canEdit={canEdit}
                         canDelete={canDelete}
-                        organizations={organizationsList}
                         page={page}
                         setPage={setPage}
                         limit={limit}
@@ -206,6 +193,7 @@ export default function Mentors() {
             {activeModal === 'edit' && (
                 <MentorFormModal
                     editingMentor={editingMentor}
+                    orgId={orgId}
                     onClose={() => {
                         setActiveModal(null);
                         setEditingMentor(null);
@@ -226,23 +214,14 @@ export default function Mentors() {
             )}
 
             <ConfirmationModal
-                isOpen={isEditConfirmOpen}
-                onClose={() => setIsEditConfirmOpen(false)}
-                onConfirm={executeSave}
-                title={editingMentor ? "Confirm Update" : "Confirm Creation"}
-                message={`Are you sure you want to ${editingMentor ? 'update this mentor' : 'create this mentor'}?`}
-                confirmText={editingMentor ? "Update Mentor" : "Create Mentor"}
+                isOpen={!!confirmConfig}
+                onClose={() => setConfirmConfig(null)}
+                onConfirm={confirmConfig?.action}
+                title={confirmConfig?.title}
+                message={confirmConfig?.message}
+                confirmText={confirmConfig?.confirmText}
+                type={confirmConfig?.type}
                 isSubmitting={isConfirming}
-            />
-
-            <ConfirmationModal
-                isOpen={!!pendingStatusChange}
-                onClose={() => setPendingStatusChange(null)}
-                onConfirm={pendingStatusChange?.action}
-                title={pendingStatusChange?.title}
-                message={pendingStatusChange?.message}
-                confirmText={pendingStatusChange?.confirmText}
-                type={pendingStatusChange?.type}
             />
         </div>
     );
