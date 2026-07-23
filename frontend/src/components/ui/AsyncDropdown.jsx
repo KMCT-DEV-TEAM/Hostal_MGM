@@ -22,6 +22,7 @@ export default function AsyncDropdown({
     const observerRef = useRef(null);
 
     const [open, setOpen] = useState(false);
+    const [dynamicPlacement, setDynamicPlacement] = useState(placement);
 
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 300);
@@ -137,6 +138,36 @@ export default function AsyncDropdown({
         item => getOptionValue(item) === value
     );
 
+    const handleToggle = () => {
+        if (!open) {
+            if (dropdownRef.current) {
+                const rect = dropdownRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const dropdownHeight = 250; // estimated max height (maxHeight prop is usually '200px' + search bar)
+
+                let spaceBelowParent = spaceBelow;
+                let scrollParent = dropdownRef.current.parentElement;
+                while (scrollParent) {
+                    if (scrollParent === document.body || scrollParent === document.documentElement) break;
+                    const style = window.getComputedStyle(scrollParent);
+                    if (/(auto|scroll)/.test(style.overflow + style.overflowY)) {
+                        const parentRect = scrollParent.getBoundingClientRect();
+                        spaceBelowParent = parentRect.bottom - rect.bottom;
+                        break;
+                    }
+                    scrollParent = scrollParent.parentElement;
+                }
+
+                if (spaceBelowParent < dropdownHeight && rect.top > dropdownHeight) {
+                    setDynamicPlacement('top');
+                } else {
+                    setDynamicPlacement(placement);
+                }
+            }
+        }
+        setOpen(!open);
+    };
+
     return (
         <div
             ref={dropdownRef}
@@ -146,7 +177,7 @@ export default function AsyncDropdown({
 
             <button
                 type="button"
-                onClick={() => setOpen(prev => !prev)}
+                onClick={handleToggle}
                 className={`flex items-center justify-between w-full border rounded-lg outline-none transition-colors ${triggerClassName || 'px-3 py-2 text-sm bg-white border-gray-200 focus:border-secondary'}`}
             >
                 <span className="truncate flex flex-wrap gap-1 items-center mr-2 font-inherit text-inherit">
@@ -184,7 +215,7 @@ export default function AsyncDropdown({
 
                 <div
                     style={{ maxHeight: maxHeight }}
-                    className={`absolute z-50 flex flex-col   min-w-full w-full max-w-[400px] ${placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none`}
+                    className={`absolute z-50 flex flex-col min-w-full w-full max-w-100 ${dynamicPlacement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none`}
                 >
 
                     <div className="sticky top-0 bg-white px-2 py-1.5 border-b border-gray-100 z-10 shrink-0">

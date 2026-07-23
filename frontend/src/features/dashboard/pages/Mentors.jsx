@@ -76,7 +76,7 @@ export default function Mentors() {
 
     const handleStatusChangeRequest = (mentor, newStatus) => {
         if (!canEdit) return;
-        setPendingStatusChange({
+        setConfirmConfig({
             title: 'Change Status',
             message: `Are you sure you want to change the status of this mentor to ${newStatus ? 'Active' : 'Inactive'}?`,
             confirmText: 'Confirm',
@@ -84,6 +84,7 @@ export default function Mentors() {
             action: async () => {
                 const id = getMentorId(mentor);
                 setStatusLoadingIds(prev => [...prev, id]);
+                setIsConfirming(true);
                 try {
                     await updateMentorStatus(role, id, { isActive: newStatus });
                     showSuccessToast('Status updated successfully');
@@ -92,6 +93,7 @@ export default function Mentors() {
                     showErrorToast(error?.response?.data?.message || 'Failed to update status');
                 } finally {
                     setStatusLoadingIds(prev => prev.filter(i => i !== id));
+                    setIsConfirming(false);
                     setConfirmConfig(null);
                 }
             }
