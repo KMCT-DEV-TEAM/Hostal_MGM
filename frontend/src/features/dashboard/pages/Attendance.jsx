@@ -18,7 +18,7 @@ export default function Attendance() {
         return <ParentAttendance />;
     }
 
-    if (user?.role === ROLES.WARDEN) {
+    if (user?.role === ROLES.WARDEN || user?.role === ROLES.ASSISTANT_WARDEN) {
         return <WardenAttendance />;
     }
 

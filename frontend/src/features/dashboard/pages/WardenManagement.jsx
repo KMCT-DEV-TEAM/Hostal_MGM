@@ -202,7 +202,7 @@ export default function WardenManagement() {
             const res = await wardenService.toggleStatus(statusToUpdate.id);
             if (res && (res.success || res.data)) {
                 const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
-                setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus } : w));
+                setWardens(wardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus, isActive: newStatus === 'Active' } : w));
                 showSuccessToast('Status Updated', res?.message || `Warden status changed to ${newStatus}`);
             }
         } catch (error) {
@@ -256,7 +256,7 @@ export default function WardenManagement() {
                 const newStatus = bulkStatusToUpdate ? 'Active' : 'Inactive';
                 setWardens(wardens.map(w => {
                     if (selectedIds.includes(w.id)) {
-                        return { ...w, status: newStatus };
+                        return { ...w, status: newStatus, isActive: newStatus === 'Active' };
                     }
                     return w;
                 }));

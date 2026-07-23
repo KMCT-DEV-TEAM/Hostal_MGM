@@ -40,9 +40,9 @@ export default function StudentLeaves() {
         setIsApplyModalOpen(true);
     };
     const [searchQuery, setSearchQuery] = useState('');
-    const [filters, setFilters] = useState({ status: '', category: '', fromDate: '', toDate: '' });
+    const [filters, setFilters] = useState({ status: '', category: '', passType: '', fromDate: '', toDate: '' });
     const [page, setPage] = useState(1);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     const fetchLeaves = async () => {
         try {
@@ -52,8 +52,9 @@ export default function StudentLeaves() {
                 limit,
                 ...(filters.status && { status: filters.status.toLowerCase() }),
                 ...(filters.category && !isHomePass && { outPassCategory: filters.category }),
-                ...(filters.fromDate && { startDate: filters.fromDate }),
-                ...(filters.toDate && { endDate: filters.toDate })
+                ...(filters.passType && { passType: filters.passType }),
+                ...(filters.fromDate && { fromDate: filters.fromDate }),
+                ...(filters.toDate && { toDate: filters.toDate })
             };
 
             let res;
@@ -111,7 +112,7 @@ export default function StudentLeaves() {
 
     useEffect(() => {
         fetchLeaves();
-    }, [page, passType, isHomePass, filters.status, filters.category, filters.fromDate, filters.toDate]);
+    }, [page, passType, isHomePass, filters.status, filters.category, filters.passType, filters.fromDate, filters.toDate]);
 
     const viewProps = {
         pageTitle,
@@ -124,6 +125,8 @@ export default function StudentLeaves() {
         totalPages,
         page,
         setPage,
+        limit,
+        setLimit,
         filters,
         setIsFilterModalOpen,
         openEditModal,
@@ -133,7 +136,7 @@ export default function StudentLeaves() {
         hasMore: page < totalPages,
         onLoadMore: () => setPage(p => p + 1),
         onFilterClick: () => setIsFilterModalOpen(true),
-        isFilterApplied: !!(filters.status || filters.category || filters.fromDate || filters.toDate),
+        isFilterApplied: !!(filters.status || filters.category || filters.passType || filters.fromDate || filters.toDate),
         onAddClick: () => {
             setEditData(null);
             setIsApplyModalOpen(true);
@@ -141,7 +144,7 @@ export default function StudentLeaves() {
     };
 
     return (
-        <>
+        <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-[#F8FAFC] text-black flex flex-col relative">
             {isMobile ? (
                 <LeavesMobileView {...viewProps} />
             ) : (
@@ -163,6 +166,7 @@ export default function StudentLeaves() {
                 pageTitle={pageTitle}
                 isOutPass={!isHomePass}
                 isStudent={true}
+                isMobile={isMobile}
                 filters={filters}
                 onApply={(newFilters) => {
                     setFilters(newFilters);
@@ -170,7 +174,7 @@ export default function StudentLeaves() {
                     setIsFilterModalOpen(false);
                 }}
                 onReset={() => {
-                    setFilters({ status: '', category: '', fromDate: '', toDate: '' });
+                    setFilters({ status: '', category: '', passType: '', fromDate: '', toDate: '' });
                     setPage(1);
                     setIsFilterModalOpen(false);
                 }}
@@ -181,6 +185,6 @@ export default function StudentLeaves() {
                 onClose={() => setViewId(null)}
                 leaveId={viewId}
             />
-        </>
+        </div>
     );
 }

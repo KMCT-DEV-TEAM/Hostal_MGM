@@ -2,6 +2,7 @@ import { ROLES } from '@/constants/roles';
 import DashboardOverview from '@/features/dashboard/pages/DashboardOverview';
 import Administrator from '@/features/dashboard/pages/Administrator';
 import WardenManagement from '@/features/dashboard/pages/WardenManagement';
+import AssistantWardenManagement from '@/features/dashboard/pages/AssistantWardenManagement';
 import Parents from '@/features/dashboard/pages/Parents';
 import Students from '@/features/dashboard/pages/Students';
 import StudentDetailView from '@/features/dashboard/components/students/StudentDetailView';
@@ -33,7 +34,8 @@ import VisitorsPage from '@/features/visitors/pages/VisitorsPage';
 import VisitorHistoryPage from '@/features/visitors/pages/VisitorHistoryPage';
 import VisitorDetails from '@/features/visitors/pages/VisitorDetails';
 import AnnouncementManagement from '@/features/dashboard/pages/AnnouncementManagement';
-
+import MentorsIndex from '@/features/dashboard/pages/MentorsIndex';
+import Mentors from '@/features/dashboard/pages/Mentors';
 export const dashboardRoutes = [
 
     {
@@ -42,6 +44,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.MAINTENANCE_STAFF,
             ROLES.PARENT
@@ -54,6 +57,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
@@ -65,6 +69,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
             ROLES.STUDENT
         ],
@@ -76,6 +81,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
             ROLES.STUDENT
         ],
@@ -87,6 +93,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
             ROLES.STUDENT
         ],
@@ -100,6 +107,21 @@ export const dashboardRoutes = [
         ],
         element: Administrator
     },
+    {
+        path: 'mentors',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: MentorsIndex
+    },
+    {
+        path: 'mentors/:orgId',
+        roles: [
+            ROLES.SUPER_ADMIN
+        ],
+        element: Mentors
+    },
 
     {
         path: 'wardens',
@@ -108,6 +130,15 @@ export const dashboardRoutes = [
             ROLES.ADMIN
         ],
         element: WardenManagement
+    },
+
+    {
+        path: 'assistant-wardens',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: AssistantWardenManagement
     },
 
     {
@@ -125,7 +156,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Students
     },
@@ -135,7 +167,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: StudentDetailView
     },
@@ -170,7 +203,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Furniture
     },
@@ -179,7 +213,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: FurnitureDetails
     },
@@ -205,7 +240,8 @@ export const dashboardRoutes = [
     {
         path: 'maintenance',
         roles: [
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Maintenance
     },
@@ -215,6 +251,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT,
             ROLES.MAINTENANCE_STAFF
@@ -227,6 +264,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT,
             ROLES.MAINTENANCE_STAFF
@@ -246,6 +284,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
@@ -265,6 +304,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
@@ -276,6 +316,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
@@ -287,6 +328,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT
         ],
         element: Complaints
@@ -297,6 +339,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT
         ],
         element: Complaints
@@ -306,7 +349,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceStaffManagement
     },
@@ -315,7 +359,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceStaffTasks
     },
@@ -332,6 +377,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
@@ -342,14 +388,16 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Attendance
     },
     {
         path: 'attendance/scan/:windowId',
         roles: [
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: AttendanceScan
     },
@@ -365,7 +413,8 @@ export const dashboardRoutes = [
         path: 'tasks',
         roles: [
             ROLES.MAINTENANCE_STAFF,
-            ROLES.WARDEN
+            ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceAssignedTasks
     },
@@ -375,6 +424,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
@@ -386,6 +436,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],

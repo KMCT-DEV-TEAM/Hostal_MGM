@@ -106,6 +106,7 @@ export async function getStudentFurnitures(role, id) {
     super_admin: studentApi.getStudentFurnituresBySuperAdmin,
     admin: studentApi.getStudentFurnituresByAdmin,
     warden: studentApi.getStudentFurnituresByWarden,
+    assistant_warden: studentApi.getStudentFurnituresByWarden,
   });
   const response = await resolver(role, id);
   return response.data;
@@ -116,6 +117,7 @@ export async function getStudentById(role, id) {
     super_admin: studentApi.getStudentByIdBySuperAdmin,
     admin: studentApi.getStudentByIdByAdmin,
     warden: studentApi.getStudentByIdByWarden,
+    assistant_warden: studentApi.getStudentByIdByWarden,
   });
   const response = await resolver(role, id);
   return response.data;
@@ -125,6 +127,7 @@ const STUDENT_FETCHERS = {
   [ROLES.ADMIN]: getStudentsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentsBySuperAdmin,
   [ROLES.WARDEN]: getStudentsByWarden,
+  [ROLES.ASSISTANT_WARDEN]: getStudentsByWarden,
 };
 
 const STUDENT_UPDATE_FETCHERS = {
@@ -141,6 +144,7 @@ const STUDENT_FILTER_OPTION_FETCHERS = {
   [ROLES.ADMIN]: getStudentFilterOptionsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentFilterOptionsBySuperAdmin,
   [ROLES.WARDEN]: getStudentFilterOptionsByWarden,
+  [ROLES.ASSISTANT_WARDEN]: getStudentFilterOptionsByWarden,
 };
 
 const STUDENT_STATUS_TOGGLE_FETCHERS = {

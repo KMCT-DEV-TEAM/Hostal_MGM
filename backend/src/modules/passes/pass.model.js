@@ -7,21 +7,27 @@ const timelineSchema = new mongoose.Schema(
       enum: [
         "created",
         "updated",
+
         "parent_approved",
         "parent_rejected",
-        "warden_approved",
-        "warden_rejected",
-        "cancelled",
-        "returned",
-        "completed",
+
+        "admin_approved",
+        "admin_rejected",
+        "admin_cancelled",
+
+        "warden_marked_out",
+        "warden_marked_returned",
+
         "student_edited_leave",
         "parent_edited_leave",
+
         "approval_reset",
-        "parent_reapproved",
-        "warden_reapproved",
         "student_cancelled_request",
         "parent_cancelled_request",
-        "admin_cancelled"
+
+        "cancelled",
+        "returned",
+        "completed"
       ],
       required: true,
     },

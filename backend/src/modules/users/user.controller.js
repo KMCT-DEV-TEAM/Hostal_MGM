@@ -363,7 +363,7 @@ const createWarden = asyncHandler(async (req, res) => {
         temppass: true,
     }, "warden");
 
-    await updateHostelDb(hostelId, null, { $push: { wardens: warden._id } });
+    await updateHostelDb(hostelId, null, null, { $push: { wardens: warden._id } });
 
     const subject = "Your Warden Account Details";
     const text = `Hello ${name}\n\nYour warden account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
@@ -631,6 +631,308 @@ const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, "Bulk warden status updated successfully");
 });
 
+// --- ASSISTANT WARDEN CONTROLLERS ---
+
+const createAssistantWarden = asyncHandler(async (req, res) => {
+    const { name, email, phone, hostelId } = req.body;
+
+    const existingUser = await findExistingUserByEmail(email);
+
+    if (existingUser) {
+        return sendError(res, 400, "Email already exists");
+    }
+
+    const hostelExists = await getHostelByIdDb(hostelId);
+    if (!hostelExists) {
+        return sendError(res, 404, "Hostel not found");
+    }
+
+    const temporaryPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await hashPassword(temporaryPassword);
+
+    const assistantWarden = await createUserDb({
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        temppass: true,
+        createdBy: req.user.id || req.user._id,
+    }, "assistant_warden");
+
+    await updateHostelDb(hostelId, null, null, { $push: { wardens: assistantWarden._id } });
+
+    const subject = "Your Assistant Warden Account Details";
+    const text = `Hello ${name}\n\nYour assistant warden account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+    const html = `<p>Hello ${name},</p><p>Your assistant warden account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+    try {
+        await sendMail(email, subject, text, html);
+    } catch (error) {
+        console.error("Failed to send temporary password email:", error);
+    }
+
+    if (req.user) {
+        await createLogDb({
+            action: "Created Assistant Warden",
+            entityType: "User",
+            entityId: assistantWarden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Created new assistant warden account for ${assistantWarden.name} (${assistantWarden.email})`,
+            status: "success"
+        });
+    }
+
+    getIo()?.emit('userCreated', { role: 'assistant_warden', data: assistantWarden });
+
+    return sendSuccess(res, 201, "Assistant Warden created and assigned to hostel successfully", { data: assistantWarden });
+});
+
+const getAssistantWardens = asyncHandler(async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
+    
+    let additionalQuery = {};
+
+    if (req.user.role === 'admin') {
+      if (!req.user.organization) {
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+      // Find all hostels under the admin's organization
+      const adminHostels = await Hostel.find({ organizations: req.user.organization }).select("wardens");
+      const wardenIds = adminHostels.reduce((acc, hostel) => acc.concat(hostel.wardens), []);
+      
+      additionalQuery = { 
+          $or: [
+              { _id: { $in: wardenIds } },
+              { organization: req.user.organization },
+              { organization: { $exists: false } },
+              { organization: null }
+          ]
+      };
+    }
+    
+    const { users, totalCount } = await getPaginatedUsersByRoleDb("assistant_warden", page, limit, status, search, additionalQuery);
+
+    const wardenIds = users.map(u => u._id);
+    const hostels = await Hostel.find({ wardens: { $in: wardenIds } });
+    
+    const usersWithHostel = users.map(user => {
+        const userObj = user.toObject ? user.toObject() : user;
+        const hostel = hostels.find(h => h.wardens.some(w => w.toString() === user._id.toString()));
+        if (hostel) {
+            userObj.hostel = hostel;
+        }
+        return userObj;
+    });
+
+    return sendSuccess(res, 200, "Assistant Wardens fetched successfully", { 
+      count: users.length, 
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      data: usersWithHostel 
+    });
+});
+
+const getAssistantWardenById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Assistant Warden ID");
+    }
+
+    let additionalQuery = {};
+
+    if (req.user.role === 'admin') {
+      if (!req.user.organization) {
+        return sendError(res, 400, "Admin is not assigned to any organization");
+      }
+      const adminHostels = await Hostel.find({ organizations: req.user.organization }).select("wardens");
+      const wardenIds = adminHostels.reduce((acc, hostel) => acc.concat(hostel.wardens), []);
+      additionalQuery = { _id: { $in: wardenIds } };
+    }
+
+    const assistantWarden = await getUserByIdAndRoleDb(id, "assistant_warden", additionalQuery);
+
+    if (!assistantWarden) {
+      return sendError(res, 404, "Assistant Warden not found");
+    }
+
+    return sendSuccess(res, 200, "Assistant Warden fetched successfully", { data: assistantWarden });
+});
+
+const updateAssistantWarden = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name, phone, hostelId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Assistant Warden ID");
+    }
+
+    const currentWarden = await getUserByIdAndRoleDb(id, "assistant_warden");
+    if (!currentWarden) {
+        return sendError(res, 404, "Assistant Warden not found");
+    }
+
+    if (req.user.role === 'admin' && currentWarden.createdBy?.toString() !== req.user.id.toString() && currentWarden.createdBy?.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, "You do not have permission to edit this Assistant Warden");
+    }
+
+    const assistantWarden = await updateUserByRoleDb(id, "assistant_warden", { name, phone });
+
+    if (hostelId) {
+        await Hostel.updateMany({ wardens: id }, { $pull: { wardens: id } });
+        await Hostel.findByIdAndUpdate(hostelId, { $push: { wardens: id } });
+    }
+
+    if (req.user) {
+        await createLogDb({
+            action: "Updated Assistant Warden",
+            entityType: "User",
+            entityId: assistantWarden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Updated details for assistant warden ${assistantWarden.name}`,
+            status: "success"
+        });
+    }
+
+    getIo()?.emit('userUpdated', { role: 'assistant_warden', id: assistantWarden._id });
+
+    return sendSuccess(res, 200, "Assistant Warden updated successfully", {
+      data: {
+        _id: assistantWarden._id,
+        name: assistantWarden.name,
+        email: assistantWarden.email,
+        phone: assistantWarden.phone,
+        role: assistantWarden.role,
+        isActive: assistantWarden.isActive,
+      }
+    });
+});
+
+const updateAssistantWardenHostel = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { hostelId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return sendError(res, 400, "Invalid Assistant Warden ID");
+    }
+
+    const currentWarden = await getUserByIdAndRoleDb(id, "assistant_warden");
+    if (!currentWarden) {
+        return sendError(res, 404, "Assistant Warden not found");
+    }
+
+    if (req.user.role === 'admin' && currentWarden.createdBy?.toString() !== req.user.id.toString() && currentWarden.createdBy?.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, "You do not have permission to edit this Assistant Warden");
+    }
+
+    const hostelExists = await getHostelByIdDb(hostelId);
+    if (!hostelExists) {
+        return sendError(res, 404, "Hostel not found");
+    }
+
+    await Hostel.updateMany({ wardens: id }, { $pull: { wardens: id } });
+    await Hostel.findByIdAndUpdate(hostelId, { $push: { wardens: id } });
+
+    if (req.user) {
+        await createLogDb({
+            action: "Updated Assistant Warden Hostel",
+            entityType: "User",
+            entityId: id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Reassigned assistant warden ${currentWarden.name} to new hostel`,
+            status: "success"
+        });
+    }
+
+    getIo()?.emit('userUpdated', { role: 'assistant_warden', id: id });
+
+    return sendSuccess(res, 200, "Assistant Warden hostel updated successfully");
+});
+
+const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, "Invalid Assistant Warden ID");
+    }
+
+    const currentWarden = await getUserByIdAndRoleDb(id, "assistant_warden");
+    if (!currentWarden) {
+        return sendError(res, 404, "Assistant Warden not found");
+    }
+
+    if (req.user.role === 'admin' && currentWarden.createdBy?.toString() !== req.user.id.toString() && currentWarden.createdBy?.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, "You do not have permission to change the status of this Assistant Warden");
+    }
+
+    const assistantWarden = await toggleUserActiveStatusByRoleDb(id, "assistant_warden");
+
+    const message = assistantWarden.isActive 
+      ? "Assistant Warden activated successfully" 
+      : "Assistant Warden deactivated successfully";
+
+    if (req.user) {
+        await createLogDb({
+            action: assistantWarden.isActive ? "Activated Assistant Warden" : "Deactivated Assistant Warden",
+            entityType: "User",
+            entityId: assistantWarden._id,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Changed status of assistant warden ${assistantWarden.name} to ${assistantWarden.isActive ? 'Active' : 'Inactive'}`,
+            status: "success"
+        });
+    }
+
+    getIo()?.emit('userUpdated', { role: 'assistant_warden', id: assistantWarden._id });
+
+    return sendSuccess(res, 200, message, {
+      data: {
+        _id: assistantWarden._id,
+        name: assistantWarden.name,
+        email: assistantWarden.email,
+        role: assistantWarden.role,
+        isActive: assistantWarden.isActive,
+      }
+    });
+});
+
+const bulkToggleAssistantWardenStatus = asyncHandler(async (req, res) => {
+    // simplified for admin permission, usually super_admin uses bulk
+    const { ids, isActive } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendError(res, 400, "Please provide an array of Assistant Warden IDs");
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return sendError(res, 400, "Please provide isActive boolean status");
+    }
+
+    await bulkToggleUserStatusByRoleDb(ids, "assistant_warden", isActive);
+
+    if (req.user) {
+        await createLogDb({
+            action: "Bulk Updated Assistant Warden Status",
+            entityType: "User",
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Bulk updated ${ids.length} assistant wardens to ${isActive ? 'Active' : 'Inactive'}`,
+            status: "success"
+        });
+    }
+
+    getIo()?.emit('userUpdated', { role: 'assistant_warden', bulk: true });
+
+    return sendSuccess(res, 200, "Bulk assistant warden status updated successfully");
+});
+
 // --- MAINTENANCE STAFF CONTROLLERS ---
 
 const createMaintenanceStaff = asyncHandler(async (req, res) => {
@@ -866,6 +1168,13 @@ export {
   updateWardenHostel,
   toggleWardenStatus,
   bulkToggleWardenStatus,
+  createAssistantWarden,
+  getAssistantWardens,
+  getAssistantWardenById,
+  updateAssistantWarden,
+  updateAssistantWardenHostel,
+  toggleAssistantWardenStatus,
+  bulkToggleAssistantWardenStatus,
   createMaintenanceStaff,
   getMaintenanceStaff,
   getMaintenanceStaffById,

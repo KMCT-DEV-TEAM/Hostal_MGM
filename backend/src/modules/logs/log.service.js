@@ -6,9 +6,10 @@ import { getIo } from "../../config/socket.js";
  * @param {Object} logData - Log details (action, entityType, entityId, user, userRole, details, status)
  * @returns {Promise<Object>} Created log
  */
-export const createLogDb = async (logData) => {
+export const createLogDb = async (logData, session = null) => {
   try {
-    const log = await ActivityLog.create(logData);
+    const options = session ? { session } : {};
+    const [log] = await ActivityLog.create([logData], options);
     getIo()?.emit('logCreated', log);
     return log;
   } catch (error) {
@@ -18,7 +19,7 @@ export const createLogDb = async (logData) => {
   }
 };
 
-/**
+/** 
  * Retrieves paginated activity logs with optional filtering
  */
 export const getPaginatedLogsDb = async (page = 1, limit = 10, search = "", status = "All", startDate, endDate, requesterRole = 'super_admin') => {

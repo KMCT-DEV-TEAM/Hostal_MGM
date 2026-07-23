@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Modal from '@/components/ui/Modal';
@@ -14,12 +14,14 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     const { register, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset, watch, setValue } = useForm({
         resolver: zodResolver(leaveSchema),
     });
-    const [isWithdrawing, setIsWithdrawing] = React.useState(false);
-    
-    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = React.useState(false);
-    const [isEditConfirmOpen, setIsEditConfirmOpen] = React.useState(false);
-    const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = React.useState(false);
-    const [pendingPayload, setPendingPayload] = React.useState(null);
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [isApiLoading, setIsApiLoading] = useState(false);
+
+    const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+    const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+    const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
+    const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState(null);
 
     const fromDateVal = watch('fromDate');
     const toDateVal = watch('toDate');
@@ -78,17 +80,18 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
     };
 
     const handleFormSubmit = (data) => {
+        setPendingPayload(data);
         if (editData) {
-            setPendingPayload(data);
             setIsEditConfirmOpen(true);
         } else {
-            executeSubmit(data);
+            setIsCreateConfirmOpen(true);
         }
     };
 
     const executeSubmit = async (overrideData) => {
         const data = overrideData || pendingPayload;
         console.log('data:', data);
+        setIsApiLoading(true);
         try {
             let payload;
             const actualPassType = data.passType || (editData ? (editData.passType === 'home_pass' ? 'Home Pass' : 'Out Pass') : initialPassType);
@@ -125,6 +128,8 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
             if (onSuccess) onSuccess();
         } catch (err) {
             showErrorToast(err.message || 'Failed to apply leave');
+        } finally {
+            setIsApiLoading(false);
         }
     };
 
@@ -174,7 +179,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                             <button
                                 type="button"
                                 onClick={handleWithdrawClick}
-                                disabled={isSubmitting || isWithdrawing}
+                                disabled={isSubmitting || isWithdrawing || isApiLoading}
                                 className="px-5 py-2 bg-red-50 text-danger border border-danger rounded-md text-xs font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
                             >
                                 {isWithdrawing ? "Withdrawing..." : "Withdraw"}
@@ -185,17 +190,17 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                         <button
                             type="button"
                             onClick={handleCloseModal}
-                            disabled={isSubmitting || isWithdrawing}
+                            disabled={isSubmitting || isWithdrawing || isApiLoading}
                             className="px-5 py-2 border border-gray-200 rounded-md text-xs font-medium hover:bg-gray-50 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting || isWithdrawing}
+                            disabled={isSubmitting || isWithdrawing || isApiLoading}
                             className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                            {(isSubmitting || isApiLoading) && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                             {editData ? "Update Request" : "Submit Request"}
                         </button>
                     </div>
@@ -212,11 +217,10 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                             setValue('returnTime', '');
                             setValue('outPassCategory', '');
                         }}
-                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                            passTypeVal === 'Home Pass'
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${passTypeVal === 'Home Pass'
                                 ? 'bg-white text-primary shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
-                        }`}
+                            }`}
                     >
                         Home Pass
                     </button>
@@ -227,11 +231,10 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                             setValue('fromDate', '');
                             setValue('toDate', '');
                         }}
-                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                            passTypeVal === 'Out Pass'
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${passTypeVal === 'Out Pass'
                                 ? 'bg-white text-primary shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
-                        }`}
+                            }`}
                     >
                         Out Pass
                     </button>
@@ -316,15 +319,33 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
             </div>
 
             <ConfirmationModal
+                isOpen={isWithdrawConfirmOpen}
+                onClose={() => setIsWithdrawConfirmOpen(false)}
+                onConfirm={confirmWithdraw}
+                title="Withdraw Request"
+                message="Are you sure you want to withdraw this leave request? This action cannot be undone."
+                confirmText="Withdraw"
+                isSubmitting={isWithdrawing}
+                type="danger"
+            />
+            <ConfirmationModal
                 isOpen={isEditConfirmOpen}
                 onClose={() => setIsEditConfirmOpen(false)}
                 onConfirm={() => executeSubmit()}
-                title="Confirm Edit"
-                message="Are you sure you want to save these changes?"
-                confirmText="Save Changes"
-                isSubmitting={isSubmitting}
+                title="Confirm Update"
+                message="Are you sure you want to update this leave request?"
+                confirmText="Update Request"
+                isSubmitting={isApiLoading}
             />
-
+            <ConfirmationModal
+                isOpen={isCreateConfirmOpen}
+                onClose={() => setIsCreateConfirmOpen(false)}
+                onConfirm={() => executeSubmit()}
+                title="Confirm Submission"
+                message="Are you sure you want to submit this leave request?"
+                confirmText="Submit Request"
+                isSubmitting={isApiLoading}
+            />
             <ConfirmationModal
                 isOpen={isDiscardConfirmOpen}
                 onClose={() => setIsDiscardConfirmOpen(false)}
@@ -339,16 +360,6 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
                 confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
             />
 
-            <ConfirmationModal
-                isOpen={isWithdrawConfirmOpen}
-                onClose={() => setIsWithdrawConfirmOpen(false)}
-                onConfirm={confirmWithdraw}
-                title="Withdraw Request"
-                message="Are you sure you want to withdraw this request? This action cannot be undone."
-                confirmText="Withdraw"
-                confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
-                isSubmitting={isWithdrawing}
-            />
         </Modal>
     );
 }

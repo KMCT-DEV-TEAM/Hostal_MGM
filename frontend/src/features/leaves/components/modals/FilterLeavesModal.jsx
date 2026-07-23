@@ -9,12 +9,14 @@ export default function FilterLeavesModal({
     pageTitle,
     isOutPass = false,
     isStudent = false,
+    isMobile = false,
     filters = {},
     onApply,
     onReset
 }) {
     const [localStatus, setLocalStatus] = useState('');
     const [localCategory, setLocalCategory] = useState('');
+    const [localPassType, setLocalPassType] = useState('');
     const [localFromDate, setLocalFromDate] = useState('');
     const [localToDate, setLocalToDate] = useState('');
 
@@ -22,6 +24,7 @@ export default function FilterLeavesModal({
         if (isOpen) {
             setLocalStatus(filters.status || '');
             setLocalCategory(filters.category || '');
+            setLocalPassType(filters.passType || '');
             setLocalFromDate(filters.fromDate || '');
             setLocalToDate(filters.toDate || '');
         }
@@ -30,6 +33,7 @@ export default function FilterLeavesModal({
     const handleReset = () => {
         setLocalStatus('');
         setLocalCategory('');
+        setLocalPassType('');
         setLocalFromDate('');
         setLocalToDate('');
         if (onReset) onReset();
@@ -40,6 +44,7 @@ export default function FilterLeavesModal({
             onApply({
                 status: localStatus,
                 category: localCategory,
+                passType: localPassType,
                 fromDate: localFromDate,
                 toDate: localToDate
             });
@@ -88,7 +93,7 @@ export default function FilterLeavesModal({
                     onChange={(e) => setLocalToDate(e.target.value)}
                 />
 
-                <div className={isOutPass ? "col-span-1" : "col-span-2"}>
+                <div className={isOutPass || isMobile ? "col-span-1" : "col-span-2"}>
                     <label className="block mb-1.5 text-xs font-medium">Status</label>
                     <Dropdown
                         options={[
@@ -106,18 +111,34 @@ export default function FilterLeavesModal({
                         triggerClassName="w-full h-10 px-3 border border-gray-200 rounded-md text-xs bg-white text-gray-700 flex justify-between items-center transition-colors focus:border-secondary"
                     />
                 </div>
-                {isOutPass && (
+                {isMobile && (
                     <div className="col-span-1">
-                        <label className="block mb-1.5 text-xs font-medium">Type</label>
+                        <label className="block mb-1.5 text-xs font-medium">Pass Type</label>
                         <Dropdown
                             options={[
                                 { label: 'All Types', value: '' },
+                                { label: 'Home Pass', value: 'home_pass' },
+                                { label: 'Out Pass', value: 'out_pass' }
+                            ]}
+                            value={localPassType}
+                            onChange={(val) => setLocalPassType(val)}
+                            placeholder="All Types"
+                            triggerClassName="w-full h-10 px-3 border border-gray-200 rounded-md text-xs bg-white text-gray-700 flex justify-between items-center transition-colors focus:border-secondary"
+                        />
+                    </div>
+                )}
+                {(isOutPass || localPassType === 'out_pass') && (
+                    <div className="col-span-1">
+                        <label className="block mb-1.5 text-xs font-medium">Category</label>
+                        <Dropdown
+                            options={[
+                                { label: 'All Categories', value: '' },
                                 { label: 'In House', value: 'in_house' },
                                 { label: 'Out House', value: 'out_house' }
                             ]}
                             value={localCategory}
                             onChange={(val) => setLocalCategory(val)}
-                            placeholder="All Types"
+                            placeholder="All Categories"
                             triggerClassName="w-full h-10 px-3 border border-gray-200 rounded-md text-xs bg-white text-gray-700 flex justify-between items-center transition-colors focus:border-secondary"
                         />
                     </div>
