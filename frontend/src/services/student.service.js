@@ -101,6 +101,11 @@ export async function getStudentsByWarden(params) {
   return response.data;
 }
 
+export async function getStudentsByMentor(params) {
+  const response = await studentApi.getStudentsByMentor(params);
+  return response.data;
+}
+
 export async function getStudentFurnitures(role, id) {
   const resolver = createRoleResolver({
     super_admin: studentApi.getStudentFurnituresBySuperAdmin,
@@ -127,6 +132,7 @@ const STUDENT_FETCHERS = {
   [ROLES.ADMIN]: getStudentsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentsBySuperAdmin,
   [ROLES.WARDEN]: getStudentsByWarden,
+  [ROLES.MENTOR]: getStudentsByMentor,
   [ROLES.ASSISTANT_WARDEN]: getStudentsByWarden,
 };
 
@@ -144,6 +150,7 @@ const STUDENT_FILTER_OPTION_FETCHERS = {
   [ROLES.ADMIN]: getStudentFilterOptionsByAdmin,
   [ROLES.SUPER_ADMIN]: getStudentFilterOptionsBySuperAdmin,
   [ROLES.WARDEN]: getStudentFilterOptionsByWarden,
+  [ROLES.MENTOR]: getStudentFilterOptionsByAdmin,
   [ROLES.ASSISTANT_WARDEN]: getStudentFilterOptionsByWarden,
 };
 

@@ -156,7 +156,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: Students
@@ -167,7 +168,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: StudentDetailView
@@ -203,7 +205,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: Furniture
@@ -213,7 +216,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: FurnitureDetails
@@ -240,7 +244,8 @@ export const dashboardRoutes = [
     {
         path: 'maintenance',
         roles: [
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: Maintenance
@@ -349,7 +354,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceStaffManagement
@@ -359,7 +365,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceStaffTasks
@@ -388,7 +395,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: Attendance
@@ -396,7 +404,8 @@ export const dashboardRoutes = [
     {
         path: 'attendance/scan/:windowId',
         roles: [
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: AttendanceScan
@@ -413,7 +422,8 @@ export const dashboardRoutes = [
         path: 'tasks',
         roles: [
             ROLES.MAINTENANCE_STAFF,
-            ROLES.WARDEN,
+            ROLES.WARDEN
+            ,
             ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceAssignedTasks

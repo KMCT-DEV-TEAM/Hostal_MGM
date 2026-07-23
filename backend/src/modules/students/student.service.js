@@ -249,6 +249,7 @@ const updateStudentsStatusByQuery = async (query, isActive) => {
 const getStudentsService = async ({
   organizationId,
   hostelIds,
+  batchIds,
   query,
 }) => {
   const {
@@ -289,6 +290,8 @@ const getStudentsService = async ({
   if (batchId && mongoose.Types.ObjectId.isValid(batchId)) {
     matchStage.batchId =
       new mongoose.Types.ObjectId(batchId);
+  } else if (batchIds && Array.isArray(batchIds) && batchIds.length > 0) {
+    matchStage.batchId = { $in: batchIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
 
   if (hostelStatus) {

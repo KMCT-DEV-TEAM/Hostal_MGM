@@ -248,7 +248,7 @@ export default function DataView({
             <div className={`flex-1 relative flex flex-col w-full ${pageScrollMode ? 'bg-gray-50/50 md:bg-white' : 'overflow-hidden bg-gray-50/50 md:bg-white min-h-0'}`}>
                 {error ? (
                     <div className="flex-1 flex items-center justify-center">
-                        <ErrorState message={error} />
+                        <ErrorState error={error} />
                     </div>
                 ) : (!data || data.length === 0) && !showAsLoading ? (
                     <div className="flex-1 flex items-center justify-center">

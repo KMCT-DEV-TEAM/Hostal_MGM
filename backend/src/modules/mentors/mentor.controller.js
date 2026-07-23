@@ -31,7 +31,12 @@ export const getMentors = asyncHandler(async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
-    const { status, search, organizationId, startDate, endDate } = req.query;
+    const { status, search, startDate, endDate, organizationId: queryOrgId } = req.query;
+
+    let organizationId = req.user.organization;
+    if (req.user.role === "super_admin") {
+      organizationId = queryOrgId;
+    }
 
     const result = await getPaginatedMentorsDb({
       page,

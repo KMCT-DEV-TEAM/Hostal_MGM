@@ -68,6 +68,9 @@ const studentApi = {
   getStudentFurnituresByWarden: (id) =>
     api.get(`/warden/students/${id}/furnitures`),
 
+  getStudentsByMentor: (params) =>
+    api.get("/admin/students/mentor", { params }),
+
 };
 
 export default studentApi;

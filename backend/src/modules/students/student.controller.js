@@ -13,6 +13,7 @@ import mongoose from "mongoose";
 import Parent from "../parents/parent.model.js";
 import hostelModel from "../hostels/hostel.model.js";
 import studentHostelModel from "../student-hostels/studentHostel.model.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 const createStudent = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
@@ -572,6 +573,44 @@ const getStudentById = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Student details fetched successfully", student);
 });
 
+const getStudentsByMentor = asyncHandler(async (req, res) => {
+  const mentorId = req.user.id;
+
+  const activeAssignments = await MentorAssignment.find({
+    mentorId,
+    status: "active",
+  }).select("batchId")
+    .lean();
+
+  if (!activeAssignments.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: {
+        page: 1,
+        limit: Number(req.query.limit) || 10,
+        totalRecords: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    });
+  }
+
+  const batchIds = activeAssignments.map(({ batchId }) => batchId);
+
+  const result = await getStudentsService({
+    organizationId: req.user.organization,
+    batchIds,
+    query: req.query,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Students fetched successfully",
+    result
+  );
+});
 
 export {
   createStudent,
@@ -584,6 +623,7 @@ export {
   getStudentsByAdmin,
   getStudentsBySuperAdmin,
   getStudentsByWarden,
+  getStudentsByMentor,
   getStudentFilterOptions,
   getStudentFurnitures,
   getStudentById,
