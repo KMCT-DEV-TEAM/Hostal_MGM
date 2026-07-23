@@ -68,7 +68,6 @@ studentAttendanceRouter.get("/dashboard", getAttendanceDashboard);
 studentAttendanceRouter.get("/", validateHistoryQuery, getAttendanceHistory);
 studentAttendanceRouter.get("/calendar", validateCalendarQuery, getAttendanceCalendar);
 studentAttendanceRouter.get("/details/:date", validateDateParam, getAttendanceDetails);
-
 export const parentAttendanceRouter = express.Router();
 parentAttendanceRouter.use(authMiddleware);
 parentAttendanceRouter.use(roleMiddleware("parent"));
@@ -76,3 +75,12 @@ parentAttendanceRouter.get("/dashboard", getAttendanceDashboard);
 parentAttendanceRouter.get("/", validateHistoryQuery, getAttendanceHistory);
 parentAttendanceRouter.get("/calendar", validateCalendarQuery, getAttendanceCalendar);
 parentAttendanceRouter.get("/details/:date", validateDateParam, getAttendanceDetails);
+
+export const mentorAttendanceRouter = express.Router();
+mentorAttendanceRouter.use(authMiddleware);
+mentorAttendanceRouter.use(roleMiddleware("mentor"));
+mentorAttendanceRouter.get("/stats", getDashboardStats);
+mentorAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
+mentorAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
+mentorAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);
+mentorAttendanceRouter.get("/student-calendar", validateCalendarQuery, getAttendanceCalendar);

@@ -93,10 +93,16 @@ export async function getParentsByWarden(params) {
   return response.data;
 }
 
+export async function getParentsByMentor(params) {
+  const response = await parentApi.getParentsByMentor(params);
+  return response.data;
+}
+
 const PARENT_FETCHERS = {
   [ROLES.ADMIN]: getParentsByAdmin,
   [ROLES.SUPER_ADMIN]: getParentsBySuperAdmin,
   [ROLES.WARDEN]: getParentsByWarden,
+  [ROLES.MENTOR]: getParentsByMentor,
 };
 
 const PARENT_EXPORT_FETCHERS = {

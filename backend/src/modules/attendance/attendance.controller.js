@@ -3,6 +3,8 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import jwt from "jsonwebtoken";
 import Hostel from "../hostels/hostel.model.js";
 import Parent from "../parents/parent.model.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import Student from "../students/student.model.js";
 import {
   createAttendanceWindowDb,
   getAttendanceWindowsDb,
@@ -28,6 +30,20 @@ const getScope = async (req) => {
     const hostel = await Hostel.findOne({ wardens: req.user.id, isActive: true }).lean();
     if (hostel) {
       scope.hostelId = hostel._id;
+    }
+  } else if (req.user.role === "mentor") {
+    const activeAssignments = await MentorAssignment.find({
+      mentorId: req.user.id,
+      status: "active",
+    }).select("batchId").lean();
+
+    if (activeAssignments.length > 0) {
+      const batchIds = activeAssignments.map(({ batchId }) => batchId);
+      const students = await Student.find({ batchId: { $in: batchIds } }).select("hostelId").lean();
+      const hostelIds = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+      scope.hostelIds = hostelIds;
+    } else {
+      scope.hostelIds = [];
     }
   }
 

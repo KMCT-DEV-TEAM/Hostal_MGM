@@ -63,6 +63,9 @@ const parentApi = {
   getParentsByWarden: (params) =>
     api.get("/warden/parents/warden", { params }),
 
+  getParentsByMentor: (params) =>
+    api.get("/admin/parents/mentor", { params }),
+
 };
 
 export default parentApi;

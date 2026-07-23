@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import Student from "../students/student.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, exportParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 const createParent = asyncHandler(async (req, res) => {
   const {
@@ -366,6 +367,40 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
     }
   );
 });
+
+const getParentsByMentor = asyncHandler(async (req, res) => {
+  const mentorId = req.user.id;
+
+  const activeAssignments = await MentorAssignment.find({
+    mentorId,
+    status: "active",
+  }).select("batchId").lean();
+
+  if (!activeAssignments.length) {
+    return sendSuccess(res, 200, "Parents fetched successfully", {
+      parents: [],
+      pagination: {
+        page: 1,
+        limit: Number(req.query.limit) || 10,
+        totalRecords: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    });
+  }
+
+  const batchIds = activeAssignments.map(({ batchId }) => batchId);
+
+  const result = await getParentsService({
+    organizationId: req.user.organization,
+    batchIds,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
 export {
   createParent,
   updateParent,
@@ -375,6 +410,7 @@ export {
   getParentsByAdmin,
   getParentsBySuperAdmin,
   getParentsByWarden,
+  getParentsByMentor,
   exportParentsByAdmin,
   exportParentsBySuperAdmin,
   bulkUpdateParentStatus,

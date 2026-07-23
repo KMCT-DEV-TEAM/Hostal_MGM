@@ -213,7 +213,7 @@ const updateParentDb = async (parentProfileId, data) => {
   };
 };
 
-const getParentsService = async ({ organizationId, hostelIds, query }) => {
+const getParentsService = async ({ organizationId, hostelIds, batchIds, query }) => {
   const {
     page = 1,
     limit = 10,
@@ -252,6 +252,10 @@ const getParentsService = async ({ organizationId, hostelIds, query }) => {
 
   if (hostelIds && Array.isArray(hostelIds) && hostelIds.length > 0) {
     parentMatch["student.hostelId"] = { $in: hostelIds.map(id => new mongoose.Types.ObjectId(id)) };
+  }
+
+  if (batchIds && Array.isArray(batchIds) && batchIds.length > 0) {
+    parentMatch["student.batchId"] = { $in: batchIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
 
   const pipeline = [
