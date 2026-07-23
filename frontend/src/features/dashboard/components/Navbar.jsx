@@ -15,8 +15,11 @@ import LogoutModal from '@/components/ui/LogoutModal';
 import NotificationPanel from '../../notifications/components/NotificationPanel';
 import LatestNotificationPopup from '../../notifications/components/LatestNotificationPopup';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 function Navbar({ onMenuClick }) {
+
+    const { isMobile } = useBreakpoint();
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
     const [isProfileOpen, setIsProfileOpen] = React.useState(false);
@@ -88,7 +91,7 @@ function Navbar({ onMenuClick }) {
                 <div className="relative" ref={notificationRef}>
                     <button
                         className="relative p-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                        onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                        onClick={() => isMobile ? navigate("/dashboard/notifications") : setIsNotificationOpen(!isNotificationOpen)}
                     >
                         <img
                             src={bellIcon}
