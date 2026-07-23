@@ -35,6 +35,37 @@ export async function deleteMentor(role, id) {
   return response.data;
 }
 
+// Mentor Assignments
+export async function assignMentor(role, payload) {
+  const response = await mentorApi.assignMentor(role, payload);
+  return response.data;
+}
+
+export async function getMentorAssignments(role, params) {
+  const response = await mentorApi.getMentorAssignments(role, params);
+  return response.data;
+}
+
+export async function getMentorAssignmentById(role, id) {
+  const response = await mentorApi.getMentorAssignmentById(role, id);
+  return response.data;
+}
+
+export async function updateMentorAssignment(role, id, payload) {
+  const response = await mentorApi.updateMentorAssignment(role, id, payload);
+  return response.data;
+}
+
+export async function transferMentor(role, id, payload) {
+  const response = await mentorApi.transferMentor(role, id, payload);
+  return response.data;
+}
+
+export async function endMentorAssignment(role, id) {
+  const response = await mentorApi.endMentorAssignment(role, id);
+  return response.data;
+}
+
 const mentorService = {
   createMentor,
   getMentors,
@@ -43,6 +74,13 @@ const mentorService = {
   updateMentor,
   updateMentorStatus,
   deleteMentor,
+  // Mentor Assignments
+  assignMentor,
+  getMentorAssignments,
+  getMentorAssignmentById,
+  updateMentorAssignment,
+  transferMentor,
+  endMentorAssignment,
 };
 
 export default mentorService;

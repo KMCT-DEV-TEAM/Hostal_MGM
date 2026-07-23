@@ -23,7 +23,7 @@ export default function MentorOrganizations() {
     const [confirmConfig, setConfirmConfig] = useState(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
-    const { organizations, pagination, loading, error } = useMentorOrganizations({
+    const { organizations, pagination, loading, error, refetch } = useMentorOrganizations({
         search: debouncedSearch,
         page,
         limit
@@ -48,10 +48,8 @@ export default function MentorOrganizations() {
                     await createMentor(role, payload);
                     showSuccessToast('Mentor created successfully');
                     setActiveModal(null);
-                    // We don't need to refetch mentor organizations because creating a mentor 
-                    // doesn't immediately change the organizations list (maybe just mentor count)
-                    // But if we want to, we can reload the page or trigger a refetch hook
-                    window.location.reload(); 
+                    // Fetch fresh data seamlessly without page reload
+                    refetch();
                 } catch (error) {
                     showErrorToast(error?.response?.data?.message || error?.message || 'Failed to create mentor');
                     throw error;
