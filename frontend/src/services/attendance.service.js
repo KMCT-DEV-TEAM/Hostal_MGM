@@ -99,6 +99,26 @@ export async function getParentHistory(params) {
     return response.data;
 }
 
+export async function getWindowsByMentor(params) {
+    const response = await attendanceApi.getWindowsByMentor(params);
+    return response.data;
+}
+
+export async function getDashboardStatsByMentor(params) {
+    const response = await attendanceApi.getDashboardStatsByMentor(params);
+    return response.data;
+}
+
+export async function getRecordsByMentor(id, params) {
+    const response = await attendanceApi.getRecordsByMentor(id, params);
+    return response.data;
+}
+
+export async function getStudentCalendarByMentor(params) {
+    const response = await attendanceApi.getStudentCalendarByMentor(params);
+    return response.data;
+}
+
 export async function getParentCalendar(params) {
     const response = await attendanceApi.getParentCalendar(params);
     return response.data;
@@ -109,6 +129,7 @@ const ATTENDANCE_WINDOWS_FETCHERS = {
     [ROLES.ADMIN]: getWindowsByAdmin,
     [ROLES.SUPER_ADMIN]: getWindowsBySuperAdmin,
     [ROLES.ASSISTANT_WARDEN]: getWindowsByWarden,
+    [ROLES.MENTOR]: getWindowsByMentor,
 };
 
 const ATTENDANCE_RECORDS_FETCHERS = {
@@ -116,6 +137,7 @@ const ATTENDANCE_RECORDS_FETCHERS = {
     [ROLES.ADMIN]: getRecordsByAdmin,
     [ROLES.SUPER_ADMIN]: getRecordsBySuperAdmin,
     [ROLES.ASSISTANT_WARDEN]: getRecordsByWarden,
+    [ROLES.MENTOR]: getRecordsByMentor,
 };
 
 const ATTENDANCE_STUDENT_CALENDAR_FETCHERS = {
@@ -125,6 +147,7 @@ const ATTENDANCE_STUDENT_CALENDAR_FETCHERS = {
     [ROLES.STUDENT]: getStudentCalendar,
     [ROLES.PARENT]: getParentCalendar,
     [ROLES.ASSISTANT_WARDEN]: getStudentCalendarByWarden,
+    [ROLES.MENTOR]: getStudentCalendarByMentor,
 };
 
 const ATTENDANCE_DASHBOARD_STATS_FETCHERS = {
@@ -132,6 +155,7 @@ const ATTENDANCE_DASHBOARD_STATS_FETCHERS = {
     [ROLES.ADMIN]: getDashboardStatsByAdmin,
     [ROLES.SUPER_ADMIN]: getDashboardStatsBySuperAdmin,
     [ROLES.ASSISTANT_WARDEN]: getDashboardStatsByWarden,
+    [ROLES.MENTOR]: getDashboardStatsByMentor,
 };
 
 const ATTENDANCE_DASHBOARD_FETCHERS = {

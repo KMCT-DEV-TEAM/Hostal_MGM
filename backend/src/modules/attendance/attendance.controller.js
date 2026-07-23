@@ -193,7 +193,7 @@ export const correctAttendance = asyncHandler(async (req, res) => {
 
 // --- Shared Student & Parent Controllers ---
 const resolveStudentId = async (req) => {
-  if (["warden", "assistant_warden", "admin", "super_admin"].includes(req.user.role)) {
+  if (["warden", "assistant_warden", "admin", "super_admin", "mentor"].includes(req.user.role)) {
     if (!req.query.studentId && !req.params.studentId) {
       throw new Error("studentId is required for staff roles to view student details.");
     }

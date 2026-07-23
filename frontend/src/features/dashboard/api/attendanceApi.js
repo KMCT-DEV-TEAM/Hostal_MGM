@@ -38,12 +38,20 @@ export const getParentHistory = (params) => apiClient.get('/parent/attendance', 
 export const getParentCalendar = (params) => apiClient.get('/parent/attendance/calendar', { params });
 export const getParentDetails = (date) => apiClient.get(`/parent/attendance/details/${date}`);
 
+// --- MENTOR API ---
+export const getWindowsByMentor = (params) => apiClient.get('/mentor/attendance/windows', { params });
+export const getDashboardStatsByMentor = (params) => apiClient.get('/mentor/attendance/stats', { params });
+export const getWindowDetailsByMentor = (id) => apiClient.get(`/mentor/attendance/windows/${id}`);
+export const getRecordsByMentor = (id, params) => apiClient.get(`/mentor/attendance/windows/${id}/records`, { params });
+export const getStudentCalendarByMentor = (params) => apiClient.get('/mentor/attendance/student-calendar', { params });
+
 const attendanceApi = {
     getWindowsByWarden, getDashboardStatsByWarden, createWindowsByWarden, getWindowDetailsByWarden, getRecordsByWarden, scanStudentByWarden, completeWindowByWarden, getStudentCalendarByWarden, correctAttendanceByWarden,
     getWindowsByAdmin, getDashboardStatsByAdmin, getWindowDetailsByAdmin, getRecordsByAdmin, getStudentCalendarByAdmin,
     getWindowsBySuperAdmin, getDashboardStatsBySuperAdmin, getWindowDetailsBySuperAdmin, getRecordsBySuperAdmin, getStudentCalendarBySuperAdmin,
     getStudentDashboard, getStudentHistory, getStudentCalendar, getStudentDetails,
-    getParentDashboard, getParentHistory, getParentCalendar, getParentDetails
+    getParentDashboard, getParentHistory, getParentCalendar, getParentDetails,
+    getWindowsByMentor, getDashboardStatsByMentor, getWindowDetailsByMentor, getRecordsByMentor, getStudentCalendarByMentor
 };
 
 export default attendanceApi;
