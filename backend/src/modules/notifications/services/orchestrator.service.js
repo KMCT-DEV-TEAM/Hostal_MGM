@@ -40,6 +40,8 @@ class OrchestratorService {
             throw error;
         }
 
+
+
         const allowedChannels = templateService.getAllowedChannels(eventName);
         channels = channels.filter(channel => allowedChannels.includes(channel));
 

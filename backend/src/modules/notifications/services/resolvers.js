@@ -120,7 +120,7 @@ export class ParentResolver {
         }
 
         pipeline.push({ $match: matchQuery });
-        
+
         pipeline.push({
             $project: {
                 _id: 0,
