@@ -16,11 +16,6 @@ export default function MentorTable({
     mentors,
     loading,
     error,
-    selectedIds = [],
-    onSelectAll,
-    onSelect,
-    onActivateSelected,
-    onDeactivateSelected,
     onStatusChangeRequest,
     onEdit,
     onView,
@@ -41,7 +36,6 @@ export default function MentorTable({
     const debouncedSearchTerm = useDebounce(searchTerm, 400);
     const [statusFilter, setStatusFilter] = useState('');
     const [organizationFilter, setOrganizationFilter] = useState('');
-    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
     useEffect(() => {
         onSearch?.(debouncedSearchTerm);
@@ -219,25 +213,6 @@ export default function MentorTable({
             toolbarEndSlot={toolbarEndSlot}
             onRowClick={onView}
             addButton={addNewButton}
-            bulkActions={canEdit ? [
-                {
-                    label: 'Activate Selected',
-                    onClick: onActivateSelected,
-                    icon: null,
-                    className: 'text-success hover:bg-green-50'
-                },
-                {
-                    label: 'Deactivate Selected',
-                    onClick: onDeactivateSelected,
-                    icon: null,
-                    className: 'text-danger hover:bg-red-50'
-                }
-            ] : []}
-            selectedIds={selectedIds}
-            onSelectAll={onSelectAll}
-            onSelect={onSelect}
-            isBulkMenuOpen={isBulkMenuOpen}
-            setIsBulkMenuOpen={setIsBulkMenuOpen}
             pagination={{
                 page,
                 limit,

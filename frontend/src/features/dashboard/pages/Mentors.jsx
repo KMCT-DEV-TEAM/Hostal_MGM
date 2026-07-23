@@ -30,7 +30,6 @@ export default function Mentors() {
     const canDelete = role === ROLES.SUPER_ADMIN || role === ROLES.ADMIN;
 
     const [activeModal, setActiveModal] = useState(null);
-    const [selectedIds, setSelectedIds] = useState([]);
     const [editingMentor, setEditingMentor] = useState(null);
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
@@ -80,13 +79,6 @@ export default function Mentors() {
         setActiveModal('edit');
     };
 
-    const handleSelectAll = () => {
-        setSelectedIds(selectedIds.length === mentors.length ? [] : mentors.map(getMentorId));
-    };
-
-    const handleSelect = (id) => {
-        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-    };
 
     const handleStatusChangeRequest = (mentor, newStatus) => {
         if (!canEdit) return;
@@ -179,15 +171,7 @@ export default function Mentors() {
                         searchValue={filters.search}
                         onSearchChange={(v) => handleFilterChange('search', v)}
                     /> */}
-                    {selectedIds.length > 0 && canEdit && (
-                        <BulkActionMenu
-                            selectedCount={selectedIds.length}
-                            actions={[
-                                { label: 'Activate Selected', onClick: () => { }, className: 'text-success hover:bg-green-50' },
-                                { label: 'Deactivate Selected', onClick: () => { }, className: 'text-danger hover:bg-red-50' }
-                            ]}
-                        />
-                    )}
+
                     <MentorTable
                         mentors={mentors}
                         loading={mentorLoading}
@@ -207,9 +191,6 @@ export default function Mentors() {
                         onEdit={handleEditClick}
                         onView={handleViewClick}
                         onFilterChange={handleFilterChange}
-                        selectedIds={selectedIds}
-                        onSelectAll={handleSelectAll}
-                        onSelect={handleSelect}
                         onStatusChangeRequest={handleStatusChangeRequest}
                         statusLoadingIds={statusLoadingIds}
                     />
