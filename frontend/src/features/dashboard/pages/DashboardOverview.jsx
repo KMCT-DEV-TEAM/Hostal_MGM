@@ -129,7 +129,7 @@ function DashboardOverview() {
                         leaveApproved: stats?.leaveApproved || 0,
                         attendance: stats?.attendance || { thisYear: [], lastYear: [] }
                     }));
-                } else if (user?.role === ROLES.WARDEN) {
+                } else if (user?.role === ROLES.WARDEN || user?.role === ROLES.ASSISTANT_WARDEN) {
                     const { data: stats } = await wardenService.getWardenDashboardStats();
                     console.log('stats from warden', stats)
 
@@ -293,7 +293,7 @@ function DashboardOverview() {
             ];
         }
 
-        if (user?.role === ROLES.WARDEN) {
+        if (user?.role === ROLES.WARDEN || user?.role === ROLES.ASSISTANT_WARDEN) {
             return [
                 {
                     label: "Total Students", value: dashboardStats.students, sub: "+45 This month",
@@ -411,7 +411,7 @@ function DashboardOverview() {
         return <MaintenanceStaffDashboardOverview />;
     }
 
-    if (user?.role === ROLES.WARDEN) {
+    if (user?.role === ROLES.WARDEN || user?.role === ROLES.ASSISTANT_WARDEN) {
         return <WardenDashboardOverview user={user} />;
     }
 

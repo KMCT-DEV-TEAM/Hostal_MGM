@@ -108,12 +108,14 @@ const ATTENDANCE_WINDOWS_FETCHERS = {
     [ROLES.WARDEN]: getWindowsByWarden,
     [ROLES.ADMIN]: getWindowsByAdmin,
     [ROLES.SUPER_ADMIN]: getWindowsBySuperAdmin,
+    [ROLES.ASSISTANT_WARDEN]: getWindowsByWarden,
 };
 
 const ATTENDANCE_RECORDS_FETCHERS = {
     [ROLES.WARDEN]: getRecordsByWarden,
     [ROLES.ADMIN]: getRecordsByAdmin,
     [ROLES.SUPER_ADMIN]: getRecordsBySuperAdmin,
+    [ROLES.ASSISTANT_WARDEN]: getRecordsByWarden,
 };
 
 const ATTENDANCE_STUDENT_CALENDAR_FETCHERS = {
@@ -122,12 +124,14 @@ const ATTENDANCE_STUDENT_CALENDAR_FETCHERS = {
     [ROLES.SUPER_ADMIN]: getStudentCalendarBySuperAdmin,
     [ROLES.STUDENT]: getStudentCalendar,
     [ROLES.PARENT]: getParentCalendar,
+    [ROLES.ASSISTANT_WARDEN]: getStudentCalendarByWarden,
 };
 
 const ATTENDANCE_DASHBOARD_STATS_FETCHERS = {
     [ROLES.WARDEN]: getDashboardStatsByWarden,
     [ROLES.ADMIN]: getDashboardStatsByAdmin,
     [ROLES.SUPER_ADMIN]: getDashboardStatsBySuperAdmin,
+    [ROLES.ASSISTANT_WARDEN]: getDashboardStatsByWarden,
 };
 
 const ATTENDANCE_DASHBOARD_FETCHERS = {
@@ -142,16 +146,19 @@ const ATTENDANCE_HISTORY_FETCHERS = {
 
 const ATTENDANCE_CREATE_WINDOW_FETCHERS = {
     [ROLES.WARDEN]: createWindowsByWarden,
+    [ROLES.ASSISTANT_WARDEN]: createWindowsByWarden,
 };
 
 
 
 const ATTENDANCE_SCAN_STUDENT_FETCHERS = {
     [ROLES.WARDEN]: scanStudentByWarden,
+    [ROLES.ASSISTANT_WARDEN]: scanStudentByWarden,
 };
 
 const ATTENDANCE_CORRECT_FETCHERS = {
     [ROLES.WARDEN]: correctAttendanceByWarden,
+    [ROLES.ASSISTANT_WARDEN]: correctAttendanceByWarden,
 };
 
 export const getWindowsByRole = createRoleResolver(ATTENDANCE_WINDOWS_FETCHERS, 'attendance windows');

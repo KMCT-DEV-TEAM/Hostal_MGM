@@ -142,6 +142,74 @@ const validateUpdateWardenHostel = (req, res, next) => {
   next();
 };
 
+// --- ASSISTANT WARDEN VALIDATIONS ---
+
+const validateCreateAssistantWarden = (req, res, next) => {
+  const { name, email, phone, hostelId } = req.body;
+
+  if (!name || !email || !phone || !hostelId) {
+    return res.status(400).json({
+      success: false,
+      message: "name, email, phone, and hostelId are required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hostelId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Hostel ID",
+    });
+  }
+
+  next();
+};
+
+const validateAssistantWardenIdParam = (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Assistant Warden ID",
+    });
+  }
+
+  next();
+};
+
+const validateUpdateAssistantWarden = (req, res, next) => {
+  const { name, phone } = req.body;
+
+  if (!name && !phone) {
+    return res.status(400).json({
+      success: false,
+      message: "At least one field (name or phone) must be provided for update",
+    });
+  }
+
+  next();
+};
+
+const validateUpdateAssistantWardenHostel = (req, res, next) => {
+  const { hostelId } = req.body;
+
+  if (!hostelId) {
+    return res.status(400).json({
+      success: false,
+      message: "hostelId is required",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hostelId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid hostelId",
+    });
+  }
+
+  next();
+};
+
 // --- MAINTENANCE STAFF VALIDATIONS ---
 
 const validateCreateMaintenanceStaff = (req, res, next) => {
@@ -193,6 +261,10 @@ export {
   validateWardenIdParam,
   validateUpdateWarden,
   validateUpdateWardenHostel,
+  validateCreateAssistantWarden,
+  validateAssistantWardenIdParam,
+  validateUpdateAssistantWarden,
+  validateUpdateAssistantWardenHostel,
   validateCreateMaintenanceStaff,
   validateMaintenanceStaffIdParam,
   validateUpdateMaintenanceStaff

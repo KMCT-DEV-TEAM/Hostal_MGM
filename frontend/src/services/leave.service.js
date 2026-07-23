@@ -158,6 +158,7 @@ const LEAVE_FETCHERS = {
   [ROLES.SUPER_ADMIN]: getLeavesBySuperAdmin,
   [ROLES.PARENT]: getLeavesByParent,
   [ROLES.WARDEN]: getLeavesByWarden,
+  [ROLES.ASSISTANT_WARDEN]: getLeavesByWarden,
   [ROLES.STUDENT]: getMyLeaves,
 };
 
@@ -175,6 +176,7 @@ const LEAVE_DETAILS_FETCHERS = {
   [ROLES.STUDENT]: getLeaveById,
   [ROLES.PARENT]: getLeaveByIdParent,
   [ROLES.WARDEN]: getLeaveByIdWarden,
+  [ROLES.ASSISTANT_WARDEN]: getLeaveByIdWarden,
   [ROLES.ADMIN]: getLeaveByIdAdmin,
   [ROLES.SUPER_ADMIN]: getLeaveByIdSuperAdmin,
 };

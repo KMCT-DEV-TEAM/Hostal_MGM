@@ -88,7 +88,7 @@ export default function AttendanceHeader({ onStatsFetched }) {
                     </p>
 
                 </div>
-                {user?.role === ROLES.WARDEN && (
+                {(user?.role === ROLES.WARDEN || user?.role === ROLES.ASSISTANT_WARDEN) && (
                     <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
                         <button
                             onClick={handleCreateAttendance}

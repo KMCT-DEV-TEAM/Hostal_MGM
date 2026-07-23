@@ -22,7 +22,7 @@ const refreshTokenCookieOptions = {
 const login = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
 
-  if (!['super_admin', 'admin', 'warden', 'student', 'parent', 'maintenance_staff'].includes(role)) {
+  if (!['super_admin', 'admin', 'warden', 'assistant_warden', 'student', 'parent', 'maintenance_staff'].includes(role)) {
     return sendError(res, 400, "Invalid login portal");
   }
 
@@ -56,7 +56,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   // Warden check
-  if (role === 'warden' && user.role !== 'warden') {
+  if (role === 'warden' && !['warden', 'assistant_warden'].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login as Warden. Check URL");
   }
 

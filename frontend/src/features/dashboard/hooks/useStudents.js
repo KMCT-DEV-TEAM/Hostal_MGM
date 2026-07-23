@@ -42,7 +42,7 @@ export function useStudents(filters) {
           hasPreviousPage: data?.pagination?.hasPreviousPage || false,
         });
       })
-      .catch((err) => setError(err))
+      .catch((err) => setError(err?.message || 'Failed to fetch students'))
       .finally(() => setLoading(false));
   }, [role, filters]);
 
