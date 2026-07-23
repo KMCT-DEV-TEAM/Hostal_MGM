@@ -3,7 +3,7 @@ import { Pencil, Mail, Phone, Plus, Download, Building, GraduationCap } from 'lu
 import { useTranslation } from '@/hooks/useTranslation';
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
-import { useDebounce } from '@/hooks/useDebounce';
+
 import { ROLES } from '@/constants/roles';
 
 export default function MentorTable({
@@ -28,18 +28,13 @@ export default function MentorTable({
     limit,
     setLimit,
     totalItems,
-    totalPages
+    totalPages,
+    searchQuery
 }) {
     const { t } = useTranslation();
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearchTerm = useDebounce(searchTerm, 400);
     const [statusFilter, setStatusFilter] = useState('');
     const [organizationFilter, setOrganizationFilter] = useState('');
-
-    useEffect(() => {
-        onSearch?.(debouncedSearchTerm);
-    }, [debouncedSearchTerm, onSearch]);
 
     const statusOptions = [
         { label: 'All Status', value: '' },
@@ -208,8 +203,8 @@ export default function MentorTable({
             error={error}
             pageScrollMode={true}
             searchPlaceholder="Search Mentors..."
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
-            searchQuery={searchTerm}
+            onSearchChange={(e) => onSearch?.(e.target.value)}
+            searchQuery={searchQuery}
             toolbarEndSlot={toolbarEndSlot}
             onRowClick={onView}
             addButton={addNewButton}

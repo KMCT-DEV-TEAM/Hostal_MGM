@@ -145,6 +145,10 @@ export default function Mentors() {
         }
     };
 
+    const handleSearchChange = useCallback((v) => {
+        handleFilterChange('search', v);
+    }, [handleFilterChange]);
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-gray-50 flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
@@ -165,7 +169,7 @@ export default function Mentors() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                     {/* <ListToolbar
                         searchPlaceholder="Search mentors..."
                         searchValue={filters.search}
@@ -173,6 +177,8 @@ export default function Mentors() {
                     /> */}
 
                     <MentorTable
+                        onSearch={handleSearchChange}
+                        searchQuery={filters.search}
                         mentors={mentors}
                         loading={mentorLoading}
                         error={mentorError}

@@ -33,13 +33,15 @@ export default function MentorOrganizations() {
                     />
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                     {/* <ListToolbar
                         searchPlaceholder="Search organizations..."
                         searchValue={search}
                         onSearchChange={setSearch}
                     /> */}
                     <MentorOrganizationsTable
+                        onSearch={setSearch}
+                        searchQuery={search}
                         organizations={organizations}
                         loading={loading}
                         error={error}
