@@ -35,6 +35,10 @@ import hostelModel from "../hostels/hostel.model.js";
 import User from "../users/user.model.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import complaintModel from "../complaints/complaint.model.js";
+import { AttendanceRecord } from "../attendance/attendance.model.js";
+import Batch from "../batches/batch.model.js";
+import Announcement from "../announcements/announcement.model.js";
 
 const getPassApproverRecipients = async (studentId, organizationId) => {
   const student = await Student.findById(studentId)
@@ -1364,11 +1368,7 @@ const buildMentorScope = async (req) => {
   };
 };
 
-export const getMentorDashboardStats = asyncHandler(async (req, res) => {
-  const scope = await buildMentorScope(req);
-  const stats = await getManagementDashboardStatsDb(scope);
-  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
-});
+
 
 export const getMentorHostels = asyncHandler(async (req, res) => {
   const scope = await buildMentorScope(req);

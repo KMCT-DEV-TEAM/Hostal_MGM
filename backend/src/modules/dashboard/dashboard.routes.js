@@ -9,7 +9,8 @@ import {
   getAdminStats,
   getStudentDashboardStats,
   getParentDashboardStats,
-  getAttendanceOverview
+  getAttendanceOverview,
+  getMentorDashboardStats
 } from "./dashboard.controller.js";
 import { getDashboardStats } from "./dashboard.services.js";
 
@@ -42,11 +43,20 @@ router.get(
   getStudentDashboardStats
 );
 
+
+
 router.get(
   "/parent/stats",
   authMiddleware,
   roleMiddleware("parent"),
   getParentDashboardStats
+);
+
+router.get(
+  "/mentor/stats",
+  authMiddleware,
+  roleMiddleware("mentor"),
+  getMentorDashboardStats
 );
 
 export default router;

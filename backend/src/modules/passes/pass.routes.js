@@ -28,7 +28,6 @@ import {
   getManagementHostelPasses,
   getAdminPassDetails,
   adminCancelPass,
-  getMentorDashboardStats,
   getMentorHostels,
   getMentorAllPasses,
   getMentorPassDetails,
@@ -52,6 +51,7 @@ import {
   validateRejectPass,
   validateGetPassesUnified
 } from "./pass.validation.js";
+import { getMentorDashboardStats } from "../dashboard/dashboard.controller.js";
 
 export const studentPassRouter = express.Router();
 
@@ -258,6 +258,7 @@ superAdminPassRouter.put("/:id/cancel", superAdminCancelPass);
 
 // ----- Mentor routes -----
 export const mentorPassRouter = express.Router();
+
 
 mentorPassRouter.use(authMiddleware);
 mentorPassRouter.use(roleMiddleware("mentor"));
