@@ -61,7 +61,7 @@ export const assignMentorDb = async (data, user) => {
 
   try {
     // 5. Ensure no active mentor assignment already exists for the batch
-    const existingActive = await MentorAssignment.findOne({ batchId, status: "ACTIVE" }).session(session);
+    const existingActive = await MentorAssignment.findOne({ batchId, status: "active" }).session(session);
     if (existingActive) {
       throw createError("An active mentor is already assigned to this batch", 400);
     }
@@ -73,7 +73,7 @@ export const assignMentorDb = async (data, user) => {
       batchId,
       assignedBy: user.id || user._id,
       assignedAt: new Date(),
-      status: "ACTIVE",
+      status: "active",
       remarks: remarks || null
     }], { session });
 
@@ -289,7 +289,7 @@ export const transferMentorDb = async (id, newMentorId, remarks, user) => {
       throw createError("Original mentor assignment not found", 404);
     }
 
-    if (oldAssignment.status !== "ACTIVE") {
+    if (oldAssignment.status !== "active") {
       throw createError(`Cannot transfer from a non-active assignment (current status: ${oldAssignment.status})`, 400);
     }
 
@@ -322,7 +322,7 @@ export const transferMentorDb = async (id, newMentorId, remarks, user) => {
       batchId: oldAssignment.batchId?._id || oldAssignment.batchId,
       assignedBy: user.id || user._id,
       assignedAt: currentDate,
-      status: "ACTIVE",
+      status: "active",
       remarks: remarks || `Transferred from mentor ${oldAssignment.mentorId?.name}`
     }], { session });
 

@@ -40,6 +40,8 @@ class OrchestratorService {
             throw error;
         }
 
+
+
         const allowedChannels = templateService.getAllowedChannels(eventName);
         channels = channels.filter(channel => allowedChannels.includes(channel));
 
@@ -59,6 +61,7 @@ class OrchestratorService {
 
             // 3. Process the stream in batches
             for await (const user of recipientCursor) {
+                console.log(`[Orchestrator Debug] Resolved recipient:`, JSON.stringify(user));
                 batch.push(user);
                 if (batch.length >= BATCH_SIZE) {
                     await this.processBatch(batch, eventName, data, channels, session, sender);

@@ -28,7 +28,7 @@ export const registerSubscriptionService = async (recipientData, subscriptionDat
     if (error.code === 11000 && error.message.includes('recipient.id_1_recipient.model_1')) {
       console.log('Dropping legacy unique index on PushSubscription...');
       await PushSubscription.collection.dropIndex('recipient.id_1_recipient.model_1').catch(e => console.log('Index already dropped or drop failed:', e.message));
-      
+
       return await PushSubscription.findOneAndUpdate(
         { endpoint },
         {
@@ -75,13 +75,13 @@ export const getActiveSubscriptionsService = async (recipientId, recipientModel)
     'recipient.id': new mongoose.Types.ObjectId(recipientId),
     isActive: true
   };
-  
+
   if (recipientModel) {
     matchQuery['recipient.model'] = recipientModel;
   }
 
   const subscriptions = await PushSubscription.find(matchQuery).lean();
-  
+
   return subscriptions.map(sub => ({
     endpoint: sub.endpoint,
     keys: sub.keys
@@ -95,9 +95,12 @@ export const getActiveSubscriptionsService = async (recipientId, recipientModel)
  * @returns {Promise<Object>} Summary of delivery
  */
 export const sendPushNotification = async (recipient, payload) => {
+  console.log(`[Push Notification Debug] Sending push to recipient:`, JSON.stringify(recipient), `Payload:`, JSON.stringify(payload));
   const activeSubscriptions = await getActiveSubscriptionsService(recipient.id, recipient.model);
+  console.log(`[Push Notification Debug] Found ${activeSubscriptions?.length || 0} active subscriptions for recipient.`);
 
   if (!activeSubscriptions || activeSubscriptions.length === 0) {
+    console.log(`[Push Notification Debug] Skipping push dispatch: no active subscriptions.`);
     return {
       success: false,
       totalSubscriptions: 0,
@@ -114,18 +117,22 @@ export const sendPushNotification = async (recipient, payload) => {
 
   const promises = activeSubscriptions.map(async (sub) => {
     try {
+      console.log(`[Push Notification Debug] Dispatching to endpoint: ${sub.endpoint}`);
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: sub.keys },
         payloadString
       );
+      console.log(`[Push Notification Debug] Successfully sent to: ${sub.endpoint}`);
       successCount++;
     } catch (error) {
+      console.log(error, "notification test ")
+      console.error(`[Push Notification Debug] Failed sending to endpoint: ${sub.endpoint}. Error: ${error.message}, Status Code: ${error.statusCode}`);
       failedCount++;
       const statusCode = error.statusCode;
       failures.push({ endpoint: sub.endpoint, error: error.message, statusCode });
 
-      if (statusCode === 404 || statusCode === 410) {
-        // Invalid/expired subscription - hard delete immediately (it's unusable and will never recover)
+      if (statusCode === 404 || statusCode === 410 || (statusCode === 403 && error.body && error.body.includes("VAPID credentials"))) {
+        console.log(`[Push Notification Debug] Hard-deleting invalid/expired/mismatched subscription: ${sub.endpoint}`);
         await removeSubscriptionService(sub.endpoint, true);
       }
     }
@@ -133,6 +140,7 @@ export const sendPushNotification = async (recipient, payload) => {
 
   await Promise.allSettled(promises);
 
+  console.log(`[Push Notification Debug] Dispatch complete. Success: ${successCount}, Failures: ${failedCount}`);
   return {
     success: true,
     totalSubscriptions: activeSubscriptions.length,

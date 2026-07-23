@@ -129,11 +129,10 @@ export const getPaginatedMentorsDb = async ({
   } else if (organizationId) {
     query.organization = organizationId;
   }
-
   if (status !== undefined && status !== "All" && status !== "") {
-    if (status === "Active" || status === "true" || status === true) {
+    if (status === "true" || status === true) {
       query.isActive = true;
-    } else if (status === "Inactive" || status === "false" || status === false) {
+    } else if (status === "false" || status === false) {
       query.isActive = false;
     }
   }
