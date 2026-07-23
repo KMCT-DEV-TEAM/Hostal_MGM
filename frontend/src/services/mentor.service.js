@@ -36,33 +36,33 @@ export async function deleteMentor(role, id) {
 }
 
 // Mentor Assignments
-export async function assignMentor(role, payload) {
-  const response = await mentorApi.assignMentor(role, payload);
+export async function assignMentor(payload) {
+  const response = await mentorApi.assignMentor(payload);
   return response.data;
 }
 
-export async function getMentorAssignments(role, params) {
-  const response = await mentorApi.getMentorAssignments(role, params);
+export async function getMentorAssignments(params) {
+  const response = await mentorApi.getMentorAssignments(params);
   return response.data;
 }
 
-export async function getMentorAssignmentById(role, id) {
-  const response = await mentorApi.getMentorAssignmentById(role, id);
+export async function getMentorAssignmentById(id) {
+  const response = await mentorApi.getMentorAssignmentById(id);
   return response.data;
 }
 
-export async function updateMentorAssignment(role, id, payload) {
-  const response = await mentorApi.updateMentorAssignment(role, id, payload);
+export async function updateMentorAssignment(id, payload) {
+  const response = await mentorApi.updateMentorAssignment(id, payload);
   return response.data;
 }
 
-export async function transferMentor(role, id, payload) {
-  const response = await mentorApi.transferMentor(role, id, payload);
+export async function transferMentor(id, payload) {
+  const response = await mentorApi.transferMentor(id, payload);
   return response.data;
 }
 
-export async function endMentorAssignment(role, id) {
-  const response = await mentorApi.endMentorAssignment(role, id);
+export async function endMentorAssignment(id) {
+  const response = await mentorApi.endMentorAssignment(id);
   return response.data;
 }
 
