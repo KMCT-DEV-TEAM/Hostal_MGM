@@ -9,7 +9,7 @@ import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
-import leaveService, { getLeaves, getAdminDashboardStats, getWardenDashboardStats } from '@/services/leave.service';
+import leaveService, { getLeaves, getAdminDashboardStats, getWardenDashboardStats, getMentorDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
@@ -29,10 +29,11 @@ export default function AdminLeaves() {
     const isSuperAdmin = role === ROLES.SUPER_ADMIN;
     const isWarden = role === ROLES.WARDEN || role === ROLES.ASSISTANT_WARDEN;
     const isAdmin = role === ROLES.ADMIN;
+    const isMentor = role === ROLES.MENTOR;
 
     const [viewId, setViewId] = useState(null);
     const selectedHostel = hostelName ? decodeURIComponent(hostelName) : null;
-    const isDetailView = !!selectedHostel || isWarden || isAdmin;
+    const isDetailView = !!selectedHostel || isWarden || isAdmin || isMentor;
 
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -137,8 +138,8 @@ export default function AdminLeaves() {
     const [adminStats, setAdminStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
 
     useEffect(() => {
-        if (isAdmin || isWarden) {
-            const fetchStats = isWarden ? getWardenDashboardStats : getAdminDashboardStats;
+        if (isAdmin || isWarden || isMentor) {
+            const fetchStats = isWarden ? getWardenDashboardStats : (isMentor ? getMentorDashboardStats : getAdminDashboardStats);
             fetchStats({ passType: isHomePass ? 'home_pass' : 'out_pass' })
                 .then(res => {
                     const statsData = res?.data?.data || res?.data || res;
@@ -151,7 +152,7 @@ export default function AdminLeaves() {
                 })
                 .catch(console.error);
         }
-    }, [isAdmin, isWarden, isHomePass]);
+    }, [isAdmin, isWarden, isMentor, isHomePass]);
 
     const pageSubtitle = useMemo(() => {
         if (isSuperAdmin) return "Monitor leave requests and approvals across all hostels.";
@@ -181,7 +182,7 @@ export default function AdminLeaves() {
     }, [hostelData, isSuperAdmin, selectedHostel, isAdmin, adminStats]);
 
     const handleUpdateStatus = (id, newStatus) => {
-        if (!isAdmin) return;
+        if (!isAdmin && !isMentor) return;
         if (newStatus === 'Approved' || newStatus === 'approved') {
             setActionModalConfig({ isOpen: true, actionType: 'approved', id });
         } else if (newStatus === 'Rejected' || newStatus === 'rejected') {
@@ -317,16 +318,16 @@ export default function AdminLeaves() {
             <div className="p-4 md:p-6 flex-1 flex flex-col">
                 <div className="mb-6 shrink-0 flex items-center gap-3">
 
-                <PageHeader
-                    title={selectedHostel ? `${isHomePass ? "Home Pass" : "Out Pass"}` : (isHomePass ? "Home Pass" : "Out Pass")}
-                    subtitle={selectedHostel ? `Monitoring student leave records` : pageSubtitle}
-                    actionButton={selectedHostel && (
-                        <BackButton text={'Back to List'} onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}`)} />
-                    )}
-                />
-            </div>
+                    <PageHeader
+                        title={selectedHostel ? `${isHomePass ? "Home Pass" : "Out Pass"}` : (isHomePass ? "Home Pass" : "Out Pass")}
+                        subtitle={selectedHostel ? `Monitoring student leave records` : pageSubtitle}
+                        actionButton={selectedHostel && (
+                            <BackButton text={'Back to List'} onClick={() => navigate(`/dashboard/leaves/${passType || 'home-pass'}`)} />
+                        )}
+                    />
+                </div>
 
-            <LeaveStatsCards stats={stats} isAdmin={true} />
+                <LeaveStatsCards stats={stats} isAdmin={true} />
 
                 <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col mt-4 md:mt-6">
                     {isDetailView ? (
@@ -339,7 +340,7 @@ export default function AdminLeaves() {
                             setStatusFilter={(s) => updateSearchParams({ status: s, page: 1 })}
                             isHomePass={isHomePass}
                             isWarden={isWarden}
-                            isAdmin={isAdmin}
+                            isAdmin={isAdmin || isMentor}
                             passType={passType}
                             selectedHostel={selectedHostel}
                             onRowClick={(r) => setViewId(r._id || r.id)}
@@ -366,66 +367,66 @@ export default function AdminLeaves() {
                     )}
                 </div>
 
-            <LeaveDetailsModal
-                isOpen={!!viewId}
-                onClose={() => {
-                    setViewId(null);
-                    if (refetchPasses) refetchPasses();
-                }}
-                leaveId={viewId}
-                isHomePass={isHomePass}
-                userRole={role}
-            />
+                <LeaveDetailsModal
+                    isOpen={!!viewId}
+                    onClose={() => {
+                        setViewId(null);
+                        if (refetchPasses) refetchPasses();
+                    }}
+                    leaveId={viewId}
+                    isHomePass={isHomePass}
+                    userRole={role}
+                />
 
-            <LeaveActionModal
-                isOpen={actionModalConfig.isOpen}
-                onClose={() => setActionModalConfig({ isOpen: false, actionType: '', id: null })}
-                actionType={actionModalConfig.actionType}
-                onSubmit={handleConfirmAction}
-                isSubmitting={isActionSubmitting}
-            />
+                <LeaveActionModal
+                    isOpen={actionModalConfig.isOpen}
+                    onClose={() => setActionModalConfig({ isOpen: false, actionType: '', id: null })}
+                    actionType={actionModalConfig.actionType}
+                    onSubmit={handleConfirmAction}
+                    isSubmitting={isActionSubmitting}
+                />
 
-            <FilterLeavesModal
-                isOpen={isFilterModalOpen}
-                onClose={() => setIsFilterModalOpen(false)}
-                pageTitle={isHomePass ? 'Home Passes' : 'Out Passes'}
-                isOutPass={!isHomePass}
-                filters={{
-                    status: statusFilter,
-                    category: categoryFilter,
-                    fromDate: fromDateFilter,
-                    toDate: toDateFilter
-                }}
-                onApply={(newFilters) => {
-                    updateSearchParams({
-                        status: newFilters.status,
-                        category: newFilters.category,
-                        fromDate: newFilters.fromDate,
-                        toDate: newFilters.toDate,
-                        page: 1
-                    });
-                    setIsFilterModalOpen(false);
-                }}
-                onReset={() => {
-                    updateSearchParams({
-                        status: '',
-                        category: '',
-                        fromDate: '',
-                        toDate: '',
-                        page: 1
-                    });
-                    setIsFilterModalOpen(false);
-                }}
-            />
+                <FilterLeavesModal
+                    isOpen={isFilterModalOpen}
+                    onClose={() => setIsFilterModalOpen(false)}
+                    pageTitle={isHomePass ? 'Home Passes' : 'Out Passes'}
+                    isOutPass={!isHomePass}
+                    filters={{
+                        status: statusFilter,
+                        category: categoryFilter,
+                        fromDate: fromDateFilter,
+                        toDate: toDateFilter
+                    }}
+                    onApply={(newFilters) => {
+                        updateSearchParams({
+                            status: newFilters.status,
+                            category: newFilters.category,
+                            fromDate: newFilters.fromDate,
+                            toDate: newFilters.toDate,
+                            page: 1
+                        });
+                        setIsFilterModalOpen(false);
+                    }}
+                    onReset={() => {
+                        updateSearchParams({
+                            status: '',
+                            category: '',
+                            fromDate: '',
+                            toDate: '',
+                            page: 1
+                        });
+                        setIsFilterModalOpen(false);
+                    }}
+                />
 
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                title={`Export ${isHomePass ? 'Home Passes' : 'Out Passes'}`}
-                fields={exportFields}
-            />
+                <ExportFilterModal
+                    isOpen={isExportConfirmOpen}
+                    onClose={() => setIsExportConfirmOpen(false)}
+                    onExport={confirmExport}
+                    isExporting={isExporting}
+                    title={`Export ${isHomePass ? 'Home Passes' : 'Out Passes'}`}
+                    fields={exportFields}
+                />
             </div>
         </div>
     );

@@ -16,7 +16,7 @@ import batchRoutes from "./modules/batches/batch.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import passwordRequestRoutes from "./modules/passwordRequests/passwordRequest.routes.js";
 import complaintCategoryRoutes from "./modules/complaintCategories/complaintCategory.routes.js";
-import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter, superAdminPassRouter } from "./modules/passes/pass.routes.js";
+import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter, superAdminPassRouter, mentorPassRouter } from "./modules/passes/pass.routes.js";
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
@@ -31,7 +31,8 @@ import {
   adminAttendanceRouter,
   superAdminAttendanceRouter,
   studentAttendanceRouter,
-  parentAttendanceRouter
+  parentAttendanceRouter,
+  mentorAttendanceRouter
 } from "./modules/attendance/attendance.routes.js";
 import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment.routes.js'
 import errorMiddleware from "./middlewares/error.middleware.js";
@@ -123,6 +124,9 @@ app.use("/api/student-hostels", studentHostelRoutes);
 // ---visitor routes -------
 // ---Mentor routes
 app.use("/api/mentor/students", studentRoutes);
+app.use("/api/mentor/parent", parentRoutes);
+app.use("/api/mentor/attendance", mentorAttendanceRouter);
+app.use("/api/mentor/passes", mentorPassRouter);
 
 // app.use("/api/mentor/students", studentRoutes);
 

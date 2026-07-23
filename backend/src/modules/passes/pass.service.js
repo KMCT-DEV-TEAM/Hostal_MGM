@@ -387,7 +387,10 @@ export const getManagementDashboardStatsDb = async (scope) => {
   endOfToday.setHours(23, 59, 59, 999);
 
   let matchQuery = {};
-  if (scope.organizationId) {
+  if (scope.role === "mentor") {
+    const studentIds = await Student.distinct('_id', { batchId: { $in: (scope.batchIds || []).map(id => new mongoose.Types.ObjectId(id)) } });
+    matchQuery = { studentId: { $in: studentIds.filter(Boolean) } };
+  } else if (scope.organizationId) {
     const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
     matchQuery = { hostelId: { $in: hostelIds.filter(Boolean) } };
   }
@@ -421,7 +424,10 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
 
 
   const matchQuery = { isActive: true };
-  if (scope.organizationId && scope.role === "admin") {
+  if (scope.role === "mentor") {
+    const hostelIds = await Student.distinct('hostelId', { batchId: { $in: (scope.batchIds || []).map(id => new mongoose.Types.ObjectId(id)) } });
+    matchQuery._id = { $in: hostelIds.filter(Boolean) };
+  } else if (scope.organizationId && scope.role === "admin") {
     const hostelIds = await Student.distinct('hostelId', { organizationId: new mongoose.Types.ObjectId(scope.organizationId) });
     matchQuery._id = { $in: hostelIds.filter(Boolean) };
   }
@@ -585,6 +591,12 @@ export const getManagementPassesDb = async (
     studentLookupPipeline.push({
       $match: {
         organizationId: new mongoose.Types.ObjectId(scope.organizationId),
+      },
+    });
+  } else if (scope.role === "mentor") {
+    studentLookupPipeline.push({
+      $match: {
+        batchId: { $in: (scope.batchIds || []).map(id => new mongoose.Types.ObjectId(id)) },
       },
     });
   }

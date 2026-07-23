@@ -152,6 +152,41 @@ export async function getWardenDashboardStats(params) {
   return response.data;
 }
 
+export async function getLeavesByMentor(params) {
+  const response = await leaveApi.getLeavesByMentor(params);
+  return response.data;
+}
+
+export async function getMentorDashboardStats(params) {
+  const response = await leaveApi.getMentorDashboardStats(params);
+  return response.data;
+}
+
+export async function getMentorHostels(params) {
+  const response = await leaveApi.getMentorHostels(params);
+  return response.data;
+}
+
+export async function getLeaveByIdMentor(id) {
+  const response = await leaveApi.getLeaveByIdMentor(id);
+  return response.data;
+}
+
+export async function approveLeaveByMentor(id, payload) {
+  const response = await leaveApi.approveLeaveByMentor(id, payload);
+  return response.data;
+}
+
+export async function rejectLeaveByMentor(id, payload) {
+  const response = await leaveApi.rejectLeaveByMentor(id, payload);
+  return response.data;
+}
+
+export async function cancelLeaveByMentor(id, payload) {
+  const response = await leaveApi.cancelLeaveByMentor(id, payload);
+  return response.data;
+}
+
 // Set up Role Resolvers (matching the structure of other services)
 const LEAVE_FETCHERS = {
   [ROLES.ADMIN]: getLeavesByAdmin,
@@ -160,11 +195,13 @@ const LEAVE_FETCHERS = {
   [ROLES.WARDEN]: getLeavesByWarden,
   [ROLES.ASSISTANT_WARDEN]: getLeavesByWarden,
   [ROLES.STUDENT]: getMyLeaves,
+  [ROLES.MENTOR]: getLeavesByMentor,
 };
 
 const LEAVE_HOSTELS_FETCHERS = {
   [ROLES.ADMIN]: getAdminHostels,
   [ROLES.SUPER_ADMIN]: getSuperAdminHostels,
+  [ROLES.MENTOR]: getMentorHostels,
 };
 
 const LEAVE_STATUS_UPDATE_FETCHERS = {
@@ -179,6 +216,7 @@ const LEAVE_DETAILS_FETCHERS = {
   [ROLES.ASSISTANT_WARDEN]: getLeaveByIdWarden,
   [ROLES.ADMIN]: getLeaveByIdAdmin,
   [ROLES.SUPER_ADMIN]: getLeaveByIdSuperAdmin,
+  [ROLES.MENTOR]: getLeaveByIdMentor,
 };
 
 export const getLeaves = createRoleResolver(LEAVE_FETCHERS, 'leave');
@@ -194,10 +232,12 @@ export const getLeaveDetails = createRoleResolver(LEAVE_DETAILS_FETCHERS, 'leave
 
 const APPROVE_FETCHERS = {
   [ROLES.ADMIN]: approveLeaveByAdmin,
+  [ROLES.MENTOR]: approveLeaveByMentor,
 };
 
 const REJECT_FETCHERS = {
   [ROLES.ADMIN]: rejectLeaveByAdmin,
+  [ROLES.MENTOR]: rejectLeaveByMentor,
 };
 
 export const approvePass = createRoleResolver(APPROVE_FETCHERS, 'approve pass');
@@ -226,6 +266,13 @@ const leaveService = {
   getLeaveDetails,
   approvePass,
   rejectPass,
+  getLeavesByMentor,
+  getMentorDashboardStats,
+  getMentorHostels,
+  getLeaveByIdMentor,
+  approveLeaveByMentor,
+  rejectLeaveByMentor,
+  cancelLeaveByMentor,
 };
 
 export default leaveService;

@@ -34,6 +34,7 @@ import Hostel from "../hostels/hostel.model.js";
 import hostelModel from "../hostels/hostel.model.js";
 import User from "../users/user.model.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 export const createPass = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
@@ -1313,4 +1314,256 @@ export const getParentPassesUnified = asyncHandler(async (req, res) => {
     data: result.passes,
     pagination: result.pagination
   });
+});
+
+const buildMentorScope = async (req) => {
+  const activeAssignments = await MentorAssignment.find({
+    mentorId: req.user.id,
+    status: "active"
+  }).select("batchId").lean();
+
+  const batchIds = activeAssignments.map(({ batchId }) => batchId);
+
+  return {
+    role: "mentor",
+    organizationId: req.user.organization,
+    batchIds,
+    actorId: req.user.id
+  };
+};
+
+export const getMentorDashboardStats = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const stats = await getManagementDashboardStatsDb(scope);
+  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", stats);
+});
+
+export const getMentorHostels = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const { hostels, pagination } = await getManagementHostelsDb(scope, req.query);
+  return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels, pagination });
+});
+
+export const getMentorAllPasses = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const { passes, pagination } = await getManagementPassesDb(req.query, scope, null);
+  return sendSuccess(res, 200, "All passes loaded successfully.", { data: passes, pagination });
+});
+
+export const getMentorPassDetails = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const { id } = req.params;
+
+  const pass = await getManagementPassDetailsDb(id, scope);
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+
+  const student = await Student.findOne({ _id: pass.studentId?._id, batchId: { $in: scope.batchIds } });
+  if (!student) {
+    return sendError(res, 403, "You don't have permission to view this pass.");
+  }
+  return sendSuccess(res, 200, "Pass details loaded successfully.", { data: pass });
+});
+
+export const mentorApprovePass = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const mentorId = scope.actorId;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const pass = await Pass.findById(id).populate("studentId");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+  if (!pass.studentId || !scope.batchIds.some(bId => bId.toString() === pass.studentId.batchId?.toString())) {
+    return sendError(res, 403, "You don't have permission to approve passes for this student.");
+  }
+
+  if (pass.status !== "pending_admin") {
+    return sendError(res, 422, "This pass can't be approved right now because of its current status.");
+  }
+
+  const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
+
+  const updateQuery = {
+    $set: {
+      status: isCancellation ? "cancelled" : "approved",
+      "adminApproval.status": "approved",
+      "adminApproval.actionBy": mentorId,
+      "adminApproval.actionAt": new Date(),
+      "adminApproval.remarks": remarks || "Approved by mentor"
+    },
+    $push: {
+      timeline: {
+        action: "admin_approved",
+        actorId: mentorId,
+        actorRole: "mentor",
+        remarks: remarks || "Approved by mentor",
+        timestamp: new Date()
+      }
+    }
+  };
+
+  const session = await mongoose.startSession();
+  let updatedPass;
+  try {
+    await session.withTransaction(async () => {
+      updatedPass = await Pass.findOneAndUpdate(
+        { _id: id, status: "pending_admin" },
+        updateQuery,
+        { new: true, session }
+      ).populate("studentId");
+      if (!updatedPass) throw new Error("ConcurrencyError");
+    });
+  } catch (err) {
+    if (err.message === "ConcurrencyError") {
+      return sendError(res, 409, "The pass could not be approved. Its status may have changed.");
+    }
+    throw err;
+  } finally {
+    session.endSession();
+  }
+
+  await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: isCancellation ? 'PASS_CANCELLED' : 'PASS_APPROVED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+    data: { message: `Your pass request has been approved by your mentor.` }
+  }).catch(err => console.error("Notification Error:", err));
+
+  return sendSuccess(res, 200, "The pass has been successfully approved.", updatedPass);
+});
+
+export const mentorRejectPass = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const mentorId = scope.actorId;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const pass = await Pass.findById(id).populate("studentId");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+  if (!pass.studentId || !scope.batchIds.some(bId => bId.toString() === pass.studentId.batchId?.toString())) {
+    return sendError(res, 403, "You don't have permission to reject passes for this student.");
+  }
+
+  if (pass.status !== "pending_admin") {
+    return sendError(res, 422, "This pass can't be rejected right now because of its current status.");
+  }
+
+  const updateQuery = {
+    $set: {
+      status: "rejected",
+      "adminApproval.status": "rejected",
+      "adminApproval.actionBy": mentorId,
+      "adminApproval.actionAt": new Date(),
+      "adminApproval.remarks": remarks
+    },
+    $push: {
+      timeline: {
+        action: "admin_rejected",
+        actorId: mentorId,
+        actorRole: "mentor",
+        remarks: remarks,
+        timestamp: new Date()
+      }
+    }
+  };
+
+  const session = await mongoose.startSession();
+  let updatedPass;
+  try {
+    await session.withTransaction(async () => {
+      updatedPass = await Pass.findOneAndUpdate(
+        { _id: id, status: "pending_admin" },
+        updateQuery,
+        { new: true, session }
+      ).populate("studentId");
+      if (!updatedPass) throw new Error("ConcurrencyError");
+    });
+  } catch (err) {
+    if (err.message === "ConcurrencyError") {
+      return sendError(res, 409, "The pass could not be rejected. Its status may have changed.");
+    }
+    throw err;
+  } finally {
+    session.endSession();
+  }
+
+  await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'PASS_REJECTED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+    data: { reason: remarks }
+  }).catch(err => console.error("Notification Error:", err));
+
+  return sendSuccess(res, 200, "The pass request has been rejected.", updatedPass);
+});
+
+export const mentorCancelPass = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScope(req);
+  const mentorId = scope.actorId;
+  const { id } = req.params;
+  const { remarks } = req.body;
+
+  const pass = await Pass.findById(id).populate("studentId");
+  if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+  if (!pass.studentId || !scope.batchIds.some(bId => bId.toString() === pass.studentId.batchId?.toString())) {
+    return sendError(res, 403, "You don't have permission to cancel passes for this student.");
+  }
+
+  if (["completed", "cancelled", "rejected", "returned"].includes(pass.status)) {
+    return sendError(res, 422, "This pass can't be cancelled because of its current status.");
+  }
+
+  if (pass.returnTracking && pass.returnTracking.leftHostelAt) {
+    return sendError(res, 422, "You cannot cancel this pass because the student has already left the hostel.");
+  }
+
+  const session = await mongoose.startSession();
+  let updatedPass;
+  try {
+    await session.withTransaction(async () => {
+      updatedPass = await Pass.findOneAndUpdate(
+        { _id: id, status: { $nin: ["completed", "cancelled", "rejected", "returned"] }, "returnTracking.leftHostelAt": null },
+        {
+          $set: {
+            status: "cancelled"
+          },
+          $push: {
+            timeline: {
+              action: "admin_cancelled",
+              actorId: mentorId,
+              actorRole: "mentor",
+              remarks: `Mentor Cancellation: ${remarks}`,
+              timestamp: new Date()
+            }
+          }
+        },
+        { new: true, session }
+      );
+      if (!updatedPass) throw new Error("ConcurrencyError");
+    });
+  } catch (err) {
+    if (err.message === "ConcurrencyError") {
+      return sendError(res, 409, "We couldn't cancel the pass because its status has recently changed. Please try again.");
+    }
+    throw err;
+  } finally {
+    session.endSession();
+  }
+
+  await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'PASS_ADMIN_CANCELLED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId } },
+    data: { reason: remarks }
+  }).catch(err => console.error("Notification Error:", err));
+
+  if (updatedPass.parentId) {
+    await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'PASS_ADMIN_CANCELLED',
+      target: { type: 'PARENT', filter: { studentId: updatedPass.studentId } },
+      data: { reason: remarks }
+    }).catch(err => console.error("Notification Error:", err));
+  }
+
+  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
