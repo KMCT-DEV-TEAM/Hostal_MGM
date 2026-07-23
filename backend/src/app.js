@@ -121,6 +121,11 @@ app.use("/api/visitor", visitorRoutes);
 app.use("/api/student-hostels", studentHostelRoutes);
 
 // ---visitor routes -------
+// ---Mentor routes
+app.use("/api/mentor/students", studentRoutes);
+
+// app.use("/api/mentor/students", studentRoutes);
+
 app.use(errorMiddleware);
 
 export default app;
