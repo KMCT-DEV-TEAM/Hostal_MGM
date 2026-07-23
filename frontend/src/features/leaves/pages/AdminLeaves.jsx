@@ -27,7 +27,7 @@ export default function AdminLeaves() {
 
     const isHomePass = passType === 'home-pass' || !passType;
     const isSuperAdmin = role === ROLES.SUPER_ADMIN;
-    const isWarden = role === ROLES.WARDEN;
+    const isWarden = role === ROLES.WARDEN || role === ROLES.ASSISTANT_WARDEN;
     const isAdmin = role === ROLES.ADMIN;
 
     const [viewId, setViewId] = useState(null);

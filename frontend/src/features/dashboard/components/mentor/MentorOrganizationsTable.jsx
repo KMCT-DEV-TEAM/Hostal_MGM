@@ -73,8 +73,8 @@ export default function MentorOrganizationsTable({
             loading={loading}
             error={error}
             searchPlaceholder="Search Organizations..."
-            onSearchChange={setSearchTerm}
-            searchValue={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            searchQuery={searchTerm}
             onRowClick={onView}
             pagination={{
                 page,

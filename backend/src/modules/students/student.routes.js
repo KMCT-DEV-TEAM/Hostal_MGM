@@ -25,7 +25,7 @@ router.get(
 router.get(
   "/filters",
   authMiddleware,
-  roleMiddleware("admin", "super_admin", "warden", "mentor"),
+  roleMiddleware("admin", "super_admin", "warden", "mentor", "assistant_warden"),
   getStudentFilterOptions
 );
 
@@ -80,7 +80,7 @@ router.get(
 router.get(
   "/warden",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   getStudentsByWarden
 );
 
@@ -101,7 +101,7 @@ router.get(
 router.get(
   "/:id/furnitures",
   authMiddleware,
-  roleMiddleware("admin", "super_admin", "warden"),
+  roleMiddleware("admin", "super_admin", "warden", "assistant_warden"),
   getStudentFurnitures
 );
 
@@ -118,7 +118,7 @@ router.put(
 router.get(
   "/:id",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden", "mentor"),
+  roleMiddleware("super_admin", "admin", "warden", "mentor", "assistant_warden"),
   validateStudentIdParam,
   getStudentById
 );

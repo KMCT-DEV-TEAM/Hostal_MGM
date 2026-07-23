@@ -64,6 +64,12 @@ export const DASHBOARD_NAV = {
                 },
 
                 {
+                    icon: UserRoundCheck,
+                    label: 'Assistant Wardens',
+                    path: '/dashboard/assistant-wardens'
+                },
+
+                {
                     icon: GraduationCap,
                     label: 'Students',
                     path: '/dashboard/students'
@@ -244,6 +250,12 @@ export const DASHBOARD_NAV = {
                     icon: UserRoundCheck,
                     label: 'Wardens',
                     path: '/dashboard/wardens'
+                },
+
+                {
+                    icon: UserRoundCheck,
+                    label: 'Assistant Wardens',
+                    path: '/dashboard/assistant-wardens'
                 },
 
                 {
@@ -457,6 +469,78 @@ export const DASHBOARD_NAV = {
                         { label: 'Visitors', path: '/dashboard/visitors' },
                         { label: 'Visitors History', path: '/dashboard/visitors/history' }
                     ]
+                },
+                {
+                    icon: CalendarX,
+                    label: 'Leave Requests',
+                    path: '/dashboard/leaves',
+
+                    subItems: [
+                        { label: 'Home Pass', path: '/dashboard/leaves/home-pass' },
+                        { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
+                    ],
+                    badge: { count: 7, variant: 'warning' }
+
+                },
+                {
+                    icon: UtensilsCrossed,
+                    label: 'Mess Management',
+                    path: '/dashboard/mess-management'
+                },
+
+            ]
+        },
+
+        {
+            section: 'REPORTS',
+            items: [
+                {
+                    icon: BarChart2,
+                    label: 'Reports',
+                    path: '/dashboard/reports'
+                }
+            ]
+        },
+    ],
+
+    [ROLES.ASSISTANT_WARDEN]: [
+        {
+            section: 'MAIN',
+
+            items: [
+                {
+                    icon: LayoutGrid,
+                    label: 'Dashboard',
+                    path: '/dashboard'
+                },
+                {
+                    icon: Megaphone,
+                    label: 'Announcements',
+                    path: '/dashboard/announcements'
+                }
+            ]
+        },
+
+        {
+            section: 'USER MANAGEMENT',
+
+            items: [
+                {
+                    icon: GraduationCap,
+                    label: 'Students',
+                    path: '/dashboard/students'
+                }
+            ]
+        },
+
+        {
+            section: 'OPERATIONS',
+
+            items: [
+                {
+                    icon: Calendar,
+                    label: 'Attendance',
+                    path: '/dashboard/attendance'
                 },
                 {
                     icon: CalendarX,

@@ -42,7 +42,7 @@ router.get(
 router.get(
   "/student/:studentId",
   authMiddleware,
-  roleMiddleware("admin", "super_admin", "student", "parent", "warden", "mentor"),
+  roleMiddleware("admin", "super_admin", "student", "parent", "warden", "assistant_warden", "mentor"),
   getStudentHostelTimeline
 );
 

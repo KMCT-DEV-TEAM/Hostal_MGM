@@ -173,7 +173,7 @@ export const wardenPassRouter = express.Router();
 wardenPassRouter.get(
   "/dashboard-stats",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   getWardenDashboardStats
 );
 
@@ -181,7 +181,7 @@ wardenPassRouter.get(
 wardenPassRouter.get(
   "/",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   validateGetPasses,
   getWardenPasses
 );
@@ -189,7 +189,7 @@ wardenPassRouter.get(
 wardenPassRouter.get(
   "/:id",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   validatePassIdParam,
   getWardenPassDetails
 );
@@ -199,7 +199,7 @@ wardenPassRouter.get(
 wardenPassRouter.patch(
   "/:id/mark-left",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   validatePassIdParam,
   markStudentLeftHostel
 );
@@ -207,7 +207,7 @@ wardenPassRouter.patch(
 wardenPassRouter.patch(
   "/:id/mark-returned",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   validatePassIdParam,
   markStudentReturned
 );
@@ -215,7 +215,7 @@ wardenPassRouter.patch(
 wardenPassRouter.patch(
   "/:id/admin-cancel",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   validatePassIdParam,
   validateRejectPass,
   wardenAdminCancelPass

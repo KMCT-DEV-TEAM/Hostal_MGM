@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
         "super_admin",
         "admin",
         "warden",
+        "assistant_warden",
         "student",
         "parent",
         "maintenance_staff",
@@ -42,6 +43,11 @@ const userSchema = new mongoose.Schema(
 
     assignedTask: {
       type: String,
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
 
     organization: {

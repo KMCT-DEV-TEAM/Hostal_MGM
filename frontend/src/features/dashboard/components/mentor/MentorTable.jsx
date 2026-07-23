@@ -212,10 +212,11 @@ export default function MentorTable({
             cardConfig={cardConfig}
             loading={loading}
             error={error}
+            pageScrollMode={true}
             searchPlaceholder="Search Mentors..."
-            onSearchChange={setSearchTerm}
-            searchValue={searchTerm}
-            // toolbarEndSlot={toolbarEndSlot}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            searchQuery={searchTerm}
+            toolbarEndSlot={toolbarEndSlot}
             onRowClick={onView}
             addButton={addNewButton}
             bulkActions={canEdit ? [

@@ -121,6 +121,7 @@ const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loading
                 <p className="text-sm">Check back later for updates.</p>
             </div>
         );
+
     }
 
     return (

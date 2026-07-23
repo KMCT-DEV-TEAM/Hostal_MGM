@@ -1,3 +1,4 @@
+import PhoneInput from '@/components/ui/PhoneInput';
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -147,35 +148,14 @@ const OrganizationFormModal = ({
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
-                                <div className={`flex border ${errors.phone ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden focus-within:border-[#0A437A]`}>
-                                    <div className="px-2 py-2 border-r border-gray-200 flex items-center gap-1 text-xs text-black bg-gray-50">
-                                        <img src="https://flagcdn.com/w20/in.png" alt="India" className="w-4 h-3" />
-                                        +91
-                                    </div>
-                                    <input
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={(e) => {
-                                            const originalVal = e.target.value;
-                                            const val = originalVal.replace(/\D/g, '');
-                                            if (originalVal !== val) {
-                                                setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
-                                            } else {
-                                                setErrors(prev => ({ ...prev, phone: '' }));
-                                            }
-                                            if (val.length <= 10) {
-                                                handleInputChange({ target: { name: 'phone', value: val } });
-                                            }
-                                        }}
-                                        type="text"
-                                        required
-                                        maxLength="10"
-                                        pattern="[0-9]{10}"
-                                        title="Please enter exactly 10 digits"
-                                        placeholder="0000000000"
-                                        className="w-full px-3 py-2 text-xs outline-none"
-                                    />
-                                </div>
+                                <PhoneInput
+                                name="phone"
+                                value={formData.phone || ''}
+                                onChange={(val) => {
+                                    setErrors({ ...formData, phone: val });
+                                    setErrors(prev => ({ ...prev, phone: '' }));
+                                }}
+                            />
                                 {errors.phone && <p className="text-red-500 text-[10px] mt-1">{errors.phone}</p>}
                             </div>
                             {isEditMode && (

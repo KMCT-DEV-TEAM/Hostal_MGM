@@ -10,21 +10,21 @@ const router = express.Router();
 router.get(
   "/stats",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   getWardenStats
 );
 
 router.get(
   "/dashboard-summary",
   authMiddleware,
-  roleMiddleware("warden"),
+  roleMiddleware("warden", "assistant_warden"),
   getWardenDashboardSummary
 );
 
 router.get(
   "/organization-data",
   authMiddleware,
-  roleMiddleware("warden", "admin", "super_admin"),
+  roleMiddleware("warden", "assistant_warden", "admin", "super_admin"),
   getOrganizationData
 );
 

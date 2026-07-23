@@ -24,7 +24,7 @@ const getScope = async (req) => {
     userId: req.user.id,
   };
 
-  if (req.user.role === "warden") {
+  if (req.user.role === "warden" || req.user.role === "assistant_warden") {
     const hostel = await Hostel.findOne({ wardens: req.user.id, isActive: true }).lean();
     if (hostel) {
       scope.hostelId = hostel._id;
@@ -37,7 +37,7 @@ const getScope = async (req) => {
 export const createAttendanceWindow = asyncHandler(async (req, res) => {
   const scope = await getScope(req);
 
-  if (scope.role !== "warden") {
+  if (scope.role !== "warden" && scope.role !== "assistant_warden") {
     return sendError(res, 403, "Only wardens can create an attendance window.");
   }
 
@@ -100,7 +100,7 @@ export const scanStudent = asyncHandler(async (req, res) => {
   const { qrToken } = req.body;
   const scope = await getScope(req);
 
-  if (scope.role !== "warden") {
+  if (!["warden", "assistant_warden"].includes(scope.role)) {
     return sendError(res, 403, "Only wardens can scan students.");
   }
 
@@ -143,7 +143,7 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const scope = await getScope(req);
 
-  if (scope.role !== "warden") {
+  if (!["warden", "assistant_warden"].includes(scope.role)) {
     return sendError(res, 403, "Only wardens can complete an attendance window.");
   }
 
@@ -177,7 +177,7 @@ export const correctAttendance = asyncHandler(async (req, res) => {
 
 // --- Shared Student & Parent Controllers ---
 const resolveStudentId = async (req) => {
-  if (["warden", "admin", "super_admin"].includes(req.user.role)) {
+  if (["warden", "assistant_warden", "admin", "super_admin"].includes(req.user.role)) {
     if (!req.query.studentId && !req.params.studentId) {
       throw new Error("studentId is required for staff roles to view student details.");
     }

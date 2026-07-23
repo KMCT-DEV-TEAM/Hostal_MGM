@@ -2,6 +2,7 @@ import { ROLES } from '@/constants/roles';
 import DashboardOverview from '@/features/dashboard/pages/DashboardOverview';
 import Administrator from '@/features/dashboard/pages/Administrator';
 import WardenManagement from '@/features/dashboard/pages/WardenManagement';
+import AssistantWardenManagement from '@/features/dashboard/pages/AssistantWardenManagement';
 import Parents from '@/features/dashboard/pages/Parents';
 import Students from '@/features/dashboard/pages/Students';
 import StudentDetailView from '@/features/dashboard/components/students/StudentDetailView';
@@ -43,10 +44,10 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.MAINTENANCE_STAFF,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: DashboardOverview
     },
@@ -56,9 +57,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: NotificationsPage
     },
@@ -68,9 +69,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
-            ROLES.STUDENT,
-            ROLES.MENTOR
+            ROLES.STUDENT
         ],
         element: VisitorsPage
     },
@@ -80,9 +81,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
-            ROLES.STUDENT,
-            ROLES.MENTOR
+            ROLES.STUDENT
         ],
         element: VisitorHistoryPage
     },
@@ -92,9 +93,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
-            ROLES.STUDENT,
-            ROLES.MENTOR
+            ROLES.STUDENT
         ],
         element: VisitorDetails
     },
@@ -132,12 +133,20 @@ export const dashboardRoutes = [
     },
 
     {
+        path: 'assistant-wardens',
+        roles: [
+            ROLES.SUPER_ADMIN,
+            ROLES.ADMIN
+        ],
+        element: AssistantWardenManagement
+    },
+
+    {
         path: 'parents',
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
-            ROLES.MENTOR
+            ROLES.WARDEN
         ],
         element: Parents
     },
@@ -147,8 +156,9 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
-            ROLES.MENTOR
+            ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Students
     },
@@ -158,8 +168,9 @@ export const dashboardRoutes = [
         roles: [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
-            ROLES.WARDEN,
-            ROLES.MENTOR
+            ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: StudentDetailView
     },
@@ -195,6 +206,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Furniture
     },
@@ -204,6 +217,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: FurnitureDetails
     },
@@ -230,6 +245,8 @@ export const dashboardRoutes = [
         path: 'maintenance',
         roles: [
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Maintenance
     },
@@ -239,6 +256,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT,
             ROLES.MAINTENANCE_STAFF
@@ -251,6 +269,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT,
             ROLES.MAINTENANCE_STAFF
@@ -270,9 +289,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: Leaves
     },
@@ -280,8 +299,7 @@ export const dashboardRoutes = [
         path: 'leaves/details/:id',
         roles: [
             ROLES.STUDENT,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: LeaveDetails
     },
@@ -291,9 +309,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: Leaves
     },
@@ -303,9 +321,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
-
         ],
         element: Leaves
     },
@@ -315,6 +333,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT
         ],
         element: Complaints
@@ -325,8 +344,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
-            ROLES.STUDENT,
-            ROLES.MENTOR
+            ROLES.ASSISTANT_WARDEN,
+            ROLES.STUDENT
         ],
         element: Complaints
     },
@@ -336,6 +355,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceStaffManagement
     },
@@ -345,6 +366,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceStaffTasks
     },
@@ -361,9 +384,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: Attendance
     },
@@ -373,6 +396,8 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: Attendance
     },
@@ -380,6 +405,8 @@ export const dashboardRoutes = [
         path: 'attendance/scan/:windowId',
         roles: [
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: AttendanceScan
     },
@@ -396,6 +423,8 @@ export const dashboardRoutes = [
         roles: [
             ROLES.MAINTENANCE_STAFF,
             ROLES.WARDEN
+            ,
+            ROLES.ASSISTANT_WARDEN
         ],
         element: MaintenanceAssignedTasks
     },
@@ -405,9 +434,9 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
-            ROLES.PARENT,
-            ROLES.MENTOR
+            ROLES.PARENT
         ],
         element: AnnouncementManagement
     },
@@ -417,6 +446,7 @@ export const dashboardRoutes = [
             ROLES.SUPER_ADMIN,
             ROLES.ADMIN,
             ROLES.WARDEN,
+            ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT
         ],
