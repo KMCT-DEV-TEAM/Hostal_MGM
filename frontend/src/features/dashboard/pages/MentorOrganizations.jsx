@@ -27,18 +27,18 @@ export default function MentorOrganizations() {
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-gray-50 flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
-                    <PageHeader 
-                        title="Mentors Management" 
-                        subtitle="Manage mentors by organization" 
+                    <PageHeader
+                        title="Mentors Management"
+                        subtitle="Manage mentors by organization"
                     />
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
-                    <ListToolbar
+                    {/* <ListToolbar
                         searchPlaceholder="Search organizations..."
                         searchValue={search}
                         onSearchChange={setSearch}
-                    />
+                    /> */}
                     <MentorOrganizationsTable
                         organizations={organizations}
                         loading={loading}

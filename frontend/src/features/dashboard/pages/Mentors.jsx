@@ -21,7 +21,7 @@ export default function Mentors() {
     const { orgId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    
+
     // We get orgName from navigation state if available
     const orgName = location.state?.orgName || '';
 
@@ -34,12 +34,12 @@ export default function Mentors() {
     const [editingMentor, setEditingMentor] = useState(null);
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
-    
+
     // Pagination & Filters for Mentors
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [filters, setFilters] = useState({ search: '', isActive: '', organizationId: orgId || '' });
-    
+
     const [organizationsList, setOrganizationsList] = useState([]);
 
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
@@ -63,7 +63,7 @@ export default function Mentors() {
 
     const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
-        setPage(1); 
+        setPage(1);
     }, []);
 
     const { mentors, pagination: mentorPagination, loading: mentorLoading, error: mentorError, refetch: refetchMentors } = useMentors({
@@ -145,7 +145,7 @@ export default function Mentors() {
             refetchMentors();
         } catch (error) {
             showErrorToast(error?.response?.data?.message || error?.message || `Failed to ${editingMentor ? 'update' : 'create'} mentor`);
-            throw error; 
+            throw error;
         } finally {
             setIsConfirming(false);
             setIsEditConfirmOpen(false);
@@ -159,32 +159,32 @@ export default function Mentors() {
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         {orgId && role === ROLES.SUPER_ADMIN && (
-                            <button 
+                            <button
                                 onClick={() => navigate('/dashboard/mentors')}
                                 className="p-2 hover:bg-gray-200 rounded-full transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5 text-gray-600" />
                             </button>
                         )}
-                        <PageHeader 
-                            title={orgName ? `Mentors - ${orgName}` : "Mentors Management"} 
-                            subtitle={orgId ? "Manage mentors for this organization" : "Manage mentor accounts and details"} 
+                        <PageHeader
+                            title={orgName ? `Mentors - ${orgName}` : "Mentors Management"}
+                            subtitle={orgId ? "Manage mentors for this organization" : "Manage mentor accounts and details"}
                         />
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
-                    <ListToolbar
+                    {/* <ListToolbar
                         searchPlaceholder="Search mentors..."
                         searchValue={filters.search}
                         onSearchChange={(v) => handleFilterChange('search', v)}
-                    />
+                    /> */}
                     {selectedIds.length > 0 && canEdit && (
                         <BulkActionMenu
                             selectedCount={selectedIds.length}
                             actions={[
-                                { label: 'Activate Selected', onClick: () => {}, className: 'text-success hover:bg-green-50' },
-                                { label: 'Deactivate Selected', onClick: () => {}, className: 'text-danger hover:bg-red-50' }
+                                { label: 'Activate Selected', onClick: () => { }, className: 'text-success hover:bg-green-50' },
+                                { label: 'Deactivate Selected', onClick: () => { }, className: 'text-danger hover:bg-red-50' }
                             ]}
                         />
                     )}
