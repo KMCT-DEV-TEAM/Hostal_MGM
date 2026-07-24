@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function DetailsSkeletonLoader() {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mt-4 animate-pulse">
             {/* LEFT COLUMN SKELETON */}
             <div className="space-y-6">
                 <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">

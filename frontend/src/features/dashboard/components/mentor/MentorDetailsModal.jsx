@@ -20,6 +20,7 @@ export default function MentorDetailsModal({
     const role = useAuthStore(s => s.user?.role);
     const [mentor, setMentor] = useState(initialMentor);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('active');
 
     useEffect(() => {
         if (!initialMentor?._id || !role) return;
@@ -63,7 +64,7 @@ export default function MentorDetailsModal({
             {loading ? (
                 <DetailsSkeletonLoader />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mt-4">
                     {/* LEFT COLUMN */}
                     <div className="space-y-6">
 
@@ -85,6 +86,44 @@ export default function MentorDetailsModal({
                                     <DetailRow label="Organization" value={mentor.organization?.name || 'Unassigned'} />
                                 )}
                             </div>
+                        </DetailCard>
+
+                        {/* Recent Activity */}
+                        <DetailCard title="Recent Assignments" subtitle="Recent assignments of the mentor">
+                            <div className="flex items-center gap-6 border-b border-gray-200 mb-4">
+                                <button
+                                    onClick={() => setActiveTab('active')}
+                                    className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === 'active' ? 'text-primary border-primary' : 'text-text-secondary border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+                                >
+                                    Active
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('history')}
+                                    className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === 'history' ? 'text-primary border-primary' : 'text-text-secondary border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+                                >
+                                    History
+                                </button>
+                            </div>
+
+                            <ActivityLog
+                                timeline={activeTab === 'active'
+                                    ? (mentor.activeAssignments || []).map(t => ({
+                                        action: `Assigned to ${t.batchId?.name || 'Batch'}`,
+                                        remarks: t.remarks ? `Assigned: ${t.remarks}` : `Assigned to ${t.batchId?.name || 'Batch'}`,
+                                        timestamp: t.assignedAt,
+                                        actorRole: t.assignedBy?.name || 'Admin',
+                                        meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' }
+                                    }))
+                                    : (mentor.historyAssignments || []).map(t => ({
+                                        action: t.status,
+                                        remarks: t.remarks ? `${t.status}: ${t.remarks}` : t.status,
+                                        timestamp: t.endedAt || t.assignedAt,
+                                        actorRole: t.assignedBy?.name || 'Admin',
+                                        meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' }
+                                    }))
+                                }
+                                defaultText={`No ${activeTab} assignments found.`}
+                            />
                         </DetailCard>
 
                     </div>
@@ -118,18 +157,6 @@ export default function MentorDetailsModal({
                                     icon={<Calendar className="w-4 h-4 text-text-secondary" />}
                                 />
                             </div>
-                        </DetailCard>
-
-                        {/* Recent Activity */}
-                        <DetailCard title="Recent Activity" subtitle="Recent assignment activity for the mentor">
-                            <ActivityLog
-                                timeline={mentor.assignments?.map(t => ({
-                                    action: `Assigned to ${t.batchId?.name || 'Batch'}`,
-                                    timestamp: t.assignedAt || t.createdAt,
-                                    actorRole: t.assignedBy?.name || 'Admin'
-                                }))}
-                                defaultText="No activity recorded yet."
-                            />
                         </DetailCard>
 
                     </div>
