@@ -3,7 +3,7 @@ import { Pencil, Mail, Phone, Plus, Download, Building, GraduationCap } from 'lu
 import { useTranslation } from '@/hooks/useTranslation';
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
-import { useDebounce } from '@/hooks/useDebounce';
+
 import { ROLES } from '@/constants/roles';
 
 export default function MentorTable({
@@ -12,15 +12,9 @@ export default function MentorTable({
     onExport,
     onAddClick,
     canCreate,
-    organizations = [],
     mentors,
     loading,
     error,
-    selectedIds = [],
-    onSelectAll,
-    onSelect,
-    onActivateSelected,
-    onDeactivateSelected,
     onStatusChangeRequest,
     onEdit,
     onView,
@@ -33,29 +27,17 @@ export default function MentorTable({
     limit,
     setLimit,
     totalItems,
-    totalPages
+    totalPages,
+    searchQuery
 }) {
     const { t } = useTranslation();
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearchTerm = useDebounce(searchTerm, 400);
     const [statusFilter, setStatusFilter] = useState('');
-    const [organizationFilter, setOrganizationFilter] = useState('');
-    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
-
-    useEffect(() => {
-        onSearch?.(debouncedSearchTerm);
-    }, [debouncedSearchTerm, onSearch]);
 
     const statusOptions = [
         { label: 'All Status', value: '' },
         { label: 'Active', value: 'Active' },
         { label: 'Inactive', value: 'Inactive' }
-    ];
-
-    const organizationOptions = [
-        { label: 'All Organizations', value: '' },
-        ...organizations.map(org => ({ label: org.name, value: org._id }))
     ];
 
     const columns = [
@@ -178,20 +160,6 @@ export default function MentorTable({
                     triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
                 />
             )}
-            {role === ROLES.SUPER_ADMIN && (
-                <Dropdown
-                    className="flex-1  "
-                    options={organizationOptions}
-                    value={organizationFilter}
-                    onChange={(val) => {
-                        setOrganizationFilter(val);
-                        onFilterChange?.('organizationId', val);
-                    }}
-                    placeholder="All Organizations"
-                    minWidth="w-40"
-                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
-                />
-            )}
 
             {onExport && (
                 <button
@@ -214,30 +182,11 @@ export default function MentorTable({
             error={error}
             pageScrollMode={true}
             searchPlaceholder="Search Mentors..."
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
-            searchQuery={searchTerm}
+            onSearchChange={(e) => onSearch?.(e.target.value)}
+            searchQuery={searchQuery}
             toolbarEndSlot={toolbarEndSlot}
             onRowClick={onView}
             addButton={addNewButton}
-            bulkActions={canEdit ? [
-                {
-                    label: 'Activate Selected',
-                    onClick: onActivateSelected,
-                    icon: null,
-                    className: 'text-success hover:bg-green-50'
-                },
-                {
-                    label: 'Deactivate Selected',
-                    onClick: onDeactivateSelected,
-                    icon: null,
-                    className: 'text-danger hover:bg-red-50'
-                }
-            ] : []}
-            selectedIds={selectedIds}
-            onSelectAll={onSelectAll}
-            onSelect={onSelect}
-            isBulkMenuOpen={isBulkMenuOpen}
-            setIsBulkMenuOpen={setIsBulkMenuOpen}
             pagination={{
                 page,
                 limit,

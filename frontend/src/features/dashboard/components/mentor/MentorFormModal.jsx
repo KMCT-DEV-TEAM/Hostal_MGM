@@ -3,9 +3,11 @@ import Modal from "@/components/ui/Modal";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { getOrganizations } from "@/services/organization.service";
+import AsyncDropdown from "@/components/ui/AsyncDropdown";
 
 export default function MentorFormModal({
   editingMentor,
+  orgId,
   onClose,
   onSave,
 }) {
@@ -20,8 +22,6 @@ export default function MentorFormModal({
     organizationId: ""
   });
 
-  const [organizations, setOrganizations] = useState([]);
-  const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -37,15 +37,21 @@ export default function MentorFormModal({
     }
   }, [editingMentor]);
 
-  useEffect(() => {
-    if (role === ROLES.SUPER_ADMIN) {
-      setLoadingOrgs(true);
-      getOrganizations({ limit: 100, status: 'Active' })
-        .then(res => setOrganizations(res.data || []))
-        .catch(err => console.error("Failed to load organizations", err))
-        .finally(() => setLoadingOrgs(false));
+  const fetchOrgs = async ({ page, search }) => {
+    try {
+      const res = await getOrganizations({ page, limit: 10, search, status: 'Active' });
+      return {
+        options: (res.data || res.organizations || []).map(org => ({
+          label: org.name,
+          value: org._id
+        })),
+        hasMore: res.currentPage < res.totalPages
+      };
+    } catch (err) {
+      console.error("Failed to load organizations", err);
+      return { options: [], hasMore: false };
     }
-  }, [role]);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,7 +64,7 @@ export default function MentorFormModal({
     if (!formData.name) newErrors.name = "Name is required";
     if (!isEdit && !formData.email) newErrors.email = "Email is required";
     if (!formData.phone) newErrors.phone = "Phone is required";
-    if (role === ROLES.SUPER_ADMIN && !isEdit && !formData.organizationId) {
+    if (role === ROLES.SUPER_ADMIN && !isEdit && !orgId && !formData.organizationId) {
       newErrors.organizationId = "Organization is required";
     }
     setErrors(newErrors);
@@ -179,23 +185,21 @@ export default function MentorFormModal({
             <ErrorMessage error={errors.specialization} />
           </div>
 
-          {!isEdit && role === ROLES.SUPER_ADMIN && (
+          {!isEdit && role === ROLES.SUPER_ADMIN && !orgId && (
             <div className="col-span-1 md:col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Organization <span className="text-danger">*</span>
               </label>
-              <select
-                name="organizationId"
+              <AsyncDropdown
                 value={formData.organizationId}
-                onChange={handleChange}
-                disabled={loadingOrgs}
-                className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.organizationId ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
-              >
-                <option value="">{loadingOrgs ? 'Loading...' : 'Select Organization'}</option>
-                {organizations.map(org => (
-                  <option key={org._id} value={org._id}>{org.name}</option>
-                ))}
-              </select>
+                onChange={(val) => {
+                  setFormData(prev => ({ ...prev, organizationId: val }));
+                  if (errors.organizationId) setErrors(prev => ({ ...prev, organizationId: "" }));
+                }}
+                fetchOptions={fetchOrgs}
+                placeholder="Select Organization"
+              // triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.organizationId ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
+              />
               <ErrorMessage error={errors.organizationId} />
             </div>
           )}
