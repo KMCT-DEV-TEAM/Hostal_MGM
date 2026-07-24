@@ -750,7 +750,16 @@ export const DASHBOARD_NAV = {
                         { label: 'Out Pass', path: '/dashboard/leaves/outpass' }
                     ],
                     badge: { count: 7, variant: 'warning' }
-                }
+                },
+                {
+                    icon: Users,
+                    label: 'Visitors Management',
+                    path: '/dashboard/visitors',
+                    subItems: [
+                        { label: 'Visitors', path: '/dashboard/visitors' },
+                        { label: 'Visitors History', path: '/dashboard/visitors/history' }
+                    ]
+                },
             ]
         }
     ]

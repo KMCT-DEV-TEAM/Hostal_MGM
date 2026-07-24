@@ -19,51 +19,19 @@ export default {
                 title: 'New Visitor Request',
                 message: '{{parentName}} has registered a new visitor ({{visitorName}}) for {{studentNames}}.'
             }
-        }
-    },
-
-    VISITOR_UPDATE_PENDING: {
-        admin: {
+        },
+        mentor: {
             "in-app": {
-                title: 'Visitor Update Needs Approval',
-                message: '{{parentName}} has updated sensitive info for visitor ({{visitorName}}). Please review and re-approve.'
+                title: 'New Visitor Request',
+                message: '{{parentName}} has registered a new visitor ({{visitorName}}) for {{studentNames}}.'
             },
             push: {
-                title: 'Visitor Update Needs Approval',
-                body: '{{parentName}} has updated sensitive info for visitor ({{visitorName}}). Please review and re-approve.'
+                title: 'New Visitor Request',
+                body: '{{parentName}} has registered a new visitor ({{visitorName}}) for {{studentNames}}.'
             },
             email: {
-                subject: 'Visitor Update Needs Re-Approval',
-                html: '<h1>Visitor Update Request</h1><p><strong>{{parentName}}</strong> has updated information for visitor <strong>{{visitorName}}</strong>.</p><p>Because sensitive data was changed (Fields: {{updatedFields}}), their status has been moved back to Pending.</p><p>Please review this in the admin portal.</p>'
-            }
-        },
-        warden: {
-            "in-app": {
-                title: 'Visitor Update Needs Approval',
-                message: '{{parentName}} has updated sensitive info for visitor ({{visitorName}}). Pending re-approval.'
-            }
-        }
-    },
-
-    VISITOR_UPDATED: {
-        admin: {
-            "in-app": {
-                title: 'Visitor Updated',
-                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
-            },
-            push: {
-                title: 'Visitor Updated',
-                body: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
-            },
-            email: {
-                subject: 'Visitor Information Updated',
-                html: '<h1>Visitor Updated</h1><p><strong>{{visitorName}}</strong> information has been updated by the Parent.</p><p><strong>Updated Fields:</strong> {{updatedFields}}</p>'
-            }
-        },
-        warden: {
-            "in-app": {
-                title: 'Visitor Updated',
-                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+                subject: 'New Visitor Registration Request',
+                html: '<h1>New Visitor Request</h1><p><strong>{{parentName}}</strong> has registered a new visitor named <strong>{{visitorName}}</strong> for student(s): <strong>{{studentNames}}</strong>.</p><p>Please review this request in the portal.</p>'
             }
         }
     },
@@ -87,6 +55,43 @@ export default {
             "in-app": {
                 title: 'Visitor Update Needs Approval',
                 message: '{{visitorName}} has updated sensitive information ({{updatedFields}}) for student(s): {{studentNames}}.'
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: 'Visitor Update Needs Approval',
+                message: '{{visitorName}} has updated sensitive information ({{updatedFields}}) for student(s): {{studentNames}}. Please review and approve.'
+            },
+            push: {
+                title: 'Visitor Update Needs Approval',
+                body: '{{visitorName}} has updated sensitive information ({{updatedFields}}) for student(s): {{studentNames}}. Please review and approve.'
+            },
+            email: {
+                subject: 'Visitor Update Needs Approval',
+                html: '<h1>Visitor Update Needs Approval</h1><p><strong>{{visitorName}}</strong> has updated sensitive information (<strong>{{updatedFields}}</strong>) for student(s): <strong>{{studentNames}}</strong>.</p><p>Please review this update in the portal.</p>'
+            }
+        }
+    },
+
+    VISITOR_UPDATED: {
+        admin: {
+            "in-app": {
+                title: 'Visitor Updated',
+                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            },
+            push: {
+                title: 'Visitor Updated',
+                body: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
+            },
+            email: {
+                subject: 'Visitor Information Updated',
+                html: '<h1>Visitor Updated</h1><p><strong>{{visitorName}}</strong> information has been updated by the Parent.</p><p><strong>Updated Fields:</strong> {{updatedFields}}</p>'
+            }
+        },
+        warden: {
+            "in-app": {
+                title: 'Visitor Updated',
+                message: '{{visitorName}} information has been updated by the Parent.\nUpdated Fields: {{updatedFields}}'
             }
         }
     },

@@ -3,6 +3,7 @@ import Department from "../departments/department.model.js";
 import Course from "../courses/course.model.js";
 import Student from "../students/student.model.js";
 import { updateStudentsStatusByQuery } from "../students/student.service.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 const checkExistingBatchCodeDb = async (code) => {
   return await Batch.findOne({ code });
@@ -37,7 +38,7 @@ const getPaginatedBatchesDb = async (query, skip, limit, sort) => {
     .skip(skip)
     .limit(limit)
     .select("-__v");
-    
+
   return await Promise.all(batches.map(async (batch) => {
     const studentsCount = await Student.countDocuments({ batchId: batch._id });
     const batchObj = batch.toObject();
@@ -62,7 +63,7 @@ const getAllBatchesDb = async (query, sort) => {
     })
     .sort(sort)
     .select("-__v");
-    
+
   return await Promise.all(batches.map(async (batch) => {
     const studentsCount = await Student.countDocuments({ batchId: batch._id });
     const batchObj = batch.toObject();
@@ -72,7 +73,7 @@ const getAllBatchesDb = async (query, sort) => {
 };
 
 const getBatchByIdDb = async (id) => {
-  return await Batch.findById(id)
+  const batch = await Batch.findById(id)
     .populate({
       path: "departmentId",
       select: "name code",
@@ -85,7 +86,45 @@ const getBatchByIdDb = async (id) => {
         }
       }
     })
-    .select("-__v");
+    .select("-__v")
+    .lean();
+  if (!batch) return null;
+
+  if (batch) {
+    const activeAssignment = await MentorAssignment.findOne({ batchId: id, status: "active" })
+      .populate("mentorId", "name email phone")
+      .populate("assignedBy", "name email")
+      .lean();
+
+    const historyAssignments = await MentorAssignment.find({
+      batchId: id,
+      status: { $ne: "active" }
+    })
+      .populate("mentorId", "name email phone")
+      .populate("assignedBy", "name email")
+      .sort({ assignedAt: -1 })
+      .lean();
+
+    batch.activeMentor = activeAssignment ? {
+      assignmentId: activeAssignment._id,
+      mentor: activeAssignment.mentorId,
+      assignedBy: activeAssignment.assignedBy,
+      assignedAt: activeAssignment.assignedAt,
+      remarks: activeAssignment.remarks
+    } : null;
+
+    batch.recentMentors = historyAssignments.map(a => ({
+      assignmentId: a._id,
+      mentor: a.mentorId,
+      assignedBy: a.assignedBy,
+      assignedAt: a.assignedAt,
+      endedAt: a.endedAt,
+      status: a.status,
+      remarks: a.remarks
+    }));
+  }
+
+  return batch;
 };
 
 const updateBatchDb = async (id, data) => {
@@ -124,7 +163,7 @@ const updateBatchesStatusByQuery = async (query, isActive) => {
 const toggleBatchStatusDb = async (id) => {
   const batch = await Batch.findById(id);
   if (!batch) throw new Error("Batch not found");
-  
+
   batch.isActive = !batch.isActive;
   await batch.save();
 

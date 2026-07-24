@@ -140,6 +140,54 @@ export class ParentResolver {
     }
 }
 
+export class MentorResolver {
+    async resolve(filter = {}) {
+        let matchQuery = { role: 'mentor', isActive: true };
+
+        const pipeline = [];
+
+        if (filter.studentIds && Array.isArray(filter.studentIds)) {
+            const Student = mongoose.model('Student');
+            const MentorAssignment = mongoose.model('MentorAssignment');
+
+            const students = await Student.find({
+                _id: { $in: filter.studentIds.map(id => new mongoose.Types.ObjectId(id)) }
+            }, 'batchId').lean();
+            const batchIds = students.map(s => s.batchId).filter(Boolean);
+
+            const activeAssignments = await MentorAssignment.find({
+                batchId: { $in: batchIds },
+                status: 'active'
+            }, 'mentorId').lean();
+            const mentorIds = activeAssignments.map(a => a.mentorId);
+
+            matchQuery._id = { $in: mentorIds };
+        } else if (filter.mentorIds && Array.isArray(filter.mentorIds)) {
+            matchQuery._id = { $in: filter.mentorIds.map(id => new mongoose.Types.ObjectId(id)) };
+        }
+
+        pipeline.push({ $match: matchQuery });
+        pipeline.push({
+            $project: {
+                _id: 0,
+                id: '$_id',
+                recipientType: { $literal: 'USER' },
+                name: '$name',
+                email: '$email',
+                phone: '$phone',
+                pushToken: '$pushToken',
+                metadata: {
+                    role: '$role',
+                    organization: '$organization'
+                }
+            }
+        });
+
+        return User.aggregate(pipeline).cursor({ batchSize: 500 });
+    }
+}
+
 export const userResolver = new UserResolver();
 export const studentResolver = new StudentResolver();
 export const parentResolver = new ParentResolver();
+export const mentorResolver = new MentorResolver();

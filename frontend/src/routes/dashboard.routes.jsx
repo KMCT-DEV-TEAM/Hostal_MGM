@@ -73,7 +73,8 @@ export const dashboardRoutes = [
             ROLES.WARDEN,
             ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
-            ROLES.STUDENT
+            ROLES.STUDENT,
+            ROLES.MENTOR
         ],
         element: VisitorsPage
     },
@@ -85,7 +86,8 @@ export const dashboardRoutes = [
             ROLES.WARDEN,
             ROLES.ASSISTANT_WARDEN,
             ROLES.PARENT,
-            ROLES.STUDENT
+            ROLES.STUDENT,
+            ROLES.MENTOR
         ],
         element: VisitorHistoryPage
     },

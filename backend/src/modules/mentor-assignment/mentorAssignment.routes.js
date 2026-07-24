@@ -28,8 +28,7 @@ router.patch("/:id", roleMiddleware("super_admin", "admin"), validateUpdateAssig
 router.post("/:id/transfer", roleMiddleware("super_admin", "admin"), validateTransferMentor, transferMentor);
 router.patch("/:id/release", roleMiddleware("super_admin", "admin"), validateAssignmentIdParam, releaseAssignment);
 
-// GET routes (Read-only) open to all authenticated roles (mentors are scoped to their own assignments)
-router.get("/", validateAssignmentPagination, getAssignments);
-router.get("/:id", validateAssignmentIdParam, getAssignmentById);
+router.get("/", roleMiddleware("super_admin", "admin", "mentor", "warden", "assistant_warden"), validateAssignmentPagination, getAssignments);
+router.get("/:id", roleMiddleware("super_admin", "admin", "mentor", "warden", "assistant_warden"), validateAssignmentIdParam, getAssignmentById);
 
 export default router;

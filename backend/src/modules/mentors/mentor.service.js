@@ -188,7 +188,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
   }
 
   const mentor = await User.findOne(query)
-    .select("-password -failedLoginAttempts -lockUntil")
+    .select("-password -failedLoginAttempts -lockUntil -temppass -failedLoginAttempts -settings")
     .populate("organization", "name code email phone")
     .lean();
 
@@ -198,14 +198,25 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
     throw error;
   }
 
-  const assignments = await MentorAssignment.find({ mentorId: mentor._id })
+  const activeAssignments = await MentorAssignment.find({ mentorId: mentor._id, status: "active" })
     .populate("batchId", "name code")
     .populate("organizationId", "name code")
     .populate("assignedBy", "name email")
     .sort({ assignedAt: -1 })
     .lean();
 
-  mentor.assignments = assignments;
+  const historyAssignments = await MentorAssignment.find({
+    mentorId: mentor._id,
+    status: { $ne: "active" }
+  })
+    .populate("batchId", "name code")
+    .populate("organizationId", "name code")
+    .populate("assignedBy", "name email")
+    .sort({ assignedAt: -1 })
+    .lean();
+
+  mentor.activeAssignments = activeAssignments;
+  mentor.historyAssignments = historyAssignments;
 
   return mentor;
 };
