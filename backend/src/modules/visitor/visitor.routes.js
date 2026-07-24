@@ -137,7 +137,7 @@ router.get(
 router.patch(
     '/:visitorId/approve',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin'),
+    roleMiddleware('super_admin', 'admin', 'mentor'),
     validateApproveVisitor,
     visitorController.approveVisitor
 );
@@ -145,7 +145,7 @@ router.patch(
 router.patch(
     '/:visitorId/reject',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin'),
+    roleMiddleware('super_admin', 'admin', 'mentor'),
     validateRejectVisitor,
     visitorController.rejectVisitor
 );
@@ -153,7 +153,7 @@ router.patch(
 router.patch(
     '/:visitorId/status',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'parent'),
+    roleMiddleware('super_admin', 'admin', 'parent', 'mentor'),
     validateUpdateVisitorStatus,
     visitorController.updateVisitorStatus
 );

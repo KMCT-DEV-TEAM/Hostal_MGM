@@ -1,4 +1,4 @@
-import { userResolver, studentResolver, parentResolver } from './resolvers.js';
+import { userResolver, studentResolver, parentResolver, mentorResolver } from './resolvers.js';
 
 /**
  * Recipient Service
@@ -29,6 +29,8 @@ class RecipientService {
                 return await studentResolver.resolve(filter);
             case 'PARENT':
                 return await parentResolver.resolve(filter);
+            case 'MENTOR':
+                return await mentorResolver.resolve(filter);
 
             case 'HOSTEL':
             case 'ROOM':
