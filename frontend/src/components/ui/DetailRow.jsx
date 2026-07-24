@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function DetailRow({ label, value, icon, valueClassName = '' }) {
     return (
-        <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[140px_1fr] items-center py-2 text-sm">
+        <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[140px_1fr] items-center py-1 text-sm">
             <div className="text-gray-500 flex items-center gap-2">
                 {icon && <span className="text-gray-400">{icon}</span>}
                 {label}

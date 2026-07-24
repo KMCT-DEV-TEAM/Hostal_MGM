@@ -344,7 +344,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         </h3>
                         <p className="text-xs text-gray-400 mb-6">Track the live approval status of this request.</p>
 
-                        <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
+                        <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-2.75 before:w-0.5 before:bg-gray-200">
                             {[
                                 // Cancelled Step (only if cancelled)
                                 request.status === 'cancelled' ? {
