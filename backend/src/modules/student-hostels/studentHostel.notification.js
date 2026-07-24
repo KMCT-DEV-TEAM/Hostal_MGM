@@ -45,6 +45,52 @@ export default {
                 title: "Ward's Hostel Changed",
                 body: "Your ward {{studentName}}'s hostel allocation has been changed. New room: {{roomNumber}}."
             }
+        },
+        user: {
+            "in-app": {
+                title: "Warden – Hostel Changed",
+                message: "{{wardenMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Warden – Hostel Changed",
+                body: "{{wardenMessage}}"
+            }
+        }
+    },
+    PASS_HOSTEL_TRANSFERRED: {
+        student: {
+            "in-app": {
+                title: "Pass Hostel Transferred",
+                message: "{{studentMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Pass Hostel Transferred",
+                body: "{{studentMessage}}"
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Pass Hostel Transferred",
+                message: "{{parentMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Pass Hostel Transferred",
+                body: "{{parentMessage}}"
+            }
+        },
+        user: {
+            "in-app": {
+                title: "Warden – Pass Hostel Transferred",
+                message: "{{wardenMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Warden – Pass Hostel Transferred",
+                body: "{{wardenMessage}}"
+            }
         }
     },
     HOSTEL_VACATED: {

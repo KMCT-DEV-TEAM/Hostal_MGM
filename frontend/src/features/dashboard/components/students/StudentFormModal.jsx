@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, FileWarning, Loader2, TriangleAlert } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import OtpInput from "@/components/ui/OtpInput";
 import Dropdown from "@/components/ui/Dropdown";
@@ -749,14 +749,20 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {role === ROLES.SUPER_ADMIN && (
                 <Field label="Organization *" error={fieldErrors.organizationId}>
-                  <Dropdown
+                  {editingStudent ? (
+                    <div className="flex items-center gap-2 text-xs bg-red-50 text-red-800 p-2 rounded-md mb-2">
+                      <TriangleAlert className="text-red-500" size={20} />
+                      <span>You cannot change the organization after the student has been created.</span>
+                    </div>
+                  ) : <Dropdown
                     options={organizationOptions}
                     value={organizationId}
                     onChange={handleOrganizationChange}
                     className="w-full"
                     minWidth=""
                     triggerClassName={dropdownTriggerClass}
-                  />
+                  />}
+
                   <input type="hidden" name="organizationId" value={organizationId} />
                   {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
                 </Field>

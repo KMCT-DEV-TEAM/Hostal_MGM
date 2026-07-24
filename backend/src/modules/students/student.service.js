@@ -134,7 +134,6 @@ const updateStudentDb = async (studentId, data) => {
     "phone",
     "gender",
     "dob",
-    "organizationId",
     "courseId",
     "departmentId",
     "batchId",
@@ -146,10 +145,6 @@ const updateStudentDb = async (studentId, data) => {
 
   const isStatusChanged = data.isActive !== undefined && data.isActive !== student.isActive;
 
-  const oldOrgId = student.organizationId ? student.organizationId.toString() : null;
-  const newOrgId = data.organizationId ? data.organizationId.toString() : null;
-  const isOrganizationChanged = data.organizationId !== undefined && newOrgId !== oldOrgId;
-
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) {
       student[field] = data[field];
@@ -157,10 +152,6 @@ const updateStudentDb = async (studentId, data) => {
   });
 
   await student.save();
-
-  if (isOrganizationChanged && student.hostelId) {
-    await syncHostelOrganizations(student.hostelId);
-  }
 
   if (isStatusChanged) {
     await Parent.updateMany({ studentId: student._id }, { isActive: student.isActive });

@@ -1162,3 +1162,54 @@ export const getParentPassesUnifiedDb = async (studentId, query) => {
     }
   };
 };
+
+export const reassignActivePasses = async (studentId, oldHostelId, newHostelId, actor, session) => {
+  if (!studentId || !newHostelId) {
+    throw new Error("Student ID and destination hostel ID are required.");
+  }
+
+  // Find all active passes for this student that aren't already assigned to the new hostel (idempotence)
+  const activePasses = await Pass.find({
+    studentId,
+    status: { $in: ["pending_parent", "pending_admin", "approved"] },
+    hostelId: { $ne: newHostelId }
+  }).session(session);
+
+  if (activePasses.length === 0) {
+    return {
+      updatedCount: 0,
+      skippedCount: 0,
+      updatedPassIds: []
+    };
+  }
+
+  const updatedPassIds = activePasses.map(p => p._id);
+
+  // Construct bulkWrite operations
+  const bulkOps = activePasses.map(pass => ({
+    updateOne: {
+      filter: { _id: pass._id },
+      update: {
+        $set: { hostelId: newHostelId },
+        $push: {
+          timeline: {
+            action: "hostel_transferred",
+            actorId: actor._id || actor.id,
+            actorRole: actor.role || "system",
+            oldHostelId: pass.hostelId || oldHostelId,
+            newHostelId,
+            remarks: "Pass responsibility transferred after hostel transfer."
+          }
+        }
+      }
+    }
+  }));
+
+  await Pass.bulkWrite(bulkOps, { session });
+
+  return {
+    updatedCount: updatedPassIds.length,
+    skippedCount: 0,
+    updatedPassIds
+  };
+};
