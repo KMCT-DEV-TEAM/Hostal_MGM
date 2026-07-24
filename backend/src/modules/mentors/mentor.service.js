@@ -188,7 +188,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
   }
 
   const mentor = await User.findOne(query)
-    .select("-password -failedLoginAttempts -lockUntil")
+    .select("-password -failedLoginAttempts -lockUntil -temppass -failedLoginAttempts -settings")
     .populate("organization", "name code email phone")
     .lean();
 

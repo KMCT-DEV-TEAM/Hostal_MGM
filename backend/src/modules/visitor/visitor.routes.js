@@ -100,12 +100,12 @@ router.get(
 );
 
 // ---------------------------------------------------------
-// Management Routes (Admin, Super Admin, Warden)
+// Management Routes (Admin, Super Admin, Warden, Mentor)
 // ---------------------------------------------------------
 router.get(
     '/',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'mentor'),
     validateListVisitors,
     visitorController.listVisitors
 );
@@ -127,7 +127,7 @@ router.post(
 router.get(
     '/:visitorId',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'mentor', 'parent', 'student'),
     validateGetVisitorDetails,
     visitorController.getVisitorDetails
 );

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
 import Visitor from './visitor.model.js';
+import MentorAssignment from '../mentors/mentorAssignment.model.js';
 import * as visitorRepository from './visitor.repository.js';
 import {
     VISITOR_STATUS,
@@ -305,6 +306,37 @@ export const listVisitors = async (query, user) => {
             throw error;
         }
         targetHostelId = wardenHostel._id; // Force warden to their hostel
+    } else if (user.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id || user._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        if (batchIds.length === 0) {
+            return {
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                data: []
+            };
+        }
+        let studentQuery = { batchId: { $in: batchIds } };
+        if (hostel) {
+            studentQuery.hostelId = hostel;
+        }
+        const studentsInBatches = await Student.find(studentQuery, "_id").lean();
+        const studentIds = studentsInBatches.map(s => s._id);
+        if (studentIds.length === 0) {
+            return {
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                data: []
+            };
+        }
+        matchStage.students = { $in: studentIds };
     } else {
         const error = new Error('Unauthorized role to list visitors.');
         error.status = 403;
@@ -443,6 +475,20 @@ export const getVisitorDetails = async (visitorId, user) => {
         const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
         if (!hasOverlap) {
             throw Object.assign(new Error('Unauthorized: Visitor not linked to your students.'), { status: 403 });
+        }
+    } else if (user.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id || user._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        
+        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
+        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
+        
+        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
+        if (!hasOverlap) {
+            throw Object.assign(new Error('Unauthorized: Visitor not linked to your assigned batches.'), { status: 403 });
         }
     }
 
