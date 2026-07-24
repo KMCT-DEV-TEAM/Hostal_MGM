@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar, UserCircle2 } from 'lucide-react';
-import InfoRow from '@/components/ui/InfoRow';
+import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar, UserCircleIcon, UserCircle2 } from 'lucide-react';
 import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 import ActivityLog from '@/components/ui/ActivityLog';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import MentorAssignmentModal from './MentorAssignmentModal';
+import MentorDetailsModal from '../mentor/MentorDetailsModal';
 import BatchService from '@/services/batch.service';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 const BatchDetailView = ({ selectedBatchDetail, setView }) => {
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+    const [selectedMentorForModal, setSelectedMentorForModal] = useState(null);
     const [batch, setBatch] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -181,10 +182,14 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                         <DetailCard title="Recent Mentors" subtitle="Historical mentor assignments">
                             <ActivityLog
                                 timeline={(displayBatch.recentMentors || []).map(m => ({
-                                    remarks: m.remarks || `Mentor: ${m.mentor?.name || 'Unknown'}`,
-                                    action: m.status,
+                                    remarks: m.remarks ? `${m.status}: ${m.remarks}` : m.status,
+                                    meta: {
+                                        label: 'Mentor',
+                                        value: m.mentor?.name || 'Unknown'
+                                    },
                                     timestamp: m.endedAt || m.assignedAt,
-                                    actorRole: m.assignedBy?.name || 'System'
+                                    actorRole: m.assignedBy?.name || 'System',
+                                    onClick: m.mentor ? () => setSelectedMentorForModal(m.mentor) : undefined
                                 }))}
                                 defaultText="No previous mentors found."
                             />
@@ -203,6 +208,14 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                     fetchBatch();
                 }}
             />
+
+            {selectedMentorForModal && (
+                <MentorDetailsModal
+                    mentor={{ _id: typeof selectedMentorForModal === 'string' ? selectedMentorForModal : selectedMentorForModal._id }}
+                    onClose={() => setSelectedMentorForModal(null)}
+                    zIndex={60}
+                />
+            )}
         </>
     );
 };

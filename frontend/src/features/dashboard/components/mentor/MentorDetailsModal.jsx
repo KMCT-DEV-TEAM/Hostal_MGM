@@ -14,7 +14,8 @@ import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 export default function MentorDetailsModal({
     mentor: initialMentor,
     onClose,
-    onEdit
+    onEdit,
+    zIndex
 }) {
     const role = useAuthStore(s => s.user?.role);
     const [mentor, setMentor] = useState(initialMentor);
@@ -57,6 +58,7 @@ export default function MentorDetailsModal({
             subtitle="Detailed view of the mentor's profile"
             maxWidth="max-w-5xl"
             bottomSheetOnMobile={true}
+            zIndex={zIndex || 50}
         >
             {loading ? (
                 <DetailsSkeletonLoader />
