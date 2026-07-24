@@ -46,12 +46,30 @@ export default {
             "in-app": {
                 title: "New Pass Request",
                 message: "{{studentName}} has submitted a new {{passTypeLabel}} request for review."
+            },
+            push: {
+                title: "New Pass Request",
+                body: "{{studentName}} has submitted a new {{passTypeLabel}} request for review."
             }
         },
         warden: {
             "in-app": {
                 title: "New Pass Request",
                 message: "{{studentName}} has submitted a new {{passTypeLabel}} request for review."
+            },
+            push: {
+                title: "New Pass Request",
+                body: "{{studentName}} has submitted a new {{passTypeLabel}} request for review."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "New Pass Request",
+                message: "{{studentName}} has submitted a new {{passTypeLabel}} request for review."
+            },
+            push: {
+                title: "New Pass Request",
+                body: "{{studentName}} has submitted a new {{passTypeLabel}} request for review."
             }
         }
     },
@@ -87,12 +105,30 @@ export default {
             "in-app": {
                 title: "Pass Ready for Final Approval",
                 message: "Parent ({{parentName}}) has approved the {{passTypeLabel}} request for {{studentName}}. It now requires your final approval."
+            },
+            push: {
+                title: "Pass Ready for Final Approval",
+                body: "Parent ({{parentName}}) has approved the {{passTypeLabel}} request for {{studentName}}."
             }
         },
         warden: {
             "in-app": {
                 title: "Pass Ready for Final Approval",
                 message: "Parent ({{parentName}}) has approved the {{passTypeLabel}} request for {{studentName}}. It now requires your final approval."
+            },
+            push: {
+                title: "Pass Ready for Final Approval",
+                body: "Parent ({{parentName}}) has approved the {{passTypeLabel}} request for {{studentName}}."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Ready for Final Approval",
+                message: "Parent ({{parentName}}) has approved the {{passTypeLabel}} request for {{studentName}}. It now requires your final approval."
+            },
+            push: {
+                title: "Pass Ready for Final Approval",
+                body: "Parent ({{parentName}}) has approved the {{passTypeLabel}} request for {{studentName}}."
             }
         }
     },
@@ -128,12 +164,30 @@ export default {
             "in-app": {
                 title: "Pass Approved",
                 message: "You have successfully approved the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Approved",
+                body: "The pass request for {{studentName}} has been approved."
             }
         },
         warden: {
             "in-app": {
                 title: "Pass Approved",
                 message: "The administration ({{approvedBy}}) has officially approved the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Approved",
+                body: "The pass request for {{studentName}} has been approved."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Approved",
+                message: "The pass request for {{studentName}} has been officially approved."
+            },
+            push: {
+                title: "Pass Approved",
+                body: "The pass request for {{studentName}} has been approved."
             }
         }
     },
@@ -169,12 +223,30 @@ export default {
             "in-app": {
                 title: "Pass Declined",
                 message: "You have declined the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "The pass request for {{studentName}} has been declined."
             }
         },
         warden: {
             "in-app": {
                 title: "Pass Request Declined",
                 message: "The administration ({{approvedBy}}) has declined the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "The pass request for {{studentName}} has been declined."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Request Declined",
+                message: "The pass request for {{studentName}} has been declined."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "The pass request for {{studentName}} has been declined."
             }
         }
     },
@@ -210,12 +282,30 @@ export default {
             "in-app": {
                 title: "Pass Request Declined",
                 message: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
             }
         },
         warden: {
             "in-app": {
                 title: "Pass Request Declined",
                 message: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Request Declined",
+                message: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "Parent ({{parentName}}) has declined the {{passTypeLabel}} request for {{studentName}}."
             }
         }
     },
@@ -225,6 +315,10 @@ export default {
             "in-app": {
                 title: "Pass Request Modified",
                 message: "A pass request for {{studentName}} was updated. {{message}}"
+            },
+            push: {
+                title: "Pass Request Modified",
+                body: "A pass request for {{studentName}} was updated."
             },
             email: {
                 subject: "Update: Pass Request Modified",
@@ -240,12 +334,30 @@ export default {
             "in-app": {
                 title: "Pass Request Modified",
                 message: "A pass request for {{studentName}} was updated."
+            },
+            push: {
+                title: "Pass Request Modified",
+                body: "A pass request for {{studentName}} was updated."
             }
         },
         warden: {
             "in-app": {
                 title: "Pass Request Modified",
                 message: "A pass request for {{studentName}} was updated."
+            },
+            push: {
+                title: "Pass Request Modified",
+                body: "A pass request for {{studentName}} was updated."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Request Modified",
+                message: "A pass request for {{studentName}} was updated."
+            },
+            push: {
+                title: "Pass Request Modified",
+                body: "A pass request for {{studentName}} was updated."
             }
         }
     },
@@ -281,6 +393,16 @@ export default {
                     <p>A pass for your ward, <strong>{{studentName}}</strong>, has been cancelled by the administration.</p>
                     <p><strong>Reason:</strong> {{reason}}</p>
                 `
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Cancelled by Administration",
+                message: "A pass for {{studentName}} has been cancelled by administration. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled by Administration",
+                body: "A pass for {{studentName}} has been cancelled by administration."
             }
         }
     },

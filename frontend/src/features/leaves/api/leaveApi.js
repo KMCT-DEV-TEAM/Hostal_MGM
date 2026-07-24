@@ -46,6 +46,21 @@ const leaveApi = {
   getLeaveByIdWarden: (id) => api.get(`/warden/passes/${id}`),
   markStudentLeft: (id) => api.patch(`/warden/passes/${id}/mark-left`),
   markStudentReturned: (id) => api.patch(`/warden/passes/${id}/mark-returned`),
+
+  // Mentor
+  getMentorHostels: (params) => api.get("/mentor/passes/hostels", { params }),
+  getMentorDashboardStats: (params) => api.get("/mentor/dashboard/mentor/stats", { params }),
+  getLeavesByMentor: (params) => {
+    const { hostelId, ...rest } = params;
+    if (hostelId) {
+      return api.get(`/mentor/passes/hostels/${hostelId}/passes`, { params: rest });
+    }
+    return api.get("/mentor/passes", { params: rest });
+  },
+  getLeaveByIdMentor: (id) => api.get(`/mentor/passes/${id}`),
+  approveLeaveByMentor: (id, payload) => api.patch(`/mentor/passes/${id}/approve`, payload),
+  rejectLeaveByMentor: (id, payload) => api.patch(`/mentor/passes/${id}/reject`, payload),
+  cancelLeaveByMentor: (id, payload) => api.put(`/mentor/passes/${id}/cancel`, payload),
 };
 
 export default leaveApi;

@@ -123,6 +123,7 @@ export async function getStudentById(role, id) {
     admin: studentApi.getStudentByIdByAdmin,
     warden: studentApi.getStudentByIdByWarden,
     assistant_warden: studentApi.getStudentByIdByWarden,
+    mentor: studentApi.getStudentByIdByMentor,
   });
   const response = await resolver(role, id);
   return response.data;

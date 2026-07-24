@@ -11,6 +11,9 @@ import Visitor from "../visitor/visitor.model.js";
 import { AttendanceRecord, AttendanceWindow } from "../attendance/attendance.model.js";
 import PasswordRequest from "../passwordRequests/passwordRequest.model.js";
 import Announcement from "../announcements/announcement.model.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import Batch from "../batches/batch.model.js";
+import { getManagementDashboardStatsDb } from "../passes/pass.service.js";
 import mongoose from "mongoose";
 
 const getSuperAdminStats = asyncHandler(async (req, res) => {
@@ -717,11 +720,123 @@ const getAttendanceOverview = asyncHandler(async (req, res) => {
   });
 });
 
+const buildMentorScopeForStats = async (req) => {
+  const activeAssignments = await MentorAssignment.find({
+    mentorId: req.user.id,
+    status: "active"
+  }).select("batchId").lean();
+
+  const batchIds = activeAssignments.map(({ batchId }) => batchId);
+
+  return {
+    role: "mentor",
+    organizationId: req.user.organization,
+    batchIds,
+    actorId: req.user.id
+  };
+};
+
+const getMentorDashboardStats = asyncHandler(async (req, res) => {
+  const scope = await buildMentorScopeForStats(req);
+  const batchIds = scope.batchIds || [];
+
+  // Resolve student IDs in mentor's batches
+  const studentIds = await Student.distinct('_id', { batchId: { $in: batchIds } });
+
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
+  const lastYearStart = new Date(new Date().getFullYear() - 1, 0, 1);
+  const lastYearEnd = new Date(new Date().getFullYear() - 1, 11, 31, 23, 59, 59);
+
+  // Run all counts parallelly
+  const [
+    studentsCount,
+    studentLastMonthCount,
+    wardensCount,
+    wardenLastMonthCount,
+    parentsCount,
+    parentLastMonthCount,
+    leaveRequests,
+    passStats,
+    thisYearAttendanceAgg,
+    lastYearAttendanceAgg,
+    batches,
+    announcements
+  ] = await Promise.all([
+    Student.countDocuments({ batchId: { $in: batchIds } }),
+    Student.countDocuments({ batchId: { $in: batchIds }, createdAt: { $gte: lastMonth } }),
+    User.countDocuments({ role: "warden", organization: scope.organizationId }),
+    User.countDocuments({ role: "warden", organization: scope.organizationId, createdAt: { $gte: lastMonth } }),
+    Parent.countDocuments({ studentId: { $in: studentIds } }),
+    Parent.countDocuments({ studentId: { $in: studentIds }, createdAt: { $gte: lastMonth } }),
+    Pass.countDocuments({ studentId: { $in: studentIds }, status: { $in: ["pending_parent", "pending_admin"] } }),
+    getManagementDashboardStatsDb(scope),
+    AttendanceRecord.aggregate([
+      { $match: { studentId: { $in: studentIds }, createdAt: { $gte: currentYearStart } } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      }
+    ]),
+    AttendanceRecord.aggregate([
+      { $match: { studentId: { $in: studentIds }, createdAt: { $gte: lastYearStart, $lte: lastYearEnd } } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      }
+    ]),
+    Batch.find({ _id: { $in: batchIds } }).select("name code").lean(),
+    Announcement.find({ status: "active", isActive: true })
+      .populate("createdBy", "firstName lastName role")
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
+  ]);
+
+  const formatAttendance = (aggResult) => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return monthNames.map((month, index) => {
+      const found = aggResult.find(item => item._id === (index + 1));
+      return {
+        month,
+        value: found && found.totalCount > 0 ? Math.round((found.presentCount / found.totalCount) * 100) : 0
+      };
+    });
+  };
+
+  const stats = {
+    students: studentsCount,
+    studentLastMonthCount: studentLastMonthCount,
+    wardens: wardensCount,
+    wardenLastMonthCount: wardenLastMonthCount,
+    parents: parentsCount,
+    parentLastMonthCount: parentLastMonthCount,
+    leaveRequests: leaveRequests,
+    ...passStats,
+    attendance: {
+      thisYear: formatAttendance(thisYearAttendanceAgg),
+      lastYear: formatAttendance(lastYearAttendanceAgg)
+    },
+    batches: batches,
+    announcements: announcements
+  };
+
+  return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", { data: stats });
+});
+
 export {
   getSuperAdminStats,
   getStudentCountByOrganization,
   getAdminStats,
   getStudentDashboardStats,
   getParentDashboardStats,
-  getAttendanceOverview
+  getAttendanceOverview,
+  getMentorDashboardStats
 };

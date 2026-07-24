@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
 import Visitor from './visitor.model.js';
+import MentorAssignment from '../mentors/mentorAssignment.model.js';
 import * as visitorRepository from './visitor.repository.js';
 import {
     VISITOR_STATUS,
@@ -132,13 +133,21 @@ export const createVisitorProfile = async (payload, user) => {
 
         await orchestratorService.triggerNotification({
             eventName: 'VISITOR_CREATED',
-            target: {
-                type: 'USER',
-                filter: {
-                    hostelId: hostelId,
-                    organizationId: organizationId
+            target: [
+                {
+                    type: 'USER',
+                    filter: {
+                        hostelId: hostelId,
+                        organizationId: organizationId
+                    }
+                },
+                {
+                    type: 'MENTOR',
+                    filter: {
+                        studentIds: studentIds
+                    }
                 }
-            },
+            ],
             data: {
                 parentName: currentParent.parentName,
                 visitorName: name,
@@ -207,6 +216,28 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
             error.status = 403;
             throw error;
         }
+    } else if (user.role === 'mentor') {
+        if (!['Inactive', 'Approved', 'Rejected', 'Pending'].includes(status)) {
+            const error = new Error('Mentors can only change status to Inactive, Approved, Pending, or Rejected.');
+            error.status = 403;
+            throw error;
+        }
+
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id || user._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
+        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
+        const visitorStudentIds = visitor.students.map(s => s.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
+        if (!hasOverlap) {
+            const error = new Error('Unauthorized to update this visitor.');
+            error.status = 403;
+            throw error;
+        }
     } else {
         const error = new Error('Unauthorized role to update visitor status.');
         error.status = 403;
@@ -229,7 +260,7 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
     if (status === VISITOR_STATUS.INACTIVE) actionName = VISITOR_APPROVAL_ACTIONS.DEACTIVATED || 'Deactivated';
     else if (status === VISITOR_STATUS.APPROVED || status === VISITOR_STATUS.PENDING) actionName = VISITOR_APPROVAL_ACTIONS.ACTIVATED || 'Activated';
 
-    const roleName = user.role === 'parent' ? 'parent' : (user.role === 'super_admin' ? 'super admin' : 'admin');
+    const roleName = user.role === 'parent' ? 'parent' : (user.role === 'mentor' ? 'mentor' : (user.role === 'super_admin' ? 'super admin' : 'admin'));
 
     const timelineEntry = {
         action: actionName,
@@ -305,6 +336,37 @@ export const listVisitors = async (query, user) => {
             throw error;
         }
         targetHostelId = wardenHostel._id; // Force warden to their hostel
+    } else if (user.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id || user._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        if (batchIds.length === 0) {
+            return {
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                data: []
+            };
+        }
+        let studentQuery = { batchId: { $in: batchIds } };
+        if (hostel) {
+            studentQuery.hostelId = hostel;
+        }
+        const studentsInBatches = await Student.find(studentQuery, "_id").lean();
+        const studentIds = studentsInBatches.map(s => s._id);
+        if (studentIds.length === 0) {
+            return {
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                data: []
+            };
+        }
+        matchStage.students = { $in: studentIds };
     } else {
         const error = new Error('Unauthorized role to list visitors.');
         error.status = 403;
@@ -444,6 +506,20 @@ export const getVisitorDetails = async (visitorId, user) => {
         if (!hasOverlap) {
             throw Object.assign(new Error('Unauthorized: Visitor not linked to your students.'), { status: 403 });
         }
+    } else if (user.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id || user._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+
+        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
+        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
+        if (!hasOverlap) {
+            throw Object.assign(new Error('Unauthorized: Visitor not linked to your assigned batches.'), { status: 403 });
+        }
     }
 
     // 2. Field-Level Security (ID Proof Masking)
@@ -553,6 +629,22 @@ export const approveVisitor = async (visitorId, adminUser) => {
             error.status = 403;
             throw error;
         }
+    } else if (adminUser.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: adminUser.id || adminUser._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
+        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
+        const visitorStudentIds = visitor.students.map(s => s.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
+        if (!hasOverlap) {
+            const error = new Error('Unauthorized to approve visitors outside your assigned batches.');
+            error.status = 403;
+            throw error;
+        }
     } else if (adminUser.role !== 'super_admin') {
         const error = new Error('Unauthorized role.');
         error.status = 403;
@@ -585,7 +677,7 @@ export const approveVisitor = async (visitorId, adminUser) => {
     const timelineEntry = {
         action: VISITOR_APPROVAL_ACTIONS.APPROVED,
         performedBy: adminUser.id,
-        remarks: 'Approved by Admin'
+        remarks: adminUser.role === 'mentor' ? 'Approved by Mentor' : 'Approved by Admin'
     };
 
     const updatedVisitor = await visitorRepository.updateVisitorStatus(visitorId, updateData, timelineEntry);
@@ -650,6 +742,22 @@ export const rejectVisitor = async (visitorId, reason, adminUser) => {
     if (adminUser.role === 'admin') {
         if (visitor.organizationId.toString() !== adminUser.organization.toString()) {
             const error = new Error('Unauthorized to reject visitors outside your organization.');
+            error.status = 403;
+            throw error;
+        }
+    } else if (adminUser.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: adminUser.id || adminUser._id,
+            status: "active"
+        }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
+        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
+        const visitorStudentIds = visitor.students.map(s => s.toString());
+
+        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
+        if (!hasOverlap) {
+            const error = new Error('Unauthorized to reject visitors outside your assigned batches.');
             error.status = 403;
             throw error;
         }
@@ -1584,13 +1692,21 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
 
         await orchestratorService.triggerNotification({
             eventName: 'VISITOR_UPDATE_PENDING',
-            target: {
-                type: 'USER',
-                filter: {
-                    hostelId: hostelId,
-                    organizationId: visitor.organizationId.toString()
+            target: [
+                {
+                    type: 'USER',
+                    filter: {
+                        hostelId: hostelId,
+                        organizationId: visitor.organizationId.toString()
+                    }
+                },
+                {
+                    type: 'MENTOR',
+                    filter: {
+                        studentIds: visitor.students.map(id => id.toString())
+                    }
                 }
-            },
+            ],
             data: {
                 visitorName: visitor.name,
                 updatedFields: updatedFieldsList.join(', '),

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Users } from 'lucide-react';
+import { Building, Users, Plus } from 'lucide-react';
 import DataView from '@/components/ui/data-view/DataView';
-import { useDebounce } from '@/hooks/useDebounce';
+import Button from '@/components/ui/Button';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+
 
 export default function MentorOrganizationsTable({
     onSearch,
+    onAddClick,
     organizations,
     loading,
     error,
@@ -14,14 +18,12 @@ export default function MentorOrganizationsTable({
     limit,
     setLimit,
     totalItems,
-    totalPages
+    totalPages,
+    searchQuery
 }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearchTerm = useDebounce(searchTerm, 400);
-
-    useEffect(() => {
-        onSearch?.(debouncedSearchTerm);
-    }, [debouncedSearchTerm, onSearch]);
+    const role = useAuthStore((s) => s.user?.role);
+    
+    const canCreate = role === ROLES.SUPER_ADMIN;
 
     const columns = [
         {
@@ -65,6 +67,17 @@ export default function MentorOrganizationsTable({
         onEdit: undefined
     };
 
+    const addNewButton = canCreate && (
+        <Button
+            size="sm"
+            onClick={onAddClick}
+            className="flex items-center justify-center gap-2"
+        >
+            <Plus className="w-4 h-4" />
+            <span className="">Add <span className='hidden md:inline'>Mentor </span></span>
+        </Button>
+    );
+
     return (
         <DataView
             data={organizations}
@@ -72,10 +85,12 @@ export default function MentorOrganizationsTable({
             cardConfig={cardConfig}
             loading={loading}
             error={error}
+            pageScrollMode={true}
             searchPlaceholder="Search Organizations..."
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
-            searchQuery={searchTerm}
+            onSearchChange={(e) => onSearch?.(e.target.value)}
+            searchQuery={searchQuery}
             onRowClick={onView}
+            addButton={addNewButton}
             pagination={{
                 page,
                 limit,

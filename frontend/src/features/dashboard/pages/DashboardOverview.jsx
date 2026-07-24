@@ -52,6 +52,7 @@ import {
 import { useTranslation } from "@/hooks/useTranslation";
 import MaintenanceStaffDashboardOverview from "../components/MaintenanceStaffDashboardOverview";
 import WardenDashboardOverview from "../components/WardenDashboardOverview";
+import MentorDashboardOverview from "../components/MentorDashboardOverview";
 
 const COMPLAINT_COLORS = ["#0A467F", "#9D77CE", "#F8BA52", "#55CDA6", "#A6A6A6", "#FF6B6B", "#4DABF7", "#FF922B", "#20C997", "#339AF0"];
 import ParentDashboard from './ParentDashboard';
@@ -413,6 +414,10 @@ function DashboardOverview() {
 
     if (user?.role === ROLES.WARDEN || user?.role === ROLES.ASSISTANT_WARDEN) {
         return <WardenDashboardOverview user={user} />;
+    }
+
+    if (user?.role === ROLES.MENTOR) {
+        return <MentorDashboardOverview user={user} />;
     }
 
     const renderOrganizationOverview = () => (

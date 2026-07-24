@@ -40,6 +40,8 @@ class OrchestratorService {
             throw error;
         }
 
+
+
         const allowedChannels = templateService.getAllowedChannels(eventName);
         channels = channels.filter(channel => allowedChannels.includes(channel));
 
@@ -47,7 +49,7 @@ class OrchestratorService {
             console.warn(`[Orchestrator] All requested external channels were discarded because they are not supported by event '${eventName}'. Only in-app will be processed.`);
         }
 
-        const recipientCursor = await recipientService.getRecipients(target);
+        const targets = Array.isArray(target) ? target : [target];
         let processedCount = 0;
         let batch = [];
         const BATCH_SIZE = 500;
@@ -56,14 +58,24 @@ class OrchestratorService {
 
         try {
             session.startTransaction();
+            const processedUserIds = new Set();
 
-            // 3. Process the stream in batches
-            for await (const user of recipientCursor) {
-                batch.push(user);
-                if (batch.length >= BATCH_SIZE) {
-                    await this.processBatch(batch, eventName, data, channels, session, sender);
-                    processedCount += batch.length;
-                    batch = [];
+            // 3. Process each target in the targets array
+            for (const tgt of targets) {
+                const recipientCursor = await recipientService.getRecipients(tgt);
+                for await (const user of recipientCursor) {
+                    const userIdStr = user.id.toString();
+                    if (processedUserIds.has(userIdStr)) {
+                        continue;
+                    }
+                    processedUserIds.add(userIdStr);
+
+                    batch.push(user);
+                    if (batch.length >= BATCH_SIZE) {
+                        await this.processBatch(batch, eventName, data, channels, session, sender);
+                        processedCount += batch.length;
+                        batch = [];
+                    }
                 }
             }
 

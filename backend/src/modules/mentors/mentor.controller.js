@@ -31,7 +31,7 @@ export const getMentors = asyncHandler(async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
-    const { status, search, startDate, endDate, organizationId: queryOrgId } = req.query;
+    const { isActive: status, search, startDate, endDate, organizationId: queryOrgId } = req.query;
 
     let organizationId = req.user.organization;
     if (req.user.role === "super_admin") {
@@ -57,6 +57,7 @@ export const getMentors = asyncHandler(async (req, res) => {
       data: result.mentors,
     });
   } catch (error) {
+    console.log(error)
     return sendError(res, error.statusCode || 500, error.message);
   }
 });

@@ -1,86 +1,222 @@
-import React from 'react';
-import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar } from 'lucide-react';
-import InfoRow from '@/components/ui/InfoRow';
+import React, { useState, useEffect } from 'react';
+import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar, UserCircleIcon, UserCircle2 } from 'lucide-react';
+import DetailCard from '@/components/ui/DetailCard';
+import DetailRow from '@/components/ui/DetailRow';
+import ActivityLog from '@/components/ui/ActivityLog';
 import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import MentorAssignmentModal from './MentorAssignmentModal';
+import MentorDetailsModal from '../mentor/MentorDetailsModal';
+import BatchService from '@/services/batch.service';
+import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 const BatchDetailView = ({ selectedBatchDetail, setView }) => {
+    const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+    const [selectedMentorForModal, setSelectedMentorForModal] = useState(null);
+    const [batch, setBatch] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const fetchBatch = async () => {
+        if (!selectedBatchDetail) return;
+        try {
+            setLoading(true);
+            const id = selectedBatchDetail._id || selectedBatchDetail.id;
+            const response = await BatchService.getBatchById(id);
+            setBatch(response.data || response);
+        } catch (err) {
+            console.error("Failed to fetch batch details:", err);
+            // Fallback to selectedBatchDetail if fetch fails
+            setBatch(selectedBatchDetail);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch batch details from API
+    useEffect(() => {
+        fetchBatch();
+    }, [selectedBatchDetail]);
+
     if (!selectedBatchDetail) return null;
 
+    if (loading) {
+        return (
+            <Modal
+                bottomSheetOnMobile={true}
+                isOpen={true}
+                onClose={() => setView('list')}
+                maxWidth="max-w-5xl"
+                title="Loading Details..."
+                icon={<Building2 size={24} />}
+            >
+                <DetailsSkeletonLoader />
+            </Modal>
+        );
+    }
+
+    const displayBatch = batch;
+    const activeAssignment = displayBatch.activeMentor || null;
+    const assignmentLoading = loading;
+
+    // Extract organization ID safely
+    const orgId = displayBatch?.departmentId?.courseId?.organizationId?._id
+        || displayBatch?.departmentId?.courseId?.organizationId
+        || displayBatch?.organizationId;
+
     return (
-        <Modal 
-            bottomSheetOnMobile={true}
-            isOpen={true}
-            onClose={() => setView('list')}
-            maxWidth="max-w-5xl"
-            title={selectedBatchDetail.name}
-            subtitle="Students"
-            icon={<Building2 size={24} />}
-        >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-                {/* Main Content Area */}
-                <div className="md:col-span-7 space-y-4 md:space-y-6">
-                    {/* Basic Info */}
-                    <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
-                        <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Batch</p>
-                        <div className="space-y-1">
-                            <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedBatchDetail.code}</InfoRow>
-                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedBatchDetail.name}</InfoRow>
-                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Dept</>}>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</InfoRow>
-                            <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> Start Year</>}>{selectedBatchDetail.startYear || 'N/A'}</InfoRow>
-                            <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> End Year</>}>{selectedBatchDetail.endYear || 'N/A'}</InfoRow>
-                            <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
-                                <span className="flex items-center">
-                                    <span className={`w-2 h-2 rounded-full ${selectedBatchDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
-                                    {selectedBatchDetail.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                            </InfoRow>
-                        </div>
+        <>
+            <Modal
+                bottomSheetOnMobile={true}
+                isOpen={true}
+                onClose={() => setView('list')}
+                maxWidth="max-w-5xl"
+                title={displayBatch.name}
+                subtitle="Students"
+                icon={<Building2 size={24} />}
+            >
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    {/* Main Content Area */}
+                    <div className="md:col-span-7 space-y-4 md:space-y-6">
+                        {/* Basic Info */}
+                        <DetailCard title="Basic Info" subtitle="Basic information of the Batch">
+                            <div className="space-y-1">
+                                <DetailRow label="Id" value={displayBatch.code} icon={<Fingerprint className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Name" value={displayBatch.name || 'Ajmal'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Dept" value={displayBatch.departmentId?.name || displayBatch.departmentId || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Start Year" value={displayBatch.startYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="End Year" value={displayBatch.endYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Status" value={
+                                    <span className="flex items-center">
+                                        <span className={`w-2 h-2 rounded-full ${displayBatch.isActive ? 'bg-success' : 'bg-danger'} mr-2`}></span>
+                                        {displayBatch.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                } icon={<ToggleRight className="w-4 h-4 text-text-secondary" />} />
+                            </div>
+                        </DetailCard>
+
+                        {/* Mentor Details Section */}
+                        <DetailCard
+                            title="Mentor Details"
+                            subtitle="Assigned mentor for this batch"
+                            headerAction={
+                                <Button
+                                    variant={'primary'}
+                                    size="sm"
+                                    fullWidth={false}
+                                    onClick={() => setIsAssignmentModalOpen(true)}
+                                    disabled={assignmentLoading}
+                                >
+                                    {activeAssignment ? 'Transfer Mentor' : 'Assign Mentor'}
+                                </Button>
+                            }
+                        >
+                            {assignmentLoading ? (
+                                <div className="text-xs text-text-secondary py-2">Loading mentor details...</div>
+                            ) : activeAssignment && activeAssignment.mentor ? (
+                                <div className="space-y-1">
+                                    <DetailRow
+                                        label="Name"
+                                        value={activeAssignment.mentor.name || 'Unknown'}
+                                        icon={<UserCircle2 className="w-4 h-4 text-text-secondary" />}
+                                    />
+                                    {activeAssignment.mentor.email && (
+                                        <DetailRow
+                                            label="Email"
+                                            value={activeAssignment.mentor.email}
+                                            icon={<Mail className="w-4 h-4 text-text-secondary" />}
+                                        />
+                                    )}
+                                    {activeAssignment.mentor.phone && (
+                                        <DetailRow
+                                            label="Phone"
+                                            value={activeAssignment.mentor.phone}
+                                            icon={<Phone className="w-4 h-4 text-text-secondary" />}
+                                        />
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-xs text-text-secondary py-4 text-center border border-dashed border-gray-200 rounded-lg bg-gray-50/50 mt-2">
+                                    No mentor is currently assigned to this batch.
+                                </div>
+                            )}
+                        </DetailCard>
+
+                        {displayBatch.address && (
+                            <DetailCard title="Address Information" subtitle="Address information of the Batch">
+                                <div className="space-y-1">
+                                    <DetailRow label="Address" value={<span className="break-words whitespace-pre-wrap">{displayBatch.address}</span>} icon={<MapPin className="w-4 h-4 text-text-secondary" />} />
+                                </div>
+                            </DetailCard>
+                        )}
+
+                        {(displayBatch.phone || displayBatch.email) && (
+                            <DetailCard title="Contact Information" subtitle="Contact information of the Batch">
+                                <div className="space-y-1">
+                                    {displayBatch.phone && <DetailRow label="Phone" value={displayBatch.phone} icon={<Phone className="w-4 h-4 text-text-secondary" />} />}
+                                    {displayBatch.email && <DetailRow label="Email" value={displayBatch.email} icon={<Mail className="w-4 h-4 text-text-secondary" />} />}
+                                </div>
+                            </DetailCard>
+                        )}
                     </div>
 
-                    {selectedBatchDetail.address && (
-                        <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Address Information</h3>
-                            <p className="text-[11px] text-text-secondary mb-4">Address information of the Batch</p>
+                    <div className="md:col-span-5 space-y-4 md:space-y-6 h-fit">
+                        <DetailCard title="Batch Summary" subtitle="Key metrics and details">
                             <div className="space-y-1">
-                                <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Address</>}><span className="break-words whitespace-pre-wrap">{selectedBatchDetail.address}</span></InfoRow>
+                                <DetailRow label="Id" value={displayBatch.code} icon={<Fingerprint className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Name" value={displayBatch.name} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Dept" value={displayBatch.departmentId?.name || displayBatch.departmentId || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Org" value={displayBatch?.departmentId?.courseId?.organizationId?.name || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Start Year" value={displayBatch.startYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="End Year" value={displayBatch.endYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Status" value={
+                                    <span className="flex items-center">
+                                        <span className={`w-2 h-2 rounded-full ${displayBatch.isActive ? 'bg-success' : 'bg-danger'} mr-2`}></span>
+                                        {displayBatch.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                } icon={<ToggleRight className="w-4 h-4 text-text-secondary" />} />
+                                {displayBatch.phone && <DetailRow label="Phone" value={displayBatch.phone} icon={<Phone className="w-4 h-4 text-text-secondary" />} />}
+                                {displayBatch.email && <DetailRow label="Email" value={displayBatch.email} icon={<Mail className="w-4 h-4 text-text-secondary" />} />}
                             </div>
-                        </div>
-                    )}
+                        </DetailCard>
 
-                    {(selectedBatchDetail.phone || selectedBatchDetail.email) && (
-                        <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Contact Information</h3>
-                            <p className="text-[11px] text-text-secondary mb-4">Contact information of the Batch</p>
-                            <div className="space-y-1">
-                                {selectedBatchDetail.phone && <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedBatchDetail.phone}</InfoRow>}
-                                {selectedBatchDetail.email && <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedBatchDetail.email}</InfoRow>}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="md:col-span-5 bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                    <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4">Batch Summary</h3>
-                    <div className="space-y-1">
-                        <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedBatchDetail.code}</InfoRow>
-                        <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedBatchDetail.name}</InfoRow>
-                        <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Dept</>}>{selectedBatchDetail.departmentId?.name || selectedBatchDetail.departmentId || 'N/A'}</InfoRow>
-                        <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedBatchDetail?.departmentId?.courseId?.organizationId?.name || 'N/A'}</InfoRow>
-                        <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> Start Year</>}>{selectedBatchDetail.startYear || 'N/A'}</InfoRow>
-                        <InfoRow label={<><Calendar className="w-4 h-4 text-gray-400" /> End Year</>}>{selectedBatchDetail.endYear || 'N/A'}</InfoRow>
-                        <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
-                            <span className="flex items-center">
-                                <span className={`w-2 h-2 rounded-full ${selectedBatchDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
-                                {selectedBatchDetail.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                        </InfoRow>
-                        {selectedBatchDetail.phone && <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedBatchDetail.phone}</InfoRow>}
-                        {selectedBatchDetail.email && <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedBatchDetail.email}</InfoRow>}
+                        <DetailCard title="Recent Mentors" subtitle="Historical mentor assignments">
+                            <ActivityLog
+                                timeline={(displayBatch.recentMentors || []).map(m => ({
+                                    remarks: m.remarks ? `${m.status}: ${m.remarks}` : m.status,
+                                    meta: {
+                                        label: 'Mentor',
+                                        value: m.mentor?.name || 'Unknown'
+                                    },
+                                    timestamp: m.endedAt || m.assignedAt,
+                                    actorRole: m.assignedBy?.name || 'System',
+                                    onClick: m.mentor ? () => setSelectedMentorForModal(m.mentor) : undefined
+                                }))}
+                                defaultText="No previous mentors found."
+                            />
+                        </DetailCard>
                     </div>
                 </div>
-            </div>
-        </Modal>
+            </Modal>
+
+            <MentorAssignmentModal
+                isOpen={isAssignmentModalOpen}
+                onClose={() => setIsAssignmentModalOpen(false)}
+                batchId={displayBatch?._id || displayBatch?.id}
+                organizationId={orgId}
+                existingAssignmentId={activeAssignment?.assignmentId}
+                onSuccess={() => {
+                    fetchBatch();
+                }}
+            />
+
+            {selectedMentorForModal && (
+                <MentorDetailsModal
+                    mentor={{ _id: typeof selectedMentorForModal === 'string' ? selectedMentorForModal : selectedMentorForModal._id }}
+                    onClose={() => setSelectedMentorForModal(null)}
+                    zIndex={60}
+                />
+            )}
+        </>
     );
 };
 

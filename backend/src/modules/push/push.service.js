@@ -28,7 +28,7 @@ export const registerSubscriptionService = async (recipientData, subscriptionDat
     if (error.code === 11000 && error.message.includes('recipient.id_1_recipient.model_1')) {
       console.log('Dropping legacy unique index on PushSubscription...');
       await PushSubscription.collection.dropIndex('recipient.id_1_recipient.model_1').catch(e => console.log('Index already dropped or drop failed:', e.message));
-      
+
       return await PushSubscription.findOneAndUpdate(
         { endpoint },
         {
@@ -75,13 +75,13 @@ export const getActiveSubscriptionsService = async (recipientId, recipientModel)
     'recipient.id': new mongoose.Types.ObjectId(recipientId),
     isActive: true
   };
-  
+
   if (recipientModel) {
     matchQuery['recipient.model'] = recipientModel;
   }
 
   const subscriptions = await PushSubscription.find(matchQuery).lean();
-  
+
   return subscriptions.map(sub => ({
     endpoint: sub.endpoint,
     keys: sub.keys
@@ -124,8 +124,7 @@ export const sendPushNotification = async (recipient, payload) => {
       const statusCode = error.statusCode;
       failures.push({ endpoint: sub.endpoint, error: error.message, statusCode });
 
-      if (statusCode === 404 || statusCode === 410) {
-        // Invalid/expired subscription - hard delete immediately (it's unusable and will never recover)
+      if (statusCode === 404 || statusCode === 410 || (statusCode === 403 && error.body && error.body.includes("VAPID credentials"))) {
         await removeSubscriptionService(sub.endpoint, true);
       }
     }

@@ -7,6 +7,7 @@ import TimelineStep from '@/components/ui/TimelineStep';
 import ActivityLog from '@/components/ui/ActivityLog';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
+import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
     const [visit, setVisit] = useState(null);
@@ -42,16 +43,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
     if (isLoading) {
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Loading Details..." maxWidth="max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
-                    <div className="space-y-6">
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                    </div>
-                    <div className="space-y-6">
-                        <div className="h-48 bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                    </div>
-                </div>
+                <DetailsSkeletonLoader />
             </Modal>
         );
     }
@@ -164,7 +156,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
                 {/* RIGHT COLUMN */}
                 <div className="space-y-6">
                     {/* Quick Summary */}
-                    <DetailCard title="Quick Summery" subtitle="Quick summery of the visit">
+                    <DetailCard title="Quick Summary" subtitle="Quick summary of the visit">
                         <div className="space-y-1">
                             <DetailRow label="Visitor Name" value={visit.quickSummary?.visitorName} icon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>} />
                             <DetailRow label="Student" value={visit.quickSummary?.studentNames} icon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>} />

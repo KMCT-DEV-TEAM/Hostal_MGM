@@ -28,6 +28,12 @@ import {
   getManagementHostelPasses,
   getAdminPassDetails,
   adminCancelPass,
+  getMentorHostels,
+  getMentorAllPasses,
+  getMentorPassDetails,
+  mentorApprovePass,
+  mentorRejectPass,
+  mentorCancelPass,
   getSuperAdminDashboardStats,
   getSuperAdminOrganizationsHostels,
   getSuperAdminPassDetails,
@@ -45,6 +51,7 @@ import {
   validateRejectPass,
   validateGetPassesUnified
 } from "./pass.validation.js";
+import { getMentorDashboardStats } from "../dashboard/dashboard.controller.js";
 
 export const studentPassRouter = express.Router();
 
@@ -248,3 +255,19 @@ superAdminPassRouter.get("/hostels", getSuperAdminOrganizationsHostels);
 superAdminPassRouter.get("/hostels/:hostelId/passes", getManagementHostelPasses);
 superAdminPassRouter.get("/:id", getSuperAdminPassDetails);
 superAdminPassRouter.put("/:id/cancel", superAdminCancelPass);
+
+// ----- Mentor routes -----
+export const mentorPassRouter = express.Router();
+
+
+mentorPassRouter.use(authMiddleware);
+mentorPassRouter.use(roleMiddleware("mentor"));
+
+mentorPassRouter.get("/", getMentorAllPasses);
+mentorPassRouter.get("/dashboard", getMentorDashboardStats);
+mentorPassRouter.get("/hostels", getMentorHostels);
+mentorPassRouter.get("/hostels/:hostelId/passes", getManagementHostelPasses);
+mentorPassRouter.get("/:id", getMentorPassDetails);
+mentorPassRouter.patch("/:id/approve", validatePassIdParam, mentorApprovePass);
+mentorPassRouter.patch("/:id/reject", validatePassIdParam, validateRejectPass, mentorRejectPass);
+mentorPassRouter.put("/:id/cancel", mentorCancelPass);

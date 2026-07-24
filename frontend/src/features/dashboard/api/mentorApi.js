@@ -25,6 +25,25 @@ const mentorApi = {
 
     deleteMentor: (role, id) =>
         api.delete(`${getPrefix(role)}/mentors/${id}`),
+
+    // Mentor Assignments
+    assignMentor: (payload) =>
+        api.post(`/mentor-assignments`, payload),
+
+    getMentorAssignments: (params) =>
+        api.get(`/mentor-assignments`, { params }),
+
+    getMentorAssignmentById: (id) =>
+        api.get(`/mentor-assignments/${id}`),
+
+    updateMentorAssignment: (id, payload) =>
+        api.patch(`/mentor-assignments/${id}`, payload),
+
+    transferMentor: (id, payload) =>
+        api.post(`/mentor-assignments/${id}/transfer`, payload),
+
+    endMentorAssignment: (id) =>
+        api.patch(`/mentor-assignments/${id}/end`),
 };
 
 export default mentorApi;

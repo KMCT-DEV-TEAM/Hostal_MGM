@@ -77,8 +77,10 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 
   const filter = {};
 
-  if (scope.role === "warden") {
+  if (scope.role === "warden" || scope.role === "assistant_warden") {
     filter.hostelId = scope.hostelId;
+  } else if (scope.role === "mentor") {
+    filter.hostelId = { $in: (scope.hostelIds || []).map(id => new mongoose.Types.ObjectId(id)) };
   } else if (query.hostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }
@@ -176,8 +178,10 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 export const getDashboardStatsDb = async (dateStr, scope) => {
   const filter = {};
 
-  if (scope.role === "warden") {
+  if (scope.role === "warden" || scope.role === "assistant_warden") {
     filter.hostelId = new mongoose.Types.ObjectId(scope.hostelId);
+  } else if (scope.role === "mentor") {
+    filter.hostelId = { $in: (scope.hostelIds || []).map(id => new mongoose.Types.ObjectId(id)) };
   }
 
   const queryDate = getStartOfDay(dateStr || new Date());

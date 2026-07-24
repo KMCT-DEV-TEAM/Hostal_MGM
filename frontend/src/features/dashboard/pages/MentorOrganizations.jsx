@@ -5,6 +5,11 @@ import ListToolbar from '@/components/ui/ListToolbar';
 import { useMentorOrganizations } from '@/features/dashboard/hooks/mentor/useMentorOrganizations';
 import { useDebounce } from '@/hooks/useDebounce';
 import MentorOrganizationsTable from '../components/mentor/MentorOrganizationsTable';
+import MentorFormModal from '../components/mentor/MentorFormModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { createMentor } from '@/services/mentor.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 export default function MentorOrganizations() {
     const navigate = useNavigate();
@@ -12,8 +17,13 @@ export default function MentorOrganizations() {
     const [limit, setLimit] = useState(10);
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
+    const role = useAuthStore((s) => s.user?.role);
 
-    const { organizations, pagination, loading, error } = useMentorOrganizations({
+    const [activeModal, setActiveModal] = useState(null);
+    const [confirmConfig, setConfirmConfig] = useState(null);
+    const [isConfirming, setIsConfirming] = useState(false);
+
+    const { organizations, pagination, loading, error, refetch } = useMentorOrganizations({
         search: debouncedSearch,
         page,
         limit
@@ -23,23 +33,54 @@ export default function MentorOrganizations() {
         navigate(`/dashboard/mentors/${org._id}`, { state: { orgName: org.name } });
     };
 
+    const handleAddMentor = () => {
+        setActiveModal('add');
+    };
+
+    const handleSaveRequest = (payload) => {
+        setConfirmConfig({
+            title: "Confirm Creation",
+            message: "Are you sure you want to create this mentor?",
+            confirmText: "Create Mentor",
+            action: async () => {
+                setIsConfirming(true);
+                try {
+                    await createMentor(role, payload);
+                    showSuccessToast('Mentor created successfully');
+                    setActiveModal(null);
+                    // Fetch fresh data seamlessly without page reload
+                    refetch();
+                } catch (error) {
+                    showErrorToast(error?.response?.data?.message || error?.message || 'Failed to create mentor');
+                    throw error;
+                } finally {
+                    setIsConfirming(false);
+                    setConfirmConfig(null);
+                }
+            }
+        });
+    };
+
     return (
         <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-gray-50 flex flex-col relative">
             <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
+                <div className="mb-6">
                     <PageHeader
                         title="Mentors Management"
                         subtitle="Manage mentors by organization"
                     />
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
                     {/* <ListToolbar
                         searchPlaceholder="Search organizations..."
                         searchValue={search}
                         onSearchChange={setSearch}
                     /> */}
                     <MentorOrganizationsTable
+                        onSearch={setSearch}
+                        onAddClick={handleAddMentor}
+                        searchQuery={search}
                         organizations={organizations}
                         loading={loading}
                         error={error}
@@ -53,6 +94,24 @@ export default function MentorOrganizations() {
                     />
                 </div>
             </div>
+
+            {activeModal === 'add' && (
+                <MentorFormModal
+                    onClose={() => setActiveModal(null)}
+                    onSave={handleSaveRequest}
+                />
+            )}
+
+            <ConfirmationModal
+                isOpen={!!confirmConfig}
+                onClose={() => setConfirmConfig(null)}
+                onConfirm={confirmConfig?.action}
+                title={confirmConfig?.title}
+                message={confirmConfig?.message}
+                confirmText={confirmConfig?.confirmText}
+                type={confirmConfig?.type}
+                isSubmitting={isConfirming}
+            />
         </div>
     );
 }

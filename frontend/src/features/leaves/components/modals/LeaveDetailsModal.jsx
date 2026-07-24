@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { formatDateReadable, formatDateTimeReadable } from '@/utils/formatters';
 import leaveService from '@/services/leave.service';
-import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ROLES } from '@/constants/roles';
 import TimelineStep from '@/components/ui/TimelineStep';
+import DetailCard from '@/components/ui/DetailCard';
+import DetailRow from '@/components/ui/DetailRow';
+import ActivityLog from '@/components/ui/ActivityLog';
+import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 const getTimelineConfig = (action) => {
     switch (action) {
@@ -111,17 +113,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
     if (isLoading) {
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Loading Details..." maxWidth="max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
-                    <div className="space-y-6">
-                        <div className="h-[350px] bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-32 bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-[400px] bg-gray-100 animate-pulse rounded-xl"></div>
-                    </div>
-                    <div className="space-y-6">
-                        <div className="h-48 bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                    </div>
-                </div>
+                <DetailsSkeletonLoader />
             </Modal>
         );
     }
@@ -302,75 +294,47 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                 <div className="space-y-6">
 
                     {/* Student Information */}
-                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Student Information</h3>
-                        <p className="text-xs text-gray-400 mb-6">Details about student</p>
-
-                        <div className="grid grid-cols-[140px_1fr] gap-y-4 text-sm">
-                            <div className="text-gray-500">Student</div>
-                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.name || '--'}</span></div>
-
-                            <div className="text-gray-500">Student ID</div>
-                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.studentId || '--'}</span></div>
-
-
-                            <div className="text-gray-500">Room No</div>
-                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.studentId?.roomNumber || '--'}</span></div>
+                    <DetailCard title="Student Information" subtitle="Details about student">
+                        <div className="space-y-1">
+                            <DetailRow label="Student" value={request.studentId?.name || '--'} />
+                            <DetailRow label="Student ID" value={request.studentId?.studentId || '--'} />
+                            <DetailRow label="Room No" value={request.studentId?.roomNumber || '--'} />
                         </div>
-                    </div>
+                    </DetailCard>
 
                     {/* Leave Information */}
-                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Leave Information</h3>
-                        <p className="text-xs text-gray-400 mb-6">Details about the leave requests</p>
-
-                        <div className="grid grid-cols-[140px_1fr] gap-y-4 text-sm">
-                            <div className="text-gray-500">Status</div>
-                            <div className="flex items-center gap-3">
-                                <span className="text-gray-400">:</span>
-                                {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
-                            </div>
-
+                    <DetailCard title="Leave Information" subtitle="Details about the leave requests">
+                        <div className="space-y-1">
+                            <DetailRow
+                                label="Status"
+                                value={renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
+                            />
                             {isHomePass ? (
                                 <>
-                                    <div className="text-gray-500">From Date</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.fromDate)}</span></div>
-
-                                    <div className="text-gray-500">To Date</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.toDate)}</span></div>
+                                    <DetailRow label="From Date" value={formatDateReadable(request.fromDate)} />
+                                    <DetailRow label="To Date" value={formatDateReadable(request.toDate)} />
                                 </>
                             ) : (
                                 <>
-                                    <div className="text-gray-500">Date</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.date)}</span></div>
-
-                                    <div className="text-gray-500">Outing Time</div>
-                                    <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{request.outTime || '--'} to {request.expectedReturnTime || '--'}</span></div>
+                                    <DetailRow label="Date" value={formatDateReadable(request.date)} />
+                                    <DetailRow label="Outing Time" value={`${request.outTime || '--'} to ${request.expectedReturnTime || '--'}`} />
                                 </>
                             )}
-
-                            <div className="text-gray-500">{isHomePass ? 'Duration' : 'Category'}</div>
-                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{duration}</span></div>
-
-                            <div className="text-gray-500">Applied Date</div>
-                            <div className="flex items-center gap-3"><span className="text-gray-400">:</span> <span className="font-medium text-gray-700">{formatDateReadable(request.createdAt)}</span></div>
-
-                            <div className="text-gray-500">Parent approval</div>
-                            <div className="flex items-center gap-3">
-                                <span className="text-gray-400">:</span>
-                                {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
-                            </div>
+                            <DetailRow label={isHomePass ? 'Duration' : 'Category'} value={duration} />
+                            <DetailRow label="Applied Date" value={formatDateReadable(request.createdAt)} />
+                            <DetailRow
+                                label="Parent approval"
+                                value={renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
+                            />
                         </div>
-                    </div>
+                    </DetailCard>
 
                     {/* Reason */}
-                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Reason</h3>
-                        <p className="text-xs text-gray-400 mb-4">Reason for the leave</p>
+                    <DetailCard title="Reason" subtitle="Reason for the leave">
                         <p className="text-sm text-gray-600 leading-relaxed">
                             {request.reason || 'No reason provided.'}
                         </p>
-                    </div>
+                    </DetailCard>
 
                     {/* Pass Progress */}
                     <div className="border border-gray-100 rounded-2xl p-6 bg-white shadow-sm relative overflow-hidden">
@@ -380,7 +344,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                         </h3>
                         <p className="text-xs text-gray-400 mb-6">Track the live approval status of this request.</p>
 
-                        <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
+                        <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-2.75 before:w-0.5 before:bg-gray-200">
                             {[
                                 // Cancelled Step (only if cancelled)
                                 request.status === 'cancelled' ? {
@@ -451,95 +415,47 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                 <div className="space-y-6">
 
                     {/* Quick Summary */}
-                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Quick Summery</h3>
-                        <p className="text-xs text-gray-400 mb-6">Quick Summery about the leave requests</p>
-
-                        <div className="space-y-4 text-sm">
-                            <div className="grid grid-cols-[130px_1fr] items-center">
-                                <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                    Student
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">:</span>
-                                    <span className="text-gray-700 font-medium">{request.studentId?.name || '--'}</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-[130px_1fr] items-center">
-                                <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Status
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">:</span>
-                                    {renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-[130px_1fr] items-center">
-                                <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Parent approval
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">:</span>
-                                    {renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-[130px_1fr] items-center">
-                                <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    Leave Period
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">:</span>
-                                    <span className="text-gray-700 font-medium">
-                                        {isHomePass ? `${formatDateReadable(request.fromDate)} - ${formatDateReadable(request.toDate)}` : formatDateReadable(request.date)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-[130px_1fr] items-center">
-                                <div className="text-gray-400 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                                    Return
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">:</span>
-                                    <span className="text-gray-700 font-medium">
-                                        {isReturned ? (request.returnTracking?.returnStatus === 'late' ? 'Returned (Late)' : 'Returned') : '-----'}
-                                    </span>
-                                </div>
-                            </div>
+                    <DetailCard title="Quick Summary" subtitle="Quick Summary about the leave requests">
+                        <div className="space-y-1">
+                            <DetailRow
+                                label="Student"
+                                value={request.studentId?.name || '--'}
+                                icon={<svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>}
+                            />
+                            <DetailRow
+                                label="Status"
+                                value={renderBadge(getStatusLabel(request.status), getStatusColor(request.status))}
+                                icon={<svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
+                            />
+                            <DetailRow
+                                label="Parent approval"
+                                value={renderBadge(isParentApproved ? 'Approved' : 'Pending', isParentApproved ? 'var(--color-success)' : 'var(--color-warning)')}
+                                icon={<svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
+                            />
+                            <DetailRow
+                                label="Leave Period"
+                                value={isHomePass ? `${formatDateReadable(request.fromDate)} - ${formatDateReadable(request.toDate)}` : formatDateReadable(request.date)}
+                                icon={<svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
+                            />
+                            <DetailRow
+                                label="Return"
+                                value={isReturned ? (request.returnTracking?.returnStatus === 'late' ? 'Returned (Late)' : 'Returned') : '-----'}
+                                icon={<svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>}
+                            />
                         </div>
-                    </div>
+                    </DetailCard>
 
                     {/* Recent Activity */}
-                    <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Recent Activity</h3>
-                        <p className="text-xs text-gray-400 mb-4">Recent Activity about the {isHomePass ? 'home pass' : 'out pass'}</p>
-
-                        <div className="space-y-3">
-                            {timeline.length > 0 ? (
-                                [...timeline].reverse().map((t, idx) => (
-                                    <div key={idx} className="border border-gray-100 rounded-lg p-3">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xs font-medium text-gray-700 capitalize">{t.remarks || t.action.replace('_', ' ')}</span>
-                                            <span className="text-[10px] text-gray-400">{formatDateReadable(t.timestamp)}</span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-500 capitalize">by {t.actorRole}</div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="border border-gray-100 rounded-lg p-3 text-center text-xs text-gray-400">
-                                    No activity recorded yet.
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <DetailCard title="Recent Activity" subtitle={`Recent Activity about the ${isHomePass ? 'home pass' : 'out pass'}`}>
+                        <ActivityLog
+                            timeline={timeline.map(t => ({
+                                action: t.remarks || t.action.replace('_', ' '),
+                                timestamp: t.timestamp,
+                                actorRole: t.actorRole
+                            }))}
+                            defaultText="No activity recorded yet."
+                        />
+                    </DetailCard>
 
                 </div>
 

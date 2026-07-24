@@ -129,11 +129,10 @@ export const getPaginatedMentorsDb = async ({
   } else if (organizationId) {
     query.organization = organizationId;
   }
-
   if (status !== undefined && status !== "All" && status !== "") {
-    if (status === "Active" || status === "true" || status === true) {
+    if (status === "true" || status === true) {
       query.isActive = true;
-    } else if (status === "Inactive" || status === "false" || status === false) {
+    } else if (status === "false" || status === false) {
       query.isActive = false;
     }
   }
@@ -189,7 +188,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
   }
 
   const mentor = await User.findOne(query)
-    .select("-password -failedLoginAttempts -lockUntil")
+    .select("-password -failedLoginAttempts -lockUntil -temppass -failedLoginAttempts -settings")
     .populate("organization", "name code email phone")
     .lean();
 
@@ -199,14 +198,25 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
     throw error;
   }
 
-  const assignments = await MentorAssignment.find({ mentorId: mentor._id })
+  const activeAssignments = await MentorAssignment.find({ mentorId: mentor._id, status: "active" })
     .populate("batchId", "name code")
     .populate("organizationId", "name code")
     .populate("assignedBy", "name email")
     .sort({ assignedAt: -1 })
     .lean();
 
-  mentor.assignments = assignments;
+  const historyAssignments = await MentorAssignment.find({
+    mentorId: mentor._id,
+    status: { $ne: "active" }
+  })
+    .populate("batchId", "name code")
+    .populate("organizationId", "name code")
+    .populate("assignedBy", "name email")
+    .sort({ assignedAt: -1 })
+    .lean();
+
+  mentor.activeAssignments = activeAssignments;
+  mentor.historyAssignments = historyAssignments;
 
   return mentor;
 };
@@ -340,7 +350,26 @@ export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) =>
       error.statusCode = 400;
       throw error;
     }
+    if (!isActive) {
+      const activeAssignments = await MentorAssignment.find({
+        mentorId: mentor._id,
+        status: "active",
+      })
+        .populate("batchId", "name")
+        .session(session)
+        .lean();
 
+      if (activeAssignments.length > 0) {
+        const batchNames = activeAssignments
+          .map((a) => a.batchId?.name || "Unknown Batch")
+          .join(", ");
+        const error = new Error(
+          `Cannot deactivate mentor. This mentor is currently assigned to batch(es): ${batchNames}. Please transfer or end their active assignments first.`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+    }
     mentor.isActive = isActive;
     await mentor.save({ session });
 

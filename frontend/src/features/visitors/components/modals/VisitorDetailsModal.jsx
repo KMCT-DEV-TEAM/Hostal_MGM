@@ -83,10 +83,10 @@ export default function VisitorDetailsModal({
         const role = user?.role;
         const status = visitor.status?.toLowerCase();
 
-        const canApproveReject = ['super_admin', 'admin'].includes(role) && status === 'pending';
-        const canDelete = (['super_admin', 'admin'].includes(role) && ['approved', 'rejected', 'active'].includes(status)) ||
+        const canApproveReject = ['super_admin', 'admin', 'mentor'].includes(role) && status === 'pending';
+        const canDelete = (['super_admin', 'admin', 'mentor'].includes(role) && ['approved', 'rejected', 'active'].includes(status)) ||
             (role === 'parent' && status !== 'inactive');
-        const canActive = ['super_admin', 'admin', 'parent'].includes(role) && status === 'inactive';
+        const canActive = ['super_admin', 'admin', 'parent', 'mentor'].includes(role) && status === 'inactive';
 
         if (!canApproveReject && !canDelete && !canActive) return null;
 
