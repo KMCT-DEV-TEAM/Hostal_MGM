@@ -452,8 +452,8 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
 
                     {/* Quick Summary */}
                     <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                        <h3 className="text-primary font-semibold text-sm mb-1">Quick Summery</h3>
-                        <p className="text-xs text-gray-400 mb-6">Quick Summery about the leave requests</p>
+                        <h3 className="text-primary font-semibold text-sm mb-1">Quick Summary</h3>
+                        <p className="text-xs text-gray-400 mb-6">Quick Summary about the leave requests</p>
 
                         <div className="space-y-4 text-sm">
                             <div className="grid grid-cols-[130px_1fr] items-center">
