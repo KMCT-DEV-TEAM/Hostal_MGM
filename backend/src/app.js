@@ -127,6 +127,7 @@ app.use("/api/mentor/students", studentRoutes);
 app.use("/api/mentor/parent", parentRoutes);
 app.use("/api/mentor/attendance", mentorAttendanceRouter);
 app.use("/api/mentor/passes", mentorPassRouter);
+app.use("/api/mentor/dashboard", dashboardRoutes);
 
 // app.use("/api/mentor/students", studentRoutes);
 

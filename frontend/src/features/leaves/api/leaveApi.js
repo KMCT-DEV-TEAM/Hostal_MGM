@@ -49,7 +49,7 @@ const leaveApi = {
 
   // Mentor
   getMentorHostels: (params) => api.get("/mentor/passes/hostels", { params }),
-  getMentorDashboardStats: (params) => api.get("/mentor/passes/dashboard", { params }),
+  getMentorDashboardStats: (params) => api.get("/mentor/dashboard/mentor/stats", { params }),
   getLeavesByMentor: (params) => {
     const { hostelId, ...rest } = params;
     if (hostelId) {

@@ -7,7 +7,7 @@ import {
   getAssignmentById,
   updateAssignment,
   transferMentor,
-  endAssignment
+  releaseAssignment
 } from "./mentorAssignment.controller.js";
 import {
   validateCreateAssignment,
@@ -26,7 +26,7 @@ router.use(authMiddleware);
 router.post("/", roleMiddleware("super_admin", "admin"), validateCreateAssignment, assignMentor);
 router.patch("/:id", roleMiddleware("super_admin", "admin"), validateUpdateAssignment, updateAssignment);
 router.post("/:id/transfer", roleMiddleware("super_admin", "admin"), validateTransferMentor, transferMentor);
-router.patch("/:id/end", roleMiddleware("super_admin", "admin"), validateAssignmentIdParam, endAssignment);
+router.patch("/:id/release", roleMiddleware("super_admin", "admin"), validateAssignmentIdParam, releaseAssignment);
 
 // GET routes (Read-only) open to all authenticated roles (mentors are scoped to their own assignments)
 router.get("/", validateAssignmentPagination, getAssignments);

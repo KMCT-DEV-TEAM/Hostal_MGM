@@ -263,7 +263,8 @@ export const dashboardRoutes = [
             ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT,
-            ROLES.MAINTENANCE_STAFF
+            ROLES.MAINTENANCE_STAFF,
+            ROLES.MENTOR
         ],
         element: Profile
     },
@@ -276,7 +277,8 @@ export const dashboardRoutes = [
             ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
             ROLES.PARENT,
-            ROLES.MAINTENANCE_STAFF
+            ROLES.MAINTENANCE_STAFF,
+            ROLES.MENTOR
         ],
         element: Settings
     },
@@ -443,7 +445,8 @@ export const dashboardRoutes = [
             ROLES.WARDEN,
             ROLES.ASSISTANT_WARDEN,
             ROLES.STUDENT,
-            ROLES.PARENT
+            ROLES.PARENT,
+            ROLES.MENTOR
         ],
         element: AnnouncementManagement
     },
