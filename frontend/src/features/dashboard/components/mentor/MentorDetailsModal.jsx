@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { User, Activity, Building, Calendar } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
@@ -138,24 +139,24 @@ export default function MentorDetailsModal({
                                 <DetailRow
                                     label="Mentor"
                                     value={mentor.name || '--'}
-                                    icon={<svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>}
+                                    icon={<User className="w-4 h-4 text-text-secondary" />}
                                 />
                                 <DetailRow
                                     label="Status"
                                     value={<StatusBadge status={isActive ? 'Active' : 'Inactive'} />}
-                                    icon={<svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
+                                    icon={<Activity className="w-4 h-4 text-text-secondary" />}
                                 />
                                 {role === ROLES.SUPER_ADMIN && (
                                     <DetailRow
                                         label="Org Code"
                                         value={mentor.organization?.code || '-----'}
-                                        icon={<svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>}
+                                        icon={<Building className="w-4 h-4 text-text-secondary" />}
                                     />
                                 )}
                                 <DetailRow
                                     label="Joined Date"
                                     value={formatDateReadable(mentor.createdAt)}
-                                    icon={<svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 00-2-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
+                                    icon={<Calendar className="w-4 h-4 text-text-secondary" />}
                                 />
                             </div>
                         </DetailCard>
