@@ -339,7 +339,26 @@ export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) =>
       error.statusCode = 400;
       throw error;
     }
+    if (!isActive) {
+      const activeAssignments = await MentorAssignment.find({
+        mentorId: mentor._id,
+        status: "active",
+      })
+        .populate("batchId", "name")
+        .session(session)
+        .lean();
 
+      if (activeAssignments.length > 0) {
+        const batchNames = activeAssignments
+          .map((a) => a.batchId?.name || "Unknown Batch")
+          .join(", ");
+        const error = new Error(
+          `Cannot deactivate mentor. This mentor is currently assigned to batch(es): ${batchNames}. Please transfer or end their active assignments first.`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+    }
     mentor.isActive = isActive;
     await mentor.save({ session });
 

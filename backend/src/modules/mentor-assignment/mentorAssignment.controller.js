@@ -104,13 +104,13 @@ export const transferMentor = asyncHandler(async (req, res) => {
 });
 
 /**
- * PATCH /mentor-assignments/:id/end
+ * PATCH /mentor-assignments/:id/release
  */
-export const endAssignment = asyncHandler(async (req, res) => {
+export const releaseAssignment = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const result = await updateAssignmentDb(id, { status: "completed" }, req.user);
-    return sendSuccess(res, 200, "Assignment ended/completed successfully", {
+    return sendSuccess(res, 200, "Batch assignment released successfully", {
       data: result
     });
   } catch (error) {
