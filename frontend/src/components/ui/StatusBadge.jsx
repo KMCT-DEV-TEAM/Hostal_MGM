@@ -47,7 +47,7 @@ const StatusBadge = ({ status, className = '', displayOverride = null }) => {
 
     return (
         <span
-            className={`px-2.5 py-1 rounded-md text-xs  inline-flex items-center justify-center gap-1.5 capitalize w-fit min-w-[80px] ${styleClass} ${className}`}
+            className={`px-2.5 py-1 rounded-md text-xs  inline-flex items-center justify-center gap-1.5 capitalize w-fit min-w-20 ${styleClass} ${className}`}
         >
             {displayStatus}
         </span>
