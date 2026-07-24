@@ -90,7 +90,7 @@ export default function Mentors() {
                     showSuccessToast('Status updated successfully');
                     refetchMentors();
                 } catch (error) {
-                    showErrorToast(error?.response?.data?.message || 'Failed to update status');
+                    showErrorToast(error?.message || 'Failed to update status');
                 } finally {
                     setStatusLoadingIds(prev => prev.filter(i => i !== id));
                     setIsConfirming(false);
@@ -115,7 +115,7 @@ export default function Mentors() {
         if (!editingMentor && orgId) {
             payload.organizationId = orgId;
         }
-        
+
         setConfirmConfig({
             title: editingMentor ? "Confirm Update" : "Confirm Creation",
             message: `Are you sure you want to ${editingMentor ? 'update this mentor' : 'create this mentor'}?`,
