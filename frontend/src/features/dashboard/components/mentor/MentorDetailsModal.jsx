@@ -95,13 +95,6 @@ export default function MentorDetailsModal({
                                     <DetailRow label="Name" value={mentor.name} />
                                     <DetailRow label="Email Address" value={mentor.email || '-----'} />
                                     <DetailRow label="Phone Number" value={mentor.phone || '-----'} />
-                                </div>
-                            </DetailCard>
-
-                            {/* Professional Details */}
-                            <DetailCard title="Professional Details" subtitle="Details about the mentor's profession">
-                                <div className="space-y-1">
-                                    <DetailRow label="Role" value={<span className="capitalize">{mentor.role || 'Mentor'}</span>} />
                                     <DetailRow label="Specialization" value={mentor.specialization || 'Not Specified'} />
                                     {role === ROLES.SUPER_ADMIN && (
                                         <DetailRow label="Organization" value={mentor.organization?.name || 'Unassigned'} />
@@ -110,8 +103,8 @@ export default function MentorDetailsModal({
                             </DetailCard>
 
                             {/* Recent Activity */}
-                            <DetailCard title="Recent Assignments" subtitle="Recent assignments of the mentor">
-                                <div className="flex items-center gap-6 border-b border-gray-200 mb-4">
+                            <DetailCard title="Recent Assignments" subtitle="Recent assignments of the mentor" className="flex flex-col">
+                                <div className="flex items-center gap-6 border-b border-gray-200 mb-4 sticky top-0 bg-white z-10 pt-2 pb-1">
                                     <button
                                         onClick={() => setActiveTab('active')}
                                         className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === 'active' ? 'text-primary border-primary' : 'text-text-secondary border-transparent hover:text-gray-700 hover:border-gray-300'}`}
@@ -126,39 +119,42 @@ export default function MentorDetailsModal({
                                     </button>
                                 </div>
 
-                                <ActivityLog
-                                    timeline={activeTab === 'active'
-                                        ? (mentor.activeAssignments || []).map(t => ({
-                                            action: `Assigned to ${t.batchId?.name || 'Batch'}`,
-                                            remarks: t.remarks ? `Assigned: ${t.remarks}` : `Assigned to ${t.batchId?.name || 'Batch'}`,
-                                            timestamp: t.assignedAt,
-                                            actorRole: t.assignedBy?.name || 'Admin',
-                                            meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' },
-                                            actionButton: (
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                fullWidth={false}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setAssignmentToRelease(t._id);
-                                                }}
-                                                className="text-danger hover:bg-danger/5 border border-danger text-[10px] py-1 px-3"
-                                            >
-                                                Release
-                                            </Button>
-                                            )
-                                        }))
-                                        : (mentor.historyAssignments || []).map(t => ({
-                                            action: t.status,
-                                            remarks: t.remarks ? `${t.status}: ${t.remarks}` : t.status,
-                                            timestamp: t.endedAt || t.assignedAt,
-                                            actorRole: t.assignedBy?.name || 'Admin',
-                                            meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' }
-                                        }))
-                                    }
-                                    defaultText={`No ${activeTab} assignments found.`}
-                                />
+                                <div className="overflow-y-auto max-h-110 pr-2 no-scrollbar">
+
+                                    <ActivityLog
+                                        timeline={activeTab === 'active'
+                                            ? (mentor.activeAssignments || []).map(t => ({
+                                                action: `Assigned to ${t.batchId?.name || 'Batch'}`,
+                                                remarks: t.remarks ? `Assigned: ${t.remarks}` : `Assigned to ${t.batchId?.name || 'Batch'}`,
+                                                timestamp: t.assignedAt,
+                                                actorRole: t.assignedBy?.name || 'Admin',
+                                                meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' },
+                                                actionButton: (
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        fullWidth={false}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setAssignmentToRelease(t._id);
+                                                        }}
+                                                        className="text-danger hover:bg-danger/5 border border-danger text-[10px] py-1 px-3"
+                                                    >
+                                                        Release
+                                                    </Button>
+                                                )
+                                            }))
+                                            : (mentor.historyAssignments || []).map(t => ({
+                                                action: t.status,
+                                                remarks: t.remarks ? `${t.status}: ${t.remarks}` : t.status,
+                                                timestamp: t.endedAt || t.assignedAt,
+                                                actorRole: t.assignedBy?.name || 'Admin',
+                                                meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' }
+                                            }))
+                                        }
+                                        defaultText={`No ${activeTab} assignments found.`}
+                                    />
+                                </div>
                             </DetailCard>
 
                         </div>
