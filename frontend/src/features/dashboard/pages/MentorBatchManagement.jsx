@@ -28,7 +28,7 @@ const MentorBatchManagement = () => {
         page,
         limit,
         search: debouncedSearch,
-        status: statusFilter,
+        status: statusFilter.toLowerCase(),
         mentorId: user?.id || user?._id,
       };
       const res = await BatchService.getMentorBatches(params);
@@ -86,10 +86,14 @@ const MentorBatchManagement = () => {
             error={error}
             page={page}
             setPage={setPage}
+            setStatusFilter={setStatusFilter}
+
             totalPages={totalPages}
             limit={limit}
             setLimit={setLimit}
             onRowClick={handleRowClick}
+            searchQuery={searchQuery}
+            statusFilter={statusFilter}
           />
           <AssignmentDetailsModal
             isOpen={isModalOpen}

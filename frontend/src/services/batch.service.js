@@ -31,12 +31,12 @@ const getBatchById = async (id) => {
 };
 
 const getMentorBatches = async (params) => {
-  const response = await apiClient.get('/batches/mentor/assignments', { params });
+  const response = await apiClient.get('/mentor-assignments', { params });
   return response.data;
 };
 
 const getMentorAssignmentById = async (id) => {
-  const response = await apiClient.get(`/batches/mentor/assignments/${id}`);
+  const response = await apiClient.get(`/mentor-assignments/${id}`);
   return response.data;
 };
 

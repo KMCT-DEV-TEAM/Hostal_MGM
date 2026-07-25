@@ -19,11 +19,9 @@ router.use(authMiddleware);
 
 router.post("/", createBatch);
 router.get("/", getBatches);
-router.get("/mentor/assignments", getMentorAssignments);
 router.put("/bulk-status", bulkUpdateBatchStatus);
 router.get("/:id", getBatchById);
 router.put("/:id", updateBatch);
 router.patch("/:id/status", toggleBatchStatus);
-router.get("/mentor/assignments/:id", roleMiddleware("mentor"), getMentorAssignmentById);
 
 export default router;

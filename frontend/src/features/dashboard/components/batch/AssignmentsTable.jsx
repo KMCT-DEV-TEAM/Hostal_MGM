@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
-import { useTranslation } from '@/hooks/useTranslation';
 import { Building2, User } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function AssignmentsTable({
   assignments,
@@ -14,37 +14,14 @@ export default function AssignmentsTable({
   setLimit,
   totalPages,
   onRowClick,
+  searchQuery,
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter,
 }) {
   const { t } = useTranslation();
 
-  // UI state for search and status filter
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All'); // All | Active | History
-
-  // Client‑side filtering
-  const filteredAssignments = useMemo(() => {
-    let data = assignments || [];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      data = data.filter((a) => {
-        return (
-          (a.batchId?.name && a.batchId.name.toLowerCase().includes(q)) ||
-          (a.batchId?.code && a.batchId.code.toLowerCase().includes(q)) ||
-          (a.mentorId?.name && a.mentorId.name.toLowerCase().includes(q)) ||
-          (a.organizationId?.name && a.organizationId.name.toLowerCase().includes(q)) ||
-          (a.assignedBy?.name && a.assignedBy.name.toLowerCase().includes(q))
-        );
-      });
-    }
-    if (statusFilter !== 'All') {
-      if (statusFilter === 'History') {
-        data = data.filter((a) => a.status !== 'active');
-      } else {
-        data = data.filter((a) => a.status === statusFilter.toLowerCase());
-      }
-    }
-    return data;
-  }, [assignments, searchQuery, statusFilter]);
+  const filteredAssignments = assignments; // Server‑side filtering; using assignments directly
 
   const columns = [
     { key: 'batch', header: t('batch'), accessor: (o) => o.batchId?.name || o.batchId },
@@ -97,7 +74,7 @@ export default function AssignmentsTable({
 
   const toolbarEndSlot = (
     <Dropdown
-      options={['All', 'Active', 'History']}
+      options={['All', 'Active', 'Transferred', 'Completed', 'Cancelled']}
       value={statusFilter}
       onChange={(val) => setStatusFilter(val)}
     />

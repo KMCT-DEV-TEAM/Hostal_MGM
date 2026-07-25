@@ -121,8 +121,13 @@ export const getPaginatedAssignmentsDb = async (filters, options) => {
 
   const query = {};
 
-  if (status) {
-    query.status = status.toUpperCase();
+  if (status && status !== "All") {
+    query.status = status;
+  }
+  if (status === "all") {
+    query.status = {
+      $in: ["active", "inactive", "completed", "cancelled", "transferred"]
+    };
   }
   if (mentorId) {
     query.mentorId = mentorId;
