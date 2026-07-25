@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import AsyncDropdown from '@/components/ui/AsyncDropdown';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { getMentors, transferMentor, assignMentor } from '@/services/mentor.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -23,6 +24,7 @@ export default function MentorAssignmentModal({
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const fetchMentors = async (search) => {
     if (!role) return [];
@@ -52,10 +54,13 @@ export default function MentorAssignmentModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
+    setIsConfirmModalOpen(true);
+  };
 
+  const executeSubmit = async () => {
     setIsSubmitting(true);
     try {
       const payload = {
@@ -88,6 +93,7 @@ export default function MentorAssignmentModal({
       showErrorToast(error?.message || 'Failed to assign mentor');
     } finally {
       setIsSubmitting(false);
+      setIsConfirmModalOpen(false);
     }
   };
 
@@ -99,73 +105,87 @@ export default function MentorAssignmentModal({
   };
 
   return (
-    <Modal
-      bottomSheetOnMobile={true}
-      isOpen={isOpen}
-      onClose={onClose}
-      title={existingAssignmentId ? "Transfer Mentor" : "Assign Mentor"}
-      titleSize="text-lg"
-      subtitle={existingAssignmentId ? "Transfer mentorship to a new mentor" : "Assign a mentor to this batch"}
-      maxWidth="max-w-xl"
-      asForm
-      onSubmit={handleSubmit}
-      footer={
-        <div className="flex justify-end gap-3">
-          <Button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            variant="outline"
-            size="sm"
-            fullWidth={false}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            isLoading={isSubmitting}
-            variant="primary"
-            size="sm"
-            fullWidth={false}
-          >
-            {existingAssignmentId ? "Transfer" : "Assign"}
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-4 md:space-y-5 py-2">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Select Mentor <span className="text-danger">*</span>
-          </label>
-          <AsyncDropdown
-            value={formData.mentorId}
-            onChange={(val) => {
-              setFormData(prev => ({ ...prev, mentorId: val }));
-              if (errors.mentorId) setErrors(prev => ({ ...prev, mentorId: "" }));
-            }}
-            fetchOptions={fetchMentors}
-            getOptionLabel={(opt) => opt.name ? `${opt.name} (${opt.email})` : 'Select Mentor'}
-            getOptionValue={(opt) => opt._id || opt.id}
-            placeholder="Search and select mentor..."
-          />
-          <ErrorMessage error={errors.mentorId} />
-        </div>
+    <>
+      <Modal
+        bottomSheetOnMobile={true}
+        isOpen={isOpen}
+        onClose={onClose}
+        title={existingAssignmentId ? "Transfer Mentor" : "Assign Mentor"}
+        titleSize="text-lg"
+        subtitle={existingAssignmentId ? "Transfer mentorship to a new mentor" : "Assign a mentor to this batch"}
+        maxWidth="max-w-lg"
+        asForm
+        onSubmit={handleSubmit}
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              variant="outline"
+              size="sm"
+              fullWidth={false}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              isLoading={isSubmitting}
+              variant="primary"
+              size="sm"
+              fullWidth={false}
+            >
+              {existingAssignmentId ? "Transfer" : "Assign"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 md:space-y-5 py-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Select Mentor <span className="text-danger">*</span>
+            </label>
+            <AsyncDropdown
+              value={formData.mentorId}
+              onChange={(val) => {
+                setFormData(prev => ({ ...prev, mentorId: val }));
+                if (errors.mentorId) setErrors(prev => ({ ...prev, mentorId: "" }));
+              }}
+              fetchOptions={fetchMentors}
+              getOptionLabel={(opt) => opt.name ? `${opt.name} (${opt.email})` : 'Select Mentor'}
+              getOptionValue={(opt) => opt._id || opt.id}
+              placeholder="Search and select mentor..."
+            />
+            <ErrorMessage error={errors.mentorId} />
+          </div>
 
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Remarks (Optional)
-          </label>
-          <textarea
-            value={formData.remarks}
-            onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
-            rows={3}
-            className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"
-            placeholder="Enter any assignment remarks or reasons..."
-          />
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Remarks (Optional)
+            </label>
+            <textarea
+              value={formData.remarks}
+              onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"
+              placeholder="Enter any assignment remarks or reasons..."
+            />
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={executeSubmit}
+        title={existingAssignmentId ? "Confirm Transfer" : "Confirm Assignment"}
+        message={`Are you sure you want to ${existingAssignmentId ? "transfer this mentor" : "assign this mentor"}?`}
+        confirmText={existingAssignmentId ? "Yes, Transfer" : "Yes, Assign"}
+        cancelText="Cancel"
+        isSubmitting={isSubmitting}
+        variant="primary"
+      />
+    </>
   );
 }
