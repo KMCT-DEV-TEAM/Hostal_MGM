@@ -88,86 +88,6 @@ const getBatches = asyncHandler(async (req, res) => {
   });
 });
 
-// Mentor-specific batch listing with optional mentor filter
-
-const getMentorAssignments = asyncHandler(async (req, res) => {
-  const { page, limit, search, status, mentorId, organizationId } = req.query;
-
-  const query = {};
-  if (mentorId) query.mentorId = mentorId;
-  if (organizationId) query.organizationId = organizationId;
-
-  if (status && status !== "All") {
-    query.status = status === "history" ? { $ne: "active" } : status;
-  }
-
-  if (search) {
-    const regex = { $regex: search, $options: "i" };
-    query.$or = [
-      { remarks: regex },
-      { name: regex },
-      { code: regex },
-    ];
-  }
-
-  const sort = { createdAt: -1 };
-
-  if (limit && Number(limit) === 0) {
-    const assignments = await MentorAssignment.find(query)
-      .sort(sort)
-      .populate("batchId", "name code")
-      .populate("organizationId", "name");
-    return sendSuccess(res, 200, "All Mentor Assignments retrieved successfully", {
-      data: assignments,
-      totalCount: assignments.length,
-      totalPages: 1,
-    });
-  }
-
-  const pageNum = Number(page) || 1;
-  const limitNum = Number(limit) || 10;
-  const skip = (pageNum - 1) * limitNum;
-
-  const [assignments, totalCount] = await Promise.all([
-    MentorAssignment.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
-      .populate("batchId", "name code")
-      .populate("organizationId", "name")
-      .populate("assignedBy", "name"),
-    MentorAssignment.countDocuments(query),
-  ]);
-
-  return sendSuccess(res, 200, "Mentor Assignments retrieved successfully", {
-    data: assignments,
-    totalCount,
-    totalPages: Math.ceil(totalCount / limitNum),
-  });
-});
-
-// Get a single mentor assignment by ID with role protection
-const getMentorAssignmentById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  console.log(req.user)
-  const assignment = await MentorAssignment.findById(id)
-    .populate('batchId', 'name code')
-    .populate('organizationId', 'name')
-    .populate('mentorId', 'name')
-    .populate('assignedBy', 'name');
-  if (!assignment) {
-    return sendError(res, 404, "Mentor Assignment not found");
-  }
-  if (req.user && req.user.role === "mentor") {
-    const mentorId = req.user.id || req.user._id;
-    console.log(assignment.mentorId)
-    console.log(mentorId)
-    if (!assignment.mentorId._id || assignment.mentorId._id.toString() !== mentorId.toString()) {
-      return sendError(res, 403, "You are not authorized to view this assignment");
-    }
-  }
-  return sendSuccess(res, 200, "Mentor Assignment retrieved successfully", { data: assignment });
-});
 
 const getBatchById = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -278,6 +198,5 @@ export {
   updateBatch,
   toggleBatchStatus,
   bulkUpdateBatchStatus,
-  getMentorAssignments,
   getMentorAssignmentById,
 };
