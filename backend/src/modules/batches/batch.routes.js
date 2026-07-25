@@ -2,8 +2,6 @@ import express from "express";
 import {
   createBatch,
   getBatches,
-  getMentorAssignments,
-  getMentorAssignmentById,
   getBatchById,
   updateBatch,
   toggleBatchStatus,

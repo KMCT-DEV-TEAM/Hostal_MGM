@@ -198,5 +198,4 @@ export {
   updateBatch,
   toggleBatchStatus,
   bulkUpdateBatchStatus,
-  getMentorAssignmentById,
 };
