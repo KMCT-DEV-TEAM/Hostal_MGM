@@ -20,15 +20,26 @@ export default function ActivityLog({ timeline, defaultText = "No activity recor
                             <div className="mb-2">
                                 <span className="text-xs font-medium text-text-primary capitalize">{t.remarks || (t.action ? t.action.replace('_', ' ') : 'Action')}</span>
                             </div>
-                            {t.meta && (
-                                <div className="flex items-center gap-3 mt-3 mb-3">
-                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                        {t.meta.icon || <UserCircle2 size={20} />}
-                                    </div>
-                                    <div>
-                                        <div className="text-[10px] text-text-secondary">{t.meta.label}</div>
-                                        <div className="text-xs font-medium text-text-primary">{t.meta.value}</div>
-                                    </div>
+                            {(t.meta || t.actionButton) && (
+                                <div className="flex items-center justify-between gap-3 mt-3 mb-3">
+                                    {t.meta ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                                {t.meta.icon || <UserCircle2 size={20} />}
+                                            </div>
+                                            <div>
+                                                <div className="text-[10px] text-text-secondary">{t.meta.label}</div>
+                                                <div className="text-xs font-medium text-text-primary">{t.meta.value}</div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div />
+                                    )}
+                                    {t.actionButton && (
+                                        <div className="shrink-0">
+                                            {t.actionButton}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             <div className="flex justify-between items-center mt-3">
