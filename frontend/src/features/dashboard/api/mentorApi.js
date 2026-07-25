@@ -43,7 +43,7 @@ const mentorApi = {
         api.post(`/mentor-assignments/${id}/transfer`, payload),
 
     endMentorAssignment: (id) =>
-        api.patch(`/mentor-assignments/${id}/end`),
+        api.patch(`/mentor-assignments/${id}/release`),
 };
 
 export default mentorApi;

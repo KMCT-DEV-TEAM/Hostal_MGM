@@ -8,8 +8,8 @@ export default function PageHeader({ title, subtitle, actionButton, className = 
                     {actionButton}
                 </div>
             )}
-            <h1 className="text-2xl font-bold text-text-primary tracking-tight">{title}</h1>
-            {subtitle && <p className="text-sm text-text-secondary mt-1">{subtitle}</p>}
+            <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">{title}</h1>
+            {subtitle && <p className="text-xs sm:text-sm text-text-secondary mt-1">{subtitle}</p>}
         </div>
     );
 }

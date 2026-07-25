@@ -7,7 +7,9 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import MentorAssignmentModal from './MentorAssignmentModal';
 import MentorDetailsModal from '../mentor/MentorDetailsModal';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import BatchService from '@/services/batch.service';
+import { endMentorAssignment } from '@/services/mentor.service';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 const BatchDetailView = ({ selectedBatchDetail, setView }) => {
@@ -15,6 +17,8 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
     const [selectedMentorForModal, setSelectedMentorForModal] = useState(null);
     const [batch, setBatch] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isReleasing, setIsReleasing] = useState(false);
+    const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
 
     const fetchBatch = async () => {
         if (!selectedBatchDetail) return;
@@ -29,6 +33,20 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
             setBatch(selectedBatchDetail);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleReleaseMentor = async () => {
+        if (!displayBatch?.activeMentor?.assignmentId) return;
+        setIsReleasing(true);
+        try {
+            await endMentorAssignment(displayBatch.activeMentor.assignmentId);
+            await fetchBatch();
+        } catch (error) {
+            console.error('Failed to release mentor', error);
+        } finally {
+            setIsReleasing(false);
+            setIsReleaseModalOpen(false);
         }
     };
 
@@ -99,15 +117,30 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                             title="Mentor Details"
                             subtitle="Assigned mentor for this batch"
                             headerAction={
-                                <Button
-                                    variant={'primary'}
-                                    size="sm"
-                                    fullWidth={false}
-                                    onClick={() => setIsAssignmentModalOpen(true)}
-                                    disabled={assignmentLoading}
-                                >
-                                    {activeAssignment ? 'Transfer Mentor' : 'Assign Mentor'}
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    {activeAssignment && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            fullWidth={false}
+                                            onClick={() => setIsReleaseModalOpen(true)}
+                                            isLoading={isReleasing}
+                                            disabled={assignmentLoading || isReleasing}
+                                            className="text-danger hover:bg-danger/5 border border-danger"
+                                        >
+                                            Release
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant={'primary'}
+                                        size="sm"
+                                        fullWidth={false}
+                                        onClick={() => setIsAssignmentModalOpen(true)}
+                                        disabled={assignmentLoading || isReleasing}
+                                    >
+                                        {activeAssignment ? 'Transfer Mentor' : 'Assign Mentor'}
+                                    </Button>
+                                </div>
                             }
                         >
                             {assignmentLoading ? (
@@ -216,6 +249,18 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                     zIndex={60}
                 />
             )}
+
+            <ConfirmationModal
+                isOpen={isReleaseModalOpen}
+                onClose={() => setIsReleaseModalOpen(false)}
+                onConfirm={handleReleaseMentor}
+                title="Release Mentor"
+                message="Are you sure you want to release the currently assigned mentor? This will move them to the history timeline."
+                confirmText="Release Mentor"
+                cancelText="Cancel"
+                isSubmitting={isReleasing}
+                variant="danger"
+            />
         </>
     );
 };
