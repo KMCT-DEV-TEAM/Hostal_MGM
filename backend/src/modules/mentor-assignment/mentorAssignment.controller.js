@@ -30,7 +30,6 @@ export const getAssignments = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const { status, search, mentorId, batchId, organizationId, sortBy, sortOrder } = req.query;
-    console.log(status)
     let targetMentorId = mentorId;
     if (req.user.role === "mentor") {
       targetMentorId = req.user.id || req.user._id;
