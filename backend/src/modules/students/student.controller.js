@@ -570,7 +570,25 @@ const getStudentById = asyncHandler(async (req, res) => {
   student.departmentId = student.department?._id;
   student.batchId = student.batch?._id;
 
-  return sendSuccess(res, 200, "Student details fetched successfully", student);
+  // Add mentor base details if batch has an active mentor
+  let mentorDetails = null;
+  if (student.batchId) {
+    const mentorAssignment = await MentorAssignment.findOne({
+      batchId: student.batchId,
+      status: "active",
+    })
+      .populate("mentorId", "name email phone")
+      .lean();
+    if (mentorAssignment) {
+      mentorDetails = mentorAssignment.mentorId;
+    }
+  }
+  if (mentorDetails) {
+    student.mentor = mentorDetails;
+  }
+
+  const { password, tempPassword, __v, ...sanitizedStudent } = student;
+  return sendSuccess(res, 200, "Student details fetched successfully", sanitizedStudent);
 });
 
 const getStudentsByMentor = asyncHandler(async (req, res) => {

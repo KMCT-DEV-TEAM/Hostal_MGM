@@ -431,5 +431,41 @@ export default {
                 body: "{{message}}"
             }
         }
+    },
+
+    PASS_HOSTEL_TRANSFERRED: {
+        student: {
+            "in-app": {
+                title: "Pass Hostel Transfer",
+                message: "{{studentMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Pass Hostel Transfer",
+                body: "{{studentMessage}}"
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Pass Reassigned",
+                message: "{{parentMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Pass Reassigned",
+                body: "{{parentMessage}}"
+            }
+        },
+        warden: {
+            "in-app": {
+                title: "Pass Responsibility Updated",
+                message: "{{wardenMessage}}",
+                type: "info"
+            },
+            push: {
+                title: "Pass Responsibility Updated",
+                body: "{{wardenMessage}}"
+            }
+        }
     }
 };

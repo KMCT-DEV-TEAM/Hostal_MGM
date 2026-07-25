@@ -27,7 +27,8 @@ const timelineSchema = new mongoose.Schema(
 
         "cancelled",
         "returned",
-        "completed"
+        "completed",
+        "hostel_transferred"
       ],
       required: true,
     },
@@ -39,6 +40,14 @@ const timelineSchema = new mongoose.Schema(
       type: String,
       enum: ["student", "parent", "warden", "admin", "super_admin", "system"],
       required: true,
+    },
+    oldHostelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hostel",
+    },
+    newHostelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hostel",
     },
     remarks: {
       type: String,

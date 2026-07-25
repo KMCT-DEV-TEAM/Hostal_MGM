@@ -482,7 +482,24 @@ const StudentDetailView = () => {
               >
                 {student.batch?.name || "N/A"}
               </InfoRow>
-
+              <InfoRow
+                icon={<User className="w-4 h-4 text-gray-400" />}
+                label="Mentor"
+              >
+                {student.mentor?.name || "N/A"}
+              </InfoRow>
+              <InfoRow
+                icon={<Mail className="w-4 h-4 text-gray-400" />}
+                label="Mentor Email"
+              >
+                {student.mentor?.email || "N/A"}
+              </InfoRow>
+              <InfoRow
+                icon={<Phone className="w-4 h-4 text-gray-400" />}
+                label="Mentor Phone"
+              >
+                {student.mentor?.phone || "N/A"}
+              </InfoRow>
             </div>
           </div>
 

@@ -5,6 +5,10 @@ import Hostel from "../hostels/hostel.model.js";
 import FurnitureAsset from "../furnitures/furnitureAsset.model.js";
 import FurnitureAssetHistory from "../furnitures/furnitureAssetHistory.model.js";
 import { syncHostelOrganizations } from "../hostels/hostel.service.js";
+import { AttendanceWindow } from "../attendance/attendance.model.js";
+import { reassignActivePasses } from "../passes/pass.service.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import Parent from "../parents/parent.model.js";
 
 const deallocateFurniture = async (studentId, actor, session) => {
   const assets = await FurnitureAsset.find({ studentId }).session(session);
@@ -119,6 +123,20 @@ const changeHostelInternal = async (studentId, data, actor) => {
       throw error;
     }
 
+    // Validate that no open attendance window exists for the current hostel
+    if (student.hostelId) {
+      const openWindowExists = await AttendanceWindow.exists({
+        hostelId: student.hostelId,
+        status: "open"
+      }).session(session);
+
+      if (openWindowExists) {
+        const error = new Error("Cannot transfer hostel. Attendance window is currently open for the student's current hostel.");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     const newHostel = await Hostel.findById(hostelId).session(session);
     if (!newHostel) {
       const error = new Error("New hostel not found");
@@ -132,7 +150,7 @@ const changeHostelInternal = async (studentId, data, actor) => {
     }
 
     const activeAllocation = await StudentHostelAllocation.findOne({
-      studentId,
+      studentId: student._id,
       status: "active"
     }).session(session);
 
@@ -157,7 +175,7 @@ const changeHostelInternal = async (studentId, data, actor) => {
     await activeAllocation.save({ session });
 
     const newAllocation = new StudentHostelAllocation({
-      studentId,
+      studentId: student._id,
       organizationId: student.organizationId,
       hostelId,
       roomNumber,
@@ -174,14 +192,80 @@ const changeHostelInternal = async (studentId, data, actor) => {
     student.hostelStatus = "active";
     await student.save({ session });
 
-    await deallocateFurniture(studentId, actor, session);
+    // Sync active passes within the same transaction
+    const passSyncResult = await reassignActivePasses(student._id, oldHostelId, hostelId, actor, session);
+
+    await deallocateFurniture(student._id, actor, session);
 
     await syncHostelOrganizations(oldHostelId, session);
     await syncHostelOrganizations(hostelId, session);
 
     await session.commitTransaction();
-    console.log("changeHostelInternal -> SUCCESS", { newAllocationId: newAllocation._id, oldAllocationId: activeAllocation._id, studentId });
-    return { oldAllocation: activeAllocation, newAllocation, student, oldHostelId };
+    console.log("changeHostelInternal -> SUCCESS", { newAllocationId: newAllocation._id, oldAllocationId: activeAllocation._id, studentId: student._id });
+
+    // Post-commit Notifications
+    if (passSyncResult && passSyncResult.updatedCount > 0) {
+      try {
+        const oldHostel = await Hostel.findById(oldHostelId).lean();
+        const oldWardenIds = oldHostel && oldHostel.wardens ? oldHostel.wardens.map(id => id.toString()) : [];
+        const newWardenIds = newHostel && newHostel.wardens ? newHostel.wardens.map(id => id.toString()) : [];
+
+        // Group 1: Notify Student, Parent, and New Hostel Wardens
+        const targets = [
+          { type: 'STUDENT', filter: { studentIds: [student._id.toString()] } },
+          { type: 'PARENT', filter: { studentIds: [student._id.toString()] } }
+        ];
+
+
+        if (newWardenIds.length > 0) {
+          targets.push({ type: 'USER', filter: { userIds: newWardenIds } });
+        }
+
+        await orchestratorService.triggerNotification({
+          eventName: 'PASS_HOSTEL_TRANSFERRED',
+          target: targets,
+          data: {
+            studentMessage: "Your active pass has been transferred to your new hostel.",
+            parentMessage: "Your child's active pass has been reassigned because of a hostel transfer.",
+            wardenMessage: "A new active pass has been assigned to your hostel."
+          }
+        });
+
+        // Group 2: Notify Old Hostel Wardens (requires a different wardenMessage)
+        if (oldWardenIds.length > 0) {
+          await orchestratorService.triggerNotification({
+            eventName: 'PASS_HOSTEL_TRANSFERRED',
+            target: {
+              type: 'USER',
+              filter: { userIds: oldWardenIds }
+            },
+            data: {
+              wardenMessage: "Active pass removed from your hostel."
+            }
+          });
+        }
+      } catch (notifErr) {
+        console.error("[HostelTransferService] Post-commit notification error:", notifErr);
+      }
+    }
+
+    // Structured Audit Log
+    console.log("[HostelTransferService] Audit Log - Student Hostel Transfer Success", {
+      studentId: student._id,
+      oldHostelId,
+      newHostelId: hostelId,
+      updatedPassCount: passSyncResult.updatedCount,
+      actor: actor._id || actor.id,
+      timestamp: new Date()
+    });
+
+    return {
+      oldAllocation: activeAllocation,
+      newAllocation,
+      student,
+      oldHostelId,
+      passSyncResult
+    };
   } catch (error) {
     console.error("changeHostelInternal -> ERROR", error);
     await session.abortTransaction();
