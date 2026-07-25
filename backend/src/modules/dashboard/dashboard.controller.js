@@ -727,7 +727,6 @@ const buildMentorScopeForStats = async (req) => {
   }).select("batchId").lean();
 
   const batchIds = activeAssignments.map(({ batchId }) => batchId);
-
   return {
     role: "mentor",
     organizationId: req.user.organization,
@@ -742,7 +741,6 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
 
   // Resolve student IDs in mentor's batches
   const studentIds = await Student.distinct('_id', { batchId: { $in: batchIds } });
-
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
   const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
@@ -777,7 +775,7 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: { $month: "$createdAt" },
-          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          presentCount: { $sum: { $cond: [{ $eq: [{ $toLower: "$status" }, "present"] }, 1, 0] } },
           totalCount: { $sum: 1 }
         }
       }
@@ -787,7 +785,7 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: { $month: "$createdAt" },
-          presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          presentCount: { $sum: { $cond: [{ $eq: [{ $toLower: "$status" }, "present"] }, 1, 0] } },
           totalCount: { $sum: 1 }
         }
       }
