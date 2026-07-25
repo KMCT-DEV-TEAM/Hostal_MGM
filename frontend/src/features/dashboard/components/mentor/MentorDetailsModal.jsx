@@ -71,6 +71,35 @@ export default function MentorDetailsModal({
 
     const isActive = mentor.isActive === true || mentor.isActive === 'true';
 
+    const renderQuickSummary = () => (
+        <DetailCard title="Quick Summary" subtitle="Quick Summary about the mentor" className="md:sticky md:top-0">
+            <div className="space-y-1">
+                <DetailRow
+                    label="Mentor"
+                    value={mentor.name || '--'}
+                    icon={<User className="w-4 h-4 text-text-secondary" />}
+                />
+                <DetailRow
+                    label="Status"
+                    value={<StatusBadge status={isActive ? 'Active' : 'Inactive'} />}
+                    icon={<Activity className="w-4 h-4 text-text-secondary" />}
+                />
+                {role === ROLES.SUPER_ADMIN && (
+                    <DetailRow
+                        label="Org Code"
+                        value={mentor.organization?.code || '-----'}
+                        icon={<Building className="w-4 h-4 text-text-secondary" />}
+                    />
+                )}
+                <DetailRow
+                    label="Joined Date"
+                    value={formatDateReadable(mentor.createdAt)}
+                    icon={<Calendar className="w-4 h-4 text-text-secondary" />}
+                />
+            </div>
+        </DetailCard>
+    );
+
     return (
         <>
             <Modal
@@ -85,11 +114,11 @@ export default function MentorDetailsModal({
                 {loading ? (
                     <DetailsSkeletonLoader />
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mt-4 md:items-start">
                         {/* LEFT COLUMN */}
                         <div className="space-y-6">
 
-                            {/* Mentor Information */}
+                            {/* 1. Mentor Information */}
                             <DetailCard title="Mentor Information" subtitle="Details about mentor">
                                 <div className="space-y-1">
                                     <DetailRow label="Name" value={mentor.name} />
@@ -102,7 +131,12 @@ export default function MentorDetailsModal({
                                 </div>
                             </DetailCard>
 
-                            {/* Recent Activity */}
+                            {/* 2. Quick Summary (MOBILE ONLY - ordered before recent assignments) */}
+                            <div className="md:hidden">
+                                {renderQuickSummary()}
+                            </div>
+
+                            {/* 3. Recent Activity */}
                             <DetailCard title="Recent Assignments" subtitle="Recent assignments of the mentor" className="flex flex-col">
                                 <div className="flex items-center gap-6 border-b border-gray-200 mb-4 sticky top-0 bg-white z-10 pt-2 pb-1">
                                     <button
@@ -156,40 +190,11 @@ export default function MentorDetailsModal({
                                     />
                                 </div>
                             </DetailCard>
-
                         </div>
 
-                        {/* RIGHT COLUMN */}
-                        <div className="space-y-6">
-
-                            {/* Quick Summary */}
-                            <DetailCard title="Quick Summary" subtitle="Quick Summary about the mentor">
-                                <div className="space-y-1">
-                                    <DetailRow
-                                        label="Mentor"
-                                        value={mentor.name || '--'}
-                                        icon={<User className="w-4 h-4 text-text-secondary" />}
-                                    />
-                                    <DetailRow
-                                        label="Status"
-                                        value={<StatusBadge status={isActive ? 'Active' : 'Inactive'} />}
-                                        icon={<Activity className="w-4 h-4 text-text-secondary" />}
-                                    />
-                                    {role === ROLES.SUPER_ADMIN && (
-                                        <DetailRow
-                                            label="Org Code"
-                                            value={mentor.organization?.code || '-----'}
-                                            icon={<Building className="w-4 h-4 text-text-secondary" />}
-                                        />
-                                    )}
-                                    <DetailRow
-                                        label="Joined Date"
-                                        value={formatDateReadable(mentor.createdAt)}
-                                        icon={<Calendar className="w-4 h-4 text-text-secondary" />}
-                                    />
-                                </div>
-                            </DetailCard>
-
+                        {/* RIGHT COLUMN (DESKTOP ONLY) */}
+                        <div className="hidden md:block space-y-6">
+                            {renderQuickSummary()}
                         </div>
                     </div>
                 )}
