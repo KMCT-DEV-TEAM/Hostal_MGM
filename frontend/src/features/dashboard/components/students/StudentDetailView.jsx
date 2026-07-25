@@ -502,6 +502,51 @@ const StudentDetailView = () => {
               </InfoRow>
             </div>
           </div>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-primary mb-1">
+              Contact Information
+            </h3>
+            <p className="text-xs text-gray-400 mb-6">
+              Contact Information of The Student
+            </p>
+            <div className="space-y-4">
+              <InfoRow
+                icon={<Phone className="w-4 h-4 text-gray-400" />}
+                label="Phone No"
+              >
+                {student.phone || "N/A"}
+              </InfoRow>
+              {/* Email row needs pencil button — custom layout */}
+              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
+                <span className="text-gray-500 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  Email
+                </span>
+                <div className="sm:col-span-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-gray-900 truncate">
+                    <span className="hidden sm:inline">: </span>
+                    {student.email || "N/A"}
+                  </span>
+                  {canChangeEmail && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEmailChangeTarget({
+                          type: "student",
+                          subjectName: student.name || "the student",
+                          currentEmail: student.email || "",
+                        })
+                      }
+                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
+                      aria-label="Change student email"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Current Hostel */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -579,51 +624,7 @@ const StudentDetailView = () => {
           </div>
 
           {/* Contact Information */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">
-              Contact Information
-            </h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Contact Information of The Student
-            </p>
-            <div className="space-y-4">
-              <InfoRow
-                icon={<Phone className="w-4 h-4 text-gray-400" />}
-                label="Phone No"
-              >
-                {student.phone || "N/A"}
-              </InfoRow>
-              {/* Email row needs pencil button — custom layout */}
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  Email
-                </span>
-                <div className="sm:col-span-2 flex items-center justify-between gap-2">
-                  <span className="font-medium text-gray-900 truncate">
-                    <span className="hidden sm:inline">: </span>
-                    {student.email || "N/A"}
-                  </span>
-                  {canChangeEmail && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEmailChangeTarget({
-                          type: "student",
-                          subjectName: student.name || "the student",
-                          currentEmail: student.email || "",
-                        })
-                      }
-                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
-                      aria-label="Change student email"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           {/* Address Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">

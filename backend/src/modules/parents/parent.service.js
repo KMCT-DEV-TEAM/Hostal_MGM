@@ -125,7 +125,7 @@ const updateParentDb = async (parentProfileId, data) => {
 };
 
 
- const setDefaultGuardianDb = async (
+const setDefaultGuardianDb = async (
   parentProfileId,
   defaultGuardian
 ) => {
@@ -343,7 +343,6 @@ const getParentsService = async ({ organizationId, hostelIds, batchIds, query })
       },
     });
   }
-  console.log(pipeline)
   const parents = await Parent.aggregate([
     ...pipeline,
     {

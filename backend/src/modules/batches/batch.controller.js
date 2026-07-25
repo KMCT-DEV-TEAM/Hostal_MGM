@@ -1,4 +1,5 @@
 import asyncHandler from "../../utils/asyncHandler.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
 import { createLogDb } from "../logs/log.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { getIo } from "../../config/socket.js";
@@ -24,15 +25,15 @@ const createBatch = asyncHandler(async (req, res) => {
   const newBatch = await createBatchDb({ name, code, departmentId, startYear, endYear });
 
   if (req.user) {
-      await createLogDb({
-          action: "Created Batch",
-          entityType: "Batch",
-          entityId: newBatch._id,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Created new batch: ${name} (${code})`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Created Batch",
+      entityType: "Batch",
+      entityId: newBatch._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Created new batch: ${name} (${code})`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('batchCreated', newBatch);
@@ -87,6 +88,7 @@ const getBatches = asyncHandler(async (req, res) => {
   });
 });
 
+
 const getBatchById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const batch = await getBatchByIdDb(id);
@@ -116,15 +118,15 @@ const updateBatch = asyncHandler(async (req, res) => {
   }
 
   if (req.user) {
-      await createLogDb({
-          action: "Updated Batch",
-          entityType: "Batch",
-          entityId: batch._id,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Updated details for batch: ${name || batch.name}`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Updated Batch",
+      entityType: "Batch",
+      entityId: batch._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Updated details for batch: ${name || batch.name}`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('batchUpdated', { id: batch._id });
@@ -141,15 +143,15 @@ const toggleBatchStatus = asyncHandler(async (req, res) => {
   }
 
   if (req.user) {
-      await createLogDb({
-          action: "Updated Batch Status",
-          entityType: "Batch",
-          entityId: batch._id,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Changed batch status to ${batch.isActive ? 'Active' : 'Inactive'} for batch: ${batch.name}`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Updated Batch Status",
+      entityType: "Batch",
+      entityId: batch._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Changed batch status to ${batch.isActive ? 'Active' : 'Inactive'} for batch: ${batch.name}`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('batchUpdated', { id: batch._id });
@@ -173,15 +175,15 @@ const bulkUpdateBatchStatus = asyncHandler(async (req, res) => {
   await bulkUpdateBatchStatusDb(ids, isActive);
 
   if (req.user) {
-      await createLogDb({
-          action: "Bulk Updated Batch Status",
-          entityType: "Batch",
-          entityId: null,
-          user: req.user.id || req.user._id,
-          userRole: req.user.role || 'System',
-          details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} batches`,
-          status: "success"
-      });
+    await createLogDb({
+      action: "Bulk Updated Batch Status",
+      entityType: "Batch",
+      entityId: null,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role || 'System',
+      details: `Bulk updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} batches`,
+      status: "success"
+    });
   }
 
   getIo()?.emit('batchUpdated', { bulk: true });

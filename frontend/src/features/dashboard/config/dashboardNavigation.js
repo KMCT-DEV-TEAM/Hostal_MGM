@@ -734,6 +734,19 @@ export const DASHBOARD_NAV = {
             ]
         },
         {
+            section: 'ACADEMICS',
+
+            items: [
+
+                {
+                    icon: Layers,
+                    label: 'Assigned Batches',
+                    path: '/dashboard/assigned-batches'
+                }
+
+            ]
+        },
+        {
             section: 'OPERATIONS',
             items: [
                 {

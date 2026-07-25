@@ -11,7 +11,6 @@ import AdminAttendance from '@/features/dashboard/pages/AdminAttendance';
 import AttendanceScan from '@/features/dashboard/pages/AttendanceScan';
 import Maintenance from '@/features/dashboard/pages/Maintenance';
 import HostelManagement from '@/features/dashboard/pages/HostelManagement';
-import BatchManagement from '@/features/dashboard/pages/BatchManagement';
 import CourseManagement from '@/features/dashboard/pages/CourseManagement';
 import DepartmentManagement from '@/features/dashboard/pages/DepartmentManagement';
 import Profile from '@/features/dashboard/pages/Profile';
@@ -36,6 +35,8 @@ import VisitorDetails from '@/features/visitors/pages/VisitorDetails';
 import AnnouncementManagement from '@/features/dashboard/pages/AnnouncementManagement';
 import MentorsIndex from '@/features/dashboard/pages/MentorsIndex';
 import Mentors from '@/features/dashboard/pages/Mentors';
+import MentorBatchManagement from '@/features/dashboard/pages/MentorBatchManagement';
+import BatchManagement from '@/features/dashboard/pages/BatchManagement';
 export const dashboardRoutes = [
 
     {
@@ -202,9 +203,16 @@ export const dashboardRoutes = [
         path: 'batches',
         roles: [
             ROLES.SUPER_ADMIN,
-            ROLES.ADMIN
+            ROLES.ADMIN,
         ],
         element: BatchManagement
+    },
+    {
+        path: 'assigned-batches',
+        roles: [
+            ROLES.MENTOR
+        ],
+        element: MentorBatchManagement
     },
     {
         path: 'furniture',
