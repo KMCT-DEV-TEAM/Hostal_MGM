@@ -30,11 +30,25 @@ const getBatchById = async (id) => {
   return response.data;
 };
 
+const getMentorBatches = async (params) => {
+  const response = await apiClient.get('/batches/mentor/assignments', { params });
+  return response.data;
+};
+
+const getMentorAssignmentById = async (id) => {
+  const response = await apiClient.get(`/batches/mentor/assignments/${id}`);
+  return response.data;
+};
+
+
+
 export default {
   getBatches,
+  getMentorBatches,
   createBatch,
   updateBatch,
   toggleStatus,
   bulkToggleStatus,
+  getMentorAssignmentById,
   getBatchById,
 };

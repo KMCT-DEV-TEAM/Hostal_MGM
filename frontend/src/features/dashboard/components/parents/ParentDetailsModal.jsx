@@ -52,13 +52,15 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
                             <InfoRow label="Email">
                                 <div className="flex items-center justify-between w-full">
                                     <span>{parent.email}</span>
-                                    <button
-                                        type="button"
-                                        className="ml-2 p-1 rounded text-text-secondary hover:text-primary transition cursor-pointer"
-                                        onClick={() => setIsEmailModalOpen(true)}
-                                    >
-                                        <Pencil size={16} />
-                                    </button>
+                                    {
+                                        role !== "mentor" && <button
+                                            type="button"
+                                            className="ml-2 p-1 rounded text-text-secondary hover:text-primary transition cursor-pointer"
+                                            onClick={() => setIsEmailModalOpen(true)}
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                    }
                                 </div>
                             </InfoRow>
                             <InfoRow label="Status">
