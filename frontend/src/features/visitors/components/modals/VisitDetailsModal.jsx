@@ -7,6 +7,7 @@ import TimelineStep from '@/components/ui/TimelineStep';
 import ActivityLog from '@/components/ui/ActivityLog';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
+import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
     const [visit, setVisit] = useState(null);
@@ -42,16 +43,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
     if (isLoading) {
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Loading Details..." maxWidth="max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
-                    <div className="space-y-6">
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                    </div>
-                    <div className="space-y-6">
-                        <div className="h-48 bg-gray-100 animate-pulse rounded-xl"></div>
-                        <div className="h-64 bg-gray-100 animate-pulse rounded-xl"></div>
-                    </div>
-                </div>
+                <DetailsSkeletonLoader />
             </Modal>
         );
     }

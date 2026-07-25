@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import AsyncDropdown from '@/components/ui/AsyncDropdown';
-import mentorService from '@/services/mentor.service';
+import { getMentors, transferMentor, assignMentor } from '@/services/mentor.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+
 
 export default function MentorAssignmentModal({
   isOpen,
@@ -26,7 +28,7 @@ export default function MentorAssignmentModal({
     if (!role) return [];
     try {
       // Fetch active mentors for the specific organization
-      const response = await mentorService.getMentors(role, {
+      const response = await getMentors(role, {
         organizationId: organizationId,
         isActive: 'true',
         search,
@@ -65,7 +67,7 @@ export default function MentorAssignmentModal({
         // Transfer mentor
         // The API might expect newMentorId for transfer depending on how it's implemented.
         // The docs say: { "newMentorId": "...", "remarks": "..." }
-        await mentorService.transferMentor(existingAssignmentId, {
+        await transferMentor(existingAssignmentId, {
           newMentorId: formData.mentorId,
           remarks: formData.remarks
         });
@@ -73,7 +75,7 @@ export default function MentorAssignmentModal({
       } else {
         // Assign new mentor
         // The docs say: { "mentorId": "...", "batchId": "...", "remarks": "..." }
-        await mentorService.assignMentor({
+        await assignMentor({
           ...payload,
           batchId
         });
@@ -83,7 +85,7 @@ export default function MentorAssignmentModal({
       onSuccess?.();
       onClose();
     } catch (error) {
-      showErrorToast(error?.response?.data?.message || error?.message || 'Failed to assign mentor');
+      showErrorToast(error?.message || 'Failed to assign mentor');
     } finally {
       setIsSubmitting(false);
     }
@@ -109,22 +111,26 @@ export default function MentorAssignmentModal({
       onSubmit={handleSubmit}
       footer={
         <div className="flex justify-end gap-3">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-5 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-          >
-            {isSubmitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {existingAssignmentId ? "Transfer" : "Assign"}
-          </button>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-5 py-2 border border-gray-200 text-text-secondary rounded-md text-xs font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+            variant="outline"
+            size="sm"
+            fullWidth={false}
           >
             Cancel
-          </button>
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+            variant="primary"
+            size="sm"
+            fullWidth={false}
+          >
+            {existingAssignmentId ? "Transfer" : "Assign"}
+          </Button>
         </div>
       }
     >

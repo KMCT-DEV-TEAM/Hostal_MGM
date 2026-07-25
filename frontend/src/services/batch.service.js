@@ -25,10 +25,16 @@ const bulkToggleStatus = async (data) => {
   return response.data;
 };
 
+const getBatchById = async (id) => {
+  const response = await apiClient.get(`/batches/${id}`);
+  return response.data;
+};
+
 export default {
   getBatches,
   createBatch,
   updateBatch,
   toggleStatus,
   bulkToggleStatus,
+  getBatchById,
 };

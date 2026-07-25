@@ -208,7 +208,7 @@ export const updateAssignmentDb = async (id, updateData, user) => {
       throw createError("Assignment not found", 404);
     }
 
-    if (["COMPLETED", "CANCELLED", "TRANSFERRED"].includes(assignment.status)) {
+    if (["completed", "cancelled", "transferred"].includes(assignment.status)) {
       throw createError(`Cannot update assignment. Current status is ${assignment.status}`, 400);
     }
 
@@ -218,7 +218,7 @@ export const updateAssignmentDb = async (id, updateData, user) => {
     }
 
     if (updateData.status) {
-      updates.status = updateData.status.toUpperCase();
+      updates.status = updateData.status.toLowerCase();
       updates.endedAt = new Date();
     }
 
@@ -231,9 +231,9 @@ export const updateAssignmentDb = async (id, updateData, user) => {
       .populate("batchId", "name");
 
     let action = "Assignment Updated";
-    if (updates.status === "COMPLETED") {
+    if (updates.status === "completed") {
       action = "Assignment Completed";
-    } else if (updates.status === "CANCELLED") {
+    } else if (updates.status === "cancelled") {
       action = "Assignment Cancelled";
     }
 
@@ -247,7 +247,7 @@ export const updateAssignmentDb = async (id, updateData, user) => {
       status: "success"
     }, session);
 
-    if (updates.status === "COMPLETED" || updates.status === "CANCELLED") {
+    if (updates.status === "completed" || updates.status === "cancelled") {
       try {
         await orchestratorService.triggerNotification({
           eventName: "MENTOR_COMPLETED",
@@ -311,7 +311,7 @@ export const transferMentorDb = async (id, newMentorId, remarks, user) => {
     const currentDate = new Date();
 
     // 1. End the old assignment
-    oldAssignment.status = "TRANSFERRED";
+    oldAssignment.status = "transferred";
     oldAssignment.endedAt = currentDate;
     await oldAssignment.save({ session });
 

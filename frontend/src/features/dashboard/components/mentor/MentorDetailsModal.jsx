@@ -9,15 +9,18 @@ import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ActivityLog from '@/components/ui/ActivityLog';
+import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 
 export default function MentorDetailsModal({
     mentor: initialMentor,
     onClose,
-    onEdit
+    onEdit,
+    zIndex
 }) {
     const role = useAuthStore(s => s.user?.role);
     const [mentor, setMentor] = useState(initialMentor);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('active');
 
     useEffect(() => {
         if (!initialMentor?._id || !role) return;
@@ -56,55 +59,12 @@ export default function MentorDetailsModal({
             subtitle="Detailed view of the mentor's profile"
             maxWidth="max-w-5xl"
             bottomSheetOnMobile={true}
+            zIndex={zIndex || 50}
         >
             {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4 animate-pulse">
-                    {/* LEFT COLUMN SKELETON */}
-                    <div className="space-y-6">
-                        <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                            <div className="h-3 bg-gray-100 rounded w-1/4 mb-6"></div>
-                            <div className="space-y-4">
-                                <div className="h-3 bg-gray-100 rounded w-3/4"></div>
-                                <div className="h-3 bg-gray-100 rounded w-1/2"></div>
-                                <div className="h-3 bg-gray-100 rounded w-5/6"></div>
-                                <div className="h-3 bg-gray-100 rounded w-2/3"></div>
-                            </div>
-                        </div>
-                        <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                            <div className="h-3 bg-gray-100 rounded w-1/4 mb-6"></div>
-                            <div className="space-y-4">
-                                <div className="h-3 bg-gray-100 rounded w-3/4"></div>
-                                <div className="h-3 bg-gray-100 rounded w-1/2"></div>
-                                <div className="h-3 bg-gray-100 rounded w-2/3"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT COLUMN SKELETON */}
-                    <div className="space-y-6">
-                        <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                            <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                            <div className="h-3 bg-gray-100 rounded w-1/3 mb-6"></div>
-                            <div className="space-y-4">
-                                <div className="h-3 bg-gray-100 rounded w-full"></div>
-                                <div className="h-3 bg-gray-100 rounded w-5/6"></div>
-                                <div className="h-3 bg-gray-100 rounded w-4/5"></div>
-                            </div>
-                        </div>
-                        <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm">
-                            <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                            <div className="h-3 bg-gray-100 rounded w-1/3 mb-6"></div>
-                            <div className="space-y-3">
-                                <div className="h-14 bg-gray-100 rounded w-full"></div>
-                                <div className="h-14 bg-gray-100 rounded w-full"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <DetailsSkeletonLoader />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mt-4">
                     {/* LEFT COLUMN */}
                     <div className="space-y-6">
 
@@ -126,6 +86,44 @@ export default function MentorDetailsModal({
                                     <DetailRow label="Organization" value={mentor.organization?.name || 'Unassigned'} />
                                 )}
                             </div>
+                        </DetailCard>
+
+                        {/* Recent Activity */}
+                        <DetailCard title="Recent Assignments" subtitle="Recent assignments of the mentor">
+                            <div className="flex items-center gap-6 border-b border-gray-200 mb-4">
+                                <button
+                                    onClick={() => setActiveTab('active')}
+                                    className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === 'active' ? 'text-primary border-primary' : 'text-text-secondary border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+                                >
+                                    Active
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('history')}
+                                    className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === 'history' ? 'text-primary border-primary' : 'text-text-secondary border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+                                >
+                                    History
+                                </button>
+                            </div>
+
+                            <ActivityLog
+                                timeline={activeTab === 'active'
+                                    ? (mentor.activeAssignments || []).map(t => ({
+                                        action: `Assigned to ${t.batchId?.name || 'Batch'}`,
+                                        remarks: t.remarks ? `Assigned: ${t.remarks}` : `Assigned to ${t.batchId?.name || 'Batch'}`,
+                                        timestamp: t.assignedAt,
+                                        actorRole: t.assignedBy?.name || 'Admin',
+                                        meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' }
+                                    }))
+                                    : (mentor.historyAssignments || []).map(t => ({
+                                        action: t.status,
+                                        remarks: t.remarks ? `${t.status}: ${t.remarks}` : t.status,
+                                        timestamp: t.endedAt || t.assignedAt,
+                                        actorRole: t.assignedBy?.name || 'Admin',
+                                        meta: { label: 'Batch', value: t.batchId?.name || 'Unknown' }
+                                    }))
+                                }
+                                defaultText={`No ${activeTab} assignments found.`}
+                            />
                         </DetailCard>
 
                     </div>
@@ -159,18 +157,6 @@ export default function MentorDetailsModal({
                                     icon={<Calendar className="w-4 h-4 text-text-secondary" />}
                                 />
                             </div>
-                        </DetailCard>
-
-                        {/* Recent Activity */}
-                        <DetailCard title="Recent Activity" subtitle="Recent assignment activity for the mentor">
-                            <ActivityLog
-                                timeline={mentor.assignments?.map(t => ({
-                                    action: `Assigned to ${t.batchId?.name || 'Batch'}`,
-                                    timestamp: t.assignedAt || t.createdAt,
-                                    actorRole: t.assignedBy?.name || 'Admin'
-                                }))}
-                                defaultText="No activity recorded yet."
-                            />
                         </DetailCard>
 
                     </div>
