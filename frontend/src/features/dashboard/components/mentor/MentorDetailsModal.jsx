@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Activity, Building, Calendar } from 'lucide-react';
+import { User, Activity, Building, Calendar, Mail, Phone, GraduationCap } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
@@ -121,12 +121,32 @@ export default function MentorDetailsModal({
                             {/* 1. Mentor Information */}
                             <DetailCard title="Mentor Information" subtitle="Details about mentor">
                                 <div className="space-y-1">
-                                    <DetailRow label="Name" value={mentor.name} />
-                                    <DetailRow label="Email Address" value={mentor.email || '-----'} />
-                                    <DetailRow label="Phone Number" value={mentor.phone || '-----'} />
-                                    <DetailRow label="Specialization" value={mentor.specialization || 'Not Specified'} />
+                                    <DetailRow 
+                                        label="Name" 
+                                        value={mentor.name} 
+                                        icon={<User className="w-4 h-4 text-text-secondary" />} 
+                                    />
+                                    <DetailRow 
+                                        label="Email Address" 
+                                        value={mentor.email || '-----'} 
+                                        icon={<Mail className="w-4 h-4 text-text-secondary" />} 
+                                    />
+                                    <DetailRow 
+                                        label="Phone Number" 
+                                        value={mentor.phone || '-----'} 
+                                        icon={<Phone className="w-4 h-4 text-text-secondary" />} 
+                                    />
+                                    <DetailRow 
+                                        label="Specialization" 
+                                        value={mentor.specialization || 'Not Specified'} 
+                                        icon={<GraduationCap className="w-4 h-4 text-text-secondary" />} 
+                                    />
                                     {role === ROLES.SUPER_ADMIN && (
-                                        <DetailRow label="Organization" value={mentor.organization?.name || 'Unassigned'} />
+                                        <DetailRow 
+                                            label="Organization" 
+                                            value={mentor.organization?.name || 'Unassigned'} 
+                                            icon={<Building className="w-4 h-4 text-text-secondary" />} 
+                                        />
                                     )}
                                 </div>
                             </DetailCard>
