@@ -21,6 +21,8 @@ import {
   X
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import DetailCard from "@/components/ui/DetailCard";
+import DetailRow from "@/components/ui/DetailRow";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
@@ -55,21 +57,6 @@ const normalizeParent = (parent, fallback = {}) => ({
   defaultGuardian:
     parent?.defaultGuardian ?? fallback?.defaultGuardian ?? false,
 });
-
-// Reusable row: stacks on mobile, grid on sm+
-const InfoRow = ({ icon, label, children }) => (
-  <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-    <span className="text-gray-500 flex items-center gap-1.5">
-      {icon}
-      {label}
-    </span>
-    <span className="sm:col-span-2 font-medium text-gray-900">
-      <span className="hidden sm:inline">: </span>
-      {children}
-    </span>
-  </div>
-);
-
 
 const StudentDetailView = () => {
   const { id } = useParams();
@@ -394,517 +381,330 @@ const StudentDetailView = () => {
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
           {/* Basic Info */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">
-              Basic Info
-            </h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Basic contact information of the Student
-            </p>
-            <div className="space-y-4">
-              <InfoRow
-                icon={<Badge className="w-4 h-4 text-gray-400" />}
-                label="Admission No"
-              >
-                {student.studentId || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<User className="w-4 h-4 text-gray-400" />}
-                label="Full Name"
-              >
-                {student.name || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<User className="w-4 h-4 text-gray-400" />}
-                label="Gender"
-              >
-                {student.gender || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<Calendar className="w-4 h-4 text-gray-400" />}
-                label="Date Of Birth"
-              >
-                {student.dob
-                  ? formatDateStandard(student.dob)
-                  : "N/A"}
-              </InfoRow>
-              {/* Status row needs custom layout for the dot */}
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  {isActive ? (
-                    <CheckCircle2 className="w-4 h-4 " />
-                  ) : (
-                    <XCircle className="w-4 h-4 " />
-                  )}
-                  Status
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
-                  <span className="hidden sm:inline">: </span>
-                  <span
-                    className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`}
-                  />
-                  {isActive ? "Active" : "Inactive"}
-                </span>
-              </div>
+          {/* Basic Info */}
+          <DetailCard title="Basic Info" subtitle="Basic contact information of the Student">
+            <div className="space-y-1">
+              <DetailRow icon={<Badge className="w-4 h-4" />} label="Admission No" value={student.studentId || "N/A"} />
+              <DetailRow icon={<User className="w-4 h-4" />} label="Full Name" value={student.name || "N/A"} />
+              <DetailRow icon={<User className="w-4 h-4" />} label="Gender" value={student.gender || "N/A"} />
+              <DetailRow icon={<Calendar className="w-4 h-4" />} label="Date Of Birth" value={student.dob ? formatDateStandard(student.dob) : "N/A"} />
+              <DetailRow
+                icon={isActive ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                label="Status"
+                value={
+                  <span className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
+                    {isActive ? "Active" : "Inactive"}
+                  </span>
+                }
+              />
             </div>
-          </div>
+          </DetailCard>
 
           {/* Academic Information */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">
-              Academic Information
-            </h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Academic details and institutional information
-            </p>
-            <div className="space-y-4">
-              <InfoRow
-                icon={<Building2 className="w-4 h-4 text-gray-400" />}
-                label="Organization"
-              >
-                {organizationName}
-              </InfoRow>
-              <InfoRow
-                icon={<BookOpen className="w-4 h-4 text-gray-400" />}
-                label="Course"
-              >
-                {student.course?.name || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<FileText className="w-4 h-4 text-gray-400" />}
-                label="Department"
-              >
-                {student.department?.name || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<Users className="w-4 h-4 text-gray-400" />}
-                label="Batch"
-              >
-                {student.batch?.name || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<User className="w-4 h-4 text-gray-400" />}
-                label="Mentor"
-              >
-                {student.mentor?.name || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<Mail className="w-4 h-4 text-gray-400" />}
-                label="Mentor Email"
-              >
-                {student.mentor?.email || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<Phone className="w-4 h-4 text-gray-400" />}
-                label="Mentor Phone"
-              >
-                {student.mentor?.phone || "N/A"}
-              </InfoRow>
+          <DetailCard title="Academic Information" subtitle="Academic details and institutional information">
+            <div className="space-y-1">
+              <DetailRow icon={<Building2 className="w-4 h-4" />} label="Organization" value={organizationName} />
+              <DetailRow icon={<BookOpen className="w-4 h-4" />} label="Course" value={student.course?.name || "N/A"} />
+              <DetailRow icon={<FileText className="w-4 h-4" />} label="Department" value={student.department?.name || "N/A"} />
+              <DetailRow icon={<Users className="w-4 h-4" />} label="Batch" value={student.batch?.name || "N/A"} />
+              <DetailRow icon={<User className="w-4 h-4" />} label="Mentor" value={student.mentor?.name || "N/A"} />
+              <DetailRow icon={<Mail className="w-4 h-4" />} label="Mentor Email" value={student.mentor?.email || "N/A"} />
+              <DetailRow icon={<Phone className="w-4 h-4" />} label="Mentor Phone" value={student.mentor?.phone || "N/A"} />
             </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">
-              Contact Information
-            </h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Contact Information of The Student
-            </p>
-            <div className="space-y-4">
-              <InfoRow
-                icon={<Phone className="w-4 h-4 text-gray-400" />}
-                label="Phone No"
-              >
-                {student.phone || "N/A"}
-              </InfoRow>
-              {/* Email row needs pencil button — custom layout */}
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  Email
-                </span>
-                <div className="sm:col-span-2 flex items-center justify-between gap-2">
-                  <span className="font-medium text-gray-900 truncate">
-                    <span className="hidden sm:inline">: </span>
-                    {student.email || "N/A"}
-                  </span>
-                  {canChangeEmail && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEmailChangeTarget({
-                          type: "student",
-                          subjectName: student.name || "the student",
-                          currentEmail: student.email || "",
-                        })
-                      }
-                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
-                      aria-label="Change student email"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          </DetailCard>
 
-          {/* Current Hostel */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex  mb-6 flex-col md:flex-row justify-left md:justify-between md:items-center items-left mb-1">
-              <div className="">
-                <h3 className="text-lg font-semibold text-primary">
-                  Current Hostel
-                </h3>
-                <p className="text-xs text-gray-400 mb-3">
-                  Current hostel allocation details
-                </p>
-              </div>
-              <div className="flex  items-center gap-2">
-                <Button
-                  size="sm"
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                  onClick={() => setIsManageHostelModalOpen(true)}
-                >
-                  {!student.hostelId ? "Allocate Hostel" : "Change Hostel"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => setIsVacateConfirmOpen(true)}
-                  disabled={!student.hostelId || student.hostelStatus !== 'active'}
-                >
-                  Vacate Hostel
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <InfoRow
-                icon={<Building2 className="w-4 h-4 text-gray-400" />}
-                label="Hostel"
-              >
-                {hostelName}
-              </InfoRow>
-              <InfoRow
-                icon={<Home className="w-4 h-4 text-gray-400" />}
-                label="Room"
-              >
-                {student.roomNumber || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<Calendar className="w-4 h-4 text-gray-400" />}
-                label="Joined On"
-              >
-                {student.activeAllocation?.joinedAt ? formatDateStandard(student.activeAllocation.joinedAt) : "N/A"}
-              </InfoRow>
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  {student.hostelStatus === "active" ? (
-                    <CheckCircle2 className="w-4 h-4 " />
-                  ) : (
-                    <XCircle className="w-4 h-4 " />
-                  )}
-                  Status
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
-                  <span className="hidden sm:inline">: </span>
-                  <span
-                    className={`w-2 h-2 rounded-full ${student.hostelStatus === "active" ? "bg-green-500" : "bg-red-500"}`}
-                  />
-                  {student.hostelStatus ? student.hostelStatus.charAt(0).toUpperCase() + student.hostelStatus.slice(1) : "N/A"}
-                </span>
-              </div>
-              <InfoRow
-                icon={<User className="w-4 h-4 text-gray-400" />}
-                label="Allocated By"
-              >
-                {student.activeAllocation?.allocatedBy?.name || "N/A"}
-              </InfoRow>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-
-
-          {/* Address Information */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-1">
-              Address Information
-            </h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Current residential address
-            </p>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-start">
-              <span className="text-gray-500 flex items-start gap-1.5 pt-0.5">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                Full Address
-              </span>
-              <span className="sm:col-span-2 font-medium text-gray-900 leading-relaxed break-words whitespace-pre-wrap overflow-hidden" style={{ wordBreak: 'break-word' }}>
-                <span className="hidden sm:inline">: </span>
-                {student.address || "N/A"}
-              </span>
-            </div>
-          </div>
-
-          {/* Parent Information */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-primary">
-                  Parent Information
-                </h3>
-                <p className="text-xs text-gray-400 mt-1">
-                  Primary parent/guardian contact details
-                </p>
-              </div>
-              <div className="flex items-center w-fit gap-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  fullWidth={false}
-                  className="whitespace-nowrap"
-                  onClick={() => setIsAddParentModalOpen(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Parent
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  fullWidth={false}
-                  className="whitespace-nowrap"
-                  onClick={() => setIsDefaultParentModalOpen(true)}
-                >
-                  Set Default
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <InfoRow
-                icon={<User className="w-4 h-4 text-gray-400" />}
-                label="Parent Name"
-              >
-                {parent?.parentName || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<FileText className="w-4 h-4 text-gray-400" />}
-                label="Relation"
-              >
-                {parent?.relationship || "N/A"}
-              </InfoRow>
-              <InfoRow
-                icon={<Phone className="w-4 h-4 text-gray-400" />}
-                label="Phone No"
-              >
-                {parent?.phone || parent?.parentPhone || "N/A"}
-              </InfoRow>
-              {/* Parent email with pencil — custom layout */}
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  Email
-                </span>
-                <div className="sm:col-span-2 flex items-center justify-between gap-2">
-                  <span className="font-medium text-gray-900 truncate">
-                    <span className="hidden sm:inline">: </span>
-                    {parent?.email || parent?.parentEmail || "N/A"}
-                  </span>
-                  {canChangeEmail && parent && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEmailChangeTarget({
-                          type: "parent",
-                          parent,
-                          subjectName: parent.parentName || "the parent",
-                          currentEmail:
-                            parent.email || parent.parentEmail || "",
-                        })
-                      }
-                      className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
-                      aria-label="Change parent email"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Assign Information */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-primary">
-                  Assign Information
-                </h3>
-                <p className="text-xs text-gray-400 mt-1">
-                  Details of Assigned Hostel and Furniture
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
-                  onClick={() => setIsAssignModalOpen(true)}
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            {(assignedFurnitures.length > 0 || student.hostel) && (
-              <div className="space-y-4">
-                <InfoRow
-                  icon={<Home className="w-4 h-4 text-gray-400" />}
-                  label="Assigned Hostel"
-                >
-                  {hostelName}
-                </InfoRow>
-                {/* {console.log('Assigned furnitures: ', assignedFurnitures)} */}
-                <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                  <span className="text-gray-500 flex items-center gap-1.5">
-                    <Box className="w-4 h-4 text-gray-400" />
-                    Furnitures
-                  </span>
-                  <div className="sm:col-span-2 font-medium text-gray-900 flex flex-wrap gap-2 items-center">
-                    <span className="hidden sm:inline">: </span>
-                    {loadingFurnitures ? (
-                      <div className="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
-                    ) : assignedFurnitures.length > 0 ? (
-                      assignedFurnitures.map((f, i) => (
-                        <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-                          {f.furnitureTypeId?.name || "Unknown"}
-                          <button
-                            type="button"
-                            className="hover:text-red-500 transition-colors ml-1 cursor-pointer"
-                            onClick={() => handleReturnClick(f)}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))
-                    ) : (
-                      "N/A"
+          <DetailCard title="Contact Information" subtitle="Contact Information of The Student">
+            <div className="space-y-1">
+              <DetailRow icon={<Phone className="w-4 h-4" />} label="Phone No" value={student.phone || "N/A"} />
+              <DetailRow
+                icon={<Mail className="w-4 h-4" />}
+                label="Email"
+                valueClassName="flex-1"
+                value={
+                  <div className="flex items-center justify-between gap-2 w-full">
+                    <span className="truncate">{student.email || "N/A"}</span>
+                    {canChangeEmail && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEmailChangeTarget({
+                            type: "student",
+                            subjectName: student.name || "the student",
+                            currentEmail: student.email || "",
+                          })
+                        }
+                        className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
+                        aria-label="Change student email"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
+                }
+              />
+            </div>
+          </DetailCard>
+
+          {/* Current Hostel */}
+          <DetailCard
+            title="Current Hostel"
+            subtitle="Current hostel allocation details"
+            headerAction={
+              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role) ? (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => setIsManageHostelModalOpen(true)}
+                  >
+                    {!student.hostelId ? "Allocate Hostel" : "Change Hostel"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => setIsVacateConfirmOpen(true)}
+                    disabled={!student.hostelId || student.hostelStatus !== 'active'}
+                  >
+                    Vacate Hostel
+                  </Button>
                 </div>
-                <InfoRow
-                  icon={<Hash className="w-4 h-4 text-gray-400" />}
+              ) : null
+            }
+          >
+            <div className="space-y-1">
+              <DetailRow icon={<Building2 className="w-4 h-4" />} label="Hostel" value={hostelName} />
+              <DetailRow icon={<Home className="w-4 h-4" />} label="Room" value={student.roomNumber || "N/A"} />
+              <DetailRow
+                icon={<Calendar className="w-4 h-4" />}
+                label="Joined On"
+                value={student.activeAllocation?.joinedAt ? formatDateStandard(student.activeAllocation.joinedAt) : "N/A"}
+              />
+              <DetailRow
+                icon={student.hostelStatus === "active" ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                label="Status"
+                value={
+                  <span className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${student.hostelStatus === "active" ? "bg-green-500" : "bg-red-500"}`} />
+                    {student.hostelStatus ? student.hostelStatus.charAt(0).toUpperCase() + student.hostelStatus.slice(1) : "N/A"}
+                  </span>
+                }
+              />
+              <DetailRow icon={<User className="w-4 h-4" />} label="Allocated By" value={student.activeAllocation?.allocatedBy?.name || "N/A"} />
+            </div>
+          </DetailCard>
+
+          {/* Address Information */}
+          <DetailCard title="Address Information" subtitle="Current residential address">
+            <div className="space-y-1">
+              <DetailRow
+                icon={<MapPin className="w-4 h-4" />}
+                label="Full Address"
+                value={
+                  <span className="leading-relaxed break-words whitespace-pre-wrap overflow-hidden" style={{ wordBreak: 'break-word' }}>
+                    {student.address || "N/A"}
+                  </span>
+                }
+              />
+            </div>
+          </DetailCard>
+
+          {/* Parent Information */}
+          <DetailCard
+            title="Parent Information"
+            subtitle="Primary parent/guardian contact details"
+            headerAction={
+              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role) ? (
+                <div className="flex items-center w-fit gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    fullWidth={false}
+                    className="whitespace-nowrap"
+                    onClick={() => setIsAddParentModalOpen(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Parent
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    fullWidth={false}
+                    className="whitespace-nowrap"
+                    onClick={() => setIsDefaultParentModalOpen(true)}
+                  >
+                    Set Default
+                  </Button>
+                </div>
+              ) : null
+            }
+          >
+            <div className="space-y-1">
+              <DetailRow icon={<User className="w-4 h-4" />} label="Parent Name" value={parent?.parentName || "N/A"} />
+              <DetailRow icon={<FileText className="w-4 h-4" />} label="Relation" value={parent?.relationship || "N/A"} />
+              <DetailRow icon={<Phone className="w-4 h-4" />} label="Phone No" value={parent?.phone || parent?.parentPhone || "N/A"} />
+              <DetailRow
+                icon={<Mail className="w-4 h-4" />}
+                label="Email"
+                valueClassName="flex-1"
+                value={
+                  <div className="flex items-center justify-between gap-2 w-full">
+                    <span className="truncate">{parent?.email || parent?.parentEmail || "N/A"}</span>
+                    {canChangeEmail && parent && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEmailChangeTarget({
+                            type: "parent",
+                            parent,
+                            subjectName: parent.parentName || "the parent",
+                            currentEmail: parent.email || parent.parentEmail || "",
+                          })
+                        }
+                        className="p-1 rounded-md text-gray-500 hover:text-primary hover:bg-gray-50 cursor-pointer shrink-0"
+                        aria-label="Change parent email"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                }
+              />
+            </div>
+          </DetailCard>
+
+          {/* Assign Information */}
+          <DetailCard
+            title="Assign Information"
+            subtitle="Details of Assigned Hostel and Furniture"
+            headerAction={
+              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) ? (
+                <div className="flex items-center w-fit gap-2">
+                  <Button
+                    className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
+                    onClick={() => setIsAssignModalOpen(true)}
+                    size="sm"
+                  >
+                    Add Furniture
+                  </Button>
+                </div>
+              ) : null
+            }
+          >
+            {(assignedFurnitures.length > 0 || student.hostel) && (
+              <div className="space-y-1">
+                <DetailRow icon={<Home className="w-4 h-4" />} label="Assigned Hostel" value={hostelName} />
+                <DetailRow
+                  icon={<Box className="w-4 h-4" />}
+                  label="Furnitures"
+                  value={
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {loadingFurnitures ? (
+                        <div className="h-6 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+                      ) : assignedFurnitures.length > 0 ? (
+                        assignedFurnitures.map((f, i) => (
+                          <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
+                            {f.furnitureTypeId?.name || "Unknown"}
+                            <button
+                              type="button"
+                              className="hover:text-red-500 transition-colors ml-1 cursor-pointer"
+                              onClick={() => handleReturnClick(f)}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        "N/A"
+                      )}
+                    </div>
+                  }
+                />
+                <DetailRow
+                  icon={<Hash className="w-4 h-4" />}
                   label="Furniture Id"
-                >
-                  {loadingFurnitures ? (
-                    <div className="h-4 bg-gray-200 rounded-md w-40 animate-pulse mt-0.5"></div>
-                  ) : assignedFurnitures.length > 0
-                    ? assignedFurnitures.map((f) => f.furnitureId).join(", ")
-                    : "N/A"}
-                </InfoRow>
-                <InfoRow
-                  icon={<Calendar className="w-4 h-4 text-gray-400" />}
+                  value={
+                    loadingFurnitures ? (
+                      <div className="h-4 bg-gray-200 rounded-md w-40 animate-pulse mt-0.5"></div>
+                    ) : assignedFurnitures.length > 0 ? (
+                      assignedFurnitures.map((f) => f.furnitureId).join(", ")
+                    ) : (
+                      "N/A"
+                    )
+                  }
+                />
+                <DetailRow
+                  icon={<Calendar className="w-4 h-4" />}
                   label="Assigned On"
-                >
-                  {loadingFurnitures ? (
-                    <div className="h-4 bg-gray-200 rounded-md w-28 animate-pulse mt-0.5"></div>
-                  ) : assignedFurnitures.length > 0 && assignedFurnitures[0].createdAt
-                    ? formatDateReadable(assignedFurnitures[0].createdAt)
-                    : "N/A"}
-                </InfoRow>
-                <InfoRow
-                  icon={<User className="w-4 h-4 text-gray-400" />}
+                  value={
+                    loadingFurnitures ? (
+                      <div className="h-4 bg-gray-200 rounded-md w-28 animate-pulse mt-0.5"></div>
+                    ) : assignedFurnitures.length > 0 && assignedFurnitures[0].createdAt ? (
+                      formatDateReadable(assignedFurnitures[0].createdAt)
+                    ) : (
+                      "N/A"
+                    )
+                  }
+                />
+                <DetailRow
+                  icon={<User className="w-4 h-4" />}
                   label="Assigned By"
-                >
-                  {loadingFurnitures ? (
-                    <div className="h-4 bg-gray-200 rounded-md w-20 animate-pulse mt-0.5"></div>
-                  ) : "Warden"}
-                </InfoRow>
+                  value={
+                    loadingFurnitures ? (
+                      <div className="h-4 bg-gray-200 rounded-md w-20 animate-pulse mt-0.5"></div>
+                    ) : (
+                      "Warden"
+                    )
+                  }
+                />
               </div>
             )}
-          </div>
+          </DetailCard>
         </div>
         <div className="lg:col-span-2 space-y-6">
           {/* Right Summary Sidebar */}
-          <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-            <div className="flex items-center gap-2 mb-4">
-              <User className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-primary">
-                Student Summary
-              </h3>
+          {/* Right Summary Sidebar */}
+          <DetailCard
+            title={
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                <span>Student Summary</span>
+              </div>
+            }
+          >
+            <div className="space-y-1">
+              <DetailRow icon={<Badge className="w-4 h-4" />} label="Admission No" value={student.studentId || "N/A"} />
+              <DetailRow icon={<User className="w-4 h-4" />} label="Full Name" value={student.name || "N/A"} />
+              <DetailRow icon={<Users className="w-4 h-4" />} label="Gender" value={student.gender || "N/A"} />
+              <DetailRow
+                icon={<Building2 className="w-4 h-4" />}
+                label="Organization"
+                valueClassName="break-words"
+                value={organizationName}
+              />
+              <DetailRow icon={<Home className="w-4 h-4" />} label="Hostel" value={hostelName} />
+              <DetailRow
+                icon={isActive ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                label="Status"
+                value={
+                  <span className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
+                    {isActive ? "Active" : "Inactive"}
+                  </span>
+                }
+              />
             </div>
-            <div className="space-y-4">
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Badge className="w-4 h-4 text-gray-400" /> Admission No
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900">
-                  <span className="hidden sm:inline">: </span>
-                  {student.studentId || "N/A"}
-                </span>
-              </div>
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-gray-400" /> Full Name
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900">
-                  <span className="hidden sm:inline">: </span>
-                  {student.name || "N/A"}
-                </span>
-              </div>
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-gray-400" /> Gender
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900">
-                  <span className="hidden sm:inline">: </span>
-                  {student.gender || "N/A"}
-                </span>
-              </div>
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-gray-400" /> Organization
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900 break-words">
-                  <span className="hidden sm:inline">: </span>
-                  {organizationName}
-                </span>
-              </div>
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  <Home className="w-4 h-4 text-gray-400" /> Hostel
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900">
-                  <span className="hidden sm:inline">: </span>
-                  {hostelName}
-                </span>
-              </div>
-              <div className="flex flex-col sm:grid sm:grid-cols-3 text-sm gap-1 sm:gap-0 sm:items-center">
-                <span className="text-gray-500 flex items-center gap-1.5">
-                  {isActive ? (
-                    <CheckCircle2 className="w-4 h-4 " />
-                  ) : (
-                    <XCircle className="w-4 h-4 " />
-                  )}
-                  Status
-                </span>
-                <span className="sm:col-span-2 font-medium text-gray-900 flex items-center gap-2">
-                  <span className="hidden sm:inline">: </span>
-                  <span
-                    className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`}
-                  />
-                  {isActive ? "Active" : "Inactive"}
-                </span>
-              </div>
-            </div>
-          </div>
+          </DetailCard>
 
           {/* Timeline Section */}
-          <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-            <div className="flex items-center gap-2 mb-6">
-              <Calendar className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-primary">
-                Hostel History
-              </h3>
-            </div>
-
+          <DetailCard
+            title={
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                <span>Hostel History</span>
+              </div>
+            }
+          >
             {timelineData.length === 0 ? (
               <div className="text-sm text-gray-500 text-center py-4">No hostel history available.</div>
             ) : (
@@ -966,7 +766,7 @@ const StudentDetailView = () => {
                 })}
               </div>
             )}
-          </div>
+          </DetailCard>
         </div>
       </div>
 

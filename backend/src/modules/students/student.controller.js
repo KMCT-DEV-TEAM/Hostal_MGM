@@ -468,25 +468,30 @@ const getStudentsBySuperAdmin = asyncHandler(
 );
 
 const getStudentFilterOptions = asyncHandler(async (req, res) => {
+  const { organizationId, filterType, search, page, limit } = req.query;
   const filters = await getStudentFilterOptionsService({
     role: req.user.role,
     userId: req.user.id,
-    organizationId: req.query.organizationId,
+    organizationId,
+    filterType,
+    search,
+    page,
+    limit,
   });
 
   return sendSuccess(
     res,
     200,
     "Student filter options fetched successfully",
-    { filters }
+    filterType ? filters : { filters }
   );
+
+
 });
 
-
-
 const getStudentFurnitures = asyncHandler(async (req, res) => {
-  const { id } = req.params;
   const student = await Student.findById(id).lean();
+  const { id } = req.params;
   if (!student) {
     return sendError(res, 404, "Student not found");
   }
