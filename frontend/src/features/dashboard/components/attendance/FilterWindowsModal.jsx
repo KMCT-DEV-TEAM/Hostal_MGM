@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import DateInput from '@/components/ui/DateInput';
 import Dropdown from '@/components/ui/Dropdown';
+import AsyncDropdown from '@/components/ui/AsyncDropdown';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getStudentFilterOptions } from '@/services/student.service';
 
@@ -18,7 +19,6 @@ export default function FilterWindowsModal({
     const [localToDate, setLocalToDate] = useState('');
     const [localStatus, setLocalStatus] = useState('');
     const [localHostelId, setLocalHostelId] = useState('');
-    const [hostels, setHostels] = useState([]);
 
     useEffect(() => {
         if (isOpen) {
@@ -29,18 +29,19 @@ export default function FilterWindowsModal({
         }
     }, [isOpen, filters]);
 
-    useEffect(() => {
-        if (isOpen && showHostel && role) {
-            getStudentFilterOptions(role).then((data) => {
-                if (data?.filters?.hostels) {
-                    setHostels([
-                        { value: '', label: 'All Hostels' },
-                        ...data.filters.hostels.map(h => ({ value: h.value, label: h.label }))
-                    ]);
-                }
-            }).catch(err => console.error("Error loading hostels", err));
+    const fetchHostelOptions = async (page, search) => {
+        if (!role) return { options: [], hasMore: false };
+        try {
+            const data = await getStudentFilterOptions(role, { filterType: 'hostel', page, search, limit: 10 });
+            return {
+                options: data?.options || [],
+                hasMore: data?.hasMore || false
+            };
+        } catch (error) {
+            console.error('Error fetching hostel options:', error);
+            return { options: [], hasMore: false };
         }
-    }, [isOpen, showHostel, role]);
+    };
 
     const handleReset = () => {
         setLocalFromDate('');
@@ -104,8 +105,8 @@ export default function FilterWindowsModal({
                 {showHostel && (
                     <div className="col-span-2">
                         <label className="block mb-1.5 text-xs font-medium">Hostel</label>
-                        <Dropdown
-                            options={hostels}
+                        <AsyncDropdown
+                            fetchOptions={fetchHostelOptions}
                             value={localHostelId}
                             onChange={(val) => setLocalHostelId(val)}
                             placeholder="All Hostels"

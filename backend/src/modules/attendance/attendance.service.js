@@ -76,11 +76,17 @@ export const getAttendanceWindowsDb = async (query, scope) => {
   const skip = (page - 1) * limit;
 
   const filter = {};
-
+  console.log(scope)
   if (scope.role === "warden" || scope.role === "assistant_warden") {
     filter.hostelId = scope.hostelId;
   } else if (scope.role === "mentor") {
-    filter.hostelId = { $in: (scope.hostelIds || []).map(id => new mongoose.Types.ObjectId(id)) };
+    if (query.hostelId && (scope.hostelIds || []).map(String).includes(String(query.hostelId))) {
+      filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
+    } else if (query.hostelId) {
+      filter.hostelId = null; // Unauthorized hostel filter, return empty
+    } else {
+      filter.hostelId = { $in: (scope.hostelIds || []).map(id => new mongoose.Types.ObjectId(id)) };
+    }
   } else if (query.hostelId) {
     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }

@@ -5,14 +5,26 @@ import mongoose from "mongoose";
 export const buildDateRangeFilter = (filter, field, startDate, endDate) => {
   if (startDate || endDate) {
     filter[field] = {};
-    if (startDate) {
+    if (startDate && !endDate) {
       const start = new Date(startDate);
       start.setUTCHours(0, 0, 0, 0);
+      const end = new Date(startDate);
+      end.setUTCHours(23, 59, 59, 999);
       filter[field].$gte = start;
-    }
-    if (endDate) {
+      filter[field].$lte = end;
+    } else if (endDate && !startDate) {
+      const start = new Date(endDate);
+      start.setUTCHours(0, 0, 0, 0);
       const end = new Date(endDate);
       end.setUTCHours(23, 59, 59, 999);
+      filter[field].$gte = start;
+      filter[field].$lte = end;
+    } else if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setUTCHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      filter[field].$gte = start;
       filter[field].$lte = end;
     }
   }

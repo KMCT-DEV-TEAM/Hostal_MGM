@@ -160,21 +160,26 @@ export default function MentorDashboardOverview({ user }) {
             icon: <UserCheck size={18} />, iconBg: "bg-[#F5F3FF]", iconColor: "text-[#8B5CF6]"
         }
     ];
-
     const quickSummaryData = [
         {
             title: "Leaves Approved",
-            sub1: "5 this week",
-            sub2: `${dashboardStats.leaveRequests} Pending Review`,
+            sub1: `${dashboardStats.quickSummary?.leaves?.approved || 0} Total Approved`,
+            sub2: `${dashboardStats.quickSummary?.leaves?.pending || 0} Pending Review`,
             icon: <CheckCircle size={18} />, iconBg: "bg-[#ECFDF5]", iconColor: "text-[#10B981]", sub2Color: "text-[#F59E0B]"
         },
         {
-            title: "Parent Message",
-            sub1: "14 Unread",
-            sub2: "5 Urgent",
-            icon: <Mail size={18} />, iconBg: "bg-[#FDF4FF]", iconColor: "text-[#D946EF]", sub2Color: "text-[#EF4444]"
+            title: "Students on Leave",
+            sub1: `${dashboardStats.quickSummary?.studentsOutside?.current || 0} Currently Out`,
+            sub2: `${dashboardStats.quickSummary?.studentsOutside?.returned || 0} Returned Today`,
+            icon: <UserMinus size={18} />, iconBg: "bg-[#FDF4FF]", iconColor: "text-[#D946EF]", sub2Color: "text-[#10B981]"
+        },
+        {
+            title: "Attendance Window",
+            sub1: `${dashboardStats.quickSummary?.attendanceStatus || "Not Opened"}`,
+            icon: <ShieldCheck size={18} />, iconBg: "bg-[#EFF6FF]", iconColor: "text-[#3B82F6]", sub2Color: ""
         }
     ];
+
 
     const currentData = (attendancePeriod === "This Year" ? dashboardStats.attendance?.thisYear : dashboardStats.attendance?.lastYear) || [];
     const validMonths = currentData.filter(d => d.value > 0);
@@ -307,10 +312,10 @@ export default function MentorDashboardOverview({ user }) {
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="text-sm font-semibold text-gray-800">{item.title}</h3>
-                                        <div className="flex gap-2 text-[12px] mt-1 items-center text-gray-500">
-                                            <span className="font-semibold text-gray-900">{item.sub1}</span>
+                                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] mt-1.5 items-center text-gray-500">
+                                            <span className="font-semibold text-gray-900 whitespace-nowrap">{item.sub1}</span>
                                             {item.sub2 && (
-                                                <span className={`${item.sub2Color} font-medium`}>{item.sub2}</span>
+                                                <span className={`${item.sub2Color} font-medium whitespace-nowrap`}>{item.sub2}</span>
                                             )}
                                         </div>
                                     </div>

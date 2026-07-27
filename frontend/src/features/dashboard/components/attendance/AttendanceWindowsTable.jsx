@@ -134,11 +134,7 @@ export default function AttendanceWindowsTable({ showHostel = true, showWarden =
                 cardConfig={cardConfig}
                 loading={loading}
                 searchQuery={searchQuery}
-                onSearchChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setPage(1);
-                }}
-                searchPlaceholder="Search by date or hostel..."
+
                 onRowClick={onRowClick}
                 page={page}
                 setPage={setPage}

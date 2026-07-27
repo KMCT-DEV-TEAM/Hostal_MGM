@@ -142,13 +142,21 @@ export const getPaginatedAssignmentsDb = async (filters, options) => {
 
 
   if (search) {
+    let flexibleSearch = search;
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    flexibleSearch = escapedSearch.replace(/\s+/g, '\\s+');
+    const searchRegex = new RegExp(flexibleSearch, 'i');
+
     const matchingMentors = await User.find({
       role: "mentor",
-      name: { $regex: search, $options: "i" }
+      name: { $regex: searchRegex }
     }).select("_id");
 
     const matchingBatches = await Batch.find({
-      name: { $regex: search, $options: "i" }
+      $or: [
+        { name: { $regex: searchRegex } },
+        { code: { $regex: searchRegex } }
+      ]
     }).select("_id");
 
     query.$or = [
