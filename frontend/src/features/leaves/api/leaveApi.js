@@ -26,6 +26,7 @@ const leaveApi = {
   cancelLeaveByAdmin: (id, payload) => api.put(`/admin/passes/${id}/cancel`, payload),
 
   // Super Admin
+  getSuperAdminDashboardStats: (params) => api.get("/super-admin/passes/dashboard", { params }),
   getSuperAdminHostels: (params) => api.get("/super-admin/passes/hostels", { params }),
   getLeavesBySuperAdmin: (params) => {
     const { hostelId, ...rest } = params;

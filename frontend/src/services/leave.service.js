@@ -58,6 +58,11 @@ export async function getLeaveByIdAdmin(id) {
   return response.data;
 }
 
+export async function getSuperAdminDashboardStats(params) {
+  const response = await leaveApi.getSuperAdminDashboardStats(params);
+  return response.data;
+}
+
 export async function getLeaveByIdSuperAdmin(id) {
   const response = await leaveApi.getLeaveByIdSuperAdmin(id);
   return response.data;
@@ -273,6 +278,7 @@ const leaveService = {
   approveLeaveByMentor,
   rejectLeaveByMentor,
   cancelLeaveByMentor,
+  getSuperAdminDashboardStats,
 };
 
 export default leaveService;
