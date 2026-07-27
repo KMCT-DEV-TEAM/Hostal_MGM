@@ -318,8 +318,7 @@ const VisitorsPage = () => {
                             </div>
                         )}
 
-                        {/* Table View */}
-                        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex flex-col relative z-0">
+                        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex flex-col flex-1 relative z-0">
                             {showAggregatedView ? (
                                 <VisitorProfilesAggregatedView
                                     visitors={visitors}
