@@ -9,7 +9,7 @@ import { ROLES } from '@/constants/roles';
 import { useLeaves } from '../hooks/useLeaves';
 import { useDebounce } from '@/hooks/useDebounce';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
-import leaveService, { getLeaves, getAdminDashboardStats, getWardenDashboardStats, getMentorDashboardStats } from '@/services/leave.service';
+import leaveService, { getLeaves, getAdminDashboardStats, getWardenDashboardStats, getMentorDashboardStats, getSuperAdminDashboardStats } from '@/services/leave.service';
 import LeavesAggregateView from '../components/views/LeavesAggregateView';
 import LeavesDetailView from '../components/views/LeavesDetailView';
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
@@ -135,24 +135,34 @@ export default function AdminLeaves() {
         organization: orgFilter !== 'All' ? orgFilter : undefined,
     }, true, { enabled: isSuperAdmin && !selectedHostel });
 
-    const [adminStats, setAdminStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
+    const [dashboardStats, setDashboardStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
 
     useEffect(() => {
-        if (isAdmin || isWarden || isMentor) {
-            const fetchStats = isWarden ? getWardenDashboardStats : (isMentor ? getMentorDashboardStats : getAdminDashboardStats);
-            fetchStats({ passType: isHomePass ? 'home_pass' : 'out_pass' })
+        let fetchStats;
+        if (isWarden) fetchStats = getWardenDashboardStats;
+        else if (isMentor) fetchStats = getMentorDashboardStats;
+        else if (isAdmin) fetchStats = getAdminDashboardStats;
+        else if (isSuperAdmin) fetchStats = getSuperAdminDashboardStats;
+
+        if (fetchStats) {
+            const params = { passType: isHomePass ? 'home_pass' : 'out_pass' };
+            if (isSuperAdmin && selectedHostel) {
+                params.hostelId = selectedHostel;
+            }
+
+            fetchStats(params)
                 .then(res => {
                     const statsData = res?.data?.data || res?.data || res;
-                    setAdminStats({
+                    setDashboardStats({
                         total: statsData.total || statsData.totalRequests || statsData.totalRequest || 0,
                         approved: statsData.approved || 0,
-                        pending: statsData.pending || 0,
+                        pending: statsData.pendingAdmin || 0,
                         rejected: statsData.rejected || 0
                     });
                 })
                 .catch(console.error);
         }
-    }, [isAdmin, isWarden, isMentor, isHomePass]);
+    }, [isAdmin, isWarden, isMentor, isSuperAdmin, isHomePass, selectedHostel]);
 
     const pageSubtitle = useMemo(() => {
         if (isSuperAdmin) return "Monitor leave requests and approvals across all hostels.";
@@ -161,25 +171,7 @@ export default function AdminLeaves() {
         return "Manage student leave and out pass requests";
     }, [isSuperAdmin, isWarden, isAdmin, isHomePass]);
 
-    const stats = useMemo(() => {
-        if (isAdmin || isWarden) return adminStats;
-        if (!hostelData || hostelData.length === 0) {
-            return { total: 0, approved: 0, pending: 0, rejected: 0 };
-        }
-        let relevantHostels = hostelData;
-        if (isSuperAdmin && selectedHostel) {
-            relevantHostels = hostelData.filter(h => h._id === selectedHostel);
-        }
-        return relevantHostels.reduce((acc, curr) => {
-            const total = curr.leaves ?? (curr.pending + curr.approved + curr.rejected);
-            return {
-                total: acc.total + (total || 0),
-                approved: acc.approved + (curr.approved || 0),
-                pending: acc.pending + (curr.pending || 0),
-                rejected: acc.rejected + (curr.rejected || 0)
-            };
-        }, { total: 0, approved: 0, pending: 0, rejected: 0 });
-    }, [hostelData, isSuperAdmin, selectedHostel, isAdmin, adminStats]);
+    const stats = dashboardStats;
 
     const handleUpdateStatus = (id, newStatus) => {
         if (!isAdmin && !isMentor) return;

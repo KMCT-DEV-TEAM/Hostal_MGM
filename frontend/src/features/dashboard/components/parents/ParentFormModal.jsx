@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import { useAuthStore } from "@/store/useAuthStore";
-import { sendOtp } from "@/services/auth.service";
+import otpApi from "@/features/dashboard/api/otpApi";
 import OtpInput from "@/components/ui/OtpInput";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,11 +74,11 @@ export default function ParentFormModal({
     try {
       setSendingOtp(true);
       setOtpError("");
-      await sendOtp({ email: watchEmail });
+      await otpApi.sendOtp({ email: watchEmail });
       setVerifyModalOpen(true);
       setVerifyOtpValue("");
     } catch (error) {
-      setOtpError(error?.message || "Failed to send OTP");
+      setOtpError(error?.response?.data?.message || error?.message || "Failed to send OTP");
     } finally {
       setSendingOtp(false);
     }
@@ -245,9 +245,8 @@ export default function ParentFormModal({
                   value={field.value}
                   onChange={field.onChange}
                   placeholder={loadingStudents ? "Loading students..." : "Select Student"}
-                  triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${
-                    errors.studentId ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
-                  } ${loadingStudents ? "opacity-50 pointer-events-none" : ""}`}
+                  triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.studentId ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+                    } ${loadingStudents ? "opacity-50 pointer-events-none" : ""}`}
                 />
               )}
             />
@@ -280,9 +279,15 @@ export default function ParentFormModal({
                 type="button"
                 onClick={sendEmailOtp}
                 disabled={!watchEmail || sendingOtp || emailVerified}
-                className="px-4 bg-primary text-white rounded-md text-xs font-medium disabled:opacity-50 min-w-[80px]"
+                className="px-4 bg-primary text-white rounded-md text-xs font-medium disabled:opacity-50 min-w-20 flex items-center justify-center gap-2"
               >
-                {sendingOtp ? "Sending..." : emailVerified ? "Verified" : "Verify"}
+                {sendingOtp ? (
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : emailVerified ? (
+                  "Verified"
+                ) : (
+                  "Verify"
+                )}
               </button>
 
             </div>
@@ -314,8 +319,10 @@ export default function ParentFormModal({
               <button
                 type="button"
                 onClick={sendEmailOtp}
-                className="px-3 py-2 bg-gray-100 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors"
+                disabled={sendingOtp}
+                className="px-3 py-2 bg-gray-100 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
+                {sendingOtp && <div className="w-3 h-3 border-2 border-gray-400/30 border-t-gray-500 rounded-full animate-spin" />}
                 Resend OTP
               </button>
 
