@@ -121,31 +121,31 @@ export default function MentorDetailsModal({
                             {/* 1. Mentor Information */}
                             <DetailCard title="Mentor Information" subtitle="Details about mentor">
                                 <div className="space-y-1">
-                                    <DetailRow 
-                                        label="Name" 
-                                        value={mentor.name} 
-                                        icon={<User className="w-4 h-4 text-text-secondary" />} 
+                                    <DetailRow
+                                        label="Name"
+                                        value={mentor.name}
+                                        icon={<User className="w-4 h-4 text-text-secondary" />}
                                     />
-                                    <DetailRow 
-                                        label="Email Address" 
-                                        value={mentor.email || '-----'} 
-                                        icon={<Mail className="w-4 h-4 text-text-secondary" />} 
+                                    <DetailRow
+                                        label="Email Address"
+                                        value={mentor.email || '-----'}
+                                        icon={<Mail className="w-4 h-4 text-text-secondary" />}
                                     />
-                                    <DetailRow 
-                                        label="Phone Number" 
-                                        value={mentor.phone || '-----'} 
-                                        icon={<Phone className="w-4 h-4 text-text-secondary" />} 
+                                    <DetailRow
+                                        label="Phone Number"
+                                        value={mentor.phone || '-----'}
+                                        icon={<Phone className="w-4 h-4 text-text-secondary" />}
                                     />
-                                    <DetailRow 
-                                        label="Specialization" 
-                                        value={mentor.specialization || 'Not Specified'} 
-                                        icon={<GraduationCap className="w-4 h-4 text-text-secondary" />} 
+                                    <DetailRow
+                                        label="Specialization"
+                                        value={mentor.specialization || 'Not Specified'}
+                                        icon={<GraduationCap className="w-4 h-4 text-text-secondary" />}
                                     />
                                     {role === ROLES.SUPER_ADMIN && (
-                                        <DetailRow 
-                                            label="Organization" 
-                                            value={mentor.organization?.name || 'Unassigned'} 
-                                            icon={<Building className="w-4 h-4 text-text-secondary" />} 
+                                        <DetailRow
+                                            label="Organization"
+                                            value={mentor.organization?.name || 'Unassigned'}
+                                            icon={<Building className="w-4 h-4 text-text-secondary" />}
                                         />
                                     )}
                                 </div>
@@ -158,7 +158,7 @@ export default function MentorDetailsModal({
 
                             {/* 3. Recent Activity */}
                             <DetailCard title="Recent Assignments" subtitle="Recent assignments of the mentor" className="flex flex-col">
-                                <div className="flex items-center gap-6 border-b border-gray-200 mb-4 sticky top-0 bg-white z-10 pt-2 pb-1">
+                                <div className="flex items-center gap-6 border-b border-gray-200 mb-4 md:sticky md:top-0 bg-white z-10 pt-2 pb-1">
                                     <button
                                         onClick={() => setActiveTab('active')}
                                         className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === 'active' ? 'text-primary border-primary' : 'text-text-secondary border-transparent hover:text-gray-700 hover:border-gray-300'}`}
@@ -173,7 +173,7 @@ export default function MentorDetailsModal({
                                     </button>
                                 </div>
 
-                                <div className="overflow-y-auto md:max-h-110 max-h-125 pr-2 no-scrollbar">
+                                <div className="md:overflow-y-auto md:max-h-110 pr-2 no-scrollbar">
 
                                     <ActivityLog
                                         timeline={activeTab === 'active'
