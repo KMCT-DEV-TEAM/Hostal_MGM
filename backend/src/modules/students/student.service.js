@@ -6,6 +6,7 @@ import { hashPassword } from "../../utils/hash.js";
 import mongoose from "mongoose";
 import Hostel from "../hostels/hostel.model.js";
 import { syncHostelOrganizations } from "../hostels/hostel.service.js";
+import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 const generateRandomPassword = () => {
   return crypto.randomBytes(4).toString("hex"); // generates an 8-character string
@@ -303,30 +304,36 @@ const getStudentsService = async ({
     matchStage.hostelId = { $in: hostelIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
 
+  let flexibleSearch = search;
+  if (search) {
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    flexibleSearch = escapedSearch.replace(/\s+/g, '\\s+');
+  }
+
   const searchMatch = search
     ? {
       $or: [
         {
           name: {
-            $regex: search,
+            $regex: flexibleSearch,
             $options: "i",
           },
         },
         {
           email: {
-            $regex: search,
+            $regex: flexibleSearch,
             $options: "i",
           },
         },
         {
           phone: {
-            $regex: search,
+            $regex: flexibleSearch,
             $options: "i",
           },
         },
         {
           studentId: {
-            $regex: search,
+            $regex: flexibleSearch,
             $options: "i",
           },
         },
@@ -443,25 +450,25 @@ const getStudentsService = async ({
         organizationId: 1,
         name: 1,
         email: 1,
-        phone: 1,
-        gender: 1,
-        dob: 1,
-        academicYear: 1,
-        address: 1,
-        hostelStatus: 1,
+        // phone: 1,
+        // gender: 1,
+        // dob: 1,
+        // academicYear: 1,
+        // address: 1,
+        // hostelStatus: 1,
         isActive: 1,
         createdAt: 1,
         organization: {
           _id: "$organization._id",
           name: "$organization.name",
-          code: "$organization.code",
+          // code: "$organization.code",
         },
 
         hostel: {
           _id: "$hostel._id",
           name: "$hostel.name",
-          code: "$hostel.code",
-          hosteltype: "$hostel.hosteltype",
+          // code: "$hostel.code",
+          // hosteltype: "$hostel.hosteltype",
         },
 
         course: {
@@ -482,13 +489,10 @@ const getStudentsService = async ({
           code: "$batch.code",
         },
 
-        parents: 1,
+        // parents: 1,
       },
     },
 
-    {
-      $unset: ["parents.password", "password"],
-    },
 
     {
       $sort: {
@@ -536,6 +540,10 @@ const getStudentFilterOptionsService = async ({
   role,
   userId,
   organizationId,
+  filterType,
+  search = '',
+  page = 1,
+  limit = 10
 }) => {
   const matchStage = {};
 
@@ -559,6 +567,95 @@ const getStudentFilterOptionsService = async ({
     }
 
     matchStage.organizationId = new mongoose.Types.ObjectId(organizationId);
+  }
+
+  if (role === "mentor") {
+    const activeAssignments = await MentorAssignment.find({
+      mentorId: userId,
+      status: "active",
+    })
+      .select("batchId")
+      .lean();
+
+    if (activeAssignments.length === 0) {
+      matchStage._id = null; // No active batches means no students
+    } else {
+      const batchIds = activeAssignments.map((a) => a.batchId);
+      matchStage.batchId = { $in: batchIds.map((id) => new mongoose.Types.ObjectId(id)) };
+    }
+  }
+
+  if (filterType) {
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    let flexibleSearch = search;
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      flexibleSearch = escapedSearch.replace(/\s+/g, '\\s+');
+    }
+    const searchRegex = new RegExp(flexibleSearch, 'i');
+
+    let pipeline = [{ $match: matchStage }];
+
+    if (filterType === 'course') {
+      pipeline.push(
+        { $match: { courseId: { $ne: null } } },
+        { $lookup: { from: "courses", localField: "courseId", foreignField: "_id", as: "course" } },
+        { $unwind: "$course" },
+        { $group: { _id: "$course._id", name: { $first: "$course.name" }, code: { $first: "$course.code" } } },
+        { $match: search ? { name: searchRegex } : {} },
+        { $sort: { name: 1 } },
+        { $project: { _id: 0, value: { $toString: "$_id" }, label: "$name", code: "$code" } },
+        { $skip: skip },
+        { $limit: limitNumber + 1 }
+      );
+    } else if (filterType === 'department') {
+      pipeline.push(
+        { $match: { departmentId: { $ne: null } } },
+        { $lookup: { from: "departments", localField: "departmentId", foreignField: "_id", as: "department" } },
+        { $unwind: "$department" },
+        { $group: { _id: "$department._id", name: { $first: "$department.name" }, code: { $first: "$department.code" } } },
+        { $match: search ? { name: searchRegex } : {} },
+        { $sort: { name: 1 } },
+        { $project: { _id: 0, value: { $toString: "$_id" }, label: "$name", code: "$code" } },
+        { $skip: skip },
+        { $limit: limitNumber + 1 }
+      );
+    } else if (filterType === 'hostel') {
+      pipeline.push(
+        { $match: { hostelId: { $ne: null } } },
+        { $lookup: { from: "hostels", localField: "hostelId", foreignField: "_id", as: "hostel" } },
+        { $unwind: "$hostel" },
+        { $group: { _id: "$hostel._id", name: { $first: "$hostel.name" }, code: { $first: "$hostel.code" } } },
+        { $match: search ? { name: searchRegex } : {} },
+        { $sort: { name: 1 } },
+        { $project: { _id: 0, value: { $toString: "$_id" }, label: "$name", code: "$code" } },
+        { $skip: skip },
+        { $limit: limitNumber + 1 }
+      );
+    } else if (filterType === 'organization') {
+      pipeline.push(
+        { $match: { organizationId: { $ne: null } } },
+        { $lookup: { from: "organizations", localField: "organizationId", foreignField: "_id", as: "organization" } },
+        { $unwind: "$organization" },
+        { $group: { _id: "$organization._id", name: { $first: "$organization.name" }, code: { $first: "$organization.code" } } },
+        { $match: search ? { name: searchRegex } : {} },
+        { $sort: { name: 1 } },
+        { $project: { _id: 0, value: { $toString: "$_id" }, label: "$name", code: "$code" } },
+        { $skip: skip },
+        { $limit: limitNumber + 1 }
+      );
+    } else {
+      return { options: [], hasMore: false };
+    }
+
+    const data = await Student.aggregate(pipeline);
+    const hasMore = data.length > limitNumber;
+    const options = hasMore ? data.slice(0, limitNumber) : data;
+
+    return { options, hasMore };
   }
 
   const [result = {}] = await Student.aggregate([
