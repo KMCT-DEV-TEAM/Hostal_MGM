@@ -11,7 +11,7 @@ const PhoneInput = ({ name, value, onChange, onBlur, disabled }) => (
       type="text"
       inputMode="numeric"
       autoComplete="off"
-      required
+      // required
       placeholder="00000 00000"
       value={value}
       maxLength={10}

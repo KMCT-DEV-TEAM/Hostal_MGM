@@ -153,7 +153,7 @@ export default function MentorDetailsModal({
                                     </button>
                                 </div>
 
-                                <div className="overflow-y-auto max-h-110 pr-2 no-scrollbar">
+                                <div className="overflow-y-auto md:max-h-110 max-h-125 pr-2 no-scrollbar">
 
                                     <ActivityLog
                                         timeline={activeTab === 'active'
