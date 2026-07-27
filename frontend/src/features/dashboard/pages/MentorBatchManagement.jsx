@@ -76,8 +76,6 @@ const MentorBatchManagement = () => {
         <BatchHeader
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
         />
         <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex-1 flex flex-col">
           <AssignmentsTable
@@ -87,12 +85,12 @@ const MentorBatchManagement = () => {
             page={page}
             setPage={setPage}
             setStatusFilter={setStatusFilter}
-
             totalPages={totalPages}
             limit={limit}
             setLimit={setLimit}
             onRowClick={handleRowClick}
             searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             statusFilter={statusFilter}
           />
           <AssignmentDetailsModal

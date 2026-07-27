@@ -9,9 +9,13 @@ const getStatusConfig = (status) => {
     let variant = 'neutral';
 
     // Success mappings
-    if (['approved', 'present', 'returned', 'returned (on time)', 'available', 'active', 'completed'].includes(normalized)) {
+    if (['approved', 'present', 'returned', 'returned (on time)', 'available', 'active'].includes(normalized)) {
         variant = 'success';
     }
+    if (['completed'].includes(normalized)) {
+        variant = 'secondary'
+    }
+
     // Danger mappings
     else if (['rejected', 'absent', 'left', 'Inactive', 'left (pending return)', 'returned (late)', 'lost', 'Inactive'].includes(normalized)) {
         variant = 'danger';
@@ -21,7 +25,7 @@ const getStatusConfig = (status) => {
         variant = 'warning';
     }
     // Primary mappings
-    else if (['allocated', 'checked in', 'open'].includes(normalized)) {
+    else if (['allocated', 'checked in', 'open', 'transferred',].includes(normalized)) {
         variant = 'primary';
     }
     // Neutral mappings
@@ -37,6 +41,7 @@ const variantStyles = {
     danger: 'bg-danger/10 text-danger border-danger/30',
     warning: 'bg-warning/10 text-warning border-warning/30',
     primary: 'bg-primary/10 text-primary border-primary/30',
+    secondary: 'bg-secondary/10 text-secondary border-secondary/40',
     neutral: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 

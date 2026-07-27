@@ -268,7 +268,7 @@ export default function StudentsTable({
       searchQuery={searchTerm}
       onSearchChange={(e) => setSearchTerm(e.target.value)}
       searchPlaceholder="Search Students..."
-      canSelect={true}
+      canSelect={ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role}
       selectedIds={selectedIds}
       onSelectAll={onSelectAll}
       onSelectRow={onSelectRow}

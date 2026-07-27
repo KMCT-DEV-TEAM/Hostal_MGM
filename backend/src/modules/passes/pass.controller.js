@@ -374,7 +374,6 @@ export const getAdminPassDetails = asyncHandler(async (req, res) => {
 
   const pass = await getManagementPassDetailsDb(id, scope);
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
-  console.log(pass, scope, id)
   const hostel = await Hostel.findOne({ _id: pass.hostelId?._id });
   if (!hostel) {
     return sendError(res, 403, "You don't have permission to view this pass.");

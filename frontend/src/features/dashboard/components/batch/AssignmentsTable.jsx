@@ -3,6 +3,7 @@ import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
 import { Building2, User } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function AssignmentsTable({
   assignments,
@@ -37,24 +38,8 @@ export default function AssignmentsTable({
       key: 'status',
       header: t('status'),
       accessor: (o) => o.status,
-      renderCell: (o) => {
-        const isActive = o.status === 'active';
-        const isCompleted = o.status === 'completed';
-        const isTransferred = o.status === 'transferred';
-        const colorClass = isActive
-          ? 'text-success bg-green-50'
-          : isCompleted
-            ? 'text-yellow-500 bg-yellow-50'
-            : isTransferred
-              ? 'text-blue-500 bg-blue-50'
-              : 'text-danger bg-red-50';
-        return (
-          <span className={`px-2 py-1 rounded ${colorClass}`}>
-            {o.status.charAt(0).toUpperCase() + o.status.slice(1)}
-          </span>
-        );
-      },
-    },
+      renderCell: (o) => <StatusBadge status={o.status} />,
+    }
   ];
 
   // Card configuration for responsive view (mobile)

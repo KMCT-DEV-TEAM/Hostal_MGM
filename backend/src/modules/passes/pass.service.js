@@ -22,6 +22,25 @@ const applyDateRangeFilter = (filter, field, startDate, endDate) => {
   buildDateRangeFilter(filter, field, startDate, endDate);
 };
 
+const applyPassDateFilter = (filter, query) => {
+  if (query.startDate || query.endDate) {
+    if (query.passType === 'home_pass') {
+      buildDateRangeFilter(filter, 'fromDate', query.startDate, query.endDate);
+    } else if (query.passType === 'out_pass') {
+      buildDateRangeFilter(filter, 'date', query.startDate, query.endDate);
+    } else {
+      const tempFilter = {};
+      buildDateRangeFilter(tempFilter, 'temp', query.startDate, query.endDate);
+      if (tempFilter.temp) {
+        filter.$or = [
+          { fromDate: tempFilter.temp },
+          { date: tempFilter.temp }
+        ];
+      }
+    }
+  }
+};
+
 export const createPassDb = async (passData, session = null) => {
   const result = await Pass.create([passData], { session: session || undefined });
   return result[0];
@@ -319,7 +338,7 @@ export const getWardenPassesDb = async (hostelId, query) => {
   const skip = (page - 1) * limit;
 
   const filter = { hostelId, ...buildStatusFilter(query) };
-  buildDateRangeFilter(filter, "createdAt", query.startDate, query.endDate);
+  applyPassDateFilter(filter, query);
 
   const pipeline = [
     { $match: filter },
@@ -569,12 +588,7 @@ export const getManagementPassesDb = async (
     filter.hostelId = new mongoose.Types.ObjectId(query.hostelId);
   }
 
-  buildDateRangeFilter(
-    filter,
-    "createdAt",
-    query.startDate,
-    query.endDate
-  );
+  applyPassDateFilter(filter, query);
 
   const studentLookupPipeline = [
     {

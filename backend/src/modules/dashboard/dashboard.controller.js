@@ -741,50 +741,50 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
 
   // Resolve student IDs in mentor's batches
   const studentIds = await Student.distinct('_id', { batchId: { $in: batchIds } });
+
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
   const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
   const lastYearStart = new Date(new Date().getFullYear() - 1, 0, 1);
-  const lastYearEnd = new Date(new Date().getFullYear() - 1, 11, 31, 23, 59, 59);
 
-  // Run all counts parallelly
   const [
-    studentsCount,
-    studentLastMonthCount,
-    wardensCount,
-    wardenLastMonthCount,
-    parentsCount,
-    parentLastMonthCount,
-    leaveRequests,
+    studentStats,
+    parentStats,
     passStats,
-    thisYearAttendanceAgg,
-    lastYearAttendanceAgg,
+    attendanceStats,
     batches,
-    announcements
+    announcements,
+    recentVisitors,
+    recentLeaveRequests,
+    todayWindows
   ] = await Promise.all([
-    Student.countDocuments({ batchId: { $in: batchIds } }),
-    Student.countDocuments({ batchId: { $in: batchIds }, createdAt: { $gte: lastMonth } }),
-    User.countDocuments({ role: "warden", organization: scope.organizationId }),
-    User.countDocuments({ role: "warden", organization: scope.organizationId, createdAt: { $gte: lastMonth } }),
-    Parent.countDocuments({ studentId: { $in: studentIds } }),
-    Parent.countDocuments({ studentId: { $in: studentIds }, createdAt: { $gte: lastMonth } }),
-    Pass.countDocuments({ studentId: { $in: studentIds }, status: { $in: ["pending_parent", "pending_admin"] } }),
-    getManagementDashboardStatsDb(scope),
-    AttendanceRecord.aggregate([
-      { $match: { studentId: { $in: studentIds }, createdAt: { $gte: currentYearStart } } },
+    Student.aggregate([
+      { $match: { batchId: { $in: batchIds } } },
       {
-        $group: {
-          _id: { $month: "$createdAt" },
-          presentCount: { $sum: { $cond: [{ $eq: [{ $toLower: "$status" }, "present"] }, 1, 0] } },
-          totalCount: { $sum: 1 }
+        $facet: {
+          total: [{ $count: "count" }],
+          lastMonth: [{ $match: { createdAt: { $gte: lastMonth } } }, { $count: "count" }]
         }
       }
     ]),
+    Parent.aggregate([
+      { $match: { studentId: { $in: studentIds } } },
+      {
+        $facet: {
+          total: [{ $count: "count" }],
+          lastMonth: [{ $match: { createdAt: { $gte: lastMonth } } }, { $count: "count" }]
+        }
+      }
+    ]),
+    getManagementDashboardStatsDb(scope),
     AttendanceRecord.aggregate([
-      { $match: { studentId: { $in: studentIds }, createdAt: { $gte: lastYearStart, $lte: lastYearEnd } } },
+      { $match: { studentId: { $in: studentIds }, createdAt: { $gte: lastYearStart } } },
       {
         $group: {
-          _id: { $month: "$createdAt" },
+          _id: { 
+            year: { $year: "$createdAt" }, 
+            month: { $month: "$createdAt" } 
+          },
           presentCount: { $sum: { $cond: [{ $eq: [{ $toLower: "$status" }, "present"] }, 1, 0] } },
           totalCount: { $sum: 1 }
         }
@@ -795,13 +795,39 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       .populate("createdBy", "firstName lastName role")
       .sort({ createdAt: -1 })
       .limit(5)
-      .lean()
+      .lean(),
+    Visitor.find({ students: { $in: studentIds } })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean(),
+    Pass.find({ studentId: { $in: studentIds } })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean(),
+    (async () => {
+      const hostelIds = await Student.distinct('hostelId', { batchId: { $in: batchIds } });
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      
+      return AttendanceWindow.find({
+        hostelId: { $in: hostelIds },
+        attendanceDate: { $gte: startOfToday, $lte: endOfToday }
+      }).select('status').lean();
+    })()
   ]);
 
-  const formatAttendance = (aggResult) => {
+  const studentsCount = studentStats[0]?.total[0]?.count || 0;
+  const studentLastMonthCount = studentStats[0]?.lastMonth[0]?.count || 0;
+  const parentsCount = parentStats[0]?.total[0]?.count || 0;
+  const parentLastMonthCount = parentStats[0]?.lastMonth[0]?.count || 0;
+
+  const currentYear = new Date().getFullYear();
+  const formatAttendance = (year) => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return monthNames.map((month, index) => {
-      const found = aggResult.find(item => item._id === (index + 1));
+      const found = attendanceStats.find(item => item._id.year === year && item._id.month === (index + 1));
       return {
         month,
         value: found && found.totalCount > 0 ? Math.round((found.presentCount / found.totalCount) * 100) : 0
@@ -809,21 +835,71 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
     });
   };
 
+  let windowStatus = "Not Opened";
+  if (todayWindows && todayWindows.length > 0) {
+    if (todayWindows.some(w => w.status === 'open')) {
+      windowStatus = "Opened";
+    } else if (todayWindows.every(w => w.status === 'completed')) {
+      windowStatus = "Closed";
+    } else {
+      windowStatus = "Opened";
+    }
+  }
+
+  const quickSummary = {
+    leaves: {
+      pending: passStats?.pending || 0,
+      approved: passStats?.approved || 0
+    },
+    studentsOutside: {
+      current: passStats?.studentsOutside || 0,
+      returned: passStats?.returnedToday || 0
+    },
+    attendanceStatus: windowStatus
+  };
+
+  const recentActivities = [
+    ...(recentLeaveRequests || []).map(r => ({
+      action: `Leave Request ${r.status.split('_')[0]}`,
+      createdAt: r.createdAt,
+      user: { name: r.studentId?.firstName || 'Student' }
+    })),
+    ...(recentVisitors || []).map(v => ({
+      action: `New Visitor`,
+      createdAt: v.createdAt,
+      user: { name: v.name || 'Visitor' }
+    }))
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+
   const stats = {
     students: studentsCount,
     studentLastMonthCount: studentLastMonthCount,
-    wardens: wardensCount,
-    wardenLastMonthCount: wardenLastMonthCount,
     parents: parentsCount,
     parentLastMonthCount: parentLastMonthCount,
-    leaveRequests: leaveRequests,
-    ...passStats,
-    attendance: {
-      thisYear: formatAttendance(thisYearAttendanceAgg),
-      lastYear: formatAttendance(lastYearAttendanceAgg)
+    leaveRequests: passStats?.pending || 0,
+    quickSummary: {
+      leaves: {
+        pending: passStats?.pending || 0,
+        approved: passStats?.approved || 0
+      },
+      studentsOutside: {
+        current: passStats?.studentsOutside || 0,
+        returned: passStats?.returnedToday || 0
+      }
     },
-    batches: batches,
-    announcements: announcements
+    recentActivities,
+    attendance: {
+      thisYear: formatAttendance(currentYear),
+      lastYear: formatAttendance(currentYear - 1)
+    },
+    batches: batches.map(b => ({ _id: b._id, name: b.name, code: b.code })),
+    announcements: announcements.map(a => ({
+      _id: a._id,
+      title: a.title,
+      message: a.message,
+      createdBy: { firstName: a.createdBy?.firstName || 'Admin' },
+      createdAt: a.createdAt
+    }))
   };
 
   return sendSuccess(res, 200, "Dashboard statistics loaded successfully.", { data: stats });
