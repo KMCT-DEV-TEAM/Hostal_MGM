@@ -255,3 +255,45 @@ export const getAttendanceDetails = asyncHandler(async (req, res) => {
     return sendError(res, 403, error.message);
   }
 });
+
+// --- V2 Controllers (M:N Architecture) ---
+// These controllers exclusively rely on explicit parameters validated by verifyStudentAccess middleware.
+
+export const getAttendanceDashboardV2 = asyncHandler(async (req, res) => {
+  try {
+    const result = await getStudentDashboardStatsDb(req.params.studentId);
+    return sendSuccess(res, 200, "Dashboard stats fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceHistoryV2 = asyncHandler(async (req, res) => {
+  try {
+    const result = await getStudentAttendanceHistoryDb(req.params.studentId, req.query);
+    return sendSuccess(res, 200, "Attendance history fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceCalendarV2 = asyncHandler(async (req, res) => {
+  const { month, year } = req.query;
+  try {
+    const result = await getStudentAttendanceCalendarDb(req.params.studentId, month, year);
+    return sendSuccess(res, 200, "Calendar events fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceDetailsV2 = asyncHandler(async (req, res) => {
+  const { date } = req.params;
+  try {
+    const result = await getStudentAttendanceDetailsDb(req.params.studentId, date);
+    if (!result) return sendError(res, 404, "No attendance record found for this date.");
+    return sendSuccess(res, 200, "Attendance details fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});

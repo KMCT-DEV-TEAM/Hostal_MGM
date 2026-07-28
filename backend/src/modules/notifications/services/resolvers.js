@@ -92,22 +92,59 @@ export class ParentResolver {
     async resolve(filter = {}) {
         let matchQuery = {};
 
-        if (filter.studentId) matchQuery.studentId = new mongoose.Types.ObjectId(filter.studentId);
-        if (filter.studentIds && Array.isArray(filter.studentIds)) {
-            matchQuery.studentId = { $in: filter.studentIds.map(id => new mongoose.Types.ObjectId(id)) };
-        }
+        // To support V2 M:N, we look up StudentParent first if studentId is provided.
+        // If not, we just search the Parent collection directly.
         if (filter.organizationId) matchQuery.organization = new mongoose.Types.ObjectId(filter.organizationId);
-        if (filter.defaultGuardian !== undefined) matchQuery.defaultGuardian = filter.defaultGuardian;
-        if (filter.relationship) matchQuery.relationship = filter.relationship;
         if (filter.parentId) matchQuery._id = new mongoose.Types.ObjectId(filter.parentId);
 
         const pipeline = [];
 
+        // If we are routing based on a student event, we MUST find all linked active parents
+        if (filter.studentId || (filter.studentIds && Array.isArray(filter.studentIds))) {
+            let spMatch = {};
+            if (filter.studentId) spMatch.studentId = new mongoose.Types.ObjectId(filter.studentId);
+            if (filter.studentIds && Array.isArray(filter.studentIds)) {
+                spMatch.studentId = { $in: filter.studentIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+            if (filter.defaultGuardian !== undefined) spMatch.defaultGuardian = filter.defaultGuardian;
+            if (filter.relationship) spMatch.relationship = filter.relationship;
+            
+            pipeline.push({
+                $lookup: {
+                    from: 'studentparents',
+                    localField: '_id',
+                    foreignField: 'parentId',
+                    as: 'studentParentInfo'
+                }
+            });
+            pipeline.push({ $unwind: '$studentParentInfo' });
+            
+            // Match the specific student link
+            pipeline.push({ 
+                $match: { 
+                    'studentParentInfo.studentId': spMatch.studentId, 
+                    'studentParentInfo.status': 'active' 
+                }
+            });
+            
+            if (spMatch.defaultGuardian !== undefined) {
+                pipeline.push({ $match: { 'studentParentInfo.defaultGuardian': spMatch.defaultGuardian } });
+            }
+            if (spMatch.relationship) {
+                pipeline.push({ $match: { 'studentParentInfo.relationship': spMatch.relationship } });
+            }
+        } else {
+            // V1 fallback filters
+            if (filter.defaultGuardian !== undefined) matchQuery.defaultGuardian = filter.defaultGuardian;
+            if (filter.relationship) matchQuery.relationship = filter.relationship;
+        }
+
         if (filter.hostelId) {
+            // Need to ensure the student linked actually belongs to this hostel
             pipeline.push({
                 $lookup: {
                     from: 'students',
-                    localField: 'studentId',
+                    localField: 'studentParentInfo.studentId',
                     foreignField: '_id',
                     as: 'studentsData'
                 }
@@ -119,7 +156,9 @@ export class ParentResolver {
             });
         }
 
-        pipeline.push({ $match: matchQuery });
+        if (Object.keys(matchQuery).length > 0) {
+            pipeline.push({ $match: matchQuery });
+        }
 
         pipeline.push({
             $project: {
@@ -131,7 +170,8 @@ export class ParentResolver {
                 phone: '$phone',
                 pushToken: '$pushToken',
                 metadata: {
-                    studentId: '$studentId'
+                    // Inject the specific studentId so we know which student triggered it
+                    studentId: { $ifNull: ['$studentParentInfo.studentId', '$studentId'] }
                 }
             }
         });

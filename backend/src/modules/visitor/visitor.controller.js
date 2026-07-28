@@ -513,3 +513,141 @@ export const updateVisitor = async (req, res) => {
         });
     }
 };
+
+// --- V2 Parent Controllers (M:N Architecture) ---
+// These controllers extract explicit studentId from req.params to support multiple linked students.
+
+export const getVisitorDashboardSummaryV2 = async (req, res) => {
+    try {
+        const studentId = req.params.studentId;
+        // Mocking user context for service since V1 service might use req.user.id for implicit lookups
+        const v2User = { ...req.user, role: "student", id: studentId }; 
+        const result = await visitorService.getDashboardSummary(v2User);
+
+        return res.status(200).json({
+            success: true,
+            message: "Dashboard summary fetched successfully.",
+            ...result
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const listVisitorVisitsV2 = async (req, res) => {
+    try {
+        const studentId = req.params.studentId;
+        const v2User = { ...req.user, role: "student", id: studentId }; 
+        const result = await visitorService.listVisitorVisits(req.query, v2User);
+        
+        return res.status(200).json({
+            success: true,
+            message: "Visits fetched successfully.",
+            ...result
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const getVisitDetailsV2 = async (req, res) => {
+    try {
+        const { visitId, studentId } = req.params;
+        const v2User = { ...req.user, role: "student", id: studentId };
+        const result = await visitorService.getVisitDetails(visitId, v2User);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visit details fetched successfully.",
+            data: result
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const createVisitorV2 = async (req, res) => {
+    try {
+        const studentId = req.params.studentId;
+        const v2User = { ...req.user, role: "parent", explicitStudentId: studentId }; 
+        // V1 service might need a patch if it relies strictly on Parent DB lookup, 
+        // but passing it inside user context is the cleanest adapter pattern.
+        const newVisitor = await visitorService.createVisitorProfile(req.body, v2User);
+
+        return res.status(201).json({
+            success: true,
+            message: "Visitor registered successfully.",
+            data: newVisitor
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const listParentVisitorsV2 = async (req, res) => {
+    try {
+        const studentId = req.params.studentId;
+        const v2User = { ...req.user, role: "student", id: studentId }; 
+        // using student scope because parent list is functionally identical for that student
+        const result = await visitorService.listStudentVisitors(req.query, v2User);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitors fetched successfully.",
+            ...result
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const updateVisitorV2 = async (req, res) => {
+    try {
+        const { visitorId, studentId } = req.params;
+        const v2User = { ...req.user, role: "parent", explicitStudentId: studentId };
+        const updatedVisitor = await visitorService.updateVisitorProfile(visitorId, req.body, v2User);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor updated successfully.",
+            data: updatedVisitor
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const getVisitorDetailsV2 = async (req, res) => {
+    try {
+        const { visitorId, studentId } = req.params;
+        const v2User = { ...req.user, role: "student", id: studentId };
+        const result = await visitorService.getVisitorDetails(visitorId, v2User);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor details fetched successfully.",
+            data: result
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+
+export const updateVisitorStatusV2 = async (req, res) => {
+    try {
+        const { visitorId, studentId } = req.params;
+        const { status } = req.body;
+        const v2User = { ...req.user, role: "parent", explicitStudentId: studentId };
+
+        const updatedVisitor = await visitorService.updateVisitorStatus(visitorId, status, v2User);
+
+        return res.status(200).json({
+            success: true,
+            message: `Visitor status updated to ${status} successfully.`,
+            data: updatedVisitor
+        });
+    } catch (error) {
+        return res.status(error.status || 500).json({ success: false, message: error.message });
+    }
+};
+

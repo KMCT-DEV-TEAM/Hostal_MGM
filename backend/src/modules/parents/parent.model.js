@@ -2,23 +2,12 @@ import mongoose from "mongoose";
 
 const parentSchema = new mongoose.Schema(
   {
-    studentId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
-      required: true,
-    },
-
     parentName: {
       type: String,
       required: true,
       trim: true,
     },
 
-    relationship: {
-      type: String,
-      required: true,
-      enum: ["father", "mother", "guardian", "other"],
-    },
     phone: {
       type: String,
       required: true,
@@ -29,10 +18,6 @@ const parentSchema = new mongoose.Schema(
       required: true,
     },
     tempPassword: {
-      type: Boolean,
-      default: false
-    },
-    defaultGuardian: {
       type: Boolean,
       default: false
     },
@@ -74,7 +59,8 @@ const parentSchema = new mongoose.Schema(
   }
 );
 
-parentSchema.index({ studentId: 1 });
+parentSchema.index({ phone: 1 }, { unique: true });
+parentSchema.index({ email: 1 }, { unique: true, sparse: true, background: true });
 
 
 parentSchema.set("toJSON", {

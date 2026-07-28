@@ -169,3 +169,64 @@ export const testBroadcast = asyncHandler(async (req, res, next) => {
 });
 
 
+
+/**
+ * @desc    Get notifications scoped to a specific student in V2 M:N architecture
+ * @route   GET /api/v2/students/:studentId/notifications
+ * @access  Private
+ */
+export const getMyNotificationsV2 = asyncHandler(async (req, res, next) => {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const skip = (page - 1) * limit;
+    const studentId = req.params.studentId;
+
+    let isRead = undefined;
+    if (req.query.isRead !== undefined) {
+        isRead = req.query.isRead === 'true';
+    }
+
+    const userModel = getModelForRole(req.user.role);
+
+    // The repository method usually fetches by recipient ID. 
+    // We will fetch and then filter by metadata.studentId.
+    // However, if the repository supports a filter param, we can pass it, but
+    // let's just do a direct mongoose query here for the V2 endpoint to guarantee correct filtering.
+    const { default: Notification } = await import('./notification.model.js');
+    
+    const query = {
+        'recipient.id': req.user.id,
+        'recipient.model': userModel,
+        'metadata.studentId': studentId
+    };
+
+    if (isRead !== undefined) {
+        query.isRead = isRead;
+    }
+
+    const [notifications, total, unreadCount] = await Promise.all([
+        Notification.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Notification.countDocuments(query),
+        Notification.countDocuments({ ...query, isRead: false })
+    ]);
+
+    res.status(200).json({
+        status: 'success',
+        results: notifications.length,
+        unreadCount,
+        pagination: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
+        },
+        data: {
+            notifications
+        }
+    });
+});
+

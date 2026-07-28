@@ -1,6 +1,7 @@
 import User from "../users/user.model.js";
 import Student from "./student.model.js";
 import Parent from "../parents/parent.model.js";
+import StudentParent from "../parents/studentParent.model.js";
 import crypto from "crypto";
 import { hashPassword } from "../../utils/hash.js";
 import mongoose from "mongoose";
@@ -70,20 +71,45 @@ const createStudentWithParentDb = async (
     ],
     { session }
   );
+  let parentRecord;
+  let existingParent = await Parent.findOne({
+    $or: [{ email: parentEmail }, { phone: parentPhone }]
+  }).session(session);
 
-  const parent = await Parent.create(
+  if (existingParent) {
+    // Update existing parent if needed (we can skip updating password to not override their existing one)
+    existingParent.parentName = parentName || existingParent.parentName;
+    existingParent.email = parentEmail || existingParent.email;
+    existingParent.phone = parentPhone || existingParent.phone;
+    await existingParent.save({ session });
+    parentRecord = existingParent;
+  } else {
+    // Create new parent
+    const createdParents = await Parent.create(
+      [
+        {
+          parentName,
+          phone: parentPhone,
+          password: hashedParentPassword,
+          tempPassword: true,
+          isVerified: true,
+          email: parentEmail,
+        },
+      ],
+      { session }
+    );
+    parentRecord = createdParents[0];
+  }
+
+  await StudentParent.create(
     [
       {
         studentId: student[0]._id,
-        parentName,
-        relationship,
-        phone: parentPhone,
-        password: hashedParentPassword,
-        tempPassword: true,
+        parentId: parentRecord._id,
+        relationship: relationship || "guardian",
         defaultGuardian: true,
-        isVerified: true,
-        email: parentEmail,
-      },
+        status: "active"
+      }
     ],
     { session }
   );
@@ -98,7 +124,7 @@ const createStudentWithParentDb = async (
 
   return {
     student: student[0],
-    parent: parent[0],
+    parent: parentRecord,
     temporaryPasswords: {
       student: studentTemporaryPassword,
       parent: parentTemporaryPassword,
@@ -428,9 +454,17 @@ const getStudentsService = async ({
 
     {
       $lookup: {
-        from: "parents",
+        from: "studentparents",
         localField: "_id",
         foreignField: "studentId",
+        as: "studentParentLinks",
+      }
+    },
+    {
+      $lookup: {
+        from: "parents",
+        localField: "studentParentLinks.parentId",
+        foreignField: "_id",
         as: "parents",
       },
     },
