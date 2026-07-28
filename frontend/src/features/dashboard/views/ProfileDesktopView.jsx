@@ -39,7 +39,7 @@ const ProfileDesktopView = ({
                     </div>
 
                     <div className="text-start">
-                        <h2 className="text-2xl font-semibold text-gray-900">{user?.name}</h2>
+                        <h2 className="text-2xl font-semibold text-gray-900">{user?.name || user.parentName}</h2>
                         <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wider">{formatRole(user?.role)}</p>
                     </div>
                 </div>
@@ -109,8 +109,8 @@ const ProfileDesktopView = ({
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="text-gray-900 font-semibold">{user?.name || t('not_provided')}</div>
-                                            <button onClick={() => handleEditClick('name', user?.name)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
+                                            <div className="text-gray-900 font-semibold">{user?.name || user.parentName}</div>
+                                            <button onClick={() => handleEditClick('name', user?.name || user.parentName)} className="p-1.5 text-primary rounded-md cursor-pointer">
                                                 <Pencil className="w-4 h-4" />
                                             </button>
                                         </>

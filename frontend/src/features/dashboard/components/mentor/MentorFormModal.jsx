@@ -4,6 +4,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { getOrganizations } from "@/services/organization.service";
 import AsyncDropdown from "@/components/ui/AsyncDropdown";
+import PhoneInput from "@/components/ui/PhoneInput";
+import { validateMentorForm } from "./mentorValidation";
 
 export default function MentorFormModal({
   editingMentor,
@@ -60,13 +62,7 @@ export default function MentorFormModal({
   };
 
   const validate = () => {
-    const newErrors = {};
-    if (!formData.name) newErrors.name = "Name is required";
-    if (!isEdit && !formData.email) newErrors.email = "Email is required";
-    if (!formData.phone) newErrors.phone = "Phone is required";
-    if (role === ROLES.SUPER_ADMIN && !isEdit && !orgId && !formData.organizationId) {
-      newErrors.organizationId = "Organization is required";
-    }
+    const newErrors = validateMentorForm(formData, { isEdit, role, orgId });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -159,13 +155,13 @@ export default function MentorFormModal({
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Phone Number <span className="text-danger">*</span>
             </label>
-            <input
-              type="text"
+            <PhoneInput
               name="phone"
               value={formData.phone}
-              onChange={handleChange}
-              placeholder="+91 9876543210"
-              className={`w-full px-3 py-2 bg-gray-50/50 border rounded-lg text-sm focus:outline-none transition-colors ${errors.phone ? 'border-red-300 focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
+              onChange={(val) => {
+                setFormData((prev) => ({ ...prev, phone: val }));
+                if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
+              }}
             />
             <ErrorMessage error={errors.phone} />
           </div>

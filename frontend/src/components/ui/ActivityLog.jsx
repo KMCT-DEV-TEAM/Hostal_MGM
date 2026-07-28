@@ -1,6 +1,5 @@
 import React from 'react';
 import { formatDateReadable } from '@/utils/formatters';
-import { UserCircle2 } from 'lucide-react';
 
 export default function ActivityLog({ timeline, defaultText = "No activity recorded yet." }) {
     return (
@@ -13,8 +12,8 @@ export default function ActivityLog({ timeline, defaultText = "No activity recor
                             key={idx}
                             onClick={isClickable ? t.onClick : undefined}
                             className={`border rounded-lg p-3 ${isClickable
-                                    ? 'border-gray-200 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all active:scale-[0.99] bg-white'
-                                    : 'border-gray-100 bg-white'
+                                ? 'border-gray-200 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all active:scale-[0.99] bg-white'
+                                : 'border-gray-100 bg-white'
                                 }`}
                         >
                             <div className="mb-2">
@@ -25,7 +24,13 @@ export default function ActivityLog({ timeline, defaultText = "No activity recor
                                     {t.meta ? (
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                                {t.meta.icon || <UserCircle2 size={20} />}
+                                                {t.meta.icon || (
+                                                    <span className="text-sm font-bold uppercase">
+                                                        {typeof t.meta.value === 'string'
+                                                            ? t.meta.value.split(' ').map(n => n[0]).join('').substring(0, 2)
+                                                            : '?'}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="text-[10px] text-text-secondary">{t.meta.label}</div>

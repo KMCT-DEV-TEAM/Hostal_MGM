@@ -8,6 +8,9 @@ import MobileFooter from "@/components/shared/MobileFooter";
 import { Outlet } from "react-router-dom";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import AttendanceQRModal from "@/features/dashboard/components/attendance/AttendanceQRModal";
+import ParentBootstrap from "./ParentBootstrap";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ROLES } from "@/constants/roles";
 
 const UserLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -15,6 +18,7 @@ const UserLayout = () => {
 
     const headerVariant = useLayoutStore((state) => state.header.variant);
     const footerVisible = useLayoutStore((state) => state.footer.visible);
+    const userRole = useAuthStore((state) => state.user?.role);
 
     return (
         <div className={`flex flex-col h-dvh bg-[#F8FAFC] ${isMobile ? 'font-mobile' : 'font-sans'}`}>
@@ -40,7 +44,7 @@ const UserLayout = () => {
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto w-full relative">
-                    <Outlet />
+                    {userRole === ROLES.PARENT ? <ParentBootstrap /> : <Outlet />}
                 </main>
             </div>
 

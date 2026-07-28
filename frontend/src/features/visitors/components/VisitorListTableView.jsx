@@ -92,7 +92,7 @@ const VisitorListTableView = ({
                             e.stopPropagation();
                             onEdit && onEdit(visitor);
                         }}
-                        className="!p-1.5 bg-secondary/10 text-secondary hover:bg-secondary/20"
+                        className="p-1.5! bg-secondary/10 text-secondary hover:bg-secondary/20"
                         title="Edit"
                     >
                         <Edit className="w-4 h-4" />
