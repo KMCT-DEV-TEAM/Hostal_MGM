@@ -14,6 +14,7 @@ import Parent from "../parents/parent.model.js";
 import hostelModel from "../hostels/hostel.model.js";
 import studentHostelModel from "../student-hostels/studentHostel.model.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import StudentParent from "../parents/studentParent.model.js";
 
 const createStudent = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
@@ -81,19 +82,7 @@ const createStudent = asyncHandler(async (req, res) => {
       );
     }
 
-    const existingParent = await Parent.findOne({
-      email: parentEmail,
-    }).session(session);
-
-    if (existingParent) {
-      await session.abortTransaction();
-      return sendError(
-        res,
-        400,
-        "Parent email already exists"
-      );
-    }
-
+    // We allow linking to an existing parent. The service layer will handle updating and creating the link.
     const { studentOtp, parentOtp } = req.body;
 
     const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
@@ -240,9 +229,9 @@ const toggleStudentStatus = asyncHandler(async (req, res) => {
   student.isActive = !student.isActive;
   await student.save();
 
-  await Parent.updateMany(
+  await StudentParent.updateMany(
     { studentId: student._id },
-    { isActive: student.isActive }
+    { status: student.isActive ? 'active' : 'inactive' }
   );
 
   if (student.hostelId) {
@@ -490,8 +479,8 @@ const getStudentFilterOptions = asyncHandler(async (req, res) => {
 });
 
 const getStudentFurnitures = asyncHandler(async (req, res) => {
-  const student = await Student.findById(id).lean();
   const { id } = req.params;
+  const student = await Student.findById(id).lean();
   if (!student) {
     return sendError(res, 404, "Student not found");
   }
@@ -546,12 +535,23 @@ const getStudentById = asyncHandler(async (req, res) => {
     }
   }
 
-  const parents = await Parent.find({ studentId: id }).lean();
-  if (parents && parents.length > 0) {
-    student.parents = parents.map(p => {
-      const { password, ...parentData } = p;
-      return parentData;
-    });
+  const studentParents = await StudentParent.find({ studentId: id, status: 'active' })
+    .populate("parentId")
+    .lean();
+
+  if (studentParents && studentParents.length > 0) {
+    student.parents = studentParents.map(sp => {
+      if (!sp.parentId) return null;
+      const { password, ...parentData } = sp.parentId;
+      return {
+        ...parentData,
+        relationship: sp.relationship,
+        defaultGuardian: sp.defaultGuardian,
+        status: sp.status
+      };
+    }).filter(Boolean);
+  } else {
+    student.parents = [];
   }
 
   // Fetch active hostel allocation
