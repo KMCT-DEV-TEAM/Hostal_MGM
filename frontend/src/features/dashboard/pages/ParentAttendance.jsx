@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import attendanceService from '@/services/attendance.service';
 import { showErrorToast } from '@/utils/toast';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import { formatDateReadable, formatDay } from '@/utils/formatters';
 import LeaveStatusBadge from '@/features/leaves/components/badges/LeaveStatusBadge';
 import InfoCard from '@/components/ui/InfoCard';
@@ -17,6 +18,7 @@ const ParentAttendance = () => {
     const pageTitle = "Attendance";
     const pageSubtitle = "Track your child's attendance records and view attendance history.";
     const { user } = useAuthStore();
+    const { activeStudentId } = useActiveStudent();
 
     const [todayStats, setTodayStats] = useState(null);
     const [summary, setSummary] = useState(null);
@@ -34,8 +36,9 @@ const ParentAttendance = () => {
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     const fetchDashboard = useCallback(async () => {
+        if (!activeStudentId) return;
         try {
-            const res = await attendanceService.getDashboardStatsByRole(user.role);
+            const res = await attendanceService.getDashboardStatsByRole(user.role, activeStudentId);
             // console.log('This is response: ', res)
             setTodayStats(res?.today || null);
             setSummary(res?.summary);
@@ -43,9 +46,10 @@ const ParentAttendance = () => {
         } catch (error) {
             console.error('Failed to load dashboard stats:', error);
         }
-    }, [user.role]);
+    }, [user.role, activeStudentId]);
 
     const fetchHistory = useCallback(async () => {
+        if (!activeStudentId) return;
         try {
             setLoading(true);
             const params = {
@@ -54,7 +58,7 @@ const ParentAttendance = () => {
                 ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
                 ...filters
             };
-            const res = await attendanceService.getAttendanceHistoryByRole(user.role, params);
+            const res = await attendanceService.getAttendanceHistoryByRole(user.role, activeStudentId, params);
             setHistory(res?.records);
             setPagination(res?.pagination ? {
                 totalRecords: res.pagination.totalRecords,
@@ -65,7 +69,7 @@ const ParentAttendance = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, debouncedSearchQuery, filters, user.role]);
+    }, [page, debouncedSearchQuery, filters, user.role, activeStudentId]);
 
     useEffect(() => {
         fetchDashboard();
