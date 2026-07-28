@@ -33,10 +33,10 @@ export const getStudentCalendar = (params) => apiClient.get('/student/attendance
 export const getStudentDetails = (date) => apiClient.get(`/student/attendance/details/${date}`);
 
 // --- PARENT API ---
-export const getParentDashboard = () => apiClient.get('/parent/attendance/dashboard');
-export const getParentHistory = (params) => apiClient.get('/parent/attendance', { params });
-export const getParentCalendar = (params) => apiClient.get('/parent/attendance/calendar', { params });
-export const getParentDetails = (date) => apiClient.get(`/parent/attendance/details/${date}`);
+export const getParentDashboard = () => apiClient.get('/parent/6a6847fec7ead6c6d469d399/attendance/dashboard');
+export const getParentHistory = (params) => apiClient.get('/parent/6a6847fec7ead6c6d469d399/attendance', { params });
+export const getParentCalendar = (params) => apiClient.get('/parent/6a6847fec7ead6c6d469d399/attendance/calendar', { params });
+export const getParentDetails = (date) => apiClient.get(`/parent/6a6847fec7ead6c6d469d399/attendance/details/${date}`);
 
 // --- MENTOR API ---
 export const getWindowsByMentor = (params) => apiClient.get('/mentor/attendance/windows', { params });

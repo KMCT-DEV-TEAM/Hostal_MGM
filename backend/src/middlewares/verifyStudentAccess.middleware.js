@@ -2,6 +2,7 @@ import StudentParent from "../modules/parents/studentParent.model.js";
 
 const verifyStudentAccess = async (req, res, next) => {
   try {
+    console.log(req.user, req.params);
     // 1. Ensure the user is a parent (Admins/Wardens have different auth flows, or we can allow them if needed, but for V2 parent routes, they must be a parent)
     if (req.user.role !== "parent") {
       // If we want admins to use these same routes, we could check for admin role here and bypass:
@@ -14,7 +15,6 @@ const verifyStudentAccess = async (req, res, next) => {
 
     // 2. Extract studentId from params or body
     const studentId = req.params.studentId || req.body.studentId;
-
     if (!studentId) {
       return res.status(400).json({
         success: false,
@@ -40,6 +40,12 @@ const verifyStudentAccess = async (req, res, next) => {
     }
     req.params.studentId = studentId;
     // 4. Access Granted
+    // Inject the verified student object into the request object
+    req.student = {
+      id: studentId,
+      parentId: req.user.id,
+    };
+
     next();
   } catch (error) {
     console.error("verifyStudentAccess Error:", error);

@@ -1,6 +1,5 @@
 import express from 'express';
 import authMiddleware from '../../middlewares/auth.middleware.js';
-import attendanceV2Router from '../attendance/attendance.v2.routes.js';
 import passV2Router from '../passes/pass.v2.routes.js';
 import visitorV2Router from '../visitor/visitor.v2.routes.js';
 import dashboardV2Router from '../dashboard/dashboard.v2.routes.js';
@@ -15,7 +14,6 @@ v2Router.use(authMiddleware);
 
 
 // Future V2 module routers will be mounted here
-v2Router.use('/students/:studentId/attendance', attendanceV2Router);
 v2Router.use('/students/:studentId/passes', passV2Router);
 v2Router.use('/students/:studentId/visitors', visitorV2Router);
 v2Router.use('/students/:studentId/dashboard', dashboardV2Router);
