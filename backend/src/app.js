@@ -40,6 +40,7 @@ import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
 import verifyStudentAccess from "./middlewares/verifyStudentAccess.middleware.js";
+import authMiddleware from "./middlewares/auth.middleware.js";
 const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -114,7 +115,7 @@ app.use("/api/student/attendance", studentAttendanceRouter);
 // ---parents routes -------
 app.use("/api/parent/dashboard", dashboardRoutes);
 app.use("/api/parent/passes", parentPassRouter);
-app.use("/api/parent/:studentId/attendance", verifyStudentAccess, parentAttendanceRouter);
+app.use("/api/parent/students/:studentId/attendance", parentAttendanceRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);

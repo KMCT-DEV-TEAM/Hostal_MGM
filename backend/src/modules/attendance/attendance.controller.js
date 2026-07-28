@@ -203,12 +203,14 @@ const resolveStudentId = async (req) => {
 
   if (req.user.role === 'parent') {
     const parent = await Parent.findById(req.user.id).select("isActive").lean();
+    console.log(parent, "parent", req.params.studentId)
     if (!parent || !parent.isActive) {
       throw new Error("Parent account is inactive or not found");
     }
+    console.log(req.params)
 
-    // If the frontend explicitly requested a studentId (via params, query, or body), use it and verify access
-    const requestedStudentId = req.params.studentId || req.query.studentId || req.body?.studentId;
+    // Use the injected req.student from verifyStudentAccess if available, otherwise fallback to params/query
+    const requestedStudentId = req.student?.id
 
     if (requestedStudentId) {
       const isLinked = await StudentParent.exists({
@@ -276,45 +278,3 @@ export const getAttendanceDetails = asyncHandler(async (req, res) => {
   }
 });
 
-// --- V2 Controllers (M:N Architecture) ---
-// These controllers exclusively rely on explicit parameters validated by verifyStudentAccess middleware.
-
-export const getAttendanceDashboardV2 = asyncHandler(async (req, res) => {
-  try {
-    const result = await getStudentDashboardStatsDb(req.params.studentId);
-    return sendSuccess(res, 200, "Dashboard stats fetched successfully", result);
-  } catch (error) {
-    return sendError(res, 403, error.message);
-  }
-});
-
-export const getAttendanceHistoryV2 = asyncHandler(async (req, res) => {
-  try {
-    const result = await getStudentAttendanceHistoryDb(req.params.studentId, req.query);
-    return sendSuccess(res, 200, "Attendance history fetched successfully", result);
-  } catch (error) {
-    return sendError(res, 403, error.message);
-  }
-});
-
-export const getAttendanceCalendarV2 = asyncHandler(async (req, res) => {
-  const { month, year } = req.query;
-  try {
-    const result = await getStudentAttendanceCalendarDb(req.params.studentId, month, year);
-    return sendSuccess(res, 200, "Calendar events fetched successfully", result);
-  } catch (error) {
-    console.log(error)
-    return sendError(res, 403, error.message);
-  }
-});
-
-export const getAttendanceDetailsV2 = asyncHandler(async (req, res) => {
-  const { date } = req.params;
-  try {
-    const result = await getStudentAttendanceDetailsDb(req.params.studentId, date);
-    if (!result) return sendError(res, 404, "No attendance record found for this date.");
-    return sendSuccess(res, 200, "Attendance details fetched successfully", result);
-  } catch (error) {
-    return sendError(res, 403, error.message);
-  }
-});
