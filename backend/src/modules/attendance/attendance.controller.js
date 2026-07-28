@@ -5,6 +5,7 @@ import Hostel from "../hostels/hostel.model.js";
 import Parent from "../parents/parent.model.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 import Student from "../students/student.model.js";
+import StudentParent from "../parents/studentParent.model.js";
 import {
   createAttendanceWindowDb,
   getAttendanceWindowsDb,
@@ -201,14 +202,33 @@ const resolveStudentId = async (req) => {
   }
 
   if (req.user.role === 'parent') {
-    const parent = await Parent.findById(req.user.id).select("studentId isActive").lean();
+    const parent = await Parent.findById(req.user.id).select("isActive").lean();
     if (!parent || !parent.isActive) {
       throw new Error("Parent account is inactive or not found");
     }
-    if (!parent.studentId) {
-      throw new Error("No student linked to this parent account");
+
+    // If the frontend explicitly requested a studentId (via params, query, or body), use it and verify access
+    const requestedStudentId = req.params.studentId || req.query.studentId || req.body?.studentId;
+
+    if (requestedStudentId) {
+      const isLinked = await StudentParent.exists({
+        parentId: req.user.id,
+        studentId: requestedStudentId,
+        status: 'active'
+      });
+      if (!isLinked) {
+        throw new Error("You are not authorized to view this student's records.");
+      }
+      return requestedStudentId;
     }
-    return parent.studentId;
+
+    // Fallback for strict V1 backward compatibility (if no studentId is passed anywhere)
+    // const firstLink = await StudentParent.findOne({ parentId: req.user.id, status: 'active' }).select("studentId").lean();
+
+    // if (!firstLink || !firstLink.studentId) {
+    //   throw new Error("No student linked to this parent account");
+    // }
+    // return firstLink.studentId;
   }
   return req.user.id;
 };
@@ -283,6 +303,7 @@ export const getAttendanceCalendarV2 = asyncHandler(async (req, res) => {
     const result = await getStudentAttendanceCalendarDb(req.params.studentId, month, year);
     return sendSuccess(res, 200, "Calendar events fetched successfully", result);
   } catch (error) {
+    console.log(error)
     return sendError(res, 403, error.message);
   }
 });

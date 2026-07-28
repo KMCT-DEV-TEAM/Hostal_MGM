@@ -5,6 +5,7 @@ import User from "../users/user.model.js";
 import Parent from "./parent.model.js";
 import mongoose from "mongoose";
 import Student from "../students/student.model.js";
+import StudentParent from "./studentParent.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, exportParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
@@ -123,16 +124,15 @@ const changeParentEmail = asyncHandler(async (req, res) => {
   }
 
   if (req.user.role === "admin") {
-    const [admin, student] = await Promise.all([
-      User.findById(req.user.id).select("organization").lean(),
-      Student.findById(parent.studentId).select("organizationId").lean(),
-    ]);
-
+    const admin = await User.findById(req.user.id).select("organization").lean();
     if (!admin?.organization) {
       return sendError(res, 400, "Admin is not assigned to any organization");
     }
 
-    if (!student || String(student.organizationId) !== String(admin.organization)) {
+    const links = await StudentParent.find({ parentId: id }).populate("studentId", "organizationId").lean();
+    const hasOrgStudent = links.some(link => link.studentId && String(link.studentId.organizationId) === String(admin.organization));
+
+    if (!hasOrgStudent) {
       return sendError(res, 403, "You can update only parents in your organization");
     }
   }
@@ -343,11 +343,12 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
 
   if (organizationId) {
     const objectIds = ids.map((id) => new mongoose.Types.ObjectId(id));
-    const validParents = await Parent.aggregate([
-      { $match: { _id: { $in: objectIds } } },
+    const validParents = await StudentParent.aggregate([
+      { $match: { parentId: { $in: objectIds } } },
       { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
       { $unwind: "$student" },
-      { $match: { "student.organizationId": new mongoose.Types.ObjectId(organizationId) } }
+      { $match: { "student.organizationId": new mongoose.Types.ObjectId(organizationId) } },
+      { $group: { _id: "$parentId" } } // Ensure uniqueness of valid parents
     ]);
 
     if (validParents.length !== ids.length) {
