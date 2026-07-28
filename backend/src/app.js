@@ -115,7 +115,7 @@ app.use("/api/student/attendance", studentAttendanceRouter);
 // ---parents routes -------
 app.use("/api/parent/dashboard", dashboardRoutes);
 app.use("/api/parent/passes", parentPassRouter);
-app.use("/api/parent/:studentId/attendance", parentAttendanceRouter);
+app.use("/api/parent/students/:studentId/attendance", parentAttendanceRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);
