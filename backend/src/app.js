@@ -39,6 +39,7 @@ import v2Router from "./modules/v2/v2.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
+import verifyStudentAccess from "./middlewares/verifyStudentAccess.middleware.js";
 const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -113,7 +114,7 @@ app.use("/api/student/attendance", studentAttendanceRouter);
 // ---parents routes -------
 app.use("/api/parent/dashboard", dashboardRoutes);
 app.use("/api/parent/passes", parentPassRouter);
-app.use("/api/parent/attendance", parentAttendanceRouter);
+app.use("/api/parent/:studentId/attendance", verifyStudentAccess, parentAttendanceRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);

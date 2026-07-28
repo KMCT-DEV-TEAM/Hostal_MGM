@@ -12,14 +12,7 @@ const v2Router = express.Router();
 // All V2 routes must be authenticated globally at this entry point
 v2Router.use(authMiddleware);
 
-// Example Health Check for V2 Namespace
-v2Router.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'V2 API Namespace is active and authenticated.',
-    user: req.user // Echo back the decoded token data for testing
-  });
-});
+
 
 // Future V2 module routers will be mounted here
 v2Router.use('/students/:studentId/attendance', attendanceV2Router);

@@ -26,6 +26,7 @@ import {
   validateDateParam,
   validateManualCorrection,
 } from "./attendance.validation.js";
+import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
 export const wardenAttendanceRouter = express.Router();
 
@@ -79,7 +80,7 @@ parentAttendanceRouter.get("/details/:date", validateDateParam, getAttendanceDet
 export const mentorAttendanceRouter = express.Router();
 mentorAttendanceRouter.use(authMiddleware);
 mentorAttendanceRouter.use(roleMiddleware("mentor"));
-mentorAttendanceRouter.get("/stats", getDashboardStats);
+mentorAttendanceRouter.get("/stats/:studentId", getDashboardStats);
 mentorAttendanceRouter.get("/windows", validateGetWindows, getAttendanceWindows);
 mentorAttendanceRouter.get("/windows/:id", validateWindowIdParam, getAttendanceWindowDetails);
 mentorAttendanceRouter.get("/windows/:id/records", validateWindowIdParam, getAttendanceRecords);

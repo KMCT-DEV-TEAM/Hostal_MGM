@@ -8,6 +8,7 @@ import { hashPassword } from "../../utils/hash.js";
 import User from "../users/user.model.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
+import StudentParent from "../parents/studentParent.model.js";
 import Hostel from "../hostels/hostel.model.js";
 import { getOrCreateOtp, verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { sendMail } from "../../utils/mailer.js";
@@ -30,7 +31,9 @@ const login = asyncHandler(async (req, res) => {
   if (role === 'student') {
     user = await Student.findOne({ email });
   } else if (role === 'parent') {
-    user = await Parent.findOne({ email }).populate("studentId", "name studentId email phone profileImage");
+    user = await Parent.findOne({ email });
+    // Note: We no longer populate "studentId" here as it was removed in M:N migration.
+    // The frontend should fetch students via V2 APIs, or we can attach them to /me.
   } else {
     user = await findUserForLoginDb(email);
   }
@@ -155,9 +158,17 @@ const me = asyncHandler(async (req, res) => {
   if (req.user.role === 'student') {
     user = await Student.findById(req.user.id).select("-password").populate("hostelId", "name code");
   } else if (req.user.role === 'parent') {
-    user = await Parent.findById(req.user.id).select("-password").populate("studentId", "name studentId email phone profileImage");
+    user = await Parent.findById(req.user.id).select("-password").lean();
+    if (user) {
+      // Find all linked active students for this parent
+      const studentParents = await StudentParent.find({ parentId: user._id, status: 'active' })
+        .populate("studentId", "name studentId email phone profileImage")
+        .lean();
+
+      user.students = studentParents.map(sp => sp.studentId).filter(Boolean);
+    }
   } else {
-    user = await User.findById(req.user.id).select("-password");
+    user = await User.findById(req.user.id).select("-password").lean();
   }
 
   if (!user || !user.isActive) {
