@@ -3,6 +3,7 @@ import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
 import Visitor from './visitor.model.js';
 import MentorAssignment from '../mentors/mentorAssignment.model.js';
+import StudentParent from '../parents/studentParent.model.js';
 import * as visitorRepository from './visitor.repository.js';
 import {
     VISITOR_STATUS,
@@ -17,7 +18,7 @@ import { orchestratorService } from '../notifications/services/orchestrator.serv
  * @param {Object} payload 
  * @param {Object} user (Authenticated Parent)
  */
-export const createVisitorProfile = async (payload, user) => {
+export const createVisitorProfile = async (payload, user, explicitStudentId = null) => {
     const {
         students: studentIds,
         name,
@@ -29,27 +30,34 @@ export const createVisitorProfile = async (payload, user) => {
         idProofNumber
     } = payload;
 
-    // 1. Parent Validation
     const currentParent = await Parent.findById(user.id);
     if (!currentParent) {
         const error = new Error('Parent not found.');
         error.status = 404;
         throw error;
     }
-    if (!currentParent.isActive) {
-        const error = new Error('Parent is inactive.');
-        error.status = 403;
-        throw error;
-    }
-    if (!currentParent.isVerified) {
-        const error = new Error('Parent is not verified.');
+    if (!currentParent.isActive || !currentParent.isVerified) {
+        const error = new Error('Parent is inactive or not verified.');
         error.status = 403;
         throw error;
     }
 
-    // Fetch all parent records matching this parent's phone to collect all authorized students
-    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-    const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+    let authorizedStudentIds = [];
+    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+    if (!studentParentLinks || studentParentLinks.length === 0) {
+        const error = new Error('Parent is inactive or not linked to any students.');
+        error.status = 403;
+        throw error;
+    }
+
+    // We allow the parent to select ANY of their linked students (siblings).
+    authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
+
+    if (explicitStudentId && !authorizedStudentIds.includes(explicitStudentId)) {
+        const error = new Error('Unauthorized access to the explicit student context.');
+        error.status = 403;
+        throw error;
+    }
 
     // 2. Student Validation
     for (const sId of studentIds) {
@@ -176,7 +184,7 @@ export const createVisitorProfile = async (payload, user) => {
  * @param {String} status 
  * @param {Object} user 
  */
-export const updateVisitorStatus = async (visitorId, status, user) => {
+export const updateVisitorStatus = async (visitorId, status, user, explicitStudentId = null) => {
     // 1. Fetch Visitor
     const visitor = await visitorRepository.findVisitorById(visitorId);
     if (!visitor) {
@@ -186,24 +194,34 @@ export const updateVisitorStatus = async (visitorId, status, user) => {
     }
 
     // 2. Authorization
-    if (user.role === 'parent') {
+    if (user.role === 'parent' || user.explicitStudentId) {
         if (!['Pending', 'Inactive'].includes(status)) {
             const error = new Error('Parents can only change status to Pending or Inactive.');
             error.status = 403;
             throw error;
         }
 
-        const currentParent = await Parent.findById(user.id);
-        if (!currentParent) {
-            const error = new Error('Parent not found.');
-            error.status = 404;
-            throw error;
+        let parentStudentIds = [];
+        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+
+        if (explicitStudentId) {
+            const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
+            if (!isAuthorized) {
+                const error = new Error('Unauthorized access to this student.');
+                error.status = 403;
+                throw error;
+            }
+            parentStudentIds = [explicitStudentId];
+        } else {
+            parentStudentIds = studentParentLinks.map(link => link.studentId.toString());
+            if (parentStudentIds.length === 0) {
+                const error = new Error('No linked students found.');
+                error.status = 403;
+                throw error;
+            }
         }
 
-        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-        const parentStudentIds = parentDocs.map(p => p.studentId.toString());
         const visitorStudentIds = visitor.students.map(s => s.toString());
-
         const hasOverlap = visitorStudentIds.some(id => parentStudentIds.includes(id));
         if (!hasOverlap) {
             const error = new Error('Unauthorized to update this visitor.');
@@ -409,18 +427,26 @@ export const listVisitors = async (query, user) => {
  * @param {Object} query 
  * @param {Object} user (Authenticated Parent)
  */
-export const listParentVisitors = async (query, user) => {
+export const listParentVisitors = async (query, user, explicitStudentId = null) => {
+    let authorizedStudentIds = [];
+
     // 1. Resolve Parent context
-    const currentParent = await Parent.findById(user.id);
-    if (!currentParent) {
-        const error = new Error('Parent not found.');
-        error.status = 404;
-        throw error;
+    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+    if (!studentParentLinks || studentParentLinks.length === 0) {
+        return { total: 0, page: Number(query.page || 1), limit: Number(query.limit || 10), totalPages: 0, data: [] };
     }
 
-    // A parent might have multiple students associated under the same phone number
-    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-    const authorizedStudentIds = parentDocs.map(p => p.studentId);
+    if (explicitStudentId) {
+        const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
+        if (!isAuthorized) {
+            const error = new Error('Unauthorized access to this student.');
+            error.status = 403;
+            throw error;
+        }
+        authorizedStudentIds = [explicitStudentId];
+    } else {
+        authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
+    }
 
     if (authorizedStudentIds.length === 0) {
         return {
@@ -434,7 +460,7 @@ export const listParentVisitors = async (query, user) => {
 
     // 2. Build Query
     const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
-    matchStage.students = { $in: authorizedStudentIds };
+    matchStage.students = { $in: authorizedStudentIds.map(id => new mongoose.Types.ObjectId(id)) };
 
     // 3. Repository Call
     const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
@@ -465,7 +491,7 @@ export const listStudentVisitors = async (query, user) => {
  * @param {String} visitorId 
  * @param {Object} user 
  */
-export const getVisitorDetails = async (visitorId, user) => {
+export const getVisitorDetails = async (visitorId, user, explicitStudentId = null) => {
     const visitor = await visitorRepository.getVisitorDetails(visitorId);
 
     if (!visitor) {
@@ -495,12 +521,19 @@ export const getVisitorDetails = async (visitorId, user) => {
         if (!visitorStudentIds.includes(user.id)) {
             throw Object.assign(new Error('Unauthorized: Visitor not assigned to this student.'), { status: 403 });
         }
-    } else if (user.role === 'parent') {
-        const currentParent = await Parent.findById(user.id);
-        if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+    } else if (user.role === 'parent' || user.explicitStudentId) {
+        let authorizedStudentIds = [];
+        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
 
-        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-        const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+        if (explicitStudentId) {
+            const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
+            if (!isAuthorized) {
+                throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
+            }
+            authorizedStudentIds = [explicitStudentId];
+        } else {
+            authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
+        }
 
         const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
         if (!hasOverlap) {
@@ -1267,7 +1300,6 @@ export const listVisitorVisits = async (query, user) => {
 
 
     } else if (user.role === 'parent') {
-        const Parent = mongoose.model('Parent');
         const currentParent = await Parent.findById(user.id);
         if (!currentParent) {
             const error = new Error('Parent not found.');
@@ -1602,7 +1634,7 @@ export const autoCompleteExpiredVisits = async () => {
  * @param {Object} payload 
  * @param {Object} user 
  */
-export const updateVisitorProfile = async (visitorId, payload, user) => {
+export const updateVisitorProfile = async (visitorId, payload, user, explicitStudentId = null) => {
     // 1. Fetch Visitor
     const visitor = await visitorRepository.findVisitorById(visitorId);
     if (!visitor) {
@@ -1610,12 +1642,22 @@ export const updateVisitorProfile = async (visitorId, payload, user) => {
     }
 
     // 2. Validate Ownership
-    const currentParent = await Parent.findById(user.id);
-    if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
-    if (!currentParent.isActive) throw Object.assign(new Error('Parent is inactive.'), { status: 403 });
+    let authorizedStudentIds = [];
+    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+    if (!studentParentLinks || studentParentLinks.length === 0) {
+        throw Object.assign(new Error('Parent is inactive or not linked to any students.'), { status: 403 });
+    }
 
-    const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-    const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+    if (explicitStudentId) {
+        const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
+        if (!isAuthorized) {
+            throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
+        }
+        authorizedStudentIds = [explicitStudentId];
+    } else {
+        authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
+    }
+
     const visitorStudentIds = visitor.students.map(id => id.toString());
 
     let isCreator = false;

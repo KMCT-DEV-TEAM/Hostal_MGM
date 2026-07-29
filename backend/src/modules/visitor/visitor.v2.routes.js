@@ -21,7 +21,7 @@ router.get('/dashboard-summary', visitorController.getVisitorDashboardSummaryV2)
 
 // Visitor Management
 router.post('/', validateCreateVisitor, visitorController.createVisitorV2);
-router.get('/', validateEndUserListVisitors, visitorController.listParentVisitorsV2);
+router.get('/', validateEndUserListVisitors, visitorController.listParentVisitors);
 router.patch('/:visitorId', validateUpdateVisitor, visitorController.updateVisitorV2);
 router.get('/:visitorId', validateGetVisitorDetails, visitorController.getVisitorDetailsV2);
 router.patch('/:visitorId/status', validateUpdateVisitorStatus, visitorController.updateVisitorStatusV2);
