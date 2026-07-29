@@ -4,17 +4,20 @@ import visitorApi from '@/features/visitors/api/visitorApi';
  * Parent Endpoints
  */
 export async function createVisitorProfile(payload) {
-    const response = await visitorApi.createVisitorProfile(payload);
+    const { studentId, ...restPayload } = payload;
+    const response = await visitorApi.createVisitorProfileV2(studentId, restPayload);
     return response.data;
 }
 
 export async function updateVisitorProfile(visitorId, payload) {
-    const response = await visitorApi.updateVisitorProfile(visitorId, payload);
+    const { studentId, ...restPayload } = payload;
+    const response = await visitorApi.updateVisitorProfileV2(studentId, visitorId, restPayload);
     return response.data;
 }
 
 export async function getParentVisitors(params) {
-    const response = await visitorApi.getParentVisitors(params);
+    const { studentId, ...restParams } = params;
+    const response = await visitorApi.getParentVisitorsV2(studentId, restParams);
     return response.data;
 }
 
@@ -80,6 +83,11 @@ export async function getVisitDetails(visitId) {
 
 export async function getVisitorDetails(visitorId) {
     const response = await visitorApi.getVisitorDetails(visitorId);
+    return response.data;
+}
+
+export async function getVisitorDetailsParent(visitorId, studentId) {
+    const response = await visitorApi.getVisitorDetailsParentV2(studentId, visitorId);
     return response.data;
 }
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { getVisitorDetails } from '@/services/visitor.service';
+import { getVisitorDetails, getVisitorDetailsParent } from '@/services/visitor.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 
 import Button from '@/components/ui/Button';
 import CheckInModal from './CheckInModal';
@@ -20,6 +21,7 @@ export default function VisitorDetailsModal({
     const [error, setError] = useState(null);
     const [isCheckInOpen, setIsCheckInOpen] = useState(false);
     const { user } = useAuthStore();
+    const { activeStudentId } = useActiveStudent();
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -32,7 +34,12 @@ export default function VisitorDetailsModal({
             setError(null);
 
             try {
-                const res = await getVisitorDetails(visitorId);
+                let res;
+                if (user?.role === 'parent') {
+                    res = await getVisitorDetailsParent(visitorId, activeStudentId);
+                } else {
+                    res = await getVisitorDetails(visitorId);
+                }
                 setVisitor(res.data || res);
             } catch (err) {
                 console.error("Failed to fetch visitor details:", err);
@@ -43,7 +50,7 @@ export default function VisitorDetailsModal({
         };
 
         fetchDetails();
-    }, [isOpen, visitorId]);
+    }, [isOpen, visitorId, user?.role, activeStudentId]);
 
     if (!isOpen) return null;
 
