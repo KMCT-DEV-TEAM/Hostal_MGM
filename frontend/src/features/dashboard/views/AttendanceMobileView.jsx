@@ -3,6 +3,7 @@ import { CheckCircle } from 'lucide-react';
 import StudentMonthlyCalendar from '../components/StudentMonthlyCalendar';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 
 const AttendanceMobileView = ({
   todayStats,
@@ -12,9 +13,11 @@ const AttendanceMobileView = ({
   useLayoutConfig();
 
   const { user: authUser } = useAuthStore();
+  const { activeStudentId } = useActiveStudent();
 
-  // Fallback to authenticated user if not provided (for student view)
-  const activeStudent = student || authUser;
+  // Fallback to activeStudentId if parent, else authUser (for student role)
+  const defaultStudent = authUser?.role === 'parent' ? { _id: activeStudentId } : authUser;
+  const activeStudent = student || defaultStudent;
   const activeRole = userRole || authUser?.role;
 
   return (
