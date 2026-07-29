@@ -35,7 +35,6 @@ import {
   mentorAttendanceRouter
 } from "./modules/attendance/attendance.routes.js";
 import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment.routes.js'
-import v2Router from "./modules/v2/v2.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
@@ -134,9 +133,6 @@ app.use("/api/mentor/passes", mentorPassRouter);
 app.use("/api/mentor/dashboard", dashboardRoutes);
 
 // app.use("/api/mentor/students", studentRoutes);
-
-// --- V2 API Namespace (M:N Architecture) ---
-app.use("/api/v2", v2Router);
 
 app.use(errorMiddleware);
 

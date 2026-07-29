@@ -28,12 +28,13 @@ export default function AttendanceQRModal() {
                 {/* QR Code Container */}
                 <div className="p-5 border border-gray-50 rounded-[28px] bg-white my-2 relative inline-block">
                     {qrToken ? (
-                        <div className="relative flex items-center justify-center">
+                        <div className="bg-white p-4 rounded-xl">
                             <QRCode
                                 value={qrToken}
-                                size={180}
-                                level="H"
-                                fgColor="#1a1a1a"
+                                size={220}
+                                level="M"
+                                bgColor="#FFFFFF"
+                                fgColor="#000000"
                             />
                         </div>
                     ) : (

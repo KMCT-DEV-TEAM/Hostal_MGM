@@ -778,9 +778,9 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       { $match: { studentId: { $in: studentIds }, createdAt: { $gte: lastYearStart } } },
       {
         $group: {
-          _id: { 
-            year: { $year: "$createdAt" }, 
-            month: { $month: "$createdAt" } 
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
           },
           presentCount: { $sum: { $cond: [{ $eq: [{ $toLower: "$status" }, "present"] }, 1, 0] } },
           totalCount: { $sum: 1 }
@@ -807,7 +807,7 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       startOfToday.setHours(0, 0, 0, 0);
       const endOfToday = new Date();
       endOfToday.setHours(23, 59, 59, 999);
-      
+
       return AttendanceWindow.find({
         hostelId: { $in: hostelIds },
         attendanceDate: { $gte: startOfToday, $lte: endOfToday }
@@ -912,129 +912,5 @@ export {
   getMentorDashboardStats
 };
 
-// --- V2 Parent Dashboard Controller (M:N Architecture) ---
-// Fetches dashboard statistics for a specific student parameterized in the route
-export const getParentDashboardStatsV2 = asyncHandler(async (req, res) => {
-  const { studentId } = req.params;
-  const student = await Student.findById(studentId);
 
-  if (!student) {
-    return sendError(res, 404, "Student not found");
-  }
-
-  const { period, radialPeriod } = req.query;
-
-  const now = new Date();
-  let startOfRadial = new Date(now.getFullYear(), now.getMonth(), 1);
-  let endOfRadial = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-  if (radialPeriod === "Last Month") {
-    startOfRadial = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    endOfRadial = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-  }
-
-  const attendanceRecords = await AttendanceRecord.find({
-    studentId,
-    createdAt: { $gte: startOfRadial, $lte: endOfRadial }
-  });
-
-  let presentCount = 0;
-  let leaveCount = 0;
-  let totalDays = attendanceRecords.length;
-  attendanceRecords.forEach(record => {
-    if (record.status === "present") presentCount++;
-    if (record.status === "on_leave") leaveCount++;
-  });
-  const attendanceRate = totalDays > 0 ? Math.round((presentCount / totalDays) * 100) : 0;
-
-  let startOfYear = new Date(now.getFullYear(), 0, 1);
-  let endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-
-  if (period === "Last Year") {
-    startOfYear = new Date(now.getFullYear() - 1, 0, 1);
-    endOfYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
-  }
-
-  const monthlyStats = await AttendanceRecord.aggregate([
-    {
-      $match: {
-        studentId: new mongoose.Types.ObjectId(studentId),
-        createdAt: { $gte: startOfYear, $lte: endOfYear }
-      }
-    },
-    {
-      $group: {
-        _id: { $month: "$createdAt" },
-        presentCount: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
-        totalCount: { $sum: 1 }
-      }
-    }
-  ]);
-
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-  const monthlyAttendance = monthNames.map((month, index) => {
-    const stat = monthlyStats.find(s => s._id === index + 1);
-    let value = 0;
-    if (stat && stat.totalCount > 0) {
-      value = Math.round((stat.presentCount / stat.totalCount) * 100);
-    }
-    return { month, value };
-  });
-
-  const pendingVisitorsCount = await Visitor.countDocuments({
-    students: studentId,
-    approvalStatus: "Pending"
-  });
-
-  const pendingLeaveRequestsCount = await Pass.countDocuments({
-    studentId,
-    status: { $in: ["pending_parent", "pending_admin"] }
-  });
-
-  const pendingParentLeaveRequests = await Pass.find({
-    studentId,
-    status: "pending_parent"
-  }).populate({
-    path: "studentId",
-    select: "firstName lastName admissionNo regNo"
-  });
-
-  const recentVisitors = await Visitor.find({ students: studentId })
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .lean();
-
-  const recentLeaveRequests = await Pass.find({ studentId })
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .lean();
-
-  const recentAnnouncements = await Announcement.find({
-    isActive: true,
-    $or: [
-      { targetType: "general" },
-      { targetType: "organization", targetOrganizations: student.organizationId },
-      { targetType: "hostel", targetHostels: student.hostelId }
-    ]
-  })
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .lean();
-
-  return sendSuccess(res, 200, "Parent dashboard stats fetched successfully (V2)", {
-    data: {
-      attendanceRate,
-      presentCount,
-      leaveCount,
-      totalDays,
-      pendingVisitorsCount,
-      pendingLeaveRequestsCount,
-      recentVisitors,
-      recentLeaveRequests,
-      recentAnnouncements,
-      monthlyAttendance,
-      pendingParentLeaveRequests
-    }
-  });
-});
 
