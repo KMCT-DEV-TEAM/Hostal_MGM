@@ -1,6 +1,8 @@
 import Visitor from './visitor.model.js';
 import VisitorVisit from './visitorVisit.model.js';
 import { VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
+import Parent from '../parents/parent.model.js';
+import User from '../users/user.model.js';
 
 /**
  * Checks if a visitor with the same phone exists in the organization
@@ -154,7 +156,7 @@ export const findVisitorById = async (visitorId) => {
  * @returns {Promise<Object>} Populated lean visitor object
  */
 export const getVisitorDetails = async (visitorId) => {
-    return await Visitor.findById(visitorId)
+    const visitor = await Visitor.findById(visitorId)
         .populate({
             path: 'students',
             select: 'name hostelId roomNumber'
@@ -163,11 +165,34 @@ export const getVisitorDetails = async (visitorId) => {
             path: 'organizationId',
             select: 'name'
         })
-        .populate({
-            path: 'approvalTimeline.performedBy',
-            select: 'name role'
-        })
         .lean();
+
+    if (visitor && visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
+        for (let i = 0; i < visitor.approvalTimeline.length; i++) {
+            const timelineEvent = visitor.approvalTimeline[i];
+            if (timelineEvent.performedBy) {
+                // Try fetching from User collection
+                let userDoc = await User.findById(timelineEvent.performedBy, 'name role').lean();
+                if (!userDoc) {
+                    // Fallback to Parent collection
+                    let parentDoc = await Parent.findById(timelineEvent.performedBy, 'parentName').lean();
+                    if (parentDoc) {
+                        userDoc = {
+                            _id: parentDoc._id,
+                            name: parentDoc.parentName || 'Parent',
+                            role: 'parent'
+                        };
+                    }
+                }
+
+                if (userDoc) {
+                    timelineEvent.performedBy = userDoc;
+                }
+            }
+        }
+    }
+
+    return visitor;
 };
 
 /**

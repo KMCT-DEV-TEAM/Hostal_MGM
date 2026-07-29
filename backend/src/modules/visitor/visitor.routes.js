@@ -17,7 +17,61 @@ import {
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
+import verifyStudentAccess from '../../middlewares/verifyStudentAccess.middleware.js';
+
 const router = express.Router();
+export const parentVisitorRouter = express.Router({ mergeParams: true });
+
+// Apply verification for all parent routes
+parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'), verifyStudentAccess);
+
+// ---------------------------------------------------------
+// Parent End-User Routes (Mounted at /api/parent/students/:studentId/visitors)
+// ---------------------------------------------------------
+parentVisitorRouter.post(
+    '/',
+    validateCreateVisitor,
+    visitorController.createVisitor
+);
+
+parentVisitorRouter.get(
+    '/',
+    validateEndUserListVisitors,
+    visitorController.listParentVisitors
+);
+
+// ---------------------------------------------------------
+// Parent Visit Listing Routes
+// ---------------------------------------------------------
+parentVisitorRouter.get(
+    '/visits',
+    validateListVisits,
+    visitorController.listVisitorVisits
+);
+
+parentVisitorRouter.get(
+    '/visits/:visitId',
+    validateGetVisitDetails,
+    visitorController.getVisitDetails
+);
+
+parentVisitorRouter.patch(
+    '/:visitorId',
+    validateUpdateVisitor,
+    visitorController.updateVisitor
+);
+
+parentVisitorRouter.get(
+    '/:visitorId',
+    validateGetVisitorDetails,
+    visitorController.getVisitorDetails
+);
+
+parentVisitorRouter.patch(
+    '/:visitorId/status',
+    validateUpdateVisitorStatus,
+    visitorController.updateVisitorStatus
+);
 
 // ---------------------------------------------------------
 // Dashboard Routes
@@ -67,29 +121,7 @@ router.get(
 // ---------------------------------------------------------
 // End-User Routes (Parent & Student)
 // ---------------------------------------------------------
-router.post(
-    '/parent/visitors',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateCreateVisitor,
-    visitorController.createVisitor
-);
-
-router.get(
-    '/parent/visitors',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateEndUserListVisitors,
-    visitorController.listParentVisitors
-);
-
-router.patch(
-    '/parent/visitors/:visitorId',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateUpdateVisitor,
-    visitorController.updateVisitor
-);
+// The parent routes have been moved to parentVisitorRouter
 
 router.get(
     '/student/visitors',
@@ -127,7 +159,7 @@ router.post(
 router.get(
     '/:visitorId',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'mentor', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'mentor', 'student'),
     validateGetVisitorDetails,
     visitorController.getVisitorDetails
 );
@@ -153,7 +185,7 @@ router.patch(
 router.patch(
     '/:visitorId/status',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'parent', 'mentor'),
+    roleMiddleware('super_admin', 'admin', 'mentor'),
     validateUpdateVisitorStatus,
     visitorController.updateVisitorStatus
 );

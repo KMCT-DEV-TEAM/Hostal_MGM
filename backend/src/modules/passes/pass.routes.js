@@ -52,6 +52,7 @@ import {
   validateGetPassesUnified
 } from "./pass.validation.js";
 import { getMentorDashboardStats } from "../dashboard/dashboard.controller.js";
+import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
 export const studentPassRouter = express.Router();
 
@@ -108,71 +109,129 @@ studentPassRouter.patch(
 
 // -----Parent routes----
 
-export const parentPassRouter = express.Router();
+// export const parentPassRouter = express.Router();
 
 
-// Unified listing: GET /passes?mode=requests|history
+// // Unified listing: GET /passes?mode=requests|history
+// parentPassRouter.get(
+//   "/passes",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validateGetPassesUnified,
+//   getParentPassesUnified
+// );
+
+// // Pass Listing & Details
+// parentPassRouter.get(
+//   "/",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validateGetPasses,
+//   getPasses
+// );
+
+// parentPassRouter.get(
+//   "/:id",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validatePassIdParam,
+//   getPassDetails
+// );
+
+// // Actions
+// parentPassRouter.patch(
+//   "/:id/approve",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validatePassIdParam,
+//   approvePass
+// );
+
+// parentPassRouter.patch(
+//   "/:id/reject",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validatePassIdParam,
+//   validateRejectPass,
+//   rejectPass
+// );
+
+// parentPassRouter.put(
+//   "/:id",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validatePassIdParam,
+//   validateUpdatePass,
+//   updatePass
+// );
+
+// parentPassRouter.patch(
+//   "/:id/cancel",
+//   authMiddleware,
+//   roleMiddleware("parent"),
+//   validatePassIdParam,
+//   validateCancelPass,
+//   cancelPass
+// );
+
+
+export const parentPassRouter = express.Router({ mergeParams: true });
+
+parentPassRouter.use(authMiddleware);
+parentPassRouter.use(roleMiddleware("parent"));
+parentPassRouter.use(verifyStudentAccess);
+
+// Unified listing
 parentPassRouter.get(
   "/passes",
-  authMiddleware,
-  roleMiddleware("parent"),
   validateGetPassesUnified,
   getParentPassesUnified
 );
 
-// Pass Listing & Details
+// Pass listing
 parentPassRouter.get(
   "/",
-  authMiddleware,
-  roleMiddleware("parent"),
   validateGetPasses,
   getPasses
 );
 
+// Pass details
 parentPassRouter.get(
   "/:id",
-  authMiddleware,
-  roleMiddleware("parent"),
   validatePassIdParam,
   getPassDetails
 );
 
-// Actions
+// Approve
 parentPassRouter.patch(
   "/:id/approve",
-  authMiddleware,
-  roleMiddleware("parent"),
   validatePassIdParam,
   approvePass
 );
 
+// Reject
 parentPassRouter.patch(
   "/:id/reject",
-  authMiddleware,
-  roleMiddleware("parent"),
   validatePassIdParam,
   validateRejectPass,
   rejectPass
 );
 
+// Update
 parentPassRouter.put(
   "/:id",
-  authMiddleware,
-  roleMiddleware("parent"),
   validatePassIdParam,
   validateUpdatePass,
   updatePass
 );
 
+// Cancel
 parentPassRouter.patch(
   "/:id/cancel",
-  authMiddleware,
-  roleMiddleware("parent"),
   validatePassIdParam,
   validateCancelPass,
   cancelPass
 );
-
 // ----- Warden routes ----
 export const wardenPassRouter = express.Router();
 
