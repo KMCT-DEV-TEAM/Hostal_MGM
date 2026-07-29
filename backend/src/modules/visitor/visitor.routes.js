@@ -40,6 +40,21 @@ parentVisitorRouter.get(
     visitorController.listParentVisitors
 );
 
+// ---------------------------------------------------------
+// Parent Visit Listing Routes
+// ---------------------------------------------------------
+parentVisitorRouter.get(
+    '/visits',
+    validateListVisits,
+    visitorController.listVisitorVisits
+);
+
+parentVisitorRouter.get(
+    '/visits/:visitId',
+    validateGetVisitDetails,
+    visitorController.getVisitDetails
+);
+
 parentVisitorRouter.patch(
     '/:visitorId',
     validateUpdateVisitor,

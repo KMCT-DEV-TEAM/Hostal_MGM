@@ -405,7 +405,6 @@ export const getSuperAdminHostelVisitors = async (req, res) => {
         });
     }
 };
-
 /**
  * Super Admin, Admin, Warden, Parent and Student list visits
  * @route GET /visitor-visits
@@ -419,7 +418,9 @@ export const listVisitorVisits = async (req, res) => {
             });
         }
 
-        const result = await visitorService.listVisitorVisits(req.query, req.user);
+        const explicitStudentId = req.student ? req.student.id : null;
+        const result = await visitorService.listVisitorVisits(req.query, req.user, explicitStudentId);
+
         return res.status(200).json({
             success: true,
             message: "Visits fetched successfully.",
@@ -456,7 +457,8 @@ export const getVisitDetails = async (req, res) => {
         }
 
         const { visitId } = req.params;
-        const result = await visitorService.getVisitDetails(visitId, req.user);
+        const explicitStudentId = req.student ? req.student.id : null;
+        const result = await visitorService.getVisitDetails(visitId, req.user, explicitStudentId);
 
         return res.status(200).json({
             success: true,

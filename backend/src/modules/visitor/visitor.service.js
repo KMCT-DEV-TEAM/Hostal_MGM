@@ -1270,7 +1270,7 @@ export const getSuperAdminHostelVisitors = async (query, user) => {
  * @param {Object} query 
  * @param {Object} user 
  */
-export const listVisitorVisits = async (query, user) => {
+export const listVisitorVisits = async (query, user, explicitStudentId = null) => {
     const { page = 1, limit = 10, search, status, startDate, endDate, hostel, sortBy = 'checkInTime', sortOrder = 'desc' } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -1297,22 +1297,27 @@ export const listVisitorVisits = async (query, user) => {
             throw error;
         }
         targetHostelId = wardenHostel._id.toString(); // Force warden to their hostel
+    } else if (user.role === 'parent' || user.explicitStudentId || explicitStudentId) {
+        let authorizedStudentIds = [];
+        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
 
-
-    } else if (user.role === 'parent') {
-        const currentParent = await Parent.findById(user.id);
-        if (!currentParent) {
-            const error = new Error('Parent not found.');
-            error.status = 404;
-            throw error;
+        if (explicitStudentId) {
+            const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
+            if (!isAuthorized) {
+                const error = new Error('Unauthorized access to this student.');
+                error.status = 403;
+                throw error;
+            }
+            authorizedStudentIds = [explicitStudentId];
+        } else {
+            authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
         }
-        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-        const authorizedStudentIds = parentDocs.map(p => p.studentId);
 
         if (authorizedStudentIds.length === 0) {
             return { total: 0, page: Number(page), limit: Number(limit), totalPages: 0, data: [] };
         }
-        matchStage.students = { $in: authorizedStudentIds };
+        matchStage.students = { $in: authorizedStudentIds.map(id => new mongoose.Types.ObjectId(id)) };
+
 
     } else if (user.role === 'student') {
         matchStage.students = new mongoose.Types.ObjectId(user.id);
@@ -1377,15 +1382,13 @@ export const listVisitorVisits = async (query, user) => {
  * @param {String} visitId 
  * @param {Object} user 
  */
-export const getVisitDetails = async (visitId, user) => {
+export const getVisitDetails = async (visitId, user, explicitStudentId = null) => {
+    // 1. Fetch from repository with necessary populations
     const visit = await visitorRepository.getVisitDetailsById(visitId);
     if (!visit) {
-        const error = new Error('Visit not found.');
-        error.status = 404;
-        throw error;
+        throw Object.assign(new Error('Visitor visit not found.'), { status: 404 });
     }
 
-    // 1. Role-Based Authorization
     const visitStudentIds = visit.students.map(s => s._id.toString());
     const visitHostelId = visit.hostelId ? visit.hostelId._id.toString() : null;
     const visitOrganizationId = visit.organizationId ? visit.organizationId._id.toString() : null;
@@ -1407,16 +1410,25 @@ export const getVisitDetails = async (visitId, user) => {
         if (!visitStudentIds.includes(user.id)) {
             throw Object.assign(new Error('Unauthorized: Visit not assigned to this student.'), { status: 403 });
         }
-    } else if (user.role === 'parent') {
-        const currentParent = await Parent.findById(user.id);
-        if (!currentParent) throw Object.assign(new Error('Parent not found.'), { status: 404 });
+    } else if (user.role === 'parent' || user.explicitStudentId || explicitStudentId) {
+        let authorizedStudentIds = [];
+        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
 
-        const parentDocs = await Parent.find({ phone: currentParent.phone, isActive: true });
-        const authorizedStudentIds = parentDocs.map(p => p.studentId.toString());
+        if (explicitStudentId) {
+            const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
+            if (!isAuthorized) {
+                const error = new Error('Unauthorized access to this student.');
+                error.status = 403;
+                throw error;
+            }
+            authorizedStudentIds = [explicitStudentId];
+        } else {
+            authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
+        }
 
         const hasOverlap = visitStudentIds.some(id => authorizedStudentIds.includes(id));
         if (!hasOverlap) {
-            throw Object.assign(new Error('Unauthorized: Visit not linked to your students.'), { status: 403 });
+            throw Object.assign(new Error('Unauthorized: Visit not linked to your authorized students.'), { status: 403 });
         }
     }
 
