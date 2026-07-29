@@ -16,6 +16,7 @@ import NotificationPanel from '../../notifications/components/NotificationPanel'
 import LatestNotificationPopup from '../../notifications/components/LatestNotificationPopup';
 import { useNotifications } from '../../notifications/hooks/useNotifications';
 import { useBreakpoint } from "@/hooks/useBreakpoint";
+import ProfileDropdownMenu from './ProfileDropdownMenu';
 
 function Navbar({ onMenuClick }) {
 
@@ -155,28 +156,10 @@ function Navbar({ onMenuClick }) {
 
                     {/* Dropdown Menu */}
                     {isProfileOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-lg border border-gray-100 py-1.5 z-50 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 md:mt-0 duration-200">
-
-
-                            <button
-                                onClick={() => { setIsProfileOpen(false); navigate('profile'); }}
-                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors text-left"
-                            >
-                                <UserIcon size={16} />
-                                <span>My Profile</span>
-                            </button>
-
-
-                            <div className="h-px bg-gray-50 my-1.5"></div>
-
-                            <button
-                                onClick={handleLogoutClick}
-                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
-                            >
-                                <LogOut size={16} />
-                                <span>Logout</span>
-                            </button>
-                        </div>
+                        <ProfileDropdownMenu 
+                            onClose={() => setIsProfileOpen(false)}
+                            onLogout={handleLogoutClick}
+                        />
                     )}
                 </div>
 

@@ -40,6 +40,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
     const [isApiLoading, setIsApiLoading] = useState(false);
+    const [selectedStudentIds, setSelectedStudentIds] = useState([]);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting, isDirty }, reset } = useForm({
         resolver: zodResolver(registerSchema),
@@ -47,6 +48,12 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             idProofType: ID_PROOF_TYPES.AADHAAR
         }
     });
+
+    useEffect(() => {
+        if (isOpen && !isEditMode && activeStudentId) {
+            setSelectedStudentIds([activeStudentId]);
+        }
+    }, [isOpen, isEditMode, activeStudentId]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -118,6 +125,15 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
         }
     };
 
+    const toggleStudentSelection = (studentId) => {
+        if (studentId === activeStudentId) return; // Prevent deselecting primary student
+        setSelectedStudentIds(prev => 
+            prev.includes(studentId) 
+                ? prev.filter(id => id !== studentId) 
+                : [...prev, studentId]
+        );
+    };
+
     const handleFormSubmit = (data) => {
         setPendingPayload(data);
         if (isEditMode) {
@@ -152,7 +168,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             } else {
                 payload = {
                     ...data,
-                    students: [extractStudentId(user.studentId)]
+                    students: user?.role === 'parent' ? selectedStudentIds : [extractStudentId(user.studentId)]
                 };
                 if (user?.role === 'parent') payload.studentId = activeStudentId;
             }
@@ -269,6 +285,36 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         error={errors.idProofNumber?.message}
                     />
                 </div>
+
+                {/* Sibling Selection Section */}
+                {!isEditMode && user?.role === 'parent' && user?.students?.length > 1 && (
+                    <div className="mt-2 border-t border-gray-100 pt-4">
+                        <label className="block mb-3 text-sm text-text-primary font-medium">
+                            Link Additional Siblings (Optional)
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {user.students.map(student => {
+                                const isPrimary = student._id === activeStudentId;
+                                const isSelected = selectedStudentIds.includes(student._id);
+                                return (
+                                    <div 
+                                        key={student._id}
+                                        onClick={() => toggleStudentSelection(student._id)}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'} ${isPrimary ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${isSelected ? 'bg-primary border-primary' : 'border-gray-300 bg-white'}`}>
+                                            {isSelected && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-semibold text-text-primary">{student.name}</span>
+                                            {isPrimary && <span className="text-[10px] font-medium text-text-secondary uppercase tracking-wider">Primary</span>}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </Modal>
         
