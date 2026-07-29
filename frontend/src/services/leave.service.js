@@ -122,27 +122,31 @@ export async function rejectLeaveByAdmin(id, payload) {
  * Parent Endpoints (Placeholders for future backend endpoints)
  */
 export async function getLeavesByParent(params) {
-  const response = await leaveApi.getLeavesByParent(params);
+  const { studentId, ...restParams } = params;
+  const response = await leaveApi.getLeavesByParentV2(studentId, restParams);
   return response.data;
 }
 
 export async function getUnifiedPassesParent(params) {
-  const response = await leaveApi.getUnifiedPassesParent(params);
+  const { studentId, ...restParams } = params;
+  const response = await leaveApi.getUnifiedPassesParentV2(studentId, restParams);
   return response.data;
 }
 
 export async function approveLeaveByParent(id, payload) {
-  const response = await leaveApi.approveLeaveByParent(id, payload);
+  const { studentId, ...restPayload } = payload;
+  const response = await leaveApi.approveLeaveByParentV2(studentId, id, restPayload);
   return response.data;
 }
 
 export async function rejectLeaveByParent(id, payload) {
-  const response = await leaveApi.rejectLeaveByParent(id, payload);
+  const { studentId, ...restPayload } = payload;
+  const response = await leaveApi.rejectLeaveByParentV2(studentId, id, restPayload);
   return response.data;
 }
 
-export async function getLeaveByIdParent(id) {
-  const response = await leaveApi.getLeaveByIdParent(id);
+export async function getLeaveByIdParent(id, studentId) {
+  const response = await leaveApi.getLeaveByIdParentV2(studentId, id);
   return response.data;
 }
 

@@ -41,6 +41,12 @@ const leaveApi = {
   approveLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/approve`, payload),
   rejectLeaveByParent: (id, payload) => api.patch(`/parent/passes/${id}/reject`, payload),
 
+  getLeavesByParentV2: (studentId, params) => api.get(`/parent/students/${studentId}/passes`, { params }),
+  getUnifiedPassesParentV2: (studentId, params) => api.get(`/parent/students/${studentId}/passes/passes`, { params }),
+  getLeaveByIdParentV2: (studentId, id) => api.get(`/parent/students/${studentId}/passes/${id}`),
+  approveLeaveByParentV2: (studentId, id, payload) => api.patch(`/parent/students/${studentId}/passes/${id}/approve`, payload),
+  rejectLeaveByParentV2: (studentId, id, payload) => api.patch(`/parent/students/${studentId}/passes/${id}/reject`, payload),
+
   // Warden
   getWardenDashboardStats: (params) => api.get("/warden/passes/dashboard-stats", { params }),
   getLeavesByWarden: (params) => api.get("/warden/passes", { params }),

@@ -119,8 +119,9 @@ export async function getStudentCalendarByMentor(params) {
     return response.data;
 }
 
-export async function getParentCalendar(studentId, params) {
-    const response = await attendanceApi.getParentCalendarV2(studentId, params);
+export async function getParentCalendar(params) {
+    const { studentId, ...restParams } = params;
+    const response = await attendanceApi.getParentCalendarV2(studentId, restParams);
     return response.data;
 }
 
