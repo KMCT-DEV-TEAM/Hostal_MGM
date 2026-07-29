@@ -22,6 +22,7 @@ import {
 } from '@/services/visitor.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import VisitorsMobileView from '../views/VisitorsMobileView';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -33,6 +34,7 @@ import FilterModal from '../components/modals/FilterModal';
 const VisitorsPage = () => {
     const { user } = useAuthStore();
     const { isMobile } = useBreakpoint();
+    const { activeStudentId } = useActiveStudent();
     const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [visitors, setVisitors] = useState([]);
@@ -112,6 +114,7 @@ const VisitorsPage = () => {
                 if (selectedHostel) params.hostel = selectedHostel.id;
 
                 if (isParent) {
+                    params.studentId = activeStudentId;
                     res = await getParentVisitors(params);
                 } else if (isStudent) {
                     res = await getStudentVisitors(params);
@@ -150,11 +153,12 @@ const VisitorsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, statusFilter, page, limit, isParent, isStudent, showAggregatedView, selectedHostel]);
+    }, [debouncedSearch, statusFilter, page, limit, isParent, isStudent, showAggregatedView, selectedHostel, activeStudentId]);
 
     useEffect(() => {
+        if (isParent && !activeStudentId) return;
         fetchVisitors();
-    }, [fetchVisitors]);
+    }, [fetchVisitors, activeStudentId, isParent]);
 
     const handleApprove = (id) => {
         setConfirmModal({ isOpen: true, type: 'approve', visitorId: id });
@@ -224,6 +228,7 @@ const VisitorsPage = () => {
 
             let response;
             if (isParent) {
+                cleanParams.studentId = activeStudentId;
                 response = await getParentVisitors(cleanParams);
             } else if (isStudent) {
                 response = await getStudentVisitors(cleanParams);

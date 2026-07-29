@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { visitorApi } from '../../api/visitorApi';
+import { createVisitorProfile, updateVisitorProfile, getVisitorDetails, getVisitorDetailsParent } from '@/services/visitor.service';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { registerSchema } from '@/features/visitors/validation/visitorSchema';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 
 export const ID_PROOF_TYPES = {
     AADHAAR: 'Aadhaar',
@@ -29,7 +30,8 @@ const idProofOptions = [
 ];
 
 const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
-    const { user } = useAuthStore()
+    const { user } = useAuthStore();
+    const { activeStudentId } = useActiveStudent();
     const isEditMode = !!initialData;
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     
@@ -67,7 +69,12 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                     if (visitorId) {
                         try {
                             setIsLoadingDetails(true);
-                            const response = await visitorApi.getVisitorDetails(visitorId);
+                            let response;
+                            if (user?.role === 'parent') {
+                                response = await getVisitorDetailsParent(visitorId, activeStudentId);
+                            } else {
+                                response = await getVisitorDetails(visitorId);
+                            }
                             const fullData = response.data?.data || response.data || {};
 
                             reset({
@@ -141,19 +148,21 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         payload[field] = data[field];
                     }
                 });
+                if (user?.role === 'parent') payload.studentId = activeStudentId;
             } else {
                 payload = {
                     ...data,
                     students: [extractStudentId(user.studentId)]
                 };
+                if (user?.role === 'parent') payload.studentId = activeStudentId;
             }
 
             if (isEditMode) {
                 const visitorId = initialData.visitorId || initialData._id || initialData.id;
-                await visitorApi.updateVisitorProfile(visitorId, payload);
+                await updateVisitorProfile(visitorId, payload);
                 showSuccessToast("Visitor updated successfully!");
             } else {
-                await visitorApi.createVisitorProfile(payload);
+                await createVisitorProfile(payload);
                 showSuccessToast("Visitor registered successfully!");
             }
 

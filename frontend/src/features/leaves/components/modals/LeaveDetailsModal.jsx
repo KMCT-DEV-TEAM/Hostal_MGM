@@ -8,6 +8,7 @@ import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 import ActivityLog from '@/components/ui/ActivityLog';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 
 const getTimelineConfig = (action) => {
     switch (action) {
@@ -83,6 +84,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
     const [error, setError] = useState(null);
     const storeRole = useAuthStore(s => s.user?.role);
     const role = userRole || storeRole;
+    const { activeStudentId } = useActiveStudent();
 
     useEffect(() => {
         const fetchLeaveDetails = async () => {
@@ -95,7 +97,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
             setError(null);
 
             try {
-                const res = await leaveService.getLeaveDetails(role, leaveId);
+                const res = await leaveService.getLeaveDetails(role, leaveId, activeStudentId);
                 setRequest(res.data || res);
             } catch (err) {
                 console.error("Failed to fetch leave details:", err);
@@ -106,7 +108,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         };
 
         fetchLeaveDetails();
-    }, [isOpen, leaveId, role]);
+    }, [isOpen, leaveId, role, activeStudentId]);
 
     if (!isOpen) return null;
 

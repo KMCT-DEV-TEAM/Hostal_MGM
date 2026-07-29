@@ -43,6 +43,12 @@ export const visitorApi = {
     
     // Dashboard Summary
     getDashboardSummary: () => api.get(`${BASE_URL}/dashboard-summary`),
+
+    // V2 Parent Endpoints
+    createVisitorProfileV2: (studentId, payload) => api.post(`/parent/students/${studentId}/visitors`, payload),
+    updateVisitorProfileV2: (studentId, visitorId, payload) => api.patch(`/parent/students/${studentId}/visitors/${visitorId}`, payload),
+    getParentVisitorsV2: (studentId, params) => api.get(`/parent/students/${studentId}/visitors`, { params }),
+    getVisitorDetailsParentV2: (studentId, visitorId) => api.get(`/parent/students/${studentId}/visitors/${visitorId}`),
 };
 
 export default visitorApi;
