@@ -23,6 +23,8 @@ export const VISITOR_VISIT_STATUS = {
 
 export const VISITOR_VISIT_TIMELINE_ACTIONS = {
     CHECKED_IN: 'Checked In',
+    STUDENT_ADDED: 'Student Added',
+    PURPOSE_UPDATED: 'Purpose Updated',
     DURATION_EXTENDED: 'Duration Extended',
     OVERSTAYED: 'Overstayed',
     CHECKED_OUT: 'Checked Out',

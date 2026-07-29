@@ -14,6 +14,7 @@ import {
     validateGetVisitDetails,
     validateUpdateVisitor,
     validateUpdateVisitorStatus,
+    validateAddStudentsToVisit,
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -151,6 +152,14 @@ router.post(
     roleMiddleware('warden'),
     validateCheckInVisitor,
     visitorController.checkInVisitor
+);
+
+router.patch(
+    '/warden/visits/:visitId/students',
+    authMiddleware,
+    roleMiddleware('warden'),
+    validateAddStudentsToVisit,
+    visitorController.addStudentsToVisit
 );
 
 // ---------------------------------------------------------
