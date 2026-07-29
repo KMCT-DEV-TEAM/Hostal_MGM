@@ -12,6 +12,7 @@ import {
     VISITOR_VISIT_TIMELINE_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import visitorVisitModel from './visitorVisit.model.js';
 
 /**
  * Parent creates a new visitor profile
@@ -971,34 +972,63 @@ export const getDashboardSummary = async (user) => {
 };
 
 /**
- * Check-in an approved visitor
+/**
+ * Check-in an approved visitor (V2 - Production Grade)
  * @param {Object} payload 
  * @param {Object} wardenUser 
  */
 export const checkInVisitor = async (payload, wardenUser) => {
-    const { visitor, purpose, expectedExitTime } = payload;
+    const { visitor, selectedStudentIds, purpose, expectedExitTime } = payload;
 
-    // 1. Role Verification (Redundant safety check)
     if (wardenUser.role !== 'warden') {
         const error = new Error('Unauthorized: Only wardens can check-in visitors.');
         error.status = 403;
         throw error;
     }
 
-    // 2. Resolve Person (Parent or Visitor)
-    let resolvedPerson = null;
-    let studentIds = [];
-    let organizationId = null;
-    let personName = '';
+    const uniqueStudentIds = [...new Set(selectedStudentIds)];
+    if (uniqueStudentIds.length !== selectedStudentIds.length) {
+        const error = new Error('Duplicate student IDs provided.');
+        error.status = 400;
+        throw error;
+    }
 
+    let resolvedPerson = null;
+    let personName = '';
+    let organizationId = null;
+
+    // Fetch Person and Target Students concurrently
+    const Student = mongoose.model('Student');
+    const [personData, students] = await Promise.all([
+        (async () => {
+            if (visitor.refType === 'Parent') {
+                return await visitorRepository.resolveParentStudents(visitor.refId);
+            } else {
+                const Visitor = mongoose.model('Visitor');
+                const visitorDoc = await Visitor.findById(visitor.refId).lean();
+                if (!visitorDoc) return null;
+                return {
+                    ...visitorDoc,
+                    authorizedStudentIds: visitorDoc.students.map(id => id.toString()),
+                    personName: visitorDoc.name
+                };
+            }
+        })(),
+        Student.find({ _id: { $in: uniqueStudentIds } })
+            .select('name isActive hostelStatus hostelId organizationId')
+            .lean()
+    ]);
+
+    resolvedPerson = personData;
+
+    if (!resolvedPerson) {
+        const error = new Error(`${visitor.refType} not found.`);
+        error.status = 404;
+        throw error;
+    }
+
+    // Person validations
     if (visitor.refType === 'Parent') {
-        const Parent = mongoose.model('Parent');
-        resolvedPerson = await Parent.findById(visitor.refId);
-        if (!resolvedPerson) {
-            const error = new Error('Parent not found.');
-            error.status = 404;
-            throw error;
-        }
         if (!resolvedPerson.isActive) {
             const error = new Error('Parent profile is inactive.');
             error.status = 400;
@@ -1009,16 +1039,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
             error.status = 400;
             throw error;
         }
-        studentIds = [resolvedPerson.studentId];
-        personName = resolvedPerson.parentName;
-    } else if (visitor.refType === 'Visitor') {
-        const Visitor = mongoose.model('Visitor');
-        resolvedPerson = await Visitor.findById(visitor.refId);
-        if (!resolvedPerson) {
-            const error = new Error('Visitor not found.');
-            error.status = 404;
-            throw error;
-        }
+    } else {
         if (resolvedPerson.approvalStatus === VISITOR_STATUS.PENDING) {
             const error = new Error('Visitor is pending approval.');
             error.status = 400;
@@ -1034,40 +1055,29 @@ export const checkInVisitor = async (payload, wardenUser) => {
             error.status = 400;
             throw error;
         }
-        studentIds = resolvedPerson.students;
-        organizationId = resolvedPerson.organizationId;
-        personName = resolvedPerson.name;
-    } else {
-        const error = new Error('Invalid visitor refType.');
+    }
+
+    if (students.length !== uniqueStudentIds.length) {
+        const error = new Error('One or more selected students not found.');
         error.status = 400;
         throw error;
     }
 
-    // 3. Student & Hostel Validation
-    const Student = mongoose.model('Student');
-    const students = await Student.find({ _id: { $in: studentIds } });
-    if (students.length === 0) {
-        const error = new Error('No students linked to this person.');
-        error.status = 400;
+    // Authorization: Is the visitor/parent authorized to visit these students?
+    const isSubset = uniqueStudentIds.every(id => resolvedPerson.authorizedStudentIds.includes(id));
+    if (!isSubset) {
+        const error = new Error(`${visitor.refType} is not authorized for all selected students.`);
+        error.status = 403;
         throw error;
     }
 
-    if (!organizationId) {
-        organizationId = students[0].organization; // Wait, Student model organization field is 'organization'
-    }
+    // Organization and Hostel boundaries
+    const targetHostelId = students[0].hostelId?.toString();
+    const targetOrgId = students[0].organizationId?.toString();
 
-    const targetHostelId = students[0].hostelId;
     if (!targetHostelId) {
         const error = new Error('Student does not have an active hostel.');
         error.status = 400;
-        throw error;
-    }
-
-    const Hostel = mongoose.model('Hostel');
-    const targetHostel = await Hostel.findById(targetHostelId);
-    if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
-        const error = new Error('Unauthorized: You are not assigned to the hostel for these students.');
-        error.status = 403;
         throw error;
     }
 
@@ -1082,22 +1092,29 @@ export const checkInVisitor = async (payload, wardenUser) => {
             error.status = 400;
             throw error;
         }
-        if (student.hostelId.toString() !== targetHostelId.toString()) {
-            const error = new Error(`Student ${student.name} does not belong to the same hostel.`);
+        if (student.hostelId.toString() !== targetHostelId) {
+            const error = new Error(`Selected students belong to different hostels. Must check-in separately per hostel.`);
+            error.status = 400;
+            throw error;
+        }
+        if (student.organizationId.toString() !== targetOrgId) {
+            const error = new Error(`Selected students belong to different organizations.`);
             error.status = 400;
             throw error;
         }
     }
 
-    // 4. Duplicate Visit Check
-    const activeVisit = await visitorRepository.findActiveVisit(visitor.refId, visitor.refType);
-    if (activeVisit) {
-        const error = new Error(`${visitor.refType} is already checked in.`);
-        error.status = 409;
+    organizationId = targetOrgId;
+
+    // Warden Authorization
+    const Hostel = mongoose.model('Hostel');
+    const targetHostel = await Hostel.findById(targetHostelId).lean();
+    if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
+        const error = new Error('Unauthorized: You are not assigned to the hostel for these students.');
+        error.status = 403;
         throw error;
     }
 
-    // 5. Construct Visit Data
     const now = new Date();
     const parsedExpectedExitTime = new Date(expectedExitTime);
 
@@ -1108,7 +1125,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
             refId: visitor.refId,
             refType: visitor.refType
         },
-        students: studentIds, // array of ObjectIds
+        students: uniqueStudentIds,
         purpose: purpose,
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         checkInTime: now,
@@ -1121,15 +1138,23 @@ export const checkInVisitor = async (payload, wardenUser) => {
         }]
     };
 
-    // 6. Create Visit
-    const newVisit = await visitorRepository.createVisit(visitData);
+    let newVisit;
+    try {
+        newVisit = await visitorRepository.createVisit(visitData);
+    } catch (error) {
+        if (error.code === 11000) {
+            const e = new Error('This visitor is already checked in. Please add students to the active visit instead.');
+            e.status = 409;
+            throw e;
+        }
+        throw error;
+    }
 
-    // 7. Fire Notification
+    // Fire notifications asynchronously
     try {
         const studentNames = students.map(s => s.name).join(', ');
-
         const notificationData = {
-            personName: personName,
+            personName: resolvedPerson.personName,
             personType: visitor.refType,
             studentName: studentNames,
             purpose: purpose,
@@ -1150,47 +1175,251 @@ export const checkInVisitor = async (payload, wardenUser) => {
         // Notify parents linked to the student
         const parentExcludeIds = visitor.refType === 'Parent' ? [visitor.refId.toString()] : [];
 
-        await orchestratorService.triggerNotification({
+        orchestratorService.triggerNotification({
             eventName: 'VISIT_CHECKED_IN',
             target: {
                 type: 'PARENT',
                 filter: {
-                    studentIds: studentIds.map(id => id.toString()),
+                    studentIds: uniqueStudentIds,
                     excludeIds: parentExcludeIds
                 }
             },
             data: notificationData,
             sender: notificationSender
-        });
+        }).catch(console.error);
 
         // Also notify students
-        await orchestratorService.triggerNotification({
+        orchestratorService.triggerNotification({
             eventName: 'VISIT_CHECKED_IN',
             target: {
                 type: 'USER',
                 filter: {
                     role: 'student',
-                    userIds: studentIds.map(id => id.toString())
+                    userIds: uniqueStudentIds
                 }
             },
             data: notificationData,
             sender: notificationSender
-        });
-    } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISIT_CHECKED_IN event:', notificationError);
+        }).catch(console.error);
+    } catch (error) {
+        console.error('Error firing check-in notifications:', error);
     }
 
-    // 8. Return Response DTO
     return {
         visitId: newVisit._id,
-        personName: personName,
+        personName: resolvedPerson.personName,
         personType: visitor.refType,
-        studentName: students.map(s => s.name).join(', '),
+        studentName: newVisit.students?.map(s => s.name).join(', ') || 'Student',
         purpose: newVisit.purpose,
         checkInTime: newVisit.checkInTime,
         expectedExitTime: newVisit.expectedExitTime,
         status: newVisit.status
     };
+};
+
+/**
+ * Add students to an active visit (V2 - Production Grade)
+ * @param {String} visitId 
+ * @param {Object} payload 
+ * @param {Object} wardenUser 
+ */
+export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
+    const { selectedStudentIds } = payload;
+
+    if (wardenUser.role !== 'warden') {
+        const error = new Error('Unauthorized: Only wardens can manage visits.');
+        error.status = 403;
+        throw error;
+    }
+
+    const uniqueStudentIds = [...new Set(selectedStudentIds)];
+    if (uniqueStudentIds.length !== selectedStudentIds.length) {
+        const error = new Error('Duplicate student IDs provided.');
+        error.status = 400;
+        throw error;
+    }
+
+    // Fetch visit
+    const visit = await visitorRepository.getVisitDetailsById(visitId);
+    if (!visit) {
+        const error = new Error('Visit not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    if (visit.status !== VISITOR_VISIT_STATUS.CHECKED_IN) {
+        const error = new Error('Students can only be added to currently active visits.');
+        error.status = 400;
+        throw error;
+    }
+
+    // Filter out already linked students
+    const existingStudentIds = visit.students.map(id => id.toString());
+    const newStudentIds = uniqueStudentIds.filter(id => !existingStudentIds.includes(id));
+
+    if (newStudentIds.length === 0) {
+        const error = new Error('All selected students are already part of this visit.');
+        error.status = 400;
+        throw error;
+    }
+
+    // Fetch Person and Target Students concurrently
+    const Student = mongoose.model('Student');
+    const [personData, students] = await Promise.all([
+        (async () => {
+            if (visit.visitor.refType === 'Parent') {
+                const Parent = mongoose.model('Parent');
+                const StudentParent = mongoose.model('StudentParent');
+                const parentDoc = await Parent.findById(visit.visitor.refId).lean();
+                if (!parentDoc) return null;
+                const links = await StudentParent.find({ parentId: parentDoc._id, status: 'active' }).select('studentId').lean();
+                return {
+                    authorizedStudentIds: links.map(l => l.studentId.toString()),
+                    personName: parentDoc.parentName
+                };
+            } else {
+                const Visitor = mongoose.model('Visitor');
+                const visitorDoc = await Visitor.findById(visit.visitor.refId).lean();
+                if (!visitorDoc) return null;
+                return {
+                    authorizedStudentIds: visitorDoc.students.map(id => id.toString()),
+                    personName: visitorDoc.name
+                };
+            }
+        })(),
+        Student.find({ _id: { $in: newStudentIds } })
+            .select('name isActive hostelStatus hostelId organizationId')
+            .lean()
+    ]);
+
+    if (!personData) {
+        const error = new Error(`${visit.visitor.refType} profile no longer exists.`);
+        error.status = 404;
+        throw error;
+    }
+
+    if (students.length !== newStudentIds.length) {
+        const error = new Error('One or more selected students not found.');
+        error.status = 400;
+        throw error;
+    }
+
+    // Subset Verification
+    const isSubset = newStudentIds.every(id => personData.authorizedStudentIds.includes(id));
+    if (!isSubset) {
+        const error = new Error(`${visit.visitor.refType} is not authorized for all newly selected students.`);
+        error.status = 403;
+        throw error;
+    }
+
+    // Organization and Hostel boundaries (must match the existing visit)
+    const targetHostelId = visit.hostelId.toString();
+    const targetOrgId = visit.organizationId.toString();
+
+    for (const student of students) {
+        if (!student.isActive) {
+            const error = new Error(`Student ${student.name} is inactive.`);
+            error.status = 400;
+            throw error;
+        }
+        if (student.hostelStatus !== 'active') {
+            const error = new Error(`Student ${student.name} does not have an active hostel status.`);
+            error.status = 400;
+            throw error;
+        }
+        if (student.hostelId.toString() !== targetHostelId) {
+            const error = new Error(`Student ${student.name} belongs to a different hostel. Must check-in separately.`);
+            error.status = 400;
+            throw error;
+        }
+        if (student.organizationId.toString() !== targetOrgId) {
+            const error = new Error(`Student ${student.name} belongs to a different organization.`);
+            error.status = 400;
+            throw error;
+        }
+    }
+
+    // Warden Authorization
+    const Hostel = mongoose.model('Hostel');
+    const targetHostel = await Hostel.findById(targetHostelId).lean();
+    if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
+        const error = new Error('Unauthorized: You are not assigned to the hostel for these students.');
+        error.status = 403;
+        throw error;
+    }
+
+    // Update Visit
+    const studentNames = students.map(s => s.name).join(', ');
+    const timelineEntry = {
+        action: VISITOR_VISIT_TIMELINE_ACTIONS.STUDENT_ADDED,
+        performedBy: wardenUser.id,
+        remarks: `Added ${studentNames} to the visit.`
+    };
+
+    const updatedVisit = await visitorVisitModel.findByIdAndUpdate(
+        visitId,
+        {
+            $addToSet: {
+                students: { $each: newStudentIds }
+            },
+            $push: {
+                visitTimeline: timelineEntry
+            }
+        },
+        { new: true }
+    );
+
+    // Notifications (Optional)
+    try {
+        const notificationData = {
+            personName: personData.personName,
+            personType: visit.visitor.refType,
+            studentName: studentNames,
+            purpose: visit.purpose,
+            link: '/dashboard/visitors/history'
+        };
+
+        const notificationSender = {
+            id: wardenUser.id,
+            model: 'User',
+            snapshot: {
+                name: wardenUser.name,
+                role: wardenUser.role
+            }
+        };
+
+        const parentExcludeIds = visit.visitor.refType === 'Parent' ? [visit.visitor.refId.toString()] : [];
+
+        orchestratorService.triggerNotification({
+            eventName: 'VISIT_STUDENT_ADDED',
+            target: {
+                type: 'PARENT',
+                filter: {
+                    studentIds: newStudentIds,
+                    excludeIds: parentExcludeIds
+                }
+            },
+            data: notificationData,
+            sender: notificationSender
+        }).catch(console.error);
+
+        orchestratorService.triggerNotification({
+            eventName: 'VISIT_STUDENT_ADDED',
+            target: {
+                type: 'USER',
+                filter: {
+                    role: 'student',
+                    userIds: newStudentIds
+                }
+            },
+            data: notificationData,
+            sender: notificationSender
+        }).catch(console.error);
+    } catch (error) {
+        console.error('Error firing add students notifications:', error);
+    }
+
+    return updatedVisit;
 };
 
 /**

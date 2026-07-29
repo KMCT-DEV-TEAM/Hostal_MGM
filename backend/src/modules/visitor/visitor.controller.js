@@ -333,6 +333,44 @@ export const checkInVisitor = async (req, res) => {
 };
 
 /**
+ * Warden adds students to an active visit
+ * @route PATCH /warden/visits/:visitId/students
+ */
+export const addStudentsToVisit = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing warden authentication."
+            });
+        }
+
+        const { visitId } = req.params;
+        const result = await visitorService.addStudentsToVisit(visitId, req.body, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Students added to the active visit successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while adding students to the visit."
+            : error.message;
+
+        console.error('[VisitorController] addStudentsToVisit error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
+/**
  * Super Admin gets hostel-wise visit summary
  * @route GET /super-admin/visitor-visits/hostels
  */

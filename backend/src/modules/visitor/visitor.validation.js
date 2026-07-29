@@ -204,13 +204,29 @@ export const validateRejectVisitor = (req, res, next) => {
 };
 
 export const validateCheckInVisitor = (req, res, next) => {
-    const { visitor, purpose, expectedExitTime, studentId, students, hostelId, organizationId } = req.body;
+    const { visitor, purpose, expectedExitTime, selectedStudentIds, studentId, students, hostelId, organizationId } = req.body;
 
     if (studentId || students || hostelId || organizationId) {
         return res.status(400).json({
             success: false,
-            message: "studentId, students, hostelId, and organizationId are not allowed in the request body."
+            message: "studentId, students, hostelId, and organizationId are not allowed in the request body. Use selectedStudentIds instead."
         });
+    }
+
+    if (!Array.isArray(selectedStudentIds) || selectedStudentIds.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "selectedStudentIds must be a non-empty array of valid object IDs."
+        });
+    }
+
+    for (const id of selectedStudentIds) {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid student ID: ${id}`
+            });
+        }
     }
 
     if (!visitor || !visitor.refId || !isValidObjectId(visitor.refId)) {
@@ -244,6 +260,36 @@ export const validateCheckInVisitor = (req, res, next) => {
 
 
     req.body.purpose = purpose.trim();
+    next();
+};
+
+export const validateAddStudentsToVisit = (req, res, next) => {
+    const { visitId } = req.params;
+    const { selectedStudentIds } = req.body;
+
+    if (!isValidObjectId(visitId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid visit ID."
+        });
+    }
+
+    if (!Array.isArray(selectedStudentIds) || selectedStudentIds.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "selectedStudentIds must be a non-empty array of valid object IDs."
+        });
+    }
+
+    for (const id of selectedStudentIds) {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid student ID: ${id}`
+            });
+        }
+    }
+
     next();
 };
 

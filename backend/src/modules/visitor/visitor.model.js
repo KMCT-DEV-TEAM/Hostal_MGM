@@ -96,9 +96,9 @@ const visitorSchema = new mongoose.Schema(
 
 // Indexes matching user requirements (organizationId, phone, student reference, status)
 visitorSchema.index({ organizationId: 1 });
-visitorSchema.index({ phone: 1 });
+visitorSchema.index({ email: 1 });
 visitorSchema.index({ students: 1 });
 visitorSchema.index({ approvalStatus: 1 });
-visitorSchema.index({ organizationId: 1, phone: 1 }, { unique: true }); // Prevent duplicate visitor records per organization
+visitorSchema.index({ organizationId: 1, email: 1 }, { unique: true });
 
 export default mongoose.model('Visitor', visitorSchema);

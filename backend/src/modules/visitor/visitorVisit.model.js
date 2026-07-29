@@ -101,6 +101,12 @@ visitorVisitSchema.index({ organizationId: 1 });
 visitorVisitSchema.index({ hostelId: 1 });
 visitorVisitSchema.index({ students: 1 });
 visitorVisitSchema.index({ 'visitor.refId': 1, 'visitor.refType': 1 });
-visitorVisitSchema.index({ status: 1 });
+visitorVisitSchema.index(
+    { 'visitor.refId': 1, 'visitor.refType': 1, status: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { status: 'Checked In' }
+    }
+);
 
 export default mongoose.model('VisitorVisit', visitorVisitSchema);
