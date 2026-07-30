@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { getVisitorDetails, getVisitDetails } from '@/services/visitor.service';
+import { getVisitorDetails, getVisitDetails, getVisitorDetailsParent } from '@/services/visitor.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import VisitorDetailsMobileView from '../views/VisitorDetailsMobileView';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
 import { showErrorToast } from '@/utils/toast';
@@ -9,6 +11,8 @@ export default function VisitorDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuthStore();
+    const { activeStudentId } = useActiveStudent();
 
     const isHistory = location.state?.isHistory;
 
@@ -26,12 +30,22 @@ export default function VisitorDetails() {
                     setVisitorData(res.data || res);
                 } else if (isHistory === false) {
                     // We know it's a regular visitor item (visitorId), fetch profile directly
-                    const res = await getVisitorDetails(id);
+                    let res;
+                    if (user?.role === 'parent') {
+                        res = await getVisitorDetailsParent(id, activeStudentId);
+                    } else {
+                        res = await getVisitorDetails(id);
+                    }
                     setVisitorData(res.data || res);
                 } else {
                     // Fallback for direct navigation (e.g. page refresh) without state
                     try {
-                        const res = await getVisitorDetails(id);
+                        let res;
+                        if (user?.role === 'parent') {
+                            res = await getVisitorDetailsParent(id, activeStudentId);
+                        } else {
+                            res = await getVisitorDetails(id);
+                        }
                         setVisitorData(res.data || res);
                     } catch (err) {
                         const res = await getVisitDetails(id);
