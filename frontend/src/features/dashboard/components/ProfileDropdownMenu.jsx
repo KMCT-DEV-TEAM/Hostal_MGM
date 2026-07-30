@@ -14,6 +14,7 @@ export default function ProfileDropdownMenu({ onClose, onLogout }) {
     const { activeStudent } = useActiveStudent();
     const setActiveStudent = useParentStore(state => state.setActiveStudent);
     const isParent = user?.role === ROLES.PARENT;
+    const hasMultipleStudents = user?.students?.length > 1;
 
     const getInitials = (name) => {
         if (!name) return 'A';
@@ -27,7 +28,7 @@ export default function ProfileDropdownMenu({ onClose, onLogout }) {
 
     return (
         <div className="absolute right-0 mt-5 flex gap-3 items-start z-50">
-            {isSwitchMenuOpen && isParent && user?.students && (
+            {isSwitchMenuOpen && isParent && hasMultipleStudents && (
                 <div className="w-85 mt-14 shrink-0 bg-white rounded-3xl shadow-sm border border-gray-100 py-4 animate-in slide-in-from-right-8 fade-in duration-200">
                     <div className="px-5 pb-2">
                         <p className="text-[10px] font-bold text-text-secondary mb-4">SWITCH STUDENT</p>
@@ -64,12 +65,12 @@ export default function ProfileDropdownMenu({ onClose, onLogout }) {
             )}
 
             <div className="w-85 shrink-0 bg-white rounded-3xl shadow-sm border border-gray-100 py-5 animate-in fade-in zoom-in-95 duration-200">
-                {isParent && activeStudent && (
+                {isParent && activeStudent && hasMultipleStudents && (
                     <div className="px-5 pb-5">
                         <p className="text-[10px] font-bold text-text-secondary mb-4">CURRENT STUDENT</p>
-                        <button
-                            onClick={() => setIsSwitchMenuOpen(!isSwitchMenuOpen)}
-                            className={`w-full flex items-center justify-between p-3.5 rounded-2xl border bg-white transition-colors group ${isSwitchMenuOpen ? 'border-primary ring-2 ring-primary/10' : 'border-success/40 hover:bg-gray-50'}`}
+                        <div
+                            onClick={() => hasMultipleStudents && setIsSwitchMenuOpen(!isSwitchMenuOpen)}
+                            className={`w-full flex items-center justify-between p-3.5 rounded-2xl border bg-white transition-colors ${hasMultipleStudents ? 'cursor-pointer group hover:bg-gray-50' : ''} ${isSwitchMenuOpen ? 'border-primary ring-2 ring-primary/10' : 'border-success/40'}`}
                         >
                             <div className="flex items-center gap-4">
                                 <div className="relative">
@@ -89,8 +90,10 @@ export default function ProfileDropdownMenu({ onClose, onLogout }) {
                                     </p>
                                 </div>
                             </div>
-                            <ChevronLeft size={18} className={`transition-transform duration-200 ${isSwitchMenuOpen ? 'rotate-180 text-primary' : 'text-gray-400 group-hover:text-gray-600'}`} />
-                        </button>
+                            {hasMultipleStudents && (
+                                <ChevronLeft size={18} className={`transition-transform duration-200 ${isSwitchMenuOpen ? 'rotate-180 text-primary' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                            )}
+                        </div>
                     </div>
                 )}
 
