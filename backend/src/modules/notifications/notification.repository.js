@@ -24,7 +24,7 @@ class NotificationRepository {
     /**
      * Retrieves notifications for a specific user with pagination and filters
      */
-    async findUserNotifications(userId, userModel, { skip = 0, limit = 20, isRead } = {}) {
+    async findUserNotifications(userId, userModel, { skip = 0, limit = 20, isRead, studentId } = {}) {
         const query = {
             'recipient.id': new mongoose.Types.ObjectId(userId),
             'recipient.model': userModel
@@ -33,9 +33,13 @@ class NotificationRepository {
         if (isRead !== undefined) {
             query['deliveries.inApp.status'] = isRead ? 'READ' : { $ne: 'READ' };
         }
+        
+        if (studentId) {
+            query['metadata.studentId'] = studentId;
+        }
 
         const [notifications, total, unreadCount] = await Promise.all([
-            Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
             Notification.countDocuments(query),
             Notification.countDocuments({ ...query, 'deliveries.inApp.status': { $ne: 'READ' } })
         ]);
