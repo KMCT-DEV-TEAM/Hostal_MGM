@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import leaveService from '@/services/leave.service';
 import LeaveDetailsMobileView from '../views/LeaveDetailsMobileView';
 import MobileSkeletonLoader from '@/components/ui/MobileSkeletonLoader';
@@ -11,6 +12,7 @@ export default function LeaveDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    const { activeStudentId } = useActiveStudent();
 
     const [request, setRequest] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function LeaveDetails() {
         if (!id) return;
         setIsLoading(true);
         try {
-            const res = await leaveService.getLeaveDetails(user?.role, id);
+            const res = await leaveService.getLeaveDetails(user?.role, id, activeStudentId);
             setRequest(res.data || res);
         } catch (err) {
             console.error("Failed to fetch leave details:", err);
@@ -33,7 +35,7 @@ export default function LeaveDetails() {
 
     useEffect(() => {
         fetchLeaveDetails();
-    }, [id, user?.role]);
+    }, [id, user?.role, activeStudentId]);
 
     const handleActionClick = (actionType) => {
         setActionModalConfig({ isOpen: true, actionType });
@@ -47,7 +49,8 @@ export default function LeaveDetails() {
             const { actionType } = actionModalConfig;
             const payload = {
                 remarks: remarks,
-                revision: request.revision ?? request.__v ?? 0
+                revision: request.revision ?? request.__v ?? 0,
+                studentId: activeStudentId
             };
 
             if (actionType === 'approved') {
