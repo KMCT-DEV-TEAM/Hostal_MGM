@@ -39,6 +39,9 @@ const studentParentSchema = new mongoose.Schema(
 // Compound index to prevent the same parent from being linked to the same student multiple times
 studentParentSchema.index({ parentId: 1, studentId: 1 }, { unique: true });
 
+// Recommended index for high-performance retrieval of a parent's active students
+studentParentSchema.index({ parentId: 1, status: 1 });
+
 // Create the model
 const StudentParent = mongoose.model("StudentParent", studentParentSchema);
 

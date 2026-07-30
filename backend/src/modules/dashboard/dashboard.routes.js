@@ -44,8 +44,6 @@ router.get(
   getStudentDashboardStats
 );
 
-
-
 router.get(
   "/students/:studentId/stats",
   authMiddleware,
