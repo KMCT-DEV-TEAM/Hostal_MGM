@@ -171,8 +171,8 @@ export default function VisitorDetailsModal({
             <div className="mt-6 grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4">
                 {/* Left Column */}
                 <div className="flex flex-col gap-4">
-                    <DetailCard 
-                        title="Visitor Information" 
+                    <DetailCard
+                        title="Visitor Information"
                         subtitle="Basic personal details"
                         headerAction={
                             visitor.status === 'Approved' && user?.role === 'warden' && (
@@ -186,7 +186,6 @@ export default function VisitorDetailsModal({
                             )
                         }
                     >
-                        <DetailRow icon={<Info size={16} />} label="Status" value={<StatusBadge status={visitor.status} />} />
                         <DetailRow icon={<User size={16} />} label="Full Name" value={visitorName} />
                         <DetailRow icon={<Phone size={16} />} label="Phone" value={visitor.phone} />
                         {visitor.email && <DetailRow icon={<Mail size={16} />} label="Email" value={visitor.email} />}
@@ -194,9 +193,34 @@ export default function VisitorDetailsModal({
                         {visitor.address && <DetailRow icon={<MapPin size={16} />} label="Address" value={visitor.address} />}
                     </DetailCard>
 
+                    <DetailCard title="Identity Details" subtitle="Provided ID proofs">
+                        <DetailRow icon={<FileText size={16} />} label="ID Type" value={visitor.idProofType} />
+                        <DetailRow icon={<CreditCard size={16} />} label="ID Number" value={visitor.idProofNumber} />
+                        {visitor.organization && visitor.organization.name && (
+                            <DetailRow icon={<Building size={16} />} label="Organization" value={visitor.organization.name} />
+                        )}
+                    </DetailCard>
+
+                    <DetailCard title="Status & Timestamps" subtitle="Registration status log">
+                        <DetailRow icon={<Calendar size={16} />} label="Registered" value={formatDateTimeReadable(visitor.createdAt)} />
+                        <DetailRow icon={<Info size={16} />} label="Status" value={<StatusBadge status={visitor.status} />} />
+                        {visitor.approvedBy && (
+                            <DetailRow icon={<User size={16} />} label="Approved By" value={visitor.approvedBy.name} />
+                        )}
+                        {visitor.approvedAt && (
+                            <DetailRow icon={<Clock size={16} />} label="Approved At" value={formatDateTimeReadable(visitor.approvedAt)} />
+                        )}
+                        {visitor.rejectedBy && (
+                            <DetailRow icon={<User size={16} />} label="Rejected By" value={visitor.rejectedBy.name} />
+                        )}
+                        {visitor.rejectionReason && (
+                            <DetailRow icon={<Info size={16} />} label="Reason" value={visitor.rejectionReason} />
+                        )}
+                    </DetailCard>
+
                     {visitor.timeline && visitor.timeline.length > 0 && (
                         <DetailCard title="Timeline" subtitle="Activity log">
-                            <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[13.5px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-200 before:to-transparent mt-4 ml-3 md:ml-0">
+                            <div className="relative pl-8 mt-4 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
                                 {visitor.timeline.map((item, index) => {
                                     const actionText = item.action || 'Updated';
                                     const badgeBg = actionText === 'Approved' ? 'bg-success/10' : actionText === 'Rejected' ? 'bg-danger/10' : 'bg-primary/10';
@@ -225,6 +249,15 @@ export default function VisitorDetailsModal({
 
                 {/* Right Column */}
                 <div className="flex flex-col gap-4">
+                    <DetailCard title="Quick Summary" subtitle="View the quick details">
+                        <DetailRow icon={<User size={16} />} label="Full Name" value={visitorName} />
+                        <DetailRow icon={<Phone size={16} />} label="Phone" value={visitor.phone} />
+                        <DetailRow icon={<Users size={16} />} label="Relationship" value={visitor.relationship} className="capitalize" />
+                        <DetailRow icon={<FileText size={16} />} label="ID Type" value={visitor.idProofType} />
+                        <DetailRow icon={<Info size={16} />} label="Status" value={<StatusBadge status={visitor.status} />} />
+                        <DetailRow icon={<Calendar size={16} />} label="Registered" value={formatDateTimeReadable(visitor.createdAt)} />
+                    </DetailCard>
+
                     {visitor.students && visitor.students.length > 0 && (
                         <DetailCard title="Linked Students" subtitle="Students associated with this visitor">
                             <div className="flex flex-col gap-3 mt-2">
@@ -246,30 +279,6 @@ export default function VisitorDetailsModal({
                             </div>
                         </DetailCard>
                     )}
-
-                    <DetailCard title="Identity Details" subtitle="Provided ID proofs">
-                        <DetailRow icon={<FileText size={16} />} label="ID Type" value={visitor.idProofType} />
-                        <DetailRow icon={<CreditCard size={16} />} label="ID Number" value={visitor.idProofNumber} />
-                        {visitor.organization && visitor.organization.name && (
-                            <DetailRow icon={<Building size={16} />} label="Organization" value={visitor.organization.name} />
-                        )}
-                    </DetailCard>
-
-                    <DetailCard title="Status & Timestamps" subtitle="Registration status log">
-                        <DetailRow icon={<Calendar size={16} />} label="Registered" value={formatDateTimeReadable(visitor.createdAt)} />
-                        {visitor.approvedBy && (
-                            <DetailRow icon={<User size={16} />} label="Approved By" value={visitor.approvedBy.name} />
-                        )}
-                        {visitor.approvedAt && (
-                            <DetailRow icon={<Clock size={16} />} label="Approved At" value={formatDateTimeReadable(visitor.approvedAt)} />
-                        )}
-                        {visitor.rejectedBy && (
-                            <DetailRow icon={<User size={16} />} label="Rejected By" value={visitor.rejectedBy.name} />
-                        )}
-                        {visitor.rejectionReason && (
-                            <DetailRow icon={<Info size={16} />} label="Reason" value={visitor.rejectionReason} />
-                        )}
-                    </DetailCard>
                 </div>
             </div>
 

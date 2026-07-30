@@ -241,7 +241,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                             label="Expected Return Time *"
                             {...register('expectedExitTime')}
                             error={errors.expectedExitTime?.message}
-                            className="!py-2 !text-[13px]"
+                            className="py-2! text-[13px]!"
                         />
                     </div>
                 </div>
