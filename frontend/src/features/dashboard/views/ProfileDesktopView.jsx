@@ -263,7 +263,7 @@ const ProfileDesktopView = ({
                                     <div className="text-gray-500 font-medium">Linked Student</div>
                                     <div className="sm:col-span-2">
                                         <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm max-w-sm">
-                                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center shrink-0">
                                                 {user.studentId.profileImage ? (
                                                     <img src={user.studentId.profileImage} alt="student" className="w-full h-full object-cover" />
                                                 ) : (

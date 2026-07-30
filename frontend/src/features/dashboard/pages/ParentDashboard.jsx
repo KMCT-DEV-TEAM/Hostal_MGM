@@ -4,12 +4,14 @@ import { getParentDashboardStats } from '@/services/parent.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import ParentDashboardDesktopView from '../views/ParentDashboardDesktopView';
 import ParentDashboardMobileView from '../views/ParentDashboardMobileView';
 
 export default function ParentDashboard() {
     const { isMobile } = useBreakpoint();
     const { user } = useAuthStore();
+    const { activeStudentId } = useActiveStudent();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [period, setPeriod] = useState('This Year');
@@ -19,9 +21,10 @@ export default function ParentDashboard() {
 
     useEffect(() => {
         const fetchStats = async () => {
+            if (!activeStudentId) return;
             setIsLoading(true);
             try {
-                const res = await getParentDashboardStats({ period, radialPeriod });
+                const res = await getParentDashboardStats(activeStudentId, { period, radialPeriod });
                 setDashboardData(res?.data);
             } catch (err) {
                 console.error("Failed to fetch parent stats", err);
@@ -30,7 +33,7 @@ export default function ParentDashboard() {
             }
         };
         fetchStats();
-    }, [period, radialPeriod]);
+    }, [period, radialPeriod, activeStudentId]);
 
     const attendanceData = dashboardData?.monthlyAttendance || [];
     const radialData = [
