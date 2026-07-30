@@ -1,6 +1,11 @@
-import React from 'react';
-import { User, Mail, Phone, Shield, Pencil, Check, X, Loader2, Building } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, Shield, Pencil, Check, X, Loader2, Building, GraduationCap, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import DetailCard from '@/components/ui/DetailCard';
+import DetailRow from '@/components/ui/DetailRow';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
+import { useParentStore } from '@/store/useParentStore';
 
 const ProfileDesktopView = ({
     user,
@@ -16,290 +21,303 @@ const ProfileDesktopView = ({
     handleOpenConfirm
 }) => {
     const { t } = useTranslation();
+    const [studentToSwitch, setStudentToSwitch] = useState(null);
+    const { activeStudentId } = useActiveStudent();
+    const { setActiveStudent } = useParentStore();
+
+    const selectedStudent = user?.role === 'parent' 
+        ? (user?.students?.find(s => s._id === activeStudentId) || user?.students?.[0])
+        : null;
 
     return (
-        <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-in fade-in duration-300">
+        <div className="p-4 md:p-8 w-full animate-in fade-in duration-300">
             {/* Header Section */}
-            <div className="mb-8">
+            <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">{t('my_profile')}</h1>
-                <p className="text-sm text-gray-500 mt-1">Manage your personal information and security</p>
+                <p className="text-sm text-gray-500 mt-1">Manage your personal informations and security</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-
-                {/* Profile Overview (Top Section) */}
-                <div className="p-6 sm:p-8 border-b border-gray-100 bg-gray-50/50 flex items-center text-start gap-4">
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#0A437A] text-3xl font-semibold">
+            {/* Main Top Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-6 w-full">
+                    <div className="relative shrink-0">
+                        <div className="w-24 h-24 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-primary text-3xl font-bold shadow-sm">
                             {user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
                         </div>
                         {user?.isActive !== false && (
-                            <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                            <div className="absolute bottom-1 right-2 w-4 h-4 bg-[#2ECC71] border-2 border-white rounded-full"></div>
                         )}
                     </div>
 
-                    <div className="text-start">
-                        <h2 className="text-2xl font-semibold text-gray-900">{user?.name || user.parentName}</h2>
-                        <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wider">{formatRole(user?.role)}</p>
+                    <div className="flex flex-col gap-1 w-full max-w-xl">
+                        {/* Name */}
+                        <div className="flex items-center gap-2 group h-8">
+                            {editingField === 'name' ? (
+                                <div className="flex items-center gap-2 w-full">
+                                    <input
+                                        type="text"
+                                        value={editValue}
+                                        onChange={(e) => {
+                                            const originalVal = e.target.value;
+                                            const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
+                                            if (originalVal !== cleanVal) {
+                                                setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
+                                            } else {
+                                                setErrors(prev => ({ ...prev, name: '' }));
+                                            }
+                                            setEditValue(cleanVal);
+                                        }}
+                                        className={`flex-1 border ${errors.name ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-primary`}
+                                        autoFocus
+                                        disabled={isSaving}
+                                    />
+                                    <button onClick={() => handleOpenConfirm('name')} disabled={isSaving || !editValue?.trim()} className="p-1.5 text-success hover:bg-green-50 rounded-md">
+                                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                    </button>
+                                    <button onClick={handleCancelEdit} disabled={isSaving} className="p-1.5 text-danger hover:bg-red-50 rounded-md">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <h2 className="text-xl font-bold text-gray-900">{user?.name || user?.parentName}</h2>
+                                    <button onClick={() => handleEditClick('name', user?.name || user?.parentName)} className="opacity-0 group-hover:opacity-100 p-1 text-primary hover:bg-blue-50 rounded transition-all">
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                        {errors.name && <p className="text-danger text-[10px] m-0 leading-none">{errors.name}</p>}
+
+                        {/* Email */}
+                        <div className="flex items-center gap-2 group h-7 mt-1 text-sm text-gray-500">
+                            {editingField === 'email' ? (
+                                <div className="flex items-center gap-2 w-full">
+                                    <input
+                                        type="email"
+                                        value={editValue}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\s/g, '');
+                                            setEditValue(val);
+                                            setErrors(prev => ({ ...prev, email: '' }));
+                                        }}
+                                        className={`flex-1 border ${errors.email ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1 text-sm focus:outline-none focus:border-primary`}
+                                        autoFocus
+                                        disabled={isSaving}
+                                    />
+                                    <button onClick={() => handleOpenConfirm('email')} disabled={isSaving || !editValue?.trim()} className="p-1 text-success hover:bg-green-50 rounded-md">
+                                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                    </button>
+                                    <button onClick={handleCancelEdit} disabled={isSaving} className="p-1 text-danger hover:bg-red-50 rounded-md">
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <span>{user?.email || t('not_provided')}</span>
+                                    {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                        <button onClick={() => handleEditClick('email', user?.email)} className="opacity-0 group-hover:opacity-100 p-1 text-primary hover:bg-blue-50 rounded transition-all">
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        {errors.email && <p className="text-danger text-[10px] m-0 leading-none">{errors.email}</p>}
+
+                        {/* Phone */}
+                        <div className="flex items-center gap-2 group h-7 text-sm text-gray-500">
+                            {editingField === 'phone' ? (
+                                <div className="flex items-center gap-2 w-full">
+                                    <input
+                                        type="text"
+                                        value={editValue}
+                                        maxLength={10}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) setEditValue(val);
+                                            setErrors(prev => ({ ...prev, phone: '' }));
+                                        }}
+                                        className={`flex-1 border ${errors.phone ? 'border-danger' : 'border-gray-300'} rounded-md px-3 py-1 text-sm focus:outline-none focus:border-primary`}
+                                        autoFocus
+                                        disabled={isSaving}
+                                    />
+                                    <button onClick={() => handleOpenConfirm('phone')} disabled={isSaving} className="p-1 text-success hover:bg-green-50 rounded-md">
+                                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                    </button>
+                                    <button onClick={handleCancelEdit} disabled={isSaving} className="p-1 text-danger hover:bg-red-50 rounded-md">
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <span>{user?.phone || t('not_provided')}</span>
+                                    <button onClick={() => handleEditClick('phone', user?.phone)} className="opacity-0 group-hover:opacity-100 p-1 text-primary hover:bg-blue-50 rounded transition-all">
+                                        <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                        {errors.phone && <p className="text-danger text-[10px] m-0 leading-none">{errors.phone}</p>}
+
                     </div>
                 </div>
 
-                {/* Information Sections */}
-                <div className="p-0">
+                <div className="shrink-0 flex items-center justify-end">
+                    <span className={`px-6 py-1.5 rounded-full text-[11px] tracking-wide font-semibold ${user?.isActive !== false ? 'bg-[#E5F5E9] text-[#2ECC71] border border-[#2ECC71]/30' : 'bg-red-50 text-danger border border-red-200'}`}>
+                        {user?.isActive !== false ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
+                </div>
+            </div>
 
-                    {/* Profile Info Section */}
-                    <div className="border-b border-gray-100 last:border-0">
-                        <div className="px-6 sm:px-8 py-5 bg-gray-50/50 flex items-center gap-2">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">{t('profile_info')}</h3>
+            {/* Role Specific Sections */}
+            {user?.role === 'parent' && (
+                <>
+                    {/* Students List */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-background-secondary flex items-center justify-center text-primary">
+                                    <GraduationCap className="w-4 h-4" />
+                                </div>
+                                <h3 className="font-bold text-primary text-lg">Students</h3>
+                            </div>
                         </div>
 
-                        <div className="px-6 sm:px-8 pb-6 text-sm">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-b border-gray-50 items-center gap-4">
-                                <div className="text-gray-500 font-medium">{t('role')}</div>
-                                <div className="sm:col-span-2">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-primary border border-blue-100 text-xs font-bold tracking-wide">
-                                        <Shield className="w-3 h-3" />
-                                        {formatRole(user?.role)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-b border-gray-50 items-center gap-4">
-                                <div className="text-gray-500 font-medium">{t('full_name')}</div>
-                                <div className="sm:col-span-2 flex items-center justify-between group">
-                                    {editingField === 'name' ? (
-                                        <div className="flex flex-col gap-1 w-full max-w-sm">
-                                            <div className="flex items-center gap-2 w-full">
-                                                <input
-                                                    type="text"
-                                                    value={editValue}
-                                                    pattern="[A-Za-z\s]+"
-                                                    title="Only letters are allowed"
-                                                    onChange={(e) => {
-                                                        const originalVal = e.target.value;
-                                                        const cleanVal = originalVal.replace(/[^a-zA-Z\s]/g, '');
-                                                        if (originalVal !== cleanVal) {
-                                                            setErrors(prev => ({ ...prev, name: 'Only letters are allowed' }));
-                                                        } else {
-                                                            setErrors(prev => ({ ...prev, name: '' }));
-                                                        }
-                                                        setEditValue(cleanVal);
-                                                    }}
-                                                    className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
-                                                    autoFocus
-                                                    disabled={isSaving}
-                                                />
-                                                <button
-                                                    onClick={() => handleOpenConfirm('name')}
-                                                    disabled={isSaving || (editValue && editValue.trim() === '')}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                                                >
-                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                                </button>
-                                                <button
-                                                    onClick={handleCancelEdit}
-                                                    disabled={isSaving}
-                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {user?.students?.map(student => {
+                                const isActive = student._id === activeStudentId;
+                                return (
+                                <div
+                                    key={student._id}
+                                    onClick={() => {
+                                        if (!isActive) {
+                                            setStudentToSwitch(student);
+                                        }
+                                    }}
+                                    className={`p-4 border ${isActive ? 'border-success shadow-sm ring-1 ring-success/10 bg-success/5' : 'border-[#EAEAEA] bg-white'} rounded-xl flex items-center justify-between cursor-pointer hover:border-success/50 transition-all duration-200`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                            <div className="w-12 h-12 rounded-full bg-background-secondary flex items-center justify-center text-primary text-sm font-bold shadow-sm">
+                                                {student.profileImage ? (
+                                                    <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover rounded-full" />
+                                                ) : (
+                                                    student.name ? student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'ST'
+                                                )}
                                             </div>
-                                            {errors.name && <p className="text-red-500 text-[10px]">{errors.name}</p>}
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#2ECC71] border-2 border-white rounded-full"></div>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div className="text-gray-900 font-semibold">{user?.name || user.parentName}</div>
-                                            <button onClick={() => handleEditClick('name', user?.name || user.parentName)} className="p-1.5 text-primary rounded-md cursor-pointer">
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
-                                <div className="text-gray-500 font-medium">{t('email_address')}</div>
-                                <div className="sm:col-span-2 flex items-center justify-between group">
-                                    {editingField === 'email' ? (
-                                        <div className="flex flex-col gap-1 w-full max-w-sm">
-                                            <div className="flex items-center gap-2 w-full">
-                                                <input
-                                                    type="email"
-                                                    value={editValue}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        const cleanVal = val.replace(/\s/g, '');
-                                                        if (val !== cleanVal) {
-                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                                        } else {
-                                                            setErrors(prev => ({ ...prev, email: '' }));
-                                                        }
-                                                        setEditValue(cleanVal);
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === ' ') {
-                                                            e.preventDefault();
-                                                            setErrors(prev => ({ ...prev, email: 'Spaces are not allowed in email' }));
-                                                        }
-                                                    }}
-                                                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
-                                                    autoFocus
-                                                    disabled={isSaving}
-                                                />
-                                                <button
-                                                    onClick={() => handleOpenConfirm('email')}
-                                                    disabled={isSaving || (editValue && editValue.trim() === '')}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                                                >
-                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                                </button>
-                                                <button
-                                                    onClick={handleCancelEdit}
-                                                    disabled={isSaving}
-                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                            {errors.email && <p className="text-red-500 text-[10px]">{errors.email}</p>}
+                                        <div>
+                                            <h4 className="font-semibold text-gray-900 text-[15px]">{student.name}</h4>
+                                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">ROOM {student.roomNo || student.room || 'N/A'} • {student.academicYear || student.currentYear || 'N/A'} YEAR</p>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div className="text-gray-900 font-semibold flex items-center gap-2">
-                                                <Mail className="w-4 h-4 text-gray-400" />
-                                                {user?.email || t('not_provided')}
-                                            </div>
-                                            {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
-                                                <button onClick={() => handleEditClick('email', user?.email)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-gray-300" />
                                 </div>
-                            </div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
-                                <div className="text-gray-500 font-medium">{t('phone_number')}</div>
-                                <div className="sm:col-span-2 flex items-center justify-between group">
-                                    {editingField === 'phone' ? (
-                                        <div className="flex flex-col gap-1 w-full max-w-sm">
-                                            <div className="flex items-center gap-2 w-full">
-                                                <input
-                                                    type="text"
-                                                    value={editValue}
-                                                    maxLength={10}
-                                                    pattern="[0-9]{10}"
-                                                    title="Please enter exactly 10 digits"
-                                                    onChange={(e) => {
-                                                        const originalVal = e.target.value;
-                                                        const val = originalVal.replace(/\D/g, '');
-                                                        if (originalVal !== val) {
-                                                            setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
-                                                        } else {
-                                                            setErrors(prev => ({ ...prev, phone: '' }));
-                                                        }
-                                                        if (val.length <= 10) {
-                                                            setEditValue(val);
-                                                        }
-                                                    }}
-                                                    className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#0A437A] focus:ring-1 focus:ring-[#0A437A] disabled:opacity-50`}
-                                                    autoFocus
-                                                    disabled={isSaving}
-                                                    placeholder="Enter 10 digit number"
-                                                />
-                                                <button
-                                                    onClick={() => handleOpenConfirm('phone')}
-                                                    disabled={isSaving}
-                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                                                >
-                                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                                </button>
-                                                <button
-                                                    onClick={handleCancelEdit}
-                                                    disabled={isSaving}
-                                                    className="p-1.5 text-danger hover:bg-danger/10 rounded-md transition-colors disabled:opacity-50"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                            {errors.phone && <p className="text-red-500 text-[10px]">{errors.phone}</p>}
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="text-gray-900 font-semibold flex items-center gap-2">
-                                                <Phone className="w-4 h-4 text-gray-400" />
-                                                {user?.phone || t('not_provided')}
-                                            </div>
-                                            <button onClick={() => handleEditClick('phone', user?.phone)} className="p-1.5 text-[#0A437A] rounded-md cursor-pointer">
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    )}
+                    {/* Student Details (Bottom Section) */}
+                    {selectedStudent && (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-50">
+                                <div className="w-8 h-8 rounded-full bg-background-secondary flex items-center justify-center text-primary">
+                                    <GraduationCap className="w-4 h-4" />
                                 </div>
+                                <h3 className="font-bold text-primary text-lg">Student Details</h3>
                             </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <DetailCard title="Personal Informations" subtitle="Basic Details about the Student" className="!shadow-none !border-gray-100">
+                                    <div className="space-y-1">
+                                        <DetailRow label="Full Name" value={selectedStudent.name} />
+                                        <DetailRow label="Phone No" value={selectedStudent.phone || 'N/A'} />
+                                        <DetailRow label="Email" value={selectedStudent.email || 'N/A'} />
+                                    </div>
+                                </DetailCard>
 
+                                <DetailCard title="Academic Information" subtitle="Academic course details" className="!shadow-none !border-gray-100">
+                                    <div className="space-y-1">
+                                        <DetailRow label="Batch" value={selectedStudent.batch || 'N/A'} />
+                                        <DetailRow label="Course" value={selectedStudent.course || 'N/A'} />
+                                        <DetailRow label="Department" value={selectedStudent.department || 'N/A'} />
+                                    </div>
+                                </DetailCard>
+
+                                <DetailCard title="Hostel Details" subtitle="Hostel allocation details" className="!shadow-none !border-gray-100">
+                                    <div className="space-y-1">
+                                        <DetailRow label="Hostel" value={selectedStudent.hostel?.name || 'N/A'} />
+                                        <DetailRow label="Warden" value={selectedStudent.warden?.name || 'N/A'} />
+                                        <DetailRow label="Contact" value={selectedStudent.warden?.phone || selectedStudent.hostel?.contact || 'N/A'} />
+                                    </div>
+                                </DetailCard>
+
+                                <DetailCard title="Mentor Details" subtitle="Assigned batch mentor details" className="!shadow-none !border-gray-100">
+                                    <div className="space-y-1">
+                                        <DetailRow label="Mentor Name" value={selectedStudent.mentor?.name || 'N/A'} />
+                                        <DetailRow label="Contact" value={selectedStudent.mentor?.phone || 'N/A'} />
+                                        <DetailRow label="Email" value={selectedStudent.mentor?.email || 'N/A'} />
+                                    </div>
+                                </DetailCard>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* If not a parent, we can just show their own details in the DetailCards using a similar style */}
+            {user?.role !== 'parent' && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-50">
+                        <div className="w-8 h-8 rounded-full bg-background-secondary flex items-center justify-center text-primary">
+                            <User className="w-4 h-4" />
+                        </div>
+                        <h3 className="font-bold text-primary text-lg">Account Details</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <DetailCard title="Role Information" subtitle="System role and permissions" className="!shadow-none !border-gray-100">
+                            <DetailRow label="Role" value={
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-primary border border-blue-100 text-xs font-bold tracking-wide">
+                                    <Shield className="w-3 h-3" />
+                                    {formatRole(user?.role)}
+                                </span>
+                            } />
                             {(user?.role === 'warden' || user?.role === 'student') && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
-                                    <div className="text-gray-500 font-medium">{user?.role === 'warden' ? t('assigned_hostel') || 'Assigned Hostel' : 'Your Hostel'}</div>
-                                    <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+                                <DetailRow label="Hostel" value={
+                                    <div className="flex flex-wrap items-center gap-2">
                                         {user?.assignedHostels && user.assignedHostels.length > 0 ? (
                                             user.assignedHostels.map((hostel, index) => (
-                                                <span key={index} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-xs font-semibold tracking-wide">
+                                                <span key={index} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-[10px] font-semibold tracking-wide">
                                                     <Building className="w-3 h-3" />
                                                     {hostel.name} {hostel.code ? `(${hostel.code})` : ''}
                                                 </span>
                                             ))
                                         ) : (
-                                            <span className="text-gray-400 text-sm italic">Not assigned to any hostel</span>
+                                            <span className="text-gray-400 text-xs italic">Not assigned to any hostel</span>
                                         )}
                                     </div>
-                                </div>
+                                } />
                             )}
-
-                            {user?.role === 'parent' && typeof user?.studentId === 'object' && user?.studentId && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
-                                    <div className="text-gray-500 font-medium">Linked Student</div>
-                                    <div className="sm:col-span-2">
-                                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm max-w-sm">
-                                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center shrink-0">
-                                                {user.studentId.profileImage ? (
-                                                    <img src={user.studentId.profileImage} alt="student" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <User className="w-5 h-5 text-gray-400" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className="font-semibold text-sm text-gray-900">{user.studentId.name || 'Not Available'}</div>
-                                                <div className="text-[11px] font-medium text-gray-500 mt-0.5 uppercase tracking-wide">ID: {user.studentId.studentId || 'N/A'}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        </DetailCard>
                     </div>
-
-                    {/* Account Settings Section */}
-                    <div className="border-b border-gray-100 last:border-0">
-
-
-                        <div className="px-6 sm:px-8 pb-6 text-sm">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 py-4 border-t border-gray-50 items-center gap-4">
-                                <div className="text-gray-500 font-medium">{t('status')}</div>
-                                <div className="sm:col-span-2">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs uppercase tracking-wide ${user?.isActive !== false ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-danger border border-red-200'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive !== false ? 'bg-success' : 'bg-red-600'}`}></span>
-                                        {user?.isActive !== false ? t('active') : t('inactive')}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
-            </div>
+            )}
+
+            <ConfirmationModal
+                isOpen={!!studentToSwitch}
+                onClose={() => setStudentToSwitch(null)}
+                onConfirm={() => {
+                    setActiveStudent(studentToSwitch._id);
+                    setStudentToSwitch(null);
+                }}
+                title="Switch Student"
+                message={`Are you sure you want to view the dashboard for ${studentToSwitch?.name}?`}
+                confirmText="Switch"
+                confirmButtonClass="bg-primary text-white hover:bg-primary/90"
+            />
         </div>
     );
 };
