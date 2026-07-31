@@ -32,29 +32,29 @@ const NotificationsDesktopView = ({
             <div className="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                        <Bell className="w-4 h-4 text-[#0A437A]" />
+                        <Bell className="w-4 h-4 text-primary" />
                     </div>
-                    <h1 className="text-xl font-semibold text-[#0A437A]">Notifications</h1>
+                    <h1 className="text-xl font-semibold text-primary">Notifications</h1>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center p-1 bg-white border border-gray-200 rounded-full">
-                        <button 
+                    <div className="bg-white rounded-[14px] p-1 flex shadow-sm border border-gray-100">
+                        <button
                             onClick={() => setFilter('all')}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${filter === 'all' ? 'bg-[#0A437A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-5 text-center py-1.5 text-[13px] font-semibold rounded-[10px] transition-all duration-200 ${filter === 'all' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                         >
                             All
                         </button>
-                        <button 
+                        <button
                             onClick={() => setFilter('read')}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${filter === 'read' ? 'bg-[#0A437A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-5 text-center py-1.5 text-[13px] font-semibold rounded-[10px] transition-all duration-200 ${filter === 'read' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                         >
                             Read
                         </button>
-                        <button 
+                        <button
                             onClick={() => setFilter('unread')}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${filter === 'unread' ? 'bg-[#0A437A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-5 text-center py-1.5 text-[13px] font-semibold rounded-[10px] transition-all duration-200 ${filter === 'unread' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                         >
                             Unread
                         </button>
@@ -70,10 +70,10 @@ const NotificationsDesktopView = ({
                         />
                     )}
 
-                    <button 
-                        onClick={markAllAsRead} 
-                        disabled={!hasUnread}
-                        className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${hasUnread ? 'text-[#0A437A] hover:bg-blue-50' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
+                    <button
+                        onClick={markAllAsRead}
+                        disabled={!hasUnread || loading}
+                        className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${hasUnread && !loading ? 'text-primary hover:bg-blue-50' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                     >
                         <CheckCheck className="w-4 h-4" />
                         Mark all as read
