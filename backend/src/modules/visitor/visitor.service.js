@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
 import Visitor from './visitor.model.js';
@@ -9,174 +10,315 @@ import {
     VISITOR_STATUS,
     VISITOR_APPROVAL_ACTIONS,
     VISITOR_VISIT_STATUS,
-    VISITOR_VISIT_TIMELINE_ACTIONS
+    VISITOR_VISIT_TIMELINE_ACTIONS,
+    VISITOR_PROFILE_STATUS,
+    VISITOR_CHANGE_LOG_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
 import visitorVisitModel from './visitorVisit.model.js';
 
 /**
- * Parent creates a new visitor profile
- * @param {Object} payload 
- * @param {Object} user (Authenticated Parent)
+ * Parent creates a new visitor profile + VisitRequest (Phone/Email/ID Proof Dedup).
+ *
+ * Deduplication strategy:
+ *   - Look up by ANY identity vector (Phone, Email, or ID Proof).
+ *   - If found, REUSE the existing Visitor profile, ignoring the new
+ *     data submitted by the parent (Silent Ignore approach).
+ *   - If not found, CREATE a new Visitor profile.
+ *
+ * Race condition handling:
+ *   When two concurrent requests submit the same Phone, Email, or ID Proof:
+ *   - One insert wins and commits.
+ *   - The other hits a MongoServerError 11000 (unique index violation).
+ *   - The service catches code 11000, queries the newly inserted Visitor by
+ *     any of those identity vectors, and falls back to the reuse flow.
+ *
+ * @param {Object} payload          - Sanitized body from validateCreateVisitor
+ * @param {Object} user             - Authenticated parent from JWT (req.user)
  */
-export const createVisitorProfile = async (payload, user, explicitStudentId = null) => {
+export const createVisitorProfile = async (payload, user) => {
     const {
-        students: studentIds,
+        studentIds, // Array of validated Object IDs
         name,
         relationship,
         phone,
         email,
         address,
         idProofType,
-        idProofNumber
+        idProofNumber,
+        purpose,
+        remarks,
+        confirmedVisitorId
     } = payload;
 
-    const currentParent = await Parent.findById(user.id);
+    // ── Step 1: Verify Parent ────────────────────────────────────────────────
+    const currentParent = await Parent.findById(user.id).lean();
     if (!currentParent) {
         const error = new Error('Parent not found.');
         error.status = 404;
         throw error;
     }
     if (!currentParent.isActive || !currentParent.isVerified) {
-        const error = new Error('Parent is inactive or not verified.');
+        const error = new Error(
+            'Parent account is inactive or not yet verified. ' +
+            'Please contact the hostel administration.'
+        );
         error.status = 403;
         throw error;
     }
 
-    let authorizedStudentIds = [];
-    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
-    if (!studentParentLinks || studentParentLinks.length === 0) {
-        const error = new Error('Parent is inactive or not linked to any students.');
-        error.status = 403;
-        throw error;
-    }
+    // ── Step 2: Validate Students (Bulk) ─────────────────────────────────────
+    // Verify Parent -> Students linkage
+    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' }).lean();
+    const authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
 
-    // We allow the parent to select ANY of their linked students (siblings).
-    authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
-
-    if (explicitStudentId && !authorizedStudentIds.includes(explicitStudentId)) {
-        const error = new Error('Unauthorized access to the explicit student context.');
-        error.status = 403;
-        throw error;
-    }
-
-    // 2. Student Validation
     for (const sId of studentIds) {
         if (!authorizedStudentIds.includes(sId.toString())) {
-            const error = new Error(`Unauthorized access to student: ${sId}`);
+            const error = new Error(`Unauthorized access to student ID ${sId}.`);
             error.status = 403;
             throw error;
         }
     }
 
-    const students = await Student.find({ _id: { $in: studentIds } });
+    // Load full student records
+    const students = await Student.find({ _id: { $in: studentIds } }).lean();
     if (students.length !== studentIds.length) {
         const error = new Error('One or more students not found.');
         error.status = 404;
         throw error;
     }
 
-    const organizationId = students[0].organizationId.toString();
-    const hostelId = students[0].hostelId ? students[0].hostelId.toString() : null;
-
     for (const student of students) {
         if (!student.isActive) {
-            const error = new Error(`Student ${student.name} is inactive.`);
+            const error = new Error(`Student "${student.name}" is inactive and is not eligible for visitor requests.`);
             error.status = 400;
             throw error;
         }
         if (student.hostelStatus !== 'active' || !student.hostelId) {
-            const error = new Error(`Student ${student.name} does not have an active hostel status.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.organizationId.toString() !== organizationId) {
-            const error = new Error('All students must belong to the same organization.');
-            error.status = 400;
-            throw error;
-        }
-        if (student.hostelId.toString() !== hostelId) {
-            const error = new Error('All students must belong to the same hostel.');
+            const error = new Error(
+                `Student "${student.name}" does not have an active hostel assignment.`
+            );
             error.status = 400;
             throw error;
         }
     }
 
-    // 3. Duplicate Validation
-    const isDuplicate = await visitorRepository.findDuplicateVisitor(organizationId, phone);
-    if (isDuplicate) {
-        const error = new Error('Visitor already exists with this phone number.');
-        error.status = 409;
-        throw error;
+    // ── Step 3: Identity Dedup (Phone, Email, or ID Proof) ──────────────────
+    let existingVisitor = null;
+    let isNewProfile = true;
+
+    if (confirmedVisitorId) {
+        existingVisitor = await visitorRepository.findVisitorById(confirmedVisitorId);
+        isNewProfile = false;
+        if (!existingVisitor) {
+            const error = new Error('The confirmed visitor profile no longer exists.');
+            error.status = 404;
+            throw error;
+        }
+    } else {
+        existingVisitor = await visitorRepository.findVisitorByIdentity(phone, email, idProofType, idProofNumber);
+        isNewProfile = !existingVisitor;
     }
 
-    // 4. Create Visitor Payload
-    const approvalTimeline = [{
-        action: VISITOR_APPROVAL_ACTIONS.CREATED,
-        performedBy: currentParent._id,
-        remarks: 'Visitor registered by Parent',
-    }];
+    // ── Step 3b: Reuse Confirmation Check ────────────────────────────────────
+    if (existingVisitor && !confirmedVisitorId) {
+        const maskedPhone = existingVisitor.phone ? '*'.repeat(Math.max(0, existingVisitor.phone.length - 4)) + existingVisitor.phone.slice(-4) : null;
+        const maskedIdProofNumber = existingVisitor.idProofNumber ? '*'.repeat(Math.max(0, existingVisitor.idProofNumber.length - 4)) + existingVisitor.idProofNumber.slice(-4) : null;
 
-    const visitorData = {
-        organizationId,
-        name,
-        relationship,
-        phone,
-        students: studentIds,
-        approvalStatus: VISITOR_STATUS.PENDING,
-        approvalTimeline
-    };
+        const confirmationToken = jwt.sign(
+            { visitorId: existingVisitor._id.toString() },
+            process.env.JWT_ACCESS_TOKEN || 'fallback_secret',
+            { expiresIn: '5m' }
+        );
 
-    if (email) visitorData.email = email;
-    if (address) visitorData.address = address;
-    if (idProofType) {
-        visitorData.idProofType = idProofType;
-        visitorData.idProofNumber = idProofNumber;
-    }
-
-    const newVisitor = await visitorRepository.createVisitor(visitorData);
-
-    // 5. Publish Notification Event
-    try {
-        const studentNames = students.map(s => s.name).join(', ');
-
-        await orchestratorService.triggerNotification({
-            eventName: 'VISITOR_CREATED',
-            target: [
-                {
-                    type: 'USER',
-                    filter: {
-                        hostelId: hostelId,
-                        organizationId: organizationId
-                    }
-                },
-                {
-                    type: 'MENTOR',
-                    filter: {
-                        studentIds: studentIds
-                    }
-                }
-            ],
-            data: {
-                parentName: currentParent.parentName,
-                visitorName: name,
-                studentNames: studentNames,
-                link: '/dashboard/visitors'
+        return {
+            requiresConfirmation: true,
+            visitor: {
+                name: existingVisitor.name,
+                phone: maskedPhone,
+                idProofType: existingVisitor.idProofType,
+                idProofNumber: maskedIdProofNumber
             },
-            sender: {
-                id: currentParent._id,
-                model: 'Parent',
-                snapshot: {
-                    name: currentParent.parentName,
-                    role: 'Parent'
+            confirmationToken
+        };
+    }
+
+    // ── Step 4: Guards on existing visitor ───────────────────────────────────
+    if (existingVisitor) {
+        // 4a. Reject if deactivated or blacklisted
+        if (existingVisitor.status !== VISITOR_PROFILE_STATUS.ACTIVE) {
+            const error = new Error(
+                'The visitor profile associated with this identity is not active. ' +
+                'Please contact the hostel administration.'
+            );
+            error.status = 403;
+            throw error;
+        }
+
+        // 4b. Block if a Pending or Approved VisitRequest already exists for ANY selected student
+        const blockingRequests = await visitorRepository.findBlockingVisitRequests(
+            existingVisitor._id.toString(),
+            studentIds
+        );
+        if (blockingRequests.length > 0) {
+            const blockingNames = blockingRequests.map(br => br.studentId?.name || 'Unknown Student').join(', ');
+            const error = new Error(
+                `Pending or Approved visit requests already exist for: ${blockingNames}. Please deselect them to proceed.`
+            );
+            error.status = 409;
+            throw error;
+        }
+
+        // 4c. Block if visitor is currently inside the hostel for ANY selected student
+        const activeVisits = await visitorRepository.findActiveVisitorVisits(
+            existingVisitor._id.toString(),
+            studentIds
+        );
+        if (activeVisits.length > 0) {
+            const error = new Error(
+                'This visitor is currently checked in to the hostel for one or more selected students.'
+            );
+            error.status = 409;
+            throw error;
+        }
+    }
+
+    // ── Step 5: Transactional create ──────────────────────────────────────────
+    let savedVisitor = existingVisitor || null;
+    let savedVisitRequests = [];
+
+    const session = await mongoose.startSession();
+
+    try {
+        await session.withTransaction(async () => {
+            // 5a. Create Visitor if none found
+            if (!savedVisitor) {
+                const visitorData = {
+                    name,
+                    phone,
+                    idProofType,
+                    idProofNumber,
+                    status: VISITOR_PROFILE_STATUS.ACTIVE,
+                    createdBy: currentParent._id,
+                    changeLog: [{
+                        action: VISITOR_CHANGE_LOG_ACTIONS.CREATED,
+                        performedBy: currentParent._id,
+                        performedByRole: 'parent',
+                        timestamp: new Date()
+                    }]
+                };
+                if (email) visitorData.email = email;
+                if (address) visitorData.address = address;
+
+                try {
+                    savedVisitor = await visitorRepository.createVisitorInSession(visitorData, session);
+                    isNewProfile = true;
+                } catch (dbError) {
+                    // Catch race condition on any unique index (phone, email, idProof)
+                    if (dbError.code === 11000) {
+                        throw dbError; // Abort transaction gracefully
+                    }
+                    throw dbError;
                 }
             }
+
+            // 5b. Create VisitRequests for ALL selected students
+            for (const sId of studentIds) {
+                const visitRequestData = {
+                    visitorId: savedVisitor._id,
+                    parentId: currentParent._id,
+                    studentId: sId,
+                    relationship, // Now belongs to VisitRequest
+                    purpose,
+                    status: VISITOR_STATUS.PENDING,
+                    remarks: remarks || undefined,
+                    approvalTimeline: [
+                        {
+                            action: VISITOR_APPROVAL_ACTIONS.CREATED,
+                            performedBy: currentParent._id,
+                            createdAt: new Date()
+                        }
+                    ]
+                };
+                const savedVr = await visitorRepository.createVisitRequest(visitRequestData, session);
+                savedVisitRequests.push(savedVr);
+            }
         });
-    } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISITOR_CREATED event:', notificationError);
+    } catch (transactionError) {
+        // ── Retry-on-conflict for concurrent identity inserts ─────────────────
+        if (transactionError.code === 11000) {
+            const racedVisitor = await visitorRepository.findVisitorByIdentity(phone, email, idProofType, idProofNumber);
+            if (!racedVisitor) throw transactionError;
+
+            if (!confirmedVisitorId) {
+                const maskedPhone = racedVisitor.phone ? '*'.repeat(Math.max(0, racedVisitor.phone.length - 4)) + racedVisitor.phone.slice(-4) : null;
+                const maskedIdProofNumber = racedVisitor.idProofNumber ? '*'.repeat(Math.max(0, racedVisitor.idProofNumber.length - 4)) + racedVisitor.idProofNumber.slice(-4) : null;
+
+                const confirmationToken = jwt.sign(
+                    { visitorId: racedVisitor._id.toString() },
+                    process.env.JWT_ACCESS_TOKEN || 'fallback_secret',
+                    { expiresIn: '5m' }
+                );
+
+                return {
+                    requiresConfirmation: true,
+                    visitor: {
+                        name: racedVisitor.name,
+                        phone: maskedPhone,
+                        idProofType: racedVisitor.idProofType,
+                        idProofNumber: maskedIdProofNumber
+                    },
+                    confirmationToken
+                };
+            }
+
+            if (racedVisitor.status !== VISITOR_PROFILE_STATUS.ACTIVE) {
+                const error = new Error('The visitor profile is not active. Please contact administration.');
+                error.status = 403;
+                throw error;
+            }
+
+            savedVisitor = racedVisitor;
+            isNewProfile = false;
+
+            // Loop outside transaction for the retry
+            for (const sId of studentIds) {
+                const savedVr = await visitorRepository.createVisitRequest({
+                    visitorId: savedVisitor._id,
+                    parentId: currentParent._id,
+                    studentId: sId,
+                    relationship,
+                    purpose,
+                    status: VISITOR_STATUS.PENDING,
+                    remarks: remarks || undefined,
+                    approvalTimeline: [
+                        {
+                            action: VISITOR_APPROVAL_ACTIONS.CREATED,
+                            performedBy: currentParent._id,
+                            createdAt: new Date()
+                        }
+                    ]
+                }, null);
+                savedVisitRequests.push(savedVr);
+            }
+        } else {
+            throw transactionError;
+        }
+    } finally {
+        await session.endSession();
     }
 
-    return newVisitor;
+    return {
+        visitor: savedVisitor,
+        visitRequests: savedVisitRequests,
+        students: students.map(s => ({
+            id: s._id,
+            name: s.name,
+            hostelId: s.hostelId,
+            organizationId: s.organizationId
+        })),
+        isNewProfile
+    };
 };
 
 /**

@@ -6,41 +6,53 @@ const isValidPhone = (phone) => /^\+?[\d\s-]{10,15}$/.test(phone);
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 export const validateCreateVisitor = (req, res, next) => {
+    // ── Forbidden fields: client must never send these ──────────────────────
+    const FORBIDDEN_BODY_FIELDS = ['studentId', 'students', 'hostelId', 'organizationId'];
+    const forbiddenPresent = FORBIDDEN_BODY_FIELDS.filter(f => req.body[f] !== undefined);
+    if (forbiddenPresent.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: `The following fields are not allowed in the request body: ${forbiddenPresent.join(', ')}. Please use 'studentIds' array.`
+        });
+    }
+
     const {
-        students,
+        studentIds,
         name,
         relationship,
         phone,
         email,
         address,
         idProofType,
-        idProofNumber
+        idProofNumber,
+        purpose,
+        remarks,
+        confirmReuse
     } = req.body;
 
-    // Validate students array
-    if (!Array.isArray(students) || students.length === 0) {
+    // ── Student Context ──────────────────────────────────────────────────────
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
         return res.status(400).json({
             success: false,
-            message: "students must be a non-empty array."
+            message: "studentIds must be a non-empty array of valid object IDs."
         });
     }
-
-    const uniqueStudentIds = new Set(students);
-    if (uniqueStudentIds.size !== students.length) {
+    if (studentIds.length > 5) {
         return res.status(400).json({
             success: false,
-            message: "students array contains duplicate entries."
+            message: "You can only select up to 5 students per visit request."
         });
     }
-
-    for (const id of students) {
+    for (const id of studentIds) {
         if (!isValidObjectId(id)) {
             return res.status(400).json({
                 success: false,
-                message: `Invalid studentId: ${id}`
+                message: `Invalid student ID in array: ${id}`
             });
         }
     }
+
+    // ── Visitor identity fields ──────────────────────────────────────────────
 
     // Validate name
     if (!name || typeof name !== 'string' || name.trim().length < 3) {
@@ -62,7 +74,7 @@ export const validateCreateVisitor = (req, res, next) => {
     if (!phone || !isValidPhone(phone)) {
         return res.status(400).json({
             success: false,
-            message: "A valid phone number is required."
+            message: "A valid phone number is required (10–15 digits)."
         });
     }
 
@@ -70,26 +82,62 @@ export const validateCreateVisitor = (req, res, next) => {
     if (email && !isValidEmail(email)) {
         return res.status(400).json({
             success: false,
-            message: "If provided, email must be valid."
+            message: "If provided, email must be a valid email address."
         });
     }
 
-    // Validate optional ID proof
-    if ((idProofType && !idProofNumber) || (!idProofType && idProofNumber)) {
+    // Validate idProofType — required
+    if (!idProofType || typeof idProofType !== 'string' || idProofType.trim().length === 0) {
         return res.status(400).json({
             success: false,
-            message: "Both idProofType and idProofNumber must be provided together."
+            message: "idProofType is required."
+        });
+    }
+    if (!ID_PROOF_TYPE_VALUES.includes(idProofType.trim())) {
+        return res.status(400).json({
+            success: false,
+            message: `Invalid idProofType. Allowed values: ${ID_PROOF_TYPE_VALUES.join(', ')}.`
         });
     }
 
-    // Attach sanitized body
+    // Validate idProofNumber — required
+    if (!idProofNumber || typeof idProofNumber !== 'string' || idProofNumber.trim().length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "idProofNumber is required."
+        });
+    }
+
+    // ── VisitRequest fields ──────────────────────────────────────────────────
+
+    // Validate purpose — required for VisitRequest
+    if (!purpose || typeof purpose !== 'string' || purpose.trim().length < 3 || purpose.trim().length > 255) {
+        return res.status(400).json({
+            success: false,
+            message: "purpose is required and must be between 3 and 255 characters."
+        });
+    }
+
+    // Validate optional remarks
+    if (remarks !== undefined && (typeof remarks !== 'string' || remarks.trim().length > 500)) {
+        return res.status(400).json({
+            success: false,
+            message: "remarks must be a string of at most 500 characters."
+        });
+    }
+
+    // ── Sanitize and attach clean values ────────────────────────────────────
+    req.body.studentIds = [...new Set(studentIds)]; // Deduplicate array
     req.body.name = name.trim();
     req.body.relationship = relationship.trim();
     req.body.phone = phone.trim();
+    req.body.idProofType = idProofType.trim();
+    req.body.idProofNumber = idProofNumber.trim();
+    req.body.purpose = purpose.trim();
     if (email) req.body.email = email.trim().toLowerCase();
     if (address) req.body.address = address.trim();
-    if (idProofType) req.body.idProofType = idProofType.trim();
-    if (idProofNumber) req.body.idProofNumber = idProofNumber.trim();
+    if (remarks) req.body.remarks = remarks.trim();
+    req.body.confirmReuse = confirmReuse === true || confirmReuse === 'true';
 
     next();
 };
@@ -366,7 +414,7 @@ export const validateUpdateVisitor = (req, res, next) => {
         });
     }
 
-    const allowedFields = ['name', 'relationship', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'];
+    const allowedFields = ['name', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'];
     const updateKeys = Object.keys(req.body);
 
     if (updateKeys.length === 0) {
@@ -384,14 +432,10 @@ export const validateUpdateVisitor = (req, res, next) => {
         });
     }
 
-    const { name, relationship, email, phone } = req.body;
+    const { name, email, phone } = req.body;
 
     if (name && (typeof name !== 'string' || name.trim().length < 3)) {
         return res.status(400).json({ success: false, message: "name must be at least 3 characters long." });
-    }
-
-    if (relationship && (typeof relationship !== 'string' || relationship.trim().length === 0)) {
-        return res.status(400).json({ success: false, message: "relationship cannot be empty." });
     }
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

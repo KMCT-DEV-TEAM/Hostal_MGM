@@ -1,21 +1,93 @@
 import Visitor from './visitor.model.js';
 import VisitorVisit from './visitorVisit.model.js';
+import VisitRequest from './visitRequest.model.js';
 import { VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
 import Parent from '../parents/parent.model.js';
 import User from '../users/user.model.js';
 
 /**
- * Checks if a visitor with the same phone exists in the organization
- * @param {String} organizationId 
- * @param {String} phone 
- * @returns {Promise<Object>} The visitor if found, else null
+ * Finds an existing Visitor matching ANY identity vector (Phone, Email, or ID Proof).
+ * If any of these match an existing record, the system treats it as the same person.
+ *
+ * @param {String} phone
+ * @param {String} email (optional)
+ * @param {String} idProofType 
+ * @param {String} idProofNumber 
+ * @returns {Promise<Object|null>} The existing Visitor if found, else null
  */
-export const findDuplicateVisitor = async (organizationId, phone) => {
-    return await Visitor.findOne({ organizationId, phone });
+export const findVisitorByIdentity = async (phone, email, idProofType, idProofNumber) => {
+    const orConditions = [
+        { phone },
+        { idProofType, idProofNumber }
+    ];
+    if (email) {
+        orConditions.push({ email });
+    }
+    return await Visitor.findOne({ $or: orConditions }).lean();
 };
 
 /**
- * Creates a new visitor profile
+ * Creates a new visitor profile inside a MongoDB session (for transaction safety).
+ * @param {Object} data 
+ * @param {import('mongoose').ClientSession} session 
+ * @returns {Promise<Object>}
+ */
+export const createVisitorInSession = async (data, session) => {
+    const visitor = new Visitor(data);
+    return await visitor.save({ session });
+};
+
+/**
+ * Finds existing VisitRequests that block new requests for the same visitor and students.
+ * Blocks on:
+ *   - 'Pending'  → awaiting approval
+ *   - 'Approved' → approved but not yet checked in at the gate
+ *
+ * @param {String} visitorId
+ * @param {Array<String>} studentIds
+ * @returns {Promise<Array>} Array of blocking requests (if any)
+ */
+export const findBlockingVisitRequests = async (visitorId, studentIds) => {
+    return await VisitRequest.find({
+        visitorId,
+        studentId: { $in: studentIds },
+        status: { $in: ['Pending', 'Approved'] }
+    }).populate('studentId', 'name').lean();
+};
+
+/**
+ * Finds active VisitorVisits (visitor currently inside the hostel)
+ * for a given visitor and students.
+ * Used to prevent creating a new request while the visitor is inside.
+ *
+ * @param {String} visitorId
+ * @param {Array<String>} studentIds
+ * @returns {Promise<Array>} Array of active visits
+ */
+export const findActiveVisitorVisits = async (visitorId, studentIds) => {
+    return await VisitorVisit.find({
+        'visitor.refId': visitorId,
+        'students.studentId': { $in: studentIds },
+        status: 'Checked In'
+    }).lean();
+};
+
+/**
+ * Creates a new VisitRequest, optionally inside a MongoDB session.
+ *
+ * @param {Object} data
+ * @param {import('mongoose').ClientSession|null} session
+ *   Pass the active session when creating inside a transaction.
+ *   Pass null when creating outside a transaction (e.g. race-condition retry path).
+ * @returns {Promise<Object>}
+ */
+export const createVisitRequest = async (data, session) => {
+    const visitRequest = new VisitRequest(data);
+    return await visitRequest.save(session ? { session } : {});
+};
+
+/**
+ * Creates a new visitor profile (no session — legacy, used outside transactions)
  * @param {Object} data 
  * @returns {Promise<Object>}
  */
@@ -23,6 +95,7 @@ export const createVisitor = async (data) => {
     const visitor = new Visitor(data);
     return await visitor.save();
 };
+
 
 /**
  * Fetches visitors with role-based filtering, pagination, and projection for tables.

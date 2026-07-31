@@ -35,6 +35,12 @@ parentVisitorRouter.post(
     visitorController.createVisitor
 );
 
+parentVisitorRouter.post(
+    '/confirm',
+    validateCreateVisitor,
+    visitorController.confirmVisitorReuse
+);
+
 parentVisitorRouter.get(
     '/',
     validateEndUserListVisitors,

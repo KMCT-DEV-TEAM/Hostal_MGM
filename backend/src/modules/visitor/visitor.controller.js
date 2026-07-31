@@ -1,7 +1,8 @@
+import jwt from 'jsonwebtoken';
 import * as visitorService from './visitor.service.js';
 
 /**
- * Parent Creates a Visitor Profile
+ * Parent Creates a Visitor Profile + Visit Requests for multiple students
  * @route POST /parent/visitors
  */
 export const createVisitor = async (req, res) => {
@@ -13,19 +14,34 @@ export const createVisitor = async (req, res) => {
             });
         }
 
-        const studentId = req.student?.id;
-        const newVisitor = await visitorService.createVisitorProfile(req.body, req.user, studentId);
+        req.body.confirmReuse = false; // Force false for the standard endpoint
+
+        const result = await visitorService.createVisitorProfile(req.body, req.user);
+
+        if (result.requiresConfirmation) {
+            return res.status(409).json({
+                success: false,
+                error: "VISITOR_EXISTS_REQUIRES_CONFIRMATION",
+                message: "An existing visitor profile was found matching the provided identity.",
+                visitor: result.visitor,
+                confirmationToken: result.confirmationToken
+            });
+        }
+
+        const message = result.isNewProfile
+            ? "Visitor registered successfully and visit requests submitted."
+            : "Existing visitor profile matched. Visit requests submitted successfully.";
 
         return res.status(201).json({
             success: true,
-            message: "Visitor registered successfully.",
-            data: newVisitor
+            message,
+            data: result
         });
 
     } catch (error) {
         const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
             ? "An internal server error occurred while registering the visitor."
             : error.message;
 
@@ -33,7 +49,62 @@ export const createVisitor = async (req, res) => {
 
         return res.status(statusCode).json({
             success: false,
-            message: message
+            message
+        });
+    }
+};
+
+/**
+ * Parent Confirms Reuse of a Visitor Profile + Visit Requests
+ * @route POST /parent/students/:studentId/visitors/confirm
+ */
+export const confirmVisitorReuse = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const { confirmationToken } = req.body;
+        if (!confirmationToken) {
+            return res.status(400).json({
+                success: false,
+                message: "Confirmation token is required."
+            });
+        }
+
+        try {
+            const decoded = jwt.verify(confirmationToken, process.env.JWT_ACCESS_TOKEN || 'fallback_secret');
+            req.body.confirmedVisitorId = decoded.visitorId;
+        } catch (tokenError) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid or expired confirmation token. Please resubmit the visitor request."
+            });
+        }
+
+        const result = await visitorService.createVisitorProfile(req.body, req.user);
+
+        return res.status(201).json({
+            success: true,
+            message: "Existing visitor profile matched. Visit requests submitted successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
+            ? "An internal server error occurred while confirming the visitor."
+            : error.message;
+
+        console.error('[VisitorController] confirmVisitorReuse error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message
         });
     }
 };
