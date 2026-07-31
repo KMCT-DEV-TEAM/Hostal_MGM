@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
-import jwt from 'jsonwebtoken';
-import { 
-    validateParentAndStudents, 
-    checkBlockingPolicies,
+import {
     createBrandNewVisitorProfile,
     confirmVisitorReuseProfile
 } from './visitor.helper.js';
@@ -17,31 +14,11 @@ import {
     VISITOR_APPROVAL_ACTIONS,
     VISITOR_VISIT_STATUS,
     VISITOR_VISIT_TIMELINE_ACTIONS,
-    VISITOR_PROFILE_STATUS,
-    VISITOR_CHANGE_LOG_ACTIONS
+
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
 import visitorVisitModel from './visitorVisit.model.js';
 
-/**
- * Parent creates a new visitor profile + VisitRequest (Phone/Email/ID Proof Dedup).
- *
- * Deduplication strategy:
- *   - Look up by ANY identity vector (Phone, Email, or ID Proof).
- *   - If found, REUSE the existing Visitor profile, ignoring the new
- *     data submitted by the parent (Silent Ignore approach).
- *   - If not found, CREATE a new Visitor profile.
- *
- * Race condition handling:
- *   When two concurrent requests submit the same Phone, Email, or ID Proof:
- *   - One insert wins and commits.
- *   - The other hits a MongoServerError 11000 (unique index violation).
- *   - The service catches code 11000, queries the newly inserted Visitor by
- *     any of those identity vectors, and falls back to the reuse flow.
- *
- * @param {Object} payload          - Sanitized body from validateCreateVisitor
- * @param {Object} user             - Authenticated parent from JWT (req.user)
- */
 
 
 /**
@@ -322,46 +299,115 @@ export const listVisitors = async (query, user) => {
  * @param {Object} query 
  * @param {Object} user (Authenticated Parent)
  */
-export const listParentVisitors = async (query, user, explicitStudentId = null) => {
-    let authorizedStudentIds = [];
+export const listParentVisitors = async (query, user) => {
+    const page = Math.max(parseInt(query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 50);
+    const skip = (page - 1) * limit;
 
-    // 1. Resolve Parent context
-    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
-    if (!studentParentLinks || studentParentLinks.length === 0) {
-        return { total: 0, page: Number(query.page || 1), limit: Number(query.limit || 10), totalPages: 0, data: [] };
+    const filters = {};
+    if (query.search) {
+        // Prevent ReDoS by safely escaping regex characters
+        const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        filters.search = escapeRegex(query.search.trim());
+    }
+    if (query.status) {
+        filters.status = query.status.trim();
+    }
+    if (query.sort) {
+        filters.sort = query.sort.trim();
     }
 
-    if (explicitStudentId) {
-        const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
-        if (!isAuthorized) {
-            const error = new Error('Unauthorized access to this student.');
-            error.status = 403;
-            throw error;
-        }
-        authorizedStudentIds = [explicitStudentId];
-    } else {
-        authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
-    }
-
-    if (authorizedStudentIds.length === 0) {
-        return {
-            total: 0,
-            page: Number(query.page || 1),
-            limit: Number(query.limit || 10),
-            totalPages: 0,
-            data: []
-        };
-    }
-
-    // 2. Build Query
-    const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
-    matchStage.students = { $in: authorizedStudentIds.map(id => new mongoose.Types.ObjectId(id)) };
-
-    // 3. Repository Call
-    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
+    const { data, total } = await visitorRepository.getParentVisitorsList(user.id, filters, skip, limit);
     const totalPages = Math.ceil(total / limit);
 
-    return { total, page, limit, totalPages, data };
+    return {
+        total,
+        page,
+        limit,
+        totalPages,
+        data
+    };
+};
+
+/**
+ * Gets isolated visitor details specifically for a Parent
+ * @param {String} visitorId 
+ * @param {Object} user 
+ */
+export const getParentVisitorDetails = async (visitorId, user) => {
+    // 1. Load the base Visitor profile
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 2. Fetch ONLY the VisitRequests linked to this specific parent
+    const visitRequests = await visitorRepository.getParentVisitRequests(visitorId, user.id);
+
+    // Security / Business Rule: If this parent has NO requests for this visitor, deny access completely.
+    if (!visitRequests || visitRequests.length === 0) {
+        const error = new Error('Unauthorized access to this visitor profile.');
+        error.status = 403;
+        throw error;
+    }
+
+    // 3. Mask sensitive data (ID Proof Number) since this is a shared profile
+    let maskedIdProofNumber = visitor.idProofNumber;
+    if (maskedIdProofNumber && maskedIdProofNumber.length > 4) {
+        maskedIdProofNumber = '*'.repeat(maskedIdProofNumber.length - 4) + maskedIdProofNumber.slice(-4);
+    } else if (maskedIdProofNumber) {
+        maskedIdProofNumber = '****';
+    }
+
+    // 4. Fetch the latest visit for this parent's requests (optional enrichment)
+    const parentStudentIds = visitRequests.map(vr => vr.studentId._id || vr.studentId);
+
+    const latestVisit = await visitorVisitModel.findOne({
+        'visitor.refId': visitorId,
+        'students.studentId': { $in: parentStudentIds }
+    })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    // 5. Format response
+    return {
+        visitorId: visitor._id,
+        name: visitor.name,
+        phone: visitor.phone,
+        email: visitor.email,
+        address: visitor.address,
+        idProofType: visitor.idProofType,
+        idProofNumber: maskedIdProofNumber,
+        status: visitor.status,
+        createdAt: visitor.createdAt,
+        updatedAt: visitor.updatedAt,
+        changeLog: visitor.changeLog,
+        // This is the parent's isolated view of VisitRequests
+        // Extract unique students linked to this visitor by this parent
+        linkedStudents: Object.values(
+            visitRequests.reduce((acc, vr) => {
+                if (vr.studentId && !acc[vr.studentId._id]) {
+                    acc[vr.studentId._id] = {
+                        id: vr.studentId._id,
+                        name: vr.studentId.name,
+                        roomNumber: vr.studentId.roomNumber,
+                        relationship: vr.relationship,
+                        purpose: vr.purpose
+                    };
+                }
+                return acc;
+            }, {})
+        ),
+
+        latestVisit: latestVisit ? {
+            visitId: latestVisit._id,
+            status: latestVisit.status,
+            checkInTime: latestVisit.checkInTime,
+            checkOutTime: latestVisit.checkOutTime
+        } : null
+    };
 };
 
 /**
@@ -1878,7 +1924,6 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
             phone: visitor.phone,
             email: visitor.email,
             address: visitor.address,
-            photoUrl: visitor.photoUrl,
             updatedAt: visitor.updatedAt
         };
     }
@@ -1957,7 +2002,6 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
         phone: updatedVisitor.phone,
         email: updatedVisitor.email,
         address: updatedVisitor.address,
-        photoUrl: updatedVisitor.photoUrl,
         updatedAt: updatedVisitor.updatedAt
     };
 };

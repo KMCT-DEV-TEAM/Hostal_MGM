@@ -41,10 +41,6 @@ const visitRequestSchema = new mongoose.Schema(
             ref: 'Student',
             required: true
         },
-
-        // relationship describes how this visitor relates to THIS specific student.
-        // It belongs here, not on the Visitor profile, because the same visitor
-        // (e.g. Rahim) can be Father to Student A and Uncle to Student B.
         relationship: {
             type: String,
             required: true,
@@ -76,7 +72,9 @@ const visitRequestSchema = new mongoose.Schema(
 visitRequestSchema.index({ visitorId: 1 });
 visitRequestSchema.index({ studentId: 1 });
 visitRequestSchema.index({ status: 1 });
-// Compound index — used by findBlockingVisitRequest in the create flow
 visitRequestSchema.index({ visitorId: 1, studentId: 1, status: 1 });
+
+visitRequestSchema.index({ parentId: 1, visitorId: 1 });
+visitRequestSchema.index({ visitorId: 1, parentId: 1 });
 
 export default mongoose.model('VisitRequest', visitRequestSchema);

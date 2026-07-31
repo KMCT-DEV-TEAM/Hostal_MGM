@@ -74,7 +74,7 @@ parentVisitorRouter.patch(
 parentVisitorRouter.get(
     '/:visitorId',
     validateGetVisitorDetails,
-    visitorController.getVisitorDetails
+    visitorController.getParentVisitorDetails
 );
 
 parentVisitorRouter.patch(

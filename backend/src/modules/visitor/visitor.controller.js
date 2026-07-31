@@ -1,4 +1,3 @@
-
 import * as visitorService from './visitor.service.js';
 
 /**
@@ -142,8 +141,7 @@ export const listParentVisitors = async (req, res) => {
             });
         }
 
-        const studentId = req.student?.id;
-        const result = await visitorService.listParentVisitors(req.query, req.user, studentId);
+        const result = await visitorService.listParentVisitors(req.query, req.user);
 
         return res.status(200).json({
             success: true,
@@ -156,6 +154,30 @@ export const listParentVisitors = async (req, res) => {
         return res.status(error.status || 500).json({
             success: false,
             message: error.message || "Failed to fetch visitors."
+        });
+    }
+};
+
+/**
+ * Gets Visitor Details for Parent
+ * @route GET /parent/visitors/:visitorId
+ */
+export const getParentVisitorDetails = async (req, res) => {
+    try {
+        const { visitorId } = req.params;
+        const result = await visitorService.getParentVisitorDetails(visitorId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor details fetched successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        console.error('[VisitorController] getParentVisitorDetails Error:', error);
+        return res.status(error.status || 500).json({
+            success: false,
+            message: error.message || "Failed to fetch visitor details."
         });
     }
 };
