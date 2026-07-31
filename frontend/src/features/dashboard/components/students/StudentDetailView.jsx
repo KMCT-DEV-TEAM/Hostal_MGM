@@ -23,6 +23,7 @@ import {
 import Button from "@/components/ui/Button";
 import DetailCard from "@/components/ui/DetailCard";
 import DetailRow from "@/components/ui/DetailRow";
+import Modal from "@/components/ui/Modal";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
@@ -33,7 +34,7 @@ import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { changeStudentEmail, getStudentFurnitures, getStudentById } from "@/services/student.service";
-import { changeParentEmail } from "@/services/parent.service";
+import { changeParentEmail, resolveParentConflict } from "@/services/parent.service";
 import { formatDateReadable, formatDateStandard } from "@/utils/formatters";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 import { getHostels } from "@/services/hostel.service";
@@ -84,6 +85,10 @@ const StudentDetailView = () => {
 
   const [isVacateConfirmOpen, setIsVacateConfirmOpen] = useState(false);
   const [isVacating, setIsVacating] = useState(false);
+
+  const [conflictData, setConflictData] = useState(null);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
 
   const handleModalCloseRequest = (closeAction) => {
     setPendingCloseAction(() => closeAction);
@@ -245,12 +250,67 @@ const StudentDetailView = () => {
   const { handleCreateParent } = useCreateParent((result, payload) => {
     const createdParent = normalizeParent(result?.data, payload);
     const studentId = createdParent.studentId ?? student._id ?? student.id;
-    onStudentChange?.(studentId, (current) => ({
-      ...current,
-      parents: [...(current.parents || []), createdParent],
-    }));
+    onStudentChange?.(studentId, (current) => {
+      const existingParents = current.parents || [];
+      const parentIdStr = String(createdParent._id);
+      
+      const isAlreadyLinked = existingParents.some(p => 
+        String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr
+      );
+
+      return {
+        ...current,
+        parents: isAlreadyLinked
+          ? existingParents.map(p => 
+              (String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr)
+                ? { ...p, ...createdParent }
+                : p
+            )
+          : [...existingParents, createdParent],
+      };
+    });
     setIsAddParentModalOpen(false);
   });
+
+  const handleResolveConflict = async (action) => {
+    setIsResolvingConflict(true);
+    try {
+      const result = await resolveParentConflict(role, {
+        ...conflictData.payload,
+        resolutionAction: action
+      });
+
+      const createdParent = normalizeParent(result?.data, conflictData.payload);
+      const sId = createdParent.studentId ?? student._id ?? student.id;
+      onStudentChange?.(sId, (current) => {
+        const existingParents = current.parents || [];
+        const parentIdStr = String(createdParent._id);
+        
+        const isAlreadyLinked = existingParents.some(p => 
+          String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr
+        );
+
+        return {
+          ...current,
+          parents: isAlreadyLinked
+            ? existingParents.map(p => 
+                (String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr)
+                  ? { ...p, ...createdParent }
+                  : p
+              )
+            : [...existingParents, createdParent],
+        };
+      });
+
+      showSuccessToast("Parent linked successfully");
+      setIsConflictModalOpen(false);
+      setConflictData(null);
+    } catch (error) {
+      showErrorToast(error?.response?.data?.message || "Failed to resolve conflict");
+    } finally {
+      setIsResolvingConflict(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -790,8 +850,109 @@ const StudentDetailView = () => {
         <ParentFormModal
           studentId={student._id}
           onClose={() => handleModalCloseRequest(() => setIsAddParentModalOpen(false))}
-          onSave={handleCreateParent}
+          onSave={async (payload) => {
+            try {
+              await handleCreateParent(payload);
+            } catch (err) {
+              const errorCode = err?.code || err?.response?.data?.code;
+              if (errorCode === 'PARENT_EXISTS_WITH_DIFFERENT_DATA') {
+                const conflictDataResponse = err?.data?.data || err?.response?.data?.data;
+
+                setConflictData({
+                  existing: conflictDataResponse.existing,
+                  submitted: conflictDataResponse.submitted,
+                  payload: payload
+                });
+                setIsConflictModalOpen(true);
+                setIsAddParentModalOpen(false);
+              }
+            }
+          }}
         />
+      )}
+
+      {isConflictModalOpen && conflictData && (
+        <Modal
+          isOpen
+          onClose={() => setIsConflictModalOpen(false)}
+          title={<span className="text-primary font-semibold text-lg">Existing Parent Account Found</span>}
+          subtitle={<span className="text-gray-500">This email is already registered with another parent account.</span>}
+          maxWidth="max-w-2xl"
+        >
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 text-sm text-gray-600 py-4 border-b border-gray-100">
+              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+              </div>
+              We'll link the student to the existing parent account.
+            </div>
+
+            <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm">
+              <h4 className="text-sm font-semibold text-primary mb-5">Parent Details</h4>
+              <div className="grid grid-cols-3 gap-6 pt-4 border-t border-gray-100">
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Name</p>
+                  <p className="text-sm font-medium text-gray-900">{conflictData.existing.name}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Address</p>
+                  <p className="text-sm text-gray-800 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    {conflictData.existing.email}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Phone Number</p>
+                  <p className="text-sm text-gray-800 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    +91 {conflictData.existing.phone}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm">
+              <h4 className="text-sm font-semibold text-primary mb-5">Linked Students ( {conflictData.existing.linkedStudents?.length || 0} )</h4>
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                {conflictData.existing.linkedStudents?.map((ls, idx) => (
+                  <div key={idx} className="flex items-center justify-between pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-medium tracking-wider">
+                        {ls.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">{ls.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-800 font-medium">{ls.course}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">{ls.academicYear}</p>
+                    </div>
+                  </div>
+                ))}
+                {(!conflictData.existing.linkedStudents || conflictData.existing.linkedStudents.length === 0) && (
+                  <p className="text-sm text-gray-500 italic">No linked students found.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-6">
+              <Button
+                variant="primary"
+                disabled={isResolvingConflict}
+                onClick={() => handleResolveConflict('update_existing')}
+              >
+                Continue With Updated Data
+              </Button>
+              <Button
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary/5"
+                disabled={isResolvingConflict}
+                onClick={() => handleResolveConflict('use_existing')}
+              >
+                Link with Existing Parent
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       <ChangeEmailModal

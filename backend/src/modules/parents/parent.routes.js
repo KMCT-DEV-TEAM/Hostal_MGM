@@ -4,7 +4,7 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 import { validateParentIdParam, validateUpdateParent, validateCreateParent } from "./parent.validation.js";
-import { createParent, updateParent, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin, getParentsByWarden, getParentsByMentor, exportParentsByAdmin, exportParentsBySuperAdmin, bulkUpdateParentStatus, changeParentEmail } from "./parent.controller.js";
+import { createParent, resolveParentConflict, updateParent, toggleParentStatus, setDefaultGuardian, getParentsByAdmin, getParentsBySuperAdmin, getParentsByWarden, getParentsByMentor, exportParentsByAdmin, exportParentsBySuperAdmin, bulkUpdateParentStatus, changeParentEmail } from "./parent.controller.js";
 
 const router = express.Router();
 
@@ -14,6 +14,14 @@ router.post(
   roleMiddleware("admin", "super_admin"),
   validateCreateParent,
   createParent
+);
+
+router.post(
+  "/resolve-conflict",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateCreateParent,
+  resolveParentConflict
 );
 
 router.patch(

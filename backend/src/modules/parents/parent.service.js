@@ -14,11 +14,13 @@ const createParentDb = async (data) => {
     parentName,
     relationship,
     phone,
-    email,
     address,
     isVerified = true,
     defaultGuardian = false,
+    resolutionAction,
   } = data;
+
+  const email = data.email ? data.email.toLowerCase().trim() : undefined;
 
   if (!mongoose.Types.ObjectId.isValid(studentId)) {
     throw new Error("Invalid studentId");
@@ -32,25 +34,56 @@ const createParentDb = async (data) => {
   const session = await mongoose.startSession();
   let parentRecord;
   let temporaryPassword = null;
-  
+
   try {
     session.startTransaction();
 
-    let existingParent = await Parent.findOne({
-      $or: [{ email }, { phone }]
-    }).session(session);
+    let existingParent = await Parent.findOne({ email }).session(session);
 
     if (existingParent) {
-      existingParent.parentName = parentName || existingParent.parentName;
-      existingParent.phone = phone || existingParent.phone;
-      existingParent.email = email || existingParent.email;
-      existingParent.address = address || existingParent.address;
-      await existingParent.save({ session });
+      if (!resolutionAction) {
+        const nameDiffers = existingParent.parentName !== parentName;
+        const phoneDiffers = existingParent.phone !== phone;
+
+        if (nameDiffers || phoneDiffers) {
+          const studentLinks = await StudentParent.find({ parentId: existingParent._id })
+            .populate({
+              path: 'studentId',
+              select: 'name course batch academicYear'
+            }).session(session);
+
+          const linkedStudents = studentLinks
+            .map(link => link.studentId)
+            .filter(Boolean);
+
+          const conflictError = new Error("Parent email already exists with different details");
+          conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
+          conflictError.statusCode = 409;
+          conflictError.conflictData = {
+            existing: {
+              name: existingParent.parentName,
+              phone: existingParent.phone,
+              email: existingParent.email,
+              linkedStudents: linkedStudents
+            },
+            submitted: { name: parentName, phone, email },
+          };
+          throw conflictError;
+        }
+      }
+
+      if (resolutionAction === 'update_existing' || (!resolutionAction && existingParent.parentName === parentName && existingParent.phone === phone)) {
+        if (parentName) existingParent.parentName = parentName;
+        if (phone) existingParent.phone = phone;
+        if (address) existingParent.address = address;
+        await existingParent.save({ session });
+      }
+
       parentRecord = existingParent;
     } else {
       temporaryPassword = generateRandomPassword();
       const hashedPassword = await hashPassword(temporaryPassword);
-      
+
       const created = await Parent.create([{
         parentName,
         phone,
@@ -89,7 +122,9 @@ const createParentDb = async (data) => {
         status: "active"
       }], { session });
     } else {
-      existingLink.relationship = relationship || existingLink.relationship;
+      if (resolutionAction !== 'use_existing') {
+        existingLink.relationship = relationship || existingLink.relationship;
+      }
       if (shouldDefaultGuardian) existingLink.defaultGuardian = true;
       existingLink.status = "active";
       await existingLink.save({ session });
@@ -136,12 +171,12 @@ const updateParentDb = async (parentProfileId, data) => {
   // Handle M:N relationship fields
   if (data.relationship !== undefined || data.defaultGuardian !== undefined) {
     const links = await StudentParent.find({ parentId: parentProfileId });
-    
+
     for (const link of links) {
       if (data.relationship !== undefined) {
         link.relationship = data.relationship;
       }
-      
+
       if (data.defaultGuardian === true) {
         // Remove default from others for this student
         await StudentParent.updateMany(
@@ -216,7 +251,7 @@ const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => {
       }
 
       link.defaultGuardian = false;
-      
+
       const existingGuardian = await StudentParent.findOne({
         studentId: link.studentId,
         parentId: { $ne: parentProfileId },
@@ -240,7 +275,7 @@ const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => {
 
   const responseObj = parentProfile.toObject();
   responseObj.defaultGuardian = defaultGuardian;
-  
+
   return { parentProfile: responseObj };
 };
 

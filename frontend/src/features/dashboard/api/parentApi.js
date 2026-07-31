@@ -6,6 +6,9 @@ const parentApi = {
   createParentByAdmin: (payload) =>
     api.post("/admin/parents", payload),
 
+  resolveParentConflictByAdmin: (payload) =>
+    api.post("/admin/parents/resolve-conflict", payload),
+
 
 
   updateParent: (id, payload) =>
@@ -54,6 +57,9 @@ const parentApi = {
 
   createParentBySuperAdmin: (payload) =>
     api.post("/super-admin/parents", payload),
+
+  resolveParentConflictBySuperAdmin: (payload) =>
+    api.post("/super-admin/parents/resolve-conflict", payload),
 
   setDefaultGuardianBySuperAdmin: (id) =>
     api.patch(`/super-admin/parents/${id}/default-guardian`, {

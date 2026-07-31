@@ -16,12 +16,6 @@ const createParent = asyncHandler(async (req, res) => {
     parentOtp,
   } = req.body;
 
-  const existingParent = await Parent.findOne({ email });
-
-  if (existingParent) {
-    return sendError(res, 400, "Parent email already exists");
-  }
-
   const isOtpValid = await verifyOtpDb(email, parentOtp);
 
   if (!isOtpValid) {
@@ -42,8 +36,13 @@ const createParent = asyncHandler(async (req, res) => {
       isVerified: true,
     });
   } catch (error) {
-    if (error.message === "Parent email already exists") {
-      return sendError(res, 400, error.message);
+    if (error.code === "PARENT_EXISTS_WITH_DIFFERENT_DATA") {
+      return res.status(409).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+        data: error.conflictData,
+      });
     }
 
     if (error.message === "Invalid studentId") {
@@ -402,8 +401,46 @@ const getParentsByMentor = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Parents fetched successfully", result);
 });
 
+const resolveParentConflict = asyncHandler(async (req, res) => {
+  const { resolutionAction, ...parentData } = req.body;
+
+  if (!resolutionAction) {
+    return sendError(res, 400, "Resolution action is required");
+  }
+
+  if (resolutionAction !== 'use_existing' && resolutionAction !== 'update_existing') {
+    return sendError(res, 400, "Invalid resolution action");
+  }
+
+  let result;
+  try {
+    result = await createParentDb({
+      ...parentData,
+      resolutionAction,
+      isVerified: true,
+    });
+  } catch (error) {
+    if (error.message === "Invalid studentId") {
+      return sendError(res, 400, "Invalid studentId");
+    }
+    throw error;
+  }
+
+  if (!result) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  return sendSuccess(
+    res,
+    201,
+    "Parent added successfully after conflict resolution",
+    result
+  );
+});
+
 export {
   createParent,
+  resolveParentConflict,
   updateParent,
   changeParentEmail,
   toggleParentStatus,

@@ -27,14 +27,18 @@ export function useCreateParent(onSuccess) {
 
       return result;
     } catch (err) {
+      const errorCode = err?.code || err?.response?.data?.code;
+
       const message =
-        err?.response?.data?.message ||
         err?.message ||
+        err?.response?.data?.message ||
         "Failed to create parent";
 
       setError(err);
 
-      showErrorToast(message);
+      if (errorCode !== "PARENT_EXISTS_WITH_DIFFERENT_DATA") {
+        showErrorToast(message);
+      }
 
       throw err;
     } finally {
