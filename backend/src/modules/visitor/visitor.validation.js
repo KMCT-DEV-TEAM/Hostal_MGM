@@ -142,6 +142,69 @@ export const validateCreateVisitor = (req, res, next) => {
     next();
 };
 
+export const validateConfirmVisitor = (req, res, next) => {
+    const {
+        studentIds,
+        relationship,
+        purpose,
+        remarks
+    } = req.body;
+
+    // ── Student Context ──────────────────────────────────────────────────────
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "studentIds must be a non-empty array of valid object IDs."
+        });
+    }
+    if (studentIds.length > 5) {
+        return res.status(400).json({
+            success: false,
+            message: "You can only select up to 5 students per visit request."
+        });
+    }
+    for (const id of studentIds) {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid student ID in array: ${id}`
+            });
+        }
+    }
+
+    // Validate relationship
+    if (!relationship || typeof relationship !== 'string' || relationship.trim().length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "relationship is required."
+        });
+    }
+
+    // Validate purpose — required for VisitRequest
+    if (!purpose || typeof purpose !== 'string' || purpose.trim().length < 3 || purpose.trim().length > 255) {
+        return res.status(400).json({
+            success: false,
+            message: "purpose is required and must be between 3 and 255 characters."
+        });
+    }
+
+    // Validate optional remarks
+    if (remarks !== undefined && (typeof remarks !== 'string' || remarks.trim().length > 500)) {
+        return res.status(400).json({
+            success: false,
+            message: "remarks must be a string of at most 500 characters."
+        });
+    }
+
+    // ── Sanitize and attach clean values ────────────────────────────────────
+    req.body.studentIds = [...new Set(studentIds)]; // Deduplicate array
+    req.body.relationship = relationship.trim();
+    req.body.purpose = purpose.trim();
+    if (remarks) req.body.remarks = remarks.trim();
+
+    next();
+};
+
 
 export const validateListVisitors = (req, res, next) => {
     let { page, limit, status, hostel, organization, sortBy, sortOrder } = req.query;

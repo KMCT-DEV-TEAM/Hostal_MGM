@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+
 import * as visitorService from './visitor.service.js';
 
 /**
@@ -21,10 +21,9 @@ export const createVisitor = async (req, res) => {
         if (result.requiresConfirmation) {
             return res.status(409).json({
                 success: false,
-                error: "VISITOR_EXISTS_REQUIRES_CONFIRMATION",
-                message: "An existing visitor profile was found matching the provided identity.",
-                visitor: result.visitor,
-                confirmationToken: result.confirmationToken
+                error: "VISITOR_EXISTS",
+                message: "A matching visitor already exists.",
+                visitor: result.visitor
             });
         }
 
@@ -56,7 +55,7 @@ export const createVisitor = async (req, res) => {
 
 /**
  * Parent Confirms Reuse of a Visitor Profile + Visit Requests
- * @route POST /parent/students/:studentId/visitors/confirm
+ * @route POST /parent/visitors/:visitorId/visit-requests
  */
 export const confirmVisitorReuse = async (req, res) => {
     try {
@@ -67,23 +66,15 @@ export const confirmVisitorReuse = async (req, res) => {
             });
         }
 
-        const { confirmationToken } = req.body;
-        if (!confirmationToken) {
+        const { visitorId } = req.params;
+        if (!visitorId) {
             return res.status(400).json({
                 success: false,
-                message: "Confirmation token is required."
+                message: "Visitor ID is required in the route."
             });
         }
 
-        try {
-            const decoded = jwt.verify(confirmationToken, process.env.JWT_ACCESS_TOKEN || 'fallback_secret');
-            req.body.confirmedVisitorId = decoded.visitorId;
-        } catch (tokenError) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid or expired confirmation token. Please resubmit the visitor request."
-            });
-        }
+        req.body.confirmedVisitorId = visitorId;
 
         const result = await visitorService.createVisitorProfile(req.body, req.user);
 

@@ -33,8 +33,8 @@ export const findVisitorByIdentity = async (phone, email, idProofType, idProofNu
  * @returns {Promise<Object>}
  */
 export const createVisitorInSession = async (data, session) => {
-    const visitor = new Visitor(data);
-    return await visitor.save({ session });
+    const [visitor] = await Visitor.create([data], { session });
+    return visitor;
 };
 
 /**
@@ -82,8 +82,12 @@ export const findActiveVisitorVisits = async (visitorId, studentIds) => {
  * @returns {Promise<Object>}
  */
 export const createVisitRequest = async (data, session) => {
+    if (session) {
+        const [visitRequest] = await VisitRequest.create([data], { session });
+        return visitRequest;
+    }
     const visitRequest = new VisitRequest(data);
-    return await visitRequest.save(session ? { session } : {});
+    return await visitRequest.save();
 };
 
 /**
