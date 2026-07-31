@@ -165,7 +165,7 @@ export const listParentVisitors = async (req, res) => {
 export const getParentVisitorDetails = async (req, res) => {
     try {
         const { visitorId } = req.params;
-        const result = await visitorService.getParentVisitorDetails(visitorId, req.user);
+        const result = await visitorService.getVisitorDetails(visitorId, req.user);
 
         return res.status(200).json({
             success: true,

@@ -18,6 +18,8 @@ import {
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
 import visitorVisitModel from './visitorVisit.model.js';
+import visitRequestModel from './visitRequest.model.js';
+import hostelModel from '../hostels/hostel.model.js';
 
 
 
@@ -180,118 +182,111 @@ const buildListingStages = (query) => {
     return { matchStage, sortStage, skip, limit: Number(limit), page: Number(page) };
 };
 
+// ============================================================================
+// Staff Visitor Listing Modules
+// ============================================================================
+
 /**
- * Lists visitors for Admin, Super Admin, and Warden
+ * 1. Authorization & Scope Resolution
+ */
+const resolveStaffListingScope = async (user, queryOrganization) => {
+    const studentMatch = {};
+    if (user.role === 'super_admin') {
+        if (queryOrganization) {
+            studentMatch['studentObj.organizationId'] = new mongoose.Types.ObjectId(queryOrganization);
+        }
+    } else if (user.role === 'admin') {
+        studentMatch['studentObj.organizationId'] = new mongoose.Types.ObjectId(user.organization);
+    } else if (user.role === 'warden') {
+        const Hostel = mongoose.model('Hostel');
+        const wardenHostels = await Hostel.find({ wardens: user.id }, '_id').lean();
+        if (!wardenHostels || wardenHostels.length === 0) {
+            throw Object.assign(new Error('Unauthorized: You are not assigned to any hostel.'), { status: 403 });
+        }
+        studentMatch['studentObj.hostelId'] = { $in: wardenHostels.map(h => h._id) };
+    } else if (user.role === 'mentor') {
+        const MentorAssignment = mongoose.model('MentorAssignment');
+        const activeAssignments = await MentorAssignment.find({ mentorId: user.id || user._id, status: "active" }, "batchId").lean();
+        const batchIds = activeAssignments.map(a => a.batchId);
+        if (batchIds.length === 0) {
+            throw Object.assign(new Error('EMPTY_SCOPE'), { status: 200 });
+        }
+        studentMatch['studentObj.batchId'] = { $in: batchIds };
+    } else {
+        throw Object.assign(new Error('Unauthorized role to list visitors.'), { status: 403 });
+    }
+    return studentMatch;
+};
+
+/**
+ * 2. Filter Construction
+ */
+const buildListingFilters = (query, studentMatch) => {
+    const initialMatch = {};
+
+    if (query.hostel) studentMatch['studentObj.hostelId'] = new mongoose.Types.ObjectId(query.hostel);
+    if (query.batch) studentMatch['studentObj.batchId'] = new mongoose.Types.ObjectId(query.batch);
+    if (query.department) studentMatch['studentObj.departmentId'] = new mongoose.Types.ObjectId(query.department);
+    if (query.course) studentMatch['studentObj.courseId'] = new mongoose.Types.ObjectId(query.course);
+
+    if (query.status) {
+        initialMatch.status = query.status.trim();
+    }
+
+    if (query.date) {
+        const startDate = new Date(query.date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(query.date);
+        endDate.setHours(23, 59, 59, 999);
+        initialMatch.createdAt = { $gte: startDate, $lte: endDate };
+    } else if (query.startDate && query.endDate) {
+        initialMatch.createdAt = {
+            $gte: new Date(query.startDate),
+            $lte: new Date(query.endDate)
+        };
+    }
+
+    const sortOptions = {};
+    if (query.search) {
+        const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        sortOptions.search = escapeRegex(query.search.trim());
+    }
+    if (query.sort) sortOptions.sort = query.sort.trim();
+
+    return { initialMatch, sortOptions };
+};
+
+/**
+ * 3. Orchestration: Lists visitors for Admin, Super Admin, Warden, and Mentor
  * @param {Object} query 
  * @param {Object} user 
  */
 export const listVisitors = async (query, user) => {
-    const { hostel, organization, date } = query;
-    const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
+    const page = Math.max(parseInt(query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 50);
+    const skip = (page - 1) * limit;
 
+    try {
+        const studentMatch = await resolveStaffListingScope(user, query.organization);
+        const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch);
 
-    // 1. Role-Based Filters
-    let targetHostelId = null;
-    if (user.role === 'super_admin') {
-        if (organization) matchStage.organizationId = new mongoose.Types.ObjectId(organization);
-        if (hostel) targetHostelId = hostel;
-    } else if (user.role === 'admin') {
-        matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
-        if (hostel) targetHostelId = hostel;
-    } else if (user.role === 'warden') {
-        const Hostel = mongoose.model('Hostel');
-        const wardenHostels = await Hostel.find({ wardens: user.id }, '_id');
-        if (!wardenHostels || wardenHostels.length === 0) {
-            const error = new Error('Unauthorized: You are not assigned to any hostel.');
-            error.status = 403;
-            throw error;
-        }
+        const { data, total } = await visitorRepository.getSharedVisitorsList(
+            initialMatch,
+            studentMatch,
+            sortOptions,
+            skip,
+            limit
+        );
 
-        const wardenHostelIds = wardenHostels.map(h => h._id);
+        const totalPages = Math.ceil(total / limit);
+        return { total, page, limit, totalPages, data };
 
-        if (hostel) {
-            const requestedHostelObjId = new mongoose.Types.ObjectId(hostel);
-            if (!wardenHostelIds.some(id => id.equals(requestedHostelObjId))) {
-                const error = new Error('Unauthorized: You do not manage the requested hostel.');
-                error.status = 403;
-                throw error;
-            }
-            targetHostelId = requestedHostelObjId; // Defer to general hostel logic
-        } else {
-            // Show visitors for all students in all managed hostels
-            const studentsInHostels = await Student.find({ hostelId: { $in: wardenHostelIds } }, '_id').lean();
-            const studentIds = studentsInHostels.map(s => s._id);
-            if (studentIds.length === 0) {
-                return { total: 0, page, limit, totalPages: 0, data: [] };
-            }
-            matchStage.students = { $in: studentIds };
+    } catch (error) {
+        if (error.message === 'EMPTY_SCOPE') {
+            return { total: 0, page, limit, totalPages: 0, data: [] };
         }
-    } else if (user.role === 'mentor') {
-        const activeAssignments = await MentorAssignment.find({
-            mentorId: user.id || user._id,
-            status: "active"
-        }, "batchId").lean();
-        const batchIds = activeAssignments.map(a => a.batchId);
-        if (batchIds.length === 0) {
-            return {
-                total: 0,
-                page,
-                limit,
-                totalPages: 0,
-                data: []
-            };
-        }
-        let studentQuery = { batchId: { $in: batchIds } };
-        if (hostel) {
-            studentQuery.hostelId = hostel;
-        }
-        const studentsInBatches = await Student.find(studentQuery, "_id").lean();
-        const studentIds = studentsInBatches.map(s => s._id);
-        if (studentIds.length === 0) {
-            return {
-                total: 0,
-                page,
-                limit,
-                totalPages: 0,
-                data: []
-            };
-        }
-        matchStage.students = { $in: studentIds };
-    } else {
-        const error = new Error('Unauthorized role to list visitors.');
-        error.status = 403;
         throw error;
     }
-
-    // 2. Hostel Filtering logic
-    if (targetHostelId) {
-        const studentsInHostel = await Student.find({ hostelId: targetHostelId }, '_id').lean();
-        const studentIds = studentsInHostel.map(s => s._id);
-        if (studentIds.length === 0) {
-            return {
-                total: 0,
-                page,
-                limit,
-                totalPages: 0,
-                data: []
-            };
-        }
-        matchStage.students = { $in: studentIds };
-    }
-
-    if (date) {
-        const startDate = new Date(date);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(date);
-        endDate.setHours(23, 59, 59, 999);
-        matchStage.createdAt = { $gte: startDate, $lte: endDate };
-    }
-
-    // 3. Repository Call
-    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
-    const totalPages = Math.ceil(total / limit);
-
-    return { total, page, limit, totalPages, data };
 };
 
 /**
@@ -329,86 +324,7 @@ export const listParentVisitors = async (query, user) => {
     };
 };
 
-/**
- * Gets isolated visitor details specifically for a Parent
- * @param {String} visitorId 
- * @param {Object} user 
- */
-export const getParentVisitorDetails = async (visitorId, user) => {
-    // 1. Load the base Visitor profile
-    const visitor = await visitorRepository.findVisitorById(visitorId);
-    if (!visitor) {
-        const error = new Error('Visitor not found.');
-        error.status = 404;
-        throw error;
-    }
 
-    // 2. Fetch ONLY the VisitRequests linked to this specific parent
-    const visitRequests = await visitorRepository.getParentVisitRequests(visitorId, user.id);
-
-    // Security / Business Rule: If this parent has NO requests for this visitor, deny access completely.
-    if (!visitRequests || visitRequests.length === 0) {
-        const error = new Error('Unauthorized access to this visitor profile.');
-        error.status = 403;
-        throw error;
-    }
-
-    // 3. Mask sensitive data (ID Proof Number) since this is a shared profile
-    let maskedIdProofNumber = visitor.idProofNumber;
-    if (maskedIdProofNumber && maskedIdProofNumber.length > 4) {
-        maskedIdProofNumber = '*'.repeat(maskedIdProofNumber.length - 4) + maskedIdProofNumber.slice(-4);
-    } else if (maskedIdProofNumber) {
-        maskedIdProofNumber = '****';
-    }
-
-    // 4. Fetch the latest visit for this parent's requests (optional enrichment)
-    const parentStudentIds = visitRequests.map(vr => vr.studentId._id || vr.studentId);
-
-    const latestVisit = await visitorVisitModel.findOne({
-        'visitor.refId': visitorId,
-        'students.studentId': { $in: parentStudentIds }
-    })
-        .sort({ createdAt: -1 })
-        .lean();
-
-    // 5. Format response
-    return {
-        visitorId: visitor._id,
-        name: visitor.name,
-        phone: visitor.phone,
-        email: visitor.email,
-        address: visitor.address,
-        idProofType: visitor.idProofType,
-        idProofNumber: maskedIdProofNumber,
-        status: visitor.status,
-        createdAt: visitor.createdAt,
-        updatedAt: visitor.updatedAt,
-        changeLog: visitor.changeLog,
-        // This is the parent's isolated view of VisitRequests
-        // Extract unique students linked to this visitor by this parent
-        linkedStudents: Object.values(
-            visitRequests.reduce((acc, vr) => {
-                if (vr.studentId && !acc[vr.studentId._id]) {
-                    acc[vr.studentId._id] = {
-                        id: vr.studentId._id,
-                        name: vr.studentId.name,
-                        roomNumber: vr.studentId.roomNumber,
-                        relationship: vr.relationship,
-                        purpose: vr.purpose
-                    };
-                }
-                return acc;
-            }, {})
-        ),
-
-        latestVisit: latestVisit ? {
-            visitId: latestVisit._id,
-            status: latestVisit.status,
-            checkInTime: latestVisit.checkInTime,
-            checkOutTime: latestVisit.checkOutTime
-        } : null
-    };
-};
 
 /**
  * Lists visitors specifically for the authenticated Student
@@ -433,178 +349,121 @@ export const listStudentVisitors = async (query, user) => {
  * @param {Object} user 
  */
 export const getVisitorDetails = async (visitorId, user, explicitStudentId = null) => {
-    const visitor = await visitorRepository.getVisitorDetails(visitorId);
-
+    // 1. Load the base Visitor profile
+    const visitor = await visitorRepository.findVisitorById(visitorId);
     if (!visitor) {
-        const error = new Error('Visitor not found.');
-        error.status = 404;
-        throw error;
+        throw Object.assign(new Error('Visitor not found.'), { status: 404 });
     }
 
-    // 1. Role-Based Authorization & Visibility Filtering
-    const visitorStudentIds = visitor.students.map(s => s._id.toString());
-    let visibleStudentIds = [...visitorStudentIds]; // Default all students visible
+    // 2. Fetch all VisitRequests for this visitor
+    const visitRequests = await visitRequestModel.find({ visitorId })
+        .populate('studentId', 'name roomNumber hostelId batchId organizationId')
+        .lean();
 
-    if (user.role === 'admin') {
-        if (visitor.organizationId._id.toString() !== user.organization.toString()) {
-            throw Object.assign(new Error('Unauthorized: Organization mismatch.'), { status: 403 });
-        }
-    } else if (user.role === 'warden') {
-        const Hostel = mongoose.model('Hostel');
-        // Warden can manage multiple hostels
-        const wardenHostels = await Hostel.find({ wardens: user.id }, '_id');
-        if (!wardenHostels || wardenHostels.length === 0) {
-            throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
-        }
-        const wardenHostelIds = wardenHostels.map(h => h._id.toString());
+    if (!visitRequests || visitRequests.length === 0) {
+        throw Object.assign(new Error('Visitor has no active visit requests.'), { status: 404 });
+    }
 
-        // Filter visible students to only those in the warden's hostels
-        visibleStudentIds = visitor.students.filter(s => {
-            const shId = s.hostelId ? (s.hostelId._id || s.hostelId).toString() : null;
-            return wardenHostelIds.includes(shId);
-        }).map(s => s._id.toString());
+    // 3. Resolve Authorization Bounds
+    let wardenHostelIds = [];
+    let mentorBatchIds = [];
+    let studentParentLinkIds = [];
 
-        if (visibleStudentIds.length === 0) {
-            throw Object.assign(new Error('Unauthorized: Hostel mismatch.'), { status: 403 });
-        }
-    } else if (user.role === 'student') {
-        if (!visitorStudentIds.includes(user.id)) {
-            throw Object.assign(new Error('Unauthorized: Visitor not assigned to this student.'), { status: 403 });
-        }
-        visibleStudentIds = [user.id]; // Only see themselves
-    } else if (user.role === 'parent' || user.explicitStudentId) {
-        let authorizedStudentIds = [];
-        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
-
-        if (explicitStudentId) {
-            const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
-            if (!isAuthorized) {
-                throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
-            }
-            authorizedStudentIds = [explicitStudentId];
-        } else {
-            authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
-        }
-
-        // Filter visible students to only the parent's authorized children
-        visibleStudentIds = authorizedStudentIds.filter(id => visitorStudentIds.includes(id));
-        if (visibleStudentIds.length === 0) {
-            throw Object.assign(new Error('Unauthorized: Visitor not linked to your students.'), { status: 403 });
-        }
+    if (user.role === 'warden') {
+        const wardenHostels = await HostelModel.find({ wardens: user.id }, '_id').lean();
+        if (!wardenHostels.length) throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
+        wardenHostelIds = wardenHostels.map(h => h._id.toString());
     } else if (user.role === 'mentor') {
-        const activeAssignments = await MentorAssignment.find({
-            mentorId: user.id || user._id,
-            status: "active"
-        }, "batchId").lean();
-        const batchIds = activeAssignments.map(a => a.batchId);
-
-        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
-        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
-
-        // Filter visible students to only the mentor's students
-        visibleStudentIds = mentorStudentIds.filter(id => visitorStudentIds.includes(id));
-        if (visibleStudentIds.length === 0) {
-            throw Object.assign(new Error('Unauthorized: Visitor not linked to your assigned batches.'), { status: 403 });
+        const activeAssignments = await MentorAssignment.find({ mentorId: user.id || user._id, status: "active" }, "batchId").lean();
+        if (!activeAssignments.length) throw Object.assign(new Error('Unauthorized: Not assigned to any batch.'), { status: 403 });
+        mentorBatchIds = activeAssignments.map(a => a.batchId.toString());
+    } else if (user.role === 'parent' || user.explicitStudentId) {
+        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' }).lean();
+        studentParentLinkIds = studentParentLinks.map(link => link.studentId.toString());
+        if (explicitStudentId && !studentParentLinkIds.includes(explicitStudentId)) {
+            throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
         }
     }
 
-    // 2. Field-Level Security (ID Proof Masking)
-    let maskedIdProofNumber = visitor.idProofNumber;
-    if (visitor.idProofNumber) {
-        const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
+    // 4. Filter VisitRequests based on role
+    const authorizedVisitRequests = visitRequests.filter(vr => {
+        const student = vr.studentId;
+        if (!student) return false;
 
-        let isCreator = false;
-        if (user.role === 'parent' && visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
-            // Find creation event
-            const creationEvent = visitor.approvalTimeline.find(t => t.action === VISITOR_APPROVAL_ACTIONS.CREATED);
-            if (creationEvent && creationEvent.performedBy && creationEvent.performedBy._id.toString() === user.id) {
-                isCreator = true;
-            }
+        if (user.role === 'super_admin') return true;
+        if (user.role === 'admin') return student.organizationId?.toString() === user.organization?.toString();
+        if (user.role === 'warden') return wardenHostelIds.includes(student.hostelId?.toString());
+        if (user.role === 'mentor') return mentorBatchIds.includes(student.batchId?.toString());
+        if (user.role === 'student') return student._id.toString() === user.id;
+        if (user.role === 'parent') {
+            if (explicitStudentId) return student._id.toString() === explicitStudentId;
+            return studentParentLinkIds.includes(student._id.toString());
         }
 
-        if (!isSuperAdminOrAdmin && !isCreator) {
-            // Mask all but last 4 characters
-            const num = visitor.idProofNumber;
-            if (num.length > 4) {
-                maskedIdProofNumber = '*'.repeat(num.length - 4) + num.slice(-4);
-            } else {
-                maskedIdProofNumber = '****'; // Fallback for very short numbers
-            }
-        }
-    }
-
-    // 3. Process Timeline & DTO Transformation
-    let approvedBy = null;
-    let approvedAt = null;
-    let rejectedBy = null;
-    let rejectedAt = null;
-    let rejectionReason = null;
-
-    // Sort timeline newest first
-    const sortedTimeline = (visitor.approvalTimeline || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    const formattedTimeline = sortedTimeline.map(t => {
-        if (t.action === VISITOR_APPROVAL_ACTIONS.APPROVED) {
-            approvedBy = t.performedBy ? { id: t.performedBy._id, name: t.performedBy.name } : null;
-            approvedAt = t.createdAt;
-        } else if (t.action === VISITOR_APPROVAL_ACTIONS.REJECTED) {
-            rejectedBy = t.performedBy ? { id: t.performedBy._id, name: t.performedBy.name } : null;
-            rejectedAt = t.createdAt;
-            rejectionReason = t.remarks;
-        }
-
-        return {
-            action: t.action,
-            performedBy: t.performedBy ? t.performedBy.name : 'System',
-            role: t.performedBy ? t.performedBy.role : 'System',
-            remarks: t.remarks,
-            createdAt: t.createdAt
-        };
+        return false;
     });
 
-    const visitorOrganizationId = visitor.organizationId ? (visitor.organizationId._id || visitor.organizationId).toString() : null;
-    const visitorOrganizationName = visitor.organizationId && visitor.organizationId.name ? visitor.organizationId.name : null;
+    if (authorizedVisitRequests.length === 0) {
+        throw Object.assign(new Error('Unauthorized access to this visitor profile.'), { status: 403 });
+    }
 
-    const formattedStudents = visitor.students
-        .filter(s => visibleStudentIds.includes(s._id.toString()))
-        .map(s => {
-            const sHostelId = s.hostelId ? (s.hostelId._id || s.hostelId).toString() : null;
-            const sHostelName = s.hostelId && s.hostelId.name ? s.hostelId.name : null;
+    // 5. Mask sensitive data
+    let maskedIdProofNumber = visitor.idProofNumber;
+    if (maskedIdProofNumber) {
+        const isSuperAdminOrAdmin = ['super_admin', 'admin'].includes(user.role);
+        if (!isSuperAdminOrAdmin) {
+            if (maskedIdProofNumber.length > 4) {
+                maskedIdProofNumber = '*'.repeat(maskedIdProofNumber.length - 4) + maskedIdProofNumber.slice(-4);
+            } else {
+                maskedIdProofNumber = '****';
+            }
+        }
+    }
 
-            const sOrgId = s.organizationId ? (s.organizationId._id || s.organizationId).toString() : visitorOrganizationId;
-            const sOrgName = s.organizationId && s.organizationId.name ? s.organizationId.name : visitorOrganizationName;
+    // 6. Fetch the latest visit for this staff's authorized requests
+    const authorizedStudentIds = authorizedVisitRequests.map(vr => vr.studentId._id || vr.studentId);
+    const latestVisit = await visitorVisitModel.findOne({
+        'visitor.refId': visitorId,
+        'students.studentId': { $in: authorizedStudentIds }
+    }).sort({ createdAt: -1 }).lean();
 
-            return {
-                id: s._id,
-                name: s.name,
-                roomNumber: s.roomNumber,
-                hostelDetails: {
-                    hostelId: sHostelId,
-                    hostelName: sHostelName
-                },
-
-            };
-        });
-
+    // 7. Format response (Identical to Parent API)
     return {
         visitorId: visitor._id,
-        visitorName: visitor.name,
+        name: visitor.name,
         phone: visitor.phone,
         email: visitor.email,
-        relationship: visitor.relationship,
         address: visitor.address,
         idProofType: visitor.idProofType,
         idProofNumber: maskedIdProofNumber,
-        students: formattedStudents,
-        status: visitor.approvalStatus,
-        approvedBy,
-        approvedAt,
-        rejectedBy,
-        rejectedAt,
-        rejectionReason,
+        status: visitor.status,
         createdAt: visitor.createdAt,
         updatedAt: visitor.updatedAt,
-        timeline: formattedTimeline
+        changeLog: visitor.changeLog,
+
+        linkedStudents: Object.values(
+            authorizedVisitRequests.reduce((acc, vr) => {
+                if (vr.studentId && !acc[vr.studentId._id]) {
+                    acc[vr.studentId._id] = {
+                        id: vr.studentId._id,
+                        name: vr.studentId.name,
+                        roomNumber: vr.studentId.roomNumber,
+                        sHostelName: vr.studentId.hostelId.name,
+                        relationship: vr.relationship,
+                        purpose: vr.purpose,
+                        requestStatus: vr.status
+                    };
+                }
+                return acc;
+            }, {})
+        ),
+
+        latestVisit: latestVisit ? {
+            visitId: latestVisit._id,
+            status: latestVisit.status,
+            checkInTime: latestVisit.checkInTime,
+            checkOutTime: latestVisit.checkOutTime
+        } : null
     };
 };
 
@@ -852,8 +711,7 @@ export const getDashboardSummary = async (user) => {
             context.organizationId = new mongoose.Types.ObjectId(user.organization);
             break;
         case 'warden':
-            const HostelModel = mongoose.model('Hostel');
-            const wardenHostelDoc = await HostelModel.findOne({ wardens: user.id }, '_id');
+            const wardenHostelDoc = await hostelModel.findOne({ wardens: user.id }, '_id');
             if (!wardenHostelDoc) throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
             context.hostelId = wardenHostelDoc._id;
             break;
