@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createVisitorProfile, updateVisitorProfile, getVisitorDetails, getVisitorDetailsParent } from '@/services/visitor.service';
+import { createVisitorProfile, updateVisitorProfile, getVisitorDetails, getVisitorDetailsParent, reuseVisitorProfile } from '@/services/visitor.service';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -41,6 +41,10 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     const [pendingPayload, setPendingPayload] = useState(null);
     const [isApiLoading, setIsApiLoading] = useState(false);
     const [selectedStudentIds, setSelectedStudentIds] = useState([]);
+    
+    // For handling 409 conflict (reusing existing visitor)
+    const [existingVisitor, setExistingVisitor] = useState(null);
+    const [isReuseConfirmOpen, setIsReuseConfirmOpen] = useState(false);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting, isDirty }, reset } = useForm({
         resolver: zodResolver(registerSchema),
@@ -107,7 +111,9 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         email: '',
                         address: '',
                         idProofType: ID_PROOF_TYPES.AADHAAR,
-                        idProofNumber: ''
+                        idProofNumber: '',
+                        purpose: '',
+                        remarks: ''
                     });
                 }
             }
@@ -143,6 +149,12 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
         }
     };
 
+    const extractStudentId = (student) => {
+        if (!student) return null;
+        if (typeof student === 'object') return student._id || student.id;
+        return student;
+    };
+
     const executeSubmit = async () => {
         const data = pendingPayload;
         setIsApiLoading(true);
@@ -168,7 +180,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             } else {
                 payload = {
                     ...data,
-                    students: user?.role === 'parent' ? selectedStudentIds : [extractStudentId(user.studentId)]
+                    studentIds: user?.role === 'parent' ? selectedStudentIds : [extractStudentId(user.studentId)]
                 };
                 if (user?.role === 'parent') payload.studentId = activeStudentId;
             }
@@ -177,20 +189,66 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                 const visitorId = initialData.visitorId || initialData._id || initialData.id;
                 await updateVisitorProfile(visitorId, payload);
                 showSuccessToast("Visitor updated successfully!");
+                setIsEditConfirmOpen(false);
+                setPendingPayload(null);
+                reset();
+                onSuccess();
+                onClose();
             } else {
                 await createVisitorProfile(payload);
                 showSuccessToast("Visitor registered successfully!");
+                setIsCreateConfirmOpen(false);
+                setPendingPayload(null);
+                reset();
+                onSuccess();
+                onClose();
             }
 
-            setIsCreateConfirmOpen(false);
-            setIsEditConfirmOpen(false);
+        } catch (error) {
+            console.error(`Failed to ${isEditMode ? 'update' : 'register'} visitor`, error);
+            
+            // The Axios interceptor throws an ApiError with .status and .data
+            const status = error?.status || error?.response?.status;
+            const errorData = error?.data || error?.response?.data;
+
+            if (!isEditMode && status === 409 && errorData?.error === 'VISITOR_EXISTS') {
+                setIsCreateConfirmOpen(false);
+                setExistingVisitor(errorData.visitor);
+                setIsReuseConfirmOpen(true);
+            } else {
+                showErrorToast(errorData?.message || error.message || `Failed to ${isEditMode ? 'update' : 'register'} visitor`);
+            }
+        } finally {
+            setIsApiLoading(false);
+        }
+    };
+
+    const executeReuseSubmit = async () => {
+        setIsApiLoading(true);
+        try {
+            const data = pendingPayload;
+            const payload = {
+                studentIds: user?.role === 'parent' ? selectedStudentIds : [extractStudentId(user.studentId)],
+                studentId: activeStudentId,
+                visitorId: existingVisitor.id || existingVisitor._id,
+                relationship: data.relationship,
+                purpose: data.purpose,
+                remarks: data.remarks
+            };
+
+            await reuseVisitorProfile(payload);
+            showSuccessToast("Visit requests successfully submitted for existing visitor.");
+            
+            setIsReuseConfirmOpen(false);
+            setExistingVisitor(null);
             setPendingPayload(null);
             reset();
             onSuccess();
             onClose();
         } catch (error) {
-            console.error(`Failed to ${isEditMode ? 'update' : 'register'} visitor`, error);
-            showErrorToast(error.message || `Failed to ${isEditMode ? 'update' : 'register'} visitor`);
+            console.error("Failed to reuse visitor profile", error);
+            const errorData = error?.data || error?.response?.data;
+            showErrorToast(errorData?.message || error.message || "Failed to reuse visitor profile");
         } finally {
             setIsApiLoading(false);
         }
@@ -285,6 +343,19 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         error={errors.idProofNumber?.message}
                     />
                 </div>
+                
+                <Input
+                    label="Purpose of Visit"
+                    {...register('purpose')}
+                    placeholder="Monthly visit"
+                    error={errors.purpose?.message}
+                />
+                <Input
+                    label="Remarks (Optional)"
+                    {...register('remarks')}
+                    placeholder="Bringing food"
+                    error={errors.remarks?.message}
+                />
 
                 {/* Sibling Selection Section */}
                 {!isEditMode && user?.role === 'parent' && user?.students?.length > 1 && (
@@ -349,6 +420,42 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             cancelText="Continue Editing"
             confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
         />
+        
+        {existingVisitor && (
+            <ConfirmationModal
+                isOpen={isReuseConfirmOpen}
+                onClose={() => {
+                    setIsReuseConfirmOpen(false);
+                    setExistingVisitor(null);
+                }}
+                onConfirm={executeReuseSubmit}
+                title="Existing Visitor Found"
+                message={
+                    <div className="flex flex-col gap-2 mt-2">
+                        <p className="text-sm text-text-secondary">
+                            A visitor with this identity already exists in the system. Would you like to link this visit request to the existing profile?
+                        </p>
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mt-2 flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-text-secondary font-medium">Name</span>
+                                <span className="text-sm font-semibold text-text-primary">{existingVisitor.name}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-text-secondary font-medium">Phone</span>
+                                <span className="text-sm font-medium text-text-primary">{existingVisitor.phone}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-text-secondary font-medium">ID Proof</span>
+                                <span className="text-sm font-medium text-text-primary">{existingVisitor.idProofType} ({existingVisitor.idProofNumber})</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                confirmText="Yes, use this visitor"
+                cancelText="Cancel"
+                isSubmitting={isApiLoading}
+            />
+        )}
         </>
     );
 };

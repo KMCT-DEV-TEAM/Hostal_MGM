@@ -9,6 +9,12 @@ export async function createVisitorProfile(payload) {
     return response.data;
 }
 
+export async function reuseVisitorProfile(payload) {
+    const { studentId, visitorId, ...restPayload } = payload;
+    const response = await visitorApi.reuseVisitorProfileV2(studentId, visitorId, restPayload);
+    return response.data;
+}
+
 export async function updateVisitorProfile(visitorId, payload) {
     const { studentId, ...restPayload } = payload;
     const response = await visitorApi.updateVisitorProfileV2(studentId, visitorId, restPayload);
