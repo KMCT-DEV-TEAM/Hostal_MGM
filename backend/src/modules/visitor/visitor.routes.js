@@ -3,6 +3,7 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import {
     validateCreateVisitor,
+    validateConfirmVisitor,
     validateListVisitors,
     validateEndUserListVisitors,
     validateGetVisitorDetails,
@@ -24,15 +25,23 @@ const router = express.Router();
 export const parentVisitorRouter = express.Router({ mergeParams: true });
 
 // Apply verification for all parent routes
-parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'), verifyStudentAccess);
+// NOTE: verifyStudentAccess is removed from the global middleware here because 
+// create and confirm endpoints now take an array of studentIds and do their own validation.
+parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'));
 
 // ---------------------------------------------------------
-// Parent End-User Routes (Mounted at /api/parent/students/:studentId/visitors)
+// Parent End-User Routes (Mounted at /api/parent/visitors)
 // ---------------------------------------------------------
 parentVisitorRouter.post(
     '/',
     validateCreateVisitor,
     visitorController.createVisitor
+);
+
+parentVisitorRouter.post(
+    '/:visitorId/visit-requests',
+    validateConfirmVisitor,
+    visitorController.confirmVisitorReuse
 );
 
 parentVisitorRouter.get(
@@ -65,7 +74,7 @@ parentVisitorRouter.patch(
 parentVisitorRouter.get(
     '/:visitorId',
     validateGetVisitorDetails,
-    visitorController.getVisitorDetails
+    visitorController.getParentVisitorDetails
 );
 
 parentVisitorRouter.patch(

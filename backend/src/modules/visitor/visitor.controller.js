@@ -1,7 +1,7 @@
 import * as visitorService from './visitor.service.js';
 
 /**
- * Parent Creates a Visitor Profile
+ * Parent Creates a Visitor Profile + Visit Requests for multiple students
  * @route POST /parent/visitors
  */
 export const createVisitor = async (req, res) => {
@@ -13,19 +13,33 @@ export const createVisitor = async (req, res) => {
             });
         }
 
-        const studentId = req.student?.id;
-        const newVisitor = await visitorService.createVisitorProfile(req.body, req.user, studentId);
+        req.body.confirmReuse = false; // Force false for the standard endpoint
+
+        const result = await visitorService.createVisitorProfile(req.body, req.user);
+
+        if (result.requiresConfirmation) {
+            return res.status(409).json({
+                success: false,
+                error: "VISITOR_EXISTS",
+                message: "A matching visitor already exists.",
+                visitor: result.visitor
+            });
+        }
+
+        const message = result.isNewProfile
+            ? "Visitor registered successfully and visit requests submitted."
+            : "Existing visitor profile matched. Visit requests submitted successfully.";
 
         return res.status(201).json({
             success: true,
-            message: "Visitor registered successfully.",
-            data: newVisitor
+            message,
+            data: result
         });
 
     } catch (error) {
         const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
             ? "An internal server error occurred while registering the visitor."
             : error.message;
 
@@ -33,7 +47,54 @@ export const createVisitor = async (req, res) => {
 
         return res.status(statusCode).json({
             success: false,
-            message: message
+            message
+        });
+    }
+};
+
+/**
+ * Parent Confirms Reuse of a Visitor Profile + Visit Requests
+ * @route POST /parent/visitors/:visitorId/visit-requests
+ */
+export const confirmVisitorReuse = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const { visitorId } = req.params;
+        if (!visitorId) {
+            return res.status(400).json({
+                success: false,
+                message: "Visitor ID is required in the route."
+            });
+        }
+
+        req.body.confirmedVisitorId = visitorId;
+
+        const result = await visitorService.createVisitorProfile(req.body, req.user);
+
+        return res.status(201).json({
+            success: true,
+            message: "Existing visitor profile matched. Visit requests submitted successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
+            ? "An internal server error occurred while confirming the visitor."
+            : error.message;
+
+        console.error('[VisitorController] confirmVisitorReuse error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message
         });
     }
 };
@@ -80,8 +141,7 @@ export const listParentVisitors = async (req, res) => {
             });
         }
 
-        const studentId = req.student?.id;
-        const result = await visitorService.listParentVisitors(req.query, req.user, studentId);
+        const result = await visitorService.listParentVisitors(req.query, req.user);
 
         return res.status(200).json({
             success: true,
@@ -94,6 +154,30 @@ export const listParentVisitors = async (req, res) => {
         return res.status(error.status || 500).json({
             success: false,
             message: error.message || "Failed to fetch visitors."
+        });
+    }
+};
+
+/**
+ * Gets Visitor Details for Parent
+ * @route GET /parent/visitors/:visitorId
+ */
+export const getParentVisitorDetails = async (req, res) => {
+    try {
+        const { visitorId } = req.params;
+        const result = await visitorService.getParentVisitorDetails(visitorId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor details fetched successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        console.error('[VisitorController] getParentVisitorDetails Error:', error);
+        return res.status(error.status || 500).json({
+            success: false,
+            message: error.message || "Failed to fetch visitor details."
         });
     }
 };

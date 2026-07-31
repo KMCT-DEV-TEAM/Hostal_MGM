@@ -40,9 +40,34 @@ export const ID_PROOF_TYPES = {
     OTHER: 'Other'
 };
 
-// Extracted value arrays for Mongoose enums
-export const VISITOR_STATUS_VALUES = Object.values(VISITOR_STATUS);
-export const VISITOR_APPROVAL_ACTION_VALUES = Object.values(VISITOR_APPROVAL_ACTIONS);
-export const VISITOR_VISIT_STATUS_VALUES = Object.values(VISITOR_VISIT_STATUS);
-export const VISITOR_VISIT_TIMELINE_ACTION_VALUES = Object.values(VISITOR_VISIT_TIMELINE_ACTIONS);
-export const ID_PROOF_TYPE_VALUES = Object.values(ID_PROOF_TYPES);
+// ── Visitor Profile Status ─────────────────────────────────────────────────────
+// Replaces the legacy `isActive: Boolean` field.
+// Four states cover every lifecycle scenario without over-engineering.
+export const VISITOR_PROFILE_STATUS = {
+    ACTIVE:      'Active',       // Normal; can receive new VisitRequests
+    INACTIVE:    'Inactive',     // Temporarily blocked; Admin can reactivate
+    BLACKLISTED: 'Blacklisted',  // Permanent security block; Super Admin only to lift
+    DELETED:     'Deleted'       // Soft deleted; hidden from all listings; history preserved
+};
+
+// ── Visitor Change Log Actions ─────────────────────────────────────────────────
+// Audit trail entries recorded on Visitor.changeLog for every profile mutation.
+export const VISITOR_CHANGE_LOG_ACTIONS = {
+    CREATED:         'Created',
+    UPDATED:         'Updated',
+    DEACTIVATED:     'Deactivated',
+    REACTIVATED:     'Reactivated',
+    BLACKLISTED:     'Blacklisted',
+    BLACKLIST_LIFTED: 'Blacklist Lifted',
+    SOFT_DELETED:    'Soft Deleted',
+    RESTORED:        'Restored'
+};
+
+export const VISITOR_STATUS_VALUES                  = Object.values(VISITOR_STATUS);
+export const VISITOR_APPROVAL_ACTION_VALUES         = Object.values(VISITOR_APPROVAL_ACTIONS);
+export const VISITOR_VISIT_STATUS_VALUES            = Object.values(VISITOR_VISIT_STATUS);
+export const VISITOR_VISIT_TIMELINE_ACTION_VALUES   = Object.values(VISITOR_VISIT_TIMELINE_ACTIONS);
+export const ID_PROOF_TYPE_VALUES                   = Object.values(ID_PROOF_TYPES);
+export const VISITOR_PROFILE_STATUS_VALUES          = Object.values(VISITOR_PROFILE_STATUS);
+export const VISITOR_CHANGE_LOG_ACTION_VALUES       = Object.values(VISITOR_CHANGE_LOG_ACTIONS);
+
