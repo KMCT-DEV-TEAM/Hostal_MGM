@@ -246,6 +246,10 @@ export default function Students() {
       refetch();
     } catch (err) {
       console.error(err);
+      const errorCode = err?.response?.data?.code || err?.data?.code;
+      if (errorCode === 'PARENT_EXISTS_WITH_DIFFERENT_DATA') {
+        throw err;
+      }
       const message =
         err?.response?.data?.message ||
         err?.data?.message ||

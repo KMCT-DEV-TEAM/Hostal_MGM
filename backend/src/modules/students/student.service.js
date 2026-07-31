@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import Hostel from "../hostels/hostel.model.js";
 import { syncHostelOrganizations } from "../hostels/hostel.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import { checkParentConflict } from "../parents/parent.service.js";
 
 const generateRandomPassword = () => {
   return crypto.randomBytes(4).toString("hex"); // generates an 8-character string
@@ -40,6 +41,7 @@ const createStudentWithParentDb = async (
     parentPhone,
     parentEmail,
     relationship,
+    resolutionAction,
   } = data;
 
   const studentTemporaryPassword = generateRandomPassword();
@@ -77,11 +79,20 @@ const createStudentWithParentDb = async (
   }).session(session);
 
   if (existingParent) {
-    // Update existing parent if needed (we can skip updating password to not override their existing one)
-    existingParent.parentName = parentName || existingParent.parentName;
-    existingParent.email = parentEmail || existingParent.email;
-    existingParent.phone = parentPhone || existingParent.phone;
-    await existingParent.save({ session });
+    if (!resolutionAction) {
+      await checkParentConflict(existingParent, { parentName, phone: parentPhone, session });
+    }
+
+    const nameDiffers = existingParent.parentName !== parentName;
+    const phoneDiffers = existingParent.phone !== parentPhone;
+
+    if (resolutionAction === 'update_existing' || (!resolutionAction && !nameDiffers && !phoneDiffers)) {
+      // update existing parent
+      existingParent.parentName = parentName || existingParent.parentName;
+      existingParent.email = parentEmail || existingParent.email;
+      existingParent.phone = parentPhone || existingParent.phone;
+      await existingParent.save({ session });
+    }
     parentRecord = existingParent;
   } else {
     // Create new parent

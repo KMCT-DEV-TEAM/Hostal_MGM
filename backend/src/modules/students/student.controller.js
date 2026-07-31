@@ -105,13 +105,14 @@ const createStudent = asyncHandler(async (req, res) => {
       );
     }
 
-    await deleteOtpDb(email);
-    await deleteOtpDb(parentEmail);
-
     const result = await createStudentWithParentDb(
       { ...req.body, isVerified: true },
       session
     );
+
+    // Delete OTPs only after successful creation, so they remain valid if a conflict is thrown
+    await deleteOtpDb(email);
+    await deleteOtpDb(parentEmail);
 
     await session.commitTransaction();
 
@@ -123,6 +124,14 @@ const createStudent = asyncHandler(async (req, res) => {
     );
   } catch (error) {
     await session.abortTransaction();
+    if (error.code === 'PARENT_EXISTS_WITH_DIFFERENT_DATA') {
+      return res.status(error.statusCode).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+        data: error.conflictData
+      });
+    }
     throw error;
   } finally {
     session.endSession();
