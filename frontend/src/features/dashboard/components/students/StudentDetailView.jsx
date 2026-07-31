@@ -248,7 +248,8 @@ const StudentDetailView = () => {
   };
 
   const { handleCreateParent } = useCreateParent((result, payload) => {
-    const createdParent = normalizeParent(result?.data, payload);
+    const parentData = result?.parent || result?.data || result;
+    const createdParent = normalizeParent(parentData, payload);
     const studentId = createdParent.studentId ?? student._id ?? student.id;
     onStudentChange?.(studentId, (current) => {
       const existingParents = current.parents || [];
@@ -280,7 +281,8 @@ const StudentDetailView = () => {
         resolutionAction: action
       });
 
-      const createdParent = normalizeParent(result?.data, conflictData.payload);
+      const parentData = result?.parent || result?.data || result;
+      const createdParent = normalizeParent(parentData, conflictData.payload);
       const sId = createdParent.studentId ?? student._id ?? student.id;
       onStudentChange?.(sId, (current) => {
         const existingParents = current.parents || [];
