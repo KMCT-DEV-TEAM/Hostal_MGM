@@ -23,19 +23,25 @@ export const useNotificationStore = create((set, get) => ({
     page: 1,
     hasMore: true,
     isInitialized: false,
+    currentStudentId: null,
+    currentFilter: 'all',
 
-    initialize: () => {
-        if (!get().isInitialized) {
-            set({ isInitialized: true });
-            get().fetchInitial();
+    initialize: (studentId = null, filter = 'all') => {
+        if (!get().isInitialized || get().currentStudentId !== studentId || get().currentFilter !== filter) {
+            set({ isInitialized: true, currentStudentId: studentId, currentFilter: filter });
+            get().fetchInitial(20, studentId, filter);
             get().setupSocket();
         }
     },
 
-    fetchInitial: async (limit = 20) => {
+    fetchInitial: async (limit = 20, studentId = null, filter = 'all') => {
         try {
             set({ loading: true });
-            const res = await notificationApi.getMyNotifications({ limit, page: 1 });
+            const params = { limit, page: 1 };
+            if (studentId) params.studentId = studentId;
+            if (filter === 'read') params.isRead = true;
+            if (filter === 'unread') params.isRead = false;
+            const res = await notificationApi.getMyNotifications(params);
             const fetched = res?.data?.data?.notifications || [];
 
             const formatted = fetched.map(formatNotification);
@@ -54,13 +60,17 @@ export const useNotificationStore = create((set, get) => ({
     },
 
     fetchNextPage: async (limit = 20) => {
-        const { page, hasMore, fetchingMore } = get();
+        const { page, hasMore, fetchingMore, currentStudentId, currentFilter } = get();
         if (!hasMore || fetchingMore) return;
 
         try {
             set({ fetchingMore: true });
             const nextPage = page + 1;
-            const res = await notificationApi.getMyNotifications({ limit, page: nextPage });
+            const params = { limit, page: nextPage };
+            if (currentStudentId) params.studentId = currentStudentId;
+            if (currentFilter === 'read') params.isRead = true;
+            if (currentFilter === 'unread') params.isRead = false;
+            const res = await notificationApi.getMyNotifications(params);
             const fetched = res?.data?.data?.notifications || [];
 
             const formatted = fetched.map(formatNotification);

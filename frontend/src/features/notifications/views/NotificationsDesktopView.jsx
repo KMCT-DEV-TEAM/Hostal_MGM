@@ -1,31 +1,89 @@
 import React from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import NotificationItem from '../components/NotificationItem';
-import { Loader2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
+import { Loader2, CheckCheck, Bell } from 'lucide-react';
 
 const NotificationsDesktopView = ({
     notifications,
     loading,
     markAsRead,
+    markAllAsRead,
     hasMore,
     fetchingMore,
-    bottomRef
+    bottomRef,
+    isParent,
+    students,
+    selectedStudentId,
+    setSelectedStudentId,
+    filter,
+    setFilter
 }) => {
+    const hasUnread = notifications.some(n => !n.isRead);
+
+    const studentOptions = [
+        { label: 'All Students', value: '' },
+        ...(students || []).map(s => ({ label: s.name, value: s._id }))
+    ];
+
     return (
         <div className="w-full h-full p-4 md:p-6 bg-background-secondary overflow-y-auto">
-            {/* Page Title */}
-            <div className="mb-6">
-                <PageHeader
-                    title="Notifications"
-                    subtitle="View and manage notifications"
-                />
+            {/* Header Area */}
+            <div className="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                        <Bell className="w-4 h-4 text-[#0A437A]" />
+                    </div>
+                    <h1 className="text-xl font-semibold text-[#0A437A]">Notifications</h1>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center p-1 bg-white border border-gray-200 rounded-full">
+                        <button 
+                            onClick={() => setFilter('all')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${filter === 'all' ? 'bg-[#0A437A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            All
+                        </button>
+                        <button 
+                            onClick={() => setFilter('read')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${filter === 'read' ? 'bg-[#0A437A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Read
+                        </button>
+                        <button 
+                            onClick={() => setFilter('unread')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${filter === 'unread' ? 'bg-[#0A437A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Unread
+                        </button>
+                    </div>
+
+                    {isParent && students?.length > 0 && (
+                        <Dropdown
+                            options={studentOptions}
+                            value={selectedStudentId}
+                            onChange={setSelectedStudentId}
+                            placeholder="All Students"
+                            triggerClassName="px-4 py-1.5 text-sm bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 min-w-[140px]"
+                        />
+                    )}
+
+                    <button 
+                        onClick={markAllAsRead} 
+                        disabled={!hasUnread}
+                        className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${hasUnread ? 'text-[#0A437A] hover:bg-blue-50' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
+                    >
+                        <CheckCheck className="w-4 h-4" />
+                        Mark all as read
+                    </button>
+                </div>
             </div>
 
             {/* Main Content Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 relative">
-                <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    {/* <X className="w-4 h-4" /> */}
-                </button>
+                {/* Drop the dummy absolute button */}
 
                 {/* Notifications List */}
                 <div className="p-6">
