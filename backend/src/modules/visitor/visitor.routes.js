@@ -20,14 +20,14 @@ import {
     validateRejectVisitRequest,
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
-
+import * as vistHistoryController from './history/visitorHistory.controller.js';
 import verifyStudentAccess from '../../middlewares/verifyStudentAccess.middleware.js';
 
 const router = express.Router();
 export const parentVisitorRouter = express.Router({ mergeParams: true });
 
 // Apply verification for all parent routes
-parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'));
+parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'), verifyStudentAccess);
 
 // ---------------------------------------------------------
 // Parent End-User Routes (Mounted at /api/parent/visitors)
@@ -56,7 +56,7 @@ parentVisitorRouter.get(
 parentVisitorRouter.get(
     '/visits',
     validateListVisits,
-    visitorController.listVisitorVisits
+    vistHistoryController.listVisitorVisits
 );
 
 parentVisitorRouter.get(
@@ -101,7 +101,7 @@ router.get(
     authMiddleware,
     roleMiddleware('super_admin'),
     validateSuperAdminHostelVisits,
-    visitorController.getSuperAdminHostelVisits
+    vistHistoryController.getSuperAdminHostelVisits
 );
 
 router.get(
@@ -117,7 +117,7 @@ router.get(
     authMiddleware,
     roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
     validateListVisits,
-    visitorController.listVisitorVisits
+    vistHistoryController.listVisitorVisits
 );
 
 router.get(
