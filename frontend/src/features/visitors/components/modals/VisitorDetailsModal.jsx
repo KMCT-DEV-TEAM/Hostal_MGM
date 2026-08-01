@@ -11,6 +11,7 @@ import CheckInModal from './CheckInModal';
 import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 import StatusBadge from '@/components/ui/StatusBadge';
+import LinkedStudentCard from '../LinkedStudentCard';
 import TimelineStep from '@/components/ui/TimelineStep';
 import { User, Phone, Mail, FileText, CreditCard, Users, MapPin, Building, Calendar, Info, Clock, History } from 'lucide-react';
 import { formatDateTimeReadable } from '@/utils/formatters';
@@ -186,7 +187,7 @@ export default function VisitorDetailsModal({
                         title="Visitor Information"
                         subtitle="Basic personal details"
                         headerAction={
-                            visitor.status === 'Approved' && user?.role === ROLES.WARDEN && (
+                            visitor.status === 'Active' && user?.role === ROLES.WARDEN && (
                                 <Button
                                     size="sm"
                                     fullWidth={false}
@@ -201,6 +202,34 @@ export default function VisitorDetailsModal({
                         <DetailRow icon={<Phone size={16} />} label="Phone" value={visitor.phone} />
                         {visitor.email && <DetailRow icon={<Mail size={16} />} label="Email" value={visitor.email} />}
                         {visitor.address && <DetailRow icon={<MapPin size={16} />} label="Address" value={visitor.address} />}
+                    </DetailCard>
+
+                    {linkedStudents.length > 0 && (
+                        <DetailCard title="Linked Students" subtitle="Students associated with this visitor">
+                            <div className="flex flex-col gap-3 mt-2">
+                                {linkedStudents.map((student, idx) => (
+                                    <LinkedStudentCard
+                                        key={idx}
+                                        student={student}
+                                        visitor={visitor}
+                                        userRole={user?.role}
+                                        onApprove={setApprovingRequestId}
+                                        onReject={setRejectingRequestId}
+                                    />
+                                ))}
+                            </div>
+                        </DetailCard>
+                    )}
+                </div>
+
+                {/* Right Column */}
+                <div className="flex flex-col gap-4">
+                    <DetailCard title="Quick Summary" subtitle="View the quick details">
+                        <DetailRow icon={<User size={16} />} label="Full Name" value={visitorName} />
+                        <DetailRow icon={<Phone size={16} />} label="Phone" value={visitor.phone} />
+                        <DetailRow icon={<FileText size={16} />} label="ID Type" value={visitor.idProofType} />
+                        <DetailRow icon={<Info size={16} />} label="Status" value={<StatusBadge status={visitor.status} />} />
+                        <DetailRow icon={<Calendar size={16} />} label="Registered" value={formatDateTimeReadable(visitor.createdAt)} />
                     </DetailCard>
 
                     <DetailCard title="Identity Details" subtitle="Provided ID proofs">
@@ -252,73 +281,6 @@ export default function VisitorDetailsModal({
                                         />
                                     );
                                 })}
-                            </div>
-                        </DetailCard>
-                    )}
-                </div>
-
-                {/* Right Column */}
-                <div className="flex flex-col gap-4">
-                    <DetailCard title="Quick Summary" subtitle="View the quick details">
-                        <DetailRow icon={<User size={16} />} label="Full Name" value={visitorName} />
-                        <DetailRow icon={<Phone size={16} />} label="Phone" value={visitor.phone} />
-                        <DetailRow icon={<FileText size={16} />} label="ID Type" value={visitor.idProofType} />
-                        <DetailRow icon={<Info size={16} />} label="Status" value={<StatusBadge status={visitor.status} />} />
-                        <DetailRow icon={<Calendar size={16} />} label="Registered" value={formatDateTimeReadable(visitor.createdAt)} />
-                    </DetailCard>
-
-                    {linkedStudents.length > 0 && (
-                        <DetailCard title="Linked Students" subtitle="Students associated with this visitor">
-                            <div className="flex flex-col gap-3 mt-2">
-                                {linkedStudents.map((student, idx) => (
-                                    <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
-                                                    {student.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-semibold text-gray-800">{student.name}</p>
-                                                    <p className="text-xs text-gray-500">{student.relationship || visitor.relationship}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {student.requestStatus && (
-                                                    <StatusBadge status={student.requestStatus} />
-                                                )}
-                                                <div className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 shrink-0">
-                                                    Room {student.roomNumber || 'N/A'}
-                                                </div>
-                                                {[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MENTOR].includes(user?.role) && student.requestStatus?.toLowerCase() === 'pending' && (
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="xs"
-                                                            fullWidth={false}
-                                                            className="border-danger! text-danger! hover:bg-danger! hover:text-white! ml-2 text-[10px] px-2 py-1 h-auto"
-                                                            onClick={() => setRejectingRequestId(student._id || student.id)}
-                                                        >
-                                                            Reject
-                                                        </Button>
-                                                        <Button
-                                                            size="xs"
-                                                            fullWidth={false}
-                                                            className="!bg-primary! hover:!bg-primary! hover:!text-white! text-[10px] px-2 py-1 h-auto"
-                                                            onClick={() => setApprovingRequestId(student._id || student.id)}
-                                                        >
-                                                            Approve
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {student.purpose && (
-                                            <div className="mt-1 text-xs text-gray-600 bg-white p-2 rounded border border-gray-100">
-                                                <span className="font-medium text-gray-700">Purpose: </span>{student.purpose}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
                             </div>
                         </DetailCard>
                     )}
