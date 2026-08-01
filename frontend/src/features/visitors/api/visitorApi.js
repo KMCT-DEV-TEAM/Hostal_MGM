@@ -32,7 +32,8 @@ export const visitorApi = {
     getAggregatedVisitors: (params) => api.get(BASE_URL, { params }),
 
     // Visit Management
-    checkInVisitor: (payload) => api.post(`${BASE_URL}/warden/visits/check-in`, payload),
+    checkInVisitor: (payload) => api.post(`${BASE_URL}/check-in`, payload),
+    addStudentsToVisit: (visitId, payload) => api.patch(`${BASE_URL}/warden/visits/${visitId}/students`, payload),
     getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
     getSuperAdminHostelVisitors: (params) => api.get(`${BASE_URL}/super-admin/visitors/hostels`, { params }),
     listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),

@@ -35,6 +35,8 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
     const [isApiLoading, setIsApiLoading] = useState(false);
+    const [isConflictConfirmOpen, setIsConflictConfirmOpen] = useState(false);
+    const [conflictVisitId, setConflictVisitId] = useState(null);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: zodResolver(checkInSchema),
@@ -51,7 +53,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
 
             const studentsList = prefilledVisitor.linkedStudents || prefilledVisitor.students;
             if (studentsList && studentsList.length > 0) {
-                const studentIds = studentsList.map(s => s.id || s._id);
+                const studentIds = studentsList.map(s => s.studentId);
                 setValue('selectedStudentIds', studentIds);
             } else {
                 setValue('selectedStudentIds', []);
@@ -93,7 +95,45 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
             if (onClose) onClose();
         } catch (error) {
             console.error("Failed to check in", error);
-            showErrorToast('Failed to check in', error.message || 'Something went wrong');
+            if (error.response?.status === 409) {
+                try {
+                    const visitorDetailsRes = await visitorApi.getVisitorDetails(data.visitorId);
+                    const visitorData = visitorDetailsRes.data?.data || visitorDetailsRes.data;
+                    const activeVisitId = visitorData?.latestVisit?.visitId;
+
+                    if (activeVisitId) {
+                        setConflictVisitId(activeVisitId);
+                        setIsConfirmOpen(false);
+                        setIsConflictConfirmOpen(true);
+                    } else {
+                        showErrorToast('Failed to find active visit', 'Could not retrieve active visit ID to add students.');
+                    }
+                } catch (fetchError) {
+                    showErrorToast('Error', 'Failed to fetch active visit details');
+                }
+            } else {
+                showErrorToast('Failed to check in', error.response?.data?.message || error.message || 'Something went wrong');
+            }
+        } finally {
+            setIsApiLoading(false);
+        }
+    };
+
+    const executeAddStudents = async () => {
+        setIsApiLoading(true);
+        try {
+            await visitorApi.addStudentsToVisit(conflictVisitId, {
+                selectedStudentIds: pendingPayload.selectedStudentIds
+            });
+            showSuccessToast('Students added to visit successfully');
+            setIsConflictConfirmOpen(false);
+            setPendingPayload(null);
+            reset();
+            if (onSuccess) onSuccess();
+            if (onClose) onClose();
+        } catch (error) {
+            console.error("Failed to add students", error);
+            showErrorToast('Failed to add students', error.response?.data?.message || error.message || 'Something went wrong');
         } finally {
             setIsApiLoading(false);
         }
@@ -264,6 +304,16 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                 title="Confirm Check-In"
                 message="Are you sure you want to check in this visitor?"
                 confirmText="Check In"
+                isSubmitting={isApiLoading}
+            />
+
+            <ConfirmationModal
+                isOpen={isConflictConfirmOpen}
+                onClose={() => setIsConflictConfirmOpen(false)}
+                onConfirm={executeAddStudents}
+                title="Visitor Already Checked In"
+                message="This visitor is already checked in. Do you want to add these students to their current visit?"
+                confirmText="Add Students"
                 isSubmitting={isApiLoading}
             />
         </>
