@@ -49,8 +49,9 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
             setValue('idProofType', prefilledVisitor.idProofType || '');
             setValue('idNumber', prefilledVisitor.idProofNumber || '');
 
-            if (prefilledVisitor.students && prefilledVisitor.students.length > 0) {
-                const studentIds = prefilledVisitor.students.map(s => s.id || s._id);
+            const studentsList = prefilledVisitor.linkedStudents || prefilledVisitor.students;
+            if (studentsList && studentsList.length > 0) {
+                const studentIds = studentsList.map(s => s.id || s._id);
                 setValue('selectedStudentIds', studentIds);
             } else {
                 setValue('selectedStudentIds', []);
@@ -169,7 +170,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                             />
                                         )}
                                     />
-                                    {errors.idProofType && <span className="text-xs text-red-500 mt-1">{errors.idProofType.message}</span>}
+                                    {errors.idProofType && <span className="text-xs text-danger mt-1">{errors.idProofType.message}</span>}
                                 </div>
                                 <div className='mb-2'>
                                     <Input
@@ -184,8 +185,8 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                         )}
                     </div>
 
-                    {prefilledVisitor?.students && prefilledVisitor.students.length > 1 && (
-                        <div className='mb-2'>
+                    {(prefilledVisitor?.linkedStudents || prefilledVisitor?.students) && (prefilledVisitor.linkedStudents || prefilledVisitor.students).length > 1 && (
+                        <div className="bg-gray-50 p-4 rounded-xl space-y-3">
                             <label className="block mb-1 text-sm text-text-primary font-medium">Visiting Students *</label>
                             <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
                                 <Controller
@@ -193,14 +194,14 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                     control={control}
                                     render={({ field }) => (
                                         <>
-                                            {prefilledVisitor.students.map((student) => {
-                                                const studentId = student.id || student._id;
+                                            {(prefilledVisitor.linkedStudents || prefilledVisitor.students).map((student) => {
+                                                const sId = student.id || student._id;
                                                 return (
-                                                    <label key={studentId} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                                    <label key={sId} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary"
-                                                            checked={field.value?.includes(studentId)}
+                                                            checked={field.value?.includes(sId)}
                                                             onChange={(e) => {
                                                                 const current = field.value || [];
                                                                 if (e.target.checked) {
@@ -231,9 +232,9 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                             {...register('purpose')}
                             placeholder="Enter text here..."
                             rows="2"
-                            className={`w-full border rounded-lg px-3.5 py-2 text-[13px] focus:ring-2 focus:ring-primary/20 outline-none resize-none ${errors.purpose ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-primary'}`}
+                            className={`w-full border rounded-lg px-3.5 py-2 text-[13px] focus:ring-2 focus:ring-primary/20 outline-none resize-none ${errors.purpose ? 'border-danger focus:border-danger' : 'border-slate-300 focus:border-primary'}`}
                         ></textarea>
-                        {errors.purpose && <span className="text-xs text-red-500 mt-1">{errors.purpose.message}</span>}
+                        {errors.purpose && <span className="text-xs text-danger mt-1">{errors.purpose.message}</span>}
                     </div>
 
                     <div>

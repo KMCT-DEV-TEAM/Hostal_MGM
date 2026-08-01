@@ -79,7 +79,8 @@ export default function VisitorDetailsModal({
     if (!visitor) return null;
 
     const visitorName = visitor.visitorName || visitor.name;
-    const studentNames = visitor.students && visitor.students.length > 0 ? visitor.students.map(s => s.name).join(', ') : '';
+    const linkedStudents = visitor.linkedStudents || visitor.students || [];
+    const studentNames = linkedStudents.length > 0 ? linkedStudents.map(s => s.name).join(', ') : '';
     const subtitle = `Linked to: ${studentNames || 'N/A'}`;
 
     const renderFooter = () => {
@@ -258,22 +259,48 @@ export default function VisitorDetailsModal({
                         <DetailRow icon={<Calendar size={16} />} label="Registered" value={formatDateTimeReadable(visitor.createdAt)} />
                     </DetailCard>
 
-                    {visitor.students && visitor.students.length > 0 && (
+                    {linkedStudents.length > 0 && (
                         <DetailCard title="Linked Students" subtitle="Students associated with this visitor">
                             <div className="flex flex-col gap-3 mt-2">
-                                {visitor.students.map((student, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
-                                                {student.name.charAt(0)}
+                                {linkedStudents.map((student, idx) => (
+                                    <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
+                                                    {student.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-gray-800">{student.name}</p>
+                                                    <p className="text-xs text-gray-500">{student.relationship || visitor.relationship}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-800">{student.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                {student.requestStatus && (
+                                                    <StatusBadge status={student.requestStatus} />
+                                                )}
+                                                <div className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 shrink-0">
+                                                    Room {student.roomNumber || 'N/A'}
+                                                </div>
+                                                {['super_admin', 'admin', 'mentor'].includes(user?.role) && student.requestStatus?.toLowerCase() === 'pending' && (
+                                                    <Button
+                                                        size="xs"
+                                                        fullWidth={false}
+                                                        className="!bg-primary! hover:!bg-primary! hover:!text-white! ml-2 text-[10px] px-2 py-1 h-auto"
+                                                        onClick={() => {
+                                                            onClose();
+                                                            onApprove && onApprove(visitorId);
+                                                        }}
+                                                    >
+                                                        Approve
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded shadow-sm border border-gray-100 shrink-0">
-                                            Room {student.roomNumber || 'N/A'}
-                                        </div>
+                                        {student.purpose && (
+                                            <div className="mt-1 text-xs text-gray-600 bg-white p-2 rounded border border-gray-100">
+                                                <span className="font-medium text-gray-700">Purpose: </span>{student.purpose}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
