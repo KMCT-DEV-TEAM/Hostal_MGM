@@ -621,7 +621,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
     try {
         const studentNames = students.map(s => s.name).join(', ');
         const notificationData = {
-            personName: resolvedPerson.personName,
+            personName: personData.name,
             personType: visitor.refType,
             studentName: studentNames,
             purpose: purpose,
