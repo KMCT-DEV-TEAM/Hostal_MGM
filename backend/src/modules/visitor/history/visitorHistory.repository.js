@@ -234,3 +234,42 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
 
     return { data, total };
 };
+
+
+/**
+ * Fetches complete details of a single visit using lean populate
+ * @param {String} visitId 
+ * @returns {Promise<Object>}
+ */
+export const getVisitDetailsById = async (visitId) => {
+    return await visitorVisitModel.findById(visitId)
+        .populate({
+            path: 'visitor.refId',
+            select: 'name parentName phone relationship address idProofType idProofNumber email'
+        })
+        .populate({
+            path: 'students',
+            select: 'name studentId roomNumber studentId',
+        })
+        .populate({
+            path: 'hostelId',
+            select: 'name'
+        })
+        .populate({
+            path: 'organizationId',
+            select: 'name'
+        })
+        .populate({
+            path: 'checkedInBy',
+            select: 'name role'
+        })
+        .populate({
+            path: 'checkedOutBy',
+            select: 'name role'
+        })
+        .populate({
+            path: 'visitTimeline.performedBy',
+            select: 'name role'
+        })
+        .lean();
+};

@@ -76,3 +76,43 @@ export const listVisitorVisits = async (req, res) => {
         });
     }
 };
+
+
+/**
+ * Gets complete visit details based on role authorization
+ * @route GET /visitor-visits/:visitId
+ */
+export const getVisitDetails = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User context missing."
+            });
+        }
+
+        const { visitId } = req.params;
+        const explicitStudentId = req.student ? req.student.id : null;
+        const result = await visitorHistoryService.getVisitDetails(visitId, req.user, explicitStudentId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visit details fetched successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
+        const message = (statusCode === 500 || isMongoError) && !error.status
+            ? "An internal server error occurred while fetching visit details."
+            : error.message;
+
+        console.error('[VisitorHistoryController] getVisitDetails error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};

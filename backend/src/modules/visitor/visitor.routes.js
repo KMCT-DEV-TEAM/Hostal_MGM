@@ -62,7 +62,7 @@ parentVisitorRouter.get(
 parentVisitorRouter.get(
     '/visits/:visitId',
     validateGetVisitDetails,
-    visitorController.getVisitDetails
+    vistHistoryController.getVisitDetails
 );
 
 parentVisitorRouter.patch(
@@ -125,7 +125,7 @@ router.get(
     authMiddleware,
     roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
     validateGetVisitDetails,
-    visitorController.getVisitDetails
+    vistHistoryController.getVisitDetails
 );
 
 // ---------------------------------------------------------
