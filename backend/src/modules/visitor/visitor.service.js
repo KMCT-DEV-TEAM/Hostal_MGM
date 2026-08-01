@@ -674,7 +674,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
 
     return {
         visitId: newVisit._id,
-        personName: resolvedPerson.personName,
+        personName: personData.name,
         personType: visitor.refType,
         studentName: newVisit.students?.map(s => s.name).join(', ') || 'Student',
         purpose: newVisit.purpose,

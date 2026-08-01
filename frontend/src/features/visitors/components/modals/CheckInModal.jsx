@@ -53,7 +53,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
 
             const studentsList = prefilledVisitor.linkedStudents || prefilledVisitor.students;
             if (studentsList && studentsList.length > 0) {
-                const studentIds = studentsList.map(s => s.studentId);
+                const studentIds = studentsList.map(s => s.studentId || (typeof s === 'string' ? s : (s._id || s.id)));
                 setValue('selectedStudentIds', studentIds);
             } else {
                 setValue('selectedStudentIds', []);
@@ -235,7 +235,10 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                     render={({ field }) => (
                                         <>
                                             {(prefilledVisitor.linkedStudents || prefilledVisitor.students).map((student) => {
-                                                const sId = student.id || student._id;
+                                                const sId = student.studentId || (typeof student === 'string' ? student : (student._id || student.id));
+
+                                                if (!sId) return null; // safety check
+
                                                 return (
                                                     <label key={sId} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
                                                         <input
@@ -245,9 +248,9 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                                             onChange={(e) => {
                                                                 const current = field.value || [];
                                                                 if (e.target.checked) {
-                                                                    field.onChange([...current, studentId]);
+                                                                    field.onChange([...current, sId]);
                                                                 } else {
-                                                                    field.onChange(current.filter(id => id !== studentId));
+                                                                    field.onChange(current.filter(id => id !== sId));
                                                                 }
                                                             }}
                                                         />
