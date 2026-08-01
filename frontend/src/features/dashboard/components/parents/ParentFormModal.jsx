@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addParentSchema, editParentSchema } from "@/features/dashboard/validation/parentSchema";
 import { useTranslation } from "@/hooks/useTranslation";
 import Dropdown from "@/components/ui/Dropdown";
+import EmailVerificationModal from "@/components/ui/EmailVerificationModal";
 
 export default function ParentFormModal({
   studentId,
@@ -84,13 +85,13 @@ export default function ParentFormModal({
     }
   };
 
-  const handleVerifyOtpSubmit = () => {
-    if (!verifyOtpValue || verifyOtpValue.length !== 6) {
+  const handleVerifyOtpSubmit = (otpValue) => {
+    if (!otpValue || otpValue.length !== 6) {
       setOtpError("Please enter the 6-digit OTP");
       return;
     }
 
-    setParentOtp(verifyOtpValue);
+    setParentOtp(otpValue);
     setEmailVerified(true);
     setVerifyModalOpen(false);
   };
@@ -305,38 +306,15 @@ export default function ParentFormModal({
         )}
       </div>
 
-      {verifyModalOpen && (
-        <Modal bottomSheetOnMobile={true}
-          isOpen
-          onClose={() => setVerifyModalOpen(false)}
-          title="Verify Parent Email"
-          maxWidth="max-w-md"
-        >
-          <div className="space-y-4">
-            <OtpInput value={verifyOtpValue} onChange={setVerifyOtpValue} />
-
-            <div className="flex justify-between">
-              <button
-                type="button"
-                onClick={sendEmailOtp}
-                disabled={sendingOtp}
-                className="px-3 py-2 bg-gray-100 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {sendingOtp && <div className="w-3 h-3 border-2 border-gray-400/30 border-t-gray-500 rounded-full animate-spin" />}
-                Resend OTP
-              </button>
-
-              <button
-                type="button"
-                onClick={handleVerifyOtpSubmit}
-                className="px-3 py-2 bg-primary text-white rounded-md text-xs font-medium hover:bg-secondary transition-colors"
-              >
-                Confirm OTP
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      <EmailVerificationModal
+        isOpen={verifyModalOpen}
+        onClose={() => setVerifyModalOpen(false)}
+        email={watchEmail}
+        onVerify={handleVerifyOtpSubmit}
+        onResend={sendEmailOtp}
+        initialError={otpError}
+        isSubmitting={false}
+      />
     </Modal>
   );
 }

@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useNotificationStore } from '@/store/useNotificationStore';
 
-export const useNotifications = () => {
+export const useNotifications = (studentId = null, filter = 'all') => {
     const store = useNotificationStore();
 
     useEffect(() => {
-        store.initialize();
-    }, [store.initialize]);
+        store.initialize(studentId, filter);
+    }, [store.initialize, studentId, filter]);
 
     return {
         notifications: store.notifications,

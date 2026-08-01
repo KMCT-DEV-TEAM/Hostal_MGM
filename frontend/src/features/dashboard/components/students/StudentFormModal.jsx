@@ -15,6 +15,7 @@ import courseService from "@/services/course.service";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import EmailVerificationModal from "@/components/ui/EmailVerificationModal";
+import ParentConflictModal from "@/components/ui/ParentConflictModal";
 
 // Human-readable labels used to build friendly required/invalid messages
 // for fields where Zod's default message isn't useful (enums, picked
@@ -183,6 +184,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [verifyOtpValue, setVerifyOtpValue] = useState("");
   const [emailVerified, setEmailVerified] = useState({ student: false, parent: false });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [conflictData, setConflictData] = useState(null);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
   // Tracks which fields the user has actually interacted with, so we don't
   // flash "Course is required" the instant the modal opens — only after
   // the user has touched (changed/blurred) that specific field.
@@ -466,11 +470,38 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       setSaving(true);
       await onSave(result.data);
     } catch (error) {
-      // onSave (handleSaveStudent in parent) already shows its own toast,
-      // this catch just prevents an unhandled rejection here.
-      console.error("Failed to create student", error);
+      const errorCode = error?.response?.data?.code || error?.data?.code;
+      if (errorCode === 'PARENT_EXISTS_WITH_DIFFERENT_DATA') {
+        const conflictDataResponse = error?.data?.data || error?.response?.data?.data;
+        setConflictData({
+          existing: conflictDataResponse.existing,
+          submitted: conflictDataResponse.submitted,
+          payload: result.data
+        });
+        setIsConflictModalOpen(true);
+      } else {
+        console.error("Failed to create student", error);
+      }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResolveConflict = async (resolutionAction) => {
+    if (!conflictData?.payload) return;
+    setIsResolvingConflict(true);
+    try {
+      const payloadWithResolution = {
+        ...conflictData.payload,
+        resolutionAction
+      };
+      await onSave(payloadWithResolution);
+      setIsConflictModalOpen(false);
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || "Failed to resolve conflict";
+      showErrorToast(message);
+    } finally {
+      setIsResolvingConflict(false);
     }
   };
 
@@ -851,7 +882,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   // Add New Student modal
   return (
-    <Modal bottomSheetOnMobile={true}
+    <>
+      <Modal bottomSheetOnMobile={true}
       isOpen={true}
       onClose={onClose}
       title="Add New Student"
@@ -1146,6 +1178,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
         confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
       />
     </Modal>
+
+      <ParentConflictModal
+        isOpen={isConflictModalOpen}
+        onClose={() => setIsConflictModalOpen(false)}
+        conflictData={conflictData}
+        isResolvingConflict={isResolvingConflict}
+        onResolve={handleResolveConflict}
+      />
+    </>
   );
 }
 

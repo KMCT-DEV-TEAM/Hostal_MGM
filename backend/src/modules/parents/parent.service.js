@@ -8,6 +8,43 @@ const generateRandomPassword = () => {
   return Math.random().toString(36).slice(-10);
 };
 
+export const checkParentConflict = async (existingParent, { parentName, phone, session }) => {
+  if (!existingParent) return;
+
+  const nameDiffers = existingParent.parentName !== parentName;
+  const phoneDiffers = existingParent.phone !== phone;
+
+  if (nameDiffers || phoneDiffers) {
+    const studentLinks = await StudentParent.find({ parentId: existingParent._id })
+      .populate({
+        path: 'studentId',
+        select: 'name course batch academicYear'
+      }).session(session);
+
+    const linkedStudents = studentLinks
+      .map(link => link.studentId)
+      .filter(Boolean);
+
+    const conflictError = new Error("Parent email already exists with different details");
+    conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
+    conflictError.statusCode = 409;
+    conflictError.conflictData = {
+      existing: {
+        name: existingParent.parentName,
+        phone: existingParent.phone,
+        email: existingParent.email,
+        linkedStudents: linkedStudents
+      },
+      submitted: {
+        name: parentName,
+        phone: phone,
+        email: existingParent.email
+      }
+    };
+    throw conflictError;
+  }
+};
+
 const createParentDb = async (data) => {
   const {
     studentId,
@@ -42,34 +79,7 @@ const createParentDb = async (data) => {
 
     if (existingParent) {
       if (!resolutionAction) {
-        const nameDiffers = existingParent.parentName !== parentName;
-        const phoneDiffers = existingParent.phone !== phone;
-
-        if (nameDiffers || phoneDiffers) {
-          const studentLinks = await StudentParent.find({ parentId: existingParent._id })
-            .populate({
-              path: 'studentId',
-              select: 'name course batch academicYear'
-            }).session(session);
-
-          const linkedStudents = studentLinks
-            .map(link => link.studentId)
-            .filter(Boolean);
-
-          const conflictError = new Error("Parent email already exists with different details");
-          conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
-          conflictError.statusCode = 409;
-          conflictError.conflictData = {
-            existing: {
-              name: existingParent.parentName,
-              phone: existingParent.phone,
-              email: existingParent.email,
-              linkedStudents: linkedStudents
-            },
-            submitted: { name: parentName, phone, email },
-          };
-          throw conflictError;
-        }
+        await checkParentConflict(existingParent, { parentName, phone, session });
       }
 
       if (resolutionAction === 'update_existing' || (!resolutionAction && existingParent.parentName === parentName && existingParent.phone === phone)) {

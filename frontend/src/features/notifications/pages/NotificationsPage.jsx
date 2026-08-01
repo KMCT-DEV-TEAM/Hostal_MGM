@@ -4,8 +4,16 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import NotificationsDesktopView from '../views/NotificationsDesktopView';
 import NotificationsMobileView from '../views/NotificationsMobileView';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
+import { useState } from 'react';
 
 const NotificationsPage = () => {
+    const { user } = useAuthStore();
+    const students = user?.role === ROLES.PARENT ? user.students || [] : [];
+    const [selectedStudentId, setSelectedStudentId] = useState('');
+    const [filter, setFilter] = useState('all');
+
     const { 
         notifications, 
         loading, 
@@ -14,7 +22,7 @@ const NotificationsPage = () => {
         fetchNextPage, 
         hasMore, 
         fetchingMore 
-    } = useNotifications();
+    } = useNotifications(selectedStudentId === '' ? null : selectedStudentId, filter);
 
     const { isMobile } = useBreakpoint();
 
@@ -34,7 +42,13 @@ const NotificationsPage = () => {
         markAllAsRead,
         hasMore,
         fetchingMore,
-        bottomRef
+        bottomRef,
+        isParent: user?.role === ROLES.PARENT,
+        students,
+        selectedStudentId,
+        setSelectedStudentId,
+        filter,
+        setFilter
     };
 
     return isMobile ? (

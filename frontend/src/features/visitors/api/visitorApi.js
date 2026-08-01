@@ -49,6 +49,7 @@ export const visitorApi = {
     updateVisitorProfileV2: (studentId, visitorId, payload) => api.patch(`/parent/students/${studentId}/visitors/${visitorId}`, payload),
     getParentVisitorsV2: (studentId, params) => api.get(`/parent/students/${studentId}/visitors`, { params }),
     getVisitorDetailsParentV2: (studentId, visitorId) => api.get(`/parent/students/${studentId}/visitors/${visitorId}`),
+    reuseVisitorProfileV2: (studentId, visitorId, payload) => api.post(`/parent/students/${studentId}/visitors/${visitorId}/visit-requests`, payload),
 };
 
 export default visitorApi;
