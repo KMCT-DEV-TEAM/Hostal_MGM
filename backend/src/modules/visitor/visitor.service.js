@@ -428,7 +428,8 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
                         sHostelName: vr.studentId.hostelId.name,
                         relationship: vr.relationship,
                         purpose: vr.purpose,
-                        requestStatus: vr.status
+                        requestStatus: vr.status,
+                        approvalTimeline: vr.approvalTimeline
                     };
                 }
                 return acc;
