@@ -100,7 +100,17 @@ export const createVisitor = async (data) => {
     const visitor = new Visitor(data);
     return await visitor.save();
 };
-
+/**
+ * Finds VisitRequests for a specific visitor and list of students
+ * @param {String} visitorId 
+ * @param {Array<String>} studentIds 
+ */
+export const getVisitRequestsByVisitorAndStudents = async (visitorId, studentIds) => {
+    return await VisitRequest.find({
+        visitorId,
+        studentId: { $in: studentIds }
+    }).lean();
+};
 
 /**
  * Unified aggregation for Visitor Listing (Staff, Student, Parent)
@@ -1012,5 +1022,26 @@ export const rejectVisitRequest = async (visitRequestId, timelineEntry, session 
             $push: { approvalTimeline: timelineEntry }
         },
         { new: true, session }
+    );
+};
+
+/**
+ * Adds students to an actively checked-in visit
+ * @param {String} visitId 
+ * @param {Array<String>} newStudentIds 
+ * @param {Object} timelineEntry 
+ */
+export const addStudentsToActiveVisit = async (visitId, newStudentIds, timelineEntry) => {
+    return await VisitorVisit.findByIdAndUpdate(
+        visitId,
+        {
+            $addToSet: {
+                students: { $each: newStudentIds }
+            },
+            $push: {
+                visitTimeline: timelineEntry
+            }
+        },
+        { new: true }
     );
 };

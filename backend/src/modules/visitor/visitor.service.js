@@ -1,7 +1,13 @@
 import mongoose from 'mongoose';
 import {
     createBrandNewVisitorProfile,
-    confirmVisitorReuseProfile
+    confirmVisitorReuseProfile,
+    validateWardenRole,
+    fetchCheckInContext,
+    validatePersonProfile,
+    validateVisitRequests,
+    validateStudentsAndHostelBoundaries,
+    authorizeWardenForHostel
 } from './visitor.helper.js';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
@@ -14,6 +20,7 @@ import {
     VISITOR_APPROVAL_ACTIONS,
     VISITOR_VISIT_STATUS,
     VISITOR_VISIT_TIMELINE_ACTIONS,
+    VISITOR_PROFILE_STATUS,
 
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
@@ -429,7 +436,8 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
                         relationship: vr.relationship,
                         purpose: vr.purpose,
                         requestStatus: vr.status,
-                        approvalTimeline: vr.approvalTimeline
+                        approvalTimeline: vr.approvalTimeline,
+                        createdAt: vr.createdAt
                     };
                 }
                 return acc;
@@ -444,11 +452,6 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         } : null
     };
 };
-
-/**
- * Resolves authorized pending VisitRequests for a user given a visitorId.
- * Used internally by bulk approve/reject.
- */
 
 
 /**
@@ -560,98 +563,13 @@ export const getDashboardSummary = async (user) => {
 export const checkInVisitor = async (payload, wardenUser) => {
     const { visitor, selectedStudentIds, purpose, expectedExitTime } = payload;
 
-    if (wardenUser.role !== 'warden') {
-        const error = new Error('Unauthorized: Only wardens can check-in visitors.');
-        error.status = 403;
-        throw error;
-    }
+    validateWardenRole(wardenUser);
 
-    const uniqueStudentIds = [...new Set(selectedStudentIds)];
-    if (uniqueStudentIds.length !== selectedStudentIds.length) {
-        const error = new Error('Duplicate student IDs provided.');
-        error.status = 400;
-        throw error;
-    }
+    const { visitRequests, personData, students } = await fetchCheckInContext(visitor, uniqueStudentIds);
 
-    let resolvedPerson = null;
-    let personName = '';
-    let organizationId = null;
+    validatePersonProfile(personData, visitor.refType);
+    validateVisitRequests(visitRequests, uniqueStudentIds);
 
-    // Fetch Person and Target Students concurrently
-    const Student = mongoose.model('Student');
-    const [personData, students] = await Promise.all([
-        (async () => {
-            if (visitor.refType === 'Parent') {
-                return await visitorRepository.resolveParentStudents(visitor.refId);
-            } else {
-                const Visitor = mongoose.model('Visitor');
-                const visitorDoc = await Visitor.findById(visitor.refId).lean();
-                if (!visitorDoc) return null;
-                return {
-                    ...visitorDoc,
-                    authorizedStudentIds: visitorDoc.students.map(id => id.toString()),
-                    personName: visitorDoc.name
-                };
-            }
-        })(),
-        Student.find({ _id: { $in: uniqueStudentIds } })
-            .select('name isActive hostelStatus hostelId organizationId')
-            .lean()
-    ]);
-
-    resolvedPerson = personData;
-
-    if (!resolvedPerson) {
-        const error = new Error(`${visitor.refType} not found.`);
-        error.status = 404;
-        throw error;
-    }
-
-    // Person validations
-    if (visitor.refType === 'Parent') {
-        if (!resolvedPerson.isActive) {
-            const error = new Error('Parent profile is inactive.');
-            error.status = 400;
-            throw error;
-        }
-        if (!resolvedPerson.isVerified) {
-            const error = new Error('Parent profile is not verified.');
-            error.status = 400;
-            throw error;
-        }
-    } else {
-        if (resolvedPerson.approvalStatus === VISITOR_STATUS.PENDING) {
-            const error = new Error('Visitor is pending approval.');
-            error.status = 400;
-            throw error;
-        }
-        if (resolvedPerson.approvalStatus === VISITOR_STATUS.REJECTED) {
-            const error = new Error('Visitor is rejected.');
-            error.status = 400;
-            throw error;
-        }
-        if (resolvedPerson.approvalStatus === VISITOR_STATUS.INACTIVE) {
-            const error = new Error('Visitor profile is inactive.');
-            error.status = 400;
-            throw error;
-        }
-    }
-
-    if (students.length !== uniqueStudentIds.length) {
-        const error = new Error('One or more selected students not found.');
-        error.status = 400;
-        throw error;
-    }
-
-    // Authorization: Is the visitor/parent authorized to visit these students?
-    const isSubset = uniqueStudentIds.every(id => resolvedPerson.authorizedStudentIds.includes(id));
-    if (!isSubset) {
-        const error = new Error(`${visitor.refType} is not authorized for all selected students.`);
-        error.status = 403;
-        throw error;
-    }
-
-    // Organization and Hostel boundaries
     const targetHostelId = students[0].hostelId?.toString();
     const targetOrgId = students[0].organizationId?.toString();
 
@@ -661,39 +579,8 @@ export const checkInVisitor = async (payload, wardenUser) => {
         throw error;
     }
 
-    for (const student of students) {
-        if (!student.isActive) {
-            const error = new Error(`Student ${student.name} is inactive.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.hostelStatus !== 'active' || !student.hostelId) {
-            const error = new Error(`Student ${student.name} does not have an active hostel status.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.hostelId.toString() !== targetHostelId) {
-            const error = new Error(`Selected students belong to different hostels. Must check-in separately per hostel.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.organizationId.toString() !== targetOrgId) {
-            const error = new Error(`Selected students belong to different organizations.`);
-            error.status = 400;
-            throw error;
-        }
-    }
-
-    organizationId = targetOrgId;
-
-    // Warden Authorization
-    const Hostel = mongoose.model('Hostel');
-    const targetHostel = await Hostel.findById(targetHostelId).lean();
-    if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
-        const error = new Error('Unauthorized: You are not assigned to the hostel for these students.');
-        error.status = 403;
-        throw error;
-    }
+    validateStudentsAndHostelBoundaries(students, targetHostelId, targetOrgId);
+    await authorizeWardenForHostel(targetHostelId, wardenUser.id);
 
     const now = new Date();
     const parsedExpectedExitTime = new Date(expectedExitTime);
@@ -806,11 +693,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
 export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
     const { selectedStudentIds } = payload;
 
-    if (wardenUser.role !== 'warden') {
-        const error = new Error('Unauthorized: Only wardens can manage visits.');
-        error.status = 403;
-        throw error;
-    }
+    validateWardenRole(wardenUser);
 
     const uniqueStudentIds = [...new Set(selectedStudentIds)];
     if (uniqueStudentIds.length !== selectedStudentIds.length) {
@@ -834,7 +717,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
     }
 
     // Filter out already linked students
-    const existingStudentIds = visit.students.map(id => id.toString());
+    const existingStudentIds = visit.students.map(student => student._id ? student._id.toString() : student.toString());
     const newStudentIds = uniqueStudentIds.filter(id => !existingStudentIds.includes(id));
 
     if (newStudentIds.length === 0) {
@@ -843,90 +726,16 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
         throw error;
     }
 
-    // Fetch Person and Target Students concurrently
-    const Student = mongoose.model('Student');
-    const [personData, students] = await Promise.all([
-        (async () => {
-            if (visit.visitor.refType === 'Parent') {
-                const Parent = mongoose.model('Parent');
-                const StudentParent = mongoose.model('StudentParent');
-                const parentDoc = await Parent.findById(visit.visitor.refId).lean();
-                if (!parentDoc) return null;
-                const links = await StudentParent.find({ parentId: parentDoc._id, status: 'active' }).select('studentId').lean();
-                return {
-                    authorizedStudentIds: links.map(l => l.studentId.toString()),
-                    personName: parentDoc.parentName
-                };
-            } else {
-                const Visitor = mongoose.model('Visitor');
-                const visitorDoc = await Visitor.findById(visit.visitor.refId).lean();
-                if (!visitorDoc) return null;
-                return {
-                    authorizedStudentIds: visitorDoc.students.map(id => id.toString()),
-                    personName: visitorDoc.name
-                };
-            }
-        })(),
-        Student.find({ _id: { $in: newStudentIds } })
-            .select('name isActive hostelStatus hostelId organizationId')
-            .lean()
-    ]);
+    const { visitRequests, personData, students } = await fetchCheckInContext(visit.visitor, newStudentIds);
 
-    if (!personData) {
-        const error = new Error(`${visit.visitor.refType} profile no longer exists.`);
-        error.status = 404;
-        throw error;
-    }
+    validatePersonProfile(personData, visit.visitor.refType);
+    validateVisitRequests(visitRequests, newStudentIds);
 
-    if (students.length !== newStudentIds.length) {
-        const error = new Error('One or more selected students not found.');
-        error.status = 400;
-        throw error;
-    }
+    const targetHostelId = visit.hostelId._id.toString();
+    const targetOrgId = visit.organizationId._id.toString();
 
-    // Subset Verification
-    const isSubset = newStudentIds.every(id => personData.authorizedStudentIds.includes(id));
-    if (!isSubset) {
-        const error = new Error(`${visit.visitor.refType} is not authorized for all newly selected students.`);
-        error.status = 403;
-        throw error;
-    }
-
-    // Organization and Hostel boundaries (must match the existing visit)
-    const targetHostelId = visit.hostelId.toString();
-    const targetOrgId = visit.organizationId.toString();
-
-    for (const student of students) {
-        if (!student.isActive) {
-            const error = new Error(`Student ${student.name} is inactive.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.hostelStatus !== 'active') {
-            const error = new Error(`Student ${student.name} does not have an active hostel status.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.hostelId.toString() !== targetHostelId) {
-            const error = new Error(`Student ${student.name} belongs to a different hostel. Must check-in separately.`);
-            error.status = 400;
-            throw error;
-        }
-        if (student.organizationId.toString() !== targetOrgId) {
-            const error = new Error(`Student ${student.name} belongs to a different organization.`);
-            error.status = 400;
-            throw error;
-        }
-    }
-
-    // Warden Authorization
-    const Hostel = mongoose.model('Hostel');
-    const targetHostel = await Hostel.findById(targetHostelId).lean();
-    if (!targetHostel || !targetHostel.wardens.some(id => id.toString() === wardenUser.id)) {
-        const error = new Error('Unauthorized: You are not assigned to the hostel for these students.');
-        error.status = 403;
-        throw error;
-    }
+    validateStudentsAndHostelBoundaries(students, targetHostelId, targetOrgId);
+    await authorizeWardenForHostel(targetHostelId, wardenUser.id);
 
     // Update Visit
     const studentNames = students.map(s => s.name).join(', ');
@@ -936,18 +745,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
         remarks: `Added ${studentNames} to the visit.`
     };
 
-    const updatedVisit = await visitorVisitModel.findByIdAndUpdate(
-        visitId,
-        {
-            $addToSet: {
-                students: { $each: newStudentIds }
-            },
-            $push: {
-                visitTimeline: timelineEntry
-            }
-        },
-        { new: true }
-    );
+    const updatedVisit = await visitorRepository.addStudentsToActiveVisit(visitId, newStudentIds, timelineEntry);
 
     // Notifications (Optional)
     try {

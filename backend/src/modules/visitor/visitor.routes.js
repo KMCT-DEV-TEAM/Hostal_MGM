@@ -156,7 +156,7 @@ router.get(
 // Visit Management (Warden)
 // ---------------------------------------------------------
 router.post(
-    '/warden/visits/check-in',
+    '/check-in',
     authMiddleware,
     roleMiddleware('warden'),
     validateCheckInVisitor,
@@ -164,7 +164,7 @@ router.post(
 );
 
 router.patch(
-    '/warden/visits/:visitId/students',
+    '/:visitId/students',
     authMiddleware,
     roleMiddleware('warden'),
     validateAddStudentsToVisit,
