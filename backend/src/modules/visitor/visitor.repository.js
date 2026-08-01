@@ -210,7 +210,6 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                                 input: '$studentObj',
                                 as: 's',
                                 in: {
-                                    id: '$$s._id', // backwards compat
                                     _id: '$$s._id',
                                     name: '$$s.name',
                                     roomNumber: '$$s.roomNumber',
@@ -964,5 +963,54 @@ export const bulkUpdateVisitRequestStatus = async (requestIds, newStatus, timeli
             $set: { status: newStatus },
             $push: { approvalTimeline: timelineEntry }
         }
+    );
+};
+
+
+/**
+ * Finds a single VisitRequest and populates its student with auth data
+ * @param {String} visitRequestId 
+ * @param {Object} session Optional mongoose session
+ */
+export const findVisitRequestWithAuthorizationData = async (visitRequestId, session = null) => {
+    return await VisitRequest.findById(visitRequestId)
+        .populate('studentId', 'organizationId batchId hostelId')
+        .session(session)
+        .lean();
+};
+
+/**
+ * Approves a single VisitRequest
+ * @param {String} visitRequestId 
+ * @param {Object} timelineEntry 
+ * @param {Object} session 
+ */
+export const approveVisitRequest = async (visitRequestId, timelineEntry, session = null) => {
+    return await VisitRequest.findByIdAndUpdate(
+        visitRequestId,
+        {
+            $set: {
+                status: VISITOR_STATUS.APPROVED
+            },
+            $push: { approvalTimeline: timelineEntry }
+        },
+        { new: true, session }
+    );
+};
+
+/**
+ * Rejects a single VisitRequest
+ * @param {String} visitRequestId 
+ * @param {Object} timelineEntry 
+ * @param {Object} session 
+ */
+export const rejectVisitRequest = async (visitRequestId, timelineEntry, session = null) => {
+    return await VisitRequest.findByIdAndUpdate(
+        visitRequestId,
+        {
+            $set: { status: 'Rejected' },
+            $push: { approvalTimeline: timelineEntry }
+        },
+        { new: true, session }
     );
 };

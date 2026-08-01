@@ -537,3 +537,27 @@ export const validateUpdateVisitorStatus = (req, res, next) => {
 
     next();
 };
+
+
+export const validateApproveVisitRequest = (req, res, next) => {
+    const { visitRequestId } = req.params;
+    if (!isValidObjectId(visitRequestId)) {
+        return res.status(400).json({ success: false, message: 'Invalid visitRequestId.' });
+    }
+    next();
+};
+
+export const validateRejectVisitRequest = (req, res, next) => {
+    const { visitRequestId } = req.params;
+    const { reason } = req.body;
+
+    if (!isValidObjectId(visitRequestId)) {
+        return res.status(400).json({ success: false, message: 'Invalid visitRequestId.' });
+    }
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+        return res.status(400).json({ success: false, message: 'Rejection reason is required.' });
+    }
+
+    req.body.reason = reason.trim();
+    next();
+};

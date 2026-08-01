@@ -5,13 +5,14 @@ import StudentParent from '../parents/studentParent.model.js';
 import Visitor from './visitor.model.js';
 import VisitRequest from './visitRequest.model.js';
 import * as visitorRepository from './visitor.repository.js';
-import { 
+import {
     VISITOR_PROFILE_STATUS,
     VISITOR_STATUS,
     VISITOR_APPROVAL_ACTIONS,
     VISITOR_CHANGE_LOG_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import MentorAssignment from '../mentors/mentorAssignment.model.js';
 
 /**
  * Validates parent account and student authorizations
@@ -195,11 +196,11 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
     } catch (transactionError) {
         // Fallback cleanup if transactions aren't supported on this deployment
         if (savedVisitor && savedVisitor._id) {
-            await Visitor.findByIdAndDelete(savedVisitor._id).catch(() => {});
+            await Visitor.findByIdAndDelete(savedVisitor._id).catch(() => { });
         }
         for (const vr of savedVisitRequests) {
             if (vr && vr._id) {
-                await VisitRequest.findByIdAndDelete(vr._id).catch(() => {});
+                await VisitRequest.findByIdAndDelete(vr._id).catch(() => { });
             }
         }
 
@@ -298,7 +299,7 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         // Fallback cleanup if transactions aren't supported on this deployment
         for (const vr of savedVisitRequests) {
             if (vr && vr._id) {
-                await VisitRequest.findByIdAndDelete(vr._id).catch(() => {});
+                await VisitRequest.findByIdAndDelete(vr._id).catch(() => { });
             }
         }
         throw transactionError;
@@ -314,7 +315,7 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
             eventName: 'VISITOR_CREATED',
             target: { type: 'ROLE', filter: { role: { $in: ['admin', 'warden'] } } },
             data: {
-                parentName: 'A Parent', 
+                parentName: 'A Parent',
                 visitorName: existingVisitor.name,
                 studentNames: studentNames
             }
@@ -328,4 +329,68 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         visitRequests: savedVisitRequests,
         students
     };
+};
+
+/**
+ * Reusable authorization helper for VisitRequest actions (Approve, Reject, Revoke, etc.)
+ */
+export const authorizeVisitRequest = async (visitRequest, user) => {
+    // 1. Role checks
+    if (!['super_admin', 'admin', 'mentor'].includes(user.role)) {
+        throw Object.assign(new Error('Unauthorized role.'), { status: 403 });
+    }
+
+    // super_admin bypasses specific scope checks
+    if (user.role === 'super_admin') {
+        return true;
+    }
+
+    // 2. Extract student info 
+    // Expects studentId to be populated
+    const student = visitRequest.studentId;
+    if (!student || !student._id) {
+        throw Object.assign(new Error('VisitRequest student data not populated for authorization.'), { status: 500 });
+    }
+
+    // 3. Scope validation based on role
+    if (user.role === 'admin') {
+        if (!student.organizationId || student.organizationId.toString() !== user.organization?.toString()) {
+            throw Object.assign(new Error('Student is outside your organization scope.'), { status: 403 });
+        }
+        return true;
+    }
+
+    if (user.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id,
+            status: 'active'
+        }, 'batchId').lean();
+        const activeBatchIds = activeAssignments.map(a => a.batchId.toString());
+        if (!student.batchId || !activeBatchIds.includes(student.batchId.toString())) {
+            throw Object.assign(new Error('Student is not in your assigned active batches.'), { status: 403 });
+        }
+        return true;
+    }
+
+    throw Object.assign(new Error('Authorization failed.'), { status: 403 });
+};
+
+/**
+ * Validates whether a state transition on a VisitRequest is allowed
+ */
+export const validateVisitRequestTransition = (currentStatus, nextStatus) => {
+    const validTransitions = {
+        [VISITOR_STATUS.PENDING]: [VISITOR_STATUS.APPROVED, VISITOR_STATUS.REJECTED],
+        [VISITOR_STATUS.APPROVED]: [VISITOR_STATUS.REVOKED],
+        [VISITOR_STATUS.REJECTED]: [], // terminal
+        [VISITOR_STATUS.REVOKED]: []   // terminal
+    };
+
+    const allowedNext = validTransitions[currentStatus] || [];
+    if (!allowedNext.includes(nextStatus)) {
+        throw Object.assign(
+            new Error(`Invalid status transition from ${currentStatus} to ${nextStatus}.`),
+            { status: 400 }
+        );
+    }
 };

@@ -278,71 +278,6 @@ export const getVisitorDetails = async (req, res) => {
 };
 
 /**
- * Admin / Super Admin approves a visitor
- * @route PATCH /visitors/:visitorId/approve
- */
-export const approveVisitor = async (req, res) => {
-    try {
-        const { visitorId } = req.params;
-
-        const result = await visitorService.approveVisitor(visitorId, req.user);
-
-        return res.status(200).json({
-            success: true,
-            message: "Visitor approved successfully.",
-            data: result
-        });
-
-    } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while approving the visitor."
-            : error.message;
-
-        console.error('[VisitorController] approveVisitor error:', error);
-
-        return res.status(statusCode).json({
-            success: false,
-            message: message
-        });
-    }
-};
-
-/**
- * Admin / Super Admin rejects a visitor
- * @route PATCH /visitors/:visitorId/reject
- */
-export const rejectVisitor = async (req, res) => {
-    try {
-        const { visitorId } = req.params;
-        const { reason } = req.body;
-
-        const result = await visitorService.rejectVisitor(visitorId, reason, req.user);
-
-        return res.status(200).json({
-            success: true,
-            message: "Visitor rejected successfully.",
-            data: result
-        });
-
-    } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while rejecting the visitor."
-            : error.message;
-
-        console.error('[VisitorController] rejectVisitor error:', error);
-
-        return res.status(statusCode).json({
-            success: false,
-            message: message
-        });
-    }
-};
-
-/**
  * Get dashboard summary cards based on role
  * @route GET /dashboard-summary
  */
@@ -640,5 +575,40 @@ export const updateVisitor = async (req, res) => {
             success: false,
             message: message
         });
+    }
+};
+
+/**
+ * Approve a single VisitRequest
+ */
+export const approveVisitRequest = async (req, res, next) => {
+    try {
+        const { visitRequestId } = req.params;
+        const result = await visitorService.approveVisitRequest(visitRequestId, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'VisitRequest approved successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Reject a single VisitRequest
+ */
+export const rejectVisitRequest = async (req, res, next) => {
+    try {
+        const { visitRequestId } = req.params;
+        const { reason } = req.body;
+        const result = await visitorService.rejectVisitRequest(visitRequestId, reason, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'VisitRequest rejected successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
     }
 };

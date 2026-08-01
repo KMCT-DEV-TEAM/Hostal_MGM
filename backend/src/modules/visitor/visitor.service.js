@@ -447,148 +447,7 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
  * Resolves authorized pending VisitRequests for a user given a visitorId.
  * Used internally by bulk approve/reject.
  */
-const resolveAuthorizedPendingRequests = async (visitorId, user) => {
-    const visitor = await visitorRepository.findVisitorById(visitorId);
-    if (!visitor) {
-        throw Object.assign(new Error('Visitor not found.'), { status: 404 });
-    }
 
-    const pendingRequests = await visitorRepository.getPendingVisitRequestsByVisitor(visitorId);
-    if (!pendingRequests || pendingRequests.length === 0) {
-        return { visitor, authorizedRequests: [], totalPending: 0 };
-    }
-
-    let authorizedRequests = [];
-    if (user.role === 'super_admin') {
-        authorizedRequests = pendingRequests;
-    } else if (user.role === 'admin') {
-        authorizedRequests = pendingRequests.filter(req => 
-            req.studentId && req.studentId.organizationId && 
-            req.studentId.organizationId.toString() === user.organization?.toString()
-        );
-    } else if (user.role === 'mentor') {
-        const activeAssignments = await MentorAssignment.find({
-            mentorId: user.id || user._id,
-            status: "active"
-        }, "batchId").lean();
-        const activeBatchIds = activeAssignments.map(a => a.batchId.toString());
-        
-        authorizedRequests = pendingRequests.filter(req => 
-            req.studentId && req.studentId.batchId && 
-            activeBatchIds.includes(req.studentId.batchId.toString())
-        );
-    } else {
-        throw Object.assign(new Error('Unauthorized role.'), { status: 403 });
-    }
-
-    return { visitor, authorizedRequests, totalPending: pendingRequests.length };
-};
-
-/**
- * Approve a pending visitor's authorized requests
- * @param {String} visitorId 
- * @param {Object} adminUser 
- */
-export const approveVisitor = async (visitorId, adminUser) => {
-    const { visitor, authorizedRequests, totalPending } = await resolveAuthorizedPendingRequests(visitorId, adminUser);
-
-    if (authorizedRequests.length === 0) {
-        throw Object.assign(
-            new Error(`No pending visit requests found that you are authorized to approve. (Total Pending: ${totalPending})`), 
-            { status: 400 }
-        );
-    }
-
-    const requestIds = authorizedRequests.map(r => r._id);
-    const timelineEntry = {
-        action: VISITOR_APPROVAL_ACTIONS.APPROVED,
-        performedBy: adminUser.id,
-        remarks: adminUser.role === 'mentor' ? 'Approved by Mentor' : 'Approved by Admin',
-        createdAt: new Date()
-    };
-
-    await visitorRepository.bulkUpdateVisitRequestStatus(requestIds, VISITOR_STATUS.APPROVED, timelineEntry);
-
-    // Notifications
-    const studentIds = authorizedRequests.map(r => r.studentId._id.toString());
-    try {
-        const studentNames = authorizedRequests.map(r => r.studentId.name).join(', ');
-        await orchestratorService.triggerNotification({
-            eventName: 'VISITOR_APPROVED',
-            target: { type: 'PARENT', filter: { studentIds } },
-            data: { visitorName: visitor.name, studentNames, link: '/dashboard/visitors' },
-            sender: { id: adminUser.id, model: 'User', snapshot: { name: adminUser.name, role: adminUser.role } }
-        });
-    } catch (e) {
-        console.error('[VisitorService] Failed to publish VISITOR_APPROVED event:', e);
-    }
-
-    return {
-        visitorId: visitor._id,
-        summary: {
-            approved: requestIds.length,
-            skipped: totalPending - requestIds.length
-        },
-        processedRequests: authorizedRequests.map(r => ({
-            visitRequestId: r._id,
-            studentId: r.studentId._id,
-            status: VISITOR_STATUS.APPROVED
-        }))
-    };
-};
-
-/**
- * Reject a pending visitor's authorized requests
- * @param {String} visitorId 
- * @param {String} reason 
- * @param {Object} adminUser 
- */
-export const rejectVisitor = async (visitorId, reason, adminUser) => {
-    const { visitor, authorizedRequests, totalPending } = await resolveAuthorizedPendingRequests(visitorId, adminUser);
-
-    if (authorizedRequests.length === 0) {
-        throw Object.assign(
-            new Error(`No pending visit requests found that you are authorized to reject. (Total Pending: ${totalPending})`), 
-            { status: 400 }
-        );
-    }
-
-    const requestIds = authorizedRequests.map(r => r._id);
-    const timelineEntry = {
-        action: VISITOR_APPROVAL_ACTIONS.REJECTED,
-        performedBy: adminUser.id,
-        remarks: reason,
-        createdAt: new Date()
-    };
-
-    await visitorRepository.bulkUpdateVisitRequestStatus(requestIds, VISITOR_STATUS.REJECTED, timelineEntry);
-
-    // Notifications
-    const studentIds = authorizedRequests.map(r => r.studentId._id.toString());
-    try {
-        await orchestratorService.triggerNotification({
-            eventName: 'VISITOR_REJECTED',
-            target: { type: 'PARENT', filter: { studentIds } },
-            data: { visitorName: visitor.name, reason, link: '/dashboard/visitors' },
-            sender: { id: adminUser.id, model: 'User', snapshot: { name: adminUser.name, role: adminUser.role } }
-        });
-    } catch (e) {
-        console.error('[VisitorService] Failed to publish VISITOR_REJECTED event:', e);
-    }
-
-    return {
-        visitorId: visitor._id,
-        summary: {
-            rejected: requestIds.length,
-            skipped: totalPending - requestIds.length
-        },
-        processedRequests: authorizedRequests.map(r => ({
-            visitRequestId: r._id,
-            studentId: r.studentId._id,
-            status: VISITOR_STATUS.REJECTED
-        }))
-    };
-};
 
 /**
  * Returns role-based dashboard summary cards for Visitor management
@@ -1759,3 +1618,86 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
     };
 };
 
+import { authorizeVisitRequest, validateVisitRequestTransition } from './visitor.helper.js';
+
+/**
+ * Approve a single VisitRequest
+ * @param {String} visitRequestId 
+ * @param {Object} user (Staff/Mentor)
+ * @param {Object} session (Optional MongoDB transaction session)
+ */
+export const approveVisitRequest = async (visitRequestId, user, session = null) => {
+    // 1. Fetch VisitRequest with populated auth data
+    const visitRequest = await visitorRepository.findVisitRequestWithAuthorizationData(visitRequestId, session);
+    if (!visitRequest) {
+        throw Object.assign(new Error('VisitRequest not found.'), { status: 404 });
+    }
+
+    // 2. Validate State Transition
+    validateVisitRequestTransition(visitRequest.status, VISITOR_STATUS.APPROVED);
+
+    // 3. Verify Authorization
+    await authorizeVisitRequest(visitRequest, user);
+
+    // 4. Prepare audit timeline entry
+    const timelineEntry = {
+        action: VISITOR_APPROVAL_ACTIONS.APPROVED,
+        performedBy: user.id || user._id,
+        performedByRole: user.role,
+        remarks: `Approved by ${user.role}`
+    };
+
+    // 5. Update VisitRequest
+    const updatedRequest = await visitorRepository.approveVisitRequest(visitRequestId, timelineEntry, session);
+
+    // (Optional) Trigger notifications here in the future
+    try {
+        const studentName = visitRequest.studentId?.name || 'Student';
+        await orchestratorService.triggerNotification({
+            eventName: 'VISITOR_APPROVED',
+            target: { type: 'PARENT', filter: { studentIds: [visitRequest.studentId._id.toString()] } },
+            data: { visitorName: 'Visitor', studentNames: studentName, link: '/dashboard/visitors' },
+            sender: { id: user.id || user._id, model: 'User', snapshot: { name: user.name, role: user.role } }
+        });
+    } catch (e) {
+        console.error('[VisitorService] Failed to publish single VISITOR_APPROVED event:', e);
+    }
+
+    return updatedRequest;
+};
+
+/**
+ * Reject a single VisitRequest
+ * @param {String} visitRequestId 
+ * @param {String} reason 
+ * @param {Object} user (Staff/Mentor)
+ * @param {Object} session (Optional MongoDB transaction session)
+ */
+export const rejectVisitRequest = async (visitRequestId, reason, user, session = null) => {
+    // 1. Fetch VisitRequest with populated auth data
+    const visitRequest = await visitorRepository.findVisitRequestWithAuthorizationData(visitRequestId, session);
+    if (!visitRequest) {
+        throw Object.assign(new Error('VisitRequest not found.'), { status: 404 });
+    }
+
+    // 2. Validate State Transition
+    validateVisitRequestTransition(visitRequest.status, VISITOR_STATUS.REJECTED);
+
+    // 3. Verify Authorization
+    await authorizeVisitRequest(visitRequest, user);
+
+    // 4. Prepare audit timeline entry
+    const timelineEntry = {
+        action: VISITOR_APPROVAL_ACTIONS.REJECTED,
+        performedBy: user.id || user._id,
+        performedByRole: user.role,
+        remarks: reason
+    };
+
+    // 5. Update VisitRequest
+    const updatedRequest = await visitorRepository.rejectVisitRequest(visitRequestId, timelineEntry, session);
+
+    // (Optional) Trigger notifications here in the future
+
+    return updatedRequest;
+};

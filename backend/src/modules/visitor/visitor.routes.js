@@ -16,6 +16,8 @@ import {
     validateUpdateVisitor,
     validateUpdateVisitorStatus,
     validateAddStudentsToVisit,
+    validateApproveVisitRequest,
+    validateRejectVisitRequest,
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 
@@ -180,22 +182,20 @@ router.get(
     visitorController.getVisitorDetails
 );
 // ---------------------------------------------------------
-// Action Routes
+// VisitRequest Action Routes
 // ---------------------------------------------------------
 router.patch(
-    '/:visitorId/approve',
+    '/visit-requests/:visitRequestId/approve',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'mentor'),
-    validateApproveVisitor,
-    visitorController.approveVisitor
+    validateApproveVisitRequest, // To be implemented in validation
+    visitorController.approveVisitRequest
 );
 
 router.patch(
-    '/:visitorId/reject',
+    '/visit-requests/:visitRequestId/reject',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'mentor'),
-    validateRejectVisitor,
-    visitorController.rejectVisitor
+    validateRejectVisitRequest,
+    visitorController.rejectVisitRequest
 );
 
 router.patch(

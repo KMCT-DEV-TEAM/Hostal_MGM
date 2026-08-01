@@ -13,6 +13,10 @@ const approvalTimelineSchema = new mongoose.Schema(
             ref: 'User',
             required: true
         },
+        performedByRole: {
+            type: String,
+            required: true
+        },
         remarks: {
             type: String,
             trim: true

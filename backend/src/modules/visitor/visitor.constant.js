@@ -2,6 +2,7 @@ export const VISITOR_STATUS = {
     PENDING: 'Pending',
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
+    REVOKED: 'Revoked',
     INACTIVE: 'Inactive'
 };
 
@@ -9,6 +10,7 @@ export const VISITOR_APPROVAL_ACTIONS = {
     CREATED: 'Created',
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
+    REVOKED: 'Revoked',
     ACTIVATED: 'Activated',
     DEACTIVATED: 'Deactivated'
 };
