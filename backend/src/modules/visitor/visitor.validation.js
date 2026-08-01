@@ -315,14 +315,7 @@ export const validateRejectVisitor = (req, res, next) => {
 };
 
 export const validateCheckInVisitor = (req, res, next) => {
-    const { visitor, purpose, expectedExitTime, selectedStudentIds, studentId, students, hostelId, organizationId } = req.body;
-
-    if (studentId || students || hostelId || organizationId) {
-        return res.status(400).json({
-            success: false,
-            message: "studentId, students, hostelId, and organizationId are not allowed in the request body. Use selectedStudentIds instead."
-        });
-    }
+    const { visitor, purpose, expectedExitTime, selectedStudentIds } = req.body;
 
     if (!Array.isArray(selectedStudentIds) || selectedStudentIds.length === 0) {
         return res.status(400).json({
