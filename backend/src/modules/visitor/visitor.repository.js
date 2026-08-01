@@ -103,121 +103,136 @@ export const createVisitor = async (data) => {
 
 
 /**
- * Fetches visitors with role-based filtering, pagination, and projection for tables.
- * @param {Object} matchStage 
- * @param {Object} sortStage 
+ * Unified aggregation for Visitor Listing (Staff, Student, Parent)
+ * @param {Object} initialMatch - Filters on Visitor collection (status, dates)
+ * @param {Object} studentMatch - Scope filters on populated Students (for Staff)
+ * @param {Object} sortOptions - Searching and sorting
  * @param {Number} skip 
  * @param {Number} limit 
- * @returns {Promise<Object>} { data: Array, total: Number }
+ * @param {String} parentIdMatch - (Optional) If provided, filters visitors created/used by this parent
  */
-export const getVisitors = async (matchStage, sortStage, skip, limit) => {
-    const pipeline = [
-        { $match: matchStage },
-        // Lookup Organization
-        {
-            $lookup: {
-                from: 'organizations',
-                localField: 'organizationId',
-                foreignField: '_id',
-                as: 'organizationInfo'
+export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, skip, limit, parentIdMatch = null) => {
+    const pipeline = [];
+
+    // 1. Initial Match (Status, Date)
+    if (Object.keys(initialMatch).length > 0) {
+        pipeline.push({ $match: initialMatch });
+    }
+
+    // 2. Lookup ALL VisitRequests for this visitor
+    pipeline.push({
+        $lookup: {
+            from: 'visitrequests',
+            localField: '_id',
+            foreignField: 'visitorId',
+            as: 'allRequests'
+        }
+    });
+
+    // 3. Parent Scope Filter (only visitors who have a visitRequest created by this parent)
+    if (parentIdMatch) {
+        pipeline.push({
+            $match: { 'allRequests.parentId': new mongoose.Types.ObjectId(parentIdMatch) }
+        });
+    }
+
+    // 4. Lookup Students for filtering and response
+    pipeline.push({
+        $lookup: {
+            from: 'students',
+            localField: 'allRequests.studentId',
+            foreignField: '_id',
+            as: 'studentObj'
+        }
+    });
+
+    // 5. Staff/Student Scope Filter
+    if (Object.keys(studentMatch).length > 0) {
+        pipeline.push({ $match: studentMatch });
+    }
+
+    // 6. Search text 
+    if (sortOptions.search) {
+        const searchRegex = new RegExp(sortOptions.search, 'i');
+        pipeline.push({
+            $match: {
+                $or: [
+                    { name: searchRegex },
+                    { phone: searchRegex },
+                    { email: searchRegex },
+                    { 'studentObj.name': searchRegex },
+                    { 'studentObj.roomNumber': searchRegex }
+                ]
             }
-        },
-        { $unwind: { path: '$organizationInfo', preserveNullAndEmptyArrays: true } },
-        // Lookup Students to get names and hostel info
-        {
-            $lookup: {
-                from: 'students',
-                localField: 'students',
-                foreignField: '_id',
-                as: 'studentDocs'
-            }
-        },
-        // We can get the hostelId from the first student since they are validated to belong to the same hostel
-        {
-            $addFields: {
-                firstStudentHostelId: { $arrayElemAt: ['$studentDocs.hostelId', 0] }
-            }
-        },
-        // Lookup Hostel
-        {
-            $lookup: {
-                from: 'hostels',
-                localField: 'firstStudentHostelId',
-                foreignField: '_id',
-                as: 'hostelInfo'
-            }
-        },
-        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
-        // Calculate fields and project
-        {
-            $addFields: {
-                approvedTimelineEvent: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$approvalTimeline",
-                                as: "timeline",
-                                cond: { $eq: ["$$timeline.action", "Approved"] }
+        });
+    }
+
+    // 6. Sort
+    let sortStage = { createdAt: -1 };
+    if (sortOptions.sort) {
+        if (sortOptions.sort === 'name' || sortOptions.sort === 'name_asc') sortStage = { name: 1 };
+        else if (sortOptions.sort === '-name') sortStage = { name: -1 };
+        else if (sortOptions.sort === 'createdAt' || sortOptions.sort === 'oldest') sortStage = { createdAt: 1 };
+        else if (sortOptions.sort === '-createdAt') sortStage = { createdAt: -1 };
+    }
+    pipeline.push({ $sort: sortStage });
+
+    // 7. Pagination & Projection via Facet
+    pipeline.push({
+        $facet: {
+            metadata: [{ $count: 'total' }],
+            data: [
+                { $skip: skip },
+                { $limit: limit },
+                {
+                    $project: {
+                        visitorId: '$_id', // backwards compat
+                        name: 1,
+                        phone: 1,
+                        email: 1,
+                        status: '$approvalStatus', // backwards compat
+                        approvalStatus: 1,
+                        createdAt: 1,
+                        updatedAt: 1,
+                        latestRequestDate: { $max: '$allRequests.createdAt' },
+                        activeRequestsCount: {
+                            $size: {
+                                $filter: {
+                                    input: '$allRequests',
+                                    as: 'req',
+                                    cond: { $in: ['$$req.status', ['Pending', 'Approved']] }
+                                }
                             }
                         },
-                        0
-                    ]
-                }
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                visitorId: '$_id',
-                visitorName: '$name',
-                phone: 1,
-                email: 1,
-                relationship: 1,
-                status: '$approvalStatus',
-                createdAt: 1,
-                approvedAt: '$approvedTimelineEvent.createdAt',
-                organizationName: '$organizationInfo.name',
-                hostelName: '$hostelInfo.name',
-
-                students: {
-                    $map: {
-                        input: '$studentDocs',
-                        as: 'st',
-                        in: {
-                            id: '$$st._id',
-                            name: '$$st.name',
-                            roomNumber: '$$st.roomNumber'
+                        studentCount: { $size: '$studentObj' },
+                        students: {
+                            $map: {
+                                input: '$studentObj',
+                                as: 's',
+                                in: {
+                                    id: '$$s._id', // backwards compat
+                                    _id: '$$s._id',
+                                    name: '$$s.name',
+                                    roomNumber: '$$s.roomNumber',
+                                    hostelId: '$$s.hostelId',
+                                    phone: '$$s.phone',
+                                    email: '$$s.email'
+                                }
+                            }
                         }
                     }
-                },
-                priority: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: ['$approvalStatus', 'Pending'] }, then: 1 },
-                            { case: { $eq: ['$approvalStatus', 'Approved'] }, then: 2 },
-                            { case: { $eq: ['$approvalStatus', 'Inactive'] }, then: 3 },
-                            { case: { $eq: ['$approvalStatus', 'Rejected'] }, then: 4 }
-                        ],
-                        default: 5
-                    }
                 }
-            }
-        },
-        { $sort: sortStage },
-        {
-            $facet: {
-                metadata: [{ $count: 'total' }],
-                data: [{ $skip: skip }, { $limit: limit }]
-            }
+            ]
         }
-    ];
+    });
 
     const result = await Visitor.aggregate(pipeline);
-    const data = result[0].data;
-    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+    const data = result[0]?.data || [];
+    const total = result[0]?.metadata[0]?.total || 0;
 
     return { data, total };
 };
+
 
 /**
  * Finds a visitor by ID
@@ -902,90 +917,7 @@ export const updateVisitor = async (visitorId, updateData) => {
     ).select('name phone email address updatedAt');
 };
 
-/**
- * Parent Module: Lists Visitors linked to a Parent via VisitRequests
- */
-export const getParentVisitorsList = async (parentId, filters, skip, limit) => {
-    const initialMatch = { parentId: new mongoose.Types.ObjectId(parentId) };
 
-    if (filters.status) {
-        initialMatch.status = filters.status;
-    }
-
-    const pipeline = [
-        { $match: initialMatch },
-        {
-            $group: {
-                _id: '$visitorId',
-                latestRequestDate: { $max: '$createdAt' },
-                students: { $addToSet: '$studentId' },
-                activeRequestsCount: {
-                    $sum: { $cond: [{ $in: ['$status', ['Pending', 'Approved']] }, 1, 0] }
-                }
-            }
-        },
-        { $lookup: { from: 'visitors', localField: '_id', foreignField: '_id', as: 'visitor' } },
-        { $unwind: '$visitor' }
-    ];
-
-    if (filters.search) {
-        pipeline.push({
-            $match: {
-                $or: [
-                    { 'visitor.name': { $regex: filters.search, $options: 'i' } },
-                    { 'visitor.phone': { $regex: filters.search, $options: 'i' } }
-                ]
-            }
-        });
-    }
-
-    let sortObj = { latestRequestDate: -1 };
-    if (filters.sort === 'oldest') {
-        sortObj = { latestRequestDate: 1 };
-    } else if (filters.sort === 'name_asc') {
-        sortObj = { 'visitor.name': 1 };
-    }
-
-    pipeline.push({ $sort: sortObj });
-
-    pipeline.push({
-        $facet: {
-            metadata: [{ $count: 'total' }],
-            data: [
-                { $skip: skip },
-                { $limit: limit },
-                { $lookup: { from: 'students', localField: 'students', foreignField: '_id', as: 'studentDetails' } },
-                {
-                    $project: {
-                        _id: 0,
-                        visitorId: "$visitor._id",
-                        name: "$visitor.name",
-                        phone: "$visitor.phone",
-                        status: "$visitor.status",
-                        latestRequestDate: 1,
-                        activeRequestsCount: 1,
-                        students: {
-                            $map: {
-                                input: "$studentDetails",
-                                as: "student",
-                                in: {
-                                    id: "$$student._id",
-                                    name: "$$student.name"
-                                }
-                            }
-                        }
-                    }
-                }
-            ]
-        }
-    });
-
-    const result = await VisitRequest.aggregate(pipeline);
-    const data = result[0].data;
-    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
-
-    return { data, total };
-};
 
 /**
  * Parent Module: Gets a specific Visitor's VisitRequests linked to a specific Parent
@@ -995,4 +927,42 @@ export const getParentVisitRequests = async (visitorId, parentId) => {
         .populate('studentId', 'name roomNumber')
         .sort({ createdAt: -1 })
         .lean();
+};
+
+// ============================================================================
+// Multi-Student Approval Methods
+// ============================================================================
+
+/**
+ * Fetches all Pending VisitRequests for a visitor, populated with student auth data
+ * @param {String} visitorId 
+ * @returns {Promise<Array>}
+ */
+export const getPendingVisitRequestsByVisitor = async (visitorId) => {
+    return await VisitRequest.find({
+        visitorId,
+        status: 'Pending'
+    })
+        .populate('studentId', 'name organizationId batchId hostelId')
+        .lean();
+};
+
+/**
+ * Atomically updates multiple VisitRequests from Pending to the new status
+ * @param {Array<String>} requestIds 
+ * @param {String} newStatus 
+ * @param {Object} timelineEntry 
+ * @returns {Promise<Object>} Mongoose Update Result
+ */
+export const bulkUpdateVisitRequestStatus = async (requestIds, newStatus, timelineEntry) => {
+    return await VisitRequest.updateMany(
+        {
+            _id: { $in: requestIds },
+            status: 'Pending' // Optimistic lock condition
+        },
+        {
+            $set: { status: newStatus },
+            $push: { approvalTimeline: timelineEntry }
+        }
+    );
 };
