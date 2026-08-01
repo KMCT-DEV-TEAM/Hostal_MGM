@@ -346,7 +346,7 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
     let studentParentLinkIds = [];
 
     if (user.role === 'warden') {
-        const wardenHostels = await HostelModel.find({ wardens: user.id }, '_id').lean();
+        const wardenHostels = await hostelModel.find({ wardens: user.id }, '_id').lean();
         if (!wardenHostels.length) throw Object.assign(new Error('Unauthorized: Not assigned to any hostel.'), { status: 403 });
         wardenHostelIds = wardenHostels.map(h => h._id.toString());
     } else if (user.role === 'mentor') {
@@ -421,7 +421,8 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
             authorizedVisitRequests.reduce((acc, vr) => {
                 if (vr.studentId && !acc[vr.studentId._id]) {
                     acc[vr.studentId._id] = {
-                        id: vr.studentId._id,
+                        _id: vr._id,
+                        studentId: vr.studentId._id,
                         name: vr.studentId.name,
                         roomNumber: vr.studentId.roomNumber,
                         sHostelName: vr.studentId.hostelId.name,
