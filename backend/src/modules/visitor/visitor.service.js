@@ -151,36 +151,6 @@ export const updateVisitorStatus = async (visitorId, status, user, explicitStude
     return updatedVisitor;
 };
 
-/**
- * Builds standard filter and sort stages for Visitor listings
- * @param {Object} query 
- * @returns {Object} { matchStage, sortStage, skip, limit }
- */
-const buildListingStages = (query) => {
-    const { page = 1, limit = 10, search, status, sortBy = 'createdAt', sortOrder = 'desc' } = query;
-    const matchStage = {};
-
-    if (status) {
-        matchStage.approvalStatus = status;
-    }
-
-    if (search) {
-        matchStage.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { phone: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } }
-        ];
-    }
-
-    let actualSortField = sortBy;
-    if (sortBy === 'visitorName') actualSortField = 'name';
-    if (sortBy === 'status') actualSortField = 'approvalStatus';
-
-    const sortStage = { priority: 1, [actualSortField]: sortOrder === 'asc' ? 1 : -1 };
-    const skip = (Number(page) - 1) * Number(limit);
-
-    return { matchStage, sortStage, skip, limit: Number(limit), page: Number(page) };
-};
 
 // ============================================================================
 // Staff Visitor Listing Modules
@@ -270,7 +240,7 @@ export const listVisitors = async (query, user) => {
         const studentMatch = await resolveStaffListingScope(user, query.organization);
         const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch);
 
-        const { data, total } = await visitorRepository.getSharedVisitorsList(
+        const { data, total } = await visitorRepository.getVisitorsList(
             initialMatch,
             studentMatch,
             sortOptions,
@@ -299,20 +269,17 @@ export const listParentVisitors = async (query, user) => {
     const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 50);
     const skip = (page - 1) * limit;
 
-    const filters = {};
-    if (query.search) {
-        // Prevent ReDoS by safely escaping regex characters
-        const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        filters.search = escapeRegex(query.search.trim());
-    }
-    if (query.status) {
-        filters.status = query.status.trim();
-    }
-    if (query.sort) {
-        filters.sort = query.sort.trim();
-    }
+    const { initialMatch, sortOptions } = buildListingFilters(query, {});
 
-    const { data, total } = await visitorRepository.getParentVisitorsList(user.id, filters, skip, limit);
+    const { data, total } = await visitorRepository.getVisitorsList(
+        initialMatch,
+        {},
+        sortOptions,
+        skip,
+        limit,
+        user.id // Pass parentIdMatch for Parent scope
+    );
+
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -332,12 +299,21 @@ export const listParentVisitors = async (query, user) => {
  * @param {Object} user (Authenticated Student)
  */
 export const listStudentVisitors = async (query, user) => {
-    // 1. Build Query
-    const { matchStage, sortStage, skip, limit, page } = buildListingStages(query);
-    matchStage.students = new mongoose.Types.ObjectId(user.id);
+    const page = Math.max(parseInt(query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 50);
+    const skip = (page - 1) * limit;
 
-    // 2. Repository Call
-    const { data, total } = await visitorRepository.getVisitors(matchStage, sortStage, skip, limit);
+    const studentMatch = { 'studentObj._id': new mongoose.Types.ObjectId(user.id) };
+    const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch);
+
+    const { data, total } = await visitorRepository.getVisitorsList(
+        initialMatch,
+        studentMatch,
+        sortOptions,
+        skip,
+        limit
+    );
+
     const totalPages = Math.ceil(total / limit);
 
     return { total, page, limit, totalPages, data };
@@ -468,230 +444,149 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
 };
 
 /**
- * Approve a pending visitor
+ * Resolves authorized pending VisitRequests for a user given a visitorId.
+ * Used internally by bulk approve/reject.
+ */
+const resolveAuthorizedPendingRequests = async (visitorId, user) => {
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        throw Object.assign(new Error('Visitor not found.'), { status: 404 });
+    }
+
+    const pendingRequests = await visitorRepository.getPendingVisitRequestsByVisitor(visitorId);
+    if (!pendingRequests || pendingRequests.length === 0) {
+        return { visitor, authorizedRequests: [], totalPending: 0 };
+    }
+
+    let authorizedRequests = [];
+    if (user.role === 'super_admin') {
+        authorizedRequests = pendingRequests;
+    } else if (user.role === 'admin') {
+        authorizedRequests = pendingRequests.filter(req => 
+            req.studentId && req.studentId.organizationId && 
+            req.studentId.organizationId.toString() === user.organization?.toString()
+        );
+    } else if (user.role === 'mentor') {
+        const activeAssignments = await MentorAssignment.find({
+            mentorId: user.id || user._id,
+            status: "active"
+        }, "batchId").lean();
+        const activeBatchIds = activeAssignments.map(a => a.batchId.toString());
+        
+        authorizedRequests = pendingRequests.filter(req => 
+            req.studentId && req.studentId.batchId && 
+            activeBatchIds.includes(req.studentId.batchId.toString())
+        );
+    } else {
+        throw Object.assign(new Error('Unauthorized role.'), { status: 403 });
+    }
+
+    return { visitor, authorizedRequests, totalPending: pendingRequests.length };
+};
+
+/**
+ * Approve a pending visitor's authorized requests
  * @param {String} visitorId 
  * @param {Object} adminUser 
  */
 export const approveVisitor = async (visitorId, adminUser) => {
-    // 1. Fetch Visitor
-    const visitor = await visitorRepository.findVisitorById(visitorId);
-    if (!visitor) {
-        const error = new Error('Visitor not found.');
-        error.status = 404;
-        throw error;
+    const { visitor, authorizedRequests, totalPending } = await resolveAuthorizedPendingRequests(visitorId, adminUser);
+
+    if (authorizedRequests.length === 0) {
+        throw Object.assign(
+            new Error(`No pending visit requests found that you are authorized to approve. (Total Pending: ${totalPending})`), 
+            { status: 400 }
+        );
     }
 
-    // 2. Authorization
-    if (adminUser.role === 'admin') {
-        if (visitor.organizationId.toString() !== adminUser.organization.toString()) {
-            const error = new Error('Unauthorized to approve visitors outside your organization.');
-            error.status = 403;
-            throw error;
-        }
-    } else if (adminUser.role === 'mentor') {
-        const activeAssignments = await MentorAssignment.find({
-            mentorId: adminUser.id || adminUser._id,
-            status: "active"
-        }, "batchId").lean();
-        const batchIds = activeAssignments.map(a => a.batchId);
-        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
-        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
-        const visitorStudentIds = visitor.students.map(s => s.toString());
-
-        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
-        if (!hasOverlap) {
-            const error = new Error('Unauthorized to approve visitors outside your assigned batches.');
-            error.status = 403;
-            throw error;
-        }
-    } else if (adminUser.role !== 'super_admin') {
-        const error = new Error('Unauthorized role.');
-        error.status = 403;
-        throw error;
-    }
-
-    // 3. Business Logic
-    if (visitor.approvalStatus === VISITOR_STATUS.APPROVED) {
-        const error = new Error('Visitor is already approved.');
-        error.status = 400;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.REJECTED) {
-        const error = new Error('Visitor is rejected and cannot be approved.');
-        error.status = 400;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.INACTIVE) {
-        const error = new Error('Visitor is inactive.');
-        error.status = 400;
-        throw error;
-    }
-
-    // 4. Update Database
-    const updateData = {
-        approvalStatus: VISITOR_STATUS.APPROVED,
-        $unset: { rejectionReason: 1 }
-    };
-
+    const requestIds = authorizedRequests.map(r => r._id);
     const timelineEntry = {
         action: VISITOR_APPROVAL_ACTIONS.APPROVED,
         performedBy: adminUser.id,
-        remarks: adminUser.role === 'mentor' ? 'Approved by Mentor' : 'Approved by Admin'
+        remarks: adminUser.role === 'mentor' ? 'Approved by Mentor' : 'Approved by Admin',
+        createdAt: new Date()
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorStatus(visitorId, updateData, timelineEntry);
+    await visitorRepository.bulkUpdateVisitRequestStatus(requestIds, VISITOR_STATUS.APPROVED, timelineEntry);
 
-    // 5. Notification
+    // Notifications
+    const studentIds = authorizedRequests.map(r => r.studentId._id.toString());
     try {
-        const students = await Student.find({ _id: { $in: visitor.students } }, 'name');
-        const studentNames = students.map(s => s.name).join(', ');
-
+        const studentNames = authorizedRequests.map(r => r.studentId.name).join(', ');
         await orchestratorService.triggerNotification({
             eventName: 'VISITOR_APPROVED',
-            target: {
-                type: 'PARENT',
-                filter: {
-                    studentIds: visitor.students.map(id => id.toString())
-                }
-            },
-            data: {
-                visitorName: visitor.name,
-                studentNames: studentNames,
-                link: '/dashboard/visitors'
-            },
-            sender: {
-                id: adminUser.id,
-                model: 'User',
-                snapshot: {
-                    name: adminUser.name,
-                    role: adminUser.role
-                }
-            }
+            target: { type: 'PARENT', filter: { studentIds } },
+            data: { visitorName: visitor.name, studentNames, link: '/dashboard/visitors' },
+            sender: { id: adminUser.id, model: 'User', snapshot: { name: adminUser.name, role: adminUser.role } }
         });
-    } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISITOR_APPROVED event:', notificationError);
+    } catch (e) {
+        console.error('[VisitorService] Failed to publish VISITOR_APPROVED event:', e);
     }
 
-    // 6. Return sanitized DTO
     return {
-        visitorId: updatedVisitor._id,
-        visitorName: updatedVisitor.name,
-        status: updatedVisitor.approvalStatus,
-        approvedAt: new Date(),
-        approvedBy: adminUser.id
+        visitorId: visitor._id,
+        summary: {
+            approved: requestIds.length,
+            skipped: totalPending - requestIds.length
+        },
+        processedRequests: authorizedRequests.map(r => ({
+            visitRequestId: r._id,
+            studentId: r.studentId._id,
+            status: VISITOR_STATUS.APPROVED
+        }))
     };
 };
 
 /**
- * Reject a pending visitor
+ * Reject a pending visitor's authorized requests
  * @param {String} visitorId 
  * @param {String} reason 
  * @param {Object} adminUser 
  */
 export const rejectVisitor = async (visitorId, reason, adminUser) => {
-    // 1. Fetch Visitor
-    const visitor = await visitorRepository.findVisitorById(visitorId);
-    if (!visitor) {
-        const error = new Error('Visitor not found.');
-        error.status = 404;
-        throw error;
+    const { visitor, authorizedRequests, totalPending } = await resolveAuthorizedPendingRequests(visitorId, adminUser);
+
+    if (authorizedRequests.length === 0) {
+        throw Object.assign(
+            new Error(`No pending visit requests found that you are authorized to reject. (Total Pending: ${totalPending})`), 
+            { status: 400 }
+        );
     }
 
-    // 2. Authorization
-    if (adminUser.role === 'admin') {
-        if (visitor.organizationId.toString() !== adminUser.organization.toString()) {
-            const error = new Error('Unauthorized to reject visitors outside your organization.');
-            error.status = 403;
-            throw error;
-        }
-    } else if (adminUser.role === 'mentor') {
-        const activeAssignments = await MentorAssignment.find({
-            mentorId: adminUser.id || adminUser._id,
-            status: "active"
-        }, "batchId").lean();
-        const batchIds = activeAssignments.map(a => a.batchId);
-        const mentorStudents = await Student.find({ batchId: { $in: batchIds } }, "_id").lean();
-        const mentorStudentIds = mentorStudents.map(s => s._id.toString());
-        const visitorStudentIds = visitor.students.map(s => s.toString());
-
-        const hasOverlap = visitorStudentIds.some(id => mentorStudentIds.includes(id));
-        if (!hasOverlap) {
-            const error = new Error('Unauthorized to reject visitors outside your assigned batches.');
-            error.status = 403;
-            throw error;
-        }
-    } else if (adminUser.role !== 'super_admin') {
-        const error = new Error('Unauthorized role.');
-        error.status = 403;
-        throw error;
-    }
-
-    // 3. Business Logic
-    if (visitor.approvalStatus === VISITOR_STATUS.APPROVED) {
-        const error = new Error('Visitor is already approved and cannot be rejected.');
-        error.status = 400;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.REJECTED) {
-        const error = new Error('Visitor is already rejected.');
-        error.status = 400;
-        throw error;
-    }
-    if (visitor.approvalStatus === VISITOR_STATUS.INACTIVE) {
-        const error = new Error('Visitor is inactive.');
-        error.status = 400;
-        throw error;
-    }
-
-    // 4. Update Database
-    const updateData = {
-        approvalStatus: VISITOR_STATUS.REJECTED,
-        rejectionReason: reason
-    };
-
+    const requestIds = authorizedRequests.map(r => r._id);
     const timelineEntry = {
         action: VISITOR_APPROVAL_ACTIONS.REJECTED,
         performedBy: adminUser.id,
-        remarks: reason
+        remarks: reason,
+        createdAt: new Date()
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorStatus(visitorId, updateData, timelineEntry);
+    await visitorRepository.bulkUpdateVisitRequestStatus(requestIds, VISITOR_STATUS.REJECTED, timelineEntry);
 
-    // 5. Notification
+    // Notifications
+    const studentIds = authorizedRequests.map(r => r.studentId._id.toString());
     try {
         await orchestratorService.triggerNotification({
             eventName: 'VISITOR_REJECTED',
-            target: {
-                type: 'PARENT',
-                filter: {
-                    studentIds: visitor.students.map(id => id.toString())
-                }
-            },
-            data: {
-                visitorName: visitor.name,
-                reason: reason,
-                link: '/dashboard/visitors'
-            },
-            sender: {
-                id: adminUser.id,
-                model: 'User',
-                snapshot: {
-                    name: adminUser.name,
-                    role: adminUser.role
-                }
-            }
+            target: { type: 'PARENT', filter: { studentIds } },
+            data: { visitorName: visitor.name, reason, link: '/dashboard/visitors' },
+            sender: { id: adminUser.id, model: 'User', snapshot: { name: adminUser.name, role: adminUser.role } }
         });
-    } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISITOR_REJECTED event:', notificationError);
+    } catch (e) {
+        console.error('[VisitorService] Failed to publish VISITOR_REJECTED event:', e);
     }
 
-    // 6. Return sanitized DTO
     return {
-        visitorId: updatedVisitor._id,
-        visitorName: updatedVisitor.name,
-        status: updatedVisitor.approvalStatus,
-        rejectedAt: new Date(),
-        rejectionReason: updatedVisitor.rejectionReason
+        visitorId: visitor._id,
+        summary: {
+            rejected: requestIds.length,
+            skipped: totalPending - requestIds.length
+        },
+        processedRequests: authorizedRequests.map(r => ({
+            visitRequestId: r._id,
+            studentId: r.studentId._id,
+            status: VISITOR_STATUS.REJECTED
+        }))
     };
 };
 

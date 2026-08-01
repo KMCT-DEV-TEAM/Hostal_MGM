@@ -25,8 +25,6 @@ const router = express.Router();
 export const parentVisitorRouter = express.Router({ mergeParams: true });
 
 // Apply verification for all parent routes
-// NOTE: verifyStudentAccess is removed from the global middleware here because 
-// create and confirm endpoints now take an array of studentIds and do their own validation.
 parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'));
 
 // ---------------------------------------------------------
