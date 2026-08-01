@@ -429,7 +429,8 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
                         relationship: vr.relationship,
                         purpose: vr.purpose,
                         requestStatus: vr.status,
-                        approvalTimeline: vr.approvalTimeline
+                        approvalTimeline: vr.approvalTimeline,
+                        createdAt: vr.createdAt
                     };
                 }
                 return acc;
@@ -444,11 +445,6 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         } : null
     };
 };
-
-/**
- * Resolves authorized pending VisitRequests for a user given a visitorId.
- * Used internally by bulk approve/reject.
- */
 
 
 /**

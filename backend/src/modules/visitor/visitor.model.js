@@ -16,8 +16,6 @@ const changeLogEntrySchema = new mongoose.Schema(
             enum: VISITOR_CHANGE_LOG_ACTION_VALUES,
             required: true
         },
-        // performedBy stores either a Parent._id or a User (admin) _id.
-        // No ref declared — performedByRole distinguishes the collection.
         performedBy: {
             type: mongoose.Schema.Types.ObjectId,
             required: true
@@ -27,8 +25,6 @@ const changeLogEntrySchema = new mongoose.Schema(
             enum: ['parent', 'admin', 'super-admin'],
             required: true
         },
-        // reason is required for all status-change actions (Deactivated,
-        // Blacklisted, Soft Deleted, etc.). Optional for Created / Updated.
         reason: {
             type: String,
             trim: true
