@@ -259,9 +259,9 @@ export const getVisitorDetails = async (visitorId) => {
         })
         .lean();
 
-    if (visitor && visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
-        for (let i = 0; i < visitor.approvalTimeline.length; i++) {
-            const timelineEvent = visitor.approvalTimeline[i];
+    if (visitor && visitor.changeLog && visitor.changeLog.length > 0) {
+        for (let i = 0; i < visitor.changeLog.length; i++) {
+            const timelineEvent = visitor.changeLog[i];
             if (timelineEvent.performedBy) {
                 // Try fetching from User collection
                 let userDoc = await User.findById(timelineEvent.performedBy, 'name role').lean();

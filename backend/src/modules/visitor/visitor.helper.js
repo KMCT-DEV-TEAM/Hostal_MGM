@@ -185,7 +185,8 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
                     remarks: remarks || undefined,
                     approvalTimeline: [{
                         action: VISITOR_APPROVAL_ACTIONS.CREATED,
-                        performedBy: user.id,
+                        performedBy: user.id || user._id,
+                        performedByRole: user.role || 'parent',
                         createdAt: new Date()
                     }]
                 };
@@ -287,7 +288,8 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
                     remarks: remarks || undefined,
                     approvalTimeline: [{
                         action: VISITOR_APPROVAL_ACTIONS.CREATED,
-                        performedBy: user.id,
+                        performedBy: user.id || user._id,
+                        performedByRole: user.role || 'parent',
                         createdAt: new Date()
                     }]
                 };
