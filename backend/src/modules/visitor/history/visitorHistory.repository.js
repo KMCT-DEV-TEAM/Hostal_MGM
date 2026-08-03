@@ -249,14 +249,14 @@ export const getVisitDetailsById = async (visitId) => {
         })
         .populate({
             path: 'students',
-            select: 'name studentId roomNumber studentId',
+            select: 'name studentId roomNumber organizationId',
+            populate: {
+                path: 'organizationId',
+                select: 'name'
+            }
         })
         .populate({
             path: 'hostelId',
-            select: 'name'
-        })
-        .populate({
-            path: 'organizationId',
             select: 'name'
         })
         .populate({

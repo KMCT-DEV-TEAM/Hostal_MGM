@@ -408,11 +408,17 @@ export const getDashboardStats = async (role, context) => {
         }
         case 'admin': {
             const orgFilter = { organizationId: context.organizationId };
+            
+            const Student = mongoose.model('Student');
+            const adminStudents = await Student.find({ organizationId: context.organizationId }, '_id').lean();
+            const adminStudentIds = adminStudents.map(s => s._id);
+            const visitFilter = { students: { $in: adminStudentIds } };
+
             const [pending, approved, inside, todaysVisits] = await Promise.all([
                 Visitor.countDocuments({ ...orgFilter, approvalStatus: VISITOR_STATUS.PENDING }),
                 Visitor.countDocuments({ ...orgFilter, approvalStatus: VISITOR_STATUS.APPROVED }),
-                VisitorVisit.countDocuments({ ...orgFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN }),
-                VisitorVisit.countDocuments({ ...orgFilter, checkInTime: { $gte: today, $lte: endOfToday } })
+                VisitorVisit.countDocuments({ ...visitFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN }),
+                VisitorVisit.countDocuments({ ...visitFilter, checkInTime: { $gte: today, $lte: endOfToday } })
             ]);
             stats.pendingApproval = pending;
             stats.approvedVisitors = approved;
@@ -693,14 +699,14 @@ export const getExpiredVisits = async (batchSize = 50) => {
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         expectedExitTime: { $lte: new Date() }
     })
-        .select('_id checkInTime expectedExitTime visitor students hostelId organizationId')
+        .select('_id checkInTime expectedExitTime visitor students hostelId')
         .populate({
             path: 'visitor.refId',
             select: 'name parentName phone'
         })
         .populate({
             path: 'students',
-            select: 'name studentId'
+            select: 'name studentId organizationId'
         })
         .limit(batchSize)
         .lean();

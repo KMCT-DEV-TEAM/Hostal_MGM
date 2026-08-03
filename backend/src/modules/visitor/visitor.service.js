@@ -645,7 +645,6 @@ export const checkInVisitor = async (payload, wardenUser) => {
     const parsedExpectedExitTime = new Date(expectedExitTime);
 
     const visitData = {
-        organizationId: targetOrgId,
         hostelId: targetHostelId,
         visitor: {
             refId: visitor.refId,
@@ -791,7 +790,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
     validateVisitRequests(visitRequests, newStudentIds);
 
     const targetHostelId = visit.hostelId._id.toString();
-    const targetOrgId = visit.organizationId._id.toString();
+    const targetOrgId = students[0].organizationId?.toString();
 
     validateStudentsAndHostelBoundaries(students, targetHostelId, targetOrgId);
     await authorizeWardenForHostel(targetHostelId, wardenUser.id);
@@ -942,7 +941,7 @@ export const autoCompleteExpiredVisits = async () => {
                 };
 
                 const notificationSender = {
-                    id: visit.organizationId,
+                    id: visit.students[0]?.organizationId,
                     type: 'organization'
                 };
 

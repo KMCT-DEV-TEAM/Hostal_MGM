@@ -8,7 +8,7 @@ const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 export const validateCreateVisitor = (req, res, next) => {
     // ── Forbidden fields: client must never send these ──────────────────────
-    const FORBIDDEN_BODY_FIELDS = ['studentId', 'students', 'hostelId', 'organizationId'];
+    const FORBIDDEN_BODY_FIELDS = ['studentId', 'students', 'hostelId'];
     const forbiddenPresent = FORBIDDEN_BODY_FIELDS.filter(f => req.body[f] !== undefined);
     if (forbiddenPresent.length > 0) {
         return res.status(400).json({

@@ -64,8 +64,15 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
         }
         targetHostelId = hostel;
     } else if (user.role === 'admin') {
-        matchStage.organizationId = new mongoose.Types.ObjectId(user.organization);
-        if (hostel) targetHostelId = hostel;
+        const Student = mongoose.model('Student');
+        const adminStudents = await Student.find({ organizationId: user.organization }, '_id').lean();
+        const adminStudentIds = adminStudents.map(s => s._id);
+        
+        matchStage.students = { $in: adminStudentIds };
+        
+        if (hostel) {
+            targetHostelId = hostel;
+        }
     } else if (user.role === 'warden') {
         const Hostel = mongoose.model('Hostel');
         const wardenHostel = await Hostel.findOne({ wardens: user.id }, '_id');
@@ -169,7 +176,6 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
 
     const visitStudentIds = visit.students.map(s => s._id.toString());
     const visitHostelId = visit.hostelId ? visit.hostelId._id.toString() : null;
-    const visitOrganizationId = visit.organizationId ? visit.organizationId._id.toString() : null;
 
     let visibleStudentIds = [...visitStudentIds]; // Default to all students
 
@@ -261,8 +267,8 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
             const sHostelId = s.hostelId ? (s.hostelId._id || s.hostelId).toString() : visitHostelId;
             const sHostelName = s.hostelId && s.hostelId.name ? s.hostelId.name : (visit.hostelId ? visit.hostelId.name : null);
 
-            const sOrgId = s.organizationId ? (s.organizationId._id || s.organizationId).toString() : visitOrganizationId;
-            const sOrgName = s.organizationId && s.organizationId.name ? s.organizationId.name : (visit.organizationId ? visit.organizationId.name : null);
+            const sOrgId = s.organizationId ? (s.organizationId._id || s.organizationId).toString() : null;
+            const sOrgName = s.organizationId && s.organizationId.name ? s.organizationId.name : null;
 
             return {
                 studentId: s._id,
