@@ -62,6 +62,8 @@ export const validateParentAndStudents = async (parentId, studentIds) => {
             throw error;
         }
     }
+
+    return { parent: currentParent, students };
 };
 
 /**
@@ -114,7 +116,17 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
 
     await validateParentAndStudents(user.id, studentIds);
 
-    const existingVisitor = await visitorRepository.findVisitorByIdentity(phone, email, idProofType, idProofNumber);
+    let existingVisitor = null;
+
+    // Priority 1: ID Proof (if provided)
+    if (idProofType && idProofNumber) {
+        existingVisitor = await visitorRepository.findVisitorByIdProof(idProofType, idProofNumber);
+    }
+
+    // Priority 2: Phone Number (fallback if ID proof wasn't provided or no match found)
+    if (!existingVisitor) {
+        existingVisitor = await visitorRepository.findVisitorByPhone(phone);
+    }
 
     if (existingVisitor) {
         const maskedPhone = existingVisitor.phone ? '*'.repeat(Math.max(0, existingVisitor.phone.length - 4)) + existingVisitor.phone.slice(-4) : null;
@@ -201,7 +213,13 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
         }
 
         if (transactionError.code === 11000) {
-            const racedVisitor = await visitorRepository.findVisitorByIdentity(phone, email, idProofType, idProofNumber);
+            let racedVisitor = null;
+            if (idProofType && idProofNumber) {
+                racedVisitor = await visitorRepository.findVisitorByIdProof(idProofType, idProofNumber);
+            }
+            if (!racedVisitor) {
+                racedVisitor = await visitorRepository.findVisitorByPhone(phone);
+            }
             if (!racedVisitor) throw transactionError;
 
             const maskedPhone = racedVisitor.phone ? '*'.repeat(Math.max(0, racedVisitor.phone.length - 4)) + racedVisitor.phone.slice(-4) : null;
@@ -326,8 +344,8 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         await session.endSession();
     }
 
-    const students = await Student.find({ _id: { $in: validStudentIds } }).lean();
-    const studentNames = students.map(s => s.name).join(', ');
+    // const students = await Student.find({ _id: { $in: validStudentIds } }).lean();
+    // const studentNames = students.map(s => s.name).join(', ');
 
     Promise.all([
         orchestratorService.triggerNotification({
@@ -346,7 +364,7 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         requiresConfirmation: false,
         visitor: existingVisitor,
         visitRequests: savedVisitRequests,
-        students
+        // students
     };
 };
 

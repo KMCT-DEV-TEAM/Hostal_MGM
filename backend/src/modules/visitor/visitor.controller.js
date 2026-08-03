@@ -100,6 +100,44 @@ export const confirmVisitorReuse = async (req, res) => {
 };
 
 /**
+ * Parent Unassigns a Visitor from a Student
+ * @route PATCH /parent/students/:studentId/visitors/:visitorId/unassign
+ */
+export const unassignVisitor = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const { studentId, visitorId } = req.params;
+
+        await visitorService.unassignVisitorFromStudent(visitorId, studentId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor unassigned successfully."
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
+            ? "An internal server error occurred while unassigning the visitor."
+            : error.message;
+
+        console.error('[VisitorController] unassignVisitor error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message
+        });
+    }
+};
+
+/**
  * Lists Visitors (Super Admin, Admin, Warden)
  * @route GET /visitors
  */
@@ -141,7 +179,7 @@ export const listParentVisitors = async (req, res) => {
             });
         }
 
-        const explicitStudentId = req.student ? req.student.id : null;
+        const explicitStudentId = req.query.studentId || null;
         const result = await visitorService.listParentVisitors(req.query, req.user, explicitStudentId);
 
         return res.status(200).json({

@@ -136,7 +136,6 @@ visitorSchema.index(
 
 visitorSchema.index({ phone: 1 }, { unique: true });
 
-visitorSchema.index({ email: 1 }, { unique: true, sparse: true });
 
 // FUZZY SIGNAL + ADMIN SEARCH — name.
 //   Supports case-insensitive name matching in potential-duplicate detection
@@ -146,4 +145,9 @@ visitorSchema.index({ name: 1 });
 // STATUS FILTER — for admin dashboards filtering by Active/Inactive/etc.
 visitorSchema.index({ status: 1 });
 
-export default mongoose.model('Visitor', visitorSchema);
+const Visitor = mongoose.model('Visitor', visitorSchema);
+
+// Drop the legacy unique email index to allow multiple family members to use the same email
+Visitor.collection.dropIndex('email_1').catch(() => { });
+
+export default Visitor;
