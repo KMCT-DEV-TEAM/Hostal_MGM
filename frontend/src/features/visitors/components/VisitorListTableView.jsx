@@ -37,17 +37,23 @@ const VisitorListTableView = ({
         ...(userRole !== 'student' ? [{
             key: 'student',
             header: 'Visiting Student',
-            accessor: (visitor) => visitor.students && visitor.students.length > 0
-                ? visitor.students.map(s => s.name || s).join(', ')
-                : '--',
+            accessor: (visitor) => {
+                const students = visitor.linkedStudents || visitor.students;
+                return students && students.length > 0
+                    ? students.map(s => s.name || s).join(', ')
+                    : '--';
+            },
             icon: Users
         }] : []),
         ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{
             key: 'room',
             header: 'Room No',
-            accessor: (visitor) => visitor.students && visitor.students.length > 0
-                ? visitor.students.map(s => s.roomNumber || s).join(', ')
-                : '--', icon: DoorOpen
+            accessor: (visitor) => {
+                const students = visitor.linkedStudents || visitor.students;
+                return students && students.length > 0
+                    ? students.map(s => s.roomNumber || s).join(', ')
+                    : '--';
+            }, icon: DoorOpen
         }] : []),
         ...(['warden', 'super_admin'].includes(userRole) ? [{
             key: 'organization',
@@ -117,13 +123,18 @@ const VisitorListTableView = ({
             // { icon: Phone, accessor: (visitor) => visitor.phone || '--' },
             ...(userRole !== 'student' ? [{
                 icon: Users,
-                accessor: (visitor) => visitor.students && visitor.students.length > 0 ? visitor.students.map(s => s.name || s).join(', ') : '--'
-            }] : []),
-            ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{
-                icon: Building,
-                accessor: (visitor) => visitor.students && visitor.students.length > 0
-                    ? visitor.students.map(s => s.roomNumber || s).join(', ')
-                    : '--',
+                accessor: (visitor) => {
+                    const students = visitor.linkedStudents || visitor.students;
+                    return students && students.length > 0 ? students.map(s => s.name || s).join(', ') : '--';
+                }
+            }, {
+                icon: DoorOpen,
+                accessor: (visitor) => {
+                    const students = visitor.linkedStudents || visitor.students;
+                    return students && students.length > 0
+                        ? students.map(s => s.roomNumber || s).join(', ')
+                        : '--';
+                },
             }] : [])
         ],
         editable: userRole === 'parent',

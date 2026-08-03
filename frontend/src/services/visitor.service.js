@@ -53,6 +53,16 @@ export async function rejectVisitor(visitorId, payload) {
     return response.data;
 }
 
+export async function approveVisitRequest(visitRequestId) {
+    const response = await visitorApi.approveVisitRequest(visitRequestId);
+    return response.data;
+}
+
+export async function rejectVisitRequest(visitRequestId, reason) {
+    const response = await visitorApi.rejectVisitRequest(visitRequestId, { reason });
+    return response.data;
+}
+
 export async function updateVisitorStatus(visitorId, status) {
     const response = await visitorApi.updateVisitorStatus(visitorId, status);
     return response.data;

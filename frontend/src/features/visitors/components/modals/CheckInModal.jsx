@@ -35,6 +35,8 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState(null);
     const [isApiLoading, setIsApiLoading] = useState(false);
+    const [isConflictConfirmOpen, setIsConflictConfirmOpen] = useState(false);
+    const [conflictVisitId, setConflictVisitId] = useState(null);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: zodResolver(checkInSchema),
@@ -49,8 +51,9 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
             setValue('idProofType', prefilledVisitor.idProofType || '');
             setValue('idNumber', prefilledVisitor.idProofNumber || '');
 
-            if (prefilledVisitor.students && prefilledVisitor.students.length > 0) {
-                const studentIds = prefilledVisitor.students.map(s => s.id || s._id);
+            const studentsList = prefilledVisitor.linkedStudents || prefilledVisitor.students;
+            if (studentsList && studentsList.length > 0) {
+                const studentIds = studentsList.map(s => s.studentId || (typeof s === 'string' ? s : (s._id || s.id)));
                 setValue('selectedStudentIds', studentIds);
             } else {
                 setValue('selectedStudentIds', []);
@@ -92,7 +95,45 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
             if (onClose) onClose();
         } catch (error) {
             console.error("Failed to check in", error);
-            showErrorToast('Failed to check in', error.message || 'Something went wrong');
+            if (error.response?.status === 409) {
+                try {
+                    const visitorDetailsRes = await visitorApi.getVisitorDetails(data.visitorId);
+                    const visitorData = visitorDetailsRes.data?.data || visitorDetailsRes.data;
+                    const activeVisitId = visitorData?.latestVisit?.visitId;
+
+                    if (activeVisitId) {
+                        setConflictVisitId(activeVisitId);
+                        setIsConfirmOpen(false);
+                        setIsConflictConfirmOpen(true);
+                    } else {
+                        showErrorToast('Failed to find active visit', 'Could not retrieve active visit ID to add students.');
+                    }
+                } catch (fetchError) {
+                    showErrorToast('Error', 'Failed to fetch active visit details');
+                }
+            } else {
+                showErrorToast('Failed to check in', error.response?.data?.message || error.message || 'Something went wrong');
+            }
+        } finally {
+            setIsApiLoading(false);
+        }
+    };
+
+    const executeAddStudents = async () => {
+        setIsApiLoading(true);
+        try {
+            await visitorApi.addStudentsToVisit(conflictVisitId, {
+                selectedStudentIds: pendingPayload.selectedStudentIds
+            });
+            showSuccessToast('Students added to visit successfully');
+            setIsConflictConfirmOpen(false);
+            setPendingPayload(null);
+            reset();
+            if (onSuccess) onSuccess();
+            if (onClose) onClose();
+        } catch (error) {
+            console.error("Failed to add students", error);
+            showErrorToast('Failed to add students', error.response?.data?.message || error.message || 'Something went wrong');
         } finally {
             setIsApiLoading(false);
         }
@@ -169,7 +210,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                             />
                                         )}
                                     />
-                                    {errors.idProofType && <span className="text-xs text-red-500 mt-1">{errors.idProofType.message}</span>}
+                                    {errors.idProofType && <span className="text-xs text-danger mt-1">{errors.idProofType.message}</span>}
                                 </div>
                                 <div className='mb-2'>
                                     <Input
@@ -184,8 +225,8 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                         )}
                     </div>
 
-                    {prefilledVisitor?.students && prefilledVisitor.students.length > 1 && (
-                        <div className='mb-2'>
+                    {(prefilledVisitor?.linkedStudents || prefilledVisitor?.students) && (prefilledVisitor.linkedStudents || prefilledVisitor.students).length > 1 && (
+                        <div className="bg-gray-50 p-4 rounded-xl space-y-3">
                             <label className="block mb-1 text-sm text-text-primary font-medium">Visiting Students *</label>
                             <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
                                 <Controller
@@ -193,20 +234,23 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                                     control={control}
                                     render={({ field }) => (
                                         <>
-                                            {prefilledVisitor.students.map((student) => {
-                                                const studentId = student.id || student._id;
+                                            {(prefilledVisitor.linkedStudents || prefilledVisitor.students).map((student) => {
+                                                const sId = student.studentId || (typeof student === 'string' ? student : (student._id || student.id));
+
+                                                if (!sId) return null; // safety check
+
                                                 return (
-                                                    <label key={studentId} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                                    <label key={sId} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary"
-                                                            checked={field.value?.includes(studentId)}
+                                                            checked={field.value?.includes(sId)}
                                                             onChange={(e) => {
                                                                 const current = field.value || [];
                                                                 if (e.target.checked) {
-                                                                    field.onChange([...current, studentId]);
+                                                                    field.onChange([...current, sId]);
                                                                 } else {
-                                                                    field.onChange(current.filter(id => id !== studentId));
+                                                                    field.onChange(current.filter(id => id !== sId));
                                                                 }
                                                             }}
                                                         />
@@ -231,9 +275,9 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                             {...register('purpose')}
                             placeholder="Enter text here..."
                             rows="2"
-                            className={`w-full border rounded-lg px-3.5 py-2 text-[13px] focus:ring-2 focus:ring-primary/20 outline-none resize-none ${errors.purpose ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-primary'}`}
+                            className={`w-full border rounded-lg px-3.5 py-2 text-[13px] focus:ring-2 focus:ring-primary/20 outline-none resize-none ${errors.purpose ? 'border-danger focus:border-danger' : 'border-slate-300 focus:border-primary'}`}
                         ></textarea>
-                        {errors.purpose && <span className="text-xs text-red-500 mt-1">{errors.purpose.message}</span>}
+                        {errors.purpose && <span className="text-xs text-danger mt-1">{errors.purpose.message}</span>}
                     </div>
 
                     <div>
@@ -263,6 +307,16 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                 title="Confirm Check-In"
                 message="Are you sure you want to check in this visitor?"
                 confirmText="Check In"
+                isSubmitting={isApiLoading}
+            />
+
+            <ConfirmationModal
+                isOpen={isConflictConfirmOpen}
+                onClose={() => setIsConflictConfirmOpen(false)}
+                onConfirm={executeAddStudents}
+                title="Visitor Already Checked In"
+                message="This visitor is already checked in. Do you want to add these students to their current visit?"
+                confirmText="Add Students"
                 isSubmitting={isApiLoading}
             />
         </>
