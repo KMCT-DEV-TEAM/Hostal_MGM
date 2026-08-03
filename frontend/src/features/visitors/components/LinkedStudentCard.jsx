@@ -15,7 +15,7 @@ export default function LinkedStudentCard({
 }) {
     // Fallback date to visitor's creation date if student doesn't have a specific date
     const dateToUse = student.date || visitor?.createdAt;
-
+    console.log(student)
     // Format date like "Aug 2, 2026"
     const formattedDate = formatDateReadable(dateToUse);
 
@@ -48,7 +48,7 @@ export default function LinkedStudentCard({
                     </div>
                     {userRole === ROLES.PARENT && onUnassign && (
                         <button
-                            onClick={() => onUnassign(student._id || student.id)}
+                            onClick={() => onUnassign(student.studentId)}
                             className="p-1.5 text-danger  hover:bg-danger/10 rounded-md transition-colors"
                             title="Unassign Student"
                         >

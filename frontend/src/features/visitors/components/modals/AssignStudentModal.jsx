@@ -47,12 +47,19 @@ export default function AssignStudentModal({ isOpen, onClose, visitor, visitorId
                         studentsArray = Object.values(data).filter(val => val && typeof val === 'object' && val._id);
                     }
 
-                    // Filter out students already linked to the visitor
+                    // Filter out students already actively linked to the visitor
                     const linkedStudents = visitor?.linkedStudents || visitor?.students || [];
+
+                    // Only hide students that are currently active or pending
+                    const activeLinkedStudents = linkedStudents.filter(s => {
+                        const status = (s.requestStatus || s.status || '').toLowerCase();
+                        return status !== 'cancelled' && status !== 'unassigned' && status !== 'rejected';
+                    });
+
                     const linkedIds = new Set(
-                        linkedStudents.flatMap(s => [
-                            s._id?.toString(), 
-                            s.id?.toString(), 
+                        activeLinkedStudents.flatMap(s => [
+                            s._id?.toString(),
+                            s.id?.toString(),
                             s.studentId?.toString(),
                             s.student?._id?.toString()
                         ].filter(Boolean))
@@ -60,14 +67,14 @@ export default function AssignStudentModal({ isOpen, onClose, visitor, visitorId
 
                     const unlinkedStudents = studentsArray.filter(s => {
                         const sIds = [
-                            s._id?.toString(), 
-                            s.id?.toString(), 
+                            s._id?.toString(),
+                            s.id?.toString(),
                             s.studentId?.toString()
                         ].filter(Boolean);
-                        
+
                         return !sIds.some(id => linkedIds.has(id));
                     });
-                    
+
                     setAvailableStudents(unlinkedStudents);
                     setSelectedStudentIds([]);
                     reset({
