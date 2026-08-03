@@ -4,6 +4,11 @@ import { createRoleResolver } from '@/utils/createRoleResolver';
 
 
 
+export async function getParentStudents(params) {
+  const response = await parentApi.getParentStudents(params);
+  return response.data;
+}
+
 export async function updateParent(id, payload) {
   const response = await parentApi.updateParent(id, payload);
   return response.data;
@@ -203,6 +208,7 @@ export async function getParentDashboardStats(studentId, params) {
 
 const parentService = {
   getParentDashboardStats,
+  getParentStudents,
   createParent,
   resolveParentConflict,
   updateParent,

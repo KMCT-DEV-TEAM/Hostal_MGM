@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createVisitorProfile, updateVisitorProfile, getVisitorDetails, getVisitorDetailsParent, reuseVisitorProfile } from '@/services/visitor.service';
+import { getParentStudents } from '@/services/parent.service';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -41,6 +42,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     const [pendingPayload, setPendingPayload] = useState(null);
     const [isApiLoading, setIsApiLoading] = useState(false);
     const [selectedStudentIds, setSelectedStudentIds] = useState([]);
+    const [availableStudents, setAvailableStudents] = useState([]);
     
     // For handling 409 conflict (reusing existing visitor)
     const [existingVisitor, setExistingVisitor] = useState(null);
@@ -57,7 +59,32 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
         if (isOpen && !isEditMode && activeStudentId) {
             setSelectedStudentIds([activeStudentId]);
         }
-    }, [isOpen, isEditMode, activeStudentId]);
+        
+        const fetchParentStudents = async () => {
+            if (isOpen && !isEditMode && user?.role === 'parent') {
+                try {
+                    const data = await getParentStudents({ hostelStatus: 'active' });
+                    
+                    // Handle both standard { data: [...] } format and the flat numeric-keyed format
+                    let studentsArray = [];
+                    if (Array.isArray(data?.data)) {
+                        studentsArray = data.data;
+                    } else if (Array.isArray(data)) {
+                        studentsArray = data;
+                    } else if (typeof data === 'object' && data !== null) {
+                        studentsArray = Object.values(data).filter(val => 
+                            val && typeof val === 'object' && val._id
+                        );
+                    }
+                    
+                    setAvailableStudents(studentsArray);
+                } catch (error) {
+                    console.error('Failed to fetch parent students:', error);
+                }
+            }
+        };
+        fetchParentStudents();
+    }, [isOpen, isEditMode, activeStudentId, user?.role]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -358,19 +385,20 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                 />
 
                 {/* Sibling Selection Section */}
-                {!isEditMode && user?.role === 'parent' && user?.students?.length > 1 && (
+                {!isEditMode && user?.role === 'parent' && availableStudents.length > 1 && (
                     <div className="mt-2 border-t border-gray-100 pt-4">
                         <label className="block mb-3 text-sm text-text-primary font-medium">
                             Link Additional Siblings (Optional)
                         </label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {user.students.map(student => {
-                                const isPrimary = student._id === activeStudentId;
-                                const isSelected = selectedStudentIds.includes(student._id);
+                            {availableStudents.map(student => {
+                                const isPrimary = student._id === activeStudentId || student.id === activeStudentId;
+                                const studentId = student._id || student.id;
+                                const isSelected = selectedStudentIds.includes(studentId);
                                 return (
                                     <div 
-                                        key={student._id}
-                                        onClick={() => toggleStudentSelection(student._id)}
+                                        key={studentId}
+                                        onClick={() => toggleStudentSelection(studentId)}
                                         className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'} ${isPrimary ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                                     >
                                         <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${isSelected ? 'bg-primary border-primary' : 'border-gray-300 bg-white'}`}>

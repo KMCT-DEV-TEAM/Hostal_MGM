@@ -35,16 +35,20 @@ export default function VisitorDetailsModal({
     const [rejectingRequestId, setRejectingRequestId] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
 
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
     const { user } = useAuthStore();
     const { activeStudentId } = useActiveStudent();
 
-    const fetchDetails = useCallback(async () => {
+    const fetchDetails = useCallback(async (isBackground = false) => {
         if (!isOpen || !visitorId) {
             setVisitor(null);
             return;
         }
 
-        setIsLoading(true);
+        if (!isBackground) {
+            setIsLoading(true);
+        }
         setError(null);
 
         try {
@@ -59,24 +63,29 @@ export default function VisitorDetailsModal({
             console.error("Failed to fetch visitor details:", err);
             setError("Failed to load details.");
         } finally {
-            setIsLoading(false);
+            if (!isBackground) {
+                setIsLoading(false);
+            }
         }
     }, [isOpen, visitorId, user?.role, activeStudentId]);
 
     useEffect(() => {
-        fetchDetails();
+        fetchDetails(false);
     }, [fetchDetails]);
 
     const handleApproveRequestSubmit = async () => {
         if (!approvingRequestId) return;
+        setIsActionLoading(true);
         try {
             await approveVisitRequest(approvingRequestId);
             showSuccessToast("Visit request approved successfully.");
             setApprovingRequestId(null);
-            fetchDetails();
+            fetchDetails(true); // background refresh
         } catch (err) {
             console.error("Approve failed:", err);
             showErrorToast(err?.response?.data?.message || "Failed to approve request");
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
@@ -85,15 +94,18 @@ export default function VisitorDetailsModal({
             showErrorToast("Rejection reason is required");
             return;
         }
+        setIsActionLoading(true);
         try {
             await rejectVisitRequest(rejectingRequestId, rejectReason);
             showSuccessToast("Visit request rejected successfully.");
             setRejectingRequestId(null);
             setRejectReason('');
-            fetchDetails();
+            fetchDetails(true); // background refresh
         } catch (err) {
             console.error("Reject failed:", err);
             showErrorToast(err?.response?.data?.message || "Failed to reject request");
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
@@ -277,7 +289,7 @@ export default function VisitorDetailsModal({
                                             badgeColor={badgeColor}
                                             nodeColor={nodeColor}
                                             avatarBg="bg-gray-100"
-                                            avatarColor="text-gray-600"
+                                            avatarColor="text-text-secondary"
                                         />
                                     );
                                 })}
@@ -309,8 +321,9 @@ export default function VisitorDetailsModal({
                             variant="outline"
                             size="sm"
                             fullWidth={false}
-                            className="border-gray-200! text-gray-600! hover:bg-gray-50!"
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
                             onClick={() => setApprovingRequestId(null)}
+                            disabled={isActionLoading}
                         >
                             Cancel
                         </Button>
@@ -319,6 +332,7 @@ export default function VisitorDetailsModal({
                             fullWidth={false}
                             className="!bg-primary! hover:!bg-primary! hover:!text-white!"
                             onClick={handleApproveRequestSubmit}
+                            isLoading={isActionLoading}
                         >
                             Confirm Approval
                         </Button>
@@ -326,7 +340,7 @@ export default function VisitorDetailsModal({
                 }
             >
                 <div className="pt-2 pb-4">
-                    <p className="text-[13px] text-gray-600">
+                    <p className="text-[13px] text-text-secondary">
                         Are you sure you want to approve this visit request? The parent and student will be notified.
                     </p>
                 </div>
@@ -347,11 +361,12 @@ export default function VisitorDetailsModal({
                             variant="outline"
                             size="sm"
                             fullWidth={false}
-                            className="border-gray-200! text-gray-600! hover:bg-gray-50!"
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
                             onClick={() => {
                                 setRejectingRequestId(null);
                                 setRejectReason('');
                             }}
+                            disabled={isActionLoading}
                         >
                             Cancel
                         </Button>
@@ -360,6 +375,7 @@ export default function VisitorDetailsModal({
                             fullWidth={false}
                             className="!bg-danger! hover:!bg-danger! hover:!text-white!"
                             onClick={handleRejectRequestSubmit}
+                            isLoading={isActionLoading}
                         >
                             Confirm Rejection
                         </Button>
