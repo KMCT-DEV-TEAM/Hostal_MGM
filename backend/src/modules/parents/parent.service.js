@@ -3,6 +3,7 @@ import Student from "../students/student.model.js";
 import StudentParent from "./studentParent.model.js";
 import { hashPassword } from "../../utils/hash.js";
 import mongoose from "mongoose";
+import { parentRepository } from "./parent.repository.js";
 
 const generateRandomPassword = () => {
   return Math.random().toString(36).slice(-10);
@@ -666,4 +667,23 @@ export {
   exportParentsService,
   toggleParentStatusDb,
   bulkUpdateParentStatusDb,
+};
+
+/**
+ * Get all active students linked to an authenticated parent.
+ * Uses the parentRepository to execute an optimized M:N query.
+ * 
+ * @param {string} parentId - The MongoDB ObjectId of the authenticated parent
+ * @param {object} filters - Optional query parameters
+ * @returns {Promise<Array>} List of formatted active student objects
+ */
+export const getParentStudentsService = async (parentId, filters = {}) => {
+  if (!mongoose.Types.ObjectId.isValid(parentId)) {
+    throw new Error("Invalid parentId");
+  }
+
+  // Fetch the students linked to this parent using optimized query
+  const students = await parentRepository.findActiveStudentsByParentId(parentId, filters);
+  
+  return students;
 };

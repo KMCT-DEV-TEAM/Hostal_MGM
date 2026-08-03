@@ -7,7 +7,16 @@ import mongoose from "mongoose";
 import Student from "../students/student.model.js";
 import StudentParent from "./studentParent.model.js";
 import Hostel from "../hostels/hostel.model.js";
-import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, exportParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
+import {
+  createParentDb,
+  updateParentDb,
+  toggleParentStatusDb,
+  setDefaultGuardianDb,
+  getParentsService,
+  exportParentsService,
+  bulkUpdateParentStatusDb,
+  getParentStudentsService
+} from "./parent.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 const createParent = asyncHandler(async (req, res) => {
@@ -438,6 +447,29 @@ const resolveParentConflict = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * @desc    Get all active students linked to the authenticated parent
+ * @route   GET /api/parent/students
+ * @access  Private (Parent only)
+ */
+const getParentStudents = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  console.log(req.user)
+  // Enforce parent access
+  if (req.user.role !== "parent") {
+    return sendError(res, 403, "Access denied. Only parents can access this resource.");
+  }
+
+  const students = await getParentStudentsService(parentId, req.query);
+  console.log(students)
+  return sendSuccess(
+    res,
+    200,
+    "Students retrieved successfully.",
+    students
+  );
+});
+
 export {
   createParent,
   resolveParentConflict,
@@ -452,4 +484,5 @@ export {
   exportParentsByAdmin,
   exportParentsBySuperAdmin,
   bulkUpdateParentStatus,
+  getParentStudents
 };

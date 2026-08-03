@@ -21,15 +21,12 @@ export const validateParentAndStudents = async (parentId, studentIds) => {
     // ── Step 1: Verify Parent ────────────────────────────────────────────────
     const currentParent = await Parent.findById(parentId).lean();
     if (!currentParent) {
-        const error = new Error('Parent not found.');
+        const error = new Error("We couldn't find your parent profile. Please try logging in again.");
         error.status = 404;
         throw error;
     }
     if (!currentParent.isActive || !currentParent.isVerified) {
-        const error = new Error(
-            'Parent account is inactive or not yet verified. ' +
-            'Please contact the hostel administration.'
-        );
+        const error = new Error("Your account is currently inactive or not verified. Please contact the hostel administration for assistance.");
         error.status = 403;
         throw error;
     }
@@ -40,7 +37,7 @@ export const validateParentAndStudents = async (parentId, studentIds) => {
 
     for (const sId of studentIds) {
         if (!authorizedStudentIds.includes(sId.toString())) {
-            const error = new Error(`Unauthorized access to student ID ${sId}.`);
+            const error = new Error("You do not have permission to schedule visits for one of the selected students.");
             error.status = 403;
             throw error;
         }
@@ -48,21 +45,19 @@ export const validateParentAndStudents = async (parentId, studentIds) => {
 
     const students = await Student.find({ _id: { $in: studentIds } }).lean();
     if (students.length !== studentIds.length) {
-        const error = new Error('One or more students not found.');
+        const error = new Error("We couldn't find some of the selected students. Please refresh the page and try again.");
         error.status = 404;
         throw error;
     }
 
     for (const student of students) {
         if (!student.isActive) {
-            const error = new Error(`Student "${student.name}" is inactive and is not eligible for visitor requests.`);
+            const error = new Error(`The student '${student.name}' is currently inactive, so you cannot schedule a visit for them.`);
             error.status = 400;
             throw error;
         }
         if (student.hostelStatus !== 'active' || !student.hostelId) {
-            const error = new Error(
-                `Student "${student.name}" does not have an active hostel assignment.`
-            );
+            const error = new Error(`The student '${student.name}' is not currently assigned to a hostel, so you cannot schedule a visit.`);
             error.status = 400;
             throw error;
         }
@@ -76,10 +71,7 @@ export const checkBlockingPolicies = async (existingVisitor, studentIds) => {
     if (!existingVisitor) return;
 
     if (existingVisitor.status !== VISITOR_PROFILE_STATUS.ACTIVE) {
-        const error = new Error(
-            'The visitor profile associated with this identity is not active. ' +
-            'Please contact the hostel administration.'
-        );
+        const error = new Error("This visitor's profile has been deactivated. Please contact the hostel administration.");
         error.status = 403;
         throw error;
     }
@@ -90,9 +82,7 @@ export const checkBlockingPolicies = async (existingVisitor, studentIds) => {
     );
     if (blockingRequests.length > 0) {
         const blockingNames = blockingRequests.map(br => br.studentId?.name || 'Unknown Student').join(', ');
-        const error = new Error(
-            `Pending or Approved visit requests already exist for: ${blockingNames}. Please deselect them to proceed.`
-        );
+        const error = new Error(`A visit request already exists for ${blockingNames}. Please unselect them to continue with the others.`);
         error.status = 409;
         throw error;
     }
@@ -102,9 +92,7 @@ export const checkBlockingPolicies = async (existingVisitor, studentIds) => {
         studentIds
     );
     if (activeVisits.length > 0) {
-        const error = new Error(
-            'This visitor is currently checked in to the hostel for one or more selected students.'
-        );
+        const error = new Error("This visitor is already inside the hostel visiting the selected student(s).");
         error.status = 409;
         throw error;
     }
@@ -132,14 +120,21 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
         const maskedPhone = existingVisitor.phone ? '*'.repeat(Math.max(0, existingVisitor.phone.length - 4)) + existingVisitor.phone.slice(-4) : null;
         const maskedIdProofNumber = existingVisitor.idProofNumber ? '*'.repeat(Math.max(0, existingVisitor.idProofNumber.length - 4)) + existingVisitor.idProofNumber.slice(-4) : null;
 
+        const existingRequests = await VisitRequest.find({ visitorId: existingVisitor._id, status: { $in: ['Pending', 'Approved'] } })
+            .populate('studentId', 'name roomNumber')
+            .lean();
+        const assignedStudents = existingRequests.map(r => r.studentId);
+
         return {
             requiresConfirmation: true,
             visitor: {
                 id: existingVisitor._id.toString(),
                 name: existingVisitor.name,
+                email: existingVisitor.email,
                 phone: maskedPhone,
                 idProofType: existingVisitor.idProofType,
-                idProofNumber: maskedIdProofNumber
+                idProofNumber: maskedIdProofNumber,
+                assignedStudents
             }
         };
     }
@@ -212,14 +207,21 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
             const maskedPhone = racedVisitor.phone ? '*'.repeat(Math.max(0, racedVisitor.phone.length - 4)) + racedVisitor.phone.slice(-4) : null;
             const maskedIdProofNumber = racedVisitor.idProofNumber ? '*'.repeat(Math.max(0, racedVisitor.idProofNumber.length - 4)) + racedVisitor.idProofNumber.slice(-4) : null;
 
+            const existingRequests = await VisitRequest.find({ visitorId: racedVisitor._id, status: { $in: ['Pending', 'Approved'] } })
+                .populate('studentId', 'name roomNumber')
+                .lean();
+            const assignedStudents = existingRequests.map(r => r.studentId);
+
             return {
                 requiresConfirmation: true,
                 visitor: {
                     id: racedVisitor._id.toString(),
                     name: racedVisitor.name,
+                    email: racedVisitor.email,
                     phone: maskedPhone,
                     idProofType: racedVisitor.idProofType,
-                    idProofNumber: maskedIdProofNumber
+                    idProofNumber: maskedIdProofNumber,
+                    assignedStudents
                 }
             };
         }
@@ -265,19 +267,34 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
 
     const existingVisitor = await visitorRepository.findVisitorById(confirmedVisitorId);
     if (!existingVisitor) {
-        const error = new Error('The confirmed visitor profile no longer exists.');
+        const error = new Error("The visitor you selected could not be found. Please try creating a new visitor.");
         error.status = 404;
         throw error;
     }
 
-    await checkBlockingPolicies(existingVisitor, studentIds);
+    const blockingRequests = await visitorRepository.findBlockingVisitRequests(existingVisitor._id.toString(), studentIds);
+    const blockingStudentIds = blockingRequests.map(br => br.studentId?._id?.toString() || br.studentId?.toString());
+    const validStudentIds = studentIds.filter(sId => !blockingStudentIds.includes(sId.toString()));
+
+    const activeVisits = await visitorRepository.findActiveVisitorVisits(existingVisitor._id.toString(), studentIds);
+    if (activeVisits.length > 0) {
+        const error = new Error("This visitor is already inside the hostel visiting the selected student(s).");
+        error.status = 409;
+        throw error;
+    }
+
+    if (validStudentIds.length === 0) {
+        const error = new Error("You have already submitted a visit request for all the selected students with this visitor. There is no need to create a new one.");
+        error.status = 409;
+        throw error;
+    }
 
     let savedVisitRequests = [];
     const session = await mongoose.startSession();
 
     try {
         await session.withTransaction(async () => {
-            for (const sId of studentIds) {
+            for (const sId of validStudentIds) {
                 const visitRequestData = {
                     visitorId: existingVisitor._id,
                     parentId: user.id,
@@ -309,7 +326,7 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         await session.endSession();
     }
 
-    const students = await Student.find({ _id: { $in: studentIds } }).lean();
+    const students = await Student.find({ _id: { $in: validStudentIds } }).lean();
     const studentNames = students.map(s => s.name).join(', ');
 
     Promise.all([

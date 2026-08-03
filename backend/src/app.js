@@ -20,6 +20,7 @@ import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter,
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
+import parentUserRouter from "./modules/parents/parent.user.routes.js";
 import pushRoutes from "./modules/push/push.routes.js";
 import visitorRoutes, { parentVisitorRouter } from "./modules/visitor/visitor.routes.js";
 import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.js";
@@ -113,6 +114,7 @@ app.use("/api/student/attendance", studentAttendanceRouter);
 
 // ---parents routes -------
 app.use("/api/parent/dashboard", dashboardRoutes);
+app.use("/api/parent/students", parentUserRouter);
 app.use("/api/parent/students/:studentId/passes", parentPassRouter);
 app.use("/api/parent/students/:studentId/attendance", parentAttendanceRouter);
 app.use("/api/parent/students/:studentId/visitors", parentVisitorRouter);

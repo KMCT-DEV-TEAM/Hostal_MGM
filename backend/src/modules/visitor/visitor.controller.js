@@ -13,7 +13,7 @@ export const createVisitor = async (req, res) => {
             });
         }
 
-        req.body.confirmReuse = false; // Force false for the standard endpoint
+        req.body.confirmReuse = false;
 
         const result = await visitorService.createVisitorProfile(req.body, req.user);
 
@@ -21,14 +21,14 @@ export const createVisitor = async (req, res) => {
             return res.status(409).json({
                 success: false,
                 error: "VISITOR_EXISTS",
-                message: "A matching visitor already exists.",
-                visitor: result.visitor
+                message: "We found an existing visitor profile matching these details. Please review the currently assigned students before proceeding.",
+                visitor: result.visitor,
             });
         }
 
         const message = result.isNewProfile
-            ? "Visitor registered successfully and visit requests submitted."
-            : "Existing visitor profile matched. Visit requests submitted successfully.";
+            ? "Your visitor has been registered and the visit request was submitted successfully."
+            : "Your visit request was submitted successfully for the existing visitor.";
 
         return res.status(201).json({
             success: true,
