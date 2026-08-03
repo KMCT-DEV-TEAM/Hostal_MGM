@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Calendar, Check, X, DoorOpen, Copy } from 'lucide-react';
+import { User, Calendar, Check, X, DoorOpen, Copy, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { ROLES } from '@/constants/roles';
@@ -10,7 +10,8 @@ export default function LinkedStudentCard({
     visitor,
     userRole,
     onApprove,
-    onReject
+    onReject,
+    onUnassign
 }) {
     // Fallback date to visitor's creation date if student doesn't have a specific date
     const dateToUse = student.date || visitor?.createdAt;
@@ -45,6 +46,15 @@ export default function LinkedStudentCard({
                         {/* <Copy size={14} /> */}
                         {student.roomNumber || 'N/A'}
                     </div>
+                    {userRole === ROLES.PARENT && onUnassign && (
+                        <button
+                            onClick={() => onUnassign(student._id || student.id)}
+                            className="p-1.5 text-danger  hover:bg-danger/10 rounded-md transition-colors"
+                            title="Unassign Student"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -76,7 +86,7 @@ export default function LinkedStudentCard({
                             variant="outline"
                             size="xs"
                             fullWidth={false}
-                            className="!border-success !text-success hover:!bg-success hover:!text-white px-3 py-1.5 h-auto text-xs flex items-center gap-1.5 rounded-md"
+                            className="border-success! text-success! hover:bg-success! hover:text-white! px-3 py-1.5 h-auto text-xs flex items-center gap-1.5 rounded-md"
                             onClick={() => onApprove(student._id || student.id)}
                         >
                             <Check size={14} />
@@ -86,7 +96,7 @@ export default function LinkedStudentCard({
                             variant="outline"
                             size="xs"
                             fullWidth={false}
-                            className="!border-danger !text-danger hover:!bg-danger hover:!text-white px-3 py-1.5 h-auto text-xs flex items-center gap-1.5 rounded-md"
+                            className="border-danger! text-danger! hover:bg-danger! hover:text-white! px-3 py-1.5 h-auto text-xs flex items-center gap-1.5 rounded-md"
                             onClick={() => onReject(student._id || student.id)}
                         >
                             <X size={14} />
