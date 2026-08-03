@@ -18,6 +18,7 @@ import {
     validateAddStudentsToVisit,
     validateApproveVisitRequest,
     validateRejectVisitRequest,
+    validateUnassignVisitor
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 import * as vistHistoryController from './history/visitorHistory.controller.js';
@@ -42,6 +43,12 @@ parentVisitorRouter.post(
     '/:visitorId/visit-requests',
     validateConfirmVisitor,
     visitorController.confirmVisitorReuse
+);
+
+parentVisitorRouter.patch(
+    '/:visitorId/unassign',
+    validateUnassignVisitor,
+    visitorController.unassignVisitor
 );
 
 parentVisitorRouter.get(

@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import { VISITOR_STATUS_VALUES, VISITOR_VISIT_STATUS, ID_PROOF_TYPE_VALUES } from "./visitor.constant.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-const isValidPhone = (phone) => /^\+?[\d\s-]{10,15}$/.test(phone);
+// Strictly enforces exactly 10 digits, optionally starting with +91 or 91.
+const isValidPhone = (phone) => /^(?:\+91|91)?\d{10}$/.test(phone.replace(/[\s-]/g, ''));
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 export const validateCreateVisitor = (req, res, next) => {
@@ -201,6 +202,27 @@ export const validateConfirmVisitor = (req, res, next) => {
     req.body.relationship = relationship.trim();
     req.body.purpose = purpose.trim();
     if (remarks) req.body.remarks = remarks.trim();
+
+    next();
+};
+
+
+export const validateUnassignVisitor = (req, res, next) => {
+    const { studentId, visitorId } = req.params;
+
+    if (!isValidObjectId(studentId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid studentId."
+        });
+    }
+
+    if (!isValidObjectId(visitorId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid visitorId."
+        });
+    }
 
     next();
 };

@@ -3,7 +3,10 @@ export const VISITOR_STATUS = {
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
     REVOKED: 'Revoked',
-    INACTIVE: 'Inactive'
+    INACTIVE: 'Inactive',
+    CANCELLED: 'Cancelled',
+    COMPLETED: 'Completed',
+    EXPIRED: 'Expired'
 };
 
 export const VISITOR_APPROVAL_ACTIONS = {
@@ -12,7 +15,8 @@ export const VISITOR_APPROVAL_ACTIONS = {
     REJECTED: 'Rejected',
     REVOKED: 'Revoked',
     ACTIVATED: 'Activated',
-    DEACTIVATED: 'Deactivated'
+    DEACTIVATED: 'Deactivated',
+    UNASSIGNED: 'Unassigned'
 };
 
 export const VISITOR_VISIT_STATUS = {

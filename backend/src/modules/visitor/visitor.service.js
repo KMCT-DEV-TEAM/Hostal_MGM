@@ -7,7 +7,8 @@ import {
     validatePersonProfile,
     validateVisitRequests,
     validateStudentsAndHostelBoundaries,
-    authorizeWardenForHostel
+    authorizeWardenForHostel,
+    validateParentAndStudents
 } from './visitor.helper.js';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
@@ -20,6 +21,7 @@ import {
     VISITOR_APPROVAL_ACTIONS,
     VISITOR_VISIT_STATUS,
     VISITOR_VISIT_TIMELINE_ACTIONS,
+    VISITOR_PROFILE_STATUS,
 
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
@@ -40,6 +42,58 @@ export const createVisitorProfile = async (payload, user) => {
 };
 
 /**
+ * Unassigns a visitor from a specific student by cancelling the active VisitRequest.
+ * 
+ * @param {String} visitorId 
+ * @param {String} studentId 
+ * @param {Object} user 
+ */
+export const unassignVisitorFromStudent = async (visitorId, studentId, user) => {
+    // 1. Verify parent owns the student
+    const { parent, students } = await validateParentAndStudents(user.id, [studentId]);
+
+    // 2. Verify visitor exists
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+
+    // 3. Verify visitor is active
+    if (visitor.status !== VISITOR_PROFILE_STATUS.ACTIVE) {
+        const error = new Error('Cannot unassign an inactive or blacklisted visitor.');
+        error.status = 400;
+        throw error;
+    }
+
+    // 4. Check for active VisitorVisit
+    const hasActiveVisit = await visitorRepository.hasActiveVisitorVisit(visitorId, studentId);
+    if (hasActiveVisit) {
+        const error = new Error('Cannot unassign a visitor while an active visit is in progress.');
+        error.status = 400;
+        throw error;
+    }
+
+    // 5. Unassign (Cancel the VisitRequest) Atomically
+    const cancelledRequest = await visitorRepository.cancelLatestActiveVisitRequest(
+        visitorId,
+        studentId,
+        parent._id, // parentId
+        user.id, // userId for timeline
+        user.role, // role
+        'Visitor unassigned from student.'
+    );
+
+    if (!cancelledRequest) {
+        const error = new Error('No active assignment found for this visitor and student.');
+        error.status = 404;
+        throw error;
+    }
+
+    return cancelledRequest;
+};
+/*
  * Update visitor status (by parent or admin)
  * @param {String} visitorId 
  * @param {String} status 

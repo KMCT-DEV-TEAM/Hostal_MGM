@@ -2,29 +2,31 @@ import mongoose from 'mongoose';
 import Visitor from './visitor.model.js';
 import VisitorVisit from './visitorVisit.model.js';
 import VisitRequest from './visitRequest.model.js';
-import { VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
+import { VISITOR_APPROVAL_ACTIONS, VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
 import Parent from '../parents/parent.model.js';
 import User from '../users/user.model.js';
 
 /**
- * Finds an existing Visitor matching ANY identity vector (Phone, Email, or ID Proof).
- * If any of these match an existing record, the system treats it as the same person.
+ * Finds an existing Visitor by ID Proof.
  *
- * @param {String} phone
- * @param {String} email (optional)
  * @param {String} idProofType 
  * @param {String} idProofNumber 
  * @returns {Promise<Object|null>} The existing Visitor if found, else null
  */
-export const findVisitorByIdentity = async (phone, email, idProofType, idProofNumber) => {
-    const orConditions = [
-        { phone },
-        { idProofType, idProofNumber }
-    ];
-    if (email) {
-        orConditions.push({ email });
-    }
-    return await Visitor.findOne({ $or: orConditions }).lean();
+export const findVisitorByIdProof = async (idProofType, idProofNumber) => {
+    if (!idProofType || !idProofNumber) return null;
+    return await Visitor.findOne({ idProofType, idProofNumber }).lean();
+};
+
+/**
+ * Finds an existing Visitor by Phone Number.
+ *
+ * @param {String} phone
+ * @returns {Promise<Object|null>} The existing Visitor if found, else null
+ */
+export const findVisitorByPhone = async (phone) => {
+    if (!phone) return null;
+    return await Visitor.findOne({ phone }).lean();
 };
 
 /**
@@ -97,9 +99,67 @@ export const createVisitRequest = async (data, session) => {
  * @returns {Promise<Object>}
  */
 export const createVisitor = async (data) => {
-    const visitor = new Visitor(data);
-    return await visitor.save();
+    return await Visitor.create(data);
 };
+
+/**
+ * Checks if a visitor and student currently have an active VisitorVisit in progress.
+ * 
+ * @param {String} visitorId 
+ * @param {String} studentId 
+ * @returns {Promise<Boolean>}
+ */
+export const hasActiveVisitorVisit = async (visitorId, studentId) => {
+    const visit = await VisitorVisit.findOne({
+        'visitor.refId': visitorId,
+        'students': studentId,
+        status: {
+            $in: [
+                VISITOR_VISIT_STATUS.CHECKED_IN,
+                VISITOR_VISIT_STATUS.EXTENDED,
+                VISITOR_VISIT_STATUS.OVERSTAYED
+            ]
+        }
+    }).select('_id').lean();
+    return !!visit;
+};
+
+/**
+ * Cancels a specific VisitRequest atomically based on matching criteria.
+ * Enforces authorization by matching parentId.
+ * 
+ * @param {String} visitorId 
+ * @param {String} studentId 
+ * @param {String} parentId 
+ * @param {String} userId 
+ * @param {String} role 
+ * @param {String} remarks 
+ * @returns {Promise<Object|null>}
+ */
+export const cancelLatestActiveVisitRequest = async (visitorId, studentId, parentId, userId, role, remarks = 'Visitor removed from student.') => {
+    return await VisitRequest.findOneAndUpdate(
+        {
+            visitorId,
+            studentId,
+            parentId,
+            status: { $in: [VISITOR_STATUS.PENDING, VISITOR_STATUS.APPROVED] }
+        },
+        {
+            $set: { status: VISITOR_STATUS.CANCELLED },
+            $push: {
+                approvalTimeline: {
+                    action: VISITOR_APPROVAL_ACTIONS.UNASSIGNED,
+                    performedBy: userId,
+                    performedByRole: role,
+                    remarks: remarks,
+                    createdAt: new Date()
+                }
+            }
+        },
+        { new: true, sort: { createdAt: -1 } }
+    );
+};
+
 /**
  * Finds VisitRequests for a specific visitor and list of students
  * @param {String} visitorId 
