@@ -179,7 +179,7 @@ export const listParentVisitors = async (req, res) => {
             });
         }
 
-        const explicitStudentId = req.student ? req.student.id : null;
+        const explicitStudentId = req.query.studentId || null;
         const result = await visitorService.listParentVisitors(req.query, req.user, explicitStudentId);
 
         return res.status(200).json({
