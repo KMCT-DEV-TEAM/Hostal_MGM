@@ -461,7 +461,6 @@ const getParentStudents = asyncHandler(async (req, res) => {
   }
 
   const students = await getParentStudentsService(parentId, req.query);
-  console.log(students)
   return sendSuccess(
     res,
     200,
