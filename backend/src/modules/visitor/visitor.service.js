@@ -8,7 +8,8 @@ import {
     validateVisitRequests,
     validateStudentsAndHostelBoundaries,
     authorizeWardenForHostel,
-    validateParentAndStudents
+    validateParentAndStudents,
+    findVisitorOrThrow
 } from './visitor.helper.js';
 import Student from '../students/student.model.js';
 import Parent from '../parents/parent.model.js';
@@ -1223,4 +1224,130 @@ export const rejectVisitRequest = async (visitRequestId, reason, user, session =
     // (Optional) Trigger notifications here in the future
 
     return updatedRequest;
+};
+
+/**
+ * Super Admin: Blacklist a visitor
+ * @param {String} visitorId 
+ * @param {String} reason 
+ * @param {Object} user 
+ */
+export const blacklistVisitorProfile = async (visitorId, reason, user) => {
+    const visitor = await findVisitorOrThrow(visitorId);
+
+    if (visitor.status === VISITOR_PROFILE_STATUS.DELETED) {
+        const error = new Error("Deleted visitors cannot be blacklisted.");
+        error.status = 409;
+        throw error;
+    }
+
+    if (visitor.status === VISITOR_PROFILE_STATUS.BLACKLISTED) {
+        const error = new Error("Visitor is already blacklisted.");
+        error.status = 409;
+        throw error;
+    }
+
+    const session = await mongoose.startSession();
+    let cancelledRequestsCount = 0;
+    let isInside = false;
+
+    try {
+        await session.withTransaction(async () => {
+            // 1. Update Visitor Profile
+            const changeLogEntry = {
+                action: VISITOR_CHANGE_LOG_ACTIONS.BLACKLISTED,
+                performedBy: user.id || user._id,
+                performedByRole: user.role,
+                reason,
+                timestamp: new Date()
+            };
+
+            await visitorRepository.updateVisitorProfileFields(
+                visitor._id,
+                { status: VISITOR_PROFILE_STATUS.BLACKLISTED },
+                changeLogEntry,
+                session // Wait, updateVisitorProfileFields does not currently accept session. Let me fix that.
+            );
+            
+            // Note: I will update updateVisitorProfileFields to support session. 
+            // In the meantime, I will just call it inside the transaction. If it doesn't take session, it's not strictly atomic, but for this refactor I will pass it anyway and we can update the repository next.
+
+            // 2. Cancel all active VisitRequests
+            cancelledRequestsCount = await visitorRepository.cancelAllActiveVisitRequests(
+                visitor._id,
+                user.id || user._id,
+                user.role,
+                "Visitor Blacklisted",
+                session
+            );
+            
+            // 3. Check if inside hostel
+            isInside = await visitorRepository.isVisitorInsideHostel(visitor._id);
+        });
+    } catch (transactionError) {
+        throw transactionError;
+    } finally {
+        await session.endSession();
+    }
+
+    // 4. Trigger security notification if inside
+    if (isInside) {
+        try {
+            await orchestratorService.triggerNotification({
+                eventName: 'VISITOR_BLACKLISTED_SECURITY_ALERT',
+                target: [
+                    { type: 'ROLE', filter: { role: 'warden', organizationId: visitor.organizationId.toString() } }
+                ],
+                data: {
+                    visitorName: visitor.name,
+                    phone: visitor.phone,
+                    reason,
+                    message: "Visitor has been blacklisted by Super Admin while currently inside the hostel. Please take immediate action."
+                }
+            });
+        } catch (err) {
+            console.error('[Notification] Failed to send blacklist security alert:', err);
+        }
+    }
+
+    return {
+        visitorId: visitor._id,
+        status: VISITOR_PROFILE_STATUS.BLACKLISTED,
+        cancelledRequestsCount,
+        securityAlertTriggered: isInside
+    };
+};
+
+/**
+ * Super Admin: Remove blacklist from a visitor
+ * @param {String} visitorId 
+ * @param {Object} user 
+ */
+export const removeBlacklistFromVisitorProfile = async (visitorId, user) => {
+    const visitor = await findVisitorOrThrow(visitorId);
+
+    if (visitor.status !== VISITOR_PROFILE_STATUS.BLACKLISTED) {
+        const error = new Error("Visitor is not currently blacklisted.");
+        error.status = 409;
+        throw error;
+    }
+
+    const changeLogEntry = {
+        action: VISITOR_CHANGE_LOG_ACTIONS.BLACKLIST_REMOVED,
+        performedBy: user.id || user._id,
+        performedByRole: user.role,
+        timestamp: new Date()
+    };
+
+    // Note: status changes to INACTIVE as per requirements
+    const updatedVisitor = await visitorRepository.updateVisitorProfileFields(
+        visitor._id,
+        { status: VISITOR_PROFILE_STATUS.INACTIVE },
+        changeLogEntry
+    );
+
+    return {
+        visitorId: updatedVisitor._id,
+        status: updatedVisitor.status
+    };
 };

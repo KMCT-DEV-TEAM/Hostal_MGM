@@ -626,3 +626,16 @@ export const authorizeWardenForHostel = async (hostelId, wardenId) => {
         throw error;
     }
 };
+
+/**
+ * Finds a visitor by ID or throws a 404 Error if not found.
+ */
+export const findVisitorOrThrow = async (visitorId) => {
+    const visitor = await visitorRepository.findVisitorById(visitorId);
+    if (!visitor) {
+        const error = new Error('Visitor not found.');
+        error.status = 404;
+        throw error;
+    }
+    return visitor;
+};

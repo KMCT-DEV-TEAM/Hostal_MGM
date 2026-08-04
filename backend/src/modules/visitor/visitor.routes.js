@@ -18,7 +18,9 @@ import {
     validateAddStudentsToVisit,
     validateApproveVisitRequest,
     validateRejectVisitRequest,
-    validateUnassignVisitor
+    validateUnassignVisitor,
+    validateBlacklistVisitor,
+    validateRemoveBlacklistVisitor
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
 import * as vistHistoryController from './history/visitorHistory.controller.js';
@@ -119,6 +121,21 @@ router.get(
     visitorController.getSuperAdminHostelVisitors
 );
 
+router.patch(
+    '/super-admin/visitors/:visitorId/blacklist',
+    authMiddleware,
+    roleMiddleware('super_admin'),
+    validateBlacklistVisitor,
+    visitorController.blacklistVisitor
+);
+
+router.patch(
+    '/super-admin/visitors/:visitorId/remove-blacklist',
+    authMiddleware,
+    roleMiddleware('super_admin'),
+    validateRemoveBlacklistVisitor,
+    visitorController.removeBlacklistVisitor
+);
 router.get(
     '/visitor-visits',
     authMiddleware,

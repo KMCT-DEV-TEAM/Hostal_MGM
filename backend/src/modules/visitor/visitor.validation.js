@@ -615,3 +615,33 @@ export const validateRejectVisitRequest = (req, res, next) => {
     req.body.reason = reason.trim();
     next();
 };
+
+export const validateBlacklistVisitor = (req, res, next) => {
+    const { visitorId } = req.params;
+    const { reason } = req.body;
+
+    if (!isValidObjectId(visitorId)) {
+        return res.status(400).json({ success: false, message: 'Invalid visitorId.' });
+    }
+    if (!reason || typeof reason !== 'string' || reason.trim().length < 3) {
+        return res.status(400).json({ success: false, message: 'Reason is required and must be at least 3 characters.' });
+    }
+
+    req.body.reason = reason.trim();
+    next();
+};
+
+export const validateRemoveBlacklistVisitor = (req, res, next) => {
+    const { visitorId } = req.params;
+
+    if (!isValidObjectId(visitorId)) {
+        return res.status(400).json({ success: false, message: 'Invalid visitorId.' });
+    }
+    
+    // Reason is optional for removal but good to sanitize if provided
+    if (req.body.reason && typeof req.body.reason === 'string') {
+        req.body.reason = req.body.reason.trim();
+    }
+
+    next();
+};
