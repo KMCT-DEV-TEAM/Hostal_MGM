@@ -65,6 +65,7 @@ export const VISITOR_CHANGE_LOG_ACTIONS = {
     REACTIVATED: 'Reactivated',
     BLACKLISTED: 'Blacklisted',
     BLACKLIST_LIFTED: 'Blacklist Lifted',
+    BLACKLIST_REMOVED: 'Blacklist Removed',
     SOFT_DELETED: 'Soft Deleted',
     RESTORED: 'Restored'
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '@/components/ui/Modal';
-import { getVisitorDetails, getVisitorDetailsParent, approveVisitRequest, rejectVisitRequest, unassignVisitor } from '@/services/visitor.service';
+import { getVisitorDetails, getVisitorDetailsParent, approveVisitRequest, rejectVisitRequest, unassignVisitor, blacklistVisitor, removeBlacklistVisitor } from '@/services/visitor.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -23,7 +23,6 @@ export default function VisitorDetailsModal({
     visitorId,
     onApprove,
     onReject,
-    onDelete,
     onActive
 }) {
     const [visitor, setVisitor] = useState(null);
@@ -39,6 +38,11 @@ export default function VisitorDetailsModal({
     const [isAssignOpen, setIsAssignOpen] = useState(false);
 
     const [isActionLoading, setIsActionLoading] = useState(false);
+
+    const [isBlacklistModalOpen, setIsBlacklistModalOpen] = useState(false);
+    const [blacklistReason, setBlacklistReason] = useState('');
+    const [isRemoveBlacklistModalOpen, setIsRemoveBlacklistModalOpen] = useState(false);
+    const [removeBlacklistReason, setRemoveBlacklistReason] = useState('');
 
     const { user } = useAuthStore();
     const { activeStudentId } = useActiveStudent();
@@ -128,6 +132,42 @@ export default function VisitorDetailsModal({
         }
     };
 
+    const handleBlacklistSubmit = async () => {
+        if (!blacklistReason.trim() || blacklistReason.length < 3) {
+            showErrorToast("Reason is required and must be at least 3 characters.");
+            return;
+        }
+        setIsActionLoading(true);
+        try {
+            await blacklistVisitor(visitorId, blacklistReason);
+            showSuccessToast("Visitor blacklisted successfully.");
+            setIsBlacklistModalOpen(false);
+            setBlacklistReason('');
+            fetchDetails(true);
+        } catch (err) {
+            console.error("Blacklist failed:", err);
+            showErrorToast(err?.response?.data?.message || "Failed to blacklist visitor");
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleRemoveBlacklistSubmit = async () => {
+        setIsActionLoading(true);
+        try {
+            await removeBlacklistVisitor(visitorId, removeBlacklistReason);
+            showSuccessToast("Blacklist removed successfully.");
+            setIsRemoveBlacklistModalOpen(false);
+            setRemoveBlacklistReason('');
+            fetchDetails(true);
+        } catch (err) {
+            console.error("Remove blacklist failed:", err);
+            showErrorToast(err?.response?.data?.message || "Failed to remove blacklist");
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     if (isLoading) {
@@ -159,27 +199,36 @@ export default function VisitorDetailsModal({
         const role = user?.role;
         const status = visitor.status?.toLowerCase();
 
-        const canDelete = ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MENTOR].includes(role) && ['approved', 'rejected', 'active'].includes(status)) ||
-            (role === ROLES.PARENT && status !== 'inactive');
+        const canBlacklist = role === ROLES.SUPER_ADMIN && status !== 'blacklisted' && status !== 'deleted';
+        const canRemoveBlacklist = role === ROLES.SUPER_ADMIN && status === 'blacklisted';
         const canActive = ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.PARENT, ROLES.MENTOR].includes(role) && status === 'inactive');
 
-        if (!canDelete && !canActive) return null;
+        if (!canBlacklist && !canRemoveBlacklist && !canActive) return null;
 
         return (
             <div className="flex items-center justify-end gap-3 w-full">
 
-                {canDelete && (
+                {canBlacklist && (
                     <Button
                         variant="outline"
                         size="sm"
                         fullWidth={false}
                         className="border-danger! text-danger! hover:bg-danger! hover:text-white!"
-                        onClick={() => {
-                            onClose();
-                            onDelete && onDelete(visitorId);
-                        }}
+                        onClick={() => setIsBlacklistModalOpen(true)}
                     >
-                        Delete
+                        Blacklist
+                    </Button>
+                )}
+
+                {canRemoveBlacklist && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        className="border-success! text-success! hover:bg-success! hover:text-white!"
+                        onClick={() => setIsRemoveBlacklistModalOpen(true)}
+                    >
+                        Remove Blacklist
                     </Button>
                 )}
 
@@ -473,6 +522,112 @@ export default function VisitorDetailsModal({
                     fetchDetails(true);
                 }}
             />
+
+            {/* Blacklist Modal */}
+            <Modal
+                isOpen={isBlacklistModalOpen}
+                onClose={() => {
+                    setIsBlacklistModalOpen(false);
+                    setBlacklistReason('');
+                }}
+                title="Blacklist Visitor"
+                maxWidth="max-w-md"
+                footer={
+                    <div className="flex items-center justify-end gap-3 w-full">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
+                            onClick={() => {
+                                setIsBlacklistModalOpen(false);
+                                setBlacklistReason('');
+                            }}
+                            disabled={isActionLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="sm"
+                            fullWidth={false}
+                            className="!bg-danger! hover:!bg-danger! hover:!text-white!"
+                            onClick={handleBlacklistSubmit}
+                            isLoading={isActionLoading}
+                        >
+                            Confirm Blacklist
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="pt-2 pb-4">
+                    <p className="text-[13px] text-text-secondary mb-4">
+                        Are you sure you want to blacklist this visitor? This will immediately cancel all pending and approved visits.
+                    </p>
+                    <label className="block text-[13px] font-medium text-text-primary mb-2">
+                        Reason for Blacklisting *
+                    </label>
+                    <textarea
+                        value={blacklistReason}
+                        onChange={(e) => setBlacklistReason(e.target.value)}
+                        placeholder="e.g., Security violation at main gate"
+                        rows="3"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger resize-none"
+                    ></textarea>
+                </div>
+            </Modal>
+
+            {/* Remove Blacklist Modal */}
+            <Modal
+                isOpen={isRemoveBlacklistModalOpen}
+                onClose={() => {
+                    setIsRemoveBlacklistModalOpen(false);
+                    setRemoveBlacklistReason('');
+                }}
+                title="Remove Blacklist"
+                maxWidth="max-w-md"
+                footer={
+                    <div className="flex items-center justify-end gap-3 w-full">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
+                            onClick={() => {
+                                setIsRemoveBlacklistModalOpen(false);
+                                setRemoveBlacklistReason('');
+                            }}
+                            disabled={isActionLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="sm"
+                            fullWidth={false}
+                            className="!bg-success! hover:!bg-success! hover:!text-white!"
+                            onClick={handleRemoveBlacklistSubmit}
+                            isLoading={isActionLoading}
+                        >
+                            Remove Blacklist
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="pt-2 pb-4">
+                    <p className="text-[13px] text-text-secondary mb-4">
+                        Are you sure you want to remove the blacklist status for this visitor? Their status will be set to Inactive.
+                    </p>
+                    <label className="block text-[13px] font-medium text-text-primary mb-2">
+                        Reason (Optional)
+                    </label>
+                    <textarea
+                        value={removeBlacklistReason}
+                        onChange={(e) => setRemoveBlacklistReason(e.target.value)}
+                        placeholder="e.g., Cleared by security"
+                        rows="3"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-success/20 focus:border-success resize-none"
+                    ></textarea>
+                </div>
+            </Modal>
         </Modal>
     );
 }

@@ -116,3 +116,13 @@ export async function getDashboardSummary() {
     const response = await visitorApi.getDashboardSummary();
     return response.data;
 }
+
+export async function blacklistVisitor(visitorId, reason) {
+    const response = await visitorApi.blacklistVisitor(visitorId, { reason });
+    return response.data;
+}
+
+export async function removeBlacklistVisitor(visitorId, reason) {
+    const response = await visitorApi.removeBlacklistVisitor(visitorId, { reason });
+    return response.data;
+}

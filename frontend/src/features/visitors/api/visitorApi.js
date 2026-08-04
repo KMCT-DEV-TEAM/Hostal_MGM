@@ -56,6 +56,10 @@ export const visitorApi = {
     // VisitRequest Granular Approvals
     approveVisitRequest: (visitRequestId) => api.patch(`${BASE_URL}/visit-requests/${visitRequestId}/approve`),
     rejectVisitRequest: (visitRequestId, payload) => api.patch(`${BASE_URL}/visit-requests/${visitRequestId}/reject`, payload),
+
+    // Blacklist (Super Admin)
+    blacklistVisitor: (visitorId, payload) => api.patch(`${BASE_URL}/super-admin/visitors/${visitorId}/blacklist`, payload),
+    removeBlacklistVisitor: (visitorId, payload) => api.patch(`${BASE_URL}/super-admin/visitors/${visitorId}/remove-blacklist`, payload),
 };
 
 export default visitorApi;
