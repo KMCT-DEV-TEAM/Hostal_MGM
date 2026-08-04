@@ -47,11 +47,6 @@ const visitorVisitSchema = new mongoose.Schema(
             ref: 'Hostel',
             required: true
         },
-        organizationId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Organization',
-            required: true
-        },
         students: [
             {
                 type: mongoose.Schema.Types.ObjectId,
@@ -97,7 +92,6 @@ const visitorVisitSchema = new mongoose.Schema(
     }
 );
 
-visitorVisitSchema.index({ organizationId: 1 });
 visitorVisitSchema.index({ hostelId: 1 });
 visitorVisitSchema.index({ students: 1 });
 visitorVisitSchema.index({ 'visitor.refId': 1, 'visitor.refType': 1 });

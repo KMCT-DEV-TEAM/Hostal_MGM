@@ -344,8 +344,8 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         await session.endSession();
     }
 
-    // const students = await Student.find({ _id: { $in: validStudentIds } }).lean();
-    // const studentNames = students.map(s => s.name).join(', ');
+    const students = await Student.find({ _id: { $in: validStudentIds } }).lean();
+    const studentNames = students.map(s => s.name).join(', ');
 
     Promise.all([
         orchestratorService.triggerNotification({
