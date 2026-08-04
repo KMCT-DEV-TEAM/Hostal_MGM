@@ -226,7 +226,7 @@ const VisitorHistoryPage = () => {
                         )}
 
                         {/* Table View */}
-                        <div className="bg-transparent flex flex-col relative z-0">
+                        <div className="bg-transparent flex flex-col flex-1 relative z-0">
                             {showAggregatedView ? (
                                 <VisitorHistoryAggregatedView
                                     visitors={visitors}

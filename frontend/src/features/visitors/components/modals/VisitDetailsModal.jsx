@@ -92,50 +92,78 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
         const checkInDate = visit.visitInformation?.checkInTime;
         const checkOutDate = visit.visitInformation?.checkOutTime;
 
-        const steps = [];
 
-        // 1. Checked Out (Top)
-        steps.push({
-            title: "Checked Out",
-            subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
-            status: checkoutStatus,
-            formattedDate: checkOutDate ? `${formatDateReadable(checkOutDate)} | ${formatTime(checkOutDate)}` : '--',
-            badgeLabel: checkoutStatus === 'approved' ? 'Completed' : 'Pending',
-            badgeColor: checkoutStatus === 'approved' ? '#3B82F6' : '#6B7280',
-            badgeBg: checkoutStatus === 'approved' ? '#EFF6FF' : '#F3F4F6',
-            nodeColor: checkoutStatus === 'approved' ? '#3B82F6' : '#D1D5DB'
+
+        // Filter events that belong in the visual timeline
+        const visualTimelineEvents = (visit.timeline || []).filter(t => {
+            const action = t.action || '';
+            return action !== 'Visit Created' && action !== 'Visit Approved' && action !== 'Visit Rejected';
         });
 
-        // 2. Intermediate events (e.g. Student Added)
-        const intermediateEvents = (visit.timeline || []).filter(
-            t => t.action !== 'Checked In' && t.action !== 'Checked Out' && t.action !== 'Visit Created' && t.action !== 'Visit Approved' && t.action !== 'Visit Rejected'
-        );
-        
-        intermediateEvents.forEach(t => {
-            steps.push({
-                title: t.action ? t.action.replace('_', ' ') : 'Action',
-                subtitle: t.performedBy ? `${t.performedBy} - ${t.role || 'Warden'}` : 'System',
-                remarks: t.remarks,
-                status: 'approved', 
-                formattedDate: t.createdAt ? `${formatDateReadable(t.createdAt)} | ${formatTime(t.createdAt)}` : '--',
-                badgeLabel: 'Updated',
-                badgeColor: '#8B5CF6',
-                badgeBg: '#EDE9FE',
-                nodeColor: '#8B5CF6'
-            });
-        });
+        const hasCheckout = visualTimelineEvents.some(t => t.action?.toLowerCase().includes('check') && t.action?.toLowerCase().includes('out'));
+        const hasCheckin = visualTimelineEvents.some(t => t.action?.toLowerCase().includes('check') && t.action?.toLowerCase().includes('in'));
 
-        // 3. Checked In (Bottom)
-        steps.push({
-            title: "Checked In",
-            subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
-            status: checkinStatus,
-            formattedDate: checkInDate ? `${formatDateReadable(checkInDate)} | ${formatTime(checkInDate)}` : '--',
-            badgeLabel: checkinStatus === 'approved' ? 'Inside' : (checkinStatus === 'submitted' ? 'Waiting' : 'Pending'),
-            badgeColor: checkinStatus === 'approved' ? '#10B981' : '#6B7280',
-            badgeBg: checkinStatus === 'approved' ? '#D1FAE5' : '#F3F4F6',
-            nodeColor: checkinStatus === 'approved' ? '#10B981' : '#D1D5DB'
-        });
+        // Construct the steps array declaratively
+        const steps = [
+            // 1. Checked Out (Top placeholder if not completed)
+            ...(!hasCheckout ? [{
+                title: "Checked Out",
+                subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
+                status: checkoutStatus,
+                formattedDate: '--',
+                badgeLabel: 'Pending',
+                badgeColor: '#6B7280',
+                badgeBg: '#F3F4F6',
+                nodeColor: '#D1D5DB'
+            }] : []),
+
+            // 2. Map actual timeline events natively
+            ...visualTimelineEvents.map(t => {
+                let badgeLabel = 'Updated';
+                let badgeColor = '#8B5CF6';
+                let badgeBg = '#EDE9FE';
+                let nodeColor = '#8B5CF6';
+                let status = 'approved';
+
+                const actionLower = (t.action || '').toLowerCase();
+
+                if (actionLower.includes('check') && actionLower.includes('out')) {
+                    badgeLabel = 'Completed';
+                    badgeColor = '#3B82F6';
+                    badgeBg = '#EFF6FF';
+                    nodeColor = '#3B82F6';
+                } else if (actionLower.includes('check') && actionLower.includes('in')) {
+                    badgeLabel = 'Inside';
+                    badgeColor = '#10B981';
+                    badgeBg = '#D1FAE5';
+                    nodeColor = '#10B981';
+                }
+
+                return {
+                    title: t.action ? t.action.replace(/_/g, ' ') : 'Action',
+                    subtitle: t.performedBy ? `${t.performedBy} - ${t.role || 'System'}` : 'System',
+                    remarks: t.remarks,
+                    status: status,
+                    formattedDate: t.createdAt ? `${formatDateReadable(t.createdAt)} | ${formatTime(t.createdAt)}` : '--',
+                    badgeLabel,
+                    badgeColor,
+                    badgeBg,
+                    nodeColor
+                };
+            }),
+
+            // 3. Checked In (Bottom placeholder if not checked in yet)
+            ...(!hasCheckin ? [{
+                title: "Checked In",
+                subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
+                status: checkinStatus,
+                formattedDate: '--',
+                badgeLabel: checkinStatus === 'submitted' ? 'Waiting' : 'Pending',
+                badgeColor: checkinStatus === 'submitted' ? '#F59E0B' : '#6B7280',
+                badgeBg: checkinStatus === 'submitted' ? '#FEF3C7' : '#F3F4F6',
+                nodeColor: '#D1D5DB'
+            }] : [])
+        ];
 
         return (
             <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
