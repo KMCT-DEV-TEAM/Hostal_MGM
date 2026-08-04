@@ -161,6 +161,44 @@ export const cancelLatestActiveVisitRequest = async (visitorId, studentId, paren
 };
 
 /**
+ * Cancels all pending/approved VisitRequests for a visitor.
+ * Returns the number of affected requests.
+ */
+export const cancelAllActiveVisitRequests = async (visitorId, userId, role, reason, session) => {
+    const result = await VisitRequest.updateMany(
+        {
+            visitorId,
+            status: { $in: [VISITOR_STATUS.PENDING, VISITOR_STATUS.APPROVED] }
+        },
+        {
+            $set: { status: VISITOR_STATUS.CANCELLED },
+            $push: {
+                approvalTimeline: {
+                    action: VISITOR_APPROVAL_ACTIONS.REVOKED, // or similar valid action
+                    performedBy: userId,
+                    performedByRole: role,
+                    remarks: reason,
+                    createdAt: new Date()
+                }
+            }
+        },
+        { session }
+    );
+    return result.modifiedCount;
+};
+
+/**
+ * Checks if a visitor is currently inside the hostel (active check-in).
+ */
+export const isVisitorInsideHostel = async (visitorId) => {
+    const activeVisit = await VisitorVisit.findOne({
+        'visitor.refId': visitorId,
+        status: VISITOR_VISIT_STATUS.CHECKED_IN
+    }).lean();
+    return activeVisit !== null;
+};
+
+/**
  * Finds VisitRequests for a specific visitor and list of students
  * @param {String} visitorId 
  * @param {Array<String>} studentIds 
@@ -817,6 +855,23 @@ export const updateVisitor = async (visitorId, updateData) => {
         { $set: updateData },
         { new: true, runValidators: true }
     ).select('name phone email address updatedAt');
+};
+
+/**
+ * Updates visitor fields and appends a changeLog entry atomically.
+ * @param {String} visitorId 
+ * @param {Object} updateData 
+ * @param {Object} changeLogEntry 
+ */
+export const updateVisitorProfileFields = async (visitorId, updateData, changeLogEntry, session = null) => {
+    return await Visitor.findByIdAndUpdate(
+        visitorId,
+        {
+            $set: updateData,
+            $push: { changeLog: changeLogEntry }
+        },
+        { new: true, runValidators: true, session }
+    );
 };
 
 

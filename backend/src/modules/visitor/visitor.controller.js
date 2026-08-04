@@ -540,3 +540,38 @@ export const rejectVisitRequest = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * Super Admin: Blacklist a visitor
+ */
+export const blacklistVisitor = async (req, res, next) => {
+    try {
+        const { visitorId } = req.params;
+        const { reason } = req.body;
+        const result = await visitorService.blacklistVisitorProfile(visitorId, reason, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'Visitor has been blacklisted successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Super Admin: Remove blacklist from a visitor
+ */
+export const removeBlacklistVisitor = async (req, res, next) => {
+    try {
+        const { visitorId } = req.params;
+        const result = await visitorService.removeBlacklistFromVisitorProfile(visitorId, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'Blacklist removed from visitor successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
