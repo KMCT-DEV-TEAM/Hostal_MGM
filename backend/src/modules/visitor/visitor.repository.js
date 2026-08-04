@@ -184,44 +184,114 @@ export const getVisitRequestsByVisitorAndStudents = async (visitorId, studentIds
 export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, skip, limit, parentIdMatch = null) => {
     const pipeline = [];
 
-    // 1. Initial Match (Status, Date)
+    // 1. Initial Match on Visitor
     if (Object.keys(initialMatch).length > 0) {
         pipeline.push({ $match: initialMatch });
     }
 
-    // 2. Lookup ALL VisitRequests for this visitor
+    // Rewrite studentMatch keys for internal lookup ('studentObj.x' -> 'student.x')
+    const studentMatchScoped = {};
+    for (const key in studentMatch) {
+        const newKey = key.replace('studentObj.', 'student.');
+        studentMatchScoped[newKey] = studentMatch[key];
+    }
+
+    // 2. Scoped Lookup for VisitRequests and Students
     pipeline.push({
         $lookup: {
             from: 'visitrequests',
-            localField: '_id',
-            foreignField: 'visitorId',
-            as: 'allRequests'
+            let: { visitorId: '$_id' },
+            pipeline: [
+                { $match: { $expr: { $eq: ['$visitorId', '$$visitorId'] } } },
+                
+                // Apply Parent Authorization Scope strictly inside the join
+                ...(parentIdMatch ? [{ $match: { parentId: new mongoose.Types.ObjectId(parentIdMatch) } }] : []),
+                
+                {
+                    $lookup: {
+                        from: 'students',
+                        localField: 'studentId',
+                        foreignField: '_id',
+                        as: 'student'
+                    }
+                },
+                // Flatten the student array
+                { $unwind: { path: '$student', preserveNullAndEmptyArrays: false } },
+                
+                // Apply Staff Authorization Scope strictly inside the join
+                ...(Object.keys(studentMatchScoped).length > 0 ? [{ $match: studentMatchScoped }] : [])
+            ],
+            as: 'authorizedRequests'
         }
     });
 
-    // 3. Parent Scope Filter (only visitors who have a visitRequest created by this parent)
-    if (parentIdMatch) {
-        pipeline.push({
-            $match: { 'allRequests.parentId': new mongoose.Types.ObjectId(parentIdMatch) }
-        });
+    // 3. Enforce Authorization Guard
+    // If the user has a restricted scope, immediately filter out visitors with 0 authorized requests
+    const hasScopeFilters = parentIdMatch || Object.keys(studentMatch).length > 0;
+    if (hasScopeFilters) {
+        pipeline.push({ $match: { 'authorizedRequests.0': { $exists: true } } });
     }
 
-    // 4. Lookup Students for filtering and response
+    // 4. Compute Metrics & Deduplicate Students strictly from authorized data
+    const statusWeights = sortOptions.statusWeights || { Approved: 1, Pending: 2, Historical: 3 };
+
     pipeline.push({
-        $lookup: {
-            from: 'students',
-            localField: 'allRequests.studentId',
-            foreignField: '_id',
-            as: 'studentObj'
+        $addFields: {
+            latestRequestDate: { $max: '$authorizedRequests.createdAt' },
+            activeRequestsCount: {
+                $size: {
+                    $filter: {
+                        input: '$authorizedRequests',
+                        as: 'req',
+                        cond: { $in: ['$$req.status', ['Pending', 'Approved']] }
+                    }
+                }
+            },
+            pendingRequestsCount: {
+                $size: {
+                    $filter: {
+                        input: '$authorizedRequests',
+                        as: 'req',
+                        cond: { $eq: ['$$req.status', 'Pending'] }
+                    }
+                }
+            },
+            // Compute minimum status weight among authorized requests
+            sortWeight: {
+                $min: {
+                    $map: {
+                        input: '$authorizedRequests',
+                        as: 'req',
+                        in: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ['$$req.status', 'Pending'] }, then: statusWeights['Pending'] || 3 },
+                                    { case: { $eq: ['$$req.status', 'Approved'] }, then: statusWeights['Approved'] || 3 }
+                                ],
+                                default: statusWeights['Historical'] || 3
+                            }
+                        }
+                    }
+                }
+            },
+            // Pure MongoDB Deduplication trick using $reduce and array traversal
+            uniqueStudents: {
+                $reduce: {
+                    input: '$authorizedRequests.student',
+                    initialValue: [],
+                    in: {
+                        $cond: [
+                            { $in: ['$$this._id', '$$value._id'] },
+                            '$$value', // Skip if already added
+                            { $concatArrays: ['$$value', ['$$this']] } // Add if unique
+                        ]
+                    }
+                }
+            }
         }
     });
 
-    // 5. Staff/Student Scope Filter
-    if (Object.keys(studentMatch).length > 0) {
-        pipeline.push({ $match: studentMatch });
-    }
-
-    // 6. Search text 
+    // 5. Global Search (Applies to Visitor + Authorized Students only)
     if (sortOptions.search) {
         const searchRegex = new RegExp(sortOptions.search, 'i');
         pipeline.push({
@@ -230,24 +300,25 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                     { name: searchRegex },
                     { phone: searchRegex },
                     { email: searchRegex },
-                    { 'studentObj.name': searchRegex },
-                    { 'studentObj.roomNumber': searchRegex }
+                    { 'uniqueStudents.name': searchRegex },
+                    { 'uniqueStudents.roomNumber': searchRegex }
                 ]
             }
         });
     }
 
-    // 6. Sort
-    let sortStage = { createdAt: -1 };
+    // 6. Sorting
+    let sortStage = { sortWeight: 1, pendingRequestsCount: -1, latestRequestDate: -1, createdAt: -1 };
     if (sortOptions.sort) {
         if (sortOptions.sort === 'name' || sortOptions.sort === 'name_asc') sortStage = { name: 1 };
         else if (sortOptions.sort === '-name') sortStage = { name: -1 };
+        else if (sortOptions.sort === 'latest_request') sortStage = { latestRequestDate: -1 };
         else if (sortOptions.sort === 'createdAt' || sortOptions.sort === 'oldest') sortStage = { createdAt: 1 };
         else if (sortOptions.sort === '-createdAt') sortStage = { createdAt: -1 };
     }
     pipeline.push({ $sort: sortStage });
 
-    // 7. Pagination & Projection via Facet
+    // 7. Facet for Pagination and Projection
     pipeline.push({
         $facet: {
             metadata: [{ $count: 'total' }],
@@ -256,7 +327,7 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                 { $limit: limit },
                 {
                     $project: {
-                        visitorId: '$_id', // backwards compat
+                        visitorId: '$_id',
                         name: 1,
                         phone: 1,
                         email: 1,
@@ -264,20 +335,14 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                         approvalStatus: 1,
                         createdAt: 1,
                         updatedAt: 1,
-                        latestRequestDate: { $max: '$allRequests.createdAt' },
-                        activeRequestsCount: {
-                            $size: {
-                                $filter: {
-                                    input: '$allRequests',
-                                    as: 'req',
-                                    cond: { $in: ['$$req.status', ['Pending', 'Approved']] }
-                                }
-                            }
-                        },
-                        studentCount: { $size: '$studentObj' },
+                        latestRequestDate: 1,
+                        activeRequestsCount: 1,
+                        pendingRequestsCount: 1,
+                        sortWeight: 1,
+                        studentCount: { $size: '$uniqueStudents' },
                         students: {
                             $map: {
-                                input: '$studentObj',
+                                input: '$uniqueStudents',
                                 as: 's',
                                 in: {
                                     _id: '$$s._id',

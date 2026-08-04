@@ -251,7 +251,7 @@ const resolveStaffListingScope = async (user, queryOrganization) => {
 /**
  * 2. Filter Construction
  */
-const buildListingFilters = (query, studentMatch) => {
+const buildListingFilters = (query, studentMatch, userRole = null) => {
     const initialMatch = {};
 
     if (query.hostel) studentMatch['studentObj.hostelId'] = new mongoose.Types.ObjectId(query.hostel);
@@ -283,6 +283,14 @@ const buildListingFilters = (query, studentMatch) => {
     }
     if (query.sort) sortOptions.sort = query.sort.trim();
 
+    // Determine Role-based Sorting Priorities
+    if (['admin', 'super_admin', 'mentor'].includes(userRole)) {
+        sortOptions.statusWeights = { Pending: 1, Approved: 2, Historical: 3 };
+    } else {
+        // Default for warden, parent, student
+        sortOptions.statusWeights = { Approved: 1, Pending: 2, Historical: 3 };
+    }
+
     return { initialMatch, sortOptions };
 };
 
@@ -298,7 +306,7 @@ export const listVisitors = async (query, user) => {
 
     try {
         const studentMatch = await resolveStaffListingScope(user, query.organization);
-        const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch);
+        const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch, user.role);
 
         const { data, total } = await visitorRepository.getVisitorsList(
             initialMatch,
@@ -334,7 +342,7 @@ export const listParentVisitors = async (query, user, explicitStudentId = null) 
         studentMatch = { 'studentObj._id': new mongoose.Types.ObjectId(explicitStudentId) };
     }
 
-    const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch);
+    const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch, user.role || 'parent');
 
     const { data, total } = await visitorRepository.getVisitorsList(
         initialMatch,
@@ -369,7 +377,7 @@ export const listStudentVisitors = async (query, user) => {
     const skip = (page - 1) * limit;
 
     const studentMatch = { 'studentObj._id': new mongoose.Types.ObjectId(user.id) };
-    const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch);
+    const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch, user.role || 'student');
 
     const { data, total } = await visitorRepository.getVisitorsList(
         initialMatch,
@@ -417,14 +425,26 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         })
         .lean();
 
-    visitRequests.sort((a, b) => {
-        const order = {
+    let order;
+    if (['admin', 'super_admin', 'mentor'].includes(user.role)) {
+        order = {
             [VISITOR_STATUS.PENDING]: 1,
             [VISITOR_STATUS.APPROVED]: 2
         };
+    } else {
+        // Parent, Warden, Student -> Approved first
+        order = {
+            [VISITOR_STATUS.APPROVED]: 1,
+            [VISITOR_STATUS.PENDING]: 2
+        };
+    }
 
-        if (order[a.status] !== order[b.status]) {
-            return order[a.status] - order[b.status];
+    visitRequests.sort((a, b) => {
+        const orderA = order[a.status] || 3;
+        const orderB = order[b.status] || 3;
+
+        if (orderA !== orderB) {
+            return orderA - orderB;
         }
 
         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -454,7 +474,6 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
             throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
         }
     }
-
     // 4. Filter VisitRequests based on role
     const authorizedVisitRequests = visitRequests.filter(vr => {
         const student = vr.studentId;
@@ -462,7 +481,7 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
 
         if (user.role === 'super_admin') return true;
         if (user.role === 'admin') return student.organizationId?.toString() === user.organization?.toString();
-        if (user.role === 'warden') return wardenHostelIds.includes(student.hostelId?.toString());
+        if (user.role === 'warden') return wardenHostelIds.includes(student.hostelId?._id?.toString());
         if (user.role === 'mentor') return mentorBatchIds.includes(student.batchId?.toString());
         if (user.role === 'student') return student._id.toString() === user.id;
         if (user.role === 'parent') {
