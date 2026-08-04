@@ -51,6 +51,7 @@ export const visitorApi = {
     getParentVisitorsV2: (studentId, params) => api.get(`/parent/students/${studentId}/visitors`, { params }),
     getVisitorDetailsParentV2: (studentId, visitorId) => api.get(`/parent/students/${studentId}/visitors/${visitorId}`),
     reuseVisitorProfileV2: (studentId, visitorId, payload) => api.post(`/parent/students/${studentId}/visitors/${visitorId}/visit-requests`, payload),
+    unassignVisitorV2: (studentId, visitorId) => api.patch(`/parent/students/${studentId}/visitors/${visitorId}/unassign`),
 
     // VisitRequest Granular Approvals
     approveVisitRequest: (visitRequestId) => api.patch(`${BASE_URL}/visit-requests/${visitRequestId}/approve`),

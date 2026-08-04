@@ -3,6 +3,8 @@ import api from '@/services/axios';
 const parentApi = {
   getParentDashboardStats: (studentId, params) => api.get(`/parent/dashboard/students/${studentId}/stats`, { params }),
 
+  getParentStudents: (params) => api.get("/parent/students", { params }),
+
   createParentByAdmin: (payload) =>
     api.post("/admin/parents", payload),
 

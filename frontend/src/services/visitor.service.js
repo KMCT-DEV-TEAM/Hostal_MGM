@@ -27,6 +27,11 @@ export async function getParentVisitors(params) {
     return response.data;
 }
 
+export async function unassignVisitor(studentId, visitorId) {
+    const response = await visitorApi.unassignVisitorV2(studentId, visitorId);
+    return response.data;
+}
+
 /**
  * Student Endpoints
  */

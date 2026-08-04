@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '@/components/ui/Modal';
-import { getVisitorDetails, getVisitorDetailsParent, approveVisitRequest, rejectVisitRequest } from '@/services/visitor.service';
+import { getVisitorDetails, getVisitorDetailsParent, approveVisitRequest, rejectVisitRequest, unassignVisitor } from '@/services/visitor.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
@@ -8,6 +8,7 @@ import { ROLES } from '@/constants/roles';
 
 import Button from '@/components/ui/Button';
 import CheckInModal from './CheckInModal';
+import AssignStudentModal from './AssignStudentModal';
 import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -34,17 +35,23 @@ export default function VisitorDetailsModal({
     const [approvingRequestId, setApprovingRequestId] = useState(null);
     const [rejectingRequestId, setRejectingRequestId] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [unassigningStudentId, setUnassigningStudentId] = useState(null);
+    const [isAssignOpen, setIsAssignOpen] = useState(false);
+
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     const { user } = useAuthStore();
     const { activeStudentId } = useActiveStudent();
 
-    const fetchDetails = useCallback(async () => {
+    const fetchDetails = useCallback(async (isBackground = false) => {
         if (!isOpen || !visitorId) {
             setVisitor(null);
             return;
         }
 
-        setIsLoading(true);
+        if (!isBackground) {
+            setIsLoading(true);
+        }
         setError(null);
 
         try {
@@ -59,24 +66,29 @@ export default function VisitorDetailsModal({
             console.error("Failed to fetch visitor details:", err);
             setError("Failed to load details.");
         } finally {
-            setIsLoading(false);
+            if (!isBackground) {
+                setIsLoading(false);
+            }
         }
     }, [isOpen, visitorId, user?.role, activeStudentId]);
 
     useEffect(() => {
-        fetchDetails();
+        fetchDetails(false);
     }, [fetchDetails]);
 
     const handleApproveRequestSubmit = async () => {
         if (!approvingRequestId) return;
+        setIsActionLoading(true);
         try {
             await approveVisitRequest(approvingRequestId);
             showSuccessToast("Visit request approved successfully.");
             setApprovingRequestId(null);
-            fetchDetails();
+            fetchDetails(true); // background refresh
         } catch (err) {
             console.error("Approve failed:", err);
             showErrorToast(err?.response?.data?.message || "Failed to approve request");
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
@@ -85,15 +97,34 @@ export default function VisitorDetailsModal({
             showErrorToast("Rejection reason is required");
             return;
         }
+        setIsActionLoading(true);
         try {
             await rejectVisitRequest(rejectingRequestId, rejectReason);
             showSuccessToast("Visit request rejected successfully.");
             setRejectingRequestId(null);
             setRejectReason('');
-            fetchDetails();
+            fetchDetails(true); // background refresh
         } catch (err) {
             console.error("Reject failed:", err);
             showErrorToast(err?.response?.data?.message || "Failed to reject request");
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleUnassignSubmit = async () => {
+        if (!unassigningStudentId) return;
+        setIsActionLoading(true);
+        try {
+            await unassignVisitor(unassigningStudentId, visitorId);
+            showSuccessToast("Student unassigned successfully.");
+            setUnassigningStudentId(null);
+            fetchDetails(true);
+        } catch (err) {
+            console.error("Unassign failed:", err);
+            showErrorToast(err?.response?.data?.message || "Failed to unassign student");
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
@@ -205,7 +236,17 @@ export default function VisitorDetailsModal({
                     </DetailCard>
 
                     {linkedStudents.length > 0 && (
-                        <DetailCard title="Linked Students" subtitle="Students associated with this visitor">
+                        <DetailCard 
+                            title="Linked Students" 
+                            subtitle="Students associated with this visitor"
+                            headerAction={
+                                user?.role === ROLES.PARENT && (
+                                    <Button size="sm" variant="outline" fullWidth={false} onClick={() => setIsAssignOpen(true)} className="px-2 py-1 h-auto text-xs border-primary text-primary hover:bg-primary hover:text-white">
+                                        + Assign
+                                    </Button>
+                                )
+                            }
+                        >
                             <div className="flex flex-col gap-3 mt-2">
                                 {linkedStudents.map((student, idx) => (
                                     <LinkedStudentCard
@@ -215,6 +256,7 @@ export default function VisitorDetailsModal({
                                         userRole={user?.role}
                                         onApprove={setApprovingRequestId}
                                         onReject={setRejectingRequestId}
+                                        onUnassign={setUnassigningStudentId}
                                     />
                                 ))}
                             </div>
@@ -277,7 +319,7 @@ export default function VisitorDetailsModal({
                                             badgeColor={badgeColor}
                                             nodeColor={nodeColor}
                                             avatarBg="bg-gray-100"
-                                            avatarColor="text-gray-600"
+                                            avatarColor="text-text-secondary"
                                         />
                                     );
                                 })}
@@ -309,8 +351,9 @@ export default function VisitorDetailsModal({
                             variant="outline"
                             size="sm"
                             fullWidth={false}
-                            className="border-gray-200! text-gray-600! hover:bg-gray-50!"
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
                             onClick={() => setApprovingRequestId(null)}
+                            disabled={isActionLoading}
                         >
                             Cancel
                         </Button>
@@ -319,6 +362,7 @@ export default function VisitorDetailsModal({
                             fullWidth={false}
                             className="!bg-primary! hover:!bg-primary! hover:!text-white!"
                             onClick={handleApproveRequestSubmit}
+                            isLoading={isActionLoading}
                         >
                             Confirm Approval
                         </Button>
@@ -326,7 +370,7 @@ export default function VisitorDetailsModal({
                 }
             >
                 <div className="pt-2 pb-4">
-                    <p className="text-[13px] text-gray-600">
+                    <p className="text-[13px] text-text-secondary">
                         Are you sure you want to approve this visit request? The parent and student will be notified.
                     </p>
                 </div>
@@ -347,11 +391,12 @@ export default function VisitorDetailsModal({
                             variant="outline"
                             size="sm"
                             fullWidth={false}
-                            className="border-gray-200! text-gray-600! hover:bg-gray-50!"
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
                             onClick={() => {
                                 setRejectingRequestId(null);
                                 setRejectReason('');
                             }}
+                            disabled={isActionLoading}
                         >
                             Cancel
                         </Button>
@@ -360,6 +405,7 @@ export default function VisitorDetailsModal({
                             fullWidth={false}
                             className="!bg-danger! hover:!bg-danger! hover:!text-white!"
                             onClick={handleRejectRequestSubmit}
+                            isLoading={isActionLoading}
                         >
                             Confirm Rejection
                         </Button>
@@ -379,6 +425,54 @@ export default function VisitorDetailsModal({
                     ></textarea>
                 </div>
             </Modal>
+
+            {/* Unassign Confirmation Modal */}
+            <Modal
+                isOpen={!!unassigningStudentId}
+                onClose={() => setUnassigningStudentId(null)}
+                title="Unassign Student"
+                maxWidth="max-w-md"
+                footer={
+                    <div className="flex items-center justify-end gap-3 w-full">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            className="border-gray-200! text-text-secondary! hover:bg-gray-50!"
+                            onClick={() => setUnassigningStudentId(null)}
+                            disabled={isActionLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="sm"
+                            fullWidth={false}
+                            className="!bg-danger! hover:!bg-danger! hover:!text-white!"
+                            onClick={handleUnassignSubmit}
+                            isLoading={isActionLoading}
+                        >
+                            Confirm Unassign
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="pt-2 pb-4">
+                    <p className="text-[13px] text-text-secondary">
+                        Are you sure you want to unassign this student from the visitor? This will cancel any active link, but historical records will remain.
+                    </p>
+                </div>
+            </Modal>
+
+            <AssignStudentModal
+                isOpen={isAssignOpen}
+                onClose={() => setIsAssignOpen(false)}
+                visitor={visitor}
+                visitorId={visitorId}
+                onSuccess={() => {
+                    setIsAssignOpen(false);
+                    fetchDetails(true);
+                }}
+            />
         </Modal>
     );
 }
