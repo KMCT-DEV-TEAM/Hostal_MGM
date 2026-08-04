@@ -9,43 +9,6 @@ const generateRandomPassword = () => {
   return Math.random().toString(36).slice(-10);
 };
 
-export const checkParentConflict = async (existingParent, { parentName, phone, session }) => {
-  if (!existingParent) return;
-
-  const nameDiffers = existingParent.parentName !== parentName;
-  const phoneDiffers = existingParent.phone !== phone;
-
-  if (nameDiffers || phoneDiffers) {
-    const studentLinks = await StudentParent.find({ parentId: existingParent._id })
-      .populate({
-        path: 'studentId',
-        select: 'name course batch academicYear'
-      }).session(session);
-
-    const linkedStudents = studentLinks
-      .map(link => link.studentId)
-      .filter(Boolean);
-
-    const conflictError = new Error("Parent email already exists with different details");
-    conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
-    conflictError.statusCode = 409;
-    conflictError.conflictData = {
-      existing: {
-        name: existingParent.parentName,
-        phone: existingParent.phone,
-        email: existingParent.email,
-        linkedStudents: linkedStudents
-      },
-      submitted: {
-        name: parentName,
-        phone: phone,
-        email: existingParent.email
-      }
-    };
-    throw conflictError;
-  }
-};
-
 const createParentDb = async (data) => {
   const {
     studentId,
@@ -76,26 +39,63 @@ const createParentDb = async (data) => {
   try {
     session.startTransaction();
 
-    let existingParent = await Parent.findOne({ email }).session(session);
+    let existingParent = await parentRepository.findParentByEmail(email, session);
 
     if (existingParent) {
+      // 1. Check if a link already exists for this student
+      const existingLink = await parentRepository.findStudentParentLink(studentId, existingParent._id, session);
+
+      if (existingLink) {
+        // Case 2: Parent exists and already linked to this student
+        const conflictError = new Error("This parent is already linked to the student.");
+        conflictError.code = "PARENT_ALREADY_LINKED";
+        conflictError.statusCode = 409;
+        throw conflictError;
+      }
+
+      // Case 3 & 4: Parent exists but is NOT linked to this student
       if (!resolutionAction) {
-        await checkParentConflict(existingParent, { parentName, phone, session });
+        const nameDiffers = existingParent.parentName !== parentName;
+        const phoneDiffers = existingParent.phone !== phone;
+
+        if (nameDiffers || phoneDiffers) {
+          // Case 4: Details differ. Throw Conflict.
+          const studentLinks = await parentRepository.getLinkedStudents(existingParent._id, session);
+          const linkedStudents = studentLinks.map(link => link.studentId).filter(Boolean);
+
+          const conflictError = new Error("Parent email already exists with different details");
+          conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
+          conflictError.statusCode = 409;
+          conflictError.conflictData = {
+            existing: {
+              name: existingParent.parentName,
+              phone: existingParent.phone,
+              email: existingParent.email,
+              linkedStudents: linkedStudents
+            },
+            submitted: {
+              name: parentName,
+              phone: phone,
+              email: existingParent.email
+            }
+          };
+          throw conflictError;
+        }
       }
 
+      // Handle updating the parent record if requested or if names/phones match
       if (resolutionAction === 'update_existing' || (!resolutionAction && existingParent.parentName === parentName && existingParent.phone === phone)) {
-        if (parentName) existingParent.parentName = parentName;
-        if (phone) existingParent.phone = phone;
-        if (address) existingParent.address = address;
-        await existingParent.save({ session });
+        parentRecord = await parentRepository.updateParentRecord(existingParent, { parentName, phone, address }, session);
+      } else {
+        parentRecord = existingParent;
       }
 
-      parentRecord = existingParent;
     } else {
+      // Case 1: Parent does not exist, create new
       temporaryPassword = generateRandomPassword();
       const hashedPassword = await hashPassword(temporaryPassword);
 
-      const created = await Parent.create([{
+      parentRecord = await parentRepository.createParentRecord({
         parentName,
         phone,
         email,
@@ -103,43 +103,24 @@ const createParentDb = async (data) => {
         isVerified,
         password: hashedPassword,
         tempPassword: true,
-      }], { session });
-      parentRecord = created[0];
+      }, session);
     }
 
     // Determine if should be default guardian
-    const linkCount = await StudentParent.countDocuments({ studentId }).session(session);
+    const linkCount = await parentRepository.countStudentParentLinks(studentId, session);
     const shouldDefaultGuardian = defaultGuardian || linkCount === 0;
 
     if (shouldDefaultGuardian) {
-      await StudentParent.updateMany(
-        { studentId },
-        { $set: { defaultGuardian: false } },
-        { session }
-      );
+      await parentRepository.clearDefaultGuardian(studentId, session);
     }
 
-    const existingLink = await StudentParent.findOne({
+    await parentRepository.createStudentParentLink({
       studentId,
-      parentId: parentRecord._id
-    }).session(session);
-
-    if (!existingLink) {
-      await StudentParent.create([{
-        studentId,
-        parentId: parentRecord._id,
-        relationship: relationship || "guardian",
-        defaultGuardian: shouldDefaultGuardian,
-        status: "active"
-      }], { session });
-    } else {
-      if (resolutionAction !== 'use_existing') {
-        existingLink.relationship = relationship || existingLink.relationship;
-      }
-      if (shouldDefaultGuardian) existingLink.defaultGuardian = true;
-      existingLink.status = "active";
-      await existingLink.save({ session });
-    }
+      parentId: parentRecord._id,
+      relationship: relationship || "guardian",
+      defaultGuardian: shouldDefaultGuardian,
+      status: "active"
+    }, session);
 
     await session.commitTransaction();
   } catch (error) {
@@ -684,6 +665,6 @@ export const getParentStudentsService = async (parentId, filters = {}) => {
 
   // Fetch the students linked to this parent using optimized query
   const students = await parentRepository.findActiveStudentsByParentId(parentId, filters);
-  
+
   return students;
 };

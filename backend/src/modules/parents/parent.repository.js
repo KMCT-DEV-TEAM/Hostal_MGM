@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import StudentParent from "./studentParent.model.js";
+import Parent from "./parent.model.js";
 
 class ParentRepository {
   /**
@@ -191,6 +192,67 @@ class ParentRepository {
     ];
 
     return await StudentParent.aggregate(pipeline);
+  }
+
+  async findParentByEmail(email, session = null) {
+    const query = Parent.findOne({ email });
+    if (session) query.session(session);
+    return await query;
+  }
+
+  async findStudentParentLink(studentId, parentId, session = null) {
+    const query = StudentParent.findOne({ studentId, parentId });
+    if (session) query.session(session);
+    return await query;
+  }
+
+  async createParentRecord(data, session = null) {
+    const created = await Parent.create([data], { session });
+    return created[0];
+  }
+
+  async updateParentRecord(parentDoc, data, session = null) {
+    if (data.parentName) parentDoc.parentName = data.parentName;
+    if (data.phone) parentDoc.phone = data.phone;
+    if (data.address) parentDoc.address = data.address;
+    await parentDoc.save({ session });
+    return parentDoc;
+  }
+
+  async createStudentParentLink(data, session = null) {
+    const created = await StudentParent.create([data], { session });
+    return created[0];
+  }
+
+  async updateStudentParentLink(linkDoc, data, session = null) {
+    if (data.relationship) linkDoc.relationship = data.relationship;
+    if (data.defaultGuardian !== undefined) linkDoc.defaultGuardian = data.defaultGuardian;
+    linkDoc.status = data.status || "active";
+    await linkDoc.save({ session });
+    return linkDoc;
+  }
+
+  async countStudentParentLinks(studentId, session = null) {
+    const query = StudentParent.countDocuments({ studentId });
+    if (session) query.session(session);
+    return await query;
+  }
+
+  async clearDefaultGuardian(studentId, session = null) {
+    return await StudentParent.updateMany(
+      { studentId },
+      { $set: { defaultGuardian: false } },
+      { session }
+    );
+  }
+
+  async getLinkedStudents(parentId, session = null) {
+    const query = StudentParent.find({ parentId }).populate({
+      path: 'studentId',
+      select: 'name course batch academicYear'
+    });
+    if (session) query.session(session);
+    return await query;
   }
 }
 

@@ -8,10 +8,47 @@ import mongoose from "mongoose";
 import Hostel from "../hostels/hostel.model.js";
 import { syncHostelOrganizations } from "../hostels/hostel.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
-import { checkParentConflict } from "../parents/parent.service.js";
+
 
 const generateRandomPassword = () => {
   return crypto.randomBytes(4).toString("hex"); // generates an 8-character string
+};
+
+const checkParentConflict = async (existingParent, { parentName, phone, session }) => {
+  if (!existingParent) return;
+
+  const nameDiffers = existingParent.parentName !== parentName;
+  const phoneDiffers = existingParent.phone !== phone;
+
+  if (nameDiffers || phoneDiffers) {
+    const studentLinks = await StudentParent.find({ parentId: existingParent._id })
+      .populate({
+        path: 'studentId',
+        select: 'name course batch academicYear'
+      }).session(session);
+
+    const linkedStudents = studentLinks
+      .map(link => link.studentId)
+      .filter(Boolean);
+
+    const conflictError = new Error("Parent email already exists with different details");
+    conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
+    conflictError.statusCode = 409;
+    conflictError.conflictData = {
+      existing: {
+        name: existingParent.parentName,
+        phone: existingParent.phone,
+        email: existingParent.email,
+        linkedStudents: linkedStudents
+      },
+      submitted: {
+        name: parentName,
+        phone: phone,
+        email: existingParent.email
+      }
+    };
+    throw conflictError;
+  }
 };
 
 const checkExistingUser = async (email) => {

@@ -54,6 +54,14 @@ const createParent = asyncHandler(async (req, res) => {
       });
     }
 
+    if (error.code === "PARENT_ALREADY_LINKED") {
+      return res.status(409).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
+    }
+
     if (error.message === "Invalid studentId") {
       return sendError(res, 400, "Invalid studentId");
     }
@@ -429,6 +437,14 @@ const resolveParentConflict = asyncHandler(async (req, res) => {
       isVerified: true,
     });
   } catch (error) {
+    if (error.code === "PARENT_ALREADY_LINKED") {
+      return res.status(409).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
+    }
+
     if (error.message === "Invalid studentId") {
       return sendError(res, 400, "Invalid studentId");
     }
