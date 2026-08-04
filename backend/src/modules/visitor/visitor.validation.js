@@ -531,7 +531,7 @@ export const validateUpdateVisitor = (req, res, next) => {
         });
     }
 
-    const allowedFields = ['name', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'];
+    const allowedFields = ['name', 'address', 'email'];
     const updateKeys = Object.keys(req.body);
 
     if (updateKeys.length === 0) {
@@ -549,7 +549,7 @@ export const validateUpdateVisitor = (req, res, next) => {
         });
     }
 
-    const { name, email, phone } = req.body;
+    const { name, email } = req.body;
 
     if (name && (typeof name !== 'string' || name.trim().length < 3)) {
         return res.status(400).json({ success: false, message: "name must be at least 3 characters long." });
@@ -559,14 +559,7 @@ export const validateUpdateVisitor = (req, res, next) => {
         return res.status(400).json({ success: false, message: "Invalid email format." });
     }
 
-    if (phone && !/^\+?[\d\s-]{10,15}$/.test(phone)) {
-        return res.status(400).json({ success: false, message: "Invalid phone number format." });
-    }
 
-    const { idProofType } = req.body;
-    if (idProofType && !ID_PROOF_TYPE_VALUES.includes(idProofType)) {
-        return res.status(400).json({ success: false, message: "Invalid idProofType." });
-    }
 
     next();
 };

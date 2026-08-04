@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware("admin", "super_admin"),
+  roleMiddleware("admin", "super_admin", "mentor"),
   validateCreateParent,
   createParent
 );
@@ -19,7 +19,7 @@ router.post(
 router.post(
   "/resolve-conflict",
   authMiddleware,
-  roleMiddleware("admin", "super_admin"),
+  roleMiddleware("admin", "super_admin", "mentor"),
   validateCreateParent,
   resolveParentConflict
 );
@@ -34,7 +34,7 @@ router.patch(
 router.patch(
   "/:id",
   authMiddleware,
-  roleMiddleware("admin", "super_admin"),
+  roleMiddleware("admin", "super_admin", "mentor"),
   validateParentIdParam,
   validateUpdateParent,
   updateParent
@@ -43,7 +43,7 @@ router.patch(
 router.patch(
   "/:id/change-email",
   authMiddleware,
-  roleMiddleware("admin", "super_admin"),
+  roleMiddleware("admin", "super_admin", "mentor"),
   validateParentIdParam,
   changeParentEmail
 );
@@ -51,7 +51,7 @@ router.patch(
 router.patch(
   "/:id/toggle-status",
   authMiddleware,
-  roleMiddleware("admin", "super_admin"),
+  roleMiddleware("admin", "super_admin", "mentor"),
   validateParentIdParam,
   toggleParentStatus
 );
@@ -59,7 +59,7 @@ router.patch(
 router.patch(
   "/:id/default-guardian",
   authMiddleware,
-  roleMiddleware("admin", "super_admin"),
+  roleMiddleware("admin", "super_admin", "mentor"),
   validateParentIdParam,
   validateUpdateParent,
   setDefaultGuardian

@@ -996,3 +996,21 @@ export const addStudentsToActiveVisit = async (visitId, newStudentIds, timelineE
         { new: true }
     );
 };
+
+/**
+ * Finds if an active VisitRequest (Pending or Approved) exists for a given parent and visitor.
+ * Optionally restrict to specific studentIds.
+ */
+export const findActiveVisitRequestForParent = async (visitorId, parentId, studentIds = null) => {
+    const query = {
+        visitorId,
+        parentId,
+        status: { $in: [VISITOR_STATUS.PENDING, VISITOR_STATUS.APPROVED] }
+    };
+
+    if (studentIds && studentIds.length > 0) {
+        query.studentId = { $in: studentIds };
+    }
+
+    return await VisitRequest.findOne(query).lean();
+};

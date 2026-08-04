@@ -452,9 +452,8 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-    if (!visitRequests || visitRequests.length === 0) {
-        throw Object.assign(new Error('Visitor has no active visit requests.'), { status: 404 });
-    }
+    // We no longer throw an error if there are no active visit requests.
+    // Instead, we allow parents (creators) and super admins to view the profile with empty linked students.
 
     // 3. Resolve Authorization Bounds
     let wardenHostelIds = [];
@@ -494,7 +493,11 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         return false;
     });
 
-    if (authorizedVisitRequests.length === 0) {
+    const isCreator = user.role === 'parent' && visitor.createdBy && visitor.createdBy.toString() === (user.id || user._id).toString();
+    const isSuperAdmin = user.role === 'super_admin';
+    const isAuthorizedByRequests = authorizedVisitRequests.length > 0;
+
+    if (!isAuthorizedByRequests && !isCreator && !isSuperAdmin) {
         throw Object.assign(new Error('Unauthorized access to this visitor profile.'), { status: 403 });
     }
 
@@ -1075,17 +1078,19 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
         authorizedStudentIds = studentParentLinks.map(link => link.studentId.toString());
     }
 
-    const visitorStudentIds = visitor.students.map(id => id.toString());
+    const activeRequest = await visitorRepository.findActiveVisitRequestForParent(
+        visitorId,
+        user.id || user._id,
+        authorizedStudentIds
+    );
 
-    const isCreator = visitor.createdBy && visitor.createdBy.toString() === user.id;
-
-    if (!isCreator) {
-        throw Object.assign(new Error('Unauthorized: You can only update visitors you created.'), { status: 403 });
+    if (!activeRequest) {
+        throw Object.assign(new Error('Unauthorized: You can only update visitors with whom you have an active visit request.'), { status: 403 });
     }
 
     // 3. Filter allowed fields and check for changes
     const allowedFields = [
-        'name', 'phone', 'email', 'address', 'photo'
+        'name', 'email', 'address'
     ];
     const updateData = {};
     const updatedFieldsList = [];
@@ -1109,16 +1114,7 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
         };
     }
 
-    if (updateData.phone) {
-        const existingVisitor = await visitorRepository.findDuplicateVisitor(visitor.organizationId, updateData.phone);
-        if (existingVisitor && existingVisitor._id.toString() !== visitorId) {
-            const error = new Error('Another visitor is already registered with this phone number in the organization.');
-            error.status = 400;
-            throw error;
-        }
-    }
 
-    // 4. Update the profile directly without reverting to Pending status
     const changeLogEntry = {
         action: VISITOR_CHANGE_LOG_ACTIONS.UPDATED,
         performedBy: user.id,
@@ -1268,7 +1264,7 @@ export const blacklistVisitorProfile = async (visitorId, reason, user) => {
                 changeLogEntry,
                 session // Wait, updateVisitorProfileFields does not currently accept session. Let me fix that.
             );
-            
+
             // Note: I will update updateVisitorProfileFields to support session. 
             // In the meantime, I will just call it inside the transaction. If it doesn't take session, it's not strictly atomic, but for this refactor I will pass it anyway and we can update the repository next.
 
@@ -1280,7 +1276,7 @@ export const blacklistVisitorProfile = async (visitorId, reason, user) => {
                 "Visitor Blacklisted",
                 session
             );
-            
+
             // 3. Check if inside hostel
             isInside = await visitorRepository.isVisitorInsideHostel(visitor._id);
         });
