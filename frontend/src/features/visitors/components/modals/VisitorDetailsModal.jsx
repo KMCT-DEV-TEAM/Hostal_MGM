@@ -284,20 +284,20 @@ export default function VisitorDetailsModal({
                         {visitor.address && <DetailRow icon={<MapPin size={16} />} label="Address" value={visitor.address} />}
                     </DetailCard>
 
-                    {linkedStudents.length > 0 && (
-                        <DetailCard 
-                            title="Linked Students" 
-                            subtitle="Students associated with this visitor"
-                            headerAction={
-                                user?.role === ROLES.PARENT && (
-                                    <Button size="sm" variant="outline" fullWidth={false} onClick={() => setIsAssignOpen(true)} className="px-2 py-1 h-auto text-xs border-primary text-primary hover:bg-primary hover:text-white">
-                                        + Assign
-                                    </Button>
-                                )
-                            }
-                        >
-                            <div className="flex flex-col gap-3 mt-2">
-                                {linkedStudents.map((student, idx) => (
+                    <DetailCard 
+                        title="Linked Students" 
+                        subtitle="Students associated with this visitor"
+                        headerAction={
+                            user?.role === ROLES.PARENT && (
+                                <Button size="sm" variant="outline" fullWidth={false} onClick={() => setIsAssignOpen(true)} className="px-2 py-1 h-auto text-xs border-primary text-primary hover:bg-primary hover:text-white">
+                                    + Assign
+                                </Button>
+                            )
+                        }
+                    >
+                        <div className="flex flex-col gap-3 mt-2">
+                            {linkedStudents.length > 0 ? (
+                                linkedStudents.map((student, idx) => (
                                     <LinkedStudentCard
                                         key={idx}
                                         student={student}
@@ -307,10 +307,14 @@ export default function VisitorDetailsModal({
                                         onReject={setRejectingRequestId}
                                         onUnassign={setUnassigningStudentId}
                                     />
-                                ))}
-                            </div>
-                        </DetailCard>
-                    )}
+                                ))
+                            ) : (
+                                <div className="text-sm text-text-secondary italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                    No students assigned to this visitor.
+                                </div>
+                            )}
+                        </div>
+                    </DetailCard>
                 </div>
 
                 {/* Right Column */}
