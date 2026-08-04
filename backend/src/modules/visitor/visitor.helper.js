@@ -129,6 +129,20 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
     }
 
     if (existingVisitor) {
+        if (existingVisitor.status === VISITOR_PROFILE_STATUS.DELETED) {
+            const error = new Error("This visitor profile has been deleted. Please contact the administrator.");
+            error.status = 409;
+            error.code = "VISITOR_DELETED";
+            throw error;
+        }
+
+        if (existingVisitor.status === VISITOR_PROFILE_STATUS.BLACKLISTED) {
+            const error = new Error("This visitor has been blacklisted and cannot be used.");
+            error.status = 403;
+            error.code = "VISITOR_BLACKLISTED";
+            throw error;
+        }
+
         const maskedPhone = existingVisitor.phone ? '*'.repeat(Math.max(0, existingVisitor.phone.length - 4)) + existingVisitor.phone.slice(-4) : null;
         const maskedIdProofNumber = existingVisitor.idProofNumber ? '*'.repeat(Math.max(0, existingVisitor.idProofNumber.length - 4)) + existingVisitor.idProofNumber.slice(-4) : null;
 
@@ -139,6 +153,8 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
 
         return {
             requiresConfirmation: true,
+            visitorId: existingVisitor._id.toString(),
+            status: existingVisitor.status,
             visitor: {
                 id: existingVisitor._id.toString(),
                 name: existingVisitor.name,
@@ -146,6 +162,7 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
                 phone: maskedPhone,
                 idProofType: existingVisitor.idProofType,
                 idProofNumber: maskedIdProofNumber,
+                status: existingVisitor.status,
                 assignedStudents
             }
         };
@@ -222,6 +239,20 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
             }
             if (!racedVisitor) throw transactionError;
 
+            if (racedVisitor.status === VISITOR_PROFILE_STATUS.DELETED) {
+                const error = new Error("This visitor profile has been deleted. Please contact the administrator.");
+                error.status = 409;
+                error.code = "VISITOR_DELETED";
+                throw error;
+            }
+
+            if (racedVisitor.status === VISITOR_PROFILE_STATUS.BLACKLISTED) {
+                const error = new Error("This visitor has been blacklisted and cannot be used.");
+                error.status = 403;
+                error.code = "VISITOR_BLACKLISTED";
+                throw error;
+            }
+
             const maskedPhone = racedVisitor.phone ? '*'.repeat(Math.max(0, racedVisitor.phone.length - 4)) + racedVisitor.phone.slice(-4) : null;
             const maskedIdProofNumber = racedVisitor.idProofNumber ? '*'.repeat(Math.max(0, racedVisitor.idProofNumber.length - 4)) + racedVisitor.idProofNumber.slice(-4) : null;
 
@@ -232,6 +263,8 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
 
             return {
                 requiresConfirmation: true,
+                visitorId: racedVisitor._id.toString(),
+                status: racedVisitor.status,
                 visitor: {
                     id: racedVisitor._id.toString(),
                     name: racedVisitor.name,
@@ -239,6 +272,7 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
                     phone: maskedPhone,
                     idProofType: racedVisitor.idProofType,
                     idProofNumber: maskedIdProofNumber,
+                    status: racedVisitor.status,
                     assignedStudents
                 }
             };
@@ -290,6 +324,20 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
         throw error;
     }
 
+    if (existingVisitor.status === VISITOR_PROFILE_STATUS.DELETED) {
+        const error = new Error("This visitor profile has been deleted. Please contact the administrator.");
+        error.status = 409;
+        error.code = "VISITOR_DELETED";
+        throw error;
+    }
+
+    if (existingVisitor.status === VISITOR_PROFILE_STATUS.BLACKLISTED) {
+        const error = new Error("This visitor has been blacklisted and cannot be used.");
+        error.status = 403;
+        error.code = "VISITOR_BLACKLISTED";
+        throw error;
+    }
+
     const blockingRequests = await visitorRepository.findBlockingVisitRequests(existingVisitor._id.toString(), studentIds);
     const blockingStudentIds = blockingRequests.map(br => br.studentId?._id?.toString() || br.studentId?.toString());
     const validStudentIds = studentIds.filter(sId => !blockingStudentIds.includes(sId.toString()));
@@ -312,6 +360,19 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
 
     try {
         await session.withTransaction(async () => {
+            if (existingVisitor.status === VISITOR_PROFILE_STATUS.INACTIVE) {
+                existingVisitor.status = VISITOR_PROFILE_STATUS.ACTIVE;
+                if (!existingVisitor.changeLog) existingVisitor.changeLog = [];
+                existingVisitor.changeLog.push({
+                    action: VISITOR_CHANGE_LOG_ACTIONS.REACTIVATED,
+                    performedBy: user.id,
+                    performedByRole: "parent",
+                    reason: "Visitor reused after becoming inactive.",
+                    timestamp: new Date()
+                });
+                await existingVisitor.save({ session });
+            }
+
             for (const sId of validStudentIds) {
                 const visitRequestData = {
                     visitorId: existingVisitor._id,

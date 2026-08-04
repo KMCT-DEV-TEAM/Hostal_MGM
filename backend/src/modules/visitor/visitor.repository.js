@@ -819,6 +819,23 @@ export const updateVisitor = async (visitorId, updateData) => {
     ).select('name phone email address updatedAt');
 };
 
+/**
+ * Updates visitor fields and appends a changeLog entry atomically.
+ * @param {String} visitorId 
+ * @param {Object} updateData 
+ * @param {Object} changeLogEntry 
+ */
+export const updateVisitorProfileFields = async (visitorId, updateData, changeLogEntry) => {
+    return await Visitor.findByIdAndUpdate(
+        visitorId,
+        {
+            $set: updateData,
+            $push: { changeLog: changeLogEntry }
+        },
+        { new: true, runValidators: true }
+    );
+};
+
 
 
 /**

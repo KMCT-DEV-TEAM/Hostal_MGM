@@ -23,7 +23,7 @@ import {
     VISITOR_VISIT_STATUS,
     VISITOR_VISIT_TIMELINE_ACTIONS,
     VISITOR_PROFILE_STATUS,
-
+    VISITOR_CHANGE_LOG_ACTIONS
 } from './visitor.constant.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
 import visitorVisitModel from './visitorVisit.model.js';
@@ -1076,22 +1076,15 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
 
     const visitorStudentIds = visitor.students.map(id => id.toString());
 
-    let isCreator = false;
-    if (visitor.approvalTimeline && visitor.approvalTimeline.length > 0) {
-        const creationEvent = visitor.approvalTimeline.find(t => t.action === VISITOR_APPROVAL_ACTIONS.CREATED);
-        if (creationEvent && creationEvent.performedBy && creationEvent.performedBy.toString() === user.id) {
-            isCreator = true;
-        }
-    }
+    const isCreator = visitor.createdBy && visitor.createdBy.toString() === user.id;
 
-    const hasOverlap = visitorStudentIds.some(id => authorizedStudentIds.includes(id));
-    if (!hasOverlap && !isCreator) {
-        throw Object.assign(new Error('Unauthorized: You can only update your own visitors.'), { status: 403 });
+    if (!isCreator) {
+        throw Object.assign(new Error('Unauthorized: You can only update visitors you created.'), { status: 403 });
     }
 
     // 3. Filter allowed fields and check for changes
     const allowedFields = [
-        'name', 'relationship', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'
+        'name', 'phone', 'email', 'address', 'photo'
     ];
     const updateData = {};
     const updatedFieldsList = [];
@@ -1124,64 +1117,19 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
         }
     }
 
-    // 4. Update and revert to Pending Status
-    updateData.approvalStatus = VISITOR_STATUS.PENDING;
-
-    const timelineEntry = {
-        action: 'Updated & Needs Re-approval',
+    // 4. Update the profile directly without reverting to Pending status
+    const changeLogEntry = {
+        action: VISITOR_CHANGE_LOG_ACTIONS.UPDATED,
         performedBy: user.id,
-        remarks: `Sensitive info updated (${updatedFieldsList.join(', ')}). Needs re-approval.`
+        performedByRole: 'parent',
+        timestamp: new Date()
     };
 
-    const updatedVisitor = await visitorRepository.updateVisitorStatus(
-
-
+    const updatedVisitor = await visitorRepository.updateVisitorProfileFields(
         visitorId,
         updateData,
-        timelineEntry
+        changeLogEntry
     );
-
-    // 5. Notify
-    try {
-        const students = await Student.find({ _id: { $in: visitor.students } }, 'name hostelId');
-        const studentNames = students.map(s => s.name).join(', ');
-        const hostelId = students.length > 0 ? students[0].hostelId : null;
-
-        await orchestratorService.triggerNotification({
-            eventName: 'VISITOR_UPDATE_PENDING',
-            target: [
-                {
-                    type: 'USER',
-                    filter: {
-                        hostelId: hostelId,
-                        organizationId: visitor.organizationId.toString()
-                    }
-                },
-                {
-                    type: 'MENTOR',
-                    filter: {
-                        studentIds: visitor.students.map(id => id.toString())
-                    }
-                }
-            ],
-            data: {
-                visitorName: visitor.name,
-                updatedFields: updatedFieldsList.join(', '),
-                studentNames: studentNames,
-                link: '/dashboard/visitors'
-            },
-            sender: {
-                id: currentParent._id,
-                model: 'Parent',
-                snapshot: {
-                    name: currentParent.parentName,
-                    role: 'Parent'
-                }
-            }
-        });
-    } catch (notificationError) {
-        console.error('[VisitorService] Failed to publish VISITOR_UPDATE_PENDING event:', notificationError);
-    }
 
     return {
         visitorId: updatedVisitor._id,
