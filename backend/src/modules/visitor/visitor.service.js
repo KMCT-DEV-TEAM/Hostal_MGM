@@ -396,10 +396,39 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         throw Object.assign(new Error('Visitor not found.'), { status: 404 });
     }
 
-    // 2. Fetch all VisitRequests for this visitor
-    const visitRequests = await visitRequestModel.find({ visitorId })
-        .populate('studentId', 'name roomNumber hostelId batchId organizationId')
+    // 2. Fetch active and past VisitRequests for this visitor
+    const visitRequests = await visitRequestModel
+        .find({
+            visitorId,
+            status: {
+                $in: [
+                    VISITOR_STATUS.PENDING,
+                    VISITOR_STATUS.APPROVED
+                ]
+            }
+        })
+        .populate({
+            path: "studentId",
+            select: "name roomNumber hostelId batchId organizationId",
+            populate: {
+                path: "hostelId",
+                select: "name"
+            }
+        })
         .lean();
+
+    visitRequests.sort((a, b) => {
+        const order = {
+            [VISITOR_STATUS.PENDING]: 1,
+            [VISITOR_STATUS.APPROVED]: 2
+        };
+
+        if (order[a.status] !== order[b.status]) {
+            return order[a.status] - order[b.status];
+        }
+
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
     if (!visitRequests || visitRequests.length === 0) {
         throw Object.assign(new Error('Visitor has no active visit requests.'), { status: 404 });
@@ -749,7 +778,8 @@ export const checkInVisitor = async (payload, wardenUser) => {
  * @param {Object} wardenUser 
  */
 export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
-    const { selectedStudentIds } = payload;
+    const { selectedStudentIds, expectedExitTime } = payload;
+    const parsedExpectedExitTime = new Date(expectedExitTime);
 
     validateWardenRole(wardenUser);
 
@@ -803,7 +833,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
         remarks: `Added ${studentNames} to the visit.`
     };
 
-    const updatedVisit = await visitorRepository.addStudentsToActiveVisit(visitId, newStudentIds, timelineEntry);
+    const updatedVisit = await visitorRepository.addStudentsToActiveVisit(visitId, newStudentIds, timelineEntry, parsedExpectedExitTime);
 
     // Notifications (Optional)
     try {

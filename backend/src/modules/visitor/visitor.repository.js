@@ -859,7 +859,7 @@ export const rejectVisitRequest = async (visitRequestId, timelineEntry, session 
  * @param {Array<String>} newStudentIds 
  * @param {Object} timelineEntry 
  */
-export const addStudentsToActiveVisit = async (visitId, newStudentIds, timelineEntry) => {
+export const addStudentsToActiveVisit = async (visitId, newStudentIds, timelineEntry, expectedExitTime) => {
     return await VisitorVisit.findByIdAndUpdate(
         visitId,
         {
@@ -868,6 +868,9 @@ export const addStudentsToActiveVisit = async (visitId, newStudentIds, timelineE
             },
             $push: {
                 visitTimeline: timelineEntry
+            },
+            $set: {
+                expectedExitTime: expectedExitTime
             }
         },
         { new: true }

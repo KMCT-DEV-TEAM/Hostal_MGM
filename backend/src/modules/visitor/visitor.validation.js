@@ -383,6 +383,22 @@ export const validateCheckInVisitor = (req, res, next) => {
         });
     }
 
+    const exitTimeDate = new Date(expectedExitTime);
+    if (isNaN(exitTimeDate.getTime())) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid expectedExitTime format."
+        });
+    }
+
+    const maxExitTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour limit
+    if (exitTimeDate > maxExitTime) {
+        return res.status(400).json({
+            success: false,
+            message: "expectedExitTime cannot be more than 1 hour from the current time."
+        });
+    }
+
 
 
     req.body.purpose = purpose.trim();
@@ -391,7 +407,7 @@ export const validateCheckInVisitor = (req, res, next) => {
 
 export const validateAddStudentsToVisit = (req, res, next) => {
     const { visitId } = req.params;
-    const { selectedStudentIds } = req.body;
+    const { selectedStudentIds, expectedExitTime } = req.body;
 
     if (!isValidObjectId(visitId)) {
         return res.status(400).json({
@@ -414,6 +430,29 @@ export const validateAddStudentsToVisit = (req, res, next) => {
                 message: `Invalid student ID: ${id}`
             });
         }
+    }
+
+    if (!expectedExitTime || typeof expectedExitTime !== 'string') {
+        return res.status(400).json({
+            success: false,
+            message: "A valid expectedExitTime is required."
+        });
+    }
+
+    const exitTimeDate = new Date(expectedExitTime);
+    if (isNaN(exitTimeDate.getTime())) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid expectedExitTime format."
+        });
+    }
+
+    const maxExitTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour limit
+    if (exitTimeDate > maxExitTime) {
+        return res.status(400).json({
+            success: false,
+            message: "expectedExitTime cannot be more than 1 hour from the current time."
+        });
     }
 
     next();
