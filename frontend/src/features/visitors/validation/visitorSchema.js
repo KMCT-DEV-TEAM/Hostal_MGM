@@ -11,3 +11,15 @@ export const registerSchema = z.object({
     purpose: z.string().min(1, 'Purpose of visit is required'),
     remarks: z.string().optional(),
 });
+
+export const editSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.string().email('Valid email is required').or(z.literal('')),
+    address: z.string().optional().or(z.literal('')),
+    relationship: z.string().optional(),
+    phone: z.string().optional(),
+    idProofType: z.string().optional(),
+    idProofNumber: z.string().optional(),
+    purpose: z.string().optional(),
+    remarks: z.string().optional(),
+});

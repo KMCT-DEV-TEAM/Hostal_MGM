@@ -10,7 +10,7 @@ import Input from '@/components/ui/Input';
 import Dropdown from '@/components/ui/Dropdown';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
-import { registerSchema } from '@/features/visitors/validation/visitorSchema';
+import { registerSchema, editSchema } from '@/features/visitors/validation/visitorSchema';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
 
@@ -49,7 +49,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
     const [isReuseConfirmOpen, setIsReuseConfirmOpen] = useState(false);
 
     const { register, handleSubmit, control, formState: { errors, isSubmitting, isDirty }, reset } = useForm({
-        resolver: zodResolver(registerSchema),
+        resolver: zodResolver(isEditMode ? editSchema : registerSchema),
         defaultValues: {
             idProofType: ID_PROOF_TYPES.AADHAAR
         }
@@ -196,7 +196,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
             let payload;
             
             if (isEditMode) {
-                const allowedFields = ['name', 'relationship', 'idProofType', 'idProofNumber', 'address', 'email', 'phone'];
+                const allowedFields = ['name', 'address', 'email'];
                 payload = {};
                 allowedFields.forEach(field => {
                     if (data[field] !== undefined) {
@@ -319,6 +319,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         {...register('relationship')}
                         placeholder="Uncle"
                         error={errors.relationship?.message}
+                        disabled={isEditMode}
                     />
                 </div>
 
@@ -328,6 +329,7 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         {...register('phone')}
                         placeholder="+919876543210"
                         error={errors.phone?.message}
+                        disabled={isEditMode}
                     />
                     <Input
                         label="Email Address"
@@ -352,13 +354,21 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                             name="idProofType"
                             control={control}
                             render={({ field }) => (
-                                <Dropdown
-                                    options={idProofOptions}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    placeholder="Select ID Type"
-                                    triggerClassName="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
-                                />
+                                isEditMode ? (
+                                    <Input
+                                        value={field.value}
+                                        disabled
+                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none transition-colors text-sm disabled:bg-slate-50 disabled:text-slate-500 disabled:border-slate-200 disabled:cursor-not-allowed"
+                                    />
+                                ) : (
+                                    <Dropdown
+                                        options={idProofOptions}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Select ID Type"
+                                        triggerClassName="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
+                                    />
+                                )
                             )}
                         />
                         {errors.idProofType && <span className="text-xs text-red-500 mt-1">{errors.idProofType.message}</span>}
@@ -368,21 +378,26 @@ const RegisterVisitorModal = ({ isOpen, onClose, onSuccess, initialData = null }
                         {...register('idProofNumber')}
                         placeholder="1234-5678-9012"
                         error={errors.idProofNumber?.message}
+                        disabled={isEditMode}
                     />
                 </div>
                 
-                <Input
-                    label="Purpose of Visit"
-                    {...register('purpose')}
-                    placeholder="Monthly visit"
-                    error={errors.purpose?.message}
-                />
-                <Input
-                    label="Remarks (Optional)"
-                    {...register('remarks')}
-                    placeholder="Bringing food"
-                    error={errors.remarks?.message}
-                />
+                {!isEditMode && (
+                    <>
+                        <Input
+                            label="Purpose of Visit"
+                            {...register('purpose')}
+                            placeholder="Monthly visit"
+                            error={errors.purpose?.message}
+                        />
+                        <Input
+                            label="Remarks (Optional)"
+                            {...register('remarks')}
+                            placeholder="Bringing food"
+                            error={errors.remarks?.message}
+                        />
+                    </>
+                )}
 
                 {/* Sibling Selection Section */}
                 {!isEditMode && user?.role === 'parent' && availableStudents.length > 1 && (
