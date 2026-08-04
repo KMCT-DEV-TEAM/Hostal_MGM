@@ -33,7 +33,7 @@ export const visitorApi = {
 
     // Visit Management
     checkInVisitor: (payload) => api.post(`${BASE_URL}/check-in`, payload),
-    addStudentsToVisit: (visitId, payload) => api.patch(`${BASE_URL}/warden/visits/${visitId}/students`, payload),
+    addStudentsToVisit: (visitId, payload) => api.patch(`${BASE_URL}/${visitId}/students`, payload),
     getSuperAdminHostelVisits: (params) => api.get(`${BASE_URL}/super-admin/visitor-visits/hostels`, { params }),
     getSuperAdminHostelVisitors: (params) => api.get(`${BASE_URL}/super-admin/visitors/hostels`, { params }),
     listVisitorVisits: (params) => api.get(`${BASE_URL}/visitor-visits`, { params }),

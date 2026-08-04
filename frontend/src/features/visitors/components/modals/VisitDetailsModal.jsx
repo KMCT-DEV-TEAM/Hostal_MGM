@@ -8,33 +8,43 @@ import ActivityLog from '@/components/ui/ActivityLog';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
+import Button from '@/components/ui/Button';
+import AddStudentToVisitModal from './AddStudentToVisitModal';
 
-export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
+export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVisit }) {
     const [visit, setVisit] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+
+    const fetchDetails = async (isBackground = false) => {
+        if (!isOpen || !visitId) {
+            setVisit(null);
+            return;
+        }
+
+        if (!isBackground) setIsLoading(true);
+        setError(null);
+
+        try {
+            const res = await getVisitDetails(visitId);
+            const updatedVisit = res.data || res;
+            setVisit(updatedVisit);
+            
+            if (isBackground && onUpdateVisit) {
+                // If this is a background refresh after an action, update the parent table row
+                const updatedStudentNames = updatedVisit.studentInformation?.map(s => s.studentName).join(', ');
+                onUpdateVisit(visitId, { studentNames: updatedStudentNames });
+            }
+        } catch (err) {
+            console.error("Failed to fetch visit details:", err);
+            setError("Failed to load details.");
+        } finally {
+            if (!isBackground) setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDetails = async () => {
-            if (!isOpen || !visitId) {
-                setVisit(null);
-                return;
-            }
-
-            setIsLoading(true);
-            setError(null);
-
-            try {
-                const res = await getVisitDetails(visitId);
-                setVisit(res.data || res);
-            } catch (err) {
-                console.error("Failed to fetch visit details:", err);
-                setError("Failed to load details.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchDetails();
     }, [isOpen, visitId]);
 
@@ -136,9 +146,25 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
                     </DetailCard>
 
                     {/* Visit Information */}
-                    <DetailCard title="Visit Information" subtitle="Basic Details about the Visit">
+                    <DetailCard 
+                        title="Visit Information" 
+                        subtitle="Basic Details about the Visit"
+                        headerAction={
+                            visit.quickSummary?.currentStatus === 'Checked In' && (
+                                <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    fullWidth={false} 
+                                    onClick={() => setIsAddStudentModalOpen(true)}
+                                    className="text-xs px-3"
+                                >
+                                    Add Student
+                                </Button>
+                            )
+                        }
+                    >
                         <div className="space-y-1">
-                            <DetailRow label="Visiting Student" value={`${studentName} ${visit.studentInformation?.[0]?.roomNo ? `(Room ${visit.studentInformation?.[0]?.roomNo})` : ''}`} />
+                            <DetailRow label="Visiting Student" value={`${studentName} ${visit.studentInformation?.length > 1 ? `+${visit.studentInformation.length - 1}` : ''} ${visit.studentInformation?.[0]?.roomNo ? `(Room ${visit.studentInformation?.[0]?.roomNo})` : ''}`} />
                             <DetailRow label="Room No" value={visit.studentInformation?.[0]?.roomNo} />
                             <DetailRow label="Purpose of Visit" value={visit.visitInformation?.purpose} />
                             <DetailRow label="Check-In" value={visit.visitInformation?.checkInTime ? `${formatTime(visit.visitInformation.checkInTime)}, ${formatDateReadable(visit.visitInformation.checkInTime)}` : '--'} />
@@ -170,6 +196,14 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
                     </DetailCard>
                 </div>
             </div>
+
+            <AddStudentToVisitModal
+                isOpen={isAddStudentModalOpen}
+                onClose={() => setIsAddStudentModalOpen(false)}
+                visit={visit}
+                visitId={visitId}
+                onSuccess={() => fetchDetails(true)}
+            />
         </Modal>
     );
 }

@@ -102,6 +102,14 @@ const VisitorHistoryPage = () => {
         fetchVisitors();
     }, [fetchVisitors]);
 
+    const handleUpdateVisit = useCallback((visitId, updatedData) => {
+        setVisitors(prev => prev.map(v => 
+            (v.visitId === visitId || v._id === visitId || v.id === visitId) 
+                ? { ...v, ...updatedData } 
+                : v
+        ));
+    }, []);
+
     const handleSearch = (searchTerm) => {
         setSearchQuery(searchTerm);
     };
@@ -251,6 +259,7 @@ const VisitorHistoryPage = () => {
                                     userRole={user?.role}
                                     limit={limit}
                                     setLimit={setLimit}
+                                    onUpdateVisit={handleUpdateVisit}
                                 />
                             )}
                         </div>
