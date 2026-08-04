@@ -16,6 +16,10 @@ const getStatusConfig = (status) => {
         variant = 'secondary'
     }
 
+    // Fatal mappings
+    else if (['blacklisted'].includes(normalized)) {
+        variant = 'fatal';
+    }
     // Danger mappings
     else if (['rejected', 'absent', 'left', 'Inactive', 'left (pending return)', 'returned (late)', 'lost', 'Inactive'].includes(normalized)) {
         variant = 'danger';
@@ -43,6 +47,7 @@ const variantStyles = {
     primary: 'bg-primary/10 text-primary border-primary/30',
     secondary: 'bg-secondary/10 text-secondary border-secondary/40',
     neutral: 'bg-gray-100 text-gray-600 border-gray-200',
+    fatal: 'bg-slate-800 text-slate-50 border-slate-900 shadow-sm',
 };
 
 const StatusBadge = ({ status, className = '', displayOverride = null }) => {

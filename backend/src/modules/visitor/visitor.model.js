@@ -22,7 +22,7 @@ const changeLogEntrySchema = new mongoose.Schema(
         },
         performedByRole: {
             type: String,
-            enum: ['parent', 'admin', 'super-admin'],
+            enum: ['parent', 'admin', 'super_admin'],
             required: true
         },
         reason: {

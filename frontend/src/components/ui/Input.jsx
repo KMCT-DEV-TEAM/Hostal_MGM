@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 
 const Input = forwardRef(({ 
     label, 
-    className = "w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm", 
+    className = "w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm disabled:bg-slate-50 disabled:text-slate-500 disabled:border-slate-200 disabled:cursor-not-allowed", 
     containerClassName = "", 
     labelClassName = "block mb-2 text-sm text-text-primary font-medium", 
     endIcon,
