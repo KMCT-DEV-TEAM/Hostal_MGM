@@ -10,8 +10,11 @@ import { formatDateReadable, formatTime } from '@/utils/formatters';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 import Button from '@/components/ui/Button';
 import AddStudentToVisitModal from './AddStudentToVisitModal';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVisit }) {
+    const { user } = useAuthStore();
     const [visit, setVisit] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -69,8 +72,8 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
     if (!visit) return null;
 
     const visitorName = visit.visitorInformation?.visitorName || 'Unknown';
-    const studentName = visit.studentInformation?.[0]?.studentName || 'Unknown';
-    const subtitle = `Visitor - ${studentName}`;
+    const studentNames = visit.quickSummary?.studentNames || visit.studentInformation?.[0]?.studentName || 'Unknown';
+    const subtitle = `Visitor - ${studentNames}`;
 
     // Helper for rendering Timeline
     const renderTimeline = () => {
@@ -89,33 +92,69 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
         const checkInDate = visit.visitInformation?.checkInTime;
         const checkOutDate = visit.visitInformation?.checkOutTime;
 
+        const steps = [];
+
+        // 1. Checked Out (Top)
+        steps.push({
+            title: "Checked Out",
+            subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
+            status: checkoutStatus,
+            formattedDate: checkOutDate ? `${formatDateReadable(checkOutDate)} | ${formatTime(checkOutDate)}` : '--',
+            badgeLabel: checkoutStatus === 'approved' ? 'Completed' : 'Pending',
+            badgeColor: checkoutStatus === 'approved' ? '#3B82F6' : '#6B7280',
+            badgeBg: checkoutStatus === 'approved' ? '#EFF6FF' : '#F3F4F6',
+            nodeColor: checkoutStatus === 'approved' ? '#3B82F6' : '#D1D5DB'
+        });
+
+        // 2. Intermediate events (e.g. Student Added)
+        const intermediateEvents = (visit.timeline || []).filter(
+            t => t.action !== 'Checked In' && t.action !== 'Checked Out' && t.action !== 'Visit Created' && t.action !== 'Visit Approved' && t.action !== 'Visit Rejected'
+        );
+        
+        intermediateEvents.forEach(t => {
+            steps.push({
+                title: t.action ? t.action.replace('_', ' ') : 'Action',
+                subtitle: t.performedBy ? `${t.performedBy} - ${t.role || 'Warden'}` : 'System',
+                remarks: t.remarks,
+                status: 'approved', 
+                formattedDate: t.createdAt ? `${formatDateReadable(t.createdAt)} | ${formatTime(t.createdAt)}` : '--',
+                badgeLabel: 'Updated',
+                badgeColor: '#8B5CF6',
+                badgeBg: '#EDE9FE',
+                nodeColor: '#8B5CF6'
+            });
+        });
+
+        // 3. Checked In (Bottom)
+        steps.push({
+            title: "Checked In",
+            subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
+            status: checkinStatus,
+            formattedDate: checkInDate ? `${formatDateReadable(checkInDate)} | ${formatTime(checkInDate)}` : '--',
+            badgeLabel: checkinStatus === 'approved' ? 'Inside' : (checkinStatus === 'submitted' ? 'Waiting' : 'Pending'),
+            badgeColor: checkinStatus === 'approved' ? '#10B981' : '#6B7280',
+            badgeBg: checkinStatus === 'approved' ? '#D1FAE5' : '#F3F4F6',
+            nodeColor: checkinStatus === 'approved' ? '#10B981' : '#D1D5DB'
+        });
+
         return (
             <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
-                <TimelineStep
-                    title="Checked Out"
-                    subtitle={visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden'}
-                    status={checkoutStatus}
-                    formattedDate={checkOutDate ? `${formatDateReadable(checkOutDate)} | ${formatTime(checkOutDate)}` : '--'}
-                    badgeLabel={checkoutStatus === 'approved' ? 'Completed' : 'Pending'}
-                    badgeColor={checkoutStatus === 'approved' ? '#3B82F6' : '#6B7280'}
-                    badgeBg={checkoutStatus === 'approved' ? '#EFF6FF' : '#F3F4F6'}
-                    nodeColor={checkoutStatus === 'approved' ? '#3B82F6' : '#D1D5DB'}
-                    avatarBg="#1E3A8A"
-                    avatarColor="#FFFFFF"
-                />
-
-                <TimelineStep
-                    title="Checked In"
-                    subtitle={visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden'}
-                    status={checkinStatus}
-                    formattedDate={checkInDate ? `${formatDateReadable(checkInDate)} | ${formatTime(checkInDate)}` : '--'}
-                    badgeLabel={checkinStatus === 'approved' ? 'Inside' : (checkinStatus === 'submitted' ? 'Waiting' : 'Pending')}
-                    badgeColor={checkinStatus === 'approved' ? '#10B981' : '#6B7280'}
-                    badgeBg={checkinStatus === 'approved' ? '#D1FAE5' : '#F3F4F6'}
-                    nodeColor={checkinStatus === 'approved' ? '#10B981' : '#D1D5DB'}
-                    avatarBg="#1E3A8A"
-                    avatarColor="#FFFFFF"
-                />
+                {steps.map((step, idx) => (
+                    <TimelineStep
+                        key={idx}
+                        title={step.title}
+                        subtitle={step.subtitle}
+                        status={step.status}
+                        formattedDate={step.formattedDate}
+                        badgeLabel={step.badgeLabel}
+                        badgeColor={step.badgeColor}
+                        badgeBg={step.badgeBg}
+                        nodeColor={step.nodeColor}
+                        avatarBg="#1E3A8A"
+                        avatarColor="#FFFFFF"
+                        remarks={step.remarks}
+                    />
+                ))}
             </div>
         );
     };
@@ -150,7 +189,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
                         title="Visit Information" 
                         subtitle="Basic Details about the Visit"
                         headerAction={
-                            visit.quickSummary?.currentStatus === 'Checked In' && (
+                            visit.quickSummary?.currentStatus === 'Checked In' && user?.role === ROLES.WARDEN && (
                                 <Button 
                                     size="sm" 
                                     variant="outline" 
@@ -164,11 +203,18 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
                         }
                     >
                         <div className="space-y-1">
-                            <DetailRow label="Visiting Student" value={`${studentName} ${visit.studentInformation?.length > 1 ? `+${visit.studentInformation.length - 1}` : ''} ${visit.studentInformation?.[0]?.roomNo ? `(Room ${visit.studentInformation?.[0]?.roomNo})` : ''}`} />
-                            <DetailRow label="Room No" value={visit.studentInformation?.[0]?.roomNo} />
+                            <DetailRow 
+                                label="Visiting Student(s)" 
+                                value={
+                                    visit.studentInformation?.length > 0 
+                                        ? visit.studentInformation.map(s => `${s.studentName} (Room ${s.roomNumber || s.roomNo || '--'})`).join(', ') 
+                                        : studentNames
+                                } 
+                            />
                             <DetailRow label="Purpose of Visit" value={visit.visitInformation?.purpose} />
                             <DetailRow label="Check-In" value={visit.visitInformation?.checkInTime ? `${formatTime(visit.visitInformation.checkInTime)}, ${formatDateReadable(visit.visitInformation.checkInTime)}` : '--'} />
                             <DetailRow label="Check-Out" value={visit.visitInformation?.checkOutTime ? `${formatTime(visit.visitInformation.checkOutTime)}, ${formatDateReadable(visit.visitInformation.checkOutTime)}` : '--'} />
+                            <DetailRow label="Duration" value={visit.visitInformation?.visitDuration || '--'} />
                             <DetailRow label="Status" value={<StatusBadge status={visit.quickSummary?.currentStatus} />} />
                         </div>
                     </DetailCard>
