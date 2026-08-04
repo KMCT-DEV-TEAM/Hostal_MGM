@@ -241,10 +241,10 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
             let: { visitorId: '$_id' },
             pipeline: [
                 { $match: { $expr: { $eq: ['$visitorId', '$$visitorId'] } } },
-                
+
                 // Apply Parent Authorization Scope strictly inside the join
                 ...(parentIdMatch ? [{ $match: { parentId: new mongoose.Types.ObjectId(parentIdMatch) } }] : []),
-                
+
                 {
                     $lookup: {
                         from: 'students',
@@ -255,7 +255,7 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                 },
                 // Flatten the student array
                 { $unwind: { path: '$student', preserveNullAndEmptyArrays: false } },
-                
+
                 // Apply Staff Authorization Scope strictly inside the join
                 ...(Object.keys(studentMatchScoped).length > 0 ? [{ $match: studentMatchScoped }] : [])
             ],
@@ -264,10 +264,18 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
     });
 
     // 3. Enforce Authorization Guard
-    // If the user has a restricted scope, immediately filter out visitors with 0 authorized requests
-    const hasScopeFilters = parentIdMatch || Object.keys(studentMatch).length > 0;
-    if (hasScopeFilters) {
+    if (parentIdMatch) {
+        // Parents can see their visitors even if there are no active requests (e.g. all historical)
         pipeline.push({ $match: { 'authorizedRequests.0': { $exists: true } } });
+    } else {
+        // Staff (Admin, Super Admin, Warden, Mentor) can ONLY see visitors with at least one ACTIVE request
+        pipeline.push({
+            $match: {
+                authorizedRequests: {
+                    $elemMatch: { status: { $in: ['Pending', 'Approved'] } }
+                }
+            }
+        });
     }
 
     // 4. Compute Metrics & Deduplicate Students strictly from authorized data
@@ -388,7 +396,8 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                                     roomNumber: '$$s.roomNumber',
                                     hostelId: '$$s.hostelId',
                                     phone: '$$s.phone',
-                                    email: '$$s.email'
+                                    email: '$$s.email',
+
                                 }
                             }
                         }
@@ -511,7 +520,7 @@ export const getDashboardStats = async (role, context) => {
         }
         case 'admin': {
             const orgFilter = { organizationId: context.organizationId };
-            
+
             const Student = mongoose.model('Student');
             const adminStudents = await Student.find({ organizationId: context.organizationId }, '_id').lean();
             const adminStudentIds = adminStudents.map(s => s._id);

@@ -67,9 +67,9 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
         const Student = mongoose.model('Student');
         const adminStudents = await Student.find({ organizationId: user.organization }, '_id').lean();
         const adminStudentIds = adminStudents.map(s => s._id);
-        
+
         matchStage.students = { $in: adminStudentIds };
-        
+
         if (hostel) {
             targetHostelId = hostel;
         }
@@ -84,7 +84,7 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
         targetHostelId = wardenHostel._id.toString(); // Force warden to their hostel
     } else if (user.role === 'parent' || user.explicitStudentId || explicitStudentId) {
         let authorizedStudentIds = [];
-        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+        const studentParentLinks = await StudentParent.find({ parentId: user.id });
 
         if (explicitStudentId) {
             const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);

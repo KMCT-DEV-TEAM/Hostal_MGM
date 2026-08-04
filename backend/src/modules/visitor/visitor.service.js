@@ -119,7 +119,7 @@ export const updateVisitorStatus = async (visitorId, status, user, explicitStude
         }
 
         let parentStudentIds = [];
-        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+        const studentParentLinks = await StudentParent.find({ parentId: user.id });
 
         if (explicitStudentId) {
             const isAuthorized = studentParentLinks.some(link => link.studentId.toString() === explicitStudentId);
@@ -469,17 +469,18 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
         if (!activeAssignments.length) throw Object.assign(new Error('Unauthorized: Not assigned to any batch.'), { status: 403 });
         mentorBatchIds = activeAssignments.map(a => a.batchId.toString());
     } else if (user.role === 'parent' || user.explicitStudentId) {
-        const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' }).lean();
+        const studentParentLinks = await StudentParent.find({ parentId: user.id }).lean();
         studentParentLinkIds = studentParentLinks.map(link => link.studentId.toString());
         if (explicitStudentId && !studentParentLinkIds.includes(explicitStudentId)) {
             throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
         }
     }
+    console.log(visitRequests)
     // 4. Filter VisitRequests based on role
     const authorizedVisitRequests = visitRequests.filter(vr => {
         const student = vr.studentId;
+        console.log(student)
         if (!student) return false;
-
         if (user.role === 'super_admin') return true;
         if (user.role === 'admin') return student.organizationId?.toString() === user.organization?.toString();
         if (user.role === 'warden') return wardenHostelIds.includes(student.hostelId?._id?.toString());
@@ -489,7 +490,7 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
             if (explicitStudentId) return student._id.toString() === explicitStudentId;
             return studentParentLinkIds.includes(student._id.toString());
         }
-
+        console.log(student, user)
         return false;
     });
 
@@ -1063,7 +1064,7 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
 
     // 2. Validate Ownership
     let authorizedStudentIds = [];
-    const studentParentLinks = await StudentParent.find({ parentId: user.id, status: 'active' });
+    const studentParentLinks = await StudentParent.find({ parentId: user.id });
     if (!studentParentLinks || studentParentLinks.length === 0) {
         throw Object.assign(new Error('Parent is inactive or not linked to any students.'), { status: 403 });
     }
