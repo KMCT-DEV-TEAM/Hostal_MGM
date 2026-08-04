@@ -16,6 +16,7 @@ import Visitor from './visitor.model.js';
 import MentorAssignment from '../mentors/mentorAssignment.model.js';
 import StudentParent from '../parents/studentParent.model.js';
 import * as visitorRepository from './visitor.repository.js';
+import * as visitorHistoryRepository from './history/visitorHistory.repository.js';
 import {
     VISITOR_STATUS,
     VISITOR_APPROVAL_ACTIONS,
@@ -810,7 +811,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
     }
 
     // Fetch visit
-    const visit = await visitorRepository.getVisitDetailsById(visitId);
+    const visit = await visitorHistoryRepository.getVisitDetailsById(visitId);
     if (!visit) {
         const error = new Error('Visit not found.');
         error.status = 404;
