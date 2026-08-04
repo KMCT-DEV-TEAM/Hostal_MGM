@@ -139,7 +139,7 @@ router.patch(
 router.get(
     '/visitor-visits',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student', 'mentor'),
     validateListVisits,
     vistHistoryController.listVisitorVisits
 );
@@ -147,7 +147,7 @@ router.get(
 router.get(
     '/visitor-visits/:visitId',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student', 'mentor'),
     validateGetVisitDetails,
     vistHistoryController.getVisitDetails
 );

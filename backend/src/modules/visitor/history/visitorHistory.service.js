@@ -82,6 +82,27 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
             throw error;
         }
         targetHostelId = wardenHostel._id.toString(); // Force warden to their hostel
+    } else if (user.role === 'mentor') {
+        const MentorAssignment = mongoose.model('MentorAssignment');
+        const Student = mongoose.model('Student');
+        const activeAssignments = await MentorAssignment.find({ mentorId: user.id || user._id, status: "active" }, "batchId").lean();
+        if (!activeAssignments.length) {
+            const error = new Error('Unauthorized: You are not assigned to any batch.');
+            error.status = 403;
+            throw error;
+        }
+        const mentorBatchIds = activeAssignments.map(a => a.batchId.toString());
+        const mentorStudents = await Student.find({ batchId: { $in: mentorBatchIds } }, "_id").lean();
+        const mentorStudentIds = mentorStudents.map(s => s._id);
+
+        if (mentorStudentIds.length === 0) {
+            return { total: 0, page: Number(page), limit: Number(limit), totalPages: 0, data: [] };
+        }
+        matchStage.students = { $in: mentorStudentIds };
+
+        if (hostel) {
+            targetHostelId = hostel;
+        }
     } else if (user.role === 'parent' || user.explicitStudentId || explicitStudentId) {
         let authorizedStudentIds = [];
         const studentParentLinks = await StudentParent.find({ parentId: user.id });
