@@ -55,7 +55,8 @@ const ProfileMobileView = ({
     const block = user?.hostel?.code || 'No value';
     const room = user?.room || 'No value';
     const checkInDate = user?.checkIn ? formatDateReadable(user.checkIn) : 'No value';
-    const warden = user?.warden || 'No value';
+    const warden = user?.hostel?.warden?.name || user?.warden?.name || (typeof user?.warden === 'string' ? user?.warden : 'No value');
+    const wardenPhone = user?.hostel?.warden?.phone || user?.warden?.phone || user?.wardenPhone || '';
 
     const editProps = {
         editingField,
@@ -119,6 +120,7 @@ const ProfileMobileView = ({
                         room={room}
                         checkInDate={checkInDate}
                         warden={warden}
+                        wardenPhone={wardenPhone}
                     />
                 </>
             )}

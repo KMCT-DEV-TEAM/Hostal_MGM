@@ -17,11 +17,14 @@ const getStudentProfile = async (userId) => {
   if (!student) throw new Error("User not found");
 
   // Determine assigned warden
-  let wardenName = null;
+  let wardenObj = null;
   if (student.hostelId) {
-    const hostel = await Hostel.findById(student.hostelId._id).populate("wardens", "name");
+    const hostel = await Hostel.findById(student.hostelId._id).populate("wardens", "name phone");
     if (hostel && hostel.wardens && hostel.wardens.length > 0) {
-      wardenName = hostel.wardens[0].name;
+      wardenObj = {
+        name: hostel.wardens[0].name,
+        phone: hostel.wardens[0].phone || hostel.phone || null
+      };
     }
   }
 
@@ -63,7 +66,7 @@ const getStudentProfile = async (userId) => {
         : [],
       room: student.roomNumber,
       checkIn: student.joiningDate,
-      warden: wardenName,
+      warden: wardenObj,
       qrToken,
     },
   };

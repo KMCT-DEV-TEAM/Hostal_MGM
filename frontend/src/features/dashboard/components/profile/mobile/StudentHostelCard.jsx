@@ -1,7 +1,7 @@
 import React from 'react';
 import { Building2, User, Phone } from 'lucide-react';
 
-const StudentHostelCard = ({ hostel, block, room, checkInDate, warden }) => {
+const StudentHostelCard = ({ hostel, block, room, checkInDate, warden, wardenPhone }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-4">
             <div className="p-4 border-b border-gray-50 flex items-center gap-3">
@@ -41,9 +41,15 @@ const StudentHostelCard = ({ hostel, block, room, checkInDate, warden }) => {
                             <p className="text-sm font-semibold text-text-primary">{warden}</p>
                         </div>
                     </div>
-                    <button className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
-                        <Phone className="w-4 h-4" />
-                    </button>
+                    {wardenPhone ? (
+                        <a href={`tel:${wardenPhone}`} className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                            <Phone className="w-4 h-4" />
+                        </a>
+                    ) : (
+                        <button className="w-9 h-9 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center shadow-sm cursor-not-allowed opacity-50" title="No phone number available">
+                            <Phone className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
