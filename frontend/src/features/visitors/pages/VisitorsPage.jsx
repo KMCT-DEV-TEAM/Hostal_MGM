@@ -301,7 +301,7 @@ const VisitorsPage = () => {
                     onEdit={isParent ? handleEdit : undefined}
                 />
             ) : (
-                <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary relative">
+                <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary ">
                     <div className="p-4 md:p-6 flex flex-col min-h-full">
                         {/* Header Section */}
                         <div className="mb-6 shrink-0 flex items-center gap-4">
@@ -323,7 +323,7 @@ const VisitorsPage = () => {
                             </div>
                         )}
 
-                        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex flex-col flex-1 relative z-0">
+                        <div className="bg-transparent flex flex-col flex-1 relative z-0">
                             {showAggregatedView ? (
                                 <VisitorProfilesAggregatedView
                                     visitors={visitors}

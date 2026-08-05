@@ -18,7 +18,7 @@ const getStatusConfig = (status) => {
 
     // Fatal mappings
     else if (['blacklisted'].includes(normalized)) {
-        variant = 'fatal';
+        variant = 'danger';
     }
     // Danger mappings
     else if (['rejected', 'absent', 'left', 'Inactive', 'left (pending return)', 'returned (late)', 'lost', 'Inactive'].includes(normalized)) {

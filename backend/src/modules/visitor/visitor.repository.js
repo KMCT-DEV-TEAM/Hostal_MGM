@@ -377,7 +377,7 @@ export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, s
                         name: 1,
                         phone: 1,
                         email: 1,
-                        status: '$approvalStatus', // backwards compat
+                        status: 1,
                         approvalStatus: 1,
                         createdAt: 1,
                         updatedAt: 1,

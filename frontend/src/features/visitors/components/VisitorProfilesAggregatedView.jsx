@@ -30,10 +30,10 @@ const VisitorProfilesAggregatedView = ({ visitors, loading, searchQuery, onSearc
 
     return (
         <DataView
-            pageScrollMode={true}
-            className="h-full border-none shadow-none bg-transparent"
+            pagessName="h-full border-none shadow-none bg-transparent"
             searchQuery={searchQuery}
-            onSearchChange={(e) => onSearch(e.target.value)}
+            onScrollMode={true}
+            claSearchChange={(e) => onSearch(e.target.value)}
             columns={columns}
             cardConfig={cardConfig}
             data={visitors}
