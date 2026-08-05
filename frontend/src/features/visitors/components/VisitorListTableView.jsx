@@ -181,9 +181,9 @@ const VisitorListTableView = ({
             <Dropdown
                 options={[
                     { value: 'All', label: 'All Status' },
-                    { value: 'Pending', label: 'Pending' },
-                    { value: 'Approved', label: 'Approved' },
-                    { value: 'Rejected', label: 'Rejected' }
+                    { label: 'Active', value: 'Active' },
+                    { label: 'Inactive', value: 'Inactive' },
+                    { label: 'Blacklisted', value: 'Blacklisted' },
                 ]}
                 value={statusFilter || 'All'}
                 onChange={(val) => onStatusFilterChange(val === 'All' ? '' : val)}

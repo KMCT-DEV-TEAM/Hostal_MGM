@@ -6,7 +6,9 @@ export const VISITOR_STATUS = {
     INACTIVE: 'Inactive',
     CANCELLED: 'Cancelled',
     COMPLETED: 'Completed',
-    EXPIRED: 'Expired'
+    EXPIRED: 'Expired',
+    ACTIVE: 'Active',
+    BLACKLISTED: 'Blacklisted',
 };
 
 export const VISITOR_APPROVAL_ACTIONS = {

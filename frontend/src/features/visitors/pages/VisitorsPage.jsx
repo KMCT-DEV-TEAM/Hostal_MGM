@@ -87,9 +87,9 @@ const VisitorsPage = () => {
             label: "Status",
             options: [
                 { label: 'All Status', value: '' },
-                { label: 'Pending', value: 'Pending' },
-                { label: 'Approved', value: 'Approved' },
-                { label: 'Rejected', value: 'Rejected' },
+                { label: 'Active', value: 'Active' },
+                { label: 'Inactive', value: 'Inactive' },
+                { label: 'Blacklisted', value: 'Blacklisted' },
             ]
         }
     ], []);
@@ -135,7 +135,7 @@ const VisitorsPage = () => {
             }
             setPagination({ totalPages, totalItems });
 
-            if (['super_admin', 'admin', 'warden'].includes(role)) {
+            if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(role)) {
                 try {
                     const statsRes = await getDashboardSummary();
                     if (statsRes && statsRes.success) {
@@ -399,9 +399,9 @@ const VisitorsPage = () => {
                     showDateFilters={false}
                     statusOptions={[
                         { label: 'All Status', value: '' },
-                        { label: 'Pending', value: 'Pending' },
-                        { label: 'Approved', value: 'Approved' },
-                        { label: 'Rejected', value: 'Rejected' },
+                        { label: 'Active', value: 'Active' },
+                        { label: 'Inactive', value: 'Inactive' },
+                        { label: 'Blacklisted', value: 'Blacklisted' },
                     ]}
                 />
 
