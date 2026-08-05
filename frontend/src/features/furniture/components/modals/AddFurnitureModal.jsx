@@ -8,6 +8,7 @@ import AsyncDropdown from '@/components/ui/AsyncDropdown';
 import { getSelectionHostels } from '@/services/hostel.service';
 import { getOrganizations } from '@/services/organization.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
 const FURNITURE_OPTIONS = [
     { label: 'Bed', value: 'Bed' },
@@ -121,7 +122,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
             const finalName = formData.name === 'Other' ? formData.customName : formData.name;
 
             let organizationId = undefined;
-            if (role === 'super_admin') {
+            if (role === ROLES.SUPER_ADMIN) {
                 organizationId = formData.organizationId;
             }
 
@@ -184,7 +185,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     )}
                 </div>
 
-                {role === 'super_admin' && (
+                {role === ROLES.SUPER_ADMIN && (
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Organization <span className="text-red-500">*</span></label>
                         <AsyncDropdown
@@ -251,7 +252,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     fullWidth={false}
                     size="md"
                     type="submit"
-                    disabled={isSubmitting || !formData.name || !formData.prefix || !formData.hostelId || (role === 'super_admin' && !formData.organizationId)}
+                    disabled={isSubmitting || !formData.name || !formData.prefix || !formData.hostelId || (role === ROLES.SUPER_ADMIN && !formData.organizationId)}
                     className="min-w-[120px] order-2 bg-[#0a3a6a] hover:bg-[#0a3a6a]/90 capitalize"
                 >
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'save'}

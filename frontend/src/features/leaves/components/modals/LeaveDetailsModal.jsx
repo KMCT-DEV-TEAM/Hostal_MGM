@@ -9,6 +9,7 @@ import DetailRow from '@/components/ui/DetailRow';
 import ActivityLog from '@/components/ui/ActivityLog';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
+import { ROLES } from '@/constants/roles';
 
 const getTimelineConfig = (action) => {
     switch (action) {
@@ -246,9 +247,9 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         const remarks = window.prompt("Enter cancellation remarks (required):");
         if (!remarks) return;
         try {
-            if (role === 'super_admin') {
+            if (role === ROLES.SUPER_ADMIN) {
                 await leaveService.cancelLeaveSuperAdmin(request._id, { remarks });
-            } else if (role === 'admin') {
+            } else if (role === ROLES.ADMIN) {
                 await leaveService.cancelLeaveAdmin(request._id, { remarks });
             }
             onClose();

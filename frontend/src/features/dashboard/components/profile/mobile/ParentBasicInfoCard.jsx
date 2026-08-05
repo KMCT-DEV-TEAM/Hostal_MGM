@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, GraduationCap, Mail, Phone, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { ROLES } from '@/constants/roles';
 
 const ParentBasicInfoCard = ({ user, activeStudent, contactEmail, contactNumber, editProps }) => {
     const {
@@ -85,7 +86,7 @@ const ParentBasicInfoCard = ({ user, activeStudent, contactEmail, contactNumber,
                                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Contact Email</p>
                                     <p className="text-sm font-medium text-text-primary">{contactEmail}</p>
                                 </div>
-                                {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                {user?.role !== ROLES.SUPER_ADMIN && user?.role !== ROLES.STUDENT && user?.role !== ROLES.PARENT && (
                                     <button
                                         onClick={() => handleEditClick('email', user?.email)}
                                         className="p-2 text-primary hover:bg-blue-50 rounded-lg active:scale-95 transition-all"
