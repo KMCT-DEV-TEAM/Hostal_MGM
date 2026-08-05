@@ -346,7 +346,7 @@ export const listParentVisitors = async (query, user, explicitStudentId = null) 
 
     const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch, user.role || 'parent');
 
-    const { data, total } = await visitorRepository.getVisaitorsList(
+    const { data, total } = await visitorRepository.getVisitorsList(
         initialMatch,
         studentMatch,
         sortOptions,

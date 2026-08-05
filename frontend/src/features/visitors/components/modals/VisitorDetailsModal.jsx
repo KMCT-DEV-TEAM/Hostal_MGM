@@ -284,11 +284,11 @@ export default function VisitorDetailsModal({
                         {visitor.address && <DetailRow icon={<MapPin size={16} />} label="Address" value={visitor.address} />}
                     </DetailCard>
 
-                    <DetailCard 
-                        title="Linked Students" 
+                    <DetailCard
+                        title="Linked Students"
                         subtitle="Students associated with this visitor"
                         headerAction={
-                            user?.role === ROLES.PARENT && (
+                            user?.role === ROLES.PARENT && visitor.status !== 'Blacklisted' && (
                                 <Button size="sm" variant="outline" fullWidth={false} onClick={() => setIsAssignOpen(true)} className="px-2 py-1 h-auto text-xs border-primary text-primary hover:bg-primary hover:text-white">
                                     + Assign
                                 </Button>

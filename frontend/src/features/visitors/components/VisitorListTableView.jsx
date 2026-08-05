@@ -220,6 +220,7 @@ const VisitorListTableView = ({
     return (
         <DataView
             pageScrollMode={true}
+
             className="h-full border-none shadow-none bg-transparent"
             searchQuery={searchQuery}
             onSearchChange={(e) => onSearch(e.target.value)}
