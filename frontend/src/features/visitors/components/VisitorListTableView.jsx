@@ -1,6 +1,6 @@
 import React from 'react';
 import DataView from '@/components/ui/data-view/DataView';
-import { Edit, Phone, Building, Users, Download, Plus, DoorOpen, Handshake } from 'lucide-react';
+import { Edit, Phone, Building, Users, Download, Plus, DoorOpen, Handshake, Clock } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
@@ -98,30 +98,24 @@ const VisitorListTableView = ({
                     : '--';
             }, icon: DoorOpen
         }] : []),
-        ...(['warden', 'super_admin'].includes(userRole) ? [{
-            key: 'organization',
-            header: 'Organization',
-            accessor: (visitor) => visitor.organizationName || '--',
-            icon: Building
-        }] : []),
-        ...(['admin', 'parent'].includes(userRole) ? [{
-            key: 'hostel',
-            header: 'Hostel',
-            accessor: (visitor) => visitor.hostelName || '--',
-            icon: Building
-        }] : []),
+        // ...(['admin', 'parent'].includes(userRole) ? [{
+        //     key: 'hostel',
+        //     header: 'Hostel',
+        //     accessor: (visitor) => visitor.hostelName || '--',
+        //     icon: Building
+        // }] : []),
         {
             key: 'phone',
             header: 'Phone',
             accessor: (visitor) => visitor.phone || '--',
             icon: Phone
         },
-        {
-            key: 'relation',
-            header: 'Relation',
-            accessor: (visitor) => visitor.relationship || visitor.relation || '--',
-            icon: Handshake
-        },
+        ...(['admin', 'super_admin', 'mentor'].includes(userRole) ? [{
+            key: 'pendingRequestsCount',
+            header: 'Pending Requests',
+            accessor: (visitor) => visitor.pendingRequestsCount > 0 ? visitor.pendingRequestsCount : 'None',
+            icon: Clock
+        }] : []),
         {
             key: 'status',
             header: 'Status',

@@ -176,6 +176,7 @@ export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, 
                 visitId: '$_id',
                 visitorName: '$visitorInfo.name',
                 visitorPhone: '$visitorInfo.phone', // included temporarily for search, removed later if needed
+                status: '$status',
                 studentNames: {
                     $reduce: {
                         input: "$studentDocs.name",

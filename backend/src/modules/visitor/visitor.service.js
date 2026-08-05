@@ -346,7 +346,7 @@ export const listParentVisitors = async (query, user, explicitStudentId = null) 
 
     const { initialMatch, sortOptions } = buildListingFilters(query, studentMatch, user.role || 'parent');
 
-    const { data, total } = await visitorRepository.getVisitorsList(
+    const { data, total } = await visitorRepository.getVisaitorsList(
         initialMatch,
         studentMatch,
         sortOptions,
@@ -475,11 +475,9 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
             throw Object.assign(new Error('Unauthorized access to this student.'), { status: 403 });
         }
     }
-    console.log(visitRequests)
     // 4. Filter VisitRequests based on role
     const authorizedVisitRequests = visitRequests.filter(vr => {
         const student = vr.studentId;
-        console.log(student)
         if (!student) return false;
         if (user.role === 'super_admin') return true;
         if (user.role === 'admin') return student.organizationId?.toString() === user.organization?.toString();
@@ -490,7 +488,6 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
             if (explicitStudentId) return student._id.toString() === explicitStudentId;
             return studentParentLinkIds.includes(student._id.toString());
         }
-        console.log(student, user)
         return false;
     });
 
@@ -673,7 +670,6 @@ export const getDashboardSummary = async (user) => {
  * @param {Object} wardenUser 
  */
 export const checkInVisitor = async (payload, wardenUser) => {
-    console.log(payload)
     const { visitor, selectedStudentIds, purpose, expectedExitTime } = payload;
     const uniqueStudentIds = [...new Set(selectedStudentIds)];
     validateWardenRole(wardenUser);
@@ -966,7 +962,7 @@ export const autoCompleteExpiredVisits = async () => {
             return { processedCount, failedCount };
         }
 
-        console.log(`[VisitorService] Found ${expiredVisits.length} expired visits. Processing...`);
+        // console.log(`[VisitorService] Found ${expiredVisits.length} expired visits. Processing...`);
 
         for (const visit of expiredVisits) {
             try {
