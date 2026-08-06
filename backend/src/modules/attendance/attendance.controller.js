@@ -20,6 +20,7 @@ import {
   getStudentAttendanceDetailsDb,
   correctAttendanceDb,
 } from "./attendance.service.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const getScope = async (req) => {
   const scope = {
@@ -66,6 +67,17 @@ export const createAttendanceWindow = asyncHandler(async (req, res) => {
     scope.hostelId,
     scope.userId
   );
+
+  await createLogDb({
+    action: "Created Attendance Window",
+    entityType: "Attendance",
+    entityId: attendanceWindow._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Warden opened a new attendance window for hostel`,
+    status: "success"
+  });
+
   return sendSuccess(
     res,
     201,
@@ -165,6 +177,17 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
   }
 
   const window = await closeAttendanceWindow(id, scope.userId);
+
+  await createLogDb({
+    action: "Completed Attendance Window",
+    entityType: "Attendance",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Warden closed/completed attendance window`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Attendance window completed successfully", window);
 });
 
@@ -185,6 +208,17 @@ export const correctAttendance = asyncHandler(async (req, res) => {
       scope.hostelId,
       { status, remarks }
     );
+
+    await createLogDb({
+      action: "Manual Attendance Correction",
+      entityType: "Attendance",
+      entityId: windowId,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Warden manually corrected attendance for student ${studentId} to status: ${status}. Remarks: ${remarks || 'N/A'}`,
+      status: "success"
+    });
+
     return sendSuccess(res, 200, "Attendance corrected successfully.", result);
   } catch (error) {
     const code = error.statusCode || 500;

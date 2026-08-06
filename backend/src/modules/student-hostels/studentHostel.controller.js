@@ -10,6 +10,7 @@ import {
 } from "./studentHostel.aggregate.js";
 import { getIo } from "../../config/socket.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import { createLogDb } from "../logs/log.service.js";
 
 export const updateStudentHostel = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
@@ -35,6 +36,18 @@ export const updateStudentHostel = asyncHandler(async (req, res) => {
     data: { roomNumber: result.student.roomNumber, studentName },
     channels: ['in-app', 'push']
   }).catch(err => console.error("Notification Error (Parent):", err));
+
+  await createLogDb({
+    action: result.action === "allocated" ? "Assigned Student to Hostel" : "Transferred Student to Hostel",
+    entityType: "StudentHostel",
+    entityId: result.student._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: result.action === "allocated"
+      ? `Student assigned to hostel, room: ${result.student.roomNumber || 'N/A'}`
+      : `Student transferred to hostel, room: ${result.student.roomNumber || 'N/A'}`,
+    status: "success"
+  });
 
   return sendSuccess(
     res,
@@ -75,6 +88,16 @@ export const vacateHostel = asyncHandler(async (req, res) => {
     data: { studentName },
     channels: ['in-app', 'push']
   }).catch(err => console.error("Notification Error (Parent):", err));
+
+  await createLogDb({
+    action: "Vacated Student from Hostel",
+    entityType: "StudentHostel",
+    entityId: result.student._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Student vacated from hostel`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "Student vacated from hostel successfully", result);
 });

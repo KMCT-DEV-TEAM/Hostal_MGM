@@ -8,13 +8,13 @@ import User from "../users/user.model.js";
 import FurnitureAsset from "../furnitures/furnitureAsset.model.js";
 import Student from "./student.model.js";
 import Organization from "../organizations/organization.model.js";
-
 import mongoose from "mongoose";
 import Parent from "../parents/parent.model.js";
 import hostelModel from "../hostels/hostel.model.js";
 import studentHostelModel from "../student-hostels/studentHostel.model.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 import StudentParent from "../parents/studentParent.model.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const createStudent = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
@@ -116,6 +116,16 @@ const createStudent = asyncHandler(async (req, res) => {
 
     await session.commitTransaction();
 
+    await createLogDb({
+      action: "Created Student",
+      entityType: "Student",
+      entityId: result.student?._id || result._id || undefined,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Created new student`,
+      status: "success"
+    });
+
     return sendSuccess(
       res,
       201,
@@ -146,6 +156,16 @@ const updateStudent = asyncHandler(async (req, res) => {
   if (!result) {
     return sendError(res, 404, "Student not found");
   }
+
+  await createLogDb({
+    action: "Updated Student",
+    entityType: "Student",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Updated student profile details`,
+    status: "success"
+  });
 
   return sendSuccess(
     res,
@@ -216,6 +236,16 @@ const changeStudentEmail = asyncHandler(async (req, res) => {
   await student.save();
   await deleteOtpDb(normalizedNewEmail);
 
+  await createLogDb({
+    action: "Changed Student Email",
+    entityType: "Student",
+    entityId: student._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Student email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Student email updated successfully", {
     data: {
       _id: student._id,
@@ -250,6 +280,16 @@ const toggleStudentStatus = asyncHandler(async (req, res) => {
   const message = student.isActive
     ? "Student activated successfully"
     : "Student deactivated successfully";
+
+  await createLogDb({
+    action: "Toggled Student Status",
+    entityType: "Student",
+    entityId: student._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Student status changed to ${student.isActive ? 'Active' : 'Inactive'}`,
+    status: "success"
+  });
 
   return sendSuccess(
     res,
@@ -303,6 +343,15 @@ const bulkUpdateStudentStatus = asyncHandler(async (req, res) => {
 
   const result = await bulkUpdateStudentStatusDb(ids, isActive, organizationId);
 
+  await createLogDb({
+    action: "Bulk Updated Student Status",
+    entityType: "Student",
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Bulk updated ${result.modifiedCount} students to ${isActive ? 'Active' : 'Inactive'}`,
+    status: "success"
+  });
+
   return sendSuccess(
     res,
     200,
@@ -346,6 +395,16 @@ const updateStudentOrganization = asyncHandler(async (req, res) => {
   if (student.hostelId && oldOrganizationId?.toString() !== organizationId.toString()) {
     await syncHostelOrganizations(student.hostelId);
   }
+
+  await createLogDb({
+    action: "Updated Student Organization",
+    entityType: "Student",
+    entityId: student._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Moved student to organization ${organization.name}`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "Student organization updated successfully", {
     data: {

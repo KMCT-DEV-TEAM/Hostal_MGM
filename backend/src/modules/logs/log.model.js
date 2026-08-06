@@ -9,7 +9,22 @@ const activityLogSchema = new mongoose.Schema(
     entityType: {
       type: String,
       required: true,
-      enum: ["Organization", "Hostel", "User", "Batch", "Course", "Department", "System"],
+      enum: ["Organization",
+        "Hostel",
+        "User",
+        "Batch",
+        "Course",
+        "Department",
+        "System",
+        "Visitor",
+        "VisitRequest",
+        "Student",
+        "Pass",
+        "Attendance",
+        "Furniture",
+        "Parent",
+        "StudentHostel"
+      ],
     },
     entityId: {
       type: mongoose.Schema.Types.ObjectId,

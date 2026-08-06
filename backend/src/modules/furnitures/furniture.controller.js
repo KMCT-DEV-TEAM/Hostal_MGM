@@ -7,6 +7,7 @@ import FurnitureType from "./furnitureType.model.js";
 import FurnitureAsset from "./furnitureAsset.model.js";
 import Organization from "../organizations/organization.model.js";
 import Hostel from "../hostels/hostel.model.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const resolveUserScope = async (user) => {
   let organizationId = null;
@@ -40,6 +41,16 @@ export const createFurnitureType = asyncHandler(async (req, res) => {
 
     const newType = await furnitureService.createFurnitureTypeService(data, openingStock, req.user);
 
+    await createLogDb({
+      action: "Created Furniture Type",
+      entityType: "Furniture",
+      entityId: newType._id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Created furniture type: ${data.name}`,
+      status: "success"
+    });
+
     return sendSuccess(res, 201, "Furniture Type created successfully.", newType);
   } catch (error) {
     if (error.code === "FT001" || error.code === "FT002") {
@@ -55,6 +66,16 @@ export const adjustAssetCount = asyncHandler(async (req, res) => {
 
   const result = await furnitureService.adjustAssetCountService(typeId, count, req.user);
 
+  await createLogDb({
+    action: "Adjusted Furniture Asset Count",
+    entityType: "Furniture",
+    entityId: typeId,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Adjusted asset count by ${count} for furniture type ${typeId}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Asset count adjusted successfully.", result);
 });
 
@@ -64,24 +85,67 @@ export const allocateFurniture = asyncHandler(async (req, res) => {
   // Call the bulk service
   await furnitureService.bulkAllocateAssetsToStudentService(student, assets, req.user);
 
+  await createLogDb({
+    action: "Allocated Furniture to Student",
+    entityType: "Furniture",
+    entityId: student._id || student.id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Allocated ${assets.length} furniture asset(s) to student`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, `Successfully allocated ${assets.length} furniture asset(s).`);
 });
 
 export const returnFurniture = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
   await furnitureService.returnAssetService(asset, req.user);
+
+  await createLogDb({
+    action: "Returned Furniture from Student",
+    entityType: "Furniture",
+    entityId: asset._id || asset.id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Furniture asset returned from student`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Furniture returned successfully.");
 });
 
 export const startMaintenance = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
   await furnitureService.changeLifecycleStatusService(asset, "maintenance", "maintenance started", req.user, req.body.remarks);
+
+  await createLogDb({
+    action: "Started Furniture Maintenance",
+    entityType: "Furniture",
+    entityId: asset._id || asset.id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Furniture asset moved to maintenance. Remarks: ${req.body.remarks || 'N/A'}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Furniture moved to maintenance.");
 });
 
 export const completeMaintenance = asyncHandler(async (req, res) => {
   const { asset } = req.validatedData;
   await furnitureService.changeLifecycleStatusService(asset, "available", "maintenance completed", req.user, req.body.remarks);
+
+  await createLogDb({
+    action: "Completed Furniture Maintenance",
+    entityType: "Furniture",
+    entityId: asset._id || asset.id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Furniture maintenance completed. Remarks: ${req.body.remarks || 'N/A'}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Maintenance completed.");
 });
 
@@ -201,6 +265,16 @@ export const updateFurnitureType = asyncHandler(async (req, res) => {
     { new: true }
   ).lean();
 
+  await createLogDb({
+    action: "Updated Furniture Type",
+    entityType: "Furniture",
+    entityId: typeId,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Updated furniture type: ${name || typeToUpdate.name}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Furniture Type updated successfully.", { data: updatedType });
 });
 
@@ -218,6 +292,17 @@ export const deleteFurnitureType = asyncHandler(async (req, res) => {
 
   try {
     await furnitureService.deleteFurnitureTypeService(typeId, req.user);
+
+    await createLogDb({
+      action: "Deleted Furniture Type",
+      entityType: "Furniture",
+      entityId: typeId,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Deleted furniture type: ${typeToDelete.name}`,
+      status: "success"
+    });
+
     return sendSuccess(res, 200, "Furniture Type deleted successfully.");
   } catch (error) {
     if (error.code === "FT004") {
@@ -246,6 +331,17 @@ export const changeAssetStatus = asyncHandler(async (req, res) => {
   };
   const actionName = actionMap[status] || "updated";
   await furnitureService.changeLifecycleStatusService(asset, status, actionName, req.user, remarks);
+
+  await createLogDb({
+    action: "Changed Furniture Asset Status",
+    entityType: "Furniture",
+    entityId: assetId,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Asset status changed to ${status}. Remarks: ${remarks || 'N/A'}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Asset status updated successfully.");
 });
 

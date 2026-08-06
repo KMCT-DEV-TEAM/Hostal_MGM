@@ -32,6 +32,7 @@ import hostelModel from "../hostels/hostel.model.js";
 import User from "../users/user.model.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const getPassApproverRecipients = async (studentId, organizationId) => {
   const student = await Student.findById(studentId)
@@ -167,6 +168,16 @@ export const createPass = asyncHandler(async (req, res) => {
       link
     }
   }).catch(err => console.error("Notification Error:", err));
+
+  await createLogDb({
+    action: "Created Pass Request",
+    entityType: "Pass",
+    entityId: newPass._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Student submitted a ${passTypeLabel} request`,
+    status: "success"
+  });
 
   return sendSuccess(res, 201, "Your pass request has been submitted successfully.", newPass);
 });
@@ -325,6 +336,16 @@ export const updatePass = asyncHandler(async (req, res) => {
       data: { passTypeLabel, studentName: sName, link }
     }).catch(err => console.error("Notification Error:", err));
   }
+
+  await createLogDb({
+    action: "Updated Pass Request",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `${req.user.role} updated a pass request`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "Your pass has been updated successfully.", updatedPass);
 });
@@ -636,6 +657,16 @@ export const adminCancelPass = asyncHandler(async (req, res) => {
     }).catch(err => console.error("Notification Error:", err));
   }
 
+  await createLogDb({
+    action: "Admin Cancelled Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Admin cancelled pass. Reason: ${reason}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
 
@@ -705,6 +736,16 @@ export const superAdminCancelPass = asyncHandler(async (req, res) => {
       data: { reason }
     }).catch(err => console.error("Notification Error:", err));
   }
+
+  await createLogDb({
+    action: "Super Admin Cancelled Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Super Admin cancelled pass. Reason: ${reason}`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
@@ -790,6 +831,17 @@ export const cancelPass = asyncHandler(async (req, res) => {
         data: { message: "Student requested cancellation of a pass." }
       }).catch(err => console.error("Notification Error:", err));
     }
+
+    await createLogDb({
+      action: "Requested Pass Cancellation",
+      entityType: "Pass",
+      entityId: id,
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `${userRole} submitted a cancellation request pending approval`,
+      status: "success"
+    });
+
     return sendSuccess(res, 200, "Your request to cancel the pass has been submitted and is awaiting approval.", updatedPass);
   }
 
@@ -813,6 +865,16 @@ export const cancelPass = asyncHandler(async (req, res) => {
   } finally {
     session.endSession();
   }
+
+  await createLogDb({
+    action: "Cancelled Pass Request",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `${userRole} directly cancelled their pass request`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "Your pass has been cancelled.", updatedPass);
 });
@@ -925,6 +987,16 @@ export const approvePass = asyncHandler(async (req, res) => {
     data: { passTypeLabel, studentName, parentName, link }
   }).catch(err => console.error("Notification Error:", err));
 
+  await createLogDb({
+    action: "Parent Approved Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent approved pass request`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "The pass has been successfully approved.", updatedPass);
 });
 
@@ -1006,6 +1078,16 @@ export const rejectPass = asyncHandler(async (req, res) => {
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
     data: { passTypeLabel, studentName, parentName, remarks: remarksText, link }
   }).catch(err => console.error("Notification Error:", err));
+
+  await createLogDb({
+    action: "Parent Rejected Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent rejected pass request. Remarks: ${remarksText}`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "The pass has been successfully rejected.", updatedPass);
 });
@@ -1150,6 +1232,16 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
     data: { message: "You have been marked as left the hostel. Have a safe trip!" }
   }).catch(err => console.error("Notification Error:", err));
 
+  await createLogDb({
+    action: "Marked Student Left Hostel",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Warden marked student as left hostel`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "The student has been marked as left.", updatedPass);
 });
 
@@ -1234,6 +1326,16 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
     data: { message: `You have been marked as returned to the hostel. Status: ${returnStatus.replace("_", " ")}` }
   }).catch(err => console.error("Notification Error:", err));
 
+  await createLogDb({
+    action: "Marked Student Returned to Hostel",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Warden marked student as returned. Status: ${returnStatus}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "The student has been marked as returned.", updatedPass);
 });
 
@@ -1306,6 +1408,16 @@ export const wardenAdminCancelPass = asyncHandler(async (req, res) => {
       data: { reason: remarks }
     }).catch(err => console.error("Notification Error:", err));
   }
+
+  await createLogDb({
+    action: "Warden Cancelled Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Warden/Assistant Warden cancelled pass. Remarks: ${remarks}`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
@@ -1451,6 +1563,16 @@ export const mentorApprovePass = asyncHandler(async (req, res) => {
     data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
   }).catch(err => console.error("Notification Error:", err));
 
+  await createLogDb({
+    action: "Mentor Approved Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Mentor approved pass request. Remarks: ${remarksText}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "The pass has been successfully approved.", updatedPass);
 });
 
@@ -1524,6 +1646,16 @@ export const mentorRejectPass = asyncHandler(async (req, res) => {
     data: { passTypeLabel: passTypeLabelReject, studentName: studentNameReject, approvedBy: approvedByReject, remarks: remarksTextReject, link: linkReject }
   }).catch(err => console.error("Notification Error:", err));
 
+  await createLogDb({
+    action: "Mentor Rejected Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Mentor rejected pass request. Remarks: ${remarksTextReject}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "The pass request has been rejected.", updatedPass);
 });
 
@@ -1595,6 +1727,16 @@ export const mentorCancelPass = asyncHandler(async (req, res) => {
       data: { reason: remarks }
     }).catch(err => console.error("Notification Error:", err));
   }
+
+  await createLogDb({
+    action: "Mentor Cancelled Pass",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Mentor cancelled pass. Remarks: ${remarks}`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
