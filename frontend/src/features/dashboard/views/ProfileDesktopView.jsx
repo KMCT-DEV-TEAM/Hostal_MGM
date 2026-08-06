@@ -6,6 +6,7 @@ import DetailRow from '@/components/ui/DetailRow';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
 import { useParentStore } from '@/store/useParentStore';
+import { ROLES } from '@/constants/roles';
 
 const ProfileDesktopView = ({
     user,
@@ -25,7 +26,7 @@ const ProfileDesktopView = ({
     const { activeStudentId } = useActiveStudent();
     const { setActiveStudent } = useParentStore();
 
-    const selectedStudent = user?.role === 'parent' 
+    const selectedStudent = user?.role === ROLES.PARENT 
         ? (user?.students?.find(s => s._id === activeStudentId) || user?.students?.[0])
         : null;
 
@@ -115,7 +116,7 @@ const ProfileDesktopView = ({
                             ) : (
                                 <>
                                     <span>{user?.email || t('not_provided')}</span>
-                                    {user?.role !== 'super_admin' && user?.role !== 'student' && user?.role !== 'parent' && (
+                                    {user?.role !== ROLES.SUPER_ADMIN && user?.role !== ROLES.STUDENT && user?.role !== ROLES.PARENT && (
                                         <button onClick={() => handleEditClick('email', user?.email)} className="opacity-0 group-hover:opacity-100 p-1 text-primary hover:bg-blue-50 rounded transition-all">
                                             <Pencil className="w-3.5 h-3.5" />
                                         </button>
@@ -171,7 +172,7 @@ const ProfileDesktopView = ({
             </div>
 
             {/* Role Specific Sections */}
-            {user?.role === 'parent' && (
+            {user?.role === ROLES.PARENT && (
                 <>
                     {/* Students List */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
@@ -268,7 +269,7 @@ const ProfileDesktopView = ({
             )}
 
             {/* If not a parent, we can just show their own details in the DetailCards using a similar style */}
-            {user?.role !== 'parent' && (
+            {user?.role !== ROLES.PARENT && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
                     <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-50">
                         <div className="w-8 h-8 rounded-full bg-background-secondary flex items-center justify-center text-primary">
@@ -285,7 +286,7 @@ const ProfileDesktopView = ({
                                     {formatRole(user?.role)}
                                 </span>
                             } />
-                            {(user?.role === 'warden' || user?.role === 'student') && (
+                            {(user?.role === ROLES.WARDEN || user?.role === ROLES.STUDENT) && (
                                 <DetailRow label="Hostel" value={
                                     <div className="flex flex-wrap items-center gap-2">
                                         {user?.assignedHostels && user.assignedHostels.length > 0 ? (

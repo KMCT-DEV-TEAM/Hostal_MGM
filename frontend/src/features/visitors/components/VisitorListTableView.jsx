@@ -4,6 +4,7 @@ import { Edit, Phone, Building, Users, Download, Plus, DoorOpen, Handshake, Cloc
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
+import { ROLES } from '@/constants/roles';
 
 const AssignedStudentsDisplay = ({ students }) => {
     if (!students || students.length === 0) return <span className="text-text-secondary">--</span>;
@@ -83,12 +84,12 @@ const VisitorListTableView = ({
             titleAccessor: (visitor) => visitor.visitorName || visitor.name || 'Unknown',
             avatarAccessor: (visitor) => visitor.visitorName || visitor.name || 'Unknown'
         },
-        ...(userRole !== 'student' ? [{
+        ...(userRole !== ROLES.STUDENT ? [{
             key: 'student',
             header: 'Assigned Student',
             renderCell: (visitor) => <AssignedStudentsDisplay students={visitor.linkedStudents || visitor.students} />
         }] : []),
-        ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{
+        ...([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(userRole) ? [{
             key: 'room',
             header: 'Room No',
             accessor: (visitor) => {
@@ -110,7 +111,7 @@ const VisitorListTableView = ({
             accessor: (visitor) => visitor.phone || '--',
             icon: Phone
         },
-        ...(['admin', 'super_admin', 'mentor'].includes(userRole) ? [{
+        ...([ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR].includes(userRole) ? [{
             key: 'pendingRequestsCount',
             header: 'Pending Requests',
             accessor: (visitor) => visitor.pendingRequestsCount > 0 ? visitor.pendingRequestsCount : 'None',
@@ -121,7 +122,7 @@ const VisitorListTableView = ({
             header: 'Status',
             renderCell: (visitor) => <StatusBadge status={visitor.status} />
         },
-        ...(userRole === 'parent' ? [{
+        ...(userRole === ROLES.PARENT ? [{
             key: 'actions',
             header: 'Actions',
             align: 'center',
@@ -158,7 +159,7 @@ const VisitorListTableView = ({
         }),
         fields: [
             // { icon: Phone, accessor: (visitor) => visitor.phone || '--' },
-            ...(userRole !== 'student' ? [{
+            ...(userRole !== ROLES.STUDENT ? [{
                 icon: Users,
                 accessor: (visitor) => <AssignedStudentsDisplay students={visitor.linkedStudents || visitor.students} />
             }, {
@@ -171,7 +172,7 @@ const VisitorListTableView = ({
                 },
             }] : [])
         ],
-        editable: userRole === 'parent',
+        editable: userRole === ROLES.PARENT,
         onEdit: (visitor) => onEdit && onEdit(visitor),
         onClick: (visitor) => onRowClick && onRowClick(visitor)
     };

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
@@ -16,6 +15,7 @@ import { formatDateReadable, formatTime } from '@/utils/formatters';
 import BackButton from '@/components/ui/BackButton';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import VisitorsMobileView from '../views/VisitorsMobileView';
+import { ROLES } from '@/constants/roles';
 
 const VisitorHistoryPage = () => {
     const { user } = useAuthStore();
@@ -34,10 +34,10 @@ const VisitorHistoryPage = () => {
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
 
-    const isSuperAdmin = user?.role === 'super_admin';
-    const canExport = ['super_admin', 'admin', 'warden'].includes(user?.role);
-    const isParent = user?.role === 'parent';
-    const isStudent = user?.role === 'student';
+    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+    const canExport = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(user?.role);
+    const isParent = user?.role === ROLES.PARENT;
+    const isStudent = user?.role === ROLES.STUDENT;
 
     const urlHostelId = searchParams.get('hostelId');
     const urlHostelName = searchParams.get('hostelName');
@@ -78,7 +78,7 @@ const VisitorHistoryPage = () => {
             setPagination({ totalPages, totalItems });
 
             // Fetch real stats from dashboard-summary if management role
-            if (['super_admin', 'admin', 'warden'].includes(user?.role)) {
+            if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(user?.role)) {
                 try {
                     const statsRes = await getDashboardSummary();
                     if (statsRes && statsRes.success) {
@@ -103,9 +103,9 @@ const VisitorHistoryPage = () => {
     }, [fetchVisitors]);
 
     const handleUpdateVisit = useCallback((visitId, updatedData) => {
-        setVisitors(prev => prev.map(v => 
-            (v.visitId === visitId || v._id === visitId || v.id === visitId) 
-                ? { ...v, ...updatedData } 
+        setVisitors(prev => prev.map(v =>
+            (v.visitId === visitId || v._id === visitId || v.id === visitId)
+                ? { ...v, ...updatedData }
                 : v
         ));
     }, []);
@@ -219,7 +219,7 @@ const VisitorHistoryPage = () => {
                         </div>
 
                         {/* Shared Stats Component */}
-                        {['super_admin', 'admin', 'warden'].includes(user?.role) && stats && (
+                        {[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(user?.role) && stats && (
                             <div className="shrink-0 mb-4 md:mb-6">
                                 <VisitorStats stats={stats} />
                             </div>
