@@ -20,8 +20,9 @@ import { studentPassRouter, parentPassRouter, wardenPassRouter, adminPassRouter,
 import complaintRoutes from "./modules/complaints/complaint.routes.js";
 import furnitureRoutes from "./modules/furnitures/furniture.routes.js";
 import logRoutes from "./modules/logs/log.routes.js";
+import parentUserRouter from "./modules/parents/parent.user.routes.js";
 import pushRoutes from "./modules/push/push.routes.js";
-import visitorRoutes from "./modules/visitor/visitor.routes.js";
+import visitorRoutes, { parentVisitorRouter } from "./modules/visitor/visitor.routes.js";
 import studentHostelRoutes from "./modules/student-hostels/studentHostel.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";
 import announcementRoutes from "./modules/announcements/announcement.routes.js";
@@ -38,6 +39,8 @@ import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
+import verifyStudentAccess from "./middlewares/verifyStudentAccess.middleware.js";
+import authMiddleware from "./middlewares/auth.middleware.js";
 const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -111,8 +114,10 @@ app.use("/api/student/attendance", studentAttendanceRouter);
 
 // ---parents routes -------
 app.use("/api/parent/dashboard", dashboardRoutes);
-app.use("/api/parent/passes", parentPassRouter);
-app.use("/api/parent/attendance", parentAttendanceRouter);
+app.use("/api/parent/students", parentUserRouter);
+app.use("/api/parent/students/:studentId/passes", parentPassRouter);
+app.use("/api/parent/students/:studentId/attendance", parentAttendanceRouter);
+app.use("/api/parent/students/:studentId/visitors", parentVisitorRouter);
 
 // ---warden routes -------
 app.use("/api/warden/passes", wardenPassRouter);

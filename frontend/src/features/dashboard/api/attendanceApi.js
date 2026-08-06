@@ -45,13 +45,45 @@ export const getWindowDetailsByMentor = (id) => apiClient.get(`/mentor/attendanc
 export const getRecordsByMentor = (id, params) => apiClient.get(`/mentor/attendance/windows/${id}/records`, { params });
 export const getStudentCalendarByMentor = (params) => apiClient.get('/mentor/attendance/student-calendar', { params });
 
+// ---------------------------
+// Parent V2 (Multi Student)
+// ---------------------------
+
+export const getParentDashboardV2 = (studentId) =>
+    apiClient.get(`/parent/students/${studentId}/attendance/dashboard`);
+
+export const getParentHistoryV2 = (studentId, params) =>
+    apiClient.get(`/parent/students/${studentId}/attendance`, {
+        params,
+    });
+
+export const getParentCalendarV2 = (studentId, params) =>
+    apiClient.get(`/parent/students/${studentId}/attendance/calendar`, {
+        params,
+    });
+
+export const getParentDetailsV2 = (studentId, date) =>
+    apiClient.get(
+        `/parent/students/${studentId}/attendance/details/${date}`
+    );
+
 const attendanceApi = {
     getWindowsByWarden, getDashboardStatsByWarden, createWindowsByWarden, getWindowDetailsByWarden, getRecordsByWarden, scanStudentByWarden, completeWindowByWarden, getStudentCalendarByWarden, correctAttendanceByWarden,
     getWindowsByAdmin, getDashboardStatsByAdmin, getWindowDetailsByAdmin, getRecordsByAdmin, getStudentCalendarByAdmin,
     getWindowsBySuperAdmin, getDashboardStatsBySuperAdmin, getWindowDetailsBySuperAdmin, getRecordsBySuperAdmin, getStudentCalendarBySuperAdmin,
     getStudentDashboard, getStudentHistory, getStudentCalendar, getStudentDetails,
     getParentDashboard, getParentHistory, getParentCalendar, getParentDetails,
-    getWindowsByMentor, getDashboardStatsByMentor, getWindowDetailsByMentor, getRecordsByMentor, getStudentCalendarByMentor
+    getWindowsByMentor, getDashboardStatsByMentor, getWindowDetailsByMentor, getRecordsByMentor, getStudentCalendarByMentor,
+
+    getParentDashboard,
+    getParentHistory,
+    getParentCalendar,
+    getParentDetails,
+
+    getParentDashboardV2,
+    getParentHistoryV2,
+    getParentCalendarV2,
+    getParentDetailsV2,
 };
 
 export default attendanceApi;

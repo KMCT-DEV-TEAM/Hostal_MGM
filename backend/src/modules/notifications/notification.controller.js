@@ -12,6 +12,7 @@ const getModelForRole = (role) => {
     if (normalizedRole === 'parent') return 'Parent';
     return 'User';
 };
+
 /**
  * @desc    Get all notifications for the current user
  * @route   GET /api/v1/notifications
@@ -22,6 +23,7 @@ export const getMyNotifications = asyncHandler(async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
+    const studentId = req.query.studentId;
     let isRead = undefined;
     if (req.query.isRead !== undefined) {
         isRead = req.query.isRead === 'true';
@@ -32,7 +34,7 @@ export const getMyNotifications = asyncHandler(async (req, res, next) => {
     const { notifications, total, unreadCount } = await notificationRepository.findUserNotifications(
         req.user.id,
         userModel,
-        { skip, limit, isRead }
+        { skip, limit, isRead, studentId }
     );
 
     res.status(200).json({
@@ -167,5 +169,6 @@ export const testBroadcast = asyncHandler(async (req, res, next) => {
         data: result
     });
 });
+
 
 

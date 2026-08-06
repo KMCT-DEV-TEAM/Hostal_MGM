@@ -8,11 +8,11 @@ import { showSuccessToast } from '@/utils/toast';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import LeavesMobileView from '../views/LeavesMobileView';
 
-// Modular imports
 import FilterLeavesModal from '../components/modals/FilterLeavesModal';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import InfoCard from '@/components/ui/InfoCard';
 import leaveService from '@/services/leave.service';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import { formatDateReadable } from '@/utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
@@ -22,6 +22,7 @@ import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 
 export default function ParentLeaves() {
     const { passType } = useParams();
+    const { activeStudentId } = useActiveStudent();
     const isHomePass = passType === 'home-pass' || !passType;
     const pageTitle = isHomePass ? 'Home Pass Requests' : 'Out Pass Requests';
     const pageSubtitle = isHomePass ? "Manage your children's home pass applications" : "Manage your children's out pass applications";
@@ -55,6 +56,7 @@ export default function ParentLeaves() {
         try {
             setLoading(true);
             const payload = {
+                studentId: activeStudentId,
                 page,
                 limit,
                 ...(searchQuery && { search: searchQuery }),
@@ -111,8 +113,10 @@ export default function ParentLeaves() {
     }, [isHomePass, passType]);
 
     useEffect(() => {
-        fetchLeaves();
-    }, [page, passType, isHomePass, filters.status, filters.category, filters.passType, filters.fromDate, filters.toDate, searchQuery]);
+        if (activeStudentId) {
+            fetchLeaves();
+        }
+    }, [page, passType, isHomePass, filters.status, filters.category, filters.passType, filters.fromDate, filters.toDate, searchQuery, activeStudentId]);
 
     const openActionModal = (request, actionType) => {
         if (actionType === 'pending') return;
@@ -126,6 +130,7 @@ export default function ParentLeaves() {
             setIsActionSubmitting(true);
             const { actionType, request } = actionModalConfig;
             const payload = {
+                studentId: activeStudentId,
                 remarks: remarks,
                 revision: request.revision ?? request.__v ?? 0
             };

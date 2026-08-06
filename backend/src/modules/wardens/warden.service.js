@@ -42,12 +42,20 @@ const getAggregateOrganizationDataDb = async (organizationId = null) => {
         preserveNullAndEmptyArrays: true,
       },
     },
-    // Lookup Parents for the Student
+    // Lookup Parents for the Student via StudentParent bridging collection
+    {
+      $lookup: {
+        from: "studentparents",
+        localField: "students._id",
+        foreignField: "studentId",
+        as: "studentParentLinks",
+      },
+    },
     {
       $lookup: {
         from: "parents",
-        localField: "students._id",
-        foreignField: "studentId",
+        localField: "studentParentLinks.parentId",
+        foreignField: "_id",
         as: "parents",
       },
     },

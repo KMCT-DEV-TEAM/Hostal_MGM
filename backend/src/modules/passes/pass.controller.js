@@ -5,9 +5,6 @@ import {
   createPassDb,
   getStudentPassesDb,
   getPassByIdDb,
-  updatePassDb,
-  addTimelineEventDb,
-  getDashboardStatsDb,
   getPassesDb,
   getPassDetailsDb,
   updatePassApprovalDb,
@@ -27,7 +24,7 @@ import {
 } from "./pass.service.js";
 import Student from "../students/student.model.js";
 import Parent from "../parents/parent.model.js";
-import { NotificationCompat as Notification } from "../notifications/notification.compat.js";
+import StudentParent from "../parents/studentParent.model.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import Pass from "./pass.model.js";
 import Hostel from "../hostels/hostel.model.js";
@@ -35,10 +32,6 @@ import hostelModel from "../hostels/hostel.model.js";
 import User from "../users/user.model.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
-import complaintModel from "../complaints/complaint.model.js";
-import { AttendanceRecord } from "../attendance/attendance.model.js";
-import Batch from "../batches/batch.model.js";
-import Announcement from "../announcements/announcement.model.js";
 
 const getPassApproverRecipients = async (studentId, organizationId) => {
   const student = await Student.findById(studentId)
@@ -98,17 +91,27 @@ export const createPass = asyncHandler(async (req, res) => {
     return sendError(res, 400, "It looks like you haven't been assigned to a hostel yet.");
   }
 
-  const parent = await Parent.findOne({
+  const defaultGuardianLink = await StudentParent.findOne({
     studentId,
-    isActive: true,
+    status: "active",
     defaultGuardian: true,
-  });
+  }).lean();
 
-  if (!parent) {
+  if (!defaultGuardianLink) {
     return sendError(
       res,
       400,
-      "We couldn't find a default guardian linked to your account."
+      "We couldn't process your request because we couldn't find a default guardian linked to your account. Please ask an admin to assign one."
+    );
+  }
+
+  const parent = await Parent.findById(defaultGuardianLink.parentId).lean();
+
+  if (!parent || !parent.isActive) {
+    return sendError(
+      res,
+      400,
+      "Your default guardian's account is currently inactive. Please contact administration."
     );
   }
 
@@ -197,6 +200,13 @@ export const updatePass = asyncHandler(async (req, res) => {
 
   const pass = await getPassByIdDb(id);
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+
+  if (userRole === "student" && pass.studentId.toString() !== userId.toString()) {
+    return sendError(res, 403, "You do not have permission to modify this pass.");
+  }
+  if (userRole === "parent" && pass.studentId.toString() !== req.student?.id?.toString()) {
+    return sendError(res, 403, "You do not have permission to modify this pass.");
+  }
 
   if (pass.returnTracking && pass.returnTracking.leftHostelAt) {
     return sendError(res, 422, "You cannot edit this pass because the student has already left the hostel.");
@@ -707,6 +717,13 @@ export const cancelPass = asyncHandler(async (req, res) => {
   const pass = await getPassByIdDb(id);
   if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
 
+  if (userRole === "student" && pass.studentId.toString() !== userId.toString()) {
+    return sendError(res, 403, "You do not have permission to cancel this pass.");
+  }
+  if (userRole === "parent" && pass.studentId.toString() !== req.student?.id?.toString()) {
+    return sendError(res, 403, "You do not have permission to cancel this pass.");
+  }
+
   if (["cancelled", "rejected", "completed", "returned"].includes(pass.status)) {
     return sendError(res, 422, "This pass can't be cancelled because of its current status.");
   }
@@ -803,28 +820,14 @@ export const cancelPass = asyncHandler(async (req, res) => {
 
 
 export const getPasses = asyncHandler(async (req, res) => {
-  const parentId = req.user.id;
-  const parent = await getParentDb(parentId);
-
-  if (!parent || !parent.studentId) {
-    return sendError(res, 404, "We couldn't find your account or your linked student.");
-  }
-
-  const { passes, pagination } = await getPassesDb(parent.studentId, req.query);
+  const { passes, pagination } = await getPassesDb(req.student.id, req.query);
   return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 
 export const getPassDetails = asyncHandler(async (req, res) => {
-  const parentId = req.user.id;
   const { id } = req.params;
 
-  const parent = await getParentDb(parentId);
-
-  if (!parent || !parent.studentId) {
-    return sendError(res, 404, "We couldn't find your account or your linked student.");
-  }
-
-  const pass = await getPassDetailsDb(id, parent.studentId);
+  const pass = await getPassDetailsDb(id, req.student.id);
   if (!pass) {
     return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
@@ -837,17 +840,11 @@ export const approvePass = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { remarks } = req.body;
 
-  const parent = await getParentDb(parentId);
-
-  if (!parent || !parent.isActive) {
-    return sendError(res, 403, "Your account is either inactive or couldn't be found.");
-  }
-
-  if (!parent.defaultGuardian) {
+  if (!req.student.defaultGuardian) {
     return sendError(res, 403, "Only the default guardian has permission to approve passes.");
   }
 
-  const pass = await Pass.findOne({ _id: id, studentId: parent.studentId });
+  const pass = await Pass.findOne({ _id: id, studentId: req.student.id });
   if (!pass) {
     return sendError(res, 404, "We couldn't find the pass you're looking for.");
   }
@@ -909,7 +906,7 @@ export const approvePass = asyncHandler(async (req, res) => {
   const link = `/dashboard/leaves/${passTypeSlug}`;
 
   const studentName = updatedPass.studentId.name;
-  const parentName = parent.parentName;
+  const parentName = req.user.name || "Parent";
 
   await orchestratorService.triggerNotification({
     sender: buildSender(req.user),
@@ -936,17 +933,11 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { remarks } = req.body;
 
-  const parent = await getParentDb(parentId);
-
-  if (!parent || !parent.isActive) {
-    return sendError(res, 403, "Your account is either inactive or couldn't be found.");
-  }
-
-  if (!parent.defaultGuardian) {
+  if (!req.student.defaultGuardian) {
     return sendError(res, 403, "Only the default guardian has permission to reject passes.");
   }
 
-  const pass = await Pass.findOne({ _id: id, studentId: parent.studentId });
+  const pass = await Pass.findOne({ _id: id, studentId: req.student.id });
 
   if (!pass) {
     return sendError(res, 404, "We couldn't find the pass you're looking for.");
@@ -1006,7 +997,7 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const link = `/dashboard/leaves/${passTypeSlug}`;
 
   const studentName = updatedPass.studentId.name;
-  const parentName = parent.parentName || "Parent";
+  const parentName = req.user.name || "Parent";
   const remarksText = remarks || "Parent rejected the pass request.";
 
   await orchestratorService.triggerNotification({
@@ -1334,14 +1325,7 @@ export const getMyPassesUnified = asyncHandler(async (req, res) => {
 });
 
 export const getParentPassesUnified = asyncHandler(async (req, res) => {
-  const parentId = req.user.id;
-  const parent = await getParentDb(parentId);
-
-  if (!parent || !parent.studentId) {
-    return sendError(res, 404, "We couldn't find your account or your linked student.");
-  }
-
-  const result = await getParentPassesUnifiedDb(parent.studentId, req.query);
+  const result = await getParentPassesUnifiedDb(req.student.id, req.query);
 
   return sendSuccess(res, 200, "Passes loaded successfully.", {
     mode: result.mode,

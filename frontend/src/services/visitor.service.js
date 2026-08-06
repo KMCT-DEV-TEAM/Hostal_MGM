@@ -4,17 +4,31 @@ import visitorApi from '@/features/visitors/api/visitorApi';
  * Parent Endpoints
  */
 export async function createVisitorProfile(payload) {
-    const response = await visitorApi.createVisitorProfile(payload);
+    const { studentId, ...restPayload } = payload;
+    const response = await visitorApi.createVisitorProfileV2(studentId, restPayload);
+    return response.data;
+}
+
+export async function reuseVisitorProfile(payload) {
+    const { studentId, visitorId, ...restPayload } = payload;
+    const response = await visitorApi.reuseVisitorProfileV2(studentId, visitorId, restPayload);
     return response.data;
 }
 
 export async function updateVisitorProfile(visitorId, payload) {
-    const response = await visitorApi.updateVisitorProfile(visitorId, payload);
+    const { studentId, ...restPayload } = payload;
+    const response = await visitorApi.updateVisitorProfileV2(studentId, visitorId, restPayload);
     return response.data;
 }
 
 export async function getParentVisitors(params) {
-    const response = await visitorApi.getParentVisitors(params);
+    const { studentId, ...restParams } = params;
+    const response = await visitorApi.getParentVisitorsV2(studentId, restParams);
+    return response.data;
+}
+
+export async function unassignVisitor(studentId, visitorId) {
+    const response = await visitorApi.unassignVisitorV2(studentId, visitorId);
     return response.data;
 }
 
@@ -41,6 +55,16 @@ export async function approveVisitor(visitorId) {
 
 export async function rejectVisitor(visitorId, payload) {
     const response = await visitorApi.rejectVisitor(visitorId, payload);
+    return response.data;
+}
+
+export async function approveVisitRequest(visitRequestId) {
+    const response = await visitorApi.approveVisitRequest(visitRequestId);
+    return response.data;
+}
+
+export async function rejectVisitRequest(visitRequestId, reason) {
+    const response = await visitorApi.rejectVisitRequest(visitRequestId, { reason });
     return response.data;
 }
 
@@ -83,7 +107,22 @@ export async function getVisitorDetails(visitorId) {
     return response.data;
 }
 
+export async function getVisitorDetailsParent(visitorId, studentId) {
+    const response = await visitorApi.getVisitorDetailsParentV2(studentId, visitorId);
+    return response.data;
+}
+
 export async function getDashboardSummary() {
     const response = await visitorApi.getDashboardSummary();
+    return response.data;
+}
+
+export async function blacklistVisitor(visitorId, reason) {
+    const response = await visitorApi.blacklistVisitor(visitorId, { reason });
+    return response.data;
+}
+
+export async function removeBlacklistVisitor(visitorId, reason) {
+    const response = await visitorApi.removeBlacklistVisitor(visitorId, { reason });
     return response.data;
 }

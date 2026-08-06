@@ -4,6 +4,11 @@ import { createRoleResolver } from '@/utils/createRoleResolver';
 
 
 
+export async function getParentStudents(params) {
+  const response = await parentApi.getParentStudents(params);
+  return response.data;
+}
+
 export async function updateParent(id, payload) {
   const response = await parentApi.updateParent(id, payload);
   return response.data;
@@ -78,6 +83,16 @@ export const createParentBySuperAdmin = async (payload) => {
   return res.data;
 };
 
+export const resolveParentConflictByAdmin = async (payload) => {
+  const res = await parentApi.resolveParentConflictByAdmin(payload);
+  return res.data;
+};
+
+export const resolveParentConflictBySuperAdmin = async (payload) => {
+  const res = await parentApi.resolveParentConflictBySuperAdmin(payload);
+  return res.data;
+};
+
 export const setDefaultGuardianByAdmin = async (payload) => {
   const res = await parentApi.setDefaultGuardianByAdmin(payload);
   return res.data;
@@ -129,6 +144,11 @@ const PARENT_CREATE_FETCHERS = {
   [ROLES.SUPER_ADMIN]: createParentBySuperAdmin,
 };
 
+const PARENT_RESOLVE_CONFLICT_FETCHERS = {
+  [ROLES.ADMIN]: resolveParentConflictByAdmin,
+  [ROLES.SUPER_ADMIN]: resolveParentConflictBySuperAdmin,
+};
+
 
 const DEFAULT_GUARDIAN_FETCHERS = {
   [ROLES.ADMIN]: setDefaultGuardianByAdmin,
@@ -170,20 +190,27 @@ export const createParent = createRoleResolver(
   "parent create"
 );
 
+export const resolveParentConflict = createRoleResolver(
+  PARENT_RESOLVE_CONFLICT_FETCHERS,
+  "parent resolve conflict"
+);
+
 export const setDefaultGuardian =
   createRoleResolver(
     DEFAULT_GUARDIAN_FETCHERS,
     "set default guardian"
   );
 
-export async function getParentDashboardStats(params) {
-  const response = await parentApi.getParentDashboardStats(params);
+export async function getParentDashboardStats(studentId, params) {
+  const response = await parentApi.getParentDashboardStats(studentId, params);
   return response.data;
 }
 
 const parentService = {
   getParentDashboardStats,
+  getParentStudents,
   createParent,
+  resolveParentConflict,
   updateParent,
   updateParentByRole,
   changeParentEmail,

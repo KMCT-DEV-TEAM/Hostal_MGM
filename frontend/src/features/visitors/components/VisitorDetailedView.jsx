@@ -7,7 +7,7 @@ import VisitDetailsModal from './modals/VisitDetailsModal';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import StatusBadge from '@/components/ui/StatusBadge';
 
-const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick, userRole, limit, setLimit }) => {
+const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch, onFilter, onRefresh, canExport, onExportClick, userRole, limit, setLimit, onUpdateVisit }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedVisitId, setSelectedVisitId] = useState(null);
 
@@ -144,6 +144,7 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
                 isOpen={!!selectedVisitId}
                 onClose={() => setSelectedVisitId(null)}
                 visitId={selectedVisitId}
+                onUpdateVisit={onUpdateVisit}
             />
         </div>
     );

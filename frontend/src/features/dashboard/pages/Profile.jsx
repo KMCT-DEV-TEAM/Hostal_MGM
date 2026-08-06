@@ -19,6 +19,7 @@ export default function Profile() {
     const { isMobile } = useBreakpoint();
 
     const [isLoading, setIsLoading] = useState(true);
+    const [profileData, setProfileData] = useState(null);
     const [editingField, setEditingField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -39,7 +40,7 @@ export default function Profile() {
         const fetchProfile = async () => {
             try {
                 const response = await authService.getFullProfile();
-                updateUser({ ...response.user, ...response.roleData });
+                setProfileData({ ...response.user, ...response.roleData });
             } catch (error) {
                 console.error("Failed to fetch profile", error);
             } finally {
@@ -59,7 +60,7 @@ export default function Profile() {
         return () => {
             socket.off('profileUpdated', handleProfileEvent);
         };
-    }, [updateUser]);
+    }, []);
 
     const handleEditClick = (field, currentValue) => {
         setEditingField(field);
@@ -117,6 +118,7 @@ export default function Profile() {
             const payload = { [field]: editValue };
             const response = await authService.updateProfile(payload);
             updateUser({ ...user, ...response.user });
+            setProfileData(prev => ({ ...prev, ...response.user }));
             showSuccessToast('Success', 'Profile updated successfully');
             setEditingField(null);
             setConfirmConfig({ isOpen: false, field: null });
@@ -159,6 +161,7 @@ export default function Profile() {
         try {
             const response = await authService.verifyEmailChange({ newEmail: editValue, otp });
             updateUser({ ...user, ...response.user });
+            setProfileData(prev => ({ ...prev, ...response.user }));
             showSuccessToast('Success', 'Email updated successfully');
             setEditingField(null);
             setIsEmailVerifyModalOpen(false);
@@ -169,12 +172,12 @@ export default function Profile() {
         }
     };
 
-    if (isLoading || !user) {
+    if (isLoading || !profileData) {
         return <ProfileSkeleton />;
     }
 
     const viewProps = {
-        user,
+        user: profileData,
         formatRole,
         editingField,
         editValue,

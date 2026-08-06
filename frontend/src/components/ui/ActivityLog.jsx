@@ -16,8 +16,15 @@ export default function ActivityLog({ timeline, defaultText = "No activity recor
                                 : 'border-gray-100 bg-white'
                                 }`}
                         >
-                            <div className="mb-2">
-                                <span className="text-xs font-medium text-text-primary capitalize">{t.remarks || (t.action ? t.action.replace('_', ' ') : 'Action')}</span>
+                            <div className="mb-2 flex flex-col gap-0.5">
+                                <span className="text-xs font-medium text-text-primary capitalize">
+                                    {t.action ? t.action.replace('_', ' ') : 'Action'}
+                                </span>
+                                {t.remarks && (
+                                    <span className="text-[11px] text-text-secondary">
+                                        {t.remarks}
+                                    </span>
+                                )}
                             </div>
                             {(t.meta || t.actionButton) && (
                                 <div className="flex items-center justify-between gap-3 mt-3 mb-3">
@@ -48,8 +55,8 @@ export default function ActivityLog({ timeline, defaultText = "No activity recor
                                 </div>
                             )}
                             <div className="flex justify-between items-center mt-3">
-                                <div className="text-[10px] text-text-secondary capitalize">by {t.actorRole || 'System'}</div>
-                                <span className="text-[10px] text-text-secondary">{formatDateReadable(t.timestamp)}</span>
+                                <div className="text-[10px] text-text-secondary capitalize">by {t.performedBy || t.actorRole || t.role || 'System'}</div>
+                                <span className="text-[10px] text-text-secondary">{formatDateReadable(t.timestamp || t.createdAt)}</span>
                             </div>
                         </div>
                     );

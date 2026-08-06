@@ -23,17 +23,19 @@ import {
 import Button from "@/components/ui/Button";
 import DetailCard from "@/components/ui/DetailCard";
 import DetailRow from "@/components/ui/DetailRow";
+import Modal from "@/components/ui/Modal";
 import SetDefaultParentModal from "../parents/SetDefaultParentModal";
 import ParentFormModal from "../parents/ParentFormModal";
 import ChangeEmailModal from "./ChangeEmailModal";
 import AssignFurnitureModal from "./AssignFurnitureModal";
+import ParentConflictModal from "@/components/ui/ParentConflictModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import ManageHostelModal from "./ManageHostelModal";
 import { useCreateParent } from "../../hooks/parent/useCreateParent";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
 import { changeStudentEmail, getStudentFurnitures, getStudentById } from "@/services/student.service";
-import { changeParentEmail } from "@/services/parent.service";
+import { changeParentEmail, resolveParentConflict } from "@/services/parent.service";
 import { formatDateReadable, formatDateStandard } from "@/utils/formatters";
 import furnitureApi from "@/features/furniture/api/furnitureApi";
 import { getHostels } from "@/services/hostel.service";
@@ -84,6 +86,10 @@ const StudentDetailView = () => {
 
   const [isVacateConfirmOpen, setIsVacateConfirmOpen] = useState(false);
   const [isVacating, setIsVacating] = useState(false);
+
+  const [conflictData, setConflictData] = useState(null);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
 
   const handleModalCloseRequest = (closeAction) => {
     setPendingCloseAction(() => closeAction);
@@ -243,14 +249,71 @@ const StudentDetailView = () => {
   };
 
   const { handleCreateParent } = useCreateParent((result, payload) => {
-    const createdParent = normalizeParent(result?.data, payload);
+    const parentData = result?.parent || result?.data || result;
+    const createdParent = normalizeParent(parentData, payload);
     const studentId = createdParent.studentId ?? student._id ?? student.id;
-    onStudentChange?.(studentId, (current) => ({
-      ...current,
-      parents: [...(current.parents || []), createdParent],
-    }));
+    onStudentChange?.(studentId, (current) => {
+      const existingParents = current.parents || [];
+      const parentIdStr = String(createdParent._id);
+
+      const isAlreadyLinked = existingParents.some(p =>
+        String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr
+      );
+
+      return {
+        ...current,
+        parents: isAlreadyLinked
+          ? existingParents.map(p =>
+            (String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr)
+              ? { ...p, ...createdParent }
+              : p
+          )
+          : [...existingParents, createdParent],
+      };
+    });
     setIsAddParentModalOpen(false);
   });
+
+  const handleResolveConflict = async (action) => {
+    setIsResolvingConflict(true);
+    try {
+      const result = await resolveParentConflict(role, {
+        ...conflictData.payload,
+        resolutionAction: action
+      });
+
+      const parentData = result?.parent || result?.data || result;
+      const createdParent = normalizeParent(parentData, conflictData.payload);
+      const sId = createdParent.studentId ?? student._id ?? student.id;
+      onStudentChange?.(sId, (current) => {
+        const existingParents = current.parents || [];
+        const parentIdStr = String(createdParent._id);
+
+        const isAlreadyLinked = existingParents.some(p =>
+          String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr
+        );
+
+        return {
+          ...current,
+          parents: isAlreadyLinked
+            ? existingParents.map(p =>
+              (String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr)
+                ? { ...p, ...createdParent }
+                : p
+            )
+            : [...existingParents, createdParent],
+        };
+      });
+
+      showSuccessToast("Parent linked successfully");
+      setIsConflictModalOpen(false);
+      setConflictData(null);
+    } catch (error) {
+      showErrorToast(error?.response?.data?.message || "Failed to resolve conflict");
+    } finally {
+      setIsResolvingConflict(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -790,9 +853,34 @@ const StudentDetailView = () => {
         <ParentFormModal
           studentId={student._id}
           onClose={() => handleModalCloseRequest(() => setIsAddParentModalOpen(false))}
-          onSave={handleCreateParent}
+          onSave={async (payload) => {
+            try {
+              await handleCreateParent(payload);
+            } catch (err) {
+              const errorCode = err?.code || err?.response?.data?.code;
+              if (errorCode === 'PARENT_EXISTS_WITH_DIFFERENT_DATA') {
+                const conflictDataResponse = err?.data?.data || err?.response?.data?.data;
+
+                setConflictData({
+                  existing: conflictDataResponse.existing,
+                  submitted: conflictDataResponse.submitted,
+                  payload: payload
+                });
+                setIsConflictModalOpen(true);
+                setIsAddParentModalOpen(false);
+              }
+            }
+          }}
         />
       )}
+
+      <ParentConflictModal
+        isOpen={isConflictModalOpen}
+        onClose={() => setIsConflictModalOpen(false)}
+        conflictData={conflictData}
+        isResolvingConflict={isResolvingConflict}
+        onResolve={handleResolveConflict}
+      />
 
       <ChangeEmailModal
         isOpen={!!emailChangeTarget}

@@ -512,16 +512,13 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
 });
 
 const getParentDashboardStats = asyncHandler(async (req, res) => {
-  const parentId = req.user.id;
-  const parent = await Parent.findById(parentId).select('studentId');
+  const studentId = req.student ? req.student.id : req.params.studentId;
 
-  if (!parent) {
-    return sendError(res, 404, "Parent not found");
+  if (!studentId) {
+    return sendError(res, 400, "Student ID is required.");
   }
 
-  const studentId = parent.studentId;
   const student = await Student.findById(studentId);
-
   if (!student) {
     return sendError(res, 404, "Student not found");
   }
@@ -781,9 +778,9 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       { $match: { studentId: { $in: studentIds }, createdAt: { $gte: lastYearStart } } },
       {
         $group: {
-          _id: { 
-            year: { $year: "$createdAt" }, 
-            month: { $month: "$createdAt" } 
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
           },
           presentCount: { $sum: { $cond: [{ $eq: [{ $toLower: "$status" }, "present"] }, 1, 0] } },
           totalCount: { $sum: 1 }
@@ -810,7 +807,7 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
       startOfToday.setHours(0, 0, 0, 0);
       const endOfToday = new Date();
       endOfToday.setHours(23, 59, 59, 999);
-      
+
       return AttendanceWindow.find({
         hostelId: { $in: hostelIds },
         attendanceDate: { $gte: startOfToday, $lte: endOfToday }
@@ -914,3 +911,6 @@ export {
   getAttendanceOverview,
   getMentorDashboardStats
 };
+
+
+

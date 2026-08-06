@@ -5,8 +5,18 @@ import User from "../users/user.model.js";
 import Parent from "./parent.model.js";
 import mongoose from "mongoose";
 import Student from "../students/student.model.js";
+import StudentParent from "./studentParent.model.js";
 import Hostel from "../hostels/hostel.model.js";
-import { createParentDb, updateParentDb, toggleParentStatusDb, setDefaultGuardianDb, getParentsService, exportParentsService, bulkUpdateParentStatusDb } from "./parent.service.js";
+import {
+  createParentDb,
+  updateParentDb,
+  toggleParentStatusDb,
+  setDefaultGuardianDb,
+  getParentsService,
+  exportParentsService,
+  bulkUpdateParentStatusDb,
+  getParentStudentsService
+} from "./parent.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 
 const createParent = asyncHandler(async (req, res) => {
@@ -14,12 +24,6 @@ const createParent = asyncHandler(async (req, res) => {
     email,
     parentOtp,
   } = req.body;
-
-  const existingParent = await Parent.findOne({ email });
-
-  if (existingParent) {
-    return sendError(res, 400, "Parent email already exists");
-  }
 
   const isOtpValid = await verifyOtpDb(email, parentOtp);
 
@@ -41,8 +45,21 @@ const createParent = asyncHandler(async (req, res) => {
       isVerified: true,
     });
   } catch (error) {
-    if (error.message === "Parent email already exists") {
-      return sendError(res, 400, error.message);
+    if (error.code === "PARENT_EXISTS_WITH_DIFFERENT_DATA") {
+      return res.status(409).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+        data: error.conflictData,
+      });
+    }
+
+    if (error.code === "PARENT_ALREADY_LINKED") {
+      return res.status(409).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
     }
 
     if (error.message === "Invalid studentId") {
@@ -123,16 +140,15 @@ const changeParentEmail = asyncHandler(async (req, res) => {
   }
 
   if (req.user.role === "admin") {
-    const [admin, student] = await Promise.all([
-      User.findById(req.user.id).select("organization").lean(),
-      Student.findById(parent.studentId).select("organizationId").lean(),
-    ]);
-
+    const admin = await User.findById(req.user.id).select("organization").lean();
     if (!admin?.organization) {
       return sendError(res, 400, "Admin is not assigned to any organization");
     }
 
-    if (!student || String(student.organizationId) !== String(admin.organization)) {
+    const links = await StudentParent.find({ parentId: id }).populate("studentId", "organizationId").lean();
+    const hasOrgStudent = links.some(link => link.studentId && String(link.studentId.organizationId) === String(admin.organization));
+
+    if (!hasOrgStudent) {
       return sendError(res, 403, "You can update only parents in your organization");
     }
   }
@@ -343,11 +359,12 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
 
   if (organizationId) {
     const objectIds = ids.map((id) => new mongoose.Types.ObjectId(id));
-    const validParents = await Parent.aggregate([
-      { $match: { _id: { $in: objectIds } } },
+    const validParents = await StudentParent.aggregate([
+      { $match: { parentId: { $in: objectIds } } },
       { $lookup: { from: "students", localField: "studentId", foreignField: "_id", as: "student" } },
       { $unwind: "$student" },
-      { $match: { "student.organizationId": new mongoose.Types.ObjectId(organizationId) } }
+      { $match: { "student.organizationId": new mongoose.Types.ObjectId(organizationId) } },
+      { $group: { _id: "$parentId" } } // Ensure uniqueness of valid parents
     ]);
 
     if (validParents.length !== ids.length) {
@@ -401,8 +418,76 @@ const getParentsByMentor = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Parents fetched successfully", result);
 });
 
+const resolveParentConflict = asyncHandler(async (req, res) => {
+  const { resolutionAction, ...parentData } = req.body;
+
+  if (!resolutionAction) {
+    return sendError(res, 400, "Resolution action is required");
+  }
+
+  if (resolutionAction !== 'use_existing' && resolutionAction !== 'update_existing') {
+    return sendError(res, 400, "Invalid resolution action");
+  }
+
+  let result;
+  try {
+    result = await createParentDb({
+      ...parentData,
+      resolutionAction,
+      isVerified: true,
+    });
+  } catch (error) {
+    if (error.code === "PARENT_ALREADY_LINKED") {
+      return res.status(409).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
+    }
+
+    if (error.message === "Invalid studentId") {
+      return sendError(res, 400, "Invalid studentId");
+    }
+    throw error;
+  }
+
+  if (!result) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  return sendSuccess(
+    res,
+    201,
+    "Parent added successfully after conflict resolution",
+    result
+  );
+});
+
+/**
+ * @desc    Get all active students linked to the authenticated parent
+ * @route   GET /api/parent/students
+ * @access  Private (Parent only)
+ */
+const getParentStudents = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  console.log(req.user)
+  // Enforce parent access
+  if (req.user.role !== "parent") {
+    return sendError(res, 403, "Access denied. Only parents can access this resource.");
+  }
+
+  const students = await getParentStudentsService(parentId, req.query);
+  return sendSuccess(
+    res,
+    200,
+    "Students retrieved successfully.",
+    students
+  );
+});
+
 export {
   createParent,
+  resolveParentConflict,
   updateParent,
   changeParentEmail,
   toggleParentStatus,
@@ -414,4 +499,5 @@ export {
   exportParentsByAdmin,
   exportParentsBySuperAdmin,
   bulkUpdateParentStatus,
+  getParentStudents
 };

@@ -89,13 +89,13 @@ export async function getStudentCalendar(params) {
     return response.data;
 }
 
-export async function getParentDashboard() {
-    const response = await attendanceApi.getParentDashboard();
+export async function getParentDashboard(studentId) {
+    const response = await attendanceApi.getParentDashboardV2(studentId);
     return response.data;
 }
 
-export async function getParentHistory(params) {
-    const response = await attendanceApi.getParentHistory(params);
+export async function getParentHistory(studentId, params) {
+    const response = await attendanceApi.getParentHistoryV2(studentId, params);
     return response.data;
 }
 
@@ -120,7 +120,8 @@ export async function getStudentCalendarByMentor(params) {
 }
 
 export async function getParentCalendar(params) {
-    const response = await attendanceApi.getParentCalendar(params);
+    const { studentId, ...restParams } = params;
+    const response = await attendanceApi.getParentCalendarV2(studentId, restParams);
     return response.data;
 }
 

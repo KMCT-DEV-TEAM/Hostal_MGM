@@ -22,6 +22,7 @@ import {
 } from '@/services/visitor.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useActiveStudent } from '@/hooks/useActiveStudent';
 import VisitorsMobileView from '../views/VisitorsMobileView';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -33,6 +34,7 @@ import FilterModal from '../components/modals/FilterModal';
 const VisitorsPage = () => {
     const { user } = useAuthStore();
     const { isMobile } = useBreakpoint();
+    const { activeStudentId } = useActiveStudent();
     const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [visitors, setVisitors] = useState([]);
@@ -85,9 +87,9 @@ const VisitorsPage = () => {
             label: "Status",
             options: [
                 { label: 'All Status', value: '' },
-                { label: 'Pending', value: 'Pending' },
-                { label: 'Approved', value: 'Approved' },
-                { label: 'Rejected', value: 'Rejected' },
+                { label: 'Active', value: 'Active' },
+                { label: 'Inactive', value: 'Inactive' },
+                { label: 'Blacklisted', value: 'Blacklisted' },
             ]
         }
     ], []);
@@ -112,6 +114,7 @@ const VisitorsPage = () => {
                 if (selectedHostel) params.hostel = selectedHostel.id;
 
                 if (isParent) {
+                    params.studentId = activeStudentId;
                     res = await getParentVisitors(params);
                 } else if (isStudent) {
                     res = await getStudentVisitors(params);
@@ -132,7 +135,7 @@ const VisitorsPage = () => {
             }
             setPagination({ totalPages, totalItems });
 
-            if (['super_admin', 'admin', 'warden'].includes(role)) {
+            if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN].includes(role)) {
                 try {
                     const statsRes = await getDashboardSummary();
                     if (statsRes && statsRes.success) {
@@ -150,11 +153,12 @@ const VisitorsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, statusFilter, page, limit, isParent, isStudent, showAggregatedView, selectedHostel]);
+    }, [debouncedSearch, statusFilter, page, limit, isParent, isStudent, showAggregatedView, selectedHostel, activeStudentId]);
 
     useEffect(() => {
+        if (isParent && !activeStudentId) return;
         fetchVisitors();
-    }, [fetchVisitors]);
+    }, [fetchVisitors, activeStudentId, isParent]);
 
     const handleApprove = (id) => {
         setConfirmModal({ isOpen: true, type: 'approve', visitorId: id });
@@ -224,6 +228,7 @@ const VisitorsPage = () => {
 
             let response;
             if (isParent) {
+                cleanParams.studentId = activeStudentId;
                 response = await getParentVisitors(cleanParams);
             } else if (isStudent) {
                 response = await getStudentVisitors(cleanParams);
@@ -296,7 +301,7 @@ const VisitorsPage = () => {
                     onEdit={isParent ? handleEdit : undefined}
                 />
             ) : (
-                <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary relative">
+                <div className="w-full h-[calc(100vh-82px)] overflow-y-auto bg-background-secondary ">
                     <div className="p-4 md:p-6 flex flex-col min-h-full">
                         {/* Header Section */}
                         <div className="mb-6 shrink-0 flex items-center gap-4">
@@ -318,7 +323,7 @@ const VisitorsPage = () => {
                             </div>
                         )}
 
-                        <div className="bg-transparent md:bg-white md:rounded-xl md:border md:border-gray-100 md:shadow-sm flex flex-col flex-1 relative z-0">
+                        <div className="bg-transparent flex flex-col flex-1 relative z-0">
                             {showAggregatedView ? (
                                 <VisitorProfilesAggregatedView
                                     visitors={visitors}
@@ -394,9 +399,9 @@ const VisitorsPage = () => {
                     showDateFilters={false}
                     statusOptions={[
                         { label: 'All Status', value: '' },
-                        { label: 'Pending', value: 'Pending' },
-                        { label: 'Approved', value: 'Approved' },
-                        { label: 'Rejected', value: 'Rejected' },
+                        { label: 'Active', value: 'Active' },
+                        { label: 'Inactive', value: 'Inactive' },
+                        { label: 'Blacklisted', value: 'Blacklisted' },
                     ]}
                 />
 

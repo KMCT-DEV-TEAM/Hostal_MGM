@@ -24,7 +24,8 @@ export default function TimelineStep({
     badgeBg,
     nodeColor,
     avatarBg,
-    avatarColor
+    avatarColor,
+    remarks
 }) {
     const actorName = (subtitle || '').split('-')[0].trim();
 
@@ -57,6 +58,11 @@ export default function TimelineStep({
 
                     {/* Title */}
                     <h4 className="text-[13px] font-medium text-gray-700 capitalize">{title}</h4>
+                    
+                    {/* Remarks */}
+                    {remarks && (
+                        <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">{remarks}</p>
+                    )}
 
                     {/* Actor info */}
                     <div className="flex items-center gap-2 mt-1">

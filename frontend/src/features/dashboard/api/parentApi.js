@@ -1,10 +1,15 @@
 import api from '@/services/axios';
 
 const parentApi = {
-  getParentDashboardStats: (params) => api.get("/parent/dashboard/parent/stats", { params }),
+  getParentDashboardStats: (studentId, params) => api.get(`/parent/dashboard/students/${studentId}/stats`, { params }),
+
+  getParentStudents: (params) => api.get("/parent/students", { params }),
 
   createParentByAdmin: (payload) =>
     api.post("/admin/parents", payload),
+
+  resolveParentConflictByAdmin: (payload) =>
+    api.post("/admin/parents/resolve-conflict", payload),
 
 
 
@@ -54,6 +59,9 @@ const parentApi = {
 
   createParentBySuperAdmin: (payload) =>
     api.post("/super-admin/parents", payload),
+
+  resolveParentConflictBySuperAdmin: (payload) =>
+    api.post("/super-admin/parents/resolve-conflict", payload),
 
   setDefaultGuardianBySuperAdmin: (id) =>
     api.patch(`/super-admin/parents/${id}/default-guardian`, {

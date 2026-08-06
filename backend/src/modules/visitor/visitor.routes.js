@@ -3,6 +3,7 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import {
     validateCreateVisitor,
+    validateConfirmVisitor,
     validateListVisitors,
     validateEndUserListVisitors,
     validateGetVisitorDetails,
@@ -14,10 +15,82 @@ import {
     validateGetVisitDetails,
     validateUpdateVisitor,
     validateUpdateVisitorStatus,
+    validateAddStudentsToVisit,
+    validateApproveVisitRequest,
+    validateRejectVisitRequest,
+    validateUnassignVisitor,
+    validateBlacklistVisitor,
+    validateRemoveBlacklistVisitor
 } from './visitor.validation.js';
 import * as visitorController from './visitor.controller.js';
+import * as vistHistoryController from './history/visitorHistory.controller.js';
+import verifyStudentAccess from '../../middlewares/verifyStudentAccess.middleware.js';
 
 const router = express.Router();
+export const parentVisitorRouter = express.Router({ mergeParams: true });
+
+// Apply verification for all parent routes
+parentVisitorRouter.use(authMiddleware, roleMiddleware('parent'), verifyStudentAccess);
+
+// ---------------------------------------------------------
+// Parent End-User Routes (Mounted at /api/parent/visitors)
+// ---------------------------------------------------------
+parentVisitorRouter.post(
+    '/',
+    validateCreateVisitor,
+    visitorController.createVisitor
+);
+
+parentVisitorRouter.post(
+    '/:visitorId/visit-requests',
+    validateConfirmVisitor,
+    visitorController.confirmVisitorReuse
+);
+
+parentVisitorRouter.patch(
+    '/:visitorId/unassign',
+    validateUnassignVisitor,
+    visitorController.unassignVisitor
+);
+
+parentVisitorRouter.get(
+    '/',
+    validateEndUserListVisitors,
+    visitorController.listParentVisitors
+);
+
+// ---------------------------------------------------------
+// Parent Visit Listing Routes
+// ---------------------------------------------------------
+parentVisitorRouter.get(
+    '/visits',
+    validateListVisits,
+    vistHistoryController.listVisitorVisits
+);
+
+parentVisitorRouter.get(
+    '/visits/:visitId',
+    validateGetVisitDetails,
+    vistHistoryController.getVisitDetails
+);
+
+parentVisitorRouter.patch(
+    '/:visitorId',
+    validateUpdateVisitor,
+    visitorController.updateVisitor
+);
+
+parentVisitorRouter.get(
+    '/:visitorId',
+    validateGetVisitorDetails,
+    visitorController.getParentVisitorDetails
+);
+
+parentVisitorRouter.patch(
+    '/:visitorId/status',
+    validateUpdateVisitorStatus,
+    visitorController.updateVisitorStatus
+);
 
 // ---------------------------------------------------------
 // Dashboard Routes
@@ -37,7 +110,7 @@ router.get(
     authMiddleware,
     roleMiddleware('super_admin'),
     validateSuperAdminHostelVisits,
-    visitorController.getSuperAdminHostelVisits
+    vistHistoryController.getSuperAdminHostelVisits
 );
 
 router.get(
@@ -48,48 +121,41 @@ router.get(
     visitorController.getSuperAdminHostelVisitors
 );
 
+router.patch(
+    '/super-admin/visitors/:visitorId/blacklist',
+    authMiddleware,
+    roleMiddleware('super_admin'),
+    validateBlacklistVisitor,
+    visitorController.blacklistVisitor
+);
+
+router.patch(
+    '/super-admin/visitors/:visitorId/remove-blacklist',
+    authMiddleware,
+    roleMiddleware('super_admin'),
+    validateRemoveBlacklistVisitor,
+    visitorController.removeBlacklistVisitor
+);
 router.get(
     '/visitor-visits',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student', 'mentor'),
     validateListVisits,
-    visitorController.listVisitorVisits
+    vistHistoryController.listVisitorVisits
 );
 
 router.get(
     '/visitor-visits/:visitId',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'parent', 'student', 'mentor'),
     validateGetVisitDetails,
-    visitorController.getVisitDetails
+    vistHistoryController.getVisitDetails
 );
 
 // ---------------------------------------------------------
 // End-User Routes (Parent & Student)
 // ---------------------------------------------------------
-router.post(
-    '/parent/visitors',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateCreateVisitor,
-    visitorController.createVisitor
-);
-
-router.get(
-    '/parent/visitors',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateEndUserListVisitors,
-    visitorController.listParentVisitors
-);
-
-router.patch(
-    '/parent/visitors/:visitorId',
-    authMiddleware,
-    roleMiddleware('parent'),
-    validateUpdateVisitor,
-    visitorController.updateVisitor
-);
+// The parent routes have been moved to parentVisitorRouter
 
 router.get(
     '/student/visitors',
@@ -114,11 +180,19 @@ router.get(
 // Visit Management (Warden)
 // ---------------------------------------------------------
 router.post(
-    '/warden/visits/check-in',
+    '/check-in',
     authMiddleware,
     roleMiddleware('warden'),
     validateCheckInVisitor,
     visitorController.checkInVisitor
+);
+
+router.patch(
+    '/:visitId/students',
+    authMiddleware,
+    roleMiddleware('warden'),
+    validateAddStudentsToVisit,
+    visitorController.addStudentsToVisit
 );
 
 // ---------------------------------------------------------
@@ -127,33 +201,31 @@ router.post(
 router.get(
     '/:visitorId',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'warden', 'mentor', 'parent', 'student'),
+    roleMiddleware('super_admin', 'admin', 'warden', 'mentor', 'student'),
     validateGetVisitorDetails,
     visitorController.getVisitorDetails
 );
 // ---------------------------------------------------------
-// Action Routes
+// VisitRequest Action Routes
 // ---------------------------------------------------------
 router.patch(
-    '/:visitorId/approve',
+    '/visit-requests/:visitRequestId/approve',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'mentor'),
-    validateApproveVisitor,
-    visitorController.approveVisitor
+    validateApproveVisitRequest, // To be implemented in validation
+    visitorController.approveVisitRequest
 );
 
 router.patch(
-    '/:visitorId/reject',
+    '/visit-requests/:visitRequestId/reject',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'mentor'),
-    validateRejectVisitor,
-    visitorController.rejectVisitor
+    validateRejectVisitRequest,
+    visitorController.rejectVisitRequest
 );
 
 router.patch(
     '/:visitorId/status',
     authMiddleware,
-    roleMiddleware('super_admin', 'admin', 'parent', 'mentor'),
+    roleMiddleware('super_admin', 'admin', 'mentor'),
     validateUpdateVisitorStatus,
     visitorController.updateVisitorStatus
 );

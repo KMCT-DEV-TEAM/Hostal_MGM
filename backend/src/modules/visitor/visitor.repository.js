@@ -1,143 +1,419 @@
+import mongoose from 'mongoose';
 import Visitor from './visitor.model.js';
 import VisitorVisit from './visitorVisit.model.js';
-import { VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
+import VisitRequest from './visitRequest.model.js';
+import { VISITOR_APPROVAL_ACTIONS, VISITOR_STATUS, VISITOR_VISIT_STATUS, VISITOR_VISIT_TIMELINE_ACTIONS } from './visitor.constant.js';
+import Parent from '../parents/parent.model.js';
+import User from '../users/user.model.js';
 
 /**
- * Checks if a visitor with the same phone exists in the organization
- * @param {String} organizationId 
- * @param {String} phone 
- * @returns {Promise<Object>} The visitor if found, else null
+ * Finds an existing Visitor by ID Proof.
+ *
+ * @param {String} idProofType 
+ * @param {String} idProofNumber 
+ * @returns {Promise<Object|null>} The existing Visitor if found, else null
  */
-export const findDuplicateVisitor = async (organizationId, phone) => {
-    return await Visitor.findOne({ organizationId, phone });
+export const findVisitorByIdProof = async (idProofType, idProofNumber) => {
+    if (!idProofType || !idProofNumber) return null;
+    return await Visitor.findOne({ idProofType, idProofNumber }).lean();
 };
 
 /**
- * Creates a new visitor profile
+ * Finds an existing Visitor by Phone Number.
+ *
+ * @param {String} phone
+ * @returns {Promise<Object|null>} The existing Visitor if found, else null
+ */
+export const findVisitorByPhone = async (phone) => {
+    if (!phone) return null;
+    return await Visitor.findOne({ phone }).lean();
+};
+
+/**
+ * Creates a new visitor profile inside a MongoDB session (for transaction safety).
+ * @param {Object} data 
+ * @param {import('mongoose').ClientSession} session 
+ * @returns {Promise<Object>}
+ */
+export const createVisitorInSession = async (data, session) => {
+    const [visitor] = await Visitor.create([data], { session });
+    return visitor;
+};
+
+/**
+ * Finds existing VisitRequests that block new requests for the same visitor and students.
+ * Blocks on:
+ *   - 'Pending'  → awaiting approval
+ *   - 'Approved' → approved but not yet checked in at the gate
+ *
+ * @param {String} visitorId
+ * @param {Array<String>} studentIds
+ * @returns {Promise<Array>} Array of blocking requests (if any)
+ */
+export const findBlockingVisitRequests = async (visitorId, studentIds) => {
+    return await VisitRequest.find({
+        visitorId,
+        studentId: { $in: studentIds },
+        status: { $in: ['Pending', 'Approved'] }
+    }).populate('studentId', 'name').lean();
+};
+
+/**
+ * Finds active VisitorVisits (visitor currently inside the hostel)
+ * for a given visitor and students.
+ * Used to prevent creating a new request while the visitor is inside.
+ *
+ * @param {String} visitorId
+ * @param {Array<String>} studentIds
+ * @returns {Promise<Array>} Array of active visits
+ */
+export const findActiveVisitorVisits = async (visitorId, studentIds) => {
+    return await VisitorVisit.find({
+        'visitor.refId': visitorId,
+        'students.studentId': { $in: studentIds },
+        status: 'Checked In'
+    }).lean();
+};
+
+/**
+ * Creates a new VisitRequest, optionally inside a MongoDB session.
+ *
+ * @param {Object} data
+ * @param {import('mongoose').ClientSession|null} session
+ *   Pass the active session when creating inside a transaction.
+ *   Pass null when creating outside a transaction (e.g. race-condition retry path).
+ * @returns {Promise<Object>}
+ */
+export const createVisitRequest = async (data, session) => {
+    if (session) {
+        const [visitRequest] = await VisitRequest.create([data], { session });
+        return visitRequest;
+    }
+    const visitRequest = new VisitRequest(data);
+    return await visitRequest.save();
+};
+
+/**
+ * Creates a new visitor profile (no session — legacy, used outside transactions)
  * @param {Object} data 
  * @returns {Promise<Object>}
  */
 export const createVisitor = async (data) => {
-    const visitor = new Visitor(data);
-    return await visitor.save();
+    return await Visitor.create(data);
 };
 
 /**
- * Fetches visitors with role-based filtering, pagination, and projection for tables.
- * @param {Object} matchStage 
- * @param {Object} sortStage 
+ * Checks if a visitor and student currently have an active VisitorVisit in progress.
+ * 
+ * @param {String} visitorId 
+ * @param {String} studentId 
+ * @returns {Promise<Boolean>}
+ */
+export const hasActiveVisitorVisit = async (visitorId, studentId) => {
+    const visit = await VisitorVisit.findOne({
+        'visitor.refId': visitorId,
+        'students': studentId,
+        status: {
+            $in: [
+                VISITOR_VISIT_STATUS.CHECKED_IN,
+                VISITOR_VISIT_STATUS.EXTENDED,
+                VISITOR_VISIT_STATUS.OVERSTAYED
+            ]
+        }
+    }).select('_id').lean();
+    return !!visit;
+};
+
+/**
+ * Cancels a specific VisitRequest atomically based on matching criteria.
+ * Enforces authorization by matching parentId.
+ * 
+ * @param {String} visitorId 
+ * @param {String} studentId 
+ * @param {String} parentId 
+ * @param {String} userId 
+ * @param {String} role 
+ * @param {String} remarks 
+ * @returns {Promise<Object|null>}
+ */
+export const cancelLatestActiveVisitRequest = async (visitorId, studentId, parentId, userId, role, remarks = 'Visitor removed from student.') => {
+    return await VisitRequest.findOneAndUpdate(
+        {
+            visitorId,
+            studentId,
+            parentId,
+            status: { $in: [VISITOR_STATUS.PENDING, VISITOR_STATUS.APPROVED] }
+        },
+        {
+            $set: { status: VISITOR_STATUS.CANCELLED },
+            $push: {
+                approvalTimeline: {
+                    action: VISITOR_APPROVAL_ACTIONS.UNASSIGNED,
+                    performedBy: userId,
+                    performedByRole: role,
+                    remarks: remarks,
+                    createdAt: new Date()
+                }
+            }
+        },
+        { new: true, sort: { createdAt: -1 } }
+    );
+};
+
+/**
+ * Cancels all pending/approved VisitRequests for a visitor.
+ * Returns the number of affected requests.
+ */
+export const cancelAllActiveVisitRequests = async (visitorId, userId, role, reason, session) => {
+    const result = await VisitRequest.updateMany(
+        {
+            visitorId,
+            status: { $in: [VISITOR_STATUS.PENDING, VISITOR_STATUS.APPROVED] }
+        },
+        {
+            $set: { status: VISITOR_STATUS.CANCELLED },
+            $push: {
+                approvalTimeline: {
+                    action: VISITOR_APPROVAL_ACTIONS.REVOKED, // or similar valid action
+                    performedBy: userId,
+                    performedByRole: role,
+                    remarks: reason,
+                    createdAt: new Date()
+                }
+            }
+        },
+        { session }
+    );
+    return result.modifiedCount;
+};
+
+/**
+ * Checks if a visitor is currently inside the hostel (active check-in).
+ */
+export const isVisitorInsideHostel = async (visitorId) => {
+    const activeVisit = await VisitorVisit.findOne({
+        'visitor.refId': visitorId,
+        status: VISITOR_VISIT_STATUS.CHECKED_IN
+    }).lean();
+    return activeVisit !== null;
+};
+
+/**
+ * Finds VisitRequests for a specific visitor and list of students
+ * @param {String} visitorId 
+ * @param {Array<String>} studentIds 
+ */
+export const getVisitRequestsByVisitorAndStudents = async (visitorId, studentIds) => {
+    return await VisitRequest.find({
+        visitorId,
+        studentId: { $in: studentIds }
+    }).lean();
+};
+
+/**
+ * Unified aggregation for Visitor Listing (Staff, Student, Parent)
+ * @param {Object} initialMatch - Filters on Visitor collection (status, dates)
+ * @param {Object} studentMatch - Scope filters on populated Students (for Staff)
+ * @param {Object} sortOptions - Searching and sorting
  * @param {Number} skip 
  * @param {Number} limit 
- * @returns {Promise<Object>} { data: Array, total: Number }
+ * @param {String} parentIdMatch - (Optional) If provided, filters visitors created/used by this parent
  */
-export const getVisitors = async (matchStage, sortStage, skip, limit) => {
-    const pipeline = [
-        { $match: matchStage },
-        // Lookup Organization
-        {
-            $lookup: {
-                from: 'organizations',
-                localField: 'organizationId',
-                foreignField: '_id',
-                as: 'organizationInfo'
-            }
-        },
-        { $unwind: { path: '$organizationInfo', preserveNullAndEmptyArrays: true } },
-        // Lookup Students to get names and hostel info
-        {
-            $lookup: {
-                from: 'students',
-                localField: 'students',
-                foreignField: '_id',
-                as: 'studentDocs'
-            }
-        },
-        // We can get the hostelId from the first student since they are validated to belong to the same hostel
-        {
-            $addFields: {
-                firstStudentHostelId: { $arrayElemAt: ['$studentDocs.hostelId', 0] }
-            }
-        },
-        // Lookup Hostel
-        {
-            $lookup: {
-                from: 'hostels',
-                localField: 'firstStudentHostelId',
-                foreignField: '_id',
-                as: 'hostelInfo'
-            }
-        },
-        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
-        // Calculate fields and project
-        {
-            $addFields: {
-                approvedTimelineEvent: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$approvalTimeline",
-                                as: "timeline",
-                                cond: { $eq: ["$$timeline.action", "Approved"] }
-                            }
-                        },
-                        0
-                    ]
-                }
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                visitorId: '$_id',
-                visitorName: '$name',
-                phone: 1,
-                email: 1,
-                relationship: 1,
-                status: '$approvalStatus',
-                createdAt: 1,
-                approvedAt: '$approvedTimelineEvent.createdAt',
-                organizationName: '$organizationInfo.name',
-                hostelName: '$hostelInfo.name',
+export const getVisitorsList = async (initialMatch, studentMatch, sortOptions, skip, limit, parentIdMatch = null) => {
+    const pipeline = [];
 
-                students: {
-                    $map: {
-                        input: '$studentDocs',
-                        as: 'st',
-                        in: {
-                            id: '$$st._id',
-                            name: '$$st.name',
-                            roomNumber: '$$st.roomNumber'
-                        }
+    // 1. Initial Match on Visitor
+    if (Object.keys(initialMatch).length > 0) {
+        pipeline.push({ $match: initialMatch });
+    }
+
+    // Rewrite studentMatch keys for internal lookup ('studentObj.x' -> 'student.x')
+    const studentMatchScoped = {};
+    for (const key in studentMatch) {
+        const newKey = key.replace('studentObj.', 'student.');
+        studentMatchScoped[newKey] = studentMatch[key];
+    }
+
+    // 2. Scoped Lookup for VisitRequests and Students
+    pipeline.push({
+        $lookup: {
+            from: 'visitrequests',
+            let: { visitorId: '$_id' },
+            pipeline: [
+                { $match: { $expr: { $eq: ['$visitorId', '$$visitorId'] } } },
+
+                // Apply Parent Authorization Scope strictly inside the join
+                ...(parentIdMatch ? [{ $match: { parentId: new mongoose.Types.ObjectId(parentIdMatch) } }] : []),
+
+                {
+                    $lookup: {
+                        from: 'students',
+                        localField: 'studentId',
+                        foreignField: '_id',
+                        as: 'student'
                     }
                 },
-                priority: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: ['$approvalStatus', 'Pending'] }, then: 1 },
-                            { case: { $eq: ['$approvalStatus', 'Approved'] }, then: 2 },
-                            { case: { $eq: ['$approvalStatus', 'Inactive'] }, then: 3 },
-                            { case: { $eq: ['$approvalStatus', 'Rejected'] }, then: 4 }
-                        ],
-                        default: 5
+                // Flatten the student array
+                { $unwind: { path: '$student', preserveNullAndEmptyArrays: false } },
+
+                // Apply Staff Authorization Scope strictly inside the join
+                ...(Object.keys(studentMatchScoped).length > 0 ? [{ $match: studentMatchScoped }] : [])
+            ],
+            as: 'authorizedRequests'
+        }
+    });
+
+    // 3. Enforce Authorization Guard
+    if (parentIdMatch) {
+        // Parents can see their visitors even if there are no active requests (e.g. all historical)
+        pipeline.push({ $match: { 'authorizedRequests.0': { $exists: true } } });
+    } else {
+        // Staff (Admin, Super Admin, Warden, Mentor) can ONLY see visitors with at least one ACTIVE request
+        pipeline.push({
+            $match: {
+                authorizedRequests: {
+                    $elemMatch: { status: { $in: ['Pending', 'Approved'] } }
+                }
+            }
+        });
+    }
+
+    // 4. Compute Metrics & Deduplicate Students strictly from authorized data
+    const statusWeights = sortOptions.statusWeights || { Approved: 1, Pending: 2, Historical: 3 };
+
+    pipeline.push({
+        $addFields: {
+            latestRequestDate: { $max: '$authorizedRequests.createdAt' },
+            activeRequestsCount: {
+                $size: {
+                    $filter: {
+                        input: '$authorizedRequests',
+                        as: 'req',
+                        cond: { $in: ['$$req.status', ['Pending', 'Approved']] }
+                    }
+                }
+            },
+            pendingRequestsCount: {
+                $size: {
+                    $filter: {
+                        input: '$authorizedRequests',
+                        as: 'req',
+                        cond: { $eq: ['$$req.status', 'Pending'] }
+                    }
+                }
+            },
+            // Compute minimum status weight among authorized requests
+            sortWeight: {
+                $min: {
+                    $map: {
+                        input: '$authorizedRequests',
+                        as: 'req',
+                        in: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ['$$req.status', 'Pending'] }, then: statusWeights['Pending'] || 3 },
+                                    { case: { $eq: ['$$req.status', 'Approved'] }, then: statusWeights['Approved'] || 3 }
+                                ],
+                                default: statusWeights['Historical'] || 3
+                            }
+                        }
+                    }
+                }
+            },
+            // Pure MongoDB Deduplication trick using $reduce and array traversal
+            uniqueStudents: {
+                $reduce: {
+                    input: '$authorizedRequests.student',
+                    initialValue: [],
+                    in: {
+                        $cond: [
+                            { $in: ['$$this._id', '$$value._id'] },
+                            '$$value', // Skip if already added
+                            { $concatArrays: ['$$value', ['$$this']] } // Add if unique
+                        ]
                     }
                 }
             }
-        },
-        { $sort: sortStage },
-        {
-            $facet: {
-                metadata: [{ $count: 'total' }],
-                data: [{ $skip: skip }, { $limit: limit }]
-            }
         }
-    ];
+    });
+
+    // 5. Global Search (Applies to Visitor + Authorized Students only)
+    if (sortOptions.search) {
+        const searchRegex = new RegExp(sortOptions.search, 'i');
+        pipeline.push({
+            $match: {
+                $or: [
+                    { name: searchRegex },
+                    { phone: searchRegex },
+                    { email: searchRegex },
+                    { 'uniqueStudents.name': searchRegex },
+                    { 'uniqueStudents.roomNumber': searchRegex }
+                ]
+            }
+        });
+    }
+
+    // 6. Sorting
+    let sortStage = { sortWeight: 1, pendingRequestsCount: -1, latestRequestDate: -1, createdAt: -1 };
+    if (sortOptions.sort) {
+        if (sortOptions.sort === 'name' || sortOptions.sort === 'name_asc') sortStage = { name: 1 };
+        else if (sortOptions.sort === '-name') sortStage = { name: -1 };
+        else if (sortOptions.sort === 'latest_request') sortStage = { latestRequestDate: -1 };
+        else if (sortOptions.sort === 'createdAt' || sortOptions.sort === 'oldest') sortStage = { createdAt: 1 };
+        else if (sortOptions.sort === '-createdAt') sortStage = { createdAt: -1 };
+    }
+    pipeline.push({ $sort: sortStage });
+
+    // 7. Facet for Pagination and Projection
+    pipeline.push({
+        $facet: {
+            metadata: [{ $count: 'total' }],
+            data: [
+                { $skip: skip },
+                { $limit: limit },
+                {
+                    $project: {
+                        visitorId: '$_id',
+                        name: 1,
+                        phone: 1,
+                        email: 1,
+                        status: 1,
+                        approvalStatus: 1,
+                        createdAt: 1,
+                        updatedAt: 1,
+                        latestRequestDate: 1,
+                        activeRequestsCount: 1,
+                        pendingRequestsCount: 1,
+                        sortWeight: 1,
+                        studentCount: { $size: '$uniqueStudents' },
+                        students: {
+                            $map: {
+                                input: '$uniqueStudents',
+                                as: 's',
+                                in: {
+                                    _id: '$$s._id',
+                                    name: '$$s.name',
+                                    roomNumber: '$$s.roomNumber',
+                                    hostelId: '$$s.hostelId',
+                                    phone: '$$s.phone',
+                                    email: '$$s.email',
+
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    });
 
     const result = await Visitor.aggregate(pipeline);
-    const data = result[0].data;
-    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+    const data = result[0]?.data || [];
+    const total = result[0]?.metadata[0]?.total || 0;
 
     return { data, total };
 };
+
 
 /**
  * Finds a visitor by ID
@@ -154,7 +430,7 @@ export const findVisitorById = async (visitorId) => {
  * @returns {Promise<Object>} Populated lean visitor object
  */
 export const getVisitorDetails = async (visitorId) => {
-    return await Visitor.findById(visitorId)
+    const visitor = await Visitor.findById(visitorId)
         .populate({
             path: 'students',
             select: 'name hostelId roomNumber'
@@ -163,11 +439,34 @@ export const getVisitorDetails = async (visitorId) => {
             path: 'organizationId',
             select: 'name'
         })
-        .populate({
-            path: 'approvalTimeline.performedBy',
-            select: 'name role'
-        })
         .lean();
+
+    if (visitor && visitor.changeLog && visitor.changeLog.length > 0) {
+        for (let i = 0; i < visitor.changeLog.length; i++) {
+            const timelineEvent = visitor.changeLog[i];
+            if (timelineEvent.performedBy) {
+                // Try fetching from User collection
+                let userDoc = await User.findById(timelineEvent.performedBy, 'name role').lean();
+                if (!userDoc) {
+                    // Fallback to Parent collection
+                    let parentDoc = await Parent.findById(timelineEvent.performedBy, 'parentName').lean();
+                    if (parentDoc) {
+                        userDoc = {
+                            _id: parentDoc._id,
+                            name: parentDoc.parentName || 'Parent',
+                            role: 'parent'
+                        };
+                    }
+                }
+
+                if (userDoc) {
+                    timelineEvent.performedBy = userDoc;
+                }
+            }
+        }
+    }
+
+    return visitor;
 };
 
 /**
@@ -221,11 +520,17 @@ export const getDashboardStats = async (role, context) => {
         }
         case 'admin': {
             const orgFilter = { organizationId: context.organizationId };
+
+            const Student = mongoose.model('Student');
+            const adminStudents = await Student.find({ organizationId: context.organizationId }, '_id').lean();
+            const adminStudentIds = adminStudents.map(s => s._id);
+            const visitFilter = { students: { $in: adminStudentIds } };
+
             const [pending, approved, inside, todaysVisits] = await Promise.all([
                 Visitor.countDocuments({ ...orgFilter, approvalStatus: VISITOR_STATUS.PENDING }),
                 Visitor.countDocuments({ ...orgFilter, approvalStatus: VISITOR_STATUS.APPROVED }),
-                VisitorVisit.countDocuments({ ...orgFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN }),
-                VisitorVisit.countDocuments({ ...orgFilter, checkInTime: { $gte: today, $lte: endOfToday } })
+                VisitorVisit.countDocuments({ ...visitFilter, status: VISITOR_VISIT_STATUS.CHECKED_IN }),
+                VisitorVisit.countDocuments({ ...visitFilter, checkInTime: { $gte: today, $lte: endOfToday } })
             ]);
             stats.pendingApproval = pending;
             stats.approvedVisitors = approved;
@@ -376,94 +681,7 @@ export const getSuperAdminHostelVisitSummary = async (matchStage, skip, limit, s
     return [];
 };
 
-// Rewritten optimized version:
-export const getSuperAdminHostelVisitSummaryAggregated = async (matchStage, searchMatchStage, skip, limit, sortStage) => {
-    const pipeline = [
-        { $match: matchStage }, // usually empty or organization-wide if we support it, but for SuperAdmin it's {}
-        {
-            $group: {
-                _id: "$hostelId",
-                totalVisits: { $sum: 1 },
-                inside: {
-                    $sum: {
-                        $cond: [{ $eq: ["$status", VISITOR_VISIT_STATUS.CHECKED_IN] }, 1, 0]
-                    }
-                },
-                completed: {
-                    $sum: {
-                        $cond: [{ $eq: ["$status", VISITOR_VISIT_STATUS.COMPLETED] }, 1, 0]
-                    }
-                }
-            }
-        },
-        {
-            $lookup: {
-                from: 'hostels',
-                localField: '_id',
-                foreignField: '_id',
-                as: 'hostelInfo'
-            }
-        },
-        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
-        {
-            $lookup: {
-                from: 'users',
-                localField: 'hostelInfo.wardens',
-                foreignField: '_id',
-                as: 'wardenDocs'
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                hostelId: '$_id',
-                hostelName: { $ifNull: ['$hostelInfo.name', 'Unknown'] },
-                totalVisits: 1,
-                inside: 1,
-                completed: 1,
-                wardenName: {
-                    $cond: {
-                        if: { $gt: [{ $size: "$wardenDocs" }, 0] },
-                        then: {
-                            $reduce: {
-                                input: "$wardenDocs.name",
-                                initialValue: "",
-                                in: {
-                                    $cond: {
-                                        if: { $eq: ["$$value", ""] },
-                                        then: "$$this",
-                                        else: { $concat: ["$$value", ", ", "$$this"] }
-                                    }
-                                }
-                            }
-                        },
-                        else: "Unassigned"
-                    }
-                }
-            }
-        }
-    ];
 
-    if (Object.keys(searchMatchStage).length > 0) {
-        pipeline.push({ $match: searchMatchStage });
-    }
-
-    pipeline.push({ $sort: sortStage });
-
-    pipeline.push({
-        $facet: {
-            metadata: [{ $count: 'total' }],
-            data: [{ $skip: skip }, { $limit: limit }]
-        }
-    });
-
-    const result = await VisitorVisit.aggregate(pipeline);
-
-    const data = result[0].data;
-    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
-
-    return { data, total };
-};
 
 
 /**
@@ -491,7 +709,7 @@ export const getSuperAdminHostelVisitorSummaryAggregated = async (matchStage, se
         {
             $lookup: {
                 from: 'students',
-                localField: 'students',
+                localField: 'studentId',
                 foreignField: '_id',
                 as: 'studentDocs'
             }
@@ -505,12 +723,39 @@ export const getSuperAdminHostelVisitorSummaryAggregated = async (matchStage, se
         {
             $group: {
                 _id: '$hostelId',
-                totalVisitors: { $sum: 1 },
+                uniqueVisitors: { $addToSet: '$visitorId' },
+                uniquePending: {
+                    $addToSet: {
+                        $cond: [{ $eq: ['$status', 'Pending'] }, '$visitorId', null]
+                    }
+                },
+                uniqueApproved: {
+                    $addToSet: {
+                        $cond: [{ $eq: ['$status', 'Approved'] }, '$visitorId', null]
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                totalVisitors: { $size: '$uniqueVisitors' },
                 pendingApprovals: {
-                    $sum: { $cond: [{ $eq: ['$approvalStatus', 'Pending'] }, 1, 0] }
+                    $size: {
+                        $filter: {
+                            input: '$uniquePending',
+                            as: 'id',
+                            cond: { $ne: ['$$id', null] }
+                        }
+                    }
                 },
                 approvedVisitors: {
-                    $sum: { $cond: [{ $eq: ['$approvalStatus', 'Approved'] }, 1, 0] }
+                    $size: {
+                        $filter: {
+                            input: '$uniqueApproved',
+                            as: 'id',
+                            cond: { $ne: ['$$id', null] }
+                        }
+                    }
                 }
             }
         },
@@ -545,7 +790,7 @@ export const getSuperAdminHostelVisitorSummaryAggregated = async (matchStage, se
         }
     ];
 
-    const result = await Visitor.aggregate(pipeline);
+    const result = await VisitRequest.aggregate(pipeline);
 
     const data = result[0].data;
     const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
@@ -553,186 +798,8 @@ export const getSuperAdminHostelVisitorSummaryAggregated = async (matchStage, se
     return { data, total };
 };
 
-export const getVisitorVisits = async (matchStage, searchMatchStage, sortStage, skip, limit) => {
-    const pipeline = [
-        { $match: matchStage },
-        // Extract refId safely to ensure $lookup can resolve it reliably
-        {
-            $addFields: {
-                tempVisitorRefId: "$visitor.refId",
-                tempVisitorRefType: "$visitor.refType"
-            }
-        },
-        // Lookup Visitor or Parent (Polymorphic)
-        {
-            $lookup: {
-                from: 'visitors',
-                localField: 'tempVisitorRefId',
-                foreignField: '_id',
-                as: 'visitorDocs'
-            }
-        },
-        {
-            $lookup: {
-                from: 'parents',
-                localField: 'tempVisitorRefId',
-                foreignField: '_id',
-                as: 'parentDocs'
-            }
-        },
-        { $unwind: { path: '$visitorDocs', preserveNullAndEmptyArrays: true } },
-        { $unwind: { path: '$parentDocs', preserveNullAndEmptyArrays: true } },
-        {
-            $addFields: {
-                visitorInfo: {
-                    name: {
-                        $cond: {
-                            if: { $eq: ['$tempVisitorRefType', 'Visitor'] },
-                            then: '$visitorDocs.name',
-                            else: '$parentDocs.parentName'
-                        }
-                    },
-                    phone: {
-                        $cond: {
-                            if: { $eq: ['$tempVisitorRefType', 'Visitor'] },
-                            then: '$visitorDocs.phone',
-                            else: '$parentDocs.phone'
-                        }
-                    }
-                }
-            }
-        },
-        // Lookup Students
-        {
-            $lookup: {
-                from: 'students',
-                localField: 'students',
-                foreignField: '_id',
-                as: 'studentDocs'
-            }
-        },
-        // Lookup Hostel
-        {
-            $lookup: {
-                from: 'hostels',
-                localField: 'hostelId',
-                foreignField: '_id',
-                as: 'hostelInfo'
-            }
-        },
-        { $unwind: { path: '$hostelInfo', preserveNullAndEmptyArrays: true } },
-        // Add Room Number logic based on the first student
-        {
-            $lookup: {
-                from: 'rooms',
-                localField: 'studentDocs.roomId', // array of room IDs
-                foreignField: '_id',
-                as: 'roomDocs'
-            }
-        },
-        // Calculate fields and project
-        {
-            $project: {
-                _id: 0,
-                visitId: '$_id',
-                visitorName: '$visitorInfo.name',
-                visitorPhone: '$visitorInfo.phone', // included temporarily for search, removed later if needed
-                studentNames: {
-                    $reduce: {
-                        input: "$studentDocs.name",
-                        initialValue: "",
-                        in: {
-                            $cond: {
-                                if: { $eq: ["$$value", ""] },
-                                then: "$$this",
-                                else: { $concat: ["$$value", ", ", "$$this"] }
-                            }
-                        }
-                    }
-                },
-                roomNumber: {
-                    $reduce: {
-                        input: "$studentDocs.roomNumber",
-                        initialValue: "",
-                        in: {
-                            $cond: {
-                                if: { $eq: ["$$value", ""] },
-                                then: "$$this",
-                                else: { $concat: ["$$value", ", ", "$$this"] }
-                            }
-                        }
-                    }
-                },
-                checkInTime: 1,
-                checkOutTime: 1,
-                status: 1,
-                hostelName: '$hostelInfo.name'
-            }
-        }
-    ];
 
-    if (Object.keys(searchMatchStage).length > 0) {
-        pipeline.push({ $match: searchMatchStage });
-    }
 
-    pipeline.push({ $sort: sortStage });
-
-    pipeline.push({
-        $facet: {
-            metadata: [{ $count: 'total' }],
-            data: [
-                { $skip: skip },
-                { $limit: limit },
-                { $project: { visitorPhone: 0 } }
-            ]
-        }
-    });
-
-    const result = await VisitorVisit.aggregate(pipeline);
-
-    const data = result[0].data;
-    const total = result[0].metadata[0] ? result[0].metadata[0].total : 0;
-
-    return { data, total };
-};
-
-/**
- * Fetches complete details of a single visit using lean populate
- * @param {String} visitId 
- * @returns {Promise<Object>}
- */
-export const getVisitDetailsById = async (visitId) => {
-    return await VisitorVisit.findById(visitId)
-        .populate({
-            path: 'visitor.refId',
-            select: 'name parentName phone relationship address idProofType idProofNumber email'
-        })
-        .populate({
-            path: 'students',
-            select: 'name studentId roomNumber studentId',
-        })
-        .populate({
-            path: 'hostelId',
-            select: 'name'
-        })
-        .populate({
-            path: 'organizationId',
-            select: 'name'
-        })
-        .populate({
-            path: 'checkedInBy',
-            select: 'name role'
-        })
-        .populate({
-            path: 'checkedOutBy',
-            select: 'name role'
-        })
-        .populate({
-            path: 'visitTimeline.performedBy',
-            select: 'name role'
-        })
-        .lean();
-};
 
 /**
  * Fetches expired visits that need to be auto-completed.
@@ -744,14 +811,14 @@ export const getExpiredVisits = async (batchSize = 50) => {
         status: VISITOR_VISIT_STATUS.CHECKED_IN,
         expectedExitTime: { $lte: new Date() }
     })
-        .select('_id checkInTime expectedExitTime visitor students hostelId organizationId')
+        .select('_id checkInTime expectedExitTime visitor students hostelId')
         .populate({
             path: 'visitor.refId',
             select: 'name parentName phone'
         })
         .populate({
             path: 'students',
-            select: 'name studentId'
+            select: 'name studentId organizationId'
         })
         .limit(batchSize)
         .lean();
@@ -796,5 +863,163 @@ export const updateVisitor = async (visitorId, updateData) => {
         visitorId,
         { $set: updateData },
         { new: true, runValidators: true }
-    ).select('name phone email address photoUrl updatedAt');
+    ).select('name phone email address updatedAt');
+};
+
+/**
+ * Updates visitor fields and appends a changeLog entry atomically.
+ * @param {String} visitorId 
+ * @param {Object} updateData 
+ * @param {Object} changeLogEntry 
+ */
+export const updateVisitorProfileFields = async (visitorId, updateData, changeLogEntry, session = null) => {
+    return await Visitor.findByIdAndUpdate(
+        visitorId,
+        {
+            $set: updateData,
+            $push: { changeLog: changeLogEntry }
+        },
+        { new: true, runValidators: true, session }
+    );
+};
+
+
+
+/**
+ * Parent Module: Gets a specific Visitor's VisitRequests linked to a specific Parent
+ */
+export const getParentVisitRequests = async (visitorId, parentId) => {
+    return await VisitRequest.find({ visitorId, parentId })
+        .populate('studentId', 'name roomNumber')
+        .sort({ createdAt: -1 })
+        .lean();
+};
+
+// ============================================================================
+// Multi-Student Approval Methods
+// ============================================================================
+
+/**
+ * Fetches all Pending VisitRequests for a visitor, populated with student auth data
+ * @param {String} visitorId 
+ * @returns {Promise<Array>}
+ */
+export const getPendingVisitRequestsByVisitor = async (visitorId) => {
+    return await VisitRequest.find({
+        visitorId,
+        status: 'Pending'
+    })
+        .populate('studentId', 'name organizationId batchId hostelId')
+        .lean();
+};
+
+/**
+ * Atomically updates multiple VisitRequests from Pending to the new status
+ * @param {Array<String>} requestIds 
+ * @param {String} newStatus 
+ * @param {Object} timelineEntry 
+ * @returns {Promise<Object>} Mongoose Update Result
+ */
+export const bulkUpdateVisitRequestStatus = async (requestIds, newStatus, timelineEntry) => {
+    return await VisitRequest.updateMany(
+        {
+            _id: { $in: requestIds },
+            status: 'Pending' // Optimistic lock condition
+        },
+        {
+            $set: { status: newStatus },
+            $push: { approvalTimeline: timelineEntry }
+        }
+    );
+};
+
+
+/**
+ * Finds a single VisitRequest and populates its student with auth data
+ * @param {String} visitRequestId 
+ * @param {Object} session Optional mongoose session
+ */
+export const findVisitRequestWithAuthorizationData = async (visitRequestId, session = null) => {
+    return await VisitRequest.findById(visitRequestId)
+        .populate('studentId', 'organizationId batchId hostelId')
+        .session(session)
+        .lean();
+};
+
+/**
+ * Approves a single VisitRequest
+ * @param {String} visitRequestId 
+ * @param {Object} timelineEntry 
+ * @param {Object} session 
+ */
+export const approveVisitRequest = async (visitRequestId, timelineEntry, session = null) => {
+    return await VisitRequest.findByIdAndUpdate(
+        visitRequestId,
+        {
+            $set: {
+                status: VISITOR_STATUS.APPROVED
+            },
+            $push: { approvalTimeline: timelineEntry }
+        },
+        { new: true, session }
+    );
+};
+
+/**
+ * Rejects a single VisitRequest
+ * @param {String} visitRequestId 
+ * @param {Object} timelineEntry 
+ * @param {Object} session 
+ */
+export const rejectVisitRequest = async (visitRequestId, timelineEntry, session = null) => {
+    return await VisitRequest.findByIdAndUpdate(
+        visitRequestId,
+        {
+            $set: { status: 'Rejected' },
+            $push: { approvalTimeline: timelineEntry }
+        },
+        { new: true, session }
+    );
+};
+
+/**
+ * Adds students to an actively checked-in visit
+ * @param {String} visitId 
+ * @param {Array<String>} newStudentIds 
+ * @param {Object} timelineEntry 
+ */
+export const addStudentsToActiveVisit = async (visitId, newStudentIds, timelineEntry, expectedExitTime) => {
+    return await VisitorVisit.findByIdAndUpdate(
+        visitId,
+        {
+            $addToSet: {
+                students: { $each: newStudentIds }
+            },
+            $push: {
+                visitTimeline: timelineEntry
+            },
+            $set: {
+                expectedExitTime: expectedExitTime
+            }
+        },
+        { new: true }
+    );
+};
+
+/**
+ * Finds if an active VisitRequest (Pending or Approved) exists for a given parent and visitor.
+ * Optionally restrict to specific studentIds.
+ */
+export const findActiveVisitRequestForParent = async (visitorId, parentId, studentIds = null) => {
+    const query = {
+        visitorId,
+        parentId,
+        status: { $in: [VISITOR_STATUS.PENDING, VISITOR_STATUS.APPROVED] }
+    };
+
+    if (studentIds && studentIds.length > 0) {
+        query.studentId = { $in: studentIds };
+    }
+
+    return await VisitRequest.findOne(query).lean();
 };

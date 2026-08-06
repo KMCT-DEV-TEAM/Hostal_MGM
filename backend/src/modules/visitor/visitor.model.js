@@ -1,28 +1,35 @@
 import mongoose from 'mongoose';
 import {
-    VISITOR_STATUS_VALUES,
-    VISITOR_APPROVAL_ACTION_VALUES,
     ID_PROOF_TYPE_VALUES,
-    VISITOR_STATUS
+    VISITOR_PROFILE_STATUS,
+    VISITOR_PROFILE_STATUS_VALUES,
+    VISITOR_CHANGE_LOG_ACTION_VALUES
 } from './visitor.constant.js';
 
-const approvalTimelineSchema = new mongoose.Schema(
+// ── Change Log Entry ──────────────────────────────────────────────────────────
+// Immutable audit trail entry. Every status change and profile mutation
+// appends one entry here. Entries are never modified or deleted.
+const changeLogEntrySchema = new mongoose.Schema(
     {
         action: {
             type: String,
-            enum: VISITOR_APPROVAL_ACTION_VALUES,
+            enum: VISITOR_CHANGE_LOG_ACTION_VALUES,
             required: true
         },
         performedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
             required: true
         },
-        remarks: {
+        performedByRole: {
+            type: String,
+            enum: ['parent', 'admin', 'super_admin'],
+            required: true
+        },
+        reason: {
             type: String,
             trim: true
         },
-        createdAt: {
+        timestamp: {
             type: Date,
             default: Date.now
         }
@@ -30,19 +37,14 @@ const approvalTimelineSchema = new mongoose.Schema(
     { _id: false }
 );
 
+// ── Visitor Schema ────────────────────────────────────────────────────────────
+// Visitor represents a real-world person — a shared, reusable identity record.
+// It does NOT belong to any organization, hostel, or parent.
+// Organization context is always derived from the Student in the VisitRequest.
 const visitorSchema = new mongoose.Schema(
     {
-        organizationId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Organization',
-            required: true
-        },
+        // ── Identity (immutable after creation — admin-only changes) ──────────
         name: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        relationship: {
             type: String,
             required: true,
             trim: true
@@ -67,6 +69,8 @@ const visitorSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+
+        // ── Contact / Optional ────────────────────────────────────────────────
         address: {
             type: String,
             trim: true
@@ -75,30 +79,75 @@ const visitorSchema = new mongoose.Schema(
             type: String,
             trim: true
         },
-        students: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Student',
-                required: true
-            }
-        ],
-        approvalStatus: {
+
+        // ── Lifecycle ─────────────────────────────────────────────────────────
+        // Replaces the legacy `isActive: Boolean` field.
+        // Valid transitions are enforced at the service layer.
+        //   Active      → Inactive | Blacklisted | Deleted
+        //   Inactive    → Active | Blacklisted | Deleted
+        //   Blacklisted → Active (Super Admin only) | Deleted
+        //   Deleted     → Active (Super Admin only — restore)
+        status: {
             type: String,
-            enum: VISITOR_STATUS_VALUES,
-            default: VISITOR_STATUS.PENDING
+            enum: VISITOR_PROFILE_STATUS_VALUES,
+            default: VISITOR_PROFILE_STATUS.ACTIVE,
+            required: true
         },
-        approvalTimeline: [approvalTimelineSchema]
+
+        // Soft delete timestamp. Set when status transitions to 'Deleted'.
+        // null when the profile is not deleted.
+        deletedAt: {
+            type: Date,
+            default: null
+        },
+
+        // ── Ownership (audit only — not an authorization gate) ────────────────
+        // Tracks who originally introduced this visitor to the system.
+        // Does NOT restrict who can edit. Admins own the profile.
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Parent',
+            required: true
+        },
+
+        // ── Audit Trail ───────────────────────────────────────────────────────
+        // Immutable log of all status changes and significant profile mutations.
+        // Append-only. Entries are never modified or deleted.
+        changeLog: {
+            type: [changeLogEntrySchema],
+            default: []
+        }
     },
     {
         timestamps: true
     }
 );
 
-// Indexes matching user requirements (organizationId, phone, student reference, status)
-visitorSchema.index({ organizationId: 1 });
-visitorSchema.index({ phone: 1 });
-visitorSchema.index({ students: 1 });
-visitorSchema.index({ approvalStatus: 1 });
-visitorSchema.index({ organizationId: 1, phone: 1 }, { unique: true }); // Prevent duplicate visitor records per organization
+// ── Indexes ───────────────────────────────────────────────────────────────────
+//
+// PRIMARY IDENTITY SIGNALS — globally unique indexes.
+// Phone, Email, and ID Proof are all treated as identity vectors.
+// A match on ANY of these will reuse the existing profile.
 
-export default mongoose.model('Visitor', visitorSchema);
+visitorSchema.index(
+    { idProofType: 1, idProofNumber: 1 },
+    { unique: true }
+);
+
+visitorSchema.index({ phone: 1 }, { unique: true });
+
+
+// FUZZY SIGNAL + ADMIN SEARCH — name.
+//   Supports case-insensitive name matching in potential-duplicate detection
+//   and general admin search by visitor name.
+visitorSchema.index({ name: 1 });
+
+// STATUS FILTER — for admin dashboards filtering by Active/Inactive/etc.
+visitorSchema.index({ status: 1 });
+
+const Visitor = mongoose.model('Visitor', visitorSchema);
+
+// Drop the legacy unique email index to allow multiple family members to use the same email
+Visitor.collection.dropIndex('email_1').catch(() => { });
+
+export default Visitor;

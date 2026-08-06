@@ -1,7 +1,7 @@
 import * as visitorService from './visitor.service.js';
 
 /**
- * Parent Creates a Visitor Profile
+ * Parent Creates a Visitor Profile + Visit Requests for multiple students
  * @route POST /parent/visitors
  */
 export const createVisitor = async (req, res) => {
@@ -13,18 +13,33 @@ export const createVisitor = async (req, res) => {
             });
         }
 
-        const newVisitor = await visitorService.createVisitorProfile(req.body, req.user);
+        req.body.confirmReuse = false;
+
+        const result = await visitorService.createVisitorProfile(req.body, req.user);
+
+        if (result.requiresConfirmation) {
+            return res.status(409).json({
+                success: false,
+                error: "VISITOR_EXISTS",
+                message: "We found an existing visitor profile matching these details. Please review the currently assigned students before proceeding.",
+                visitor: result.visitor,
+            });
+        }
+
+        const message = result.isNewProfile
+            ? "Your visitor has been registered and the visit request was submitted successfully."
+            : "Your visit request was submitted successfully for the existing visitor.";
 
         return res.status(201).json({
             success: true,
-            message: "Visitor registered successfully.",
-            data: newVisitor
+            message,
+            data: result
         });
 
     } catch (error) {
         const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
             ? "An internal server error occurred while registering the visitor."
             : error.message;
 
@@ -32,7 +47,92 @@ export const createVisitor = async (req, res) => {
 
         return res.status(statusCode).json({
             success: false,
-            message: message
+            message
+        });
+    }
+};
+
+/**
+ * Parent Confirms Reuse of a Visitor Profile + Visit Requests
+ * @route POST /parent/visitors/:visitorId/visit-requests
+ */
+export const confirmVisitorReuse = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const { visitorId } = req.params;
+        if (!visitorId) {
+            return res.status(400).json({
+                success: false,
+                message: "Visitor ID is required in the route."
+            });
+        }
+
+        req.body.confirmedVisitorId = visitorId;
+
+        const result = await visitorService.createVisitorProfile(req.body, req.user);
+
+        return res.status(201).json({
+            success: true,
+            message: "Existing visitor profile matched. Visit requests submitted successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
+            ? "An internal server error occurred while confirming the visitor."
+            : error.message;
+
+        console.error('[VisitorController] confirmVisitorReuse error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message
+        });
+    }
+};
+
+/**
+ * Parent Unassigns a Visitor from a Student
+ * @route PATCH /parent/students/:studentId/visitors/:visitorId/unassign
+ */
+export const unassignVisitor = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Missing parent authentication."
+            });
+        }
+
+        const { studentId, visitorId } = req.params;
+
+        await visitorService.unassignVisitorFromStudent(visitorId, studentId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor unassigned successfully."
+        });
+
+    } catch (error) {
+        const statusCode = error.status || 500;
+        const isDbError = ['MongoError', 'MongoServerError', 'ValidationError', 'CastError'].includes(error.name);
+        const message = (statusCode === 500 || isDbError) && !error.status
+            ? "An internal server error occurred while unassigning the visitor."
+            : error.message;
+
+        console.error('[VisitorController] unassignVisitor error:', error);
+
+        return res.status(statusCode).json({
+            success: false,
+            message
         });
     }
 };
@@ -79,7 +179,8 @@ export const listParentVisitors = async (req, res) => {
             });
         }
 
-        const result = await visitorService.listParentVisitors(req.query, req.user);
+        const explicitStudentId = req.query.studentId || null;
+        const result = await visitorService.listParentVisitors(req.query, req.user, explicitStudentId);
 
         return res.status(200).json({
             success: true,
@@ -97,6 +198,30 @@ export const listParentVisitors = async (req, res) => {
 };
 
 /**
+ * Gets Visitor Details for Parent
+ * @route GET /parent/visitors/:visitorId
+ */
+export const getParentVisitorDetails = async (req, res) => {
+    try {
+        const { visitorId } = req.params;
+        const result = await visitorService.getVisitorDetails(visitorId, req.user);
+
+        return res.status(200).json({
+            success: true,
+            message: "Visitor details fetched successfully.",
+            data: result
+        });
+
+    } catch (error) {
+        console.error('[VisitorController] getParentVisitorDetails Error:', error);
+        return res.status(error.status || 500).json({
+            success: false,
+            message: error.message || "Failed to fetch visitor details."
+        });
+    }
+};
+
+/**
  * Update visitor status (by parent or admin)
  */
 export const updateVisitorStatus = async (req, res) => {
@@ -104,7 +229,8 @@ export const updateVisitorStatus = async (req, res) => {
         const { visitorId } = req.params;
         const { status } = req.body;
 
-        const updatedVisitor = await visitorService.updateVisitorStatus(visitorId, status, req.user);
+        const studentId = req.student?.id;
+        const updatedVisitor = await visitorService.updateVisitorStatus(visitorId, status, req.user, studentId);
 
         return res.status(200).json({
             success: true,
@@ -165,7 +291,8 @@ export const getVisitorDetails = async (req, res) => {
     try {
         const { visitorId } = req.params;
 
-        const result = await visitorService.getVisitorDetails(visitorId, req.user);
+        const studentId = req.student?.id;
+        const result = await visitorService.getVisitorDetails(visitorId, req.user, studentId);
 
         return res.status(200).json({
             success: true,
@@ -181,71 +308,6 @@ export const getVisitorDetails = async (req, res) => {
             : error.message;
 
         console.error('[VisitorController] getVisitorDetails error:', error);
-
-        return res.status(statusCode).json({
-            success: false,
-            message: message
-        });
-    }
-};
-
-/**
- * Admin / Super Admin approves a visitor
- * @route PATCH /visitors/:visitorId/approve
- */
-export const approveVisitor = async (req, res) => {
-    try {
-        const { visitorId } = req.params;
-
-        const result = await visitorService.approveVisitor(visitorId, req.user);
-
-        return res.status(200).json({
-            success: true,
-            message: "Visitor approved successfully.",
-            data: result
-        });
-
-    } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while approving the visitor."
-            : error.message;
-
-        console.error('[VisitorController] approveVisitor error:', error);
-
-        return res.status(statusCode).json({
-            success: false,
-            message: message
-        });
-    }
-};
-
-/**
- * Admin / Super Admin rejects a visitor
- * @route PATCH /visitors/:visitorId/reject
- */
-export const rejectVisitor = async (req, res) => {
-    try {
-        const { visitorId } = req.params;
-        const { reason } = req.body;
-
-        const result = await visitorService.rejectVisitor(visitorId, reason, req.user);
-
-        return res.status(200).json({
-            success: true,
-            message: "Visitor rejected successfully.",
-            data: result
-        });
-
-    } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while rejecting the visitor."
-            : error.message;
-
-        console.error('[VisitorController] rejectVisitor error:', error);
 
         return res.status(statusCode).json({
             success: false,
@@ -329,34 +391,35 @@ export const checkInVisitor = async (req, res) => {
 };
 
 /**
- * Super Admin gets hostel-wise visit summary
- * @route GET /super-admin/visitor-visits/hostels
+ * Warden adds students to an active visit
+ * @route PATCH /warden/visits/:visitId/students
  */
-export const getSuperAdminHostelVisits = async (req, res) => {
+export const addStudentsToVisit = async (req, res) => {
     try {
-        if (!req.user) {
+        if (!req.user || !req.user.id) {
             return res.status(401).json({
                 success: false,
-                message: "Unauthorized: User context missing."
+                message: "Unauthorized: Missing warden authentication."
             });
         }
 
-        const result = await visitorService.getSuperAdminHostelVisits(req.query, req.user);
+        const { visitId } = req.params;
+        const result = await visitorService.addStudentsToVisit(visitId, req.body, req.user);
 
         return res.status(200).json({
             success: true,
-            message: "Hostel visits summary fetched successfully.",
-            ...result
+            message: "Students added to the active visit successfully.",
+            data: result
         });
 
     } catch (error) {
         const statusCode = error.status || 500;
         const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
         const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while fetching hostel visits."
+            ? "An internal server error occurred while adding students to the visit."
             : error.message;
 
-        console.error('[VisitorController] getSuperAdminHostelVisits error:', error);
+        console.error('[VisitorController] addStudentsToVisit error:', error);
 
         return res.status(statusCode).json({
             success: false,
@@ -364,6 +427,7 @@ export const getSuperAdminHostelVisits = async (req, res) => {
         });
     }
 };
+
 
 /**
  * Super Admin gets hostel-wise visitor summary
@@ -402,79 +466,6 @@ export const getSuperAdminHostelVisitors = async (req, res) => {
     }
 };
 
-/**
- * Super Admin, Admin, Warden, Parent and Student list visits
- * @route GET /visitor-visits
- */
-export const listVisitorVisits = async (req, res) => {
-    try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: User context missing."
-            });
-        }
-
-        const result = await visitorService.listVisitorVisits(req.query, req.user);
-        return res.status(200).json({
-            success: true,
-            message: "Visits fetched successfully.",
-            ...result
-        });
-
-    } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while fetching visits."
-            : error.message;
-
-        console.error('[VisitorController] listVisitorVisits error:', error);
-
-        return res.status(statusCode).json({
-            success: false,
-            message: message
-        });
-    }
-};
-
-/**
- * Gets complete visit details based on role authorization
- * @route GET /visitor-visits/:visitId
- */
-export const getVisitDetails = async (req, res) => {
-    try {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: User context missing."
-            });
-        }
-
-        const { visitId } = req.params;
-        const result = await visitorService.getVisitDetails(visitId, req.user);
-
-        return res.status(200).json({
-            success: true,
-            message: "Visit details fetched successfully.",
-            data: result
-        });
-
-    } catch (error) {
-        const statusCode = error.status || 500;
-        const isMongoError = error.name === 'MongoError' || error.name === 'ValidationError' || error.name === 'CastError';
-        const message = (statusCode === 500 || isMongoError) && !error.status
-            ? "An internal server error occurred while fetching visit details."
-            : error.message;
-
-        console.error('[VisitorController] getVisitDetails error:', error);
-
-        return res.status(statusCode).json({
-            success: false,
-            message: message
-        });
-    }
-};
 
 /**
  * Parent updates a Visitor Profile
@@ -490,7 +481,8 @@ export const updateVisitor = async (req, res) => {
         }
 
         const { visitorId } = req.params;
-        const updatedVisitor = await visitorService.updateVisitorProfile(visitorId, req.body, req.user);
+        const studentId = req.student?.id;
+        const updatedVisitor = await visitorService.updateVisitorProfile(visitorId, req.body, req.user, studentId);
 
         return res.status(200).json({
             success: true,
@@ -511,5 +503,75 @@ export const updateVisitor = async (req, res) => {
             success: false,
             message: message
         });
+    }
+};
+
+/**
+ * Approve a single VisitRequest
+ */
+export const approveVisitRequest = async (req, res, next) => {
+    try {
+        const { visitRequestId } = req.params;
+        const result = await visitorService.approveVisitRequest(visitRequestId, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'VisitRequest approved successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Reject a single VisitRequest
+ */
+export const rejectVisitRequest = async (req, res, next) => {
+    try {
+        const { visitRequestId } = req.params;
+        const { reason } = req.body;
+        const result = await visitorService.rejectVisitRequest(visitRequestId, reason, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'VisitRequest rejected successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Super Admin: Blacklist a visitor
+ */
+export const blacklistVisitor = async (req, res, next) => {
+    try {
+        const { visitorId } = req.params;
+        const { reason } = req.body;
+        const result = await visitorService.blacklistVisitorProfile(visitorId, reason, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'Visitor has been blacklisted successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Super Admin: Remove blacklist from a visitor
+ */
+export const removeBlacklistVisitor = async (req, res, next) => {
+    try {
+        const { visitorId } = req.params;
+        const result = await visitorService.removeBlacklistFromVisitorProfile(visitorId, req.user);
+        res.status(200).json({
+            success: true,
+            message: 'Blacklist removed from visitor successfully.',
+            data: result
+        });
+    } catch (error) {
+        next(error);
     }
 };

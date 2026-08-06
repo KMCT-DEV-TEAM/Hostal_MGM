@@ -1,9 +1,58 @@
 import React from 'react';
 import DataView from '@/components/ui/data-view/DataView';
-import { Edit, Phone, Building, Users, Download, Plus, DoorOpen, Handshake } from 'lucide-react';
+import { Edit, Phone, Building, Users, Download, Plus, DoorOpen, Handshake, Clock } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Dropdown from '@/components/ui/Dropdown';
+
+const AssignedStudentsDisplay = ({ students }) => {
+    if (!students || students.length === 0) return <span className="text-text-secondary">--</span>;
+
+    const firstStudent = students[0];
+    const hasMore = students.length > 1;
+
+    return (
+        <div className="flex items-center gap-1.5 relative group cursor-default">
+            <span className="font-medium text-text-primary truncate max-w-30" title={firstStudent.name || firstStudent}>
+                {firstStudent.name || firstStudent}
+            </span>
+            {hasMore && (
+                <span className="text-primary text-xs font-semibold px-1.5 py-0.5 bg-primary/10 rounded cursor-pointer whitespace-nowrap">
+                    +{students.length - 1}
+                </span>
+            )}
+
+            {hasMore && (
+                <div className="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-200 shadow-xl rounded-xl p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 before:absolute before:-top-2 before:left-4 before:w-4 before:h-4 before:bg-white before:border-l before:border-t before:border-gray-200 before:rotate-45">
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100 relative z-10">
+                        <h4 className="text-sm font-semibold text-text-primary">Assigned Students</h4>
+                    </div>
+                    <div className="flex flex-col gap-3 max-h-48 overflow-y-auto relative z-10">
+                        {students.map((student, idx) => (
+                            <div key={idx} className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-xs shrink-0">
+                                    {(student.name || 'S').charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex flex-col overflow-hidden">
+                                    <span className="text-sm font-medium text-text-primary truncate" title={student.name || student}>
+                                        {student.name || student}
+                                    </span>
+                                    {(student.roomNumber || student.grade) && (
+                                        <span className="text-[11px] text-text-secondary truncate">
+                                            {student.roomNumber && `Room ${student.roomNumber}`}
+                                            {student.roomNumber && student.grade && ' • '}
+                                            {student.grade && `Grade ${student.grade}`}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const VisitorListTableView = ({
     visitors,
@@ -36,43 +85,37 @@ const VisitorListTableView = ({
         },
         ...(userRole !== 'student' ? [{
             key: 'student',
-            header: 'Visiting Student',
-            accessor: (visitor) => visitor.students && visitor.students.length > 0
-                ? visitor.students.map(s => s.name || s).join(', ')
-                : '--',
-            icon: Users
+            header: 'Assigned Student',
+            renderCell: (visitor) => <AssignedStudentsDisplay students={visitor.linkedStudents || visitor.students} />
         }] : []),
         ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{
             key: 'room',
             header: 'Room No',
-            accessor: (visitor) => visitor.students && visitor.students.length > 0
-                ? visitor.students.map(s => s.roomNumber || s).join(', ')
-                : '--', icon: DoorOpen
+            accessor: (visitor) => {
+                const students = visitor.linkedStudents || visitor.students;
+                return students && students.length > 0
+                    ? students.map(s => s.roomNumber || s).join(', ')
+                    : '--';
+            }, icon: DoorOpen
         }] : []),
-        ...(['warden', 'super_admin'].includes(userRole) ? [{
-            key: 'organization',
-            header: 'Organization',
-            accessor: (visitor) => visitor.organizationName || '--',
-            icon: Building
-        }] : []),
-        ...(['admin', 'parent'].includes(userRole) ? [{
-            key: 'hostel',
-            header: 'Hostel',
-            accessor: (visitor) => visitor.hostelName || '--',
-            icon: Building
-        }] : []),
+        // ...(['admin', 'parent'].includes(userRole) ? [{
+        //     key: 'hostel',
+        //     header: 'Hostel',
+        //     accessor: (visitor) => visitor.hostelName || '--',
+        //     icon: Building
+        // }] : []),
         {
             key: 'phone',
             header: 'Phone',
             accessor: (visitor) => visitor.phone || '--',
             icon: Phone
         },
-        {
-            key: 'relation',
-            header: 'Relation',
-            accessor: (visitor) => visitor.relationship || visitor.relation || '--',
-            icon: Handshake
-        },
+        ...(['admin', 'super_admin', 'mentor'].includes(userRole) ? [{
+            key: 'pendingRequestsCount',
+            header: 'Pending Requests',
+            accessor: (visitor) => visitor.pendingRequestsCount > 0 ? visitor.pendingRequestsCount : 'None',
+            icon: Clock
+        }] : []),
         {
             key: 'status',
             header: 'Status',
@@ -117,13 +160,15 @@ const VisitorListTableView = ({
             // { icon: Phone, accessor: (visitor) => visitor.phone || '--' },
             ...(userRole !== 'student' ? [{
                 icon: Users,
-                accessor: (visitor) => visitor.students && visitor.students.length > 0 ? visitor.students.map(s => s.name || s).join(', ') : '--'
-            }] : []),
-            ...(['super_admin', 'admin', 'warden'].includes(userRole) ? [{
-                icon: Building,
-                accessor: (visitor) => visitor.students && visitor.students.length > 0
-                    ? visitor.students.map(s => s.roomNumber || s).join(', ')
-                    : '--',
+                accessor: (visitor) => <AssignedStudentsDisplay students={visitor.linkedStudents || visitor.students} />
+            }, {
+                icon: DoorOpen,
+                accessor: (visitor) => {
+                    const students = visitor.linkedStudents || visitor.students;
+                    return students && students.length > 0
+                        ? students.map(s => s.roomNumber || s).join(', ')
+                        : '--';
+                },
             }] : [])
         ],
         editable: userRole === 'parent',
@@ -136,9 +181,9 @@ const VisitorListTableView = ({
             <Dropdown
                 options={[
                     { value: 'All', label: 'All Status' },
-                    { value: 'Pending', label: 'Pending' },
-                    { value: 'Approved', label: 'Approved' },
-                    { value: 'Rejected', label: 'Rejected' }
+                    { label: 'Active', value: 'Active' },
+                    { label: 'Inactive', value: 'Inactive' },
+                    { label: 'Blacklisted', value: 'Blacklisted' },
                 ]}
                 value={statusFilter || 'All'}
                 onChange={(val) => onStatusFilterChange(val === 'All' ? '' : val)}
@@ -175,6 +220,7 @@ const VisitorListTableView = ({
     return (
         <DataView
             pageScrollMode={true}
+
             className="h-full border-none shadow-none bg-transparent"
             searchQuery={searchQuery}
             onSearchChange={(e) => onSearch(e.target.value)}

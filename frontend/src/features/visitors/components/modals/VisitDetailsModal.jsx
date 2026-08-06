@@ -8,33 +8,46 @@ import ActivityLog from '@/components/ui/ActivityLog';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { formatDateReadable, formatTime } from '@/utils/formatters';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
+import Button from '@/components/ui/Button';
+import AddStudentToVisitModal from './AddStudentToVisitModal';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLES } from '@/constants/roles';
 
-export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
+export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVisit }) {
+    const { user } = useAuthStore();
     const [visit, setVisit] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+
+    const fetchDetails = async (isBackground = false) => {
+        if (!isOpen || !visitId) {
+            setVisit(null);
+            return;
+        }
+
+        if (!isBackground) setIsLoading(true);
+        setError(null);
+
+        try {
+            const res = await getVisitDetails(visitId);
+            const updatedVisit = res.data || res;
+            setVisit(updatedVisit);
+            
+            if (isBackground && onUpdateVisit) {
+                // If this is a background refresh after an action, update the parent table row
+                const updatedStudentNames = updatedVisit.studentInformation?.map(s => s.studentName).join(', ');
+                onUpdateVisit(visitId, { studentNames: updatedStudentNames });
+            }
+        } catch (err) {
+            console.error("Failed to fetch visit details:", err);
+            setError("Failed to load details.");
+        } finally {
+            if (!isBackground) setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDetails = async () => {
-            if (!isOpen || !visitId) {
-                setVisit(null);
-                return;
-            }
-
-            setIsLoading(true);
-            setError(null);
-
-            try {
-                const res = await getVisitDetails(visitId);
-                setVisit(res.data || res);
-            } catch (err) {
-                console.error("Failed to fetch visit details:", err);
-                setError("Failed to load details.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchDetails();
     }, [isOpen, visitId]);
 
@@ -59,8 +72,8 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
     if (!visit) return null;
 
     const visitorName = visit.visitorInformation?.visitorName || 'Unknown';
-    const studentName = visit.studentInformation?.[0]?.studentName || 'Unknown';
-    const subtitle = `Visitor - ${studentName}`;
+    const studentNames = visit.quickSummary?.studentNames || visit.studentInformation?.[0]?.studentName || 'Unknown';
+    const subtitle = `Visitor - ${studentNames}`;
 
     // Helper for rendering Timeline
     const renderTimeline = () => {
@@ -79,33 +92,97 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
         const checkInDate = visit.visitInformation?.checkInTime;
         const checkOutDate = visit.visitInformation?.checkOutTime;
 
+
+
+        // Filter events that belong in the visual timeline
+        const visualTimelineEvents = (visit.timeline || []).filter(t => {
+            const action = t.action || '';
+            return action !== 'Visit Created' && action !== 'Visit Approved' && action !== 'Visit Rejected';
+        });
+
+        const hasCheckout = visualTimelineEvents.some(t => t.action?.toLowerCase().includes('check') && t.action?.toLowerCase().includes('out'));
+        const hasCheckin = visualTimelineEvents.some(t => t.action?.toLowerCase().includes('check') && t.action?.toLowerCase().includes('in'));
+
+        // Construct the steps array declaratively
+        const steps = [
+            // 1. Checked Out (Top placeholder if not completed)
+            ...(!hasCheckout ? [{
+                title: "Checked Out",
+                subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
+                status: checkoutStatus,
+                formattedDate: '--',
+                badgeLabel: 'Pending',
+                badgeColor: '#6B7280',
+                badgeBg: '#F3F4F6',
+                nodeColor: '#D1D5DB'
+            }] : []),
+
+            // 2. Map actual timeline events natively
+            ...visualTimelineEvents.map(t => {
+                let badgeLabel = 'Updated';
+                let badgeColor = '#8B5CF6';
+                let badgeBg = '#EDE9FE';
+                let nodeColor = '#8B5CF6';
+                let status = 'approved';
+
+                const actionLower = (t.action || '').toLowerCase();
+
+                if (actionLower.includes('check') && actionLower.includes('out')) {
+                    badgeLabel = 'Completed';
+                    badgeColor = '#3B82F6';
+                    badgeBg = '#EFF6FF';
+                    nodeColor = '#3B82F6';
+                } else if (actionLower.includes('check') && actionLower.includes('in')) {
+                    badgeLabel = 'Inside';
+                    badgeColor = '#10B981';
+                    badgeBg = '#D1FAE5';
+                    nodeColor = '#10B981';
+                }
+
+                return {
+                    title: t.action ? t.action.replace(/_/g, ' ') : 'Action',
+                    subtitle: t.performedBy ? `${t.performedBy} - ${t.role || 'System'}` : 'System',
+                    remarks: t.remarks,
+                    status: status,
+                    formattedDate: t.createdAt ? `${formatDateReadable(t.createdAt)} | ${formatTime(t.createdAt)}` : '--',
+                    badgeLabel,
+                    badgeColor,
+                    badgeBg,
+                    nodeColor
+                };
+            }),
+
+            // 3. Checked In (Bottom placeholder if not checked in yet)
+            ...(!hasCheckin ? [{
+                title: "Checked In",
+                subtitle: visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden',
+                status: checkinStatus,
+                formattedDate: '--',
+                badgeLabel: checkinStatus === 'submitted' ? 'Waiting' : 'Pending',
+                badgeColor: checkinStatus === 'submitted' ? '#F59E0B' : '#6B7280',
+                badgeBg: checkinStatus === 'submitted' ? '#FEF3C7' : '#F3F4F6',
+                nodeColor: '#D1D5DB'
+            }] : [])
+        ];
+
         return (
             <div className="relative pl-8 space-y-10 before:absolute before:top-4 before:bottom-4 before:left-[11px] before:w-0.5 before:bg-gray-200">
-                <TimelineStep
-                    title="Checked Out"
-                    subtitle={visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden'}
-                    status={checkoutStatus}
-                    formattedDate={checkOutDate ? `${formatDateReadable(checkOutDate)} | ${formatTime(checkOutDate)}` : '--'}
-                    badgeLabel={checkoutStatus === 'approved' ? 'Completed' : 'Pending'}
-                    badgeColor={checkoutStatus === 'approved' ? '#3B82F6' : '#6B7280'}
-                    badgeBg={checkoutStatus === 'approved' ? '#EFF6FF' : '#F3F4F6'}
-                    nodeColor={checkoutStatus === 'approved' ? '#3B82F6' : '#D1D5DB'}
-                    avatarBg="#1E3A8A"
-                    avatarColor="#FFFFFF"
-                />
-
-                <TimelineStep
-                    title="Checked In"
-                    subtitle={visit.wardenInformation?.name ? `${visit.wardenInformation.name} - Warden` : 'Warden'}
-                    status={checkinStatus}
-                    formattedDate={checkInDate ? `${formatDateReadable(checkInDate)} | ${formatTime(checkInDate)}` : '--'}
-                    badgeLabel={checkinStatus === 'approved' ? 'Inside' : (checkinStatus === 'submitted' ? 'Waiting' : 'Pending')}
-                    badgeColor={checkinStatus === 'approved' ? '#10B981' : '#6B7280'}
-                    badgeBg={checkinStatus === 'approved' ? '#D1FAE5' : '#F3F4F6'}
-                    nodeColor={checkinStatus === 'approved' ? '#10B981' : '#D1D5DB'}
-                    avatarBg="#1E3A8A"
-                    avatarColor="#FFFFFF"
-                />
+                {steps.map((step, idx) => (
+                    <TimelineStep
+                        key={idx}
+                        title={step.title}
+                        subtitle={step.subtitle}
+                        status={step.status}
+                        formattedDate={step.formattedDate}
+                        badgeLabel={step.badgeLabel}
+                        badgeColor={step.badgeColor}
+                        badgeBg={step.badgeBg}
+                        nodeColor={step.nodeColor}
+                        avatarBg="#1E3A8A"
+                        avatarColor="#FFFFFF"
+                        remarks={step.remarks}
+                    />
+                ))}
             </div>
         );
     };
@@ -136,13 +213,36 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
                     </DetailCard>
 
                     {/* Visit Information */}
-                    <DetailCard title="Visit Information" subtitle="Basic Details about the Visit">
+                    <DetailCard 
+                        title="Visit Information" 
+                        subtitle="Basic Details about the Visit"
+                        headerAction={
+                            visit.quickSummary?.currentStatus === 'Checked In' && user?.role === ROLES.WARDEN && (
+                                <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    fullWidth={false} 
+                                    onClick={() => setIsAddStudentModalOpen(true)}
+                                    className="text-xs px-3"
+                                >
+                                    Add Student
+                                </Button>
+                            )
+                        }
+                    >
                         <div className="space-y-1">
-                            <DetailRow label="Visiting Student" value={`${studentName} ${visit.studentInformation?.[0]?.roomNo ? `(Room ${visit.studentInformation?.[0]?.roomNo})` : ''}`} />
-                            <DetailRow label="Room No" value={visit.studentInformation?.[0]?.roomNo} />
+                            <DetailRow 
+                                label="Visiting Student(s)" 
+                                value={
+                                    visit.studentInformation?.length > 0 
+                                        ? visit.studentInformation.map(s => `${s.studentName} (Room ${s.roomNumber || s.roomNo || '--'})`).join(', ') 
+                                        : studentNames
+                                } 
+                            />
                             <DetailRow label="Purpose of Visit" value={visit.visitInformation?.purpose} />
                             <DetailRow label="Check-In" value={visit.visitInformation?.checkInTime ? `${formatTime(visit.visitInformation.checkInTime)}, ${formatDateReadable(visit.visitInformation.checkInTime)}` : '--'} />
                             <DetailRow label="Check-Out" value={visit.visitInformation?.checkOutTime ? `${formatTime(visit.visitInformation.checkOutTime)}, ${formatDateReadable(visit.visitInformation.checkOutTime)}` : '--'} />
+                            <DetailRow label="Duration" value={visit.visitInformation?.visitDuration || '--'} />
                             <DetailRow label="Status" value={<StatusBadge status={visit.quickSummary?.currentStatus} />} />
                         </div>
                     </DetailCard>
@@ -170,6 +270,14 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId }) {
                     </DetailCard>
                 </div>
             </div>
+
+            <AddStudentToVisitModal
+                isOpen={isAddStudentModalOpen}
+                onClose={() => setIsAddStudentModalOpen(false)}
+                visit={visit}
+                visitId={visitId}
+                onSuccess={() => fetchDetails(true)}
+            />
         </Modal>
     );
 }
