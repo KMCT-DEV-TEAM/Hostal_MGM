@@ -11,8 +11,9 @@ const MobilePageHeader = () => {
     const { unreadCount } = useNotifications();
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 pt-8 pb-4 px-4 bg-background-secondary shrink-0 shadow-sm pointer-events-none">
-            <div className="bg-white rounded-full py-4 px-4 flex items-center justify-between shadow-sm border border-gray-50 pointer-events-auto">
+        <div className="fixed top-0 left-0 right-0 z-50 py-4 px-4 pointer-events-none">
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-accent" />
+            <div className="relative z-10 bg-white rounded-full py-4 px-4 flex items-center justify-between shadow-sm border border-gray-50 pointer-events-auto">
 
                 {/* Left Action (Back) */}
                 <div className="w-8 flex items-center justify-start">
