@@ -25,7 +25,9 @@ const UserLayout = () => {
 
 
             {/* Header Area */}
-            {!isMobile && (
+            {isMobile ? (
+                headerVariant !== "none" && <MobileHeader />
+            ) : (
                 <div className="h-[82px] shrink-0">
                     <Navbar onMenuClick={() => setIsSidebarOpen(prev => !prev)} />
                 </div>
@@ -41,24 +43,13 @@ const UserLayout = () => {
                 )}
 
                 {/* Main Content Area */}
-                <main className={`flex-1 overflow-y-auto w-full relative ${isMobile ? 'pb-24 pt-24 bg-transparent' : ''}`}>
+                <main className={`flex-1 overflow-y-auto w-full relative ${isMobile ? (headerVariant !== "none" ? 'pt-[104px] ' : '') + (footerVisible ? 'pb-[104px]' : '') : ''}`}>
                     {userRole === ROLES.PARENT ? <ParentBootstrap /> : <Outlet />}
                 </main>
             </div>
 
-            {/* Floating Header */}
-            {isMobile && headerVariant !== "none" && (
-                <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
-                    <MobileHeader />
-                </div>
-            )}
-
-            {/* Floating Footer */}
-            {isMobile && footerVisible && (
-                <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
-                    <MobileFooter />
-                </div>
-            )}
+            {/* Footer Area */}
+            {isMobile && footerVisible && <MobileFooter />}
 
             {/* Global Modals */}
             <AttendanceQRModal />
