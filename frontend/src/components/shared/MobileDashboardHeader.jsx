@@ -26,8 +26,8 @@ const MobileDashboardHeader = () => {
     const hasMultipleStudents = user?.role === ROLES.PARENT && user?.students?.length > 1;
 
     return (
-        <div className="pt-8 pb-4 px-4 bg-background-secondary">
-            <div className="bg-white rounded-3xl p-2 flex items-center justify-between shadow-sm border border-gray-50">
+        <div className="pt-6 px-4 bg-linear-to-b from-background via-background/95 to-transparent pointer-events-none">
+            <div className="bg-white rounded-[28px] p-2 flex items-center justify-between shadow-sm border border-gray-100 pointer-events-auto shadow-black/5">
                 <Link to="/dashboard/profile" className="flex items-center gap-3 pl-1 hover:opacity-80 transition-opacity">
                     {user?.profileImage ? (
                         <img

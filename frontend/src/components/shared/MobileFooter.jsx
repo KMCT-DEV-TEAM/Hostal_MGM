@@ -28,8 +28,8 @@ const MobileFooter = () => {
     ];
 
     return (
-        <div className="pb-6 pt-3 px-6 bg-background-secondary">
-            <div className="bg-white rounded-[32px] p-2 flex items-center justify-between shadow-sm border border-gray-50">
+        <div className="pb-4 px-4 bg-linear-to-t from-white via-background/95 to-transparent pointer-events-none">
+            <div className="bg-white rounded-4xl p-2 flex items-center justify-between shadow-sm border border-gray-100 pointer-events-auto shadow-black/5">
                 {navItems.map((item) => {
                     const Icon = item.icon;
 
