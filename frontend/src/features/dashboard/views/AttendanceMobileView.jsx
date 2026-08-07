@@ -21,7 +21,7 @@ const AttendanceMobileView = ({
   const activeRole = userRole || authUser?.role;
 
   return (
-    <div className="w-full h-full p-4 flex flex-col bg-background-secondary gap-4 overflow-y-auto">
+    <div className="w-full p-4 flex flex-col gap-4">
       {/* Today's Status Card */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-50 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">

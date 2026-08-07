@@ -43,7 +43,7 @@ export default function LeavesMobileView({
         ];
 
     return (
-        <div className="w-full h-full p-4 overflow-y-auto bg-background-secondary">
+        <div className="w-full p-4">
             <MobileListContainer
                 tabs={tabs}
                 stats={stats}

@@ -104,8 +104,8 @@ const ComplaintMobileView = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] w-full overflow-hidden">
-      <div className="px-5 pt-6 pb-4 bg-[#f8fafc] shrink-0">
+    <div className="flex flex-col w-full">
+      <div className="px-5 pt-6 pb-4 shrink-0">
         <h3 className="text-[19px] font-bold text-gray-900 mb-5">complaint Management</h3>
 
         <div className="bg-white rounded-[14px] p-1 flex shadow-sm border border-gray-50">
@@ -132,7 +132,7 @@ const ComplaintMobileView = ({
 
 
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
+      <div className="flex-1 px-5 pb-4">
         <MobileListContainer
           showSearch={true}
           searchPlaceholder="Search requests..."

@@ -111,7 +111,7 @@ export default function LeaveDetailsMobileView({ request, onBack, userRole, onAc
     };
 
     return (
-        <div className="w-full h-full p-4 overflow-y-auto bg-background-secondary space-y-4">
+        <div className="w-full p-4 space-y-4">
 
             {/* Status Card */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-50">
