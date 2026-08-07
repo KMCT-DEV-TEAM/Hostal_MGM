@@ -18,6 +18,7 @@ import {
   getParentStudentsService
 } from "./parent.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
+import { createLogDb } from "../logs/log.service.js";
 
 const createParent = asyncHandler(async (req, res) => {
   const {
@@ -73,6 +74,16 @@ const createParent = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
+  await createLogDb({
+    action: "Created Parent",
+    entityType: "Parent",
+    entityId: result.parent._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Created parent account for ${result.parent.parentName} (${result.parent.email})`,
+    status: "success"
+  });
+
   return sendSuccess(
     res,
     201,
@@ -104,6 +115,16 @@ const updateParent = asyncHandler(async (req, res) => {
   if (!result) {
     return sendError(res, 404, "Parent not found");
   }
+
+  await createLogDb({
+    action: "Updated Parent",
+    entityType: "Parent",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Updated parent profile details`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, "Parent updated successfully", {
     data: {
@@ -177,6 +198,16 @@ const changeParentEmail = asyncHandler(async (req, res) => {
   await parent.save();
   await deleteOtpDb(normalizedNewEmail);
 
+  await createLogDb({
+    action: "Changed Parent Email",
+    entityType: "Parent",
+    entityId: parent._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, "Parent email updated successfully", {
     data: {
       parentId: parent._id,
@@ -202,6 +233,16 @@ const toggleParentStatus = asyncHandler(async (req, res) => {
   const message = result.parentProfile.isActive
     ? "Parent activated successfully"
     : "Parent deactivated successfully";
+
+  await createLogDb({
+    action: result.parentProfile.isActive ? "Activated Parent" : "Deactivated Parent",
+    entityType: "Parent",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent status changed to ${result.parentProfile.isActive ? 'Active' : 'Inactive'}`,
+    status: "success"
+  });
 
   return sendSuccess(res, 200, message, {
     data: {
@@ -324,6 +365,16 @@ const setDefaultGuardian = asyncHandler(async (req, res) => {
     ? "Parent set as default guardian successfully"
     : "Parent removed as default guardian successfully";
 
+  await createLogDb({
+    action: defaultGuardian ? "Set Default Guardian" : "Removed Default Guardian",
+    entityType: "Parent",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent ${defaultGuardian ? 'set as' : 'removed as'} default guardian`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, message, {
     data: {
       parentId: result.parentProfile._id,
@@ -373,6 +424,15 @@ const bulkUpdateParentStatus = asyncHandler(async (req, res) => {
   }
 
   const result = await bulkUpdateParentStatusDb(ids, isActive);
+
+  await createLogDb({
+    action: "Bulk Updated Parent Status",
+    entityType: "Parent",
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Bulk updated ${result.modifiedCount} parents to ${isActive ? 'Active' : 'Inactive'}`,
+    status: "success"
+  });
 
   return sendSuccess(
     res,
@@ -454,6 +514,16 @@ const resolveParentConflict = asyncHandler(async (req, res) => {
   if (!result) {
     return sendError(res, 404, "Student not found");
   }
+
+  await createLogDb({
+    action: "Resolved Parent Conflict",
+    entityType: "Parent",
+    entityId: result.parent?._id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent conflict resolved via action: ${resolutionAction}`,
+    status: "success"
+  });
 
   return sendSuccess(
     res,

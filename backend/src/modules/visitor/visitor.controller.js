@@ -1,4 +1,5 @@
 import * as visitorService from './visitor.service.js';
+import { createLogDb } from '../logs/log.service.js';
 
 /**
  * Parent Creates a Visitor Profile + Visit Requests for multiple students
@@ -29,6 +30,16 @@ export const createVisitor = async (req, res) => {
         const message = result.isNewProfile
             ? "Your visitor has been registered and the visit request was submitted successfully."
             : "Your visit request was submitted successfully for the existing visitor.";
+
+        await createLogDb({
+            action: result.isNewProfile ? "Created Visitor" : "Created Visit Request",
+            entityType: "Visitor",
+            entityId: result.visitor?._id || "Unknown",
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Parent submitted a visit request`,
+            status: "success"
+        });
 
         return res.status(201).json({
             success: true,
@@ -77,6 +88,16 @@ export const confirmVisitorReuse = async (req, res) => {
 
         const result = await visitorService.createVisitorProfile(req.body, req.user);
 
+        await createLogDb({
+            action: "Created Visit Request",
+            entityType: "Visitor",
+            entityId: result.visitor?._id || visitorId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Parent confirmed reuse of visitor profile`,
+            status: "success"
+        });
+
         return res.status(201).json({
             success: true,
             message: "Existing visitor profile matched. Visit requests submitted successfully.",
@@ -115,6 +136,16 @@ export const unassignVisitor = async (req, res) => {
         const { studentId, visitorId } = req.params;
 
         await visitorService.unassignVisitorFromStudent(visitorId, studentId, req.user);
+
+        await createLogDb({
+            action: "Unassigned Visitor",
+            entityType: "Visitor",
+            entityId: visitorId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Unassigned visitor from student ${studentId}`,
+            status: "success"
+        });
 
         return res.status(200).json({
             success: true,
@@ -231,6 +262,16 @@ export const updateVisitorStatus = async (req, res) => {
 
         const studentId = req.student?.id;
         const updatedVisitor = await visitorService.updateVisitorStatus(visitorId, status, req.user, studentId);
+
+        await createLogDb({
+            action: "Updated Visitor Status",
+            entityType: "Visitor",
+            entityId: visitorId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Status updated to ${status}`,
+            status: "success"
+        });
 
         return res.status(200).json({
             success: true,
@@ -368,6 +409,16 @@ export const checkInVisitor = async (req, res) => {
 
         const result = await visitorService.checkInVisitor(req.body, req.user);
 
+        await createLogDb({
+            action: "Visitor Check-In",
+            entityType: "VisitRequest",
+            entityId: req.body.visitRequestId || result?._id || "Unknown",
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Warden checked in visitor`,
+            status: "success"
+        });
+
         return res.status(201).json({
             success: true,
             message: "Visitor checked in successfully.",
@@ -405,6 +456,16 @@ export const addStudentsToVisit = async (req, res) => {
 
         const { visitId } = req.params;
         const result = await visitorService.addStudentsToVisit(visitId, req.body, req.user);
+
+        await createLogDb({
+            action: "Added Students to Visit",
+            entityType: "VisitRequest",
+            entityId: visitId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Warden added students to active visit ${visitId}`,
+            status: "success"
+        });
 
         return res.status(200).json({
             success: true,
@@ -484,6 +545,16 @@ export const updateVisitor = async (req, res) => {
         const studentId = req.student?.id;
         const updatedVisitor = await visitorService.updateVisitorProfile(visitorId, req.body, req.user, studentId);
 
+        await createLogDb({
+            action: "Updated Visitor",
+            entityType: "Visitor",
+            entityId: visitorId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Updated visitor profile details`,
+            status: "success"
+        });
+
         return res.status(200).json({
             success: true,
             message: "Visitor updated successfully.",
@@ -513,6 +584,17 @@ export const approveVisitRequest = async (req, res, next) => {
     try {
         const { visitRequestId } = req.params;
         const result = await visitorService.approveVisitRequest(visitRequestId, req.user);
+        
+        await createLogDb({
+            action: "Approved Visit Request",
+            entityType: "VisitRequest",
+            entityId: visitRequestId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Approved visit request ${visitRequestId}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             message: 'VisitRequest approved successfully.',
@@ -531,6 +613,17 @@ export const rejectVisitRequest = async (req, res, next) => {
         const { visitRequestId } = req.params;
         const { reason } = req.body;
         const result = await visitorService.rejectVisitRequest(visitRequestId, reason, req.user);
+        
+        await createLogDb({
+            action: "Rejected Visit Request",
+            entityType: "VisitRequest",
+            entityId: visitRequestId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Rejected visit request: ${reason}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             message: 'VisitRequest rejected successfully.',
@@ -549,6 +642,17 @@ export const blacklistVisitor = async (req, res, next) => {
         const { visitorId } = req.params;
         const { reason } = req.body;
         const result = await visitorService.blacklistVisitorProfile(visitorId, reason, req.user);
+        
+        await createLogDb({
+            action: "Blacklisted Visitor",
+            entityType: "Visitor",
+            entityId: visitorId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Visitor blacklisted: ${reason}`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             message: 'Visitor has been blacklisted successfully.',
@@ -566,6 +670,17 @@ export const removeBlacklistVisitor = async (req, res, next) => {
     try {
         const { visitorId } = req.params;
         const result = await visitorService.removeBlacklistFromVisitorProfile(visitorId, req.user);
+        
+        await createLogDb({
+            action: "Removed Visitor from Blacklist",
+            entityType: "Visitor",
+            entityId: visitorId,
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Removed visitor from blacklist`,
+            status: "success"
+        });
+
         res.status(200).json({
             success: true,
             message: 'Blacklist removed from visitor successfully.',
