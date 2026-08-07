@@ -43,7 +43,7 @@ const UserLayout = () => {
                 )}
 
                 {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto w-full relative">
+                <main className={`flex-1 overflow-y-auto w-full relative ${isMobile ? (headerVariant !== "none" ? 'pt-[104px] ' : '') + (footerVisible ? 'pb-[104px]' : '') : ''}`}>
                     {userRole === ROLES.PARENT ? <ParentBootstrap /> : <Outlet />}
                 </main>
             </div>
