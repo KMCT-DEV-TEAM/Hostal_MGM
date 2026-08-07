@@ -523,14 +523,14 @@ const StudentDetailView = () => {
                   >
                     {!student.hostelId ? "Allocate Hostel" : "Change Hostel"}
                   </Button>
-                  <Button
+                  {student.hostelStatus === 'active' && student.hostelId && <Button
                     size="sm"
                     variant="danger"
                     onClick={() => setIsVacateConfirmOpen(true)}
                     disabled={!student.hostelId || student.hostelStatus !== 'active'}
                   >
                     Vacate Hostel
-                  </Button>
+                  </Button>}
                 </div>
               ) : null
             }
@@ -641,7 +641,7 @@ const StudentDetailView = () => {
             title="Assign Information"
             subtitle="Details of Assigned Hostel and Furniture"
             headerAction={
-              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) ? (
+              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) && (student?.hostelStatus === "active") ? (
                 <div className="flex items-center w-fit gap-2">
                   <Button
                     className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
@@ -654,7 +654,32 @@ const StudentDetailView = () => {
               ) : null
             }
           >
-            {(assignedFurnitures.length > 0 || student.hostel) && (
+            {!student.hostel ? (
+              /* ── Empty state: no hostel assigned ── */
+              <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Home className="w-7 h-7 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">No Hostel Assigned</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-[220px]">
+                    This student has not been allocated a hostel yet.
+                  </p>
+                </div>
+                {(ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    fullWidth={false}
+                    onClick={() => setIsManageHostelModalOpen(true)}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Allocate Hostel
+                  </Button>
+                )}
+              </div>
+            ) : (
+              /* ── Hostel assigned: show details ── */
               <div className="space-y-1">
                 <DetailRow icon={<Home className="w-4 h-4" />} label="Assigned Hostel" value={hostelName} />
                 <DetailRow
@@ -678,7 +703,7 @@ const StudentDetailView = () => {
                           </span>
                         ))
                       ) : (
-                        "N/A"
+                        <span className="text-xs text-gray-400 italic">No furniture assigned</span>
                       )}
                     </div>
                   }
@@ -836,7 +861,7 @@ const StudentDetailView = () => {
       {isDefaultParentModalOpen && (
         <SetDefaultParentModal
           parents={parents}
-          onClose={() => handleModalCloseRequest(() => setIsDefaultParentModalOpen(false))}
+          onClose={() => setIsDefaultParentModalOpen(false)}
           onDefaultChange={(parentId) => {
             onStudentChange?.(student._id, (current) => ({
               ...current,

@@ -1,5 +1,4 @@
-
-import { Phone, X, ShieldCheck } from "lucide-react";
+import { Phone, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import Modal from "@/components/ui/Modal";
@@ -19,37 +18,52 @@ export default function SetDefaultParentModal({
     defaultIndex >= 0 ? defaultIndex : 0
   );
 
+  // Track whether the user has changed the selection away from the current default
+  const isDirty = selectedParent !== defaultIndex && !parents[selectedParent]?.defaultGuardian;
+
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDiscard, setShowDiscard] = useState(false);
 
   const { loading, handleSetDefaultGuardian } =
     useDefaultGuardian(async (result) => {
       const updatedParentId = result?.data?.parentId ?? selectedParentData?._id;
       onDefaultChange?.(updatedParentId, result);
+      // Close immediately after success — no discard prompt needed
       onClose();
     });
 
   const selectedParentData = parents[selectedParent];
 
+  // Called when user clicks "Set Guardian"
   const handleSaveClick = () => {
     if (!selectedParentData) return;
-
+    // If the selected parent is already the default, just close with no prompt
     if (selectedParentData.defaultGuardian) {
       onClose();
       return;
     }
-
     setShowConfirm(true);
   };
 
+  // Called when user confirms the "Set Guardian" confirmation
   const handleConfirm = async () => {
+    // Dismiss the confirm dialog immediately so it doesn't flash on success
+    setShowConfirm(false);
     try {
-      await handleSetDefaultGuardian(
-        selectedParentData._id
-      );
-
-      setShowConfirm(false);
+      await handleSetDefaultGuardian(selectedParentData._id);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  // Called when user tries to close (X button or Cancel)
+  const handleCloseRequest = () => {
+    if (loading) return; // never close mid-request
+    // Only ask to discard if the user actually changed the selection
+    if (isDirty) {
+      setShowDiscard(true);
+    } else {
+      onClose();
     }
   };
 
@@ -57,16 +71,16 @@ export default function SetDefaultParentModal({
     <>
       <Modal
         isOpen={true}
-        onClose={onClose}
+        onClose={showConfirm ? undefined : handleCloseRequest}
         title="Set Default Parent"
         subtitle="Select the parent who will act as the default guardian for this student."
         maxWidth="max-w-xl"
         footer={
           <div className="flex justify-end gap-3 w-full">
             <button
-              onClick={onClose}
+              onClick={handleCloseRequest}
               disabled={loading}
-              className="h-10 min-w-[110px] rounded-md border border-primary bg-white px-5 text-sm font-medium text-primary hover:bg-gray-50"
+              className="h-10 min-w-[110px] rounded-md border border-primary bg-white px-5 text-sm font-medium text-primary hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -142,6 +156,7 @@ export default function SetDefaultParentModal({
         </div>
       </Modal>
 
+      {/* Confirmation: "Are you sure you want to set this guardian?" */}
       <ConfirmationModal
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
@@ -151,6 +166,20 @@ export default function SetDefaultParentModal({
         message={`Are you sure you want to make "${selectedParentData?.parentName}" the default guardian? The previous default guardian will be removed automatically.`}
         confirmText="Set Guardian"
         loadingText="Updating..."
+      />
+
+      {/* Discard: only shown when user changed selection and tries to cancel */}
+      <ConfirmationModal
+        isOpen={showDiscard}
+        onClose={() => setShowDiscard(false)}
+        onConfirm={() => {
+          setShowDiscard(false);
+          onClose();
+        }}
+        title="Discard Changes"
+        message="You have selected a different guardian but haven't saved. Are you sure you want to discard your changes?"
+        confirmText="Discard"
+        confirmButtonClass="bg-red-600 text-white hover:bg-red-700 min-w-[100px]"
       />
     </>
   );
