@@ -19,21 +19,23 @@ import {
 } from "./parent.service.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 import { createLogDb } from "../logs/log.service.js";
+import { checkParentAccess, checkStudentAccess } from "./parent.scope.js";
 
 const createParent = asyncHandler(async (req, res) => {
-  const {
-    email,
-    parentOtp,
-  } = req.body;
+  const { email, parentOtp, studentId } = req.body;
+
+  if (studentId) {
+    try {
+      await checkStudentAccess(req.user, studentId);
+    } catch (error) {
+      return sendError(res, error.statusCode || 403, error.message);
+    }
+  }
 
   const isOtpValid = await verifyOtpDb(email, parentOtp);
 
   if (!isOtpValid) {
-    return sendError(
-      res,
-      400,
-      "Invalid or expired OTP"
-    );
+    return sendError(res, 400, "Invalid or expired OTP");
   }
 
   await deleteOtpDb(email);
@@ -84,23 +86,25 @@ const createParent = asyncHandler(async (req, res) => {
     status: "success"
   });
 
-  return sendSuccess(
-    res,
-    201,
-    "Parent created successfully",
-    {
-      data: {
-        parentId: result.parent._id,
-        studentId: result.parent.studentId,
-        parentName: result.parent.parentName,
-        email: result.parent.email,
-        defaultGuardian: result.parent.defaultGuardian,
-      },
+  return sendSuccess(res, 201, "Parent created successfully", {
+    data: {
+      parentId: result.parent._id,
+      studentId: result.parent.studentId,
+      parentName: result.parent.parentName,
+      email: result.parent.email,
+      defaultGuardian: result.parent.defaultGuardian,
     }
-  );
+  });
 });
+
 const updateParent = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  try {
+    await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
+  }
 
   let result;
   try {
@@ -141,10 +145,16 @@ const updateParent = asyncHandler(async (req, res) => {
 const changeParentEmail = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { oldEmail, newEmail, otp } = req.body;
-  console.log('req:', req.body)
 
   if (!oldEmail || !newEmail || !otp) {
     return sendError(res, 400, "oldEmail, newEmail, and otp are required");
+  }
+
+  let parentContext;
+  try {
+    parentContext = await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
   }
 
   const normalizedOldEmail = String(oldEmail).trim().toLowerCase();
@@ -154,27 +164,7 @@ const changeParentEmail = asyncHandler(async (req, res) => {
     return sendError(res, 400, "New email must be different from current email");
   }
 
-  const parent = await Parent.findById(id);
-
-  if (!parent) {
-    return sendError(res, 404, "Parent not found");
-  }
-
-  if (req.user.role === "admin") {
-    const admin = await User.findById(req.user.id).select("organization").lean();
-    if (!admin?.organization) {
-      return sendError(res, 400, "Admin is not assigned to any organization");
-    }
-
-    const links = await StudentParent.find({ parentId: id }).populate("studentId", "organizationId").lean();
-    const hasOrgStudent = links.some(link => link.studentId && String(link.studentId.organizationId) === String(admin.organization));
-
-    if (!hasOrgStudent) {
-      return sendError(res, 403, "You can update only parents in your organization");
-    }
-  }
-
-  if (parent.email !== normalizedOldEmail) {
+  if (parentContext.email !== normalizedOldEmail) {
     return sendError(res, 400, "Current email does not match");
   }
 
@@ -193,6 +183,7 @@ const changeParentEmail = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Invalid or expired OTP");
   }
 
+  const parent = await Parent.findById(id);
   parent.email = normalizedNewEmail;
   parent.isVerified = true;
   await parent.save();
@@ -223,6 +214,12 @@ const changeParentEmail = asyncHandler(async (req, res) => {
 
 const toggleParentStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  try {
+    await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
+  }
 
   const result = await toggleParentStatusDb(id);
 
@@ -258,11 +255,7 @@ const getParentsByAdmin = asyncHandler(async (req, res) => {
     .lean();
 
   if (!admin?.organization) {
-    return sendError(
-      res,
-      400,
-      "Admin is not assigned to any organization"
-    );
+    return sendError(res, 400, "Admin is not assigned to any organization");
   }
   const organizationId = admin.organization;
 
@@ -316,11 +309,7 @@ const exportParentsByAdmin = asyncHandler(async (req, res) => {
     .lean();
 
   if (!admin?.organization) {
-    return sendError(
-      res,
-      400,
-      "Admin is not assigned to any organization"
-    );
+    return sendError(res, 400, "Admin is not assigned to any organization");
   }
   const organizationId = admin.organization;
 
@@ -355,7 +344,14 @@ const setDefaultGuardian = asyncHandler(async (req, res) => {
     return sendError(res, 400, "defaultGuardian must be a boolean");
   }
 
-  const result = await setDefaultGuardianDb(id, defaultGuardian);
+  let parentContext;
+  try {
+    parentContext = await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
+  }
+
+  const result = await setDefaultGuardianDb(parentContext._id, defaultGuardian);
 
   if (!result) {
     return sendError(res, 404, "Parent not found");
@@ -479,7 +475,15 @@ const getParentsByMentor = asyncHandler(async (req, res) => {
 });
 
 const resolveParentConflict = asyncHandler(async (req, res) => {
-  const { resolutionAction, ...parentData } = req.body;
+  const { resolutionAction, studentId, ...parentData } = req.body;
+
+  if (studentId) {
+    try {
+      await checkStudentAccess(req.user, studentId);
+    } catch (error) {
+      return sendError(res, error.statusCode || 403, error.message);
+    }
+  }
 
   if (!resolutionAction) {
     return sendError(res, 400, "Resolution action is required");
@@ -493,6 +497,7 @@ const resolveParentConflict = asyncHandler(async (req, res) => {
   try {
     result = await createParentDb({
       ...parentData,
+      studentId,
       resolutionAction,
       isVerified: true,
     });
@@ -540,7 +545,6 @@ const resolveParentConflict = asyncHandler(async (req, res) => {
  */
 const getParentStudents = asyncHandler(async (req, res) => {
   const parentId = req.user.id;
-  console.log(req.user)
   // Enforce parent access
   if (req.user.role !== "parent") {
     return sendError(res, 403, "Access denied. Only parents can access this resource.");
