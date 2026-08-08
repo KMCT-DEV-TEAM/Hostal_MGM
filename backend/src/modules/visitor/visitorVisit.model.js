@@ -99,7 +99,7 @@ visitorVisitSchema.index(
     { 'visitor.refId': 1, 'visitor.refType': 1, status: 1 },
     {
         unique: true,
-        partialFilterExpression: { status: 'Checked In' }
+        partialFilterExpression: { status: VISITOR_VISIT_STATUS.CHECKED_IN }
     }
 );
 

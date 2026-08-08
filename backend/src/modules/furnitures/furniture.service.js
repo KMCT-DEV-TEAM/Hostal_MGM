@@ -386,3 +386,18 @@ export const changeLifecycleStatusService = async (asset, newStatus, actionName,
     session.endSession();
   }
 };
+
+export const validateFurnitureClearance = async (studentId) => {
+  const hasAllocated = await FurnitureAsset.exists({
+    studentId,
+    status: "allocated"
+  });
+  
+  if (hasAllocated) {
+    const error = new Error("Furniture clearance pending. Please return all allocated furniture before proceeding.");
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  return true;
+};

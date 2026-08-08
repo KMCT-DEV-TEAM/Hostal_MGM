@@ -1177,53 +1177,74 @@ export const getParentPassesUnifiedDb = async (studentId, query) => {
   };
 };
 
-export const reassignActivePasses = async (studentId, oldHostelId, newHostelId, actor, session) => {
+export const handlePassesForTransfer = async (studentId, oldHostelId, newHostelId, actor, session) => {
   if (!studentId || !newHostelId) {
     throw new Error("Student ID and destination hostel ID are required.");
   }
 
-  // Find all active passes for this student that aren't already assigned to the new hostel (idempotence)
-  const activePasses = await Pass.find({
-    studentId,
-    status: { $in: ["pending_parent", "pending_admin", "approved"] },
-    hostelId: { $ne: newHostelId }
-  }).session(session);
-
-  if (activePasses.length === 0) {
-    return {
-      updatedCount: 0,
-      skippedCount: 0,
-      updatedPassIds: []
-    };
-  }
-
-  const updatedPassIds = activePasses.map(p => p._id);
-
-  // Construct bulkWrite operations
-  const bulkOps = activePasses.map(pass => ({
-    updateOne: {
-      filter: { _id: pass._id },
-      update: {
-        $set: { hostelId: newHostelId },
-        $push: {
-          timeline: {
-            action: "hostel_transferred",
-            actorId: actor._id || actor.id,
-            actorRole: actor.role || "system",
-            oldHostelId: pass.hostelId || oldHostelId,
-            newHostelId,
-            remarks: "Pass responsibility transferred after hostel transfer."
-          }
+  const result = await Pass.updateMany(
+    {
+      studentId,
+      status: { $in: ["pending_parent", "pending_admin", "approved"] },
+      hostelId: { $ne: newHostelId }
+    },
+    {
+      $set: { hostelId: newHostelId },
+      $push: {
+        timeline: {
+          action: "hostel_transferred",
+          actorId: actor._id || actor.id,
+          actorRole: actor.role || "system",
+          oldHostelId: oldHostelId,
+          newHostelId,
+          remarks: "Pass responsibility transferred after hostel transfer.",
+          timestamp: new Date()
         }
       }
-    }
-  }));
-
-  await Pass.bulkWrite(bulkOps, { session });
+    },
+    { session }
+  );
 
   return {
-    updatedCount: updatedPassIds.length,
-    skippedCount: 0,
-    updatedPassIds
+    updatedCount: result.modifiedCount
   };
+};
+
+export const cancelActionablePasses = async (studentId, actor, session) => {
+  await Pass.updateMany(
+    {
+      studentId,
+      status: { $in: ["pending_parent", "pending_admin", "approved"] }
+    },
+    {
+      $set: { status: "cancelled" },
+      $push: {
+        timeline: {
+          action: "cancelled",
+          actorId: actor._id || actor.id,
+          actorRole: actor.role || "system",
+          remarks: "Pass cancelled automatically due to hostel vacate.",
+          timestamp: new Date()
+        }
+      }
+    },
+    { session }
+  );
+};
+
+export const validateStudentNotOutside = async (studentId) => {
+  const isOutside = await Pass.exists({
+    studentId,
+    status: "approved",
+    "returnTracking.leftHostelAt": { $ne: null },
+    "returnTracking.returnedAt": null
+  });
+  
+  if (isOutside) {
+    const error = new Error("Cannot vacate hostel. The student is currently outside on an active pass and must return first.");
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  return true;
 };

@@ -1344,3 +1344,79 @@ export const removeBlacklistFromVisitorProfile = async (visitorId, user) => {
         status: updatedVisitor.status
     };
 };
+
+const _handleStudentVisitorRemoval = async (studentId, session, actor, actionType) => {
+    const activeVisits = await visitorVisitModel.find({
+        students: studentId,
+        status: VISITOR_VISIT_STATUS.CHECKED_IN
+    }).session(session);
+
+    if (activeVisits.length === 0) return;
+
+    const bulkOps = [];
+    const now = new Date();
+    const actorId = actor._id || actor.id || null;
+    const actorRole = actor.role || "system";
+
+    for (const visit of activeVisits) {
+        const remainingStudents = visit.students.filter(id => id.toString() !== studentId.toString());
+        const isEmpty = remainingStudents.length === 0;
+
+        const baseTimelineEvent = {
+            action: actionType === "hostel_change" ? "student_transferred" : "student_vacated",
+            actorId: actorId,
+            actorRole: actorRole,
+            timestamp: now,
+            remarks: `Student removed from visit due to ${actionType.replace('_', ' ')}.`
+        };
+
+        const updateDoc = {
+            $pull: { students: studentId }
+        };
+
+        if (isEmpty) {
+            updateDoc.$set = {
+                status: VISITOR_VISIT_STATUS.CHECKED_OUT,
+                checkoutTime: now,
+                checkoutActor: actorId
+            };
+            updateDoc.$push = {
+                timeline: {
+                    $each: [
+                        baseTimelineEvent,
+                        {
+                            action: VISITOR_VISIT_TIMELINE_ACTIONS.CHECKED_OUT,
+                            actorId: actorId,
+                            actorRole: actorRole,
+                            timestamp: now,
+                            remarks: "Automatically checked out as no students remain."
+                        }
+                    ]
+                }
+            };
+        } else {
+            updateDoc.$push = {
+                timeline: baseTimelineEvent
+            };
+        }
+
+        bulkOps.push({
+            updateOne: {
+                filter: { _id: visit._id },
+                update: updateDoc
+            }
+        });
+    }
+
+    if (bulkOps.length > 0) {
+        await visitorVisitModel.bulkWrite(bulkOps, { session });
+    }
+};
+
+export const handleStudentHostelChangeVisitor = async (studentId, session, actor) => {
+    return _handleStudentVisitorRemoval(studentId, session, actor, "hostel_change");
+};
+
+export const handleStudentVacateVisitor = async (studentId, session, actor) => {
+    return _handleStudentVisitorRemoval(studentId, session, actor, "hostel_vacate");
+};

@@ -5,10 +5,15 @@ import Hostel from "../hostels/hostel.model.js";
 import FurnitureAsset from "../furnitures/furnitureAsset.model.js";
 import FurnitureAssetHistory from "../furnitures/furnitureAssetHistory.model.js";
 import { syncHostelOrganizations } from "../hostels/hostel.service.js";
-import { AttendanceWindow } from "../attendance/attendance.model.js";
-import { reassignActivePasses } from "../passes/pass.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import Parent from "../parents/parent.model.js";
+
+// New Domain Helpers
+import { validateFurnitureClearance } from "../furnitures/furniture.service.js";
+import { validateAttendanceForTransfer, handleAttendanceForVacate } from "../attendance/attendance.service.js";
+import { handlePassesForTransfer, cancelActionablePasses, validateStudentNotOutside } from "../passes/pass.service.js";
+import { handleStudentHostelChangeVisitor, handleStudentVacateVisitor } from "../visitor/visitor.service.js";
+import { addHostelTransferContextToComplaints, addHostelVacateContextToComplaints } from "../complaints/complaint.service.js";
 
 const deallocateFurniture = async (studentId, actor, session) => {
   const assets = await FurnitureAsset.find({ studentId }).session(session);
@@ -109,170 +114,134 @@ const allocateHostelInternal = async (studentId, data, actor) => {
 };
 
 const changeHostelInternal = async (studentId, data, actor) => {
+  // 1. Context Loading
+  const [student, activeAllocation, newHostel] = await Promise.all([
+    Student.findById(studentId).lean(),
+    StudentHostelAllocation.findOne({ studentId, status: "active" }).lean(),
+    Hostel.findById(data.hostelId).lean()
+  ]);
+
+  if (!student) throw Object.assign(new Error("Student not found"), { statusCode: 404 });
+  if (!student.isActive) throw Object.assign(new Error("This student is not active"), { statusCode: 400 });
+  if (!activeAllocation) throw Object.assign(new Error("Student is not currently allocated to any hostel"), { statusCode: 400 });
+
+  if (!newHostel) throw Object.assign(new Error("New hostel not found"), { statusCode: 404 });
+  if (!newHostel.isActive) throw Object.assign(new Error("New hostel is not active"), { statusCode: 400 });
+
+  // if (newHostel.organizationId && student.organizationId && newHostel.organizationId.toString() !== student.organizationId.toString()) {
+  //     throw Object.assign(new Error("New hostel does not belong to the student's organization"), { statusCode: 400 });
+  // }
+
+  if (activeAllocation.hostelId.toString() === data.hostelId.toString()) {
+    throw Object.assign(new Error("New hostel must differ from current hostel"), { statusCode: 400 });
+  }
+
+  const oldHostelId = activeAllocation.hostelId;
+
+  // 2. Preflight Checks
+  await Promise.all([
+    validateFurnitureClearance(studentId),
+    validateAttendanceForTransfer(studentId, oldHostelId)
+  ]);
+
+  // 3. Start Transaction
   const session = await mongoose.startSession();
   session.startTransaction();
 
+  let newAllocation;
   try {
-    const { hostelId, roomNumber, reason, remarks, joinedAt } = data;
-    console.log("changeHostelInternal -> START", { studentId, data, actorId: actor._id || actor.id });
+    // 4. Revalidate Critical State & Conditional Updates
+    const allocUpdate = await StudentHostelAllocation.updateOne(
+      { _id: activeAllocation._id, status: "active" },
+      {
+        $set: {
+          status: "transferred",
+          vacatedAt: new Date(),
+          vacatedBy: actor._id || actor.id,
+          reason: data.reason || "Hostel Change"
+        }
+      },
+      { session }
+    );
+    if (allocUpdate.modifiedCount !== 1) throw Object.assign(new Error("Conflict: Allocation already modified"), { statusCode: 409 });
 
-    const student = await Student.findById(studentId).session(session);
-    if (!student) {
-      const error = new Error("Student not found");
-      error.statusCode = 404;
-      throw error;
-    }
+    const studentUpdate = await Student.updateOne(
+      { _id: studentId, hostelId: oldHostelId, hostelStatus: "active" },
+      { $set: { hostelId: data.hostelId, roomNumber: data.roomNumber, hostelStatus: "active" } },
+      { session }
+    );
+    if (studentUpdate.modifiedCount !== 1) throw Object.assign(new Error("Conflict: Student hostel state changed concurrently"), { statusCode: 409 });
 
-    // Validate that no open attendance window exists for the current hostel
-    if (student.hostelId) {
-      const openWindowExists = await AttendanceWindow.exists({
-        hostelId: student.hostelId,
-        status: "open"
-      }).session(session);
-
-      if (openWindowExists) {
-        const error = new Error("Cannot transfer hostel. Attendance window is currently open for the student's current hostel.");
-        error.statusCode = 400;
-        throw error;
-      }
-    }
-
-    const newHostel = await Hostel.findById(hostelId).session(session);
-    if (!newHostel) {
-      const error = new Error("New hostel not found");
-      error.statusCode = 404;
-      throw error;
-    }
-    if (!newHostel.isActive) {
-      const error = new Error("New hostel is not active");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const activeAllocation = await StudentHostelAllocation.findOne({
-      studentId: student._id,
-      status: "active"
-    }).session(session);
-
-    if (!activeAllocation) {
-      const error = new Error("Student is not currently allocated to any hostel");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (activeAllocation.hostelId.toString() === hostelId.toString()) {
-      const error = new Error("New hostel must differ from current hostel");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const oldHostelId = activeAllocation.hostelId;
-
-    activeAllocation.status = "transferred";
-    activeAllocation.vacatedAt = new Date();
-    activeAllocation.vacatedBy = actor._id || actor.id;
-    activeAllocation.reason = reason || "Hostel Change";
-    await activeAllocation.save({ session });
-
-    const newAllocation = new StudentHostelAllocation({
+    newAllocation = new StudentHostelAllocation({
       studentId: student._id,
       organizationId: student.organizationId,
-      hostelId,
-      roomNumber,
+      hostelId: data.hostelId,
+      roomNumber: data.roomNumber,
       status: "active",
       allocatedBy: actor._id || actor.id,
-      joinedAt: joinedAt || new Date(),
-      reason,
-      remarks,
+      joinedAt: data.joinedAt || new Date(),
+      reason: data.reason,
+      remarks: data.remarks,
     });
     await newAllocation.save({ session });
 
-    student.hostelId = hostelId;
-    student.roomNumber = roomNumber;
-    student.hostelStatus = "active";
-    await student.save({ session });
-
-    // Sync active passes within the same transaction
-    const passSyncResult = await reassignActivePasses(student._id, oldHostelId, hostelId, actor, session);
-
-    await deallocateFurniture(student._id, actor, session);
+    // 5. Atomic Mutations (Dependencies)
+    const passSyncResult = await handlePassesForTransfer(studentId, oldHostelId, data.hostelId, actor, session);
+    await handleStudentHostelChangeVisitor(studentId, session, actor);
+    await addHostelTransferContextToComplaints(studentId, activeAllocation._id, actor, session);
 
     await syncHostelOrganizations(oldHostelId, session);
-    await syncHostelOrganizations(hostelId, session);
+    await syncHostelOrganizations(data.hostelId, session);
 
+    // 6. Commit
     await session.commitTransaction();
     console.log("changeHostelInternal -> SUCCESS", { newAllocationId: newAllocation._id, oldAllocationId: activeAllocation._id, studentId: student._id });
-
-    // Post-commit Notifications
-    if (passSyncResult && passSyncResult.updatedCount > 0) {
-      try {
-        const oldHostel = await Hostel.findById(oldHostelId).lean();
-        const oldWardenIds = oldHostel && oldHostel.wardens ? oldHostel.wardens.map(id => id.toString()) : [];
-        const newWardenIds = newHostel && newHostel.wardens ? newHostel.wardens.map(id => id.toString()) : [];
-
-        // Group 1: Notify Student, Parent, and New Hostel Wardens
-        const targets = [
-          { type: 'STUDENT', filter: { studentIds: [student._id.toString()] } },
-          { type: 'PARENT', filter: { studentIds: [student._id.toString()] } }
-        ];
-
-
-        if (newWardenIds.length > 0) {
-          targets.push({ type: 'USER', filter: { userIds: newWardenIds } });
-        }
-
-        await orchestratorService.triggerNotification({
-          eventName: 'PASS_HOSTEL_TRANSFERRED',
-          target: targets,
-          data: {
-            studentMessage: "Your active pass has been transferred to your new hostel.",
-            parentMessage: "Your child's active pass has been reassigned because of a hostel transfer.",
-            wardenMessage: "A new active pass has been assigned to your hostel."
-          }
-        });
-
-        // Group 2: Notify Old Hostel Wardens (requires a different wardenMessage)
-        if (oldWardenIds.length > 0) {
-          await orchestratorService.triggerNotification({
-            eventName: 'PASS_HOSTEL_TRANSFERRED',
-            target: {
-              type: 'USER',
-              filter: { userIds: oldWardenIds }
-            },
-            data: {
-              wardenMessage: "Active pass removed from your hostel."
-            }
-          });
-        }
-      } catch (notifErr) {
-        console.error("[HostelTransferService] Post-commit notification error:", notifErr);
-      }
-    }
-
-    // Structured Audit Log
-    console.log("[HostelTransferService] Audit Log - Student Hostel Transfer Success", {
-      studentId: student._id,
-      oldHostelId,
-      newHostelId: hostelId,
-      updatedPassCount: passSyncResult.updatedCount,
-      actor: actor._id || actor.id,
-      timestamp: new Date()
-    });
-
-    return {
-      oldAllocation: activeAllocation,
-      newAllocation,
-      student,
-      oldHostelId,
-      passSyncResult
-    };
   } catch (error) {
-    console.error("changeHostelInternal -> ERROR", error);
     await session.abortTransaction();
     throw error;
   } finally {
     session.endSession();
   }
+
+  // 7. Post-Commit Notifications
+  try {
+    const oldWardenIds = (await Hostel.findById(oldHostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [];
+    const newWardenIds = newHostel.wardens?.map(id => id.toString()) || [];
+
+    orchestratorService.triggerNotification({
+      eventName: 'HOSTEL_TRANSFERRED',
+      target: [
+        { type: 'STUDENT', filter: { studentIds: [studentId.toString()] } },
+        { type: 'PARENT', filter: { studentIds: [studentId.toString()] } }
+      ],
+      data: { message: "Your hostel accommodation has been changed." }
+    }).catch(err => console.error(err));
+
+    if (newWardenIds.length > 0) {
+      orchestratorService.triggerNotification({
+        eventName: 'HOSTEL_TRANSFERRED',
+        target: { type: 'USER', filter: { userIds: newWardenIds } },
+        data: { message: "A new student has joined your hostel." }
+      }).catch(err => console.error(err));
+    }
+
+    if (oldWardenIds.length > 0) {
+      orchestratorService.triggerNotification({
+        eventName: 'HOSTEL_TRANSFERRED',
+        target: { type: 'USER', filter: { userIds: oldWardenIds } },
+        data: { message: "A student has been transferred out of your hostel." }
+      }).catch(err => console.error(err));
+    }
+  } catch (notifErr) {
+    console.error("[Notification Error]", notifErr);
+  }
+
+  return {
+    oldAllocation: activeAllocation,
+    newAllocation,
+    student,
+    oldHostelId
+  };
 };
 
 export const updateStudentHostelService = async (studentId, data, actor) => {
@@ -293,54 +262,91 @@ export const updateStudentHostelService = async (studentId, data, actor) => {
 };
 
 export const vacateHostelService = async (studentId, data, actor) => {
+  // 1. Context Loading
+  const [student, activeAllocation] = await Promise.all([
+    Student.findById(studentId).lean(),
+    StudentHostelAllocation.findOne({ studentId, status: "active" }).lean()
+  ]);
+
+  if (!student) throw Object.assign(new Error("Student not found"), { statusCode: 404 });
+  if (!activeAllocation) throw Object.assign(new Error("Student is not currently allocated to any hostel"), { statusCode: 400 });
+
+  const oldHostelId = activeAllocation.hostelId;
+
+  // 2. Preflight Checks
+  await Promise.all([
+    validateFurnitureClearance(studentId),
+    validateStudentNotOutside(studentId)
+  ]);
+
+  // 3. Start Transaction
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { reason, remarks } = data;
+    // 4. Revalidate Critical State & Conditional Updates
+    const allocUpdate = await StudentHostelAllocation.updateOne(
+      { _id: activeAllocation._id, status: "active" },
+      {
+        $set: {
+          status: "vacated",
+          vacatedAt: new Date(),
+          vacatedBy: actor._id || actor.id,
+          reason: data.reason,
+          remarks: data.remarks
+        }
+      },
+      { session }
+    );
+    if (allocUpdate.modifiedCount !== 1) throw Object.assign(new Error("Conflict: Allocation already modified"), { statusCode: 409 });
 
-    const student = await Student.findById(studentId).session(session);
-    if (!student) {
-      const error = new Error("Student not found");
-      error.statusCode = 404;
-      throw error;
-    }
+    const studentUpdate = await Student.updateOne(
+      { _id: studentId, hostelId: oldHostelId, hostelStatus: "active" },
+      { $set: { hostelId: null, roomNumber: null, hostelStatus: "inactive" } },
+      { session }
+    );
+    if (studentUpdate.modifiedCount !== 1) throw Object.assign(new Error("Conflict: Student hostel state changed concurrently"), { statusCode: 409 });
 
-    const activeAllocation = await StudentHostelAllocation.findOne({
-      studentId,
-      status: "active"
-    }).session(session);
-
-    if (!activeAllocation) {
-      const error = new Error("Student is not currently allocated to any hostel");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const oldHostelId = activeAllocation.hostelId;
-
-    activeAllocation.status = "vacated";
-    activeAllocation.vacatedAt = new Date();
-    activeAllocation.vacatedBy = actor._id || actor.id;
-    activeAllocation.reason = reason;
-    activeAllocation.remarks = remarks;
-    await activeAllocation.save({ session });
-
-    student.hostelId = null;
-    student.roomNumber = null;
-    student.hostelStatus = "inactive";
-    await student.save({ session });
-
-    await deallocateFurniture(studentId, actor, session);
+    // 5. Atomic Mutations (Dependencies)
+    await handleAttendanceForVacate(studentId, oldHostelId, session, actor._id || actor.id);
+    await cancelActionablePasses(studentId, actor, session);
+    await handleStudentVacateVisitor(studentId, session, actor);
+    await addHostelVacateContextToComplaints(studentId, activeAllocation._id, actor, session);
 
     await syncHostelOrganizations(oldHostelId, session);
 
+    // 6. Commit
     await session.commitTransaction();
-    return { allocation: activeAllocation, student, oldHostelId };
   } catch (error) {
     await session.abortTransaction();
     throw error;
   } finally {
     session.endSession();
   }
+
+  // 7. Post-Commit Notifications
+  try {
+    const oldWardenIds = (await Hostel.findById(oldHostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [];
+
+    orchestratorService.triggerNotification({
+      eventName: 'HOSTEL_VACATED',
+      target: [
+        { type: 'STUDENT', filter: { studentIds: [studentId.toString()] } },
+        { type: 'PARENT', filter: { studentIds: [studentId.toString()] } }
+      ],
+      data: { message: "Your hostel accommodation has been successfully vacated." }
+    }).catch(err => console.error(err));
+
+    if (oldWardenIds.length > 0) {
+      orchestratorService.triggerNotification({
+        eventName: 'HOSTEL_VACATED',
+        target: { type: 'USER', filter: { userIds: oldWardenIds } },
+        data: { message: "A student has vacated your hostel." }
+      }).catch(err => console.error(err));
+    }
+  } catch (notifErr) {
+    console.error("[Notification Error]", notifErr);
+  }
+
+  return { allocation: activeAllocation, student, oldHostelId };
 };
