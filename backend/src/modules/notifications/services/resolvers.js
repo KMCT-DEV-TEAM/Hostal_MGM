@@ -123,7 +123,7 @@ export class ParentResolver {
             pipeline.push({ 
                 $match: { 
                     'studentParentInfo.studentId': spMatch.studentId, 
-                    'studentParentInfo.status': 'active' 
+                    'studentParentInfo.status': filter.includeInactive ? { $in: ['active', 'inactive'] } : 'active'
                 }
             });
             

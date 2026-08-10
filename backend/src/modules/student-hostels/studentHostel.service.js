@@ -103,6 +103,35 @@ const allocateHostelInternal = async (studentId, data, actor) => {
 
     await session.commitTransaction();
     console.log("allocateHostelInternal -> SUCCESS", { allocationId: allocation._id, studentId });
+
+    // Post-Commit Notifications
+    try {
+      const newWardenIds = hostel.wardens?.map(id => id.toString()) || [];
+      const sender = actor ? { id: actor._id || actor.id, role: actor.role, name: actor.name } : null;
+      const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+
+      orchestratorService.triggerNotification({
+        sender,
+        eventName: 'HOSTEL_ALLOCATED',
+        target: [
+          { type: 'STUDENT', filter: { studentIds: [studentId.toString()] } },
+          { type: 'PARENT', filter: { studentIds: [studentId.toString()] } }
+        ],
+        data: { message: "Hostel allocated.", studentName, roomNumber: data.roomNumber }
+      }).catch(err => console.error(err));
+
+      if (newWardenIds.length > 0) {
+        orchestratorService.triggerNotification({
+          sender,
+          eventName: 'HOSTEL_ALLOCATED',
+          target: { type: 'USER', filter: { userIds: newWardenIds } },
+          data: { message: "A new student has been allocated to your hostel.", studentName, roomNumber: data.roomNumber }
+        }).catch(err => console.error(err));
+      }
+    } catch (notifErr) {
+      console.error("[Notification Error]", notifErr);
+    }
+
     return { allocation, student, oldHostelId: null };
   } catch (error) {
     console.error("allocateHostelInternal -> ERROR", error);
@@ -208,28 +237,34 @@ const changeHostelInternal = async (studentId, data, actor) => {
     const oldWardenIds = (await Hostel.findById(oldHostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [];
     const newWardenIds = newHostel.wardens?.map(id => id.toString()) || [];
 
+    const sender = actor ? { id: actor._id || actor.id, role: actor.role, name: actor.name } : null;
+    const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+
     orchestratorService.triggerNotification({
+      sender,
       eventName: 'HOSTEL_TRANSFERRED',
       target: [
         { type: 'STUDENT', filter: { studentIds: [studentId.toString()] } },
         { type: 'PARENT', filter: { studentIds: [studentId.toString()] } }
       ],
-      data: { message: "Your hostel accommodation has been changed." }
+      data: { message: "Your hostel accommodation has been changed.", studentName, roomNumber: data.roomNumber }
     }).catch(err => console.error(err));
 
     if (newWardenIds.length > 0) {
       orchestratorService.triggerNotification({
+        sender,
         eventName: 'HOSTEL_TRANSFERRED',
         target: { type: 'USER', filter: { userIds: newWardenIds } },
-        data: { message: "A new student has joined your hostel." }
+        data: { message: "A new student has joined your hostel.", studentName, roomNumber: data.roomNumber }
       }).catch(err => console.error(err));
     }
 
     if (oldWardenIds.length > 0) {
       orchestratorService.triggerNotification({
+        sender,
         eventName: 'HOSTEL_TRANSFERRED',
         target: { type: 'USER', filter: { userIds: oldWardenIds } },
-        data: { message: "A student has been transferred out of your hostel." }
+        data: { message: "A student has been transferred out of your hostel.", studentName }
       }).catch(err => console.error(err));
     }
   } catch (notifErr) {
@@ -328,20 +363,25 @@ export const vacateHostelService = async (studentId, data, actor) => {
   try {
     const oldWardenIds = (await Hostel.findById(oldHostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [];
 
+    const sender = actor ? { id: actor._id || actor.id, role: actor.role, name: actor.name } : null;
+    const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+
     orchestratorService.triggerNotification({
+      sender,
       eventName: 'HOSTEL_VACATED',
       target: [
         { type: 'STUDENT', filter: { studentIds: [studentId.toString()] } },
         { type: 'PARENT', filter: { studentIds: [studentId.toString()] } }
       ],
-      data: { message: "Your hostel accommodation has been successfully vacated." }
+      data: { message: "Your hostel accommodation has been successfully vacated.", studentName }
     }).catch(err => console.error(err));
 
     if (oldWardenIds.length > 0) {
       orchestratorService.triggerNotification({
+        sender,
         eventName: 'HOSTEL_VACATED',
         target: { type: 'USER', filter: { userIds: oldWardenIds } },
-        data: { message: "A student has vacated your hostel." }
+        data: { message: "A student has vacated your hostel.", studentName }
       }).catch(err => console.error(err));
     }
   } catch (notifErr) {

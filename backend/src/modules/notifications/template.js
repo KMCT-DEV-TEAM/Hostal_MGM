@@ -8,6 +8,7 @@ import visitTimeline from '../visitor/visitor.notification.js';
 import studentHostelTemplates from '../student-hostels/studentHostel.notification.js';
 import announcementTemplates from '../announcements/announcement.notification.js';
 import mentorAssignmentTemplates from '../mentor-assignment/mentorAssignment.notification.js';
+import studentTemplates from '../students/student.notification.js';
 
 /**
  * Bootstraps the Template Registry by loading all domain-specific templates.
@@ -20,6 +21,7 @@ export const registerAllTemplates = () => {
     templateService.registerTemplates(studentHostelTemplates);
     templateService.registerTemplates(announcementTemplates);
     templateService.registerTemplates(mentorAssignmentTemplates);
+    templateService.registerTemplates(studentTemplates);
 
     console.log('[Notification System] All domain templates successfully registered.');
 };

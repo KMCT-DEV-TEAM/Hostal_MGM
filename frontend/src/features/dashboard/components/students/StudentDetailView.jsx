@@ -18,7 +18,11 @@ import {
   Plus,
   Box,
   Hash,
-  X
+  X,
+  AlertTriangle,
+  Backpack,
+  ArrowLeftFromLine,
+  ChevronLeft
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DetailCard from "@/components/ui/DetailCard";
@@ -364,7 +368,24 @@ const StudentDetailView = () => {
   }
 
   if (error) {
-    return <div className="flex h-[50vh] items-center justify-center text-red-500">{error}</div>;
+    return (
+      <div className="flex flex-col h-[80vh]  bg-transparent items-center justify-center  p-8 text-center space-y-3 max-w-md mx-auto my-auto">
+        <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-3">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-800">Access Denied</h2>
+        <p className="text-sm text-gray-500 max-w-sm mb-4">{error}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          fullWidth={false}
+          className="mt-2"
+          onClick={() => navigate('/dashboard/students')}
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-700" /> Back to Students
+        </Button>
+      </div>
+    );
   }
 
   if (!student) return null;
