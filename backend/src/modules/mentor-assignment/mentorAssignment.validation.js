@@ -117,6 +117,41 @@ export const validateAssignmentIdParam = (req, res, next) => {
   next();
 };
 
+export const validateReleaseAssignment = (req, res, next) => {
+  const { reason, status } = req.body || {};
+  const { id } = req.params;
+  console.log(req.body, "req.body")
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Assignment ID",
+    });
+  }
+
+  if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "A valid release reason is required",
+    });
+  }
+
+  if (reason.trim().length > 500) {
+    return res.status(400).json({
+      success: false,
+      message: "Reason cannot exceed 500 characters",
+    });
+  }
+
+  if (status && !["completed", "cancelled"].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: "Status can only be completed or cancelled",
+    });
+  }
+
+  next();
+};
+
 export const validateAssignmentPagination = (req, res, next) => {
   const { page, limit } = req.query;
 

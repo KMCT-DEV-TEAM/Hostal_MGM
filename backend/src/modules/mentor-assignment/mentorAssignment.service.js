@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 import User from "../users/user.model.js";
 import Batch from "../batches/batch.model.js";
+import Student from "../students/student.model.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 
@@ -377,6 +378,99 @@ export const transferMentorDb = async (id, newMentorId, remarks, user) => {
 
     await session.commitTransaction();
     return { oldAssignment, newAssignment };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+/**
+ * Atomically releases a mentor assignment
+ */
+export const releaseAssignmentDb = async (id, reason, targetStatus = "completed", user) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const filter = { _id: id, status: "active" };
+    if (user.role === "admin") {
+      filter.organizationId = user.organization;
+    }
+
+    const updatedAssignment = await MentorAssignment.findOneAndUpdate(
+      filter,
+      {
+        $set: {
+          status: targetStatus,
+          endedAt: new Date(),
+          remarks: reason
+        }
+      },
+      { new: true, session }
+    )
+      .populate("mentorId", "name email")
+      .populate("batchId", "name");
+
+    if (!updatedAssignment) {
+      // If null, it could be missing, already released, or unauthorized.
+      const existing = await MentorAssignment.findById(id).session(session);
+      if (!existing) {
+        throw createError("Assignment not found", 404);
+      }
+      if (user.role === "admin" && existing.organizationId?.toString() !== user.organization?.toString()) {
+        throw createError("Not authorized to release this assignment", 403);
+      }
+      throw createError(`Cannot release assignment. Current status is ${existing.status}`, 409);
+    }
+
+    await createLogDb({
+      action: targetStatus === "completed" ? "Assignment Completed" : "Assignment Cancelled",
+      entityType: "User",
+      entityId: updatedAssignment.mentorId?._id || updatedAssignment.mentorId,
+      user: user.id || user._id,
+      userRole: user.role || "System",
+      details: `Released mentor ${updatedAssignment.mentorId?.name} from batch ${updatedAssignment.batchId?.name}. Reason: ${reason}`,
+      status: "success"
+    }, session);
+
+    const students = await Student.find({ batchId: updatedAssignment.batchId?._id }).select("_id").session(session);
+    const studentIds = students.map(s => s._id.toString());
+
+    await session.commitTransaction();
+
+    // Trigger Notifications outside of transaction
+    try {
+      await orchestratorService.triggerNotification({
+        eventName: "MENTOR_RELEASED",
+        target: { type: "USER", filter: { userId: updatedAssignment.mentorId?._id || updatedAssignment.mentorId } },
+        data: {
+          batchName: updatedAssignment.batchId?.name,
+          reason
+        },
+        channels: ["in-app"]
+      });
+
+      if (studentIds.length > 0) {
+        await orchestratorService.triggerNotification({
+          eventName: "MENTOR_RELEASED",
+          target: [
+            { type: "STUDENT", filter: { studentIds } },
+            { type: "PARENT", filter: { studentIds } }
+          ],
+          data: {
+            batchName: updatedAssignment.batchId?.name,
+            message: "The mentor for your batch has been unassigned."
+          },
+          channels: ["in-app"]
+        });
+      }
+    } catch (notifErr) {
+      console.error("Failed to trigger assignment release notification:", notifErr);
+    }
+
+    return updatedAssignment;
   } catch (error) {
     await session.abortTransaction();
     throw error;

@@ -14,7 +14,8 @@ import {
   validateTransferMentor,
   validateUpdateAssignment,
   validateAssignmentIdParam,
-  validateAssignmentPagination
+  validateAssignmentPagination,
+  validateReleaseAssignment
 } from "./mentorAssignment.validation.js";
 
 const router = express.Router();
@@ -26,7 +27,7 @@ router.use(authMiddleware);
 router.post("/", roleMiddleware("super_admin", "admin"), validateCreateAssignment, assignMentor);
 router.patch("/:id", roleMiddleware("super_admin", "admin"), validateUpdateAssignment, updateAssignment);
 router.post("/:id/transfer", roleMiddleware("super_admin", "admin"), validateTransferMentor, transferMentor);
-router.patch("/:id/release", roleMiddleware("super_admin", "admin"), validateAssignmentIdParam, releaseAssignment);
+router.patch("/:id/release", roleMiddleware("super_admin", "admin"), validateReleaseAssignment, releaseAssignment);
 
 router.get("/", roleMiddleware("super_admin", "admin", "mentor", "warden", "assistant_warden"), validateAssignmentPagination, getAssignments);
 router.get("/:id", roleMiddleware("super_admin", "admin", "mentor", "warden", "assistant_warden"), validateAssignmentIdParam, getAssignmentById);

@@ -541,7 +541,7 @@ export const getVisitorDetails = async (visitorId, user, explicitStudentId = nul
                         studentId: vr.studentId._id,
                         name: vr.studentId.name,
                         roomNumber: vr.studentId.roomNumber,
-                        sHostelName: vr.studentId.hostelId.name,
+                        sHostelName: vr.studentId.hostelId?.name,
                         relationship: vr.relationship,
                         purpose: vr.purpose,
                         requestStatus: vr.status,

@@ -7,10 +7,11 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import MentorAssignmentModal from './MentorAssignmentModal';
 import MentorDetailsModal from '../mentor/MentorDetailsModal';
-import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import MentorReleaseModal from '../mentor/MentorReleaseModal';
 import BatchService from '@/services/batch.service';
 import { endMentorAssignment } from '@/services/mentor.service';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 const BatchDetailView = ({ selectedBatchDetail, setView }) => {
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
@@ -36,14 +37,16 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
         }
     };
 
-    const handleReleaseMentor = async () => {
+    const handleReleaseMentor = async (reason) => {
         if (!displayBatch?.activeMentor?.assignmentId) return;
         setIsReleasing(true);
         try {
-            await endMentorAssignment(displayBatch.activeMentor.assignmentId);
+            await endMentorAssignment(displayBatch.activeMentor.assignmentId, { reason });
+            showSuccessToast('Mentor released successfully');
             await fetchBatch();
         } catch (error) {
             console.error('Failed to release mentor', error);
+            showErrorToast(error?.response?.data?.message || error?.message || 'Failed to release mentor');
         } finally {
             setIsReleasing(false);
             setIsReleaseModalOpen(false);
@@ -250,16 +253,11 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                 />
             )}
 
-            <ConfirmationModal
+            <MentorReleaseModal
                 isOpen={isReleaseModalOpen}
                 onClose={() => setIsReleaseModalOpen(false)}
                 onConfirm={handleReleaseMentor}
-                title="Release Mentor"
-                message="Are you sure you want to release the currently assigned mentor? This will move them to the history timeline."
-                confirmText="Release Mentor"
-                cancelText="Cancel"
                 isSubmitting={isReleasing}
-                variant="danger"
             />
         </>
     );
