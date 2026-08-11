@@ -64,6 +64,15 @@ export class PushProvider {
         };
 
         const result = await sendPushNotification(recipient, payload);
+        
+        // Add logging to debug push deliveries
+        if (!result.success) {
+            console.log(`[PushProvider] Skipped (No active subscriptions) for recipient:`, recipient);
+        } else if (result.failedCount > 0) {
+            console.error(`[PushProvider] Failed deliveries for recipient:`, recipient, result.failures);
+        } else {
+            console.log(`[PushProvider] Successfully delivered ${result.successCount} push notifications to recipient:`, recipient);
+        }
 
         return { status: result.success ? 'DELIVERED' : 'FAILED', channel: 'push', timestamp: new Date(), details: result };
     }

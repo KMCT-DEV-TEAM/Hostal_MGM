@@ -18,7 +18,11 @@ import {
   Plus,
   Box,
   Hash,
-  X
+  X,
+  AlertTriangle,
+  Backpack,
+  ArrowLeftFromLine,
+  ChevronLeft
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DetailCard from "@/components/ui/DetailCard";
@@ -364,7 +368,24 @@ const StudentDetailView = () => {
   }
 
   if (error) {
-    return <div className="flex h-[50vh] items-center justify-center text-red-500">{error}</div>;
+    return (
+      <div className="flex flex-col h-[80vh]  bg-transparent items-center justify-center  p-8 text-center space-y-3 max-w-md mx-auto my-auto">
+        <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-3">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-800">Access Denied</h2>
+        <p className="text-sm text-gray-500 max-w-sm mb-4">{error}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          fullWidth={false}
+          className="mt-2"
+          onClick={() => navigate('/dashboard/students')}
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-700" /> Back to Students
+        </Button>
+      </div>
+    );
   }
 
   if (!student) return null;
@@ -523,14 +544,14 @@ const StudentDetailView = () => {
                   >
                     {!student.hostelId ? "Allocate Hostel" : "Change Hostel"}
                   </Button>
-                  <Button
+                  {student.hostelStatus === 'active' && student.hostelId && <Button
                     size="sm"
                     variant="danger"
                     onClick={() => setIsVacateConfirmOpen(true)}
                     disabled={!student.hostelId || student.hostelStatus !== 'active'}
                   >
                     Vacate Hostel
-                  </Button>
+                  </Button>}
                 </div>
               ) : null
             }
@@ -641,7 +662,7 @@ const StudentDetailView = () => {
             title="Assign Information"
             subtitle="Details of Assigned Hostel and Furniture"
             headerAction={
-              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) ? (
+              (ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) && (student?.hostelStatus === "active") ? (
                 <div className="flex items-center w-fit gap-2">
                   <Button
                     className="px-6 py-2 rounded-md text-white cursor-pointer text-sm bg-primary hover:bg-secondary"
@@ -654,7 +675,32 @@ const StudentDetailView = () => {
               ) : null
             }
           >
-            {(assignedFurnitures.length > 0 || student.hostel) && (
+            {!student.hostel ? (
+              /* ── Empty state: no hostel assigned ── */
+              <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Home className="w-7 h-7 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">No Hostel Assigned</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-[220px]">
+                    This student has not been allocated a hostel yet.
+                  </p>
+                </div>
+                {(ROLES.SUPER_ADMIN === role || ROLES.ADMIN === role || ROLES.WARDEN === role) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    fullWidth={false}
+                    onClick={() => setIsManageHostelModalOpen(true)}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Allocate Hostel
+                  </Button>
+                )}
+              </div>
+            ) : (
+              /* ── Hostel assigned: show details ── */
               <div className="space-y-1">
                 <DetailRow icon={<Home className="w-4 h-4" />} label="Assigned Hostel" value={hostelName} />
                 <DetailRow
@@ -678,7 +724,7 @@ const StudentDetailView = () => {
                           </span>
                         ))
                       ) : (
-                        "N/A"
+                        <span className="text-xs text-gray-400 italic">No furniture assigned</span>
                       )}
                     </div>
                   }
@@ -836,7 +882,7 @@ const StudentDetailView = () => {
       {isDefaultParentModalOpen && (
         <SetDefaultParentModal
           parents={parents}
-          onClose={() => handleModalCloseRequest(() => setIsDefaultParentModalOpen(false))}
+          onClose={() => setIsDefaultParentModalOpen(false)}
           onDefaultChange={(parentId) => {
             onStudentChange?.(student._id, (current) => ({
               ...current,

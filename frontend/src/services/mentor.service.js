@@ -61,8 +61,8 @@ export async function transferMentor(id, payload) {
   return response.data;
 }
 
-export async function endMentorAssignment(id) {
-  const response = await mentorApi.endMentorAssignment(id);
+export async function endMentorAssignment(id, payload) {
+  const response = await mentorApi.endMentorAssignment(id, payload);
   return response.data;
 }
 

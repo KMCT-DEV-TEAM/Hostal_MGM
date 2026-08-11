@@ -21,6 +21,17 @@ export default {
                 title: "Ward's Hostel Allocated",
                 body: "Your ward {{studentName}} has been allocated to a hostel room: {{roomNumber}}."
             }
+        },
+        user: {
+            "in-app": {
+                title: "Warden – Hostel Allocated",
+                message: "A new student has been allocated to your hostel.",
+                type: "info"
+            },
+            push: {
+                title: "Warden – Hostel Allocated",
+                body: "A new student has been allocated to your hostel."
+            }
         }
     },
     HOSTEL_CHANGED: {
@@ -55,6 +66,41 @@ export default {
             push: {
                 title: "Warden – Hostel Changed",
                 body: "{{wardenMessage}}"
+            }
+        }
+    },
+    HOSTEL_TRANSFERRED: {
+        student: {
+            "in-app": {
+                title: "Hostel Transferred",
+                message: "Your hostel accommodation has been changed.",
+                type: "info"
+            },
+            push: {
+                title: "Hostel Transferred",
+                body: "Your hostel accommodation has been changed."
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Ward's Hostel Transferred",
+                message: "Your ward's hostel accommodation has been changed.",
+                type: "info"
+            },
+            push: {
+                title: "Ward's Hostel Transferred",
+                body: "Your ward's hostel accommodation has been changed."
+            }
+        },
+        user: {
+            "in-app": {
+                title: "Warden – Hostel Transferred",
+                message: "{{message}}",
+                type: "info"
+            },
+            push: {
+                title: "Warden – Hostel Transferred",
+                body: "{{message}}"
             }
         }
     },
@@ -114,6 +160,17 @@ export default {
             push: {
                 title: "Ward's Hostel Vacated",
                 body: "Your ward {{studentName}} has been vacated from their hostel."
+            }
+        },
+        user: {
+            "in-app": {
+                title: "Warden – Hostel Vacated",
+                message: "{{message}}",
+                type: "info"
+            },
+            push: {
+                title: "Warden – Hostel Vacated",
+                body: "{{message}}"
             }
         }
     }

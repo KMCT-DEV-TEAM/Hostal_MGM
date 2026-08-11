@@ -37,5 +37,40 @@ export default {
                 body: "Your mentorship assignment for batch {{batchName}} has been completed."
             }
         }
+    },
+    MENTOR_RELEASED: {
+        mentor: {
+            "in-app": {
+                title: "Released from Batch",
+                message: "You have been released from batch {{batchName}}. Reason: {{reason}}",
+                type: "info"
+            },
+            push: {
+                title: "Released from Batch",
+                body: "You have been released from batch {{batchName}}. Reason: {{reason}}"
+            }
+        },
+        student: {
+            "in-app": {
+                title: "Mentor Unassigned",
+                message: "{{message}}",
+                type: "info"
+            },
+            push: {
+                title: "Mentor Unassigned",
+                body: "{{message}}"
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Mentor Unassigned",
+                message: "{{message}}",
+                type: "info"
+            },
+            push: {
+                title: "Mentor Unassigned",
+                body: "{{message}}"
+            }
+        }
     }
 };

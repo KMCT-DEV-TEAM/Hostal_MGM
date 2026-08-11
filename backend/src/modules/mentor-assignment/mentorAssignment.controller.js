@@ -5,7 +5,8 @@ import {
   getPaginatedAssignmentsDb,
   getAssignmentByIdDb,
   updateAssignmentDb,
-  transferMentorDb
+  transferMentorDb,
+  releaseAssignmentDb
 } from "./mentorAssignment.service.js";
 
 /**
@@ -108,7 +109,8 @@ export const transferMentor = asyncHandler(async (req, res) => {
 export const releaseAssignment = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await updateAssignmentDb(id, { status: "completed" }, req.user);
+    const { reason, status } = req.body;
+    const result = await releaseAssignmentDb(id, reason, status, req.user);
     return sendSuccess(res, 200, "Batch assignment released successfully", {
       data: result
     });

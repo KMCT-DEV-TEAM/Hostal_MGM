@@ -15,6 +15,8 @@ import studentHostelModel from "../student-hostels/studentHostel.model.js";
 import MentorAssignment from "../mentors/mentorAssignment.model.js";
 import StudentParent from "../parents/studentParent.model.js";
 import { createLogDb } from "../logs/log.service.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import { buildSender } from "../notifications/utils/sender.util.js";
 
 const createStudent = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
@@ -126,6 +128,22 @@ const createStudent = asyncHandler(async (req, res) => {
       status: "success"
     });
 
+    const studentId = result.student?._id || result._id;
+    const studentName = result.student?.name || req.body.name || '';
+
+    orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'STUDENT_CREATED',
+      target: [
+        { type: 'STUDENT', filter: { studentId } },
+        { type: 'PARENT', filter: { studentId } }
+      ],
+      data: {
+        studentName,
+        studentId
+      }
+    }).catch(err => console.error("[Notification Error] STUDENT_CREATED:", err));
+
     return sendSuccess(
       res,
       201,
@@ -151,10 +169,15 @@ const createStudent = asyncHandler(async (req, res) => {
 const updateStudent = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  const oldStudent = await Student.findById(id).lean();
+  if (!oldStudent) {
+    return sendError(res, 404, "Student not found");
+  }
+
   const result = await updateStudentDb(id, req.body);
 
   if (!result) {
-    return sendError(res, 404, "Student not found");
+    return sendError(res, 404, "Failed to update student");
   }
 
   await createLogDb({
@@ -163,20 +186,43 @@ const updateStudent = asyncHandler(async (req, res) => {
     entityId: id,
     user: req.user.id || req.user._id,
     userRole: req.user.role,
-    details: `Updated student profile details`,
+    details: `Updated student profile information`,
     status: "success"
   });
 
-  return sendSuccess(
-    res,
-    200,
-    "Student updated successfully",
-    {
-      studentId: result.studentId,
-      name: result.name,
-      email: result.email,
+  // Notification: High-value changes
+  const newStudent = result.student || result;
+
+  if (oldStudent.batchId?.toString() !== newStudent.batchId?.toString()) {
+    orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'STUDENT_BATCH_CHANGED',
+      target: [
+        { type: 'STUDENT', filter: { studentId: id } },
+        { type: 'MENTOR', filter: { studentId: id } } // Triggers new mentor based on new batch
+      ],
+      data: { studentName: newStudent.name, studentId: id }
+    }).catch(err => console.error("[Notification Error] STUDENT_BATCH_CHANGED:", err));
+  }
+
+  if (oldStudent.hostelId?.toString() !== newStudent.hostelId?.toString()) {
+    const hostelDoc = await hostelModel.findById(newStudent.hostelId).lean();
+    if (hostelDoc && hostelDoc.wardens && hostelDoc.wardens.length > 0) {
+      orchestratorService.triggerNotification({
+        sender: buildSender(req.user),
+        eventName: 'STUDENT_HOSTEL_CHANGED',
+        target: [
+          { type: 'STUDENT', filter: { studentId: id } },
+          { type: 'USER', filter: { userIds: hostelDoc.wardens } } // Targets warden of the new hostel
+        ],
+        data: { studentName: newStudent.name, studentId: id }
+      }).catch(err => console.error("[Notification Error] STUDENT_HOSTEL_CHANGED:", err));
     }
-  );
+  }
+
+  return sendSuccess(res, 200, "Student updated successfully", {
+    data: result.student || result,
+  });
 });
 
 const changeStudentEmail = asyncHandler(async (req, res) => {
@@ -246,6 +292,13 @@ const changeStudentEmail = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+  orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'EMAIL_CHANGED_CONFIRMATION',
+    target: { type: 'STUDENT', filter: { studentId: student._id } },
+    data: { studentName: student.name, studentId: student._id }
+  }).catch(err => console.error("[Notification Error] EMAIL_CHANGED_CONFIRMATION:", err));
+
   return sendSuccess(res, 200, "Student email updated successfully", {
     data: {
       _id: student._id,
@@ -290,6 +343,29 @@ const toggleStudentStatus = asyncHandler(async (req, res) => {
     details: `Student status changed to ${student.isActive ? 'Active' : 'Inactive'}`,
     status: "success"
   });
+
+  const eventName = student.isActive ? 'STUDENT_ACTIVATED' : 'STUDENT_DEACTIVATED';
+  const targets = [
+    { type: 'STUDENT', filter: { studentId: student._id } },
+    { type: 'PARENT', filter: { studentId: student._id, includeInactive: !student.isActive } }
+  ];
+
+  if (!student.isActive) {
+    if (student.hostelId) {
+      const hostelDoc = await hostelModel.findById(student.hostelId).lean();
+      if (hostelDoc && hostelDoc.wardens && hostelDoc.wardens.length > 0) {
+        targets.push({ type: 'USER', filter: { userIds: hostelDoc.wardens } });
+      }
+    }
+    targets.push({ type: 'MENTOR', filter: { studentId: student._id } });
+  }
+
+  orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName,
+    target: targets,
+    data: { studentName: student.name, studentId: student._id }
+  }).catch(err => console.error(`[Notification Error] ${eventName}:`, err));
 
   return sendSuccess(
     res,
@@ -352,6 +428,37 @@ const bulkUpdateStudentStatus = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+  if (result.modifiedCount > 0) {
+    const eventName = isActive ? 'STUDENT_ACTIVATED' : 'STUDENT_DEACTIVATED';
+    const targets = [
+      { type: 'STUDENT', filter: { studentIds: ids } },
+      { type: 'PARENT', filter: { studentIds: ids, includeInactive: !isActive } }
+    ];
+
+    if (!isActive) {
+      targets.push({ type: 'MENTOR', filter: { studentIds: ids } });
+      
+      const students = await Student.find({ _id: { $in: ids } }).select('hostelId').lean();
+      const hostelIds = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+      
+      if (hostelIds.length > 0) {
+        const hostels = await hostelModel.find({ _id: { $in: hostelIds } }).select('wardens').lean();
+        const wardenIds = [...new Set(hostels.flatMap(h => h.wardens?.map(w => w.toString()) || []))];
+        
+        if (wardenIds.length > 0) {
+          targets.push({ type: 'USER', filter: { userIds: wardenIds } });
+        }
+      }
+    }
+
+    orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName,
+      target: targets,
+      data: { studentName: "Student", studentId: "" }
+    }).catch(err => console.error(`[Notification Error] Bulk ${eventName}:`, err));
+  }
+
   return sendSuccess(
     res,
     200,
@@ -405,6 +512,18 @@ const updateStudentOrganization = asyncHandler(async (req, res) => {
     details: `Moved student to organization ${organization.name}`,
     status: "success"
   });
+
+  orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'STUDENT_ORGANIZATION_CHANGED',
+    target: [
+      { type: 'STUDENT', filter: { studentId: student._id } },
+      { type: 'PARENT', filter: { studentId: student._id } },
+      { type: 'ROLE', filter: { role: 'admin', organizationId: oldOrganizationId } },
+      { type: 'ROLE', filter: { role: 'admin', organizationId: organizationId } }
+    ],
+    data: { studentName: student.name, studentId: student._id }
+  }).catch(err => console.error("[Notification Error] STUDENT_ORGANIZATION_CHANGED:", err));
 
   return sendSuccess(res, 200, "Student organization updated successfully", {
     data: {
@@ -603,7 +722,7 @@ const getStudentById = asyncHandler(async (req, res) => {
     }
   }
 
-  const studentParents = await StudentParent.find({ studentId: id, status: 'active' })
+  const studentParents = await StudentParent.find({ studentId: id })
     .populate("parentId")
     .lean();
 

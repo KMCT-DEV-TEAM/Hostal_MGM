@@ -254,6 +254,53 @@ class ParentRepository {
     if (session) query.session(session);
     return await query;
   }
+
+  /**
+   * Fetches a parent and their linked organization and batch IDs in one query.
+   */
+  async getParentAuthContext(parentId) {
+    const objectId = mongoose.Types.ObjectId.isValid(parentId) 
+      ? new mongoose.Types.ObjectId(parentId) 
+      : null;
+
+    if (!objectId) return null;
+
+    const pipeline = [
+      { $match: { _id: objectId } },
+      {
+        $lookup: {
+          from: "studentparents",
+          localField: "_id",
+          foreignField: "parentId",
+          as: "links"
+        }
+      },
+      {
+        $lookup: {
+          from: "students",
+          localField: "links.studentId",
+          foreignField: "_id",
+          as: "students"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          email: 1,
+          // Map out the linked context to flat arrays for easy checking
+          linkedOrganizationIds: { 
+            $map: { input: "$students", as: "s", in: { $toString: "$$s.organizationId" } } 
+          },
+          linkedBatchIds: { 
+            $map: { input: "$students", as: "s", in: { $toString: "$$s.batchId" } } 
+          }
+        }
+      }
+    ];
+
+    const results = await Parent.aggregate(pipeline);
+    return results.length ? results[0] : null;
+  }
 }
 
 export const parentRepository = new ParentRepository();

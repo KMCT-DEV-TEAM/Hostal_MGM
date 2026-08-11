@@ -970,20 +970,17 @@ export const approvePass = asyncHandler(async (req, res) => {
   const studentName = updatedPass.studentId.name;
   const parentName = req.user.name || "Parent";
 
-  await orchestratorService.triggerNotification({
-    sender: buildSender(req.user),
-    eventName: 'PASS_PARENT_APPROVED',
-    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
-    data: { passTypeLabel, studentName, parentName, link }
-  }).catch(err => console.error("Notification Error:", err));
-
-
   const studentDoc = await Student.findById(updatedPass.studentId._id || updatedPass.studentId).select("organizationId").lean();
-  const target = await getPassApproverRecipients(studentDoc._id, studentDoc.organizationId);
+  const approverTarget = await getPassApproverRecipients(studentDoc._id, studentDoc.organizationId);
+
   await orchestratorService.triggerNotification({
     sender: buildSender(req.user),
     eventName: 'PASS_PARENT_APPROVED',
-    target,
+    target: [
+      { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+      approverTarget,
+      { type: 'ROLE', filter: { role: 'warden', organizationId: studentDoc.organizationId } }
+    ],
     data: { passTypeLabel, studentName, parentName, link }
   }).catch(err => console.error("Notification Error:", err));
 

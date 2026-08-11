@@ -452,3 +452,37 @@ export const addInternalNoteDb = async (complaintId, userRole, addedBy, noteText
 
     return await complaint.save();
 };
+
+const _addContextToComplaints = async (studentId, allocationId, actor, session, actionType) => {
+    const marker = `[Allocation: ${allocationId}]`;
+    const noteText = actionType === "transferred" 
+        ? `${marker} Student transferred to another hostel. Complaint remains associated with the original room for maintenance follow-up.`
+        : `${marker} Student vacated the hostel. Complaint remains associated with the original room for maintenance follow-up.`;
+    
+    await Complaint.updateMany(
+        {
+            studentId,
+            status: { $in: ['Pending', 'In progress', 'Awaiting'] },
+            "internalNotes.note": { $not: { $regex: marker } }
+        },
+        {
+            $push: {
+                internalNotes: {
+                    note: noteText,
+                    addedBy: actor._id || actor.id || null,
+                    role: actor.role || "system",
+                    date: new Date()
+                }
+            }
+        },
+        { session }
+    );
+};
+
+export const addHostelTransferContextToComplaints = async (studentId, allocationId, actor, session) => {
+    return _addContextToComplaints(studentId, allocationId, actor, session, "transferred");
+};
+
+export const addHostelVacateContextToComplaints = async (studentId, allocationId, actor, session) => {
+    return _addContextToComplaints(studentId, allocationId, actor, session, "vacated");
+};

@@ -412,7 +412,7 @@ export const checkInVisitor = async (req, res) => {
         await createLogDb({
             action: "Visitor Check-In",
             entityType: "VisitRequest",
-            entityId: req.body.visitRequestId || result?._id || "Unknown",
+            entityId: req.body.visitRequestId || result?.visitId || result?._id,
             user: req.user.id || req.user._id,
             userRole: req.user.role,
             details: `Warden checked in visitor`,

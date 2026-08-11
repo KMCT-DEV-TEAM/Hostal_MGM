@@ -11,7 +11,8 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import ActivityLog from '@/components/ui/ActivityLog';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 import Button from '@/components/ui/Button';
-import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import MentorReleaseModal from './MentorReleaseModal';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 export default function MentorDetailsModal({
     mentor: initialMentor,
@@ -51,16 +52,18 @@ export default function MentorDetailsModal({
         };
     }, [initialMentor?._id, role]);
 
-    const handleRelease = async () => {
+    const handleRelease = async (reason) => {
         if (!assignmentToRelease) return;
         setIsReleasing(true);
         try {
-            await mentorService.endMentorAssignment(assignmentToRelease);
+            await mentorService.endMentorAssignment(assignmentToRelease, { reason });
+            showSuccessToast('Mentor released successfully');
             // Refresh mentor details
             const response = await mentorService.getMentorById(role, mentor._id);
             if (response?.data) setMentor(response.data);
         } catch (error) {
             console.error("Failed to release mentor", error);
+            showErrorToast(error?.response?.data?.message || error?.message || 'Failed to release mentor');
         } finally {
             setIsReleasing(false);
             setAssignmentToRelease(null);
@@ -220,16 +223,11 @@ export default function MentorDetailsModal({
                 )}
             </Modal>
 
-            <ConfirmationModal
+            <MentorReleaseModal
                 isOpen={!!assignmentToRelease}
                 onClose={() => setAssignmentToRelease(null)}
                 onConfirm={handleRelease}
-                title="Release Mentor"
-                message="Are you sure you want to release the mentor from this active assignment? This will move it to the history timeline."
-                confirmText="Release"
-                cancelText="Cancel"
                 isSubmitting={isReleasing}
-                variant="danger"
             />
         </>
     );

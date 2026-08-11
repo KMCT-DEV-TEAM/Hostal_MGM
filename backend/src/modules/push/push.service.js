@@ -124,7 +124,7 @@ export const sendPushNotification = async (recipient, payload) => {
       const statusCode = error.statusCode;
       failures.push({ endpoint: sub.endpoint, error: error.message, statusCode });
 
-      if (statusCode === 404 || statusCode === 410 || (statusCode === 403 && error.body && error.body.includes("VAPID credentials"))) {
+      if (statusCode === 401 || statusCode === 404 || statusCode === 410 || (statusCode === 403 && error.body && error.body.includes("VAPID credentials"))) {
         await removeSubscriptionService(sub.endpoint, true);
       }
     }

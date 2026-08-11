@@ -133,6 +133,7 @@ class OrchestratorService {
 
                 if (baseLink) channelPayload.data = { url: baseLink };
                 if (channel === 'in-app') {
+                    channelPayload.id = docId;
                     channelPayload.event = eventName;
                     if (sender) channelPayload.sender = { name: sender.snapshot?.name, role: sender.snapshot?.role };
                 }

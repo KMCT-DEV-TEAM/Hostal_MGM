@@ -288,11 +288,15 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
     Promise.all([
         orchestratorService.triggerNotification({
             eventName: 'VISITOR_CREATED',
-            target: { type: 'ROLE', filter: { role: { $in: ['admin', 'warden'] } } },
+            target: [
+                { type: 'ROLE', filter: { role: { $in: ['admin'] } } },
+                { type: 'MENTOR', filter: { studentIds: studentIds.map(id => id.toString()) } }
+            ],
             data: {
                 parentName: 'A Parent',
                 visitorName: savedVisitor.name,
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             }
         })
     ]).catch(err => console.error('[Notification] Error in createBrandNewVisitorProfile:', err));
@@ -411,11 +415,15 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
     Promise.all([
         orchestratorService.triggerNotification({
             eventName: 'VISITOR_CREATED',
-            target: { type: 'ROLE', filter: { role: { $in: ['admin', 'warden'] } } },
+            target: [
+                { type: 'ROLE', filter: { role: { $in: ['admin'] } } },
+                { type: 'MENTOR', filter: { studentIds: studentIds.map(id => id.toString()) } }
+            ],
             data: {
                 parentName: 'A Parent',
                 visitorName: existingVisitor.name,
-                studentNames: studentNames
+                studentNames: studentNames,
+                link: '/dashboard/visitors'
             }
         })
     ]).catch(err => console.error('[Notification] Error in confirmVisitorReuseProfile:', err));

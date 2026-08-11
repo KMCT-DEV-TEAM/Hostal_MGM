@@ -19,24 +19,6 @@ export const updateStudentHostel = asyncHandler(async (req, res) => {
   const eventName = result.action === "allocated" ? "HOSTEL_ALLOCATED" : "HOSTEL_CHANGED";
   const studentName = result.student.name || `${result.student.firstName || ''} ${result.student.lastName || ''}`.trim();
 
-  // Trigger notification for Student
-  await orchestratorService.triggerNotification({
-    sender: { id: req.user._id, role: req.user.role, name: req.user.name },
-    eventName,
-    target: { type: 'STUDENT', filter: { studentId: result.student._id } },
-    data: { roomNumber: result.student.roomNumber, studentName },
-    channels: ['in-app', 'push']
-  }).catch(err => console.error("Notification Error (Student):", err));
-
-  // Trigger notification for Parent
-  await orchestratorService.triggerNotification({
-    sender: { id: req.user._id, role: req.user.role, name: req.user.name },
-    eventName,
-    target: { type: 'PARENT', filter: { studentId: result.student._id } },
-    data: { roomNumber: result.student.roomNumber, studentName },
-    channels: ['in-app', 'push']
-  }).catch(err => console.error("Notification Error (Parent):", err));
-
   await createLogDb({
     action: result.action === "allocated" ? "Assigned Student to Hostel" : "Transferred Student to Hostel",
     entityType: "StudentHostel",
@@ -70,24 +52,6 @@ export const vacateHostel = asyncHandler(async (req, res) => {
   });
 
   const studentName = result.student.name || `${result.student.firstName || ''} ${result.student.lastName || ''}`.trim();
-
-  // Trigger notification for Student
-  await orchestratorService.triggerNotification({
-    sender: { id: req.user._id, role: req.user.role, name: req.user.name },
-    eventName: "HOSTEL_VACATED",
-    target: { type: 'STUDENT', filter: { studentId: result.student._id } },
-    data: { studentName },
-    channels: ['in-app', 'push']
-  }).catch(err => console.error("Notification Error (Student):", err));
-
-  // Trigger notification for Parent
-  await orchestratorService.triggerNotification({
-    sender: { id: req.user._id, role: req.user.role, name: req.user.name },
-    eventName: "HOSTEL_VACATED",
-    target: { type: 'PARENT', filter: { studentId: result.student._id } },
-    data: { studentName },
-    channels: ['in-app', 'push']
-  }).catch(err => console.error("Notification Error (Parent):", err));
 
   await createLogDb({
     action: "Vacated Student from Hostel",
