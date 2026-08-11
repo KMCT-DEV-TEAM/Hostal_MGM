@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 import FurnitureType from "./furnitureType.model.js";
 import FurnitureAsset from "./furnitureAsset.model.js";
 import FurnitureAssetHistory from "./furnitureAssetHistory.model.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import Hostel from "../hostels/hostel.model.js";
+import Student from "../students/student.model.js";
 
 // --- DB Layer Functions ---
 export const getLatestAssetIdByPrefixDb = async (prefix, session) => {
@@ -309,6 +312,37 @@ export const bulkAllocateAssetsToStudentService = async (student, assets, actor)
     }
 
     await session.commitTransaction();
+
+    // Trigger Notifications
+    try {
+      const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+      const sender = actor ? { id: actor._id || actor.id, role: actor.role, name: actor.name } : null;
+
+      orchestratorService.triggerNotification({
+        sender,
+        eventName: 'FURNITURE_ALLOCATED',
+        target: [
+          { type: 'STUDENT', filter: { studentIds: [student._id.toString()] } },
+          { type: 'PARENT', filter: { studentIds: [student._id.toString()] } }
+        ],
+        data: { count: assets.length, studentName }
+      }).catch(err => console.error(err));
+
+      if (student.hostelId) {
+        const wardenIds = (await Hostel.findById(student.hostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [];
+        if (wardenIds.length > 0) {
+          orchestratorService.triggerNotification({
+            sender,
+            eventName: 'FURNITURE_ALLOCATED',
+            target: { type: 'USER', filter: { userIds: wardenIds } },
+            data: { count: assets.length, studentName }
+          }).catch(err => console.error(err));
+        }
+      }
+    } catch (notifErr) {
+      console.error("[Notification Error - Furniture Allocated]", notifErr);
+    }
+
     return { status: "success", count: assets.length };
   } catch (error) {
     await session.abortTransaction();
@@ -343,6 +377,42 @@ export const returnAssetService = async (asset, actor) => {
     await history.save({ session });
 
     await session.commitTransaction();
+
+    // Trigger Notifications
+    try {
+      if (previousStudent) {
+        const student = await Student.findById(previousStudent).lean();
+        if (student) {
+          const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+          const sender = actor ? { id: actor._id || actor.id, role: actor.role, name: actor.name } : null;
+
+          orchestratorService.triggerNotification({
+            sender,
+            eventName: 'FURNITURE_RETURNED',
+            target: [
+              { type: 'STUDENT', filter: { studentIds: [previousStudent.toString()] } },
+              { type: 'PARENT', filter: { studentIds: [previousStudent.toString()] } }
+            ],
+            data: { assetId: asset.furnitureId || asset._id.toString(), studentName }
+          }).catch(err => console.error(err));
+
+          if (student.hostelId) {
+            const wardenIds = (await Hostel.findById(student.hostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [];
+            if (wardenIds.length > 0) {
+              orchestratorService.triggerNotification({
+                sender,
+                eventName: 'FURNITURE_RETURNED',
+                target: { type: 'USER', filter: { userIds: wardenIds } },
+                data: { assetId: asset.furnitureId || asset._id.toString(), studentName }
+              }).catch(err => console.error(err));
+            }
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.error("[Notification Error - Furniture Returned]", notifErr);
+    }
+
     return true;
   } catch (error) {
     await session.abortTransaction();
@@ -378,6 +448,35 @@ export const changeLifecycleStatusService = async (asset, newStatus, actionName,
     await history.save({ session });
 
     await session.commitTransaction();
+
+    // Trigger Notifications
+    try {
+      const sender = actor ? { id: actor._id || actor.id, role: actor.role, name: actor.name } : null;
+
+      const type = await FurnitureType.findById(asset.furnitureTypeId).lean();
+      const wardenIds = type?.hostelId ? (await Hostel.findById(type.hostelId).select("wardens").lean())?.wardens?.map(id => id.toString()) || [] : [];
+
+      if (wardenIds.length > 0) {
+        orchestratorService.triggerNotification({
+          sender,
+          eventName: 'FURNITURE_STATUS_CHANGED',
+          target: { type: 'USER', filter: { userIds: wardenIds } },
+          data: { assetId: asset.furnitureId || asset._id.toString(), newStatus }
+        }).catch(err => console.error(err));
+      }
+
+      if (asset.studentId) {
+        orchestratorService.triggerNotification({
+          sender,
+          eventName: 'FURNITURE_STATUS_CHANGED',
+          target: { type: 'STUDENT', filter: { studentIds: [asset.studentId.toString()] } },
+          data: { assetId: asset.furnitureId || asset._id.toString(), newStatus }
+        }).catch(err => console.error(err));
+      }
+    } catch (notifErr) {
+      console.error("[Notification Error - Furniture Status Changed]", notifErr);
+    }
+
     return true;
   } catch (error) {
     await session.abortTransaction();

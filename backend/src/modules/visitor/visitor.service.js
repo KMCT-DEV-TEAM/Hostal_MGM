@@ -729,7 +729,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
     try {
         const studentNames = students.map(s => s.name).join(', ');
         const notificationData = {
-            personName: personData.name,
+            personName: personData.personName,
             personType: visitor.refType,
             studentName: studentNames,
             purpose: purpose,
@@ -747,42 +747,47 @@ export const checkInVisitor = async (payload, wardenUser) => {
             }
         };
 
-        // Notify parents linked to the student
         const parentExcludeIds = visitor.refType === 'Parent' ? [visitor.refId.toString()] : [];
 
-        orchestratorService.triggerNotification({
-            eventName: 'VISIT_CHECKED_IN',
-            target: {
+        // Determine targets (Parent, Student, Mentor)
+        const targets = [
+            {
                 type: 'PARENT',
-                filter: {
-                    studentIds: uniqueStudentIds,
-                    excludeIds: parentExcludeIds
-                }
+                filter: { studentIds: uniqueStudentIds, excludeIds: parentExcludeIds }
             },
-            data: notificationData,
-            sender: notificationSender
-        }).catch(console.error);
+            {
+                type: 'STUDENT',
+                filter: { studentIds: uniqueStudentIds }
+            },
+            {
+                type: 'MENTOR',
+                filter: { studentIds: uniqueStudentIds }
+            }
+        ];
 
-        // Also notify students
-        orchestratorService.triggerNotification({
+        // Resolve Wardens via student hostelIds
+        const hostelIds = [...new Set(students.map(s => s.hostelId?.toString()).filter(Boolean))];
+        if (hostelIds.length > 0) {
+            const hostels = await hostelModel.find({ _id: { $in: hostelIds } }).select("wardens").lean();
+            const wardenIds = [...new Set(hostels.flatMap(h => h.wardens || []).map(w => w.toString()))];
+            if (wardenIds.length > 0) {
+                targets.push({ type: 'USER', filter: { userIds: wardenIds } });
+            }
+        }
+
+        await orchestratorService.triggerNotification({
             eventName: 'VISIT_CHECKED_IN',
-            target: {
-                type: 'USER',
-                filter: {
-                    role: 'student',
-                    userIds: uniqueStudentIds
-                }
-            },
+            target: targets,
             data: notificationData,
             sender: notificationSender
-        }).catch(console.error);
+        });
     } catch (error) {
         console.error('Error firing check-in notifications:', error);
     }
 
     return {
         visitId: newVisit._id,
-        personName: personData.name,
+        personName: personData.personName,
         personType: visitor.refType,
         studentName: newVisit.students?.map(s => s.name).join(', ') || 'Student',
         purpose: newVisit.purpose,
@@ -996,37 +1001,36 @@ export const autoCompleteExpiredVisits = async () => {
                     type: 'organization'
                 };
 
-                // Notify parent/visitor
-                if (visit.visitor?.refType === 'Parent') {
-                    await orchestratorService.triggerNotification({
-                        eventName: 'VISIT_AUTO_CHECKED_OUT',
-                        target: {
-                            type: 'USER',
-                            filter: { role: 'parent', userIds: [visit.visitor.refId._id.toString()] }
-                        },
-                        data: notificationData,
-                        sender: notificationSender
-                    });
-                } else if (visit.visitor?.refType === 'Visitor') {
-                    // Assuming we notify linked parents if it's a general visitor
-                    await orchestratorService.triggerNotification({
-                        eventName: 'VISIT_AUTO_CHECKED_OUT',
-                        target: {
-                            type: 'USER',
-                            filter: { role: 'parent', studentIds: studentIds }
-                        },
-                        data: notificationData,
-                        sender: notificationSender
-                    });
+                // Determine targets (Parent, Student, Mentor)
+                const parentExcludeIds = visit.visitor?.refType === 'Parent' ? [visit.visitor.refId._id.toString()] : [];
+                const targets = [
+                    {
+                        type: 'PARENT',
+                        filter: { studentIds: studentIds, excludeIds: parentExcludeIds }
+                    },
+                    {
+                        type: 'STUDENT',
+                        filter: { studentIds: studentIds }
+                    },
+                    {
+                        type: 'MENTOR',
+                        filter: { studentIds: studentIds }
+                    }
+                ];
+
+                // Resolve Wardens via student hostelIds
+                const hostelIds = [...new Set(visit.students.map(s => s.hostelId?.toString()).filter(Boolean))];
+                if (hostelIds.length > 0) {
+                    const hostels = await hostelModel.find({ _id: { $in: hostelIds } }).select("wardens").lean();
+                    const wardenIds = [...new Set(hostels.flatMap(h => h.wardens || []).map(w => w.toString()))];
+                    if (wardenIds.length > 0) {
+                        targets.push({ type: 'USER', filter: { userIds: wardenIds } });
+                    }
                 }
 
-                // Notify students
                 await orchestratorService.triggerNotification({
                     eventName: 'VISIT_AUTO_CHECKED_OUT',
-                    target: {
-                        type: 'USER',
-                        filter: { role: 'student', userIds: studentIds }
-                    },
+                    target: targets,
                     data: notificationData,
                     sender: notificationSender
                 });
@@ -1167,17 +1171,36 @@ export const approveVisitRequest = async (visitRequestId, user, session = null) 
     // 5. Update VisitRequest
     const updatedRequest = await visitorRepository.approveVisitRequest(visitRequestId, timelineEntry, session);
 
-    // (Optional) Trigger notifications here in the future
+    // Trigger Notifications
     try {
-        const studentName = visitRequest.studentId?.name || 'Student';
+        const student = await Student.findById(visitRequest.studentId._id).lean();
+        const studentName = student?.name || student?.firstName || 'Student';
+        const senderInfo = { id: user.id || user._id, model: 'User', snapshot: { name: user.name, role: user.role } };
+        const studentIdStr = visitRequest.studentId._id.toString();
+
+        // Base targets (Parent, Student, Mentor)
+        const targets = [
+            { type: 'PARENT', filter: { studentIds: [studentIdStr] } },
+            { type: 'STUDENT', filter: { studentIds: [studentIdStr] } },
+            { type: 'MENTOR', filter: { studentIds: [studentIdStr] } }
+        ];
+
+        // Add Warden via hostel lookup if student has a hostel
+        if (student?.hostelId) {
+            const hostel = await hostelModel.findById(student.hostelId).select("wardens").lean();
+            if (hostel && hostel.wardens && hostel.wardens.length > 0) {
+                targets.push({ type: 'USER', filter: { userIds: hostel.wardens.map(w => w.toString()) } });
+            }
+        }
+
         await orchestratorService.triggerNotification({
             eventName: 'VISITOR_APPROVED',
-            target: { type: 'PARENT', filter: { studentIds: [visitRequest.studentId._id.toString()] } },
+            target: targets,
             data: { visitorName: 'Visitor', studentNames: studentName, link: '/dashboard/visitors' },
-            sender: { id: user.id || user._id, model: 'User', snapshot: { name: user.name, role: user.role } }
+            sender: senderInfo
         });
     } catch (e) {
-        console.error('[VisitorService] Failed to publish single VISITOR_APPROVED event:', e);
+        console.error('[VisitorService] Failed to publish VISITOR_APPROVED event:', e);
     }
 
     return updatedRequest;
@@ -1214,7 +1237,23 @@ export const rejectVisitRequest = async (visitRequestId, reason, user, session =
     // 5. Update VisitRequest
     const updatedRequest = await visitorRepository.rejectVisitRequest(visitRequestId, timelineEntry, session);
 
-    // (Optional) Trigger notifications here in the future
+    // Trigger Notifications
+    try {
+        const studentIdStr = visitRequest.studentId._id.toString();
+        const senderInfo = { id: user.id || user._id, model: 'User', snapshot: { name: user.name, role: user.role } };
+        
+        await orchestratorService.triggerNotification({
+            eventName: 'VISITOR_REJECTED',
+            target: [
+                { type: 'PARENT', filter: { studentIds: [studentIdStr] } },
+                { type: 'STUDENT', filter: { studentIds: [studentIdStr] } }
+            ],
+            data: { visitorName: 'Visitor', reason: reason, link: '/dashboard/visitors' },
+            sender: senderInfo
+        });
+    } catch (e) {
+        console.error('[VisitorService] Failed to publish VISITOR_REJECTED event:', e);
+    }
 
     return updatedRequest;
 };
@@ -1295,7 +1334,8 @@ export const blacklistVisitorProfile = async (visitorId, reason, user) => {
                     visitorName: visitor.name,
                     phone: visitor.phone,
                     reason,
-                    message: "Visitor has been blacklisted by Super Admin while currently inside the hostel. Please take immediate action."
+                    message: "Visitor has been blacklisted by Super Admin while currently inside the hostel. Please take immediate action.",
+                    link: '/dashboard/visitors'
                 }
             });
         } catch (err) {

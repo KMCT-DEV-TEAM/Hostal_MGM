@@ -158,16 +158,20 @@ export default {
             "in-app": {
                 title: "Pass Request Approved",
                 message: "The administration ({{approvedBy}}) has officially approved the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Approved",
+                body: "The administration ({{approvedBy}}) has officially approved the {{passTypeLabel}} request for {{studentName}}."
             }
         },
         admin: {
             "in-app": {
                 title: "Pass Approved",
-                message: "You have successfully approved the {{passTypeLabel}} request for {{studentName}}."
+                message: "The {{passTypeLabel}} request for {{studentName}} has been approved by {{approvedBy}}."
             },
             push: {
                 title: "Pass Approved",
-                body: "The pass request for {{studentName}} has been approved."
+                body: "The pass request for {{studentName}} has been approved by {{approvedBy}}."
             }
         },
         warden: {
@@ -217,16 +221,20 @@ export default {
             "in-app": {
                 title: "Pass Request Declined",
                 message: "The administration ({{approvedBy}}) has declined the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Declined",
+                body: "The administration ({{approvedBy}}) has declined the {{passTypeLabel}} request for {{studentName}}."
             }
         },
         admin: {
             "in-app": {
                 title: "Pass Declined",
-                message: "You have declined the {{passTypeLabel}} request for {{studentName}}."
+                message: "The {{passTypeLabel}} request for {{studentName}} has been declined by {{approvedBy}}."
             },
             push: {
                 title: "Pass Request Declined",
-                body: "The pass request for {{studentName}} has been declined."
+                body: "The pass request for {{studentName}} has been declined by {{approvedBy}}."
             }
         },
         warden: {
@@ -311,6 +319,16 @@ export default {
     },
 
     PASS_MODIFIED: {
+        student: {
+            "in-app": {
+                title: "Pass Request Modified",
+                message: "Your pass request was updated. {{message}}"
+            },
+            push: {
+                title: "Pass Request Modified",
+                body: "Your pass request was updated. Please check the app for details."
+            }
+        },
         parent: {
             "in-app": {
                 title: "Pass Request Modified",
@@ -386,6 +404,10 @@ export default {
                 title: "Pass Cancelled by Administration",
                 message: "A pass for {{studentName}} has been cancelled by administration. Reason: {{reason}}"
             },
+            push: {
+                title: "Pass Cancelled by Administration",
+                body: "A pass for {{studentName}} has been cancelled by administration. Reason: {{reason}}"
+            },
             email: {
                 subject: "Alert: Ward's Pass Cancelled",
                 html: `
@@ -404,6 +426,26 @@ export default {
                 title: "Pass Cancelled by Administration",
                 body: "A pass for {{studentName}} has been cancelled by administration."
             }
+        },
+        admin: {
+            "in-app": {
+                title: "Pass Cancelled",
+                message: "A pass for {{studentName}} has been cancelled. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled",
+                body: "A pass for {{studentName}} has been cancelled."
+            }
+        },
+        warden: {
+            "in-app": {
+                title: "Pass Cancelled",
+                message: "A pass for {{studentName}} has been cancelled. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled",
+                body: "A pass for {{studentName}} has been cancelled."
+            }
         }
     },
 
@@ -417,6 +459,16 @@ export default {
                 title: "Hostel Exit",
                 body: "You have been marked as left the hostel. Have a safe trip!"
             }
+        },
+        parent: {
+            "in-app": {
+                title: "Hostel Exit Registered",
+                message: "Your ward {{studentName}} has been marked as left the hostel."
+            },
+            push: {
+                title: "Hostel Exit",
+                body: "Your ward {{studentName}} has left the hostel."
+            }
         }
     },
 
@@ -429,6 +481,16 @@ export default {
             push: {
                 title: "Hostel Return",
                 body: "{{message}}"
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Hostel Return Registered",
+                message: "Your ward {{studentName}} has safely returned to the hostel."
+            },
+            push: {
+                title: "Hostel Return",
+                body: "Your ward {{studentName}} has returned to the hostel."
             }
         }
     },

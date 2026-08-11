@@ -14,7 +14,7 @@ import DetailRow from '@/components/ui/DetailRow';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LinkedStudentCard from '../LinkedStudentCard';
 import TimelineStep from '@/components/ui/TimelineStep';
-import { User, Phone, Mail, FileText, CreditCard, Users, MapPin, Building, Calendar, Info, Clock, History } from 'lucide-react';
+import { User, Phone, Mail, FileText, CreditCard, Users, MapPin, Building, Calendar, Info, Clock, History, AlertCircle } from 'lucide-react';
 import { formatDateTimeReadable } from '@/utils/formatters';
 
 export default function VisitorDetailsModal({
@@ -68,7 +68,8 @@ export default function VisitorDetailsModal({
             setVisitor(res.data || res);
         } catch (err) {
             console.error("Failed to fetch visitor details:", err);
-            setError("Failed to load details.");
+            const serverMessage = err?.response?.data?.message || "Failed to load details.";
+            setError(serverMessage);
         } finally {
             if (!isBackground) {
                 setIsLoading(false);
@@ -180,8 +181,26 @@ export default function VisitorDetailsModal({
 
     if (error) {
         return (
-            <Modal isOpen={isOpen} onClose={onClose} title="Error" maxWidth="max-w-md">
-                <div className="p-4 text-center text-danger font-medium">{error}</div>
+            <Modal isOpen={isOpen} onClose={onClose} title="Access Restricted" maxWidth="max-w-md">
+                <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                    <div className="w-16 h-16 bg-danger/10 text-danger rounded-full flex items-center justify-center">
+                        <AlertCircle size={32} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold text-text-primary mb-2">Unable to Load Visitor</h3>
+                        <p className="text-[14px] text-text-secondary leading-relaxed">
+                            {error}
+                        </p>
+                    </div>
+                    <Button
+                        onClick={onClose}
+                        size='sm'
+                        className="mt-4 !bg-primary! hover:!bg-primary! hover:!text-white! px-8"
+                        fullWidth={false}
+                    >
+                        Close
+                    </Button>
+                </div>
             </Modal>
         );
     }

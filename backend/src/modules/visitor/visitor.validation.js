@@ -391,7 +391,15 @@ export const validateCheckInVisitor = (req, res, next) => {
         });
     }
 
-    const maxExitTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour limit
+    const now = Date.now();
+    if (exitTimeDate.getTime() <= now) {
+        return res.status(400).json({
+            success: false,
+            message: "expectedExitTime must be a future time."
+        });
+    }
+
+    const maxExitTime = new Date(now + 60 * 60 * 1000); // 1 hour limit
     if (exitTimeDate > maxExitTime) {
         return res.status(400).json({
             success: false,
