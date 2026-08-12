@@ -977,9 +977,10 @@ export const approvePass = asyncHandler(async (req, res) => {
     sender: buildSender(req.user),
     eventName: 'PASS_PARENT_APPROVED',
     target: [
-      { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+      { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id.toString() } },
+      { type: 'PARENT', filter: { studentId: updatedPass.studentId._id.toString() } },
       approverTarget,
-      { type: 'ROLE', filter: { role: 'warden', organizationId: studentDoc.organizationId } }
+      { type: 'ROLE', filter: { role: 'warden', organizationId: studentDoc.organizationId.toString() } }
     ],
     data: { passTypeLabel, studentName, parentName, link }
   }).catch(err => console.error("Notification Error:", err));
@@ -1225,8 +1226,11 @@ export const markStudentLeftHostel = asyncHandler(async (req, res) => {
   await orchestratorService.triggerNotification({
     sender: buildSender(req.user),
     eventName: 'WARDEN_MARKED_OUT',
-    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
-    data: { message: "You have been marked as left the hostel. Have a safe trip!" }
+    target: [
+      { type: 'STUDENT', filter: { studentId: updatedPass.studentId._id } },
+      { type: 'PARENT', filter: { studentId: updatedPass.studentId._id } }
+    ],
+    data: { message: "The student has been marked as left the hostel. Have a safe trip!" }
   }).catch(err => console.error("Notification Error:", err));
 
   await createLogDb({
