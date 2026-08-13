@@ -39,10 +39,10 @@ export default function StudentDashboardMobileView({
     if (isLoading) {
         return (
             <div className="min-h-screen bg-[#F8F9FA] font-sans overflow-x-hidden pb-[100px]">
-                <div className="px-5 pt-8 pb-4 space-y-6 animate-pulse">
+                <div className="px-5 pt-5 pb-4 space-y-6 animate-pulse">
 
                     {/* Attendance Card Skeleton */}
-                    <div className="bg-white rounded-[24px] p-6 flex justify-between items-center shadow-sm border border-gray-50">
+                    <div className="bg-white rounded-3xl p-6 flex justify-between items-center shadow-sm border border-gray-50">
                         <div className="flex flex-col gap-2 z-10 w-full">
                             <div className="h-5 w-3/4 bg-gray-200 rounded"></div>
                             <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
@@ -55,17 +55,17 @@ export default function StudentDashboardMobileView({
                     </div>
 
                     {/* Stats Row Skeleton */}
-                    <div className="bg-white rounded-[24px] py-6 px-4 flex justify-between items-center shadow-sm border border-gray-50">
+                    <div className="bg-white rounded-3xl py-6 px-4 flex justify-between items-center shadow-sm border border-gray-50">
                         <div className="flex flex-col items-center flex-1 gap-2">
                             <div className="h-5 w-10 bg-gray-200 rounded"></div>
                             <div className="h-3 w-16 bg-gray-200 rounded"></div>
                         </div>
-                        <div className="h-10 w-[1px] bg-gray-100"></div>
+                        <div className="h-10 w-px bg-gray-100"></div>
                         <div className="flex flex-col items-center flex-1 gap-2">
                             <div className="h-5 w-10 bg-gray-200 rounded"></div>
                             <div className="h-3 w-16 bg-gray-200 rounded"></div>
                         </div>
-                        <div className="h-10 w-[1px] bg-gray-100"></div>
+                        <div className="h-10 w-px bg-gray-100"></div>
                         <div className="flex flex-col items-center flex-1 gap-2">
                             <div className="h-5 w-10 bg-gray-200 rounded"></div>
                             <div className="h-3 w-16 bg-gray-200 rounded"></div>
@@ -80,7 +80,7 @@ export default function StudentDashboardMobileView({
                         </div>
                         <div className="flex gap-4 overflow-x-hidden pb-4">
                             {[1, 2].map((i) => (
-                                <div key={i} className="bg-white rounded-[24px] p-5 min-w-[260px] w-[260px] shrink-0 shadow-sm border border-gray-50">
+                                <div key={i} className="bg-white rounded-3xl p-5 min-w-[260px] w-[260px] shrink-0 shadow-sm border border-gray-50">
                                     <div className="w-[46px] h-[46px] rounded-[14px] bg-gray-200 mb-5"></div>
                                     <div className="h-4 w-3/4 bg-gray-200 rounded mb-2.5"></div>
                                     <div className="space-y-2">
@@ -118,10 +118,10 @@ export default function StudentDashboardMobileView({
 
     return (
         <div className="min-h-screen bg-[#F8F9FA] font-sans overflow-x-hidden ">
-            <div className="px-5 pt-8 pb-4 space-y-6">
+            <div className="px-5 pt-5 pb-4 space-y-6">
 
                 {/* Attendance Overview Card */}
-                <div className="bg-white rounded-[24px] p-6 flex justify-between items-center shadow-sm border border-gray-50">
+                <div className="bg-white rounded-3xl p-6 flex justify-between items-center shadow-sm border border-gray-50">
                     <div className="flex flex-col gap-1.5 z-10">
                         <h3 className="text-[17px] font-bold text-[#1A1F36]">Attendance Overview</h3>
                         <p className="text-[13px] text-gray-500 font-medium">{attendanceRate}% Monthly Attendance</p>
@@ -161,7 +161,7 @@ export default function StudentDashboardMobileView({
                 </div>
 
                 {/* Stats Row */}
-                <div className="bg-white rounded-[24px] py-6 px-4 flex justify-between items-center shadow-sm border border-gray-50">
+                <div className="bg-white rounded-3xl py-6 px-4 flex justify-between items-center shadow-sm border border-gray-50">
                     <div className="flex flex-col items-center flex-1">
                         <span className="text-[17px] font-bold text-[#1e3a8a] mb-1.5">{attendanceRate}%</span>
                         <span className="text-[10.5px] text-gray-400 font-medium uppercase tracking-wider">Attendance</span>
@@ -198,7 +198,7 @@ export default function StudentDashboardMobileView({
                                 />
                             ))
                         ) : (
-                            <div className="bg-white rounded-[24px] p-5 text-center text-sm text-gray-500 shadow-sm border border-gray-50 flex-1">
+                            <div className="bg-white rounded-3xl p-5 text-center text-sm text-gray-500 shadow-sm border border-gray-50 flex-1">
                                 No recent announcements.
                             </div>
                         )}
