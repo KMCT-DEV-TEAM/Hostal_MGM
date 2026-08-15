@@ -1,16 +1,20 @@
-import mongoose from "mongoose";
-import dns from 'dns';
+import { PrismaClient } from '@prisma/client';
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
+const { Pool } = pg;
+const connectionString = `${process.env.DATABASE_URL}`;
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("MongoDB Connected");
-  } catch (err) {
-    console.error("Error connecting to MongoDB:", err.message);
-    process.exit(1);
-  }
-};
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
-export default connectDB;
+prisma.$connect()
+  .then(() => {
+    console.log('Database connected successfully');
+  })
+  .catch((error) => {
+    console.error('Database connection failed:', error);
+  });
+
+export default prisma;

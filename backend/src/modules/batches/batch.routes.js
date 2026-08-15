@@ -1,25 +1,22 @@
-import express from "express";
+import express from 'express';
 import {
   createBatch,
-  getBatches,
+  getBatchs,
   getBatchById,
   updateBatch,
-  toggleBatchStatus,
-  bulkUpdateBatchStatus,
-} from "./batch.controller.js";
-import authMiddleware from "../../middlewares/auth.middleware.js";
-import roleMiddleware from "../../middlewares/role.middleware.js";
+  deleteBatch,
+} from './batch.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-// Apply auth middleware to all batch routes
-router.use(authMiddleware);
+router.route('/')
+  .post(protect, createBatch)
+  .get(protect, getBatchs);
 
-router.post("/", createBatch);
-router.get("/", getBatches);
-router.put("/bulk-status", bulkUpdateBatchStatus);
-router.get("/:id", getBatchById);
-router.put("/:id", updateBatch);
-router.patch("/:id/status", toggleBatchStatus);
+router.route('/:id')
+  .get(protect, getBatchById)
+  .put(protect, updateBatch)
+  .delete(protect, deleteBatch);
 
 export default router;

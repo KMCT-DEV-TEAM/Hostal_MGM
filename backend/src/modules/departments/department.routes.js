@@ -1,24 +1,22 @@
-import express from "express";
+import express from 'express';
 import {
   createDepartment,
   getDepartments,
   getDepartmentById,
   updateDepartment,
-  toggleDepartmentStatus,
-  bulkUpdateDepartmentStatus,
-} from "./Department.controller.js";
-import authMiddleware from "../../middlewares/auth.middleware.js";
+  deleteDepartment,
+} from './department.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.route('/')
+  .post(protect, createDepartment)
+  .get(protect, getDepartments);
 
-router.post("/", createDepartment);
-router.get("/", getDepartments);
-router.put("/bulk-status", bulkUpdateDepartmentStatus);
-router.get("/:id", getDepartmentById);
-router.put("/:id", updateDepartment);
-router.patch("/:id/status", toggleDepartmentStatus);
+router.route('/:id')
+  .get(protect, getDepartmentById)
+  .put(protect, updateDepartment)
+  .delete(protect, deleteDepartment);
 
 export default router;
-

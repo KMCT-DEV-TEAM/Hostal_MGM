@@ -1,67 +1,64 @@
-import asyncHandler from "../../utils/asyncHandler.js";
-import { sendSuccess, sendError } from "../../utils/response.js";
-import {
-  verifyEmailExistsDb,
-  submitPasswordRequestDb,
-  getPasswordRequestsDb,
-  approvePasswordRequestDb,
-  rejectPasswordRequestDb,
-} from "./passwordRequest.service.js";
-import { getIo } from "../../config/socket.js";
+import prisma from '../../config/db.js';
 
-export const verifyEmailForReset = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  
-  if (!email) {
-    return sendError(res, 400, "Email is required");
+export const createPasswordRequest = async (req, res) => {
+  try {
+    const data = await prisma.passwordRequest.create({
+      data: req.body,
+    });
+    res.status(201).json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
+};
 
-  const exists = await verifyEmailExistsDb(email);
-
-  if (!exists) {
-    return sendError(res, 404, "User not found with this email");
+export const getPasswordRequests = async (req, res) => {
+  try {
+    const data = await prisma.passwordRequest.findMany();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
+};
 
-  return sendSuccess(res, 200, "Email verified successfully", { email });
-});
-
-export const submitPasswordRequest = asyncHandler(async (req, res) => {
-  const { email, newPassword, confirmPassword } = req.body;
-
-  if (!email || !newPassword || !confirmPassword) {
-    return sendError(res, 400, "Email, new password, and confirm password are required");
+export const getPasswordRequestById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await prisma.passwordRequest.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!data) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
+};
 
-  if (newPassword !== confirmPassword) {
-    return sendError(res, 400, "Passwords do not match");
+export const updatePasswordRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await prisma.passwordRequest.update({
+      where: { id: parseInt(id) },
+      data: req.body,
+    });
+    res.status(200).json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
+};
 
-  const result = await submitPasswordRequestDb(email, newPassword);
-
-  getIo()?.emit('passwordRequestCreated', result);
-
-  return sendSuccess(res, 201, "Password reset request submitted successfully", result);
-});
-
-export const getPasswordRequests = asyncHandler(async (req, res) => {
-  const result = await getPasswordRequestsDb(req.query);
-  return sendSuccess(res, 200, "Password requests fetched successfully", result);
-});
-
-export const approvePasswordRequest = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const result = await approvePasswordRequestDb(id);
-  
-  getIo()?.emit('passwordRequestUpdated', { id });
-
-  return sendSuccess(res, 200, "Password request approved and password updated successfully", result);
-});
-
-export const rejectPasswordRequest = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const result = await rejectPasswordRequestDb(id);
-  
-  getIo()?.emit('passwordRequestUpdated', { id });
-
-  return sendSuccess(res, 200, "Password request rejected successfully", result);
-});
+export const deletePasswordRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.passwordRequest.delete({
+      where: { id: parseInt(id) },
+    });
+    res.status(200).json({ message: 'Deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

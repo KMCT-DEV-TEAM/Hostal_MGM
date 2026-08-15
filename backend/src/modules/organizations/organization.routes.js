@@ -1,70 +1,22 @@
-import express from "express";
-
-import authMiddleware from "../../middlewares/auth.middleware.js";
-import roleMiddleware from "../../middlewares/role.middleware.js";
-
+import express from 'express';
 import {
   createOrganization,
   getOrganizations,
   getOrganizationById,
   updateOrganization,
-  toggleOrganizationStatus,
-  bulkUpdateOrganizationStatus
-} from "./organization.controller.js";
-
-import {
-  validateCreateOrganization,
-  validateOrganizationIdParam,
-  validateUpdateOrganization
-} from "./organization.validation.js";
+  deleteOrganization,
+} from './organization.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.post(
-  "/",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  validateCreateOrganization,
-  createOrganization
-);
+router.route('/')
+  .post(protect, createOrganization)
+  .get(protect, getOrganizations);
 
-router.get(
-  "/",
-  authMiddleware,
-  roleMiddleware("super_admin", "admin"),
-  getOrganizations
-);
-
-router.get(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("super_admin", "admin"),
-  validateOrganizationIdParam,
-  getOrganizationById
-);
-
-router.patch(
-  "/bulk-status",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  bulkUpdateOrganizationStatus
-);
-
-router.patch(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  validateOrganizationIdParam,
-  validateUpdateOrganization,
-  updateOrganization
-);
-
-router.patch(
-  "/:id/toggle-status",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  validateOrganizationIdParam,
-  toggleOrganizationStatus
-);
+router.route('/:id')
+  .get(protect, getOrganizationById)
+  .put(protect, updateOrganization)
+  .delete(protect, deleteOrganization);
 
 export default router;

@@ -1,78 +1,22 @@
-import express from "express";
-
-import authMiddleware from "../../middlewares/auth.middleware.js";
-import roleMiddleware from "../../middlewares/role.middleware.js";
-
-import {
-  validateCreateHostel,
-  validateHostelIdParam,
-  validateUpdateHostel,
-} from "./hostel.validation.js";
-
+import express from 'express';
 import {
   createHostel,
   getHostels,
-  getSelectionHostels,
   getHostelById,
   updateHostel,
-  toggleHostelStatus,
-  bulkUpdateHostelStatus,
-} from "./hostel.controller.js";
+  deleteHostel,
+} from './hostel.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.post(
-  "/",
-  authMiddleware,
-  roleMiddleware("super_admin", "admin"),
-  validateCreateHostel,
-  createHostel
-);
+router.route('/')
+  .post(protect, createHostel)
+  .get(protect, getHostels);
 
-router.get(
-  "/",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  getHostels
-);
-
-router.get(
-  "/selection",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  getSelectionHostels
-);
-
-router.get(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  validateHostelIdParam,
-  getHostelById
-);
-
-router.patch(
-  "/bulk-status",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  bulkUpdateHostelStatus
-);
-
-router.patch(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  validateHostelIdParam,
-  validateUpdateHostel,
-  updateHostel
-);
-
-router.patch(
-  "/:id/toggle-status",
-  authMiddleware,
-  roleMiddleware("admin", "super_admin"),
-  validateHostelIdParam,
-  toggleHostelStatus
-);
+router.route('/:id')
+  .get(protect, getHostelById)
+  .put(protect, updateHostel)
+  .delete(protect, deleteHostel);
 
 export default router;

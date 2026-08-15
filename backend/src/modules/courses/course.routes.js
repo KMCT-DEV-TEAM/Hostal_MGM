@@ -1,23 +1,22 @@
-import express from "express";
-import authMiddleware from "../../middlewares/auth.middleware.js";
+import express from 'express';
 import {
   createCourse,
   getCourses,
   getCourseById,
   updateCourse,
-  toggleCourseStatus,
-  bulkUpdateCourseStatus,
-} from "./course.controller.js";
+  deleteCourse,
+} from './course.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.route('/')
+  .post(protect, createCourse)
+  .get(protect, getCourses);
 
-router.post("/", createCourse);
-router.get("/", getCourses);
-router.put("/bulk-status", bulkUpdateCourseStatus);
-router.get("/:id", getCourseById);
-router.put("/:id", updateCourse);
-router.patch("/:id/status", toggleCourseStatus);
+router.route('/:id')
+  .get(protect, getCourseById)
+  .put(protect, updateCourse)
+  .delete(protect, deleteCourse);
 
 export default router;

@@ -5,7 +5,7 @@ let io;
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.ALLOWED_ORIGINS.split(','),
+      origin: 'http://localhost:5173', // Vite frontend default port
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: true
     }
@@ -23,7 +23,6 @@ export const initSocket = (server) => {
       console.log("Client disconnected:", socket.id);
     });
   });
-
 
   return io;
 };

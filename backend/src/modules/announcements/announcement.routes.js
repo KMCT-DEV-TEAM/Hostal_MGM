@@ -1,14 +1,22 @@
-import express from "express";
-import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement } from "./announcement.controller.js";
-import authMiddleware from "../../middlewares/auth.middleware.js";
+import express from 'express';
+import {
+  createAnnouncement,
+  getAnnouncements,
+  getAnnouncementById,
+  updateAnnouncement,
+  deleteAnnouncement,
+} from './announcement.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.route('/')
+  .post(protect, createAnnouncement)
+  .get(protect, getAnnouncements);
 
-router.post("/", createAnnouncement);
-router.get("/", getAnnouncements);
-router.put("/:id", updateAnnouncement);
-router.delete("/:id", deleteAnnouncement);
+router.route('/:id')
+  .get(protect, getAnnouncementById)
+  .put(protect, updateAnnouncement)
+  .delete(protect, deleteAnnouncement);
 
 export default router;

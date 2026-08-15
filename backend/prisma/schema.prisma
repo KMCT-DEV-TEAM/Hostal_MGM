@@ -1,0 +1,286 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  Int               @id @default(autoincrement())
+  name                String
+  email               String            @unique
+  phone               String?
+  password            String
+  role                String            @default("student") // super_admin, admin, warden, assistant_warden, student, parent, maintenance_staff, mentor
+  specialization      String?
+  assignedTask        String?
+  
+  // Organization relationship
+  organizationId      Int?
+  organization        Organization?     @relation("UserOrganization", fields: [organizationId], references: [id])
+  
+  // Creator relationship
+  createdById         Int?
+  createdBy           User?             @relation("UserCreator", fields: [createdById], references: [id])
+  createdUsers        User[]            @relation("UserCreator")
+  
+  isActive            Boolean           @default(true)
+  temppass            Boolean           @default(false)
+  failedLoginAttempts Int               @default(0)
+  lockUntil           DateTime?
+  
+  // Refresh Token
+  refreshToken        String?
+
+  settings            Json?             @default("{\"notifications\": {\"emailAlerts\": true, \"smsAlerts\": false, \"pushAlerts\": true, \"inAppAlerts\": true}, \"preferences\": {\"theme\": \"light\", \"language\": \"en\"}}")
+  
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // Inverse relations
+  organizationsAdmin  Organization[]    @relation("OrganizationAdmin")
+  hostelsAdmin        Hostel[]          @relation("HostelAdmin")
+  wardenOfHostels     Hostel[]          @relation("HostelWardens")
+  announcements       Announcement[]    @relation("AnnouncementCreator")
+  complaintsStudent   Complaint[]       @relation("ComplaintStudent")
+  complaintsAssigned  Complaint[]       @relation("ComplaintAssignee")
+  activityLogs        ActivityLog[]     @relation("LogUser")
+  passwordRequests    PasswordRequest[] @relation("UserPasswordRequest")
+  notificationsReceived Notification[]  @relation("NotificationRecipient")
+  notificationsSent   Notification[]    @relation("NotificationSender")
+}
+
+model Organization {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  code               String   @unique
+  organisationNumber String   @unique
+  
+  adminId            Int?
+  admin              User?    @relation("OrganizationAdmin", fields: [adminId], references: [id])
+  
+  email              String?
+  phone              String?
+  address            String?
+  isActive           Boolean  @default(true)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Inverse relations
+  users              User[]   @relation("UserOrganization")
+  courses            Course[]
+  hostels            Hostel[] @relation("OrganizationHostels")
+  announcements      Announcement[] @relation("AnnouncementOrganizations")
+  complaints         Complaint[]
+}
+
+model Course {
+  id               Int      @id @default(autoincrement())
+  name             String
+  code             String   @unique
+  organizationId   Int
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  departmentsCount Int      @default(0)
+  batchesCount     Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  departments      Department[]
+}
+
+model Department {
+  id           Int      @id @default(autoincrement())
+  name         String
+  code         String   @unique
+  courseId     Int
+  course       Course   @relation(fields: [courseId], references: [id])
+  batchesCount Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  batches      Batch[]
+}
+
+model Batch {
+  id            Int        @id @default(autoincrement())
+  name          String
+  code          String     @unique
+  departmentId  Int
+  department    Department @relation(fields: [departmentId], references: [id])
+  startYear     Int
+  endYear       Int
+  studentsCount Int        @default(0)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Hostel {
+  id            Int      @id @default(autoincrement())
+  name          String
+  code          String   @unique
+  email         String?
+  phone         String?
+  
+  adminId       Int?
+  admin         User?    @relation("HostelAdmin", fields: [adminId], references: [id])
+  
+  location      String?
+  capacity      Int?
+  hosteltype    String   // "boys", "girls"
+  isActive      Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Many-to-many
+  organizations Organization[] @relation("OrganizationHostels")
+  wardens       User[]         @relation("HostelWardens")
+  announcements Announcement[] @relation("AnnouncementHostels")
+  complaints    Complaint[]
+}
+
+model Announcement {
+  id            Int      @id @default(autoincrement())
+  title         String
+  message       String
+  
+  createdById   Int
+  createdBy     User     @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  
+  creatorRole   String   // "super_admin", "admin", "warden"
+  targetType    String   // "general", "organization", "hostel"
+  isActive      Boolean  @default(true)
+  status        String   @default("active") // "scheduled", "active", "expired", "deleted"
+  
+  scheduledAt   DateTime?
+  expiresAt     DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Many-to-many
+  targetOrganizations Organization[] @relation("AnnouncementOrganizations")
+  targetHostels       Hostel[]       @relation("AnnouncementHostels")
+}
+
+model ComplaintCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  complaints  Complaint[]
+}
+
+model Complaint {
+  id              Int      @id @default(autoincrement())
+  
+  studentId       Int
+  student         User     @relation("ComplaintStudent", fields: [studentId], references: [id])
+  
+  hostelId        Int
+  hostel          Hostel   @relation(fields: [hostelId], references: [id])
+  
+  organizationId  Int
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  categoryId      Int
+  category        ComplaintCategory @relation(fields: [categoryId], references: [id])
+  
+  roomNo          String
+  subject         String
+  description     String?
+  
+  status          String   @default("Pending") // "Pending", "In progress", "Awaiting", "Resolved", "Rejected", "Incomplete"
+  priority        String   @default("Medium") // "High", "Medium", "Low"
+  
+  assignedStaffId Int?
+  assignedStaff   User?    @relation("ComplaintAssignee", fields: [assignedStaffId], references: [id])
+  
+  materialsUsed   String?
+  resolutionNotes String?
+  
+  internalNotes   Json?    // Array of { note, addedBy, role, date }
+  timeline        Json?    // Array of { status, message, date, by }
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entityType  String
+  entityId    Int?
+  
+  userId      Int
+  user        User     @relation("LogUser", fields: [userId], references: [id])
+  
+  userRole    String
+  details     String
+  status      String   @default("success") // "success", "error", "warning"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  createdAt DateTime @default(now())
+  // In SQL, TTL is not automatic like MongoDB. Needs a cron job to clean up older than 5 mins.
+}
+
+model PasswordRequest {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation("UserPasswordRequest", fields: [userId], references: [id])
+  newPassword String
+  status      String   @default("pending") // "pending", "approved", "rejected"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id              Int      @id @default(autoincrement())
+  
+  recipientId     Int
+  recipientModel  String   // 'User', 'Student', 'Parent'
+  recipientSnapshot Json?
+  
+  senderId        Int?
+  senderModel     String?  // 'User', 'Student', 'Parent', 'System'
+  senderSnapshot  Json?
+  
+  event           String
+  category        String
+  priority        String   @default("NORMAL")
+  eventType       String
+  
+  title           String
+  message         String
+  link            String?
+  type            String   @default("info")
+  
+  isRead          Boolean  @default(false)
+  metadata        Json?    @default("{}")
+  deliveries      Json?    
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  recipient       User     @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  sender          User?    @relation("NotificationSender", fields: [senderId], references: [id])
+}

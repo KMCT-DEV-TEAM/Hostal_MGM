@@ -1,23 +1,22 @@
-import express from "express";
+import express from 'express';
 import {
   createComplaintCategory,
-  getComplaintCategories,
+  getComplaintCategorys,
   getComplaintCategoryById,
   updateComplaintCategory,
-  toggleComplaintCategoryStatus,
-  bulkUpdateComplaintCategoryStatus,
-} from "./complaintCategory.controller.js";
-import authMiddleware from "../../middlewares/auth.middleware.js";
+  deleteComplaintCategory,
+} from './complaintCategory.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.route('/')
+  .post(protect, createComplaintCategory)
+  .get(protect, getComplaintCategorys);
 
-router.post("/", createComplaintCategory);
-router.get("/", getComplaintCategories);
-router.put("/bulk-status", bulkUpdateComplaintCategoryStatus);
-router.get("/:id", getComplaintCategoryById);
-router.put("/:id", updateComplaintCategory);
-router.patch("/:id/status", toggleComplaintCategoryStatus);
+router.route('/:id')
+  .get(protect, getComplaintCategoryById)
+  .put(protect, updateComplaintCategory)
+  .delete(protect, deleteComplaintCategory);
 
 export default router;

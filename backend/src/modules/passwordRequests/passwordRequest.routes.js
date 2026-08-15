@@ -1,33 +1,22 @@
-import express from "express";
-import authMiddleware from "../../middlewares/auth.middleware.js";
-import roleMiddleware from "../../middlewares/role.middleware.js";
+import express from 'express';
 import {
+  createPasswordRequest,
   getPasswordRequests,
-  approvePasswordRequest,
-  rejectPasswordRequest,
-} from "./passwordRequest.controller.js";
+  getPasswordRequestById,
+  updatePasswordRequest,
+  deletePasswordRequest,
+} from './passwordRequest.controller.js';
+import { protect } from '../auth/auth.middleware.js';
 
 const router = express.Router();
 
-router.get(
-  "/",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  getPasswordRequests
-);
+router.route('/')
+  .post(protect, createPasswordRequest)
+  .get(protect, getPasswordRequests);
 
-router.patch(
-  "/:id/approve",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  approvePasswordRequest
-);
-
-router.patch(
-  "/:id/reject",
-  authMiddleware,
-  roleMiddleware("super_admin"),
-  rejectPasswordRequest
-);
+router.route('/:id')
+  .get(protect, getPasswordRequestById)
+  .put(protect, updatePasswordRequest)
+  .delete(protect, deletePasswordRequest);
 
 export default router;

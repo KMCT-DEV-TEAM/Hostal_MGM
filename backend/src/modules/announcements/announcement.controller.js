@@ -1,305 +1,64 @@
-import Announcement from "./announcement.model.js";
-import Hostel from "../hostels/hostel.model.js";
-import Student from "../students/student.model.js";
-import Parent from "../parents/parent.model.js";
-import User from "../users/user.model.js";
-import { triggerAnnouncementNotifications } from "./announcement.service.js";
+import prisma from '../../config/db.js';
 
-// Create Announcement
-export const createAnnouncement = async (req, res, next) => {
+export const createAnnouncement = async (req, res) => {
   try {
-    const { title, message, targetType, targetOrganizations, targetHostels, scheduledAt, expiresAt } = req.body;
-    const user = req.user; 
-    user._id = user.id || user._id; 
-
-    if (!title || !message) {
-      return res.status(400).json({ success: false, message: "Title and message are required" });
-    }
-
-    let actualTargetType = targetType;
-    let actualOrganizations = [];
-    let actualHostels = [];
-
-    if (user.role === "super_admin") {
-      if (!["general", "organization", "hostel"].includes(targetType)) {
-        return res.status(400).json({ success: false, message: "Valid targetType is required for super admin" });
-      }
-      if (targetType === "organization") {
-        actualOrganizations = targetOrganizations || [];
-      } else if (targetType === "hostel") {
-        actualHostels = targetHostels || [];
-      }
-    } else if (user.role === "admin") {
-      actualTargetType = "organization";
-      const dbUser = await User.findById(user._id);
-      if (!dbUser || !dbUser.organization) {
-         return res.status(400).json({ success: false, message: "Admin is not assigned to an organization" });
-      }
-      actualOrganizations = [dbUser.organization];
-    } else if (user.role === "warden" || user.role === "assistant_warden") {
-      actualTargetType = "hostel";
-      // Fetch hostels managed by this warden
-      const hostels = await Hostel.find({ wardens: user._id });
-      if (!hostels || hostels.length === 0) {
-        return res.status(400).json({ success: false, message: "Warden is not assigned to any hostels" });
-      }
-      actualHostels = hostels.map(h => h._id);
-    } else {
-      return res.status(403).json({ success: false, message: "Unauthorized to create announcements" });
-    }
-
-    // Determine status based on scheduledAt
-    let status = 'active';
-    let isActive = true;
-    if (scheduledAt && new Date(scheduledAt) > new Date()) {
-      status = 'scheduled';
-      isActive = false;
-    }
-
-    const announcement = await Announcement.create({
-      title,
-      message,
-      createdBy: user._id,
-      creatorRole: user.role,
-      targetType: actualTargetType,
-      targetOrganizations: actualOrganizations,
-      targetHostels: actualHostels,
-      scheduledAt: scheduledAt || null,
-      expiresAt: expiresAt || null,
-      status,
-      isActive,
+    const data = await prisma.announcement.create({
+      data: req.body,
     });
-
-    if (status === 'active') {
-      // Trigger notifications asynchronously
-      triggerAnnouncementNotifications(announcement).catch(console.error);
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: status === 'scheduled' ? "Announcement scheduled successfully" : "Announcement created successfully",
-      data: announcement,
-    });
+    res.status(201).json(data);
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Get Announcements
-export const getAnnouncements = async (req, res, next) => {
+export const getAnnouncements = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status = "active", search = "" } = req.query;
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 10;
-    const skip = (pageNum - 1) * limitNum;
-
-    const user = req.user;
-    user._id = user.id || user._id;
-    let queryConditions = [];
-
-    if (status === "all") {
-        // no status filter
-    } else if (status === "history") {
-        queryConditions.push({ status: { $in: ["expired", "deleted", "history"] } });
-    } else if (status === "active") {
-        queryConditions.push({ 
-            $or: [{ status: "active" }, { status: { $exists: false } }] 
-        });
-    } else {
-        queryConditions.push({ status: status });
-    }
-
-    if (search) {
-        queryConditions.push({
-            $or: [
-                { title: { $regex: search, $options: "i" } },
-                { message: { $regex: search, $options: "i" } }
-            ]
-        });
-    }
-
-    let query = queryConditions.length > 0 ? { $and: queryConditions } : {};
-
-    let roleQuery = {};
-
-    if (user.role === "super_admin") {
-      // Super admin sees all history or based on status if needed
-      roleQuery = {};
-    } else if (user.role === "admin") {
-      // Admins see general + their org
-      const dbUser = await User.findById(user._id);
-      roleQuery = {
-        $or: [
-          { targetType: "general" },
-          { targetType: "organization", targetOrganizations: dbUser?.organization },
-          { createdBy: user._id }
-        ]
-      };
-    } else if (user.role === "warden" || user.role === "assistant_warden") {
-      // Wardens see general + their hostels
-      const hostels = await Hostel.find({ wardens: user._id });
-      const hostelIds = hostels.map(h => h._id);
-      roleQuery = {
-        $or: [
-          { targetType: "general" },
-          { targetType: "hostel", targetHostels: { $in: hostelIds } },
-          { createdBy: user.id || user._id }
-        ]
-      };
-    } else if (user.role === "student") {
-       // Students see general + their org + their hostel
-       const dbUser = await Student.findById(user._id);
-       roleQuery = {
-          $or: [
-             { targetType: "general" },
-             { targetType: "organization", targetOrganizations: dbUser?.organizationId },
-             { targetType: "hostel", targetHostels: dbUser?.hostelId }
-          ]
-       };
-    } else if (user.role === "parent") {
-       // Parents need to see based on their student. 
-       const dbUser = await Parent.findById(user._id);
-       const parentStudent = await Student.findById(dbUser?.studentId);
-       if (parentStudent) {
-           roleQuery = {
-              $or: [
-                 { targetType: "general" },
-                 { targetType: "organization", targetOrganizations: parentStudent.organizationId },
-                 { targetType: "hostel", targetHostels: parentStudent.hostelId }
-              ]
-           };
-       } else {
-           roleQuery = { targetType: "general" };
-       }
-    }
-
-    let finalQuery = query;
-    if (Object.keys(roleQuery).length > 0) {
-        finalQuery = { $and: [query, roleQuery] };
-    }
-
-    const total = await Announcement.countDocuments(finalQuery);
-    
-    const announcements = await Announcement.find(finalQuery)
-      .populate("createdBy", "name role")
-      .populate("targetOrganizations", "name")
-      .populate("targetHostels", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum);
-
-    return res.status(200).json({
-      success: true,
-      data: announcements,
-      pagination: {
-        total,
-        page: pageNum,
-        limit: limitNum,
-        totalPages: Math.ceil(total / limitNum),
-        hasMore: pageNum * limitNum < total
-      }
-    });
+    const data = await prisma.announcement.findMany();
+    res.status(200).json(data);
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Update Announcement
-export const updateAnnouncement = async (req, res, next) => {
+export const getAnnouncementById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, message, targetType, targetOrganizations, targetHostels, scheduledAt, expiresAt } = req.body;
-    const user = req.user;
-    user._id = user.id || user._id;
-
-    const announcement = await Announcement.findById(id);
-    if (!announcement) {
-      return res.status(404).json({ success: false, message: "Announcement not found" });
-    }
-
-    // Check authorization: Super admin can edit anything. Others can only edit their own.
-    if (user.role !== "super_admin" && announcement.createdBy.toString() !== user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized to edit this announcement" });
-    }
-
-    let actualTargetType = targetType || announcement.targetType;
-    let actualOrganizations = targetOrganizations || announcement.targetOrganizations;
-    let actualHostels = targetHostels || announcement.targetHostels;
-
-    if (user.role === "super_admin" && targetType) {
-      if (!["general", "organization", "hostel"].includes(targetType)) {
-        return res.status(400).json({ success: false, message: "Valid targetType is required" });
-      }
-      if (targetType === "general") {
-         actualOrganizations = [];
-         actualHostels = [];
-      } else if (targetType === "organization") {
-         actualHostels = [];
-      } else if (targetType === "hostel") {
-         actualOrganizations = [];
-      }
-    }
-
-    // Update status if scheduledAt changed
-    let status = announcement.status;
-    let isActive = announcement.isActive;
-    if (scheduledAt) {
-      if (new Date(scheduledAt) > new Date()) {
-        status = 'scheduled';
-        isActive = false;
-      } else {
-        status = 'active';
-        isActive = true;
-      }
-    }
-
-    announcement.title = title || announcement.title;
-    announcement.message = message || announcement.message;
-    announcement.targetType = actualTargetType;
-    announcement.targetOrganizations = actualOrganizations;
-    announcement.targetHostels = actualHostels;
-    announcement.scheduledAt = scheduledAt !== undefined ? scheduledAt : announcement.scheduledAt;
-    announcement.expiresAt = expiresAt !== undefined ? expiresAt : announcement.expiresAt;
-    announcement.status = status;
-    announcement.isActive = isActive;
-
-    await announcement.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Announcement updated successfully",
-      data: announcement,
+    const data = await prisma.announcement.findUnique({
+      where: { id: parseInt(id) },
     });
+    if (!data) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json(data);
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Delete Announcement (Soft Delete)
-export const deleteAnnouncement = async (req, res, next) => {
+export const updateAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = req.user;
-    user._id = user.id || user._id;
-
-    const announcement = await Announcement.findById(id);
-    if (!announcement) {
-      return res.status(404).json({ success: false, message: "Announcement not found" });
-    }
-
-    if (user.role !== "super_admin" && announcement.createdBy.toString() !== user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized to delete this announcement" });
-    }
-
-    announcement.status = 'deleted';
-    announcement.isActive = false;
-    await announcement.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Announcement deleted successfully",
+    const data = await prisma.announcement.update({
+      where: { id: parseInt(id) },
+      data: req.body,
     });
+    res.status(200).json(data);
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const deleteAnnouncement = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.announcement.delete({
+      where: { id: parseInt(id) },
+    });
+    res.status(200).json({ message: 'Deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
