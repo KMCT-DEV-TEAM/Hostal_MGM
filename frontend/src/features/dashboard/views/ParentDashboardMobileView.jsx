@@ -33,7 +33,7 @@ export default function ParentDashboardMobileView({
     if (isLoading) {
         return (
             <div className="min-h-screen bg-[#F5F7F8] font-sans  overflow-x-hidden animate-pulse">
-                <div className="px-5 pt-8 pb-4 space-y-6">
+                <div className="px-5 pt-5 pb-4 space-y-6">
                     {/* Attendance Card Skeleton */}
                     <div className="bg-white rounded-lg p-6 flex justify-between items-center shadow-sm border border-gray-100">
                         <div className="flex flex-col gap-2 z-10 w-full">
@@ -115,7 +115,7 @@ export default function ParentDashboardMobileView({
 
     return (
         <div className="min-h-screen bg-[#F5F7F8] font-sans  overflow-x-hidden">
-            <div className="px-5 pt-8 pb-4 space-y-6">
+            <div className="px-5 pt-5 pb-4 space-y-6">
                 {/* Attendance Overview Card */}
                 <div className="bg-white rounded-lg p-6 flex justify-between items-center  shadow-sm">
                     <div className="flex flex-col gap-1.5 z-10">
