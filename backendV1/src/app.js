@@ -55,7 +55,7 @@ app.use('/api/batches', batchRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/complaint-categories', complaintCategoryRoutes);
 app.use('/api/announcements', announcementRoutes);
-app.use('/api/otps', otpRoutes);
+app.use('/api/otp', otpRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
 
@@ -68,5 +68,8 @@ app.use('/api/super-admin/password-requests', passwordRequestRoutes);
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running smoothly" });
 });
+
+import errorMiddleware from './middlewares/error.middleware.js';
+app.use(errorMiddleware);
 
 export default app;

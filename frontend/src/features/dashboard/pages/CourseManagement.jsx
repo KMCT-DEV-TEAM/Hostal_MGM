@@ -110,7 +110,7 @@ const CourseManagement = () => {
             try {
                 const res = await organizationService.getOrganizations({ limit: 1000, status: 'Active' });
                 if (res && res.data) {
-                    setOrganizations(res.data);
+                    setOrganizations(Array.isArray(res.data?.data || res.data) ? (res.data?.data || res.data) : []);
                 }
             } catch (err) {
                 console.error("Failed to fetch organizations:", err);

@@ -118,7 +118,7 @@ const AdminFormModal = ({
                         <div>
                             <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
                             <Dropdown
-                                options={organizations.map(org => ({ value: org._id, label: org.name }))}
+                                options={organizations.map(org => ({ value: org.id, label: org.name }))}
                                 value={adminForm.organization}
                                 onChange={(val) => { setAdminForm({ ...adminForm, organization: val }); setErrors(prev => ({ ...prev, organization: '' })); }}
                                 placeholder={t('select_organization')}
