@@ -366,6 +366,8 @@ export const updateUserEmail = asyncHandler(async (req, res) => {
       organization: updatedUser.organization,
     },
   });
+});
+
 export const createWarden = asyncHandler(async (req, res) => {
   const { name, email, phone, hostelId } = req.body;
 
