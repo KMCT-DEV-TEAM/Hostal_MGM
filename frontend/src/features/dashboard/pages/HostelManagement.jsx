@@ -159,7 +159,7 @@ export default function HostelManagement() {
     // SELECTION & ACTION HANDLERS
     // ==========================================
     const handleSelectAll = (mobileIds) => {
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : hostels.map(h => h._id);
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : hostels.map(h => h.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -203,12 +203,12 @@ export default function HostelManagement() {
             };
             if (editingHostel) {
                 // Update Existing Record
-                const res = await hostelService.updateHostel(editingHostel._id, {
+                const res = await hostelService.updateHostel(editingHostel.id, {
                     code: hostelForm.code,
                     name: hostelForm.name,
                     phone: hostelForm.phone,
                     email: hostelForm.email,
-                    hosteltype: hostelForm.type,
+                    hosteltype: hostelForm.hosteltype || hostelForm.hostelType,
                     capacity: hostelForm.capacity,
                     location: hostelForm.location
                 });
@@ -216,7 +216,7 @@ export default function HostelManagement() {
                 let updatedHostel = { ...res.data };
                 const currentStatus = editingHostel.isActive ? 'Active' : 'Inactive';
                 if (hostelForm.status !== currentStatus) {
-                    await hostelService.bulkToggleStatus({ ids: [editingHostel._id], isActive: hostelForm.status === 'Active' });
+                    await hostelService.bulkToggleStatus({ ids: [editingHostel.id], isActive: hostelForm.status === 'Active' });
                     updatedHostel.isActive = hostelForm.status === 'Active';
                 }
 
@@ -263,7 +263,7 @@ export default function HostelManagement() {
             if (res && (res.success || res.data)) {
                 const newStatus = !statusToUpdate.currentStatus;
                 setHostels(hostels.map(h =>
-                    h._id === statusToUpdate.id ? { ...h, isActive: newStatus } : h
+                    h.id === statusToUpdate.id ? { ...h, isActive: newStatus } : h
                 ));
                 showSuccessToast('Status Updated', res?.message || 'Hostel status changed successfully');
             }
@@ -290,7 +290,7 @@ export default function HostelManagement() {
             const res = await hostelService.bulkToggleStatus({ ids: selectedIds, isActive: bulkStatusToUpdate });
             if (res && (res.success || res.data)) {
                 setHostels(hostels.map(h => {
-                    if (selectedIds.includes(h._id)) {
+                    if (selectedIds.includes(h.id)) {
                         return { ...h, isActive: bulkStatusToUpdate };
                     }
                     return h;
@@ -340,7 +340,7 @@ export default function HostelManagement() {
                 "Code": hostel.code || "N/A",
                 "Email": hostel.email,
                 "Phone": hostel.phone || "N/A",
-                "Type": hostel.hosteltype || "N/A",
+                "Type": hostel.hostelType || hostel.hosteltype || "N/A",
                 "Capacity": hostel.capacity,
                 "Location": hostel.location || "N/A",
                 "Status": hostel.isActive ? "Active" : "Inactive",
@@ -387,7 +387,7 @@ export default function HostelManagement() {
 
     const openEditHostelModal = (hostel) => {
         setEditingHostel(hostel);
-        setHostelForm({ ...hostel });
+        setHostelForm({ ...hostel, hosteltype: hostel.hosteltype || hostel.hostelType?.toLowerCase() });
         setActiveModal('hostel');
     };
 
@@ -428,7 +428,7 @@ export default function HostelManagement() {
                                 <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Hostel</p>
                                 <div className="space-y-1">
                                     <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
-                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
+                                    <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hostelType || selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
                                     <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</InfoRow>
                                     <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedHostelDetail.capacity || 'N/A'}</InfoRow>
                                     <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
@@ -446,7 +446,7 @@ export default function HostelManagement() {
                             <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Hostel Summary</h3>
                             <div className="space-y-1">
                                 <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
-                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hosteltype}</span></InfoRow>
+                                <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hostelType || selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
                                 <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                     <span className="flex items-center">
                                         <span className={`w-2 h-2 rounded-full ${selectedHostelDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>

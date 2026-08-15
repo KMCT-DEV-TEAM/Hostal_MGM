@@ -33,10 +33,7 @@ export const createHostel = asyncHandler(async (req, res) => {
     }
   });
 
-  return sendSuccess(res, 201, 'Hostel created successfully', {
-    ...newHostel,
-    _id: newHostel.id
-  });
+  return sendSuccess(res, 201, 'Hostel created successfully', newHostel);
 });
 
 export const getHostels = asyncHandler(async (req, res) => {
@@ -69,18 +66,12 @@ export const getHostels = asyncHandler(async (req, res) => {
     prisma.hostel.count({ where: whereClause })
   ]);
 
-  // Map id to _id for frontend compatibility
-  const mappedHostels = hostels.map(h => ({
-    ...h,
-    _id: h.id
-  }));
-
   return sendSuccess(res, 200, 'Hostels retrieved successfully', {
-    count: mappedHostels.length,
+    count: hostels.length,
     totalCount,
     currentPage: page,
     totalPages: Math.ceil(totalCount / limit),
-    data: mappedHostels
+    data: hostels
   });
 });
 
@@ -98,10 +89,7 @@ export const getHostelById = asyncHandler(async (req, res) => {
     return sendError(res, 404, 'Hostel not found');
   }
 
-  return sendSuccess(res, 200, 'Hostel retrieved successfully', {
-    ...hostel,
-    _id: hostel.id
-  });
+  return sendSuccess(res, 200, 'Hostel retrieved successfully', hostel);
 });
 
 export const updateHostel = asyncHandler(async (req, res) => {
@@ -138,10 +126,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
     }
   });
 
-  return sendSuccess(res, 200, 'Hostel updated successfully', {
-    ...updatedHostel,
-    _id: updatedHostel.id
-  });
+  return sendSuccess(res, 200, 'Hostel updated successfully', updatedHostel);
 });
 
 export const deleteHostel = asyncHandler(async (req, res) => {
@@ -181,10 +166,7 @@ export const toggleHostelStatus = asyncHandler(async (req, res) => {
     ? "Hostel activated successfully" 
     : "Hostel deactivated successfully";
 
-  return sendSuccess(res, 200, message, {
-    ...updatedHostel,
-    _id: updatedHostel.id
-  });
+  return sendSuccess(res, 200, message, updatedHostel);
 });
 
 export const bulkToggleHostelStatus = asyncHandler(async (req, res) => {
