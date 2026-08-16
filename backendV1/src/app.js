@@ -56,7 +56,6 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/complaint-categories', complaintCategoryRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/otps', otpRoutes);
-app.use('/api/otp', otpRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
 
