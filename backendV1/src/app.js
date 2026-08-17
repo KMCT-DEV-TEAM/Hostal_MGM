@@ -6,6 +6,13 @@ import helmet from 'helmet';
 
 const app = express();
 
+// Disable ETags and caching to ensure fresh API responses
+app.set('etag', false);
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')

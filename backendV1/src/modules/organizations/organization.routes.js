@@ -5,7 +5,8 @@ import {
   getOrganizations,
   getOrganizationById,
   updateOrganization,
-  deleteOrganization
+  deleteOrganization,
+  bulkUpdateOrganizationStatus
 } from './organization.controller.js';
 
 const router = express.Router();
@@ -16,9 +17,12 @@ router.route('/')
   .post(createOrganization)
   .get(getOrganizations);
 
+router.patch('/bulk-status', bulkUpdateOrganizationStatus);
+router.patch('/:id/toggle-status', deleteOrganization);
+
 router.route('/:id')
   .get(getOrganizationById)
-  .put(updateOrganization)
+  .patch(updateOrganization)
   .delete(deleteOrganization);
 
 export default router;
