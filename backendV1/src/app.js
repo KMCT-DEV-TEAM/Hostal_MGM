@@ -70,4 +70,7 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running smoothly" });
 });
 
+import errorMiddleware from './middlewares/error.middleware.js';
+app.use(errorMiddleware);
+
 export default app;
