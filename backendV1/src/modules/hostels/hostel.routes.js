@@ -5,7 +5,9 @@ import {
   getHostels,
   getHostelById,
   updateHostel,
-  deleteHostel
+  deleteHostel,
+  toggleHostelStatus,
+  bulkToggleHostelStatus
 } from './hostel.controller.js';
 
 const router = express.Router();
@@ -16,9 +18,16 @@ router.route('/')
   .post(createHostel)
   .get(getHostels);
 
+// Needs to be before /:id to prevent "bulk-status" being treated as an id
+router.route('/bulk-status')
+  .patch(bulkToggleHostelStatus);
+
 router.route('/:id')
   .get(getHostelById)
-  .put(updateHostel)
+  .patch(updateHostel)
   .delete(deleteHostel);
+
+router.route('/:id/toggle-status')
+  .patch(toggleHostelStatus);
 
 export default router;

@@ -160,3 +160,52 @@ export const deleteHostel = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, 'Hostel deleted successfully');
 });
+
+export const toggleHostelStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const existingHostel = await prisma.hostel.findUnique({ where: { id } });
+
+  if (!existingHostel) {
+    return sendError(res, 404, 'Hostel not found');
+  }
+
+  const updatedHostel = await prisma.hostel.update({
+    where: { id },
+    data: {
+      isActive: !existingHostel.isActive
+    }
+  });
+
+  const message = updatedHostel.isActive 
+    ? "Hostel activated successfully" 
+    : "Hostel deactivated successfully";
+
+  return sendSuccess(res, 200, message, {
+    ...updatedHostel,
+    _id: updatedHostel.id
+  });
+});
+
+export const bulkToggleHostelStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return sendError(res, 400, "Please provide an array of Hostel IDs");
+  }
+
+  if (typeof isActive !== 'boolean') {
+    return sendError(res, 400, "Please provide isActive boolean status");
+  }
+
+  await prisma.hostel.updateMany({
+    where: {
+      id: { in: ids }
+    },
+    data: {
+      isActive
+    }
+  });
+
+  return sendSuccess(res, 200, "Bulk hostel status updated successfully");
+});
