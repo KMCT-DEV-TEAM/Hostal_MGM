@@ -145,17 +145,75 @@ export const createStudentWithParentDb = async (data, tx) => {
   return {
     student: {
       ...student,
-      _id: student.id, // for compatibility
-      name: student.fullName // for compatibility
+      _id: student.id,
+      name: student.fullName
     },
     parent: {
       ...parentRecord,
-      _id: parentRecord.id // for compatibility
+      _id: parentRecord.id
     },
     temporaryPasswords: {
       student: studentTemporaryPassword,
       parent: parentTemporaryPassword,
     },
     _id: student.id
+  };
+};
+
+export const updateStudentDb = async (studentId, data) => {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId }
+  });
+
+  if (!student) {
+    return null;
+  }
+
+  if (data.email && data.email !== student.email) {
+    const existingStudent = await prisma.student.findFirst({
+      where: {
+        email: data.email,
+        id: { not: studentId }
+      }
+    });
+
+    if (existingStudent) {
+      throw { statusCode: 400, message: "Student email already exists" };
+    }
+  }
+
+  const allowedFieldsMap = {
+    studentCode: "studentCode",
+    name: "fullName",
+    email: "email",
+    phone: "phone",
+    gender: "gender",
+    dob: "dob",
+    courseId: "courseId",
+    departmentId: "departmentId",
+    batchId: "batchId",
+    academicYear: "academicYear",
+    address: "address",
+    isActive: "isActive",
+  };
+
+  const updateData = {};
+
+  Object.keys(allowedFieldsMap).forEach((field) => {
+    if (data[field] !== undefined) {
+      const dbField = allowedFieldsMap[field];
+      updateData[dbField] = field === "dob" && data[field] ? new Date(data[field]) : data[field];
+    }
+  });
+
+  const updatedStudent = await prisma.student.update({
+    where: { id: studentId },
+    data: updateData
+  });
+
+  return {
+    ...updatedStudent,
+    _id: updatedStudent.id,
+    name: updatedStudent.fullName
   };
 };

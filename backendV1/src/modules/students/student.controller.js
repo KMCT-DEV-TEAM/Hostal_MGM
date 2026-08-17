@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createStudentWithParentDb } from "./student.service.js";
+import { createStudentWithParentDb, updateStudentDb } from "./student.service.js";
 import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
@@ -127,4 +127,50 @@ export const createStudent = asyncHandler(async (req, res) => {
     }
     throw error;
   }
+});
+
+export const updateStudent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const oldStudent = await prisma.student.findUnique({
+    where: { id }
+  });
+
+  if (!oldStudent) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  const result = await updateStudentDb(id, req.body);
+
+  if (!result) {
+    return sendError(res, 404, "Failed to update student");
+  }
+
+  await createLogDb({
+    action: "Updated Student",
+    entityType: "Student",
+    entityId: id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Updated student profile information`,
+    status: "success"
+  });
+
+  const newStudent = result;
+
+  if (oldStudent.batchId !== newStudent.batchId) {
+    orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'STUDENT_BATCH_CHANGED',
+      target: [
+        { type: 'STUDENT', filter: { studentId: id } },
+        { type: 'MENTOR', filter: { studentId: id } }
+      ],
+      data: { studentName: newStudent.name, studentId: id }
+    }).catch(err => console.error("[Notification Error] STUDENT_BATCH_CHANGED:", err));
+  }
+
+  return sendSuccess(res, 200, "Student updated successfully", {
+    data: newStudent,
+  });
 });
