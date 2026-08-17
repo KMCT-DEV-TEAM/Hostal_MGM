@@ -77,7 +77,7 @@ export default function WardenFormModal({
                                     } else {
                                         setErrors(prev => ({ ...prev, name: '' }));
                                     }
-                                    setWardenForm({ ...wardenForm, name: cleanVal });
+                                    setWardenForm(prev => ({ ...prev, name: cleanVal }));
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />
@@ -89,7 +89,7 @@ export default function WardenFormModal({
                                 name="phone"
                                 value={wardenForm.phone || ''}
                                 onChange={(val) => {
-                                    setWardenForm({ ...wardenForm, phone: val });
+                                    setWardenForm(prev => ({ ...prev, phone: val }));
                                     setErrors(prev => ({ ...prev, phone: '' }));
                                 }}
                             />
@@ -114,7 +114,7 @@ export default function WardenFormModal({
                                                 } else {
                                                     setErrors(prev => ({ ...prev, email: '' }));
                                                 }
-                                                setWardenForm({ ...wardenForm, email: cleanVal });
+                                                setWardenForm(prev => ({ ...prev, email: cleanVal }));
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key === ' ') {
@@ -160,9 +160,12 @@ export default function WardenFormModal({
                         <div>
                             <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')} <span className="text-red-500">*</span></label>
                             <Dropdown
-                                options={AVAILABLE_HOSTELS.map(h => ({ value: h._id || h, label: h.name || h }))}
-                                value={wardenForm.hostel}
-                                onChange={(val) => setWardenForm({ ...wardenForm, hostel: val })}
+                                options={[
+                                    { value: 'Not Assigned', label: 'Not Assigned' },
+                                    ...AVAILABLE_HOSTELS.map(h => ({ value: h.id || h, label: h.name || h }))
+                                ]}
+                                value={wardenForm.hostel || 'Not Assigned'}
+                                onChange={(val) => setWardenForm(prev => ({ ...prev, hostel: val }))}
                                 placeholder={t('select_hostel')}
                                 minWidth="w-full"
                                 triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
@@ -178,7 +181,7 @@ export default function WardenFormModal({
                                         { value: 'Inactive', label: 'Inactive' }
                                     ]}
                                     value={wardenForm.status || (wardenForm.isActive !== undefined ? (wardenForm.isActive ? 'Active' : 'Inactive') : 'Active')}
-                                    onChange={(val) => setWardenForm({ ...wardenForm, status: val, isActive: val === 'Active' })}
+                                    onChange={(val) => setWardenForm(prev => ({ ...prev, status: val, isActive: val === 'Active' }))}
                                     triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left"
                                 />
                             </div>

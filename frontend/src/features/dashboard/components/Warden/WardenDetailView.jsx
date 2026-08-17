@@ -9,7 +9,7 @@ const WardenDetailView = ({ selectedWardenDetail, setView, openChangeEmailModal 
 
     useEffect(() => {
         if (selectedWardenDetail && selectedWardenDetail.hostel) {
-            const hostelId = typeof selectedWardenDetail.hostel === 'object' ? selectedWardenDetail.hostel._id : selectedWardenDetail.hostel;
+            const hostelId = typeof selectedWardenDetail.hostel === 'object' ? selectedWardenDetail.hostel.id : selectedWardenDetail.hostel;
             if (hostelId && hostelId !== 'Not Assigned') {
                 const fetchHostel = async () => {
                     setLoadingHostel(true);
