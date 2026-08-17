@@ -326,14 +326,14 @@ export default function WardenManagement() {
     // ==========================================
     const openAddWardenModal = () => {
         setEditingWarden(null);
-        setWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?._id || '', status: 'Active' });
+        setWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?.id || '', status: 'Active' });
         setIsEmailVerified(false);
         setActiveModal('warden');
     };
 
     const openEditWardenModal = (warden) => {
         setEditingWarden(warden);
-        setWardenForm({ ...warden, hostel: warden.hostel?._id || warden.hostel });
+        setWardenForm({ ...warden, hostel: warden.hostel?.id || warden.hostel });
         setIsEmailVerified(true); // Assuming editing an existing warden means email is verified
         setActiveModal('warden');
     };
@@ -431,11 +431,11 @@ export default function WardenManagement() {
 
                 let updatedWarden = { ...res.data };
 
-                const oldHostelId = typeof editingWarden.hostel === 'object' ? editingWarden.hostel?._id : editingWarden.hostel;
+                const oldHostelId = typeof editingWarden.hostel === 'object' ? editingwarden.hostel?.id : editingWarden.hostel;
                 if (wardenForm.hostel !== oldHostelId) {
                     await wardenService.updateWardenHostel(editingWarden.id, { hostelId: wardenForm.hostel });
-                    const newHostel = availableHostels.find(h => h._id === wardenForm.hostel);
-                    updatedWarden.hostel = newHostel ? newHostel : { _id: wardenForm.hostel };
+                    const newHostel = availableHostels.find(h => h.id === wardenForm.hostel);
+                    updatedWarden.hostel = newHostel ? newHostel : { id: wardenForm.hostel };
                 }
 
                 if (wardenForm.status !== editingWarden.status) {
