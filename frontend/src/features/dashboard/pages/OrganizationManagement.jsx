@@ -145,7 +145,7 @@ const OrganizationManagement = () => {
             // Re-fetch or locally update the status
             setOrgs((prevOrgs) =>
                 prevOrgs.map((org) =>
-                    org._id === statusToUpdate.id ? { ...org, isActive: !org.isActive } : org
+                    org.id === statusToUpdate.id ? { ...org, isActive: !org.isActive } : org
                 )
             );
             setIsStatusConfirmOpen(false);
@@ -162,7 +162,7 @@ const OrganizationManagement = () => {
     const openModal = (mode, org = null) => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && org) {
-            setEditingId(org._id);
+            setEditingId(org.id);
             setFormData({
                 name: org.name || '',
                 code: org.code || '',
@@ -239,8 +239,8 @@ const OrganizationManagement = () => {
     };
 
     const handleSelectAll = (mobileIds) => {
-        // Use _id instead of id
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : orgs.map(h => h._id);
+        // Use id
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : orgs.map(h => h.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
