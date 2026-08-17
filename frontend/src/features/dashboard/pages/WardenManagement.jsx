@@ -113,7 +113,7 @@ export default function WardenManagement() {
             if (res && res.data) {
                 const formatted = res.data.map(w => ({
                     ...w,
-                    id: w._id,
+                    id: w.id,
                     status: w.isActive ? 'Active' : 'Inactive',
                     hostel: w.hostel || 'Not Assigned'
                 }));
@@ -431,7 +431,7 @@ export default function WardenManagement() {
 
                 let updatedWarden = { ...res.data };
 
-                const oldHostelId = typeof editingWarden.hostel === 'object' ? editingwarden.hostel?.id : editingWarden.hostel;
+                const oldHostelId = typeof editingWarden.hostel === 'object' ? editingWarden.hostel?.id : editingWarden.hostel;
                 if (wardenForm.hostel !== oldHostelId) {
                     await wardenService.updateWardenHostel(editingWarden.id, { hostelId: wardenForm.hostel });
                     const newHostel = availableHostels.find(h => h.id === wardenForm.hostel);

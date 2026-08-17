@@ -113,7 +113,7 @@ export default function AssistantWardenManagement() {
             if (res && res.data) {
                 const formatted = res.data.map(w => ({
                     ...w,
-                    id: w._id,
+                    id: w.id,
                     status: w.isActive ? 'Active' : 'Inactive',
                     hostel: w.hostel || 'Not Assigned'
                 }));
@@ -326,14 +326,14 @@ export default function AssistantWardenManagement() {
     // ==========================================
     const openAddAssistantWardenModal = () => {
         setEditingAssistantWarden(null);
-        setAssistantWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?._id || '', status: 'Active' });
+        setAssistantWardenForm({ name: '', email: '', phone: '', hostel: availableHostels[0]?.id || '', status: 'Active' });
         setIsEmailVerified(false);
         setActiveModal('assistantWarden');
     };
 
     const openEditAssistantWardenModal = (assistantWarden) => {
         setEditingAssistantWarden(assistantWarden);
-        setAssistantWardenForm({ ...assistantWarden, hostel: assistantWarden.hostel?._id || assistantWarden.hostel });
+        setAssistantWardenForm({ ...assistantWarden, hostel: assistantWarden.hostel?.id || assistantWarden.hostel });
         setIsEmailVerified(true); // Assuming editing an existing assistantWarden means email is verified
         setActiveModal('assistantWarden');
     };
@@ -431,11 +431,11 @@ export default function AssistantWardenManagement() {
 
                 let updatedAssistantWarden = { ...res.data };
 
-                const oldHostelId = typeof editingAssistantWarden.hostel === 'object' ? editingAssistantWarden.hostel?._id : editingAssistantWarden.hostel;
+                const oldHostelId = typeof editingAssistantWarden.hostel === 'object' ? editingAssistantWarden.hostel?.id : editingAssistantWarden.hostel;
                 if (assistantWardenForm.hostel !== oldHostelId) {
                     await assistantWardenService.updateAssistantWardenHostel(editingAssistantWarden.id, { hostelId: assistantWardenForm.hostel });
-                    const newHostel = availableHostels.find(h => h._id === assistantWardenForm.hostel);
-                    updatedAssistantWarden.hostel = newHostel ? newHostel : { _id: assistantWardenForm.hostel };
+                    const newHostel = availableHostels.find(h => h.id === assistantWardenForm.hostel);
+                    updatedAssistantWarden.hostel = newHostel ? newHostel : { id: assistantWardenForm.hostel };
                 }
 
                 if (assistantWardenForm.status !== editingAssistantWarden.status) {
