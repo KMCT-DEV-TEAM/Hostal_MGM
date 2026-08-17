@@ -9,7 +9,7 @@ const AssistantWardenDetailView = ({ selectedAssistantWardenDetail, setView, ope
 
     useEffect(() => {
         if (selectedAssistantWardenDetail && selectedAssistantWardenDetail.hostel) {
-            const hostelId = typeof selectedAssistantWardenDetail.hostel === 'object' ? selectedAssistantWardenDetail.hostel._id : selectedAssistantWardenDetail.hostel;
+            const hostelId = typeof selectedAssistantWardenDetail.hostel === 'object' ? selectedAssistantWardenDetail.hostel.id : selectedAssistantWardenDetail.hostel;
             if (hostelId && hostelId !== 'Not Assigned') {
                 const fetchHostel = async () => {
                     setLoadingHostel(true);
