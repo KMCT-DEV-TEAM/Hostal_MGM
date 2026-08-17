@@ -15,7 +15,12 @@ import {
   updateEmail,
   updateWardenHostel,
   toggleWardenStatus,
-  bulkToggleWardenStatus
+  bulkToggleWardenStatus,
+  getMaintenanceStaff,
+  createMaintenanceStaff,
+  updateMaintenanceStaff,
+  toggleMaintenanceStaffStatus,
+  bulkToggleMaintenanceStaffStatus
 } from './user.controller.js';
 
 const router = express.Router();
@@ -68,6 +73,19 @@ router.route('/wardens/:id/toggle-status')
 // --- ASSISTANT WARDEN ROUTES ---
 router.route('/assistant-wardens')
   .get(getAssistantWardens);
+
+// --- MAINTENANCE STAFF ROUTES ---
+router.route('/maintenance-staff')
+  .get(getMaintenanceStaff)
+  .post(createMaintenanceStaff);
+
+router.post('/maintenance-staff/bulk-toggle-status', bulkToggleMaintenanceStaffStatus);
+
+router.route('/maintenance-staff/:id')
+  .patch(updateMaintenanceStaff);
+
+router.route('/maintenance-staff/:id/toggle-status')
+  .patch(toggleMaintenanceStaffStatus);
 
 export default router;
 
