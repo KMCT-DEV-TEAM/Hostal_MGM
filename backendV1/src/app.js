@@ -25,6 +25,7 @@ const corsOptions = {
 app.use(compression());
 app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV !== "production") {
@@ -46,6 +47,8 @@ import passwordRequestRoutes from './modules/passwordRequests/passwordRequest.ro
 import userRoutes from './modules/users/user.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
 
+import studentRoutes from './modules/students/student.routes.js';
+
 // Generic Mounts
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
@@ -59,6 +62,8 @@ app.use('/api/otps', otpRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+app.use('/api/students', studentRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);
