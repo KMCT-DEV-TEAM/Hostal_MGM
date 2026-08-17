@@ -1,6 +1,9 @@
 import * as complaintService from "./complaint.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { getIo } from "../../config/socket.js";
+import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import { buildSender } from "../notifications/utils/sender.util.js";
+import Complaint from "./complaint.model.js";
 
 // @desc    Create a new complaint
 // @route   POST /api/complaints
@@ -8,6 +11,22 @@ import { getIo } from "../../config/socket.js";
 export const createComplaint = async (req, res) => {
     try {
         const complaint = await complaintService.createComplaintDb(req.body, req.user);
+        
+        const fullComplaint = await Complaint.findById(complaint._id).populate('studentId', 'name firstName lastName').populate('hostelId', 'wardens');
+        if (fullComplaint && fullComplaint.hostelId && fullComplaint.hostelId.wardens) {
+            const sName = fullComplaint.studentId?.name || `${fullComplaint.studentId?.firstName || ''} ${fullComplaint.studentId?.lastName || ''}`.trim();
+            await orchestratorService.triggerNotification({
+                sender: buildSender(req.user),
+                eventName: 'COMPLAINT_CREATED',
+                target: [
+                    { type: 'USER', filter: { userIds: fullComplaint.hostelId.wardens } },
+                    { type: 'ROLE', filter: { role: 'super_admin' } },
+                    { type: 'ROLE', filter: { role: 'admin', organizationId: fullComplaint.organizationId } }
+                ],
+                data: { title: fullComplaint.subject, studentName: sName }
+            }).catch(err => console.error("Notification Error:", err));
+        }
+
         getIo()?.emit('complaintCreated', complaint);
         res.status(201).json({
             success: true,
@@ -47,7 +66,23 @@ export const updateComplaint = async (req, res) => {
 // @access  Private (Student)
 export const deleteComplaint = async (req, res) => {
     try {
+        const complaint = await Complaint.findById(req.params.id).populate('studentId', 'name firstName lastName').populate('hostelId', 'wardens');
         await complaintService.deleteComplaintDb(req.params.id, req.user.id);
+
+        if (complaint && complaint.hostelId && complaint.hostelId.wardens) {
+            const sName = complaint.studentId?.name || `${complaint.studentId?.firstName || ''} ${complaint.studentId?.lastName || ''}`.trim();
+            await orchestratorService.triggerNotification({
+                sender: buildSender(req.user),
+                eventName: 'COMPLAINT_DELETED',
+                target: [
+                    { type: 'USER', filter: { userIds: complaint.hostelId.wardens } },
+                    { type: 'ROLE', filter: { role: 'super_admin' } },
+                    { type: 'ROLE', filter: { role: 'admin', organizationId: complaint.organizationId } }
+                ],
+                data: { title: complaint.subject, studentName: sName }
+            }).catch(err => console.error("Notification Error:", err));
+        }
+
         getIo()?.emit('complaintDeleted', { id: req.params.id });
         res.status(200).json({
             success: true,
@@ -200,6 +235,13 @@ export const updateComplaintStatus = async (req, res) => {
 
         const updatedComplaint = await complaintService.updateComplaintStatusDb(req.params.id, status, userRole, message);
         
+        await orchestratorService.triggerNotification({
+            sender: buildSender(req.user),
+            eventName: 'COMPLAINT_STATUS_UPDATED',
+            target: { type: 'STUDENT', filter: { studentId: updatedComplaint.studentId } },
+            data: { title: updatedComplaint.subject, status: status }
+        }).catch(err => console.error("Notification Error:", err));
+
         await createLogDb({
             action: `Updated Complaint Status`,
             entityType: "System",
@@ -235,6 +277,20 @@ export const assignMaintenanceStaff = async (req, res) => {
 
         const updatedComplaint = await complaintService.assignStaffToComplaintDb(req.params.id, staffId, userRole);
         
+        await orchestratorService.triggerNotification({
+            sender: buildSender(req.user),
+            eventName: 'COMPLAINT_ASSIGNED',
+            target: { type: 'STUDENT', filter: { studentId: updatedComplaint.studentId } },
+            data: { title: updatedComplaint.subject }
+        }).catch(err => console.error("Notification Error:", err));
+
+        await orchestratorService.triggerNotification({
+            sender: buildSender(req.user),
+            eventName: 'COMPLAINT_ASSIGNED',
+            target: { type: 'USER', filter: { userIds: [staffId] } },
+            data: { title: updatedComplaint.subject }
+        }).catch(err => console.error("Notification Error:", err));
+
         await createLogDb({
             action: `Assigned Maintenance Staff`,
             entityType: "System",
@@ -293,6 +349,21 @@ export const submitComplaintResolution = async (req, res) => {
         const staffId = req.user.id;
 
         const updatedComplaint = await complaintService.submitComplaintResolutionDb(req.params.id, staffId, materialsUsed, resolutionNotes);
+        
+        const fullComplaint = await Complaint.findById(updatedComplaint._id).populate('hostelId', 'wardens');
+        if (fullComplaint && fullComplaint.hostelId && fullComplaint.hostelId.wardens) {
+            await orchestratorService.triggerNotification({
+                sender: buildSender(req.user),
+                eventName: 'COMPLAINT_RESOLUTION_SUBMITTED',
+                target: [
+                    { type: 'USER', filter: { userIds: fullComplaint.hostelId.wardens } },
+                    { type: 'ROLE', filter: { role: 'super_admin' } },
+                    { type: 'ROLE', filter: { role: 'admin', organizationId: fullComplaint.organizationId } }
+                ],
+                data: { title: fullComplaint.subject }
+            }).catch(err => console.error("Notification Error:", err));
+        }
+
         getIo()?.emit('complaintUpdated', { id: req.params.id });
         res.status(200).json({
             success: true,
@@ -316,6 +387,13 @@ export const approveComplaintResolution = async (req, res) => {
         
         const updatedComplaint = await complaintService.approveComplaintResolutionDb(req.params.id, userRole);
         
+        await orchestratorService.triggerNotification({
+            sender: buildSender(req.user),
+            eventName: 'COMPLAINT_RESOLVED',
+            target: { type: 'STUDENT', filter: { studentId: updatedComplaint.studentId } },
+            data: { title: updatedComplaint.subject }
+        }).catch(err => console.error("Notification Error:", err));
+
         await createLogDb({
             action: `Approved Complaint Resolution`,
             entityType: "System",
@@ -351,6 +429,15 @@ export const rejectComplaintResolution = async (req, res) => {
 
         const updatedComplaint = await complaintService.rejectComplaintResolutionDb(req.params.id, userRole, rejectNote);
         
+        if (updatedComplaint.assignedStaff) {
+            await orchestratorService.triggerNotification({
+                sender: buildSender(req.user),
+                eventName: 'COMPLAINT_RESOLUTION_REJECTED',
+                target: { type: 'USER', filter: { userIds: [updatedComplaint.assignedStaff] } },
+                data: { title: updatedComplaint.subject, remarks: rejectNote }
+            }).catch(err => console.error("Notification Error:", err));
+        }
+
         await createLogDb({
             action: `Rejected Complaint Resolution`,
             entityType: "System",
@@ -385,6 +472,21 @@ export const rejectAssignedTask = async (req, res) => {
         const staffId = req.user.id;
 
         const updatedComplaint = await complaintService.rejectAssignedTaskDb(req.params.id, staffId, rejectNote);
+        
+        const fullComplaint = await Complaint.findById(updatedComplaint._id).populate('hostelId', 'wardens');
+        if (fullComplaint && fullComplaint.hostelId && fullComplaint.hostelId.wardens) {
+            await orchestratorService.triggerNotification({
+                sender: buildSender(req.user),
+                eventName: 'COMPLAINT_TASK_REJECTED',
+                target: [
+                    { type: 'USER', filter: { userIds: fullComplaint.hostelId.wardens } },
+                    { type: 'ROLE', filter: { role: 'super_admin' } },
+                    { type: 'ROLE', filter: { role: 'admin', organizationId: fullComplaint.organizationId } }
+                ],
+                data: { title: fullComplaint.subject, remarks: rejectNote }
+            }).catch(err => console.error("Notification Error:", err));
+        }
+
         getIo()?.emit('complaintUpdated', { id: req.params.id });
         res.status(200).json({
             success: true,
