@@ -975,18 +975,18 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
 
 export const validateAttendanceForTransfer = async (studentId, hostelId) => {
   const todayStart = getStartOfDay(new Date());
-  
+
   const window = await AttendanceWindow.findOne({
     hostelId,
     attendanceDate: todayStart
   }).select("_id").lean();
-  
+
   if (window) {
     const recordExists = await AttendanceRecord.exists({
       studentId,
       attendanceWindowId: window._id
     });
-    
+
     if (recordExists) {
       const error = new Error("Cannot transfer hostel. Today's attendance has already been recorded for this student.");
       error.statusCode = 400;
@@ -997,18 +997,18 @@ export const validateAttendanceForTransfer = async (studentId, hostelId) => {
 
 export const handleAttendanceForVacate = async (studentId, hostelId, session, actorId) => {
   const todayStart = getStartOfDay(new Date());
-  
+
   const window = await AttendanceWindow.findOne({
     hostelId,
     attendanceDate: todayStart
   }).select("_id status").session(session).lean();
-  
+
   if (window) {
     const recordExists = await AttendanceRecord.exists({
       studentId,
       attendanceWindowId: window._id
     }).session(session);
-    
+
     if (!recordExists) {
       await AttendanceRecord.create([{
         attendanceWindowId: window._id,
@@ -1018,7 +1018,7 @@ export const handleAttendanceForVacate = async (studentId, hostelId, session, ac
         status: "absent",
         remarks: "Automatically marked absent during hostel vacate.",
       }], { session });
-      
+
       if (window.status === 'open') {
         await AttendanceWindow.updateOne(
           { _id: window._id },
