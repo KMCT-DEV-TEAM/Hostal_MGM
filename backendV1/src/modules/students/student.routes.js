@@ -1,6 +1,6 @@
 import express from "express";
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent } from "./student.validation.js";
-import { createStudent, updateStudent, changeStudentEmail, getAdminOrganizationData } from "./student.controller.js";
+import { createStudent, updateStudent, changeStudentEmail, getAdminOrganizationData, getAdminStats } from "./student.controller.js";
 
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -12,6 +12,13 @@ router.get(
   authMiddleware,
   roleMiddleware("admin"),
   getAdminOrganizationData
+);
+
+router.get(
+  "/admin-stats",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getAdminStats
 );
 
 router.post(

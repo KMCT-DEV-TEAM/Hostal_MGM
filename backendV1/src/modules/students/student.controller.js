@@ -282,3 +282,23 @@ export const getAdminOrganizationData = asyncHandler(async (req, res) => {
     data: data[0]
   });
 });
+
+export const getAdminStats = asyncHandler(async (req, res) => {
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  if (!organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const studentCount = await prisma.student.count({
+    where: {
+      organizationId: organizationId
+    }
+  });
+
+  return sendSuccess(res, 200, "Admin stats fetched successfully", {
+    data: {
+      students: studentCount,
+    },
+  });
+});
