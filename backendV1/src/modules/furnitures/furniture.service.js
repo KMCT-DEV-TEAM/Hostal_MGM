@@ -494,6 +494,52 @@ export const getFurnitureTypeDistributionService = async (matchQuery) => {
   }));
 };
 
+export const getFurnitureAssetsListService = async (matchQuery, skip, limit) => {
+  const assets = await prisma.furnitureAsset.findMany({
+    where: matchQuery,
+    skip,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      student: { select: { id: true, name: true, studentCode: true } },
+      furnitureType: {
+        include: {
+          organization: { select: { id: true, name: true } },
+          hostel: { select: { id: true, name: true } }
+        }
+      }
+    }
+  });
+
+  return assets.map(asset => ({
+    _id: asset.id,
+    furnitureId: asset.furnitureId,
+    furnitureTypeId: asset.furnitureTypeId,
+    typeInfo: asset.furnitureType ? {
+      _id: asset.furnitureType.id,
+      name: asset.furnitureType.name,
+      prefix: asset.furnitureType.prefix
+    } : null,
+    organization: asset.furnitureType?.organization ? {
+      _id: asset.furnitureType.organization.id,
+      name: asset.furnitureType.organization.name
+    } : null,
+    hostel: asset.furnitureType?.hostel ? {
+      _id: asset.furnitureType.hostel.id,
+      name: asset.furnitureType.hostel.name
+    } : null,
+    status: asset.status.toLowerCase(), // Re-lowercase for frontend compatibility
+    remarks: asset.remarks,
+    createdAt: asset.createdAt,
+    updatedAt: asset.updatedAt,
+    studentId: asset.student ? {
+      _id: asset.student.id,
+      name: asset.student.name,
+      studentId: asset.student.studentCode
+    } : null
+  }));
+};
+
 export const getFurnitureTypesListService = async (matchQuery, skip, limit) => {
   const types = await prisma.furnitureType.findMany({
     where: matchQuery,

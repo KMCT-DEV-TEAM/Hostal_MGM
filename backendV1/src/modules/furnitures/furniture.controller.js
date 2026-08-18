@@ -331,3 +331,61 @@ export const changeAssetStatus = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Asset status updated successfully.");
 });
+
+export const getFurnitureAssetsByType = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const status = req.query.status ? req.query.status.toUpperCase() : undefined;
+  const search = req.query.search;
+
+  const matchQuery = { furnitureTypeId: typeId };
+  if (status && status !== "ALL") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { not: "INACTIVE" };
+  }
+  if (search) matchQuery.furnitureId = { contains: search, mode: "insensitive" };
+
+  const assets = await furnitureService.getFurnitureAssetsListService(matchQuery, skip, limit);
+  const total = await prisma.furnitureAsset.count({ where: matchQuery });
+
+  return sendSuccess(res, 200, "Assets retrieved.", { assets, total, page, limit });
+});
+
+export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const status = req.query.status ? req.query.status.toUpperCase() : undefined;
+  const search = req.query.search;
+
+  const scope = await resolveUserScope(req.user);
+
+  const typeQuery = {};
+  if (req.user.role === "admin") {
+    typeQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    typeQuery.hostelId = scope.hostelId;
+  }
+
+  const types = await prisma.furnitureType.findMany({
+    where: typeQuery,
+    select: { id: true }
+  });
+  const typeIds = types.map(t => t.id);
+
+  const matchQuery = { furnitureTypeId: { in: typeIds } };
+  if (status && status !== "ALL") {
+    matchQuery.status = status;
+  } else {
+    matchQuery.status = { not: "INACTIVE" };
+  }
+  if (search) matchQuery.furnitureId = { contains: search, mode: "insensitive" };
+
+  const assets = await furnitureService.getFurnitureAssetsListService(matchQuery, skip, limit);
+  const total = await prisma.furnitureAsset.count({ where: matchQuery });
+
+  return sendSuccess(res, 200, "All Hostel Assets retrieved.", { assets, total, page, limit });
+});

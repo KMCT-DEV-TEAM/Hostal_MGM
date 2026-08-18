@@ -13,7 +13,9 @@ import {
   getFurnitureTypeDetails,
   updateFurnitureType,
   deleteFurnitureType,
-  changeAssetStatus
+  changeAssetStatus,
+  getFurnitureAssetsByType,
+  getAllHostelFurnitureAssets
 } from "./furniture.controller.js";
 
 import {
@@ -53,6 +55,13 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   getFurnitureTypeDetails
+);
+
+router.get(
+  "/types/:typeId/assets",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getFurnitureAssetsByType
 );
 
 router.post(
@@ -100,6 +109,13 @@ router.post(
   roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateReturn,
   returnFurniture
+);
+
+router.get(
+  "/assets/all-hostel",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getAllHostelFurnitureAssets
 );
 
 router.patch(
