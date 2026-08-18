@@ -104,3 +104,16 @@ export const validateAllocateStudentHostel = (req, res, next) => {
 
   next();
 };
+
+export const validateVacateHostel = (req, res, next) => {
+  const { studentId } = req.params;
+
+  if (!studentId || !isUUID(studentId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or missing studentId parameter",
+    });
+  }
+
+  next();
+};

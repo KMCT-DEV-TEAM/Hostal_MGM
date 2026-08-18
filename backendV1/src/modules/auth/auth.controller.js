@@ -3,6 +3,7 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { comparePassword, hashPassword } from "../../utils/hash.js";
 import { prisma } from "../../config/prisma.js";
+import jwt from "jsonwebtoken";
 
 const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -117,21 +118,47 @@ const me = asyncHandler(async (req, res) => {
       where: { id: req.user.id },
       include: {
         studentHostels: {
-          include: { hostel: true }
+          where: { status: 'active' },
+          include: { 
+            hostel: {
+              select: { id: true, name: true, code: true }
+            } 
+          }
         }
       }
     });
+    
     if (user) {
         user.role = 'student';
-        if (user.studentHostels && user.studentHostels.length > 0) {
-            user.assignedHostels = user.studentHostels.map(sh => sh.hostel);
+        const activeAllocation = user.studentHostels?.[0];
+        
+        if (activeAllocation?.hostel) {
+            user.assignedHostels = [{
+              _id: activeAllocation.hostel.id,
+              name: activeAllocation.hostel.name,
+              code: activeAllocation.hostel.code
+            }];
         }
+        
+        const qrToken = jwt.sign(
+          {
+            studentId: user.id,
+            idString: user.studentCode,
+            name: user.fullName,
+            roomNo: activeAllocation?.roomNumber || null,
+            type: "attendance_qr",
+          },
+          process.env.JWT_ACCESS_TOKEN
+        );
+        
+        user.qrToken = qrToken;
     }
   } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
     user = await prisma.parent.findUnique({
       where: { id: req.user.id },
       include: {
         studentParents: {
+          where: { status: 'active' },
           include: { student: true }
         }
       }
