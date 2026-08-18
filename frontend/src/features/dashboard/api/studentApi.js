@@ -43,7 +43,7 @@ const studentApi = {
   getStudentByIdBySuperAdmin: (id) => api.get(`/super-admin/students/${id}`),
 
   getStudentsBySuperAdmin: (params) =>
-    api.get("/super-admin/students/super-admin", { params }),
+    api.get("/students/super-admin", { params }),
 
   getStudentFilterOptionsBySuperAdmin: (params) =>
     api.get("/super-admin/students/filters", { params }),

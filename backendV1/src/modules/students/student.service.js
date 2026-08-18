@@ -357,3 +357,155 @@ export const getStudentsService = async ({
     },
   };
 };
+
+export const getStudentFilterOptionsService = async ({
+  role,
+  userId,
+  organizationId,
+  filterType,
+  search = '',
+  page = 1,
+  limit = 10
+}) => {
+  const where = {};
+
+  if (role === "admin") {
+    const admin = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true }
+    });
+
+    if (!admin?.organizationId) {
+      throw { statusCode: 400, message: "Admin is not assigned to any organization" };
+    }
+
+    where.organizationId = admin.organizationId;
+  }
+
+  if (role === "super_admin" && organizationId) {
+    where.organizationId = organizationId;
+  }
+
+  if (role === "mentor") {
+    const activeAssignments = await prisma.mentorAssignment.findMany({
+      where: {
+        mentorId: userId,
+        status: "ACTIVE",
+      },
+      select: { batchId: true }
+    });
+
+    if (activeAssignments.length === 0) {
+      where.id = "00000000-0000-0000-0000-000000000000"; // Impossible UUID to match 0 students
+    } else {
+      where.batchId = { in: activeAssignments.map((a) => a.batchId) };
+    }
+  }
+
+  // NOTE: intentionally leaving warden without filters to match old logic exactly.
+
+  if (filterType) {
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    let options = [];
+    let hasMore = false;
+
+    if (filterType === 'course') {
+      const records = await prisma.course.findMany({
+        where: {
+          name: { contains: search, mode: "insensitive" },
+          students: { some: where }
+        },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limitNumber + 1
+      });
+      hasMore = records.length > limitNumber;
+      options = (hasMore ? records.slice(0, limitNumber) : records).map(r => ({ value: r.id, label: r.name, code: r.code }));
+    } else if (filterType === 'department') {
+      const records = await prisma.department.findMany({
+        where: {
+          name: { contains: search, mode: "insensitive" },
+          students: { some: where }
+        },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limitNumber + 1
+      });
+      hasMore = records.length > limitNumber;
+      options = (hasMore ? records.slice(0, limitNumber) : records).map(r => ({ value: r.id, label: r.name, code: r.code }));
+    } else if (filterType === 'hostel') {
+      const records = await prisma.hostel.findMany({
+        where: {
+          name: { contains: search, mode: "insensitive" },
+          studentHostels: { some: { student: where } }
+        },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limitNumber + 1
+      });
+      hasMore = records.length > limitNumber;
+      options = (hasMore ? records.slice(0, limitNumber) : records).map(r => ({ value: r.id, label: r.name, code: r.code }));
+    } else if (filterType === 'organization') {
+      const records = await prisma.organization.findMany({
+        where: {
+          name: { contains: search, mode: "insensitive" },
+          students: { some: where }
+        },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limitNumber + 1
+      });
+      hasMore = records.length > limitNumber;
+      options = (hasMore ? records.slice(0, limitNumber) : records).map(r => ({ value: r.id, label: r.name, code: r.code }));
+    }
+
+    return { options, hasMore };
+  }
+
+  const [courses, departments, batches, hostels, organizations] = await Promise.all([
+    prisma.course.findMany({
+      where: { students: { some: where } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.department.findMany({
+      where: { students: { some: where } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.batch.findMany({
+      where: { students: { some: where } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.hostel.findMany({
+      where: { studentHostels: { some: { student: where } } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: 'asc' }
+    }),
+    role === "super_admin" ? prisma.organization.findMany({
+      where: { students: { some: where } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: 'asc' }
+    }) : Promise.resolve([])
+  ]);
+
+  return {
+    courses: courses.map(r => ({ value: r.id, label: r.name, code: r.code })),
+    departments: departments.map(r => ({ value: r.id, label: r.name, code: r.code })),
+    batches: batches.map(r => ({ value: r.id, label: r.name, code: r.code })),
+    hostels: hostels.map(r => ({ value: r.id, label: r.name, code: r.code })),
+    organizations: role === "super_admin" ? organizations.map(r => ({ value: r.id, label: r.name, code: r.code })) : [],
+    statuses: [
+      { label: "Active", value: "true" },
+      { label: "Inactive", value: "false" },
+    ],
+  };
+};

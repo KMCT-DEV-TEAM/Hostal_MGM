@@ -1,6 +1,6 @@
 import express from "express";
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent } from "./student.validation.js";
-import { createStudent, updateStudent, changeStudentEmail, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsByWarden, getStudentsBySuperAdmin, getStudentsByMentor } from "./student.controller.js";
+import { createStudent, updateStudent, changeStudentEmail, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsByWarden, getStudentsBySuperAdmin, getStudentsByMentor, getStudentFilterOptions } from "./student.controller.js";
 
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -47,6 +47,13 @@ router.get(
   authMiddleware,
   roleMiddleware("mentor"),
   getStudentsByMentor
+);
+
+router.get(
+  "/filters",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin", "warden", "mentor", "assistant_warden"),
+  getStudentFilterOptions
 );
 
 router.post(

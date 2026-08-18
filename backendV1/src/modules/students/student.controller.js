@@ -1,7 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createStudentWithParentDb, updateStudentDb, getStudentsService } from "./student.service.js";
-import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
+import { createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
+import { verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
@@ -388,4 +388,24 @@ export const getStudentsByMentor = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentFilterOptions = asyncHandler(async (req, res) => {
+  const { organizationId, filterType, search, page, limit } = req.query;
+  const filters = await getStudentFilterOptionsService({
+    role: req.user.role,
+    userId: req.user.id,
+    organizationId,
+    filterType,
+    search,
+    page,
+    limit,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Student filter options fetched successfully",
+    filterType ? filters : { filters }
+  );
 });
