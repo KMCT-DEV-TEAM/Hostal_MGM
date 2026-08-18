@@ -34,7 +34,7 @@ export const createFurnitureType = asyncHandler(async (req, res) => {
       updatedBy: req.user.id,
     };
 
-    const openingStock = req.body.openingStock || 0;
+    const openingStock = req.body.openingStock ?? 0;
 
     const newType = await furnitureService.createFurnitureTypeService(data, openingStock, req.user);
 
@@ -179,7 +179,7 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
 
 export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
   const { typeId } = req.params;
-  
+
   const type = await prisma.furnitureType.findUnique({
     where: { id: typeId },
     include: {
@@ -228,7 +228,7 @@ export const updateFurnitureType = asyncHandler(async (req, res) => {
   const typeToUpdate = await prisma.furnitureType.findUnique({
     where: { id: typeId }
   });
-  
+
   if (!typeToUpdate) return sendError(res, 404, "Furniture Type not found");
 
   const scope = await resolveUserScope(req.user);
@@ -316,7 +316,7 @@ export const changeAssetStatus = asyncHandler(async (req, res) => {
     inactive: "updated"
   };
   const actionName = actionMap[status.toLowerCase()] || "updated";
-  
+
   await furnitureService.changeLifecycleStatusService(asset, status.toUpperCase(), actionName, req.user, remarks);
 
   await createLogDb({
@@ -439,7 +439,7 @@ export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
   });
 
   const total = await prisma.furnitureType.count({ where: query });
-  
+
   const mappedTypes = types.map(t => ({
     _id: t.id,
     name: t.name,

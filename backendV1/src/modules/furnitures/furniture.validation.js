@@ -1,32 +1,58 @@
 import { prisma } from "../../config/prisma.js";
-import { uuidRegex } from "../../utils/uuid.js";
 import { checkAnyAssetAllocatedForTypeDb } from "./furniture.service.js";
 
-export const validateCreateFurnitureType = async (req, res, next) => {
+const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+export const validateCreateFurnitureType = (req, res, next) => {
   try {
     const { name, prefix, openingStock } = req.body;
 
-    if (!name || name.trim().length < 2 || name.trim().length > 100) {
-      return res.status(400).json({ success: false, message: "Name must be between 2 and 100 characters." });
+    if (
+      typeof name !== "string" ||
+      name.trim().length < 2 ||
+      name.trim().length > 100
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Name must be between 2 and 100 characters.",
+      });
     }
 
-    if (!prefix || prefix.trim().length > 10 || /\s/.test(prefix.trim())) {
-      return res.status(400).json({ success: false, message: "Prefix must be up to 10 characters without spaces." });
+    if (
+      typeof prefix !== "string" ||
+      prefix.trim().length === 0 ||
+      prefix.trim().length > 10 ||
+      /\s/.test(prefix.trim())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Prefix must be up to 10 characters without spaces.",
+      });
     }
 
     if (openingStock !== undefined) {
-      if (typeof openingStock !== "number" || openingStock < 0 || openingStock > 10000) {
-        return res.status(400).json({ success: false, message: "Opening stock must be between 0 and 10000." });
+      const stock = Number(openingStock);
+
+      if (!Number.isFinite(stock) || stock < 0 || stock > 10000) {
+        return res.status(400).json({
+          success: false,
+          message: "Opening stock must be between 0 and 10000.",
+        });
       }
+
+      req.body.openingStock = stock;
     }
 
     next();
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Validation Error",
+      error: error.message,
+    });
   }
 };
 
-const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export const validateAdjustAssetCount = async (req, res, next) => {
   try {
@@ -159,7 +185,7 @@ export const validateUpdateFurnitureType = async (req, res, next) => {
   try {
     const { typeId: id } = req.params;
     const { prefix } = req.body;
-    
+
     if (!uuidRegex.test(id)) {
       return res.status(400).json({ success: false, message: "Invalid Furniture Type ID." });
     }
@@ -172,7 +198,7 @@ export const validateUpdateFurnitureType = async (req, res, next) => {
       const existingType = await prisma.furnitureType.findUnique({
         where: { id }
       });
-      
+
       if (!existingType) {
         return res.status(404).json({ success: false, message: "Furniture Type Not Found" });
       }
