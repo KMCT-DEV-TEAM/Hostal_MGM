@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { orchestratorService } from "../notification/services/orchestrator.service.js";
 
 export const getLatestAssetIdByPrefixDb = async (prefix, tx) => {
   return await tx.furnitureAsset.findFirst({
@@ -230,5 +231,66 @@ export const adjustAssetCountService = async (typeId, newCount, actor) => {
     }
 
     return { status: "updated", previousCount: currentCount, newCount };
+  });
+};
+
+export const bulkAllocateAssetsToStudentService = async (student, assets, actor) => {
+  return await prisma.$transaction(async (tx) => {
+    const assetIds = assets.map(a => a.id);
+    const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+
+    await tx.furnitureAsset.updateMany({
+      where: { id: { in: assetIds } },
+      data: { status: "ALLOCATED", studentId: student.id, updatedById: actor.id }
+    });
+
+    const historyDocs = assets.map(asset => ({
+      furnitureAssetId: asset.id,
+      action: "allocated",
+      previousStatus: "AVAILABLE",
+      currentStatus: "ALLOCATED",
+      studentId: student.id,
+      performedById: actor.id,
+      performedByRole: actor.role,
+      remarks: "Allocated Furniture to Student",
+    }));
+
+    await tx.furnitureAssetHistory.createMany({ data: historyDocs });
+
+    // Trigger Notifications after transaction completes
+    try {
+      const sender = actor ? { id: actor.id, role: actor.role, name: actor.name } : null;
+
+      orchestratorService.triggerNotification({
+        sender,
+        eventName: 'FURNITURE_ALLOCATED',
+        target: [
+          { type: 'STUDENT', filter: { studentIds: [student.id] } },
+          { type: 'PARENT', filter: { studentIds: [student.id] } }
+        ],
+        data: { count: assets.length, studentName }
+      }).catch(err => console.error(err));
+
+      if (student.hostelId) {
+        const wardenRelations = await tx.hostelWarden.findMany({
+          where: { hostelId: student.hostelId },
+          select: { wardenId: true }
+        });
+        const wardenIds = wardenRelations.map(rel => rel.wardenId);
+
+        if (wardenIds.length > 0) {
+          orchestratorService.triggerNotification({
+            sender,
+            eventName: 'FURNITURE_ALLOCATED',
+            target: { type: 'USER', filter: { userIds: wardenIds } },
+            data: { count: assets.length, studentName }
+          }).catch(err => console.error(err));
+        }
+      }
+    } catch (notifErr) {
+      console.error("[Notification Error - Furniture Allocated]", notifErr);
+    }
+
+    return { status: "success", count: assets.length };
   });
 };

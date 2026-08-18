@@ -75,3 +75,22 @@ export const adjustAssetCount = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Asset count adjusted successfully.", result);
 });
+
+export const allocateFurniture = asyncHandler(async (req, res) => {
+  const { student, assets } = req.validatedData;
+
+  // Call the bulk service
+  await furnitureService.bulkAllocateAssetsToStudentService(student, assets, req.user);
+
+  await createLogDb({
+    action: "Allocated Furniture to Student",
+    entityType: "Furniture",
+    entityId: student.id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Allocated ${assets.length} furniture asset(s) to student`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, `Successfully allocated ${assets.length} furniture asset(s).`);
+});

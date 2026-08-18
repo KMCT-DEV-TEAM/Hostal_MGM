@@ -1,3 +1,5 @@
+import { prisma } from "../../config/prisma.js";
+
 export const validateCreateFurnitureType = async (req, res, next) => {
   try {
     const { name, prefix, openingStock } = req.body;
@@ -37,6 +39,86 @@ export const validateAdjustAssetCount = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Count must be a positive integer." });
     }
 
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};
+
+export const validateAllocate = async (req, res, next) => {
+  try {
+    const { studentId, assetId, assetIds } = req.body;
+
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: "studentId is required." });
+    }
+
+    if (!uuidRegex.test(studentId)) {
+      return res.status(400).json({ success: false, message: "Invalid studentId." });
+    }
+
+    let assetsToAllocate = [];
+    if (assetIds && Array.isArray(assetIds)) {
+      assetsToAllocate = assetIds;
+    } else if (assetId) {
+      assetsToAllocate = [assetId];
+    } else {
+      return res.status(400).json({ success: false, message: "assetId or assetIds array is required." });
+    }
+
+    if (assetsToAllocate.length === 0) {
+      return res.status(400).json({ success: false, message: "No assets provided." });
+    }
+
+    const student = await prisma.student.findUnique({ where: { id: studentId } });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student Not Found" });
+    }
+
+    if (!student.isActive) {
+      return res.status(400).json({ success: false, message: `Student ${student.name || student.firstName} is inactive.` });
+    }
+
+    if (!student.hostelId) {
+      return res.status(400).json({ success: false, message: `Student ${student.name || student.firstName} is not assigned to a hostel. Please assign a hostel to this student first.` });
+    }
+
+    const validatedAssets = [];
+
+    for (const id of assetsToAllocate) {
+      if (!uuidRegex.test(id)) {
+        return res.status(400).json({ success: false, message: `Invalid assetId provided: ${id}` });
+      }
+
+      const asset = await prisma.furnitureAsset.findUnique({
+        where: { id },
+        include: { furnitureType: true }
+      });
+
+      if (!asset) {
+        return res.status(404).json({ success: false, message: `Furniture Asset Not Found: ${id}` });
+      }
+
+      if (asset.status === "INACTIVE") {
+        return res.status(409).json({ success: false, message: `Furniture asset ${asset.furnitureId || id} is inactive and cannot be allocated.` });
+      }
+
+      if (asset.status !== "AVAILABLE") {
+        return res.status(409).json({ success: false, message: `Furniture ${asset.furnitureId || id} is already in use or unavailable.` });
+      }
+
+      if (asset.studentId) {
+        return res.status(409).json({ success: false, message: `Furniture asset ${asset.furnitureId || id} is already allocated to another student.` });
+      }
+
+      if (String(asset.furnitureType.hostelId) !== String(student.hostelId)) {
+        return res.status(403).json({ success: false, message: `Asset ${asset.furnitureId || id} belongs to a different hostel. You can only assign furniture from the student's allocated hostel.` });
+      }
+
+      validatedAssets.push(asset);
+    }
+
+    req.validatedData = { student, assets: validatedAssets };
     next();
   } catch (error) {
     return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
