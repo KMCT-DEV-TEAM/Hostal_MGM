@@ -27,8 +27,8 @@ export const updateStudentHostel = asyncHandler(async (req, res) => {
 
   const actionLogDetails =
     result.action === "allocated"
-      ? `Student assigned to hostel, room: ${result.student.roomNumber || "N/A"}`
-      : `Student transferred to hostel, room: ${result.student.roomNumber || "N/A"}`;
+      ? `Student assigned to hostel, room: ${result.roomNumber || "N/A"}`
+      : `Student transferred to hostel, room: ${result.roomNumber || "N/A"}`;
 
   // Log activity
   try {

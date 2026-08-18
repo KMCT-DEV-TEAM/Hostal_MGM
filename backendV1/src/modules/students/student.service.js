@@ -276,7 +276,7 @@ export const getStudentsService = async ({
   }
 
   if (hostelStatus) {
-    hostelFilters.status = hostelStatus.toUpperCase();
+    hostelFilters.status = hostelStatus.toLowerCase();
     applyHostelFilter = true;
   }
 
@@ -304,7 +304,7 @@ export const getStudentsService = async ({
       department: { select: { id: true, name: true, code: true } },
       batch: { select: { id: true, name: true, code: true } },
       studentHostels: {
-        where: { status: "ALLOCATED" },
+        where: { status: "active" },
         include: { hostel: { select: { id: true, name: true } } }
       }
     }

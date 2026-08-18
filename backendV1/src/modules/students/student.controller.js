@@ -474,7 +474,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
         select: { id: true, name: true, code: true }
       },
       studentHostels: {
-        where: { status: "ALLOCATED" },
+        where: { status: "active" },
         include: {
           hostel: {
             select: { id: true, name: true, code: true, hostelType: true }
