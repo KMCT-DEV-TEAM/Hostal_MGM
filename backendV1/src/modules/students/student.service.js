@@ -442,7 +442,7 @@ export const getStudentFilterOptionsService = async ({
       const records = await prisma.hostel.findMany({
         where: {
           name: { contains: search, mode: "insensitive" },
-          studentHostels: { some: { student: where } }
+          studentHostels: { some: { student: where, status: "active" } }
         },
         select: { id: true, name: true, code: true },
         orderBy: { name: 'asc' },
@@ -486,7 +486,7 @@ export const getStudentFilterOptionsService = async ({
       orderBy: { name: 'asc' }
     }),
     prisma.hostel.findMany({
-      where: { studentHostels: { some: { student: where } } },
+      where: { studentHostels: { some: { student: where, status: "active" } } },
       select: { id: true, name: true, code: true },
       orderBy: { name: 'asc' }
     }),
