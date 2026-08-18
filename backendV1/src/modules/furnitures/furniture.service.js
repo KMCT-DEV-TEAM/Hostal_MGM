@@ -557,3 +557,33 @@ export const getFurnitureTypesListService = async (matchQuery, skip, limit) => {
     };
   });
 };
+
+export const changeLifecycleStatusService = async (asset, newStatus, actionName, actor, remarks) => {
+  return await prisma.$transaction(async (tx) => {
+    const updateData = { status: newStatus, updatedById: actor.id };
+    
+    if (["AVAILABLE", "MAINTENANCE", "SCRAP"].includes(newStatus)) {
+      updateData.studentId = null;
+    }
+
+    await tx.furnitureAsset.update({
+      where: { id: asset.id },
+      data: updateData
+    });
+
+    await tx.furnitureAssetHistory.create({
+      data: {
+        furnitureAssetId: asset.id,
+        action: actionName,
+        previousStatus: asset.status,
+        currentStatus: newStatus,
+        studentId: asset.studentId, // log the student that had it (for lost event)
+        performedById: actor.id,
+        performedByRole: actor.role,
+        remarks: remarks || null
+      }
+    });
+
+    return true;
+  });
+};

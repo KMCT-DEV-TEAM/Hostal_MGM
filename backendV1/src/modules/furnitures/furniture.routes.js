@@ -12,7 +12,8 @@ import {
   getFurnitureTypes,
   getFurnitureTypeDetails,
   updateFurnitureType,
-  deleteFurnitureType
+  deleteFurnitureType,
+  changeAssetStatus
 } from "./furniture.controller.js";
 
 import {
@@ -20,7 +21,8 @@ import {
   validateAdjustAssetCount,
   validateAllocate,
   validateReturn,
-  validateUpdateFurnitureType
+  validateUpdateFurnitureType,
+  validateManualStatusChange
 } from "./furniture.validation.js";
 
 const router = express.Router();
@@ -98,6 +100,14 @@ router.post(
   roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateReturn,
   returnFurniture
+);
+
+router.patch(
+  "/assets/:assetId/status",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateManualStatusChange,
+  changeAssetStatus
 );
 
 export default router;

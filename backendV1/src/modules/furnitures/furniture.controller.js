@@ -299,3 +299,35 @@ export const deleteFurnitureType = asyncHandler(async (req, res) => {
     throw error;
   }
 });
+
+export const adjustAssetsCount = adjustAssetCount;
+
+export const changeAssetStatus = asyncHandler(async (req, res) => {
+  const { assetId } = req.params;
+  const { status, remarks } = req.body;
+  const { asset } = req.validatedData;
+
+  const actionMap = {
+    maintenance: "maintenance started",
+    available: "updated",
+    allocated: "allocated",
+    lost: "lost",
+    scrap: "scrapped",
+    inactive: "updated"
+  };
+  const actionName = actionMap[status.toLowerCase()] || "updated";
+  
+  await furnitureService.changeLifecycleStatusService(asset, status.toUpperCase(), actionName, req.user, remarks);
+
+  await createLogDb({
+    action: "Changed Furniture Asset Status",
+    entityType: "Furniture",
+    entityId: assetId,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Asset status changed to ${status}. Remarks: ${remarks || 'N/A'}`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "Asset status updated successfully.");
+});

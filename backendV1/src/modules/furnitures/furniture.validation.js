@@ -189,3 +189,68 @@ export const validateUpdateFurnitureType = async (req, res, next) => {
     return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
   }
 };
+
+export const validateManualStatusChange = async (req, res, next) => {
+  try {
+    const { assetId } = req.params;
+    const { status } = req.body;
+
+    if (!uuidRegex.test(assetId)) {
+      return res.status(400).json({ success: false, message: "Invalid Asset ID." });
+    }
+
+    const allowedStatuses = ["available", "maintenance", "inactive", "lost", "scrap"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Status can only be manually changed to one of: ${allowedStatuses.join(", ")}`
+      });
+    }
+
+    const asset = await prisma.furnitureAsset.findUnique({ where: { id: assetId } });
+    if (!asset) {
+      return res.status(404).json({ success: false, message: "Furniture Asset Not Found" });
+    }
+
+    if (asset.status === "ALLOCATED") {
+      return res.status(409).json({ success: false, message: "Cannot change status of an allocated asset. Return it first." });
+    }
+
+    req.validatedData = { asset, newStatus: status, remarks: req.body.remarks };
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};
+
+const validateStatusChange = (allowedCurrentStatuses) => async (req, res, next) => {
+  try {
+    const { assetId } = req.params;
+
+    if (!uuidRegex.test(assetId)) {
+      return res.status(400).json({ success: false, message: "Invalid Asset ID." });
+    }
+
+    const asset = await prisma.furnitureAsset.findUnique({ where: { id: assetId } });
+    if (!asset) {
+      return res.status(404).json({ success: false, message: "Furniture Asset Not Found" });
+    }
+
+    if (!allowedCurrentStatuses.includes(asset.status.toLowerCase())) {
+      return res.status(409).json({
+        success: false,
+        message: `Asset status cannot be changed. Current status is '${asset.status}', must be one of: ${allowedCurrentStatuses.join(", ")}`
+      });
+    }
+
+    req.validatedData = { asset };
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};
+
+export const validateStartMaintenance = validateStatusChange(["available"]);
+export const validateCompleteMaintenance = validateStatusChange(["maintenance"]);
+export const validateMarkLost = validateStatusChange(["available", "allocated"]);
+export const validateMarkScrap = validateStatusChange(["available", "maintenance"]);
