@@ -2,7 +2,9 @@
 
 import { prisma } from "../../config/prisma.js";
 
-
+/**
+ * Fetches a student record for hostel allocation logic.
+ */
 export const getStudentById = (studentId) =>
   prisma.student.findUnique({
     where: { id: studentId },
@@ -14,7 +16,9 @@ export const getStudentById = (studentId) =>
     },
   });
 
-
+/**
+ * Fetches a hostel record for hostel allocation logic.
+ */
 export const getHostelById = (hostelId) =>
   prisma.hostel.findUnique({
     where: { id: hostelId },
@@ -25,8 +29,133 @@ export const getHostelById = (hostelId) =>
       isActive: true,
     },
   });
+/**
+ * Retrieves paginated, sorted, and filtered hostel allocation history.
+ */
+export const getHostelHistoryDb = async (query) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    hostelId,
+    organizationId,
+    status,
+    sortBy = "joinedAt",
+    sortOrder = "desc",
+  } = query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const where = {};
+
+  if (organizationId) {
+    where.organizationId = organizationId;
+  }
+  if (hostelId) {
+    where.hostelId = hostelId;
+  }
+  if (status) {
+    where.status = status;
+  }
+  if (search) {
+    where.OR = [
+      { student: { fullName: { contains: search, mode: "insensitive" } } },
+      { student: { studentCode: { contains: search, mode: "insensitive" } } },
+      { hostel: { name: { contains: search, mode: "insensitive" } } },
+      { roomNumber: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const orderBy = {
+    [sortBy]: sortOrder === "asc" ? "asc" : "desc",
+  };
+
+  const [history, total] = await prisma.$transaction([
+    prisma.studentHostel.findMany({
+      where,
+      skip,
+      take: limitNumber,
+      orderBy,
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            studentCode: true,
+            email: true,
+          }
+        },
+        hostel: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          }
+        },
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          }
+        },
+        allocatedBy: {
+          select: {
+            id: true,
+            fullName: true,
+          }
+        },
+        vacatedBy: {
+          select: {
+            id: true,
+            fullName: true,
+          }
+        }
+      }
+    }),
+    prisma.studentHostel.count({ where }),
+  ]);
+
+  return { history, total, limitNumber, pageNumber };
+};
+
+/**
+ * Retrieves the complete chronological allocation timeline for a specific student.
+ */
+export const getStudentHostelTimelineDb = async (studentId) => {
+  return await prisma.studentHostel.findMany({
+    where: { studentId },
+    orderBy: { joinedAt: "desc" },
+    include: {
+      hostel: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+        }
+      },
+      allocatedBy: {
+        select: {
+          id: true,
+          fullName: true,
+        }
+      },
+      vacatedBy: {
+        select: {
+          id: true,
+          fullName: true,
+        }
+      }
+    }
+  });
+};
 
 
+/**
+ * Finds the currently active hostel allocation for a student.
+ */
 export const findActiveAllocation = (studentId) =>
   prisma.studentHostel.findFirst({
     where: {
@@ -42,6 +171,9 @@ export const findActiveAllocation = (studentId) =>
   });
 
 
+/**
+ * Creates a new student hostel allocation record within a transaction.
+ */
 export const createAllocation = (tx, data) =>
   tx.studentHostel.create({
     data: {
@@ -71,6 +203,9 @@ export const createAllocation = (tx, data) =>
   });
 
 
+/**
+ * Updates an allocation's status (e.g. to "vacated" or "transferred") within a transaction.
+ */
 export const updateAllocationStatus = (
   tx,
   allocationId,
@@ -88,6 +223,10 @@ export const updateAllocationStatus = (
     },
   });
 
+/**
+ * Synchronizes the HostelOrganization join table based on currently active allocations.
+ * Must run within the allocation transaction.
+ */
 export const syncHostelOrganizations = async (tx, hostelId) => {
   // 1. Find all distinct organizations of students currently occupying this hostel
   // (Using StudentHostel as the source of truth)

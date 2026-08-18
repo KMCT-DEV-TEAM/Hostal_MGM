@@ -2,13 +2,15 @@
 
 import { prisma } from "../../config/prisma.js";
 import AppError from "../../utils/AppError.js";
+import { orchestratorService } from "../notification/services/orchestrator.service.js";
 import {
   getStudentById,
   getHostelById,
   findActiveAllocation,
   createAllocation,
   syncHostelOrganizations,
-  updateAllocationStatus,
+  getHostelHistoryDb,
+  getStudentHostelTimelineDb,
 } from "./studentHostel.repository.js";
 
 // ---------------------------------------------------------------------------
@@ -48,6 +50,34 @@ const addHostelTransferContextToComplaints = async (
 };
 
 
+
+// ---------------------------------------------------------------------------
+// STUBS FOR CROSS-MODULE INTEGRATIONS (VACATE)
+// ---------------------------------------------------------------------------
+
+const validateStudentNotOutside = async (studentId) => {
+  // Returns immediately. Migration pending.
+};
+
+const handleAttendanceForVacate = async (studentId, hostelId, tx, actorId) => {
+  // Returns immediately. Migration pending.
+};
+
+const cancelActionablePasses = async (studentId, actor, tx) => {
+  // Returns immediately. Migration pending.
+};
+
+const handleStudentVacateVisitor = async (studentId, tx, actor) => {
+  // Returns immediately. Migration pending.
+};
+
+const addHostelVacateContextToComplaints = async (studentId, allocationId, actor, tx) => {
+  // Returns immediately. Migration pending.
+};
+/**
+ * Allocates a student to a new hostel (initial allocation).
+ * Orchestrates pre-flight validation and Prisma transaction.
+ */
 const allocateStudentToHostelService = async (
   studentId,
   hostelId,
@@ -55,15 +85,6 @@ const allocateStudentToHostelService = async (
   { reason, remarks, joinedAt } = {},
   currentUser,
 ) => {
-  // -------------------------------------------------------------------------
-  // PHASE 1: Pre-flight validation
-  // All reads run outside the transaction — fast, no lock held.
-  //
-  // Matches MongoDB allocateHostelInternal:
-  //   Student.findById → isActive check
-  //   Hostel.findById  → isActive check
-  //   StudentHostelAllocation.findOne({ status: "active" })
-  // -------------------------------------------------------------------------
 
   // Rule 1 — Student must exist
   const student = await getStudentById(studentId);
@@ -183,6 +204,9 @@ const allocateStudentToHostelService = async (
 };
 
 
+/**
+ * Transfers a student from their current hostel to a new one.
+ */
 const changeHostelInternal = async (
   studentId,
   activeAllocation,
@@ -305,6 +329,9 @@ const changeHostelInternal = async (
 };
 
 
+/**
+ * Dispatcher service for allocating or transferring a student.
+ */
 export const updateStudentHostelService = async (
   studentId,
   data,
@@ -343,4 +370,130 @@ export const updateStudentHostelService = async (
       currentUser,
     );
   }
+};
+
+/**
+ * Service to orchestrate vacating a student from their current hostel.
+ */
+export const vacateHostelService = async (studentId, data, currentUser) => {
+  const actorId = currentUser.id || currentUser._id;
+  const { reason, remarks } = data || {};
+
+  // 1. Context Loading
+  const student = await getStudentById(studentId);
+  if (!student) {
+    throw new AppError("Student not found", 404);
+  }
+
+  const activeAllocation = await findActiveAllocation(studentId);
+  if (!activeAllocation) {
+    throw new AppError("Student is not currently allocated to any hostel", 400);
+  }
+
+  const oldHostelId = activeAllocation.hostelId;
+
+  // 2. Preflight Checks
+  await validateFurnitureClearance(studentId);
+  await validateStudentNotOutside(studentId);
+
+  // 3. Start Transaction
+  const { updatedAllocation, txStudent } = await prisma.$transaction(async (tx) => {
+    // 4. Update Allocation Status
+    const alloc = await updateAllocationStatus(
+      tx,
+      activeAllocation.id,
+      "vacated", // status
+      actorId,   // vacatedById
+      reason
+    );
+
+    // Re-verify student in tx (MongoDB does this for atomic guarantees)
+    const txStud = await tx.student.findUnique({ where: { id: studentId } });
+
+    // 5. Cross-Module Atomic Mutations
+    await handleAttendanceForVacate(studentId, oldHostelId, tx, actorId);
+    await cancelActionablePasses(studentId, currentUser, tx);
+    await handleStudentVacateVisitor(studentId, tx, currentUser);
+    await addHostelVacateContextToComplaints(studentId, activeAllocation.id, currentUser, tx);
+
+    // 6. Sync Organizations
+    await syncHostelOrganizations(tx, oldHostelId);
+
+    return { updatedAllocation: alloc, txStudent: txStud };
+  });
+
+  // 7. Post-Commit Notifications
+  try {
+    const oldHostel = await getHostelById(oldHostelId);
+    // In Prisma, we would typically fetch wardens via HostelWarden join, but mimicking exact Mongo behavior:
+    const oldWardenIds = await prisma.hostelWarden.findMany({
+      where: { hostelId: oldHostelId },
+      select: { userId: true }
+    }).then(wardens => wardens.map(w => w.userId));
+
+    const sender = currentUser ? { id: actorId, role: currentUser.role, name: currentUser.fullName } : null;
+    const studentName = txStudent.fullName;
+
+    // Notify Student and Parent
+    orchestratorService.triggerNotification({
+      sender,
+      eventName: "HOSTEL_VACATED",
+      target: [
+        { type: "STUDENT", filter: { studentIds: [studentId] } },
+        { type: "PARENT", filter: { studentIds: [studentId] } }
+      ],
+      data: { message: "Your hostel accommodation has been successfully vacated.", studentName }
+    }).catch(err => console.error(err));
+
+    // Notify Wardens
+    if (oldWardenIds.length > 0) {
+      orchestratorService.triggerNotification({
+        sender,
+        eventName: "HOSTEL_VACATED",
+        target: { type: "USER", filter: { userIds: oldWardenIds } },
+        data: { message: "A student has vacated your hostel.", studentName }
+      }).catch(err => console.error(err));
+    }
+  } catch (notifErr) {
+    console.error("[Notification Error]", notifErr);
+  }
+
+  // 8. Return exactly matching MongoDB response structure
+  return {
+    action: "vacated",
+    oldAllocation: activeAllocation,
+    newAllocation: updatedAllocation,
+    student: {
+      ...txStudent,
+      name: txStudent.fullName // Map for legacy compatibility if needed
+    },
+    oldHostelId
+  };
+};
+
+/**
+ * Service wrapper for retrieving paginated hostel allocation history.
+ */
+export const getHostelHistoryService = async (query) => {
+  const result = await getHostelHistoryDb(query);
+  
+  const totalPages = Math.ceil(result.total / result.limitNumber);
+
+  return {
+    history: result.history,
+    pagination: {
+      totalRecords: result.total,
+      totalPages: totalPages,
+      currentPage: result.pageNumber,
+      limit: result.limitNumber,
+    }
+  };
+};
+
+/**
+ * Service wrapper for retrieving a student's complete allocation timeline.
+ */
+export const getStudentHostelTimelineService = async (studentId) => {
+  const result = await getStudentHostelTimelineDb(studentId);
+  return result;
 };
