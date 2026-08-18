@@ -5,13 +5,15 @@ import roleMiddleware from "../../middlewares/role.middleware.js";
 import {
   createFurnitureType,
   adjustAssetCount,
-  allocateFurniture
+  allocateFurniture,
+  returnFurniture
 } from "./furniture.controller.js";
 
 import {
   validateCreateFurnitureType,
   validateAdjustAssetCount,
-  validateAllocate
+  validateAllocate,
+  validateReturn
 } from "./furniture.validation.js";
 
 const router = express.Router();
@@ -38,6 +40,14 @@ router.post(
   roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
   validateAllocate,
   allocateFurniture
+);
+
+router.post(
+  "/students/:studentId/assets/:assetId/return",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
+  validateReturn,
+  returnFurniture
 );
 
 export default router;

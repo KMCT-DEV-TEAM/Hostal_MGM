@@ -124,3 +124,31 @@ export const validateAllocate = async (req, res, next) => {
     return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
   }
 };
+
+export const validateReturn = async (req, res, next) => {
+  try {
+    const { studentId, assetId } = req.params;
+
+    if (!uuidRegex.test(studentId) || !uuidRegex.test(assetId)) {
+      return res.status(400).json({ success: false, message: "Invalid ID parameters." });
+    }
+
+    const asset = await prisma.furnitureAsset.findUnique({ where: { id: assetId } });
+    if (!asset) {
+      return res.status(404).json({ success: false, message: "Furniture Asset Not Found" });
+    }
+
+    if (asset.status !== "ALLOCATED") {
+      return res.status(409).json({ success: false, message: "Asset is not currently allocated." });
+    }
+
+    if (String(asset.studentId) !== String(studentId)) {
+      return res.status(403).json({ success: false, message: "Asset does not belong to this student." });
+    }
+
+    req.validatedData = { asset };
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};

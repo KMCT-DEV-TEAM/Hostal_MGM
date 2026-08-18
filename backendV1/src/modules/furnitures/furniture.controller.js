@@ -94,3 +94,20 @@ export const allocateFurniture = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, `Successfully allocated ${assets.length} furniture asset(s).`);
 });
+
+export const returnFurniture = asyncHandler(async (req, res) => {
+  const { asset } = req.validatedData;
+  await furnitureService.returnAssetService(asset, req.user);
+
+  await createLogDb({
+    action: "Returned Furniture from Student",
+    entityType: "Furniture",
+    entityId: asset.id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Furniture asset returned from student`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "Furniture returned successfully.");
+});

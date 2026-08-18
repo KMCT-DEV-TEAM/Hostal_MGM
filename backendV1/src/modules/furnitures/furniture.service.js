@@ -294,3 +294,73 @@ export const bulkAllocateAssetsToStudentService = async (student, assets, actor)
     return { status: "success", count: assets.length };
   });
 };
+
+export const returnAssetService = async (asset, actor) => {
+  return await prisma.$transaction(async (tx) => {
+    const previousStudent = asset.studentId;
+
+    await tx.furnitureAsset.update({
+      where: { id: asset.id },
+      data: { status: "AVAILABLE", studentId: null, updatedById: actor.id }
+    });
+
+    await tx.furnitureAssetHistory.create({
+      data: {
+        furnitureAssetId: asset.id,
+        action: "returned",
+        previousStatus: "ALLOCATED",
+        currentStatus: "AVAILABLE",
+        studentId: previousStudent,
+        performedById: actor.id,
+        performedByRole: actor.role,
+        remarks: "Returned Furniture from Student"
+      }
+    });
+
+    // Trigger Notifications
+    try {
+      if (previousStudent) {
+        const student = await tx.student.findUnique({
+          where: { id: previousStudent },
+          select: { name: true, firstName: true, lastName: true, hostelId: true }
+        });
+
+        if (student) {
+          const studentName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+          const sender = actor ? { id: actor.id, role: actor.role, name: actor.name } : null;
+
+          orchestratorService.triggerNotification({
+            sender,
+            eventName: 'FURNITURE_RETURNED',
+            target: [
+              { type: 'STUDENT', filter: { studentIds: [previousStudent] } },
+              { type: 'PARENT', filter: { studentIds: [previousStudent] } }
+            ],
+            data: { assetId: asset.furnitureId || asset.id, studentName }
+          }).catch(err => console.error(err));
+
+          if (student.hostelId) {
+            const wardenRelations = await tx.hostelWarden.findMany({
+              where: { hostelId: student.hostelId },
+              select: { wardenId: true }
+            });
+            const wardenIds = wardenRelations.map(rel => rel.wardenId);
+
+            if (wardenIds.length > 0) {
+              orchestratorService.triggerNotification({
+                sender,
+                eventName: 'FURNITURE_RETURNED',
+                target: { type: 'USER', filter: { userIds: wardenIds } },
+                data: { assetId: asset.furnitureId || asset.id, studentName }
+              }).catch(err => console.error(err));
+            }
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.error("[Notification Error - Furniture Returned]", notifErr);
+    }
+
+    return true;
+  });
+};
