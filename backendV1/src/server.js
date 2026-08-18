@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 import http from "http";
 import { initSocket } from "./config/socket.js";
+import { registerAllTemplates } from "./modules/notification/templates/index.js";
 
 const bootstrap = async () => {
   try {
@@ -15,6 +16,9 @@ const bootstrap = async () => {
 
     const server = http.createServer(app);
     initSocket(server);
+
+    registerAllTemplates();
+
 
     server.listen(PORT, () => {
       console.log(`Server running on ${PORT}`);

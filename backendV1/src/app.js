@@ -37,7 +37,7 @@ import otpRoutes from './modules/otps/otp.routes.js';
 import hostelRoutes from './modules/hostels/hostel.routes.js';
 import passwordRequestRoutes from './modules/passwordRequests/passwordRequest.routes.js';
 import userRoutes from './modules/users/user.routes.js';
-import notificationRoutes from './modules/notifications/notification.routes.js';
+import notificationRoutes from './modules/notification/notification.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
