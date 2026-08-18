@@ -16,7 +16,7 @@ const CourseFormModal = ({
 }) => {
     const { t } = useTranslation();
     const [errors, setErrors] = React.useState({});
-    const selectedOrg = (organizations || []).find(o => o._id === formData.organizationId);
+    const selectedOrg = (organizations || []).find(o => o.id === formData.organizationId);
     const orgCode = selectedOrg ? `${selectedOrg.code}-` : '';
 
     const onSubmit = (e) => {
@@ -75,7 +75,7 @@ const CourseFormModal = ({
                             <label className="block text-[10px] font-medium text-black mb-1">Organization <span className="text-red-500">*</span></label>
                             <div className="relative">
                                 <Dropdown
-                                    options={(organizations || []).map(org => ({ value: org._id, label: org.name }))}
+                                    options={(organizations || []).map(org => ({ value: org.id, label: org.name }))}
                                     value={formData.organizationId || ''}
                                     onChange={(val) => {
                                         setErrors(prev => ({ ...prev, organizationId: undefined }));

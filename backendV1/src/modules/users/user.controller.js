@@ -47,7 +47,12 @@ const getPaginatedUsersByRole = async (role, page, limit, status, search, additi
             hostel: {
               select: {
                 id: true,
-                name: true
+                name: true,
+                code: true,
+                hostelType: true,
+                capacity: true,
+                location: true,
+                isActive: true,
               }
             }
           }
@@ -92,12 +97,23 @@ export const getWardens = asyncHandler(async (req, res) => {
 
   const { users, totalCount } = await getPaginatedUsersByRole("WARDEN", page, limit, status, search);
 
-  const mappedUsers = users.map(user => ({
-    ...user,
-    _id: user.id,
-    name: user.fullName,
-    hostel: user.hostelWardens && user.hostelWardens.length > 0 ? user.hostelWardens[0].hostel : null
-  }));
+  const mappedUsers = users.map(user => {
+    const rawHostel = user.hostelWardens && user.hostelWardens.length > 0 ? user.hostelWardens[0].hostel : null;
+    const hostel = rawHostel ? {
+      ...rawHostel,
+      status: rawHostel.isActive ? 'Active' : 'Inactive',
+      hosteltype: rawHostel.hostelType ? rawHostel.hostelType.toLowerCase() : rawHostel.hosteltype
+    } : null;
+
+    return {
+      ...user,
+      id: user.id,
+      _id: user.id,
+      name: user.fullName,
+      status: user.isActive ? 'Active' : 'Inactive',
+      hostel
+    };
+  });
 
   return sendSuccess(res, 200, "Wardens fetched successfully", {
     count: mappedUsers.length,

@@ -154,7 +154,7 @@ export default function MentorAssignmentModal({
               }}
               fetchOptions={fetchMentors}
               getOptionLabel={(opt) => opt.name ? `${opt.name} (${opt.email})` : 'Select Mentor'}
-              getOptionValue={(opt) => opt._id || opt.id}
+              getOptionValue={(opt) => opt.id}
               placeholder="Search and select mentor..."
             />
             <ErrorMessage error={errors.mentorId} />

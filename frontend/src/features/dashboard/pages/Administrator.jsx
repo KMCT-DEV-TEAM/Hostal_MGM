@@ -289,7 +289,7 @@ export default function Administrator() {
         setIsEmailChangeModalOpen(true);
     };
 
-    const handleConfirmEmailChange = async (e) => {
+    const confirmEmailChange = async (e) => {
         e.preventDefault();
         if (!emailChangeAdminId || !newEmailForm || !passwordConfirm) return;
         setIsEmailUpdating(true);

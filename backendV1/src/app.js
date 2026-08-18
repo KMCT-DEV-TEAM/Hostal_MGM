@@ -45,9 +45,10 @@ import otpRoutes from './modules/otps/otp.routes.js';
 import hostelRoutes from './modules/hostels/hostel.routes.js';
 import passwordRequestRoutes from './modules/passwordRequests/passwordRequest.routes.js';
 import userRoutes from './modules/users/user.routes.js';
-import notificationRoutes from './modules/notifications/notification.routes.js';
+import notificationRoutes from './modules/notification/notification.routes.js';
 
 import studentRoutes from './modules/students/student.routes.js';
+import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
@@ -63,6 +64,7 @@ app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/students', studentRoutes);
+app.use('/api/student-hostels', studentHostelRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);

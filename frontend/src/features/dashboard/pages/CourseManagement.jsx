@@ -154,7 +154,7 @@ const CourseManagement = () => {
             // Re-fetch or locally update the status
             setcourses((prevcourses) =>
                 prevcourses.map((course) =>
-                    course._id === statusToUpdate.id ? { ...course, isActive: !course.isActive } : course
+                    course.id === statusToUpdate.id ? { ...course, isActive: !course.isActive } : course
                 )
             );
             setIsStatusConfirmOpen(false);
@@ -171,11 +171,11 @@ const CourseManagement = () => {
     const openModal = (mode, course = null) => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && course) {
-            setEditingId(course._id);
+            setEditingId(course.id);
 
             // Extract suffix code
-            const orgId = course.organizationId?._id || course.organizationId;
-            const org = organizations.find(o => o._id === orgId);
+            const orgId = course.organizationId?.id || course.organizationId;
+            const org = organizations.find(o => o.id === orgId);
             const prefix = org ? `${org.code}-` : '';
             const suffixCode = course.code?.startsWith(prefix) ? course.code.substring(prefix.length) : course.code;
 
@@ -218,7 +218,7 @@ const CourseManagement = () => {
         try {
             setIsSubmitting(true);
 
-            const org = organizations.find(o => o._id === formData.organizationId);
+            const org = organizations.find(o => o.id === formData.organizationId);
             const prefix = org ? `${org.code}-` : '';
             const finalData = {
                 ...formData,
@@ -257,8 +257,8 @@ const CourseManagement = () => {
     };
 
     const handleSelectAll = (mobileIds) => {
-        // Use _id instead of id
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : courses.map(h => h._id);
+        // Use id
+        const currentVisibleIds = (Array.isArray(mobileIds) && (typeof mobileIds[0] === 'string' || typeof mobileIds[0] === 'number')) ? mobileIds : courses.map(h => h.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
