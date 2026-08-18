@@ -6,7 +6,9 @@ import {
   createFurnitureType,
   adjustAssetCount,
   allocateFurniture,
-  returnFurniture
+  returnFurniture,
+  getDashboardSummary,
+  getAssetsDashboardSummary
 } from "./furniture.controller.js";
 
 import {
@@ -17,6 +19,20 @@ import {
 } from "./furniture.validation.js";
 
 const router = express.Router();
+
+router.get(
+  "/dashboard/summary",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getDashboardSummary
+);
+
+router.get(
+  "/assets/dashboard/summary",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getAssetsDashboardSummary
+);
 
 router.post(
   "/types",

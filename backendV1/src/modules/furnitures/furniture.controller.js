@@ -111,3 +111,34 @@ export const returnFurniture = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Furniture returned successfully.");
 });
+
+export const getDashboardSummary = asyncHandler(async (req, res) => {
+  const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin") {
+    matchQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    matchQuery.hostelId = scope.hostelId;
+  }
+
+  const summary = await furnitureService.getDashboardSummaryService(matchQuery);
+  const distribution = await furnitureService.getFurnitureTypeDistributionService(matchQuery);
+
+  return sendSuccess(res, 200, "Dashboard data retrieved.", { summary, distribution });
+});
+
+export const getAssetsDashboardSummary = asyncHandler(async (req, res) => {
+  const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin") {
+    matchQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    matchQuery.hostelId = scope.hostelId;
+  }
+
+  const summary = await furnitureService.getDashboardSummaryService(matchQuery);
+
+  return sendSuccess(res, 200, "Assets Dashboard data retrieved.", { summary });
+});

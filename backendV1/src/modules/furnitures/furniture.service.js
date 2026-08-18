@@ -364,3 +364,65 @@ export const returnAssetService = async (asset, actor) => {
     return true;
   });
 };
+
+export const getDashboardSummaryService = async (matchQuery) => {
+  const types = await prisma.furnitureType.findMany({
+    where: matchQuery,
+    select: { id: true }
+  });
+
+  if (types.length === 0) {
+    return { totalAssets: 0, available: 0, allocated: 0, maintenance: 0, lost: 0, scrap: 0 };
+  }
+
+  const typeIds = types.map(t => t.id);
+
+  const counts = await prisma.furnitureAsset.groupBy({
+    by: ['status'],
+    where: {
+      furnitureTypeId: { in: typeIds },
+      status: { not: 'INACTIVE' }
+    },
+    _count: { _all: true }
+  });
+
+  const summary = { totalAssets: 0, available: 0, allocated: 0, maintenance: 0, lost: 0, scrap: 0 };
+
+  counts.forEach(group => {
+    const status = group.status.toLowerCase();
+    const count = group._count._all;
+    if (summary[status] !== undefined) {
+      summary[status] = count;
+    }
+  });
+
+  summary.totalAssets = summary.available + summary.allocated + summary.maintenance;
+  return summary;
+};
+
+export const getFurnitureTypeDistributionService = async (matchQuery) => {
+  const types = await prisma.furnitureType.findMany({
+    where: matchQuery,
+    select: { id: true, name: true }
+  });
+
+  if (types.length === 0) return [];
+
+  const typeMap = new Map(types.map(t => [t.id, t.name]));
+  const typeIds = Array.from(typeMap.keys());
+
+  const distributionRaw = await prisma.furnitureAsset.groupBy({
+    by: ['furnitureTypeId'],
+    where: {
+      furnitureTypeId: { in: typeIds },
+      status: { in: ['AVAILABLE', 'ALLOCATED', 'MAINTENANCE'] }
+    },
+    _count: { _all: true },
+    orderBy: { _count: { _all: 'desc' } }
+  });
+
+  return distributionRaw.map(d => ({
+    _id: typeMap.get(d.furnitureTypeId),
+    count: d._count._all
+  }));
+};
