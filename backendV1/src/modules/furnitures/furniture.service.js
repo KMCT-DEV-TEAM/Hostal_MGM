@@ -1,6 +1,20 @@
 import { prisma } from "../../config/prisma.js";
 import { orchestratorService } from "../notification/services/orchestrator.service.js";
 
+export const checkAnyAssetAllocatedForTypeDb = async (typeId, tx = prisma) => {
+  const asset = await tx.furnitureAsset.findFirst({
+    where: {
+      furnitureTypeId: typeId,
+      OR: [
+        { studentId: { not: null } },
+        { status: { not: "AVAILABLE" } }
+      ]
+    },
+    select: { id: true }
+  });
+  return !!asset;
+};
+
 export const getLatestAssetIdByPrefixDb = async (prefix, tx) => {
   return await tx.furnitureAsset.findFirst({
     where: {
@@ -360,6 +374,59 @@ export const returnAssetService = async (asset, actor) => {
     } catch (notifErr) {
       console.error("[Notification Error - Furniture Returned]", notifErr);
     }
+
+    return true;
+  });
+};
+
+export const deleteFurnitureTypeService = async (typeId, actor) => {
+  return await prisma.$transaction(async (tx) => {
+    const hasStartedLifecycle = await checkAnyAssetAllocatedForTypeDb(typeId, tx);
+    if (hasStartedLifecycle) {
+      const error = new Error("Furniture Type cannot be deleted because one or more furniture assets have entered their lifecycle.");
+      error.code = "FT004";
+      throw error;
+    }
+
+    const hasInactive = await tx.furnitureAsset.findFirst({
+      where: { furnitureTypeId: typeId, status: "INACTIVE" }
+    });
+    if (hasInactive) {
+      const error = new Error("Cannot delete furniture type while it contains Inactive assets. Please restore them to active inventory first.");
+      error.code = "FT005";
+      throw error;
+    }
+
+    const eligibleAssets = await tx.furnitureAsset.findMany({
+      where: { furnitureTypeId: typeId, status: "AVAILABLE", studentId: null },
+      select: { id: true }
+    });
+
+    const assetIds = eligibleAssets.map((a) => a.id);
+
+    if (assetIds.length > 0) {
+      const timelines = assetIds.map(id => ({
+        furnitureAssetId: id,
+        action: "deleted",
+        previousStatus: "AVAILABLE",
+        currentStatus: "deleted", // Note: The enum is just for current status on Asset, history status is a string
+        performedById: actor.id,
+        performedByRole: actor.role,
+        remarks: "Deleted Type cascade",
+      }));
+      
+      await tx.furnitureAssetHistory.createMany({
+        data: timelines
+      });
+
+      await tx.furnitureAsset.deleteMany({
+        where: { id: { in: assetIds } }
+      });
+    }
+
+    await tx.furnitureType.delete({
+      where: { id: typeId }
+    });
 
     return true;
   });

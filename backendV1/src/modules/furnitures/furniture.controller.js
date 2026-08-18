@@ -220,3 +220,82 @@ export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Furniture Type details retrieved.", mappedType);
 });
+
+export const updateFurnitureType = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+  const { name, prefix, description, isActive } = req.body;
+
+  const typeToUpdate = await prisma.furnitureType.findUnique({
+    where: { id: typeId }
+  });
+  
+  if (!typeToUpdate) return sendError(res, 404, "Furniture Type not found");
+
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin" && typeToUpdate.organizationId !== scope.organizationId) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
+  }
+
+  const updatedType = await prisma.furnitureType.update({
+    where: { id: typeId },
+    data: { name, prefix, description, isActive, updatedById: req.user.id }
+  });
+
+  await createLogDb({
+    action: "Updated Furniture Type",
+    entityType: "Furniture",
+    entityId: typeId,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Updated furniture type: ${name || typeToUpdate.name}`,
+    status: "success"
+  });
+
+  const mappedUpdatedType = {
+    ...updatedType,
+    _id: updatedType.id
+  };
+
+  return sendSuccess(res, 200, "Furniture Type updated successfully.", { data: mappedUpdatedType });
+});
+
+export const deleteFurnitureType = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+
+  const typeToDelete = await prisma.furnitureType.findUnique({
+    where: { id: typeId }
+  });
+
+  if (!typeToDelete) return sendError(res, 404, "Furniture Type not found");
+
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin" && typeToDelete.organizationId !== scope.organizationId) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
+  }
+
+  try {
+    await furnitureService.deleteFurnitureTypeService(typeId, req.user);
+
+    await createLogDb({
+      action: "Deleted Furniture Type",
+      entityType: "Furniture",
+      entityId: typeId,
+      user: req.user.id,
+      userRole: req.user.role,
+      details: `Deleted furniture type: ${typeToDelete.name}`,
+      status: "success"
+    });
+
+    return sendSuccess(res, 200, "Furniture Type and associated unallocated assets deleted successfully.");
+  } catch (error) {
+    if (error.code === "FT004") {
+      return sendError(res, 409, error.message);
+    }
+    if (error.code === "FT005") {
+      return sendError(res, 400, error.message);
+    }
+    throw error;
+  }
+});

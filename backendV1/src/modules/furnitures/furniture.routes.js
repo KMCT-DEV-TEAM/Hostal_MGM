@@ -10,14 +10,17 @@ import {
   getDashboardSummary,
   getAssetsDashboardSummary,
   getFurnitureTypes,
-  getFurnitureTypeDetails
+  getFurnitureTypeDetails,
+  updateFurnitureType,
+  deleteFurnitureType
 } from "./furniture.controller.js";
 
 import {
   validateCreateFurnitureType,
   validateAdjustAssetCount,
   validateAllocate,
-  validateReturn
+  validateReturn,
+  validateUpdateFurnitureType
 } from "./furniture.validation.js";
 
 const router = express.Router();
@@ -56,6 +59,21 @@ router.post(
   roleMiddleware("super_admin", "admin"),
   validateCreateFurnitureType,
   createFurnitureType
+);
+
+router.put(
+  "/types/:typeId",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  validateUpdateFurnitureType,
+  updateFurnitureType
+);
+
+router.delete(
+  "/types/:typeId",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin"),
+  deleteFurnitureType
 );
 
 router.patch(

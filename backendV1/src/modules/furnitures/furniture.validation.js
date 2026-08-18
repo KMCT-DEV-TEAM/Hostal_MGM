@@ -1,4 +1,6 @@
 import { prisma } from "../../config/prisma.js";
+import { uuidRegex } from "../../utils/uuid.js";
+import { checkAnyAssetAllocatedForTypeDb } from "./furniture.service.js";
 
 export const validateCreateFurnitureType = async (req, res, next) => {
   try {
@@ -147,6 +149,41 @@ export const validateReturn = async (req, res, next) => {
     }
 
     req.validatedData = { asset };
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};
+
+export const validateUpdateFurnitureType = async (req, res, next) => {
+  try {
+    const { typeId: id } = req.params;
+    const { prefix } = req.body;
+    
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({ success: false, message: "Invalid Furniture Type ID." });
+    }
+
+    if (prefix) {
+      if (prefix.trim().length > 10 || /\s/.test(prefix.trim())) {
+        return res.status(400).json({ success: false, message: "Prefix must be up to 10 characters without spaces." });
+      }
+
+      const existingType = await prisma.furnitureType.findUnique({
+        where: { id }
+      });
+      
+      if (!existingType) {
+        return res.status(404).json({ success: false, message: "Furniture Type Not Found" });
+      }
+
+      if (existingType.prefix !== prefix) {
+        const hasAllocatedAssets = await checkAnyAssetAllocatedForTypeDb(id);
+        if (hasAllocatedAssets) {
+          return res.status(409).json({ success: false, message: "Furniture prefix cannot be updated because allocated assets exist." });
+        }
+      }
+    }
     next();
   } catch (error) {
     return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
