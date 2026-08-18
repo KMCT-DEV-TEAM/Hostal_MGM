@@ -4,6 +4,7 @@ import { createStudentWithParentDb, updateStudentDb } from "./student.service.js
 import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import { prisma } from "../../config/prisma.js";
 
@@ -262,4 +263,22 @@ export const changeStudentEmail = asyncHandler(async (req, res) => {
   }).catch(err => console.error("[Notification Error] EMAIL_CHANGED_CONFIRMATION:", err));
 
   return sendSuccess(res, 200, "Email updated successfully");
+});
+
+export const getAdminOrganizationData = asyncHandler(async (req, res) => {
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  if (!organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const data = await getAggregateOrganizationDataDb(organizationId);
+
+  if (!data || data.length === 0) {
+    return sendError(res, 404, "Organization data not found");
+  }
+
+  return sendSuccess(res, 200, "Organization data fetched successfully", {
+    data: data[0]
+  });
 });
