@@ -4,6 +4,7 @@ import { prisma } from '../../config/prisma.js';
 import { hashPassword } from '../../utils/hash.js';
 import { sendMail } from '../../utils/mailer.js';
 import { getIo } from '../../config/socket.js';
+import { deleteOtpDb } from '../otps/otp.service.js';
 
 const getPaginatedUsersByRole = async (role, page, limit, status, search, additionalWhere = {}) => {
   const skip = (page - 1) * limit;
@@ -154,6 +155,9 @@ export const createAdmin = asyncHandler(async (req, res) => {
     `Hello ${name}, your temp pass is ${tempPass}`,
     `<p>Hello ${name},</p><p>Your temporary password is: <strong>${tempPass}</strong></p>`
   ).catch(console.error);
+
+  // Cleanup OTP record once admin is created
+  await deleteOtpDb(email);
 
   getIo()?.emit('userCreated', { role: 'admin', id: admin.id });
 
@@ -433,6 +437,9 @@ export const createWarden = asyncHandler(async (req, res) => {
   } catch (error) {
       console.error("Failed to send temporary password email:", error);
   }
+
+  // Cleanup OTP record once warden is created
+  await deleteOtpDb(email);
 
   const io = getIo();
   if (io) {
