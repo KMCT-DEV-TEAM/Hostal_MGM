@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createStudentWithParentDb, updateStudentDb } from "./student.service.js";
+import { createStudentWithParentDb, updateStudentDb, getStudentsService } from "./student.service.js";
 import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
@@ -301,4 +301,91 @@ export const getAdminStats = asyncHandler(async (req, res) => {
       students: studentCount,
     },
   });
+});
+
+export const getStudentsByAdmin = asyncHandler(async (req, res) => {
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  if (!organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const result = await getStudentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentsByWarden = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const wardenHostels = await prisma.hostelWarden.findMany({
+    where: { userId: wardenId },
+    select: { hostelId: true }
+  });
+
+  if (!wardenHostels.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: req.query.limit || 10, hasNextPage: false, hasPreviousPage: false }
+    });
+  }
+
+  const hostelIds = wardenHostels.map(h => h.hostelId);
+
+  const result = await getStudentsService({
+    hostelIds,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentsBySuperAdmin = asyncHandler(async (req, res) => {
+  const { organizationId } = req.query;
+
+  const result = await getStudentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentsByMentor = asyncHandler(async (req, res) => {
+  const mentorId = req.user.id;
+
+  const activeAssignments = await prisma.mentorAssignment.findMany({
+    where: {
+      mentorId,
+      status: "ACTIVE",
+    },
+    select: { batchId: true }
+  });
+
+  if (!activeAssignments.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: {
+        page: 1,
+        limit: Number(req.query.limit) || 10,
+        totalRecords: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    });
+  }
+
+  const batchIds = activeAssignments.map(a => a.batchId);
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  const result = await getStudentsService({
+    organizationId,
+    batchIds,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
 });

@@ -217,3 +217,143 @@ export const updateStudentDb = async (studentId, data) => {
     name: updatedStudent.fullName
   };
 };
+
+export const getStudentsService = async ({
+  organizationId,
+  hostelIds,
+  batchIds,
+  query,
+}) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    hostelId,
+    departmentId,
+    courseId,
+    batchId,
+    hostelStatus,
+    isActive,
+  } = query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const where = {};
+
+  if (organizationId) {
+    where.organizationId = organizationId;
+  }
+
+  if (departmentId) {
+    where.departmentId = departmentId;
+  }
+
+  if (courseId) {
+    where.courseId = courseId;
+  }
+
+  if (batchId) {
+    where.batchId = batchId;
+  } else if (batchIds && Array.isArray(batchIds) && batchIds.length > 0) {
+    where.batchId = { in: batchIds };
+  }
+
+  if (typeof isActive !== "undefined") {
+    where.isActive = isActive === "true";
+  }
+
+  const hostelFilters = {};
+  let applyHostelFilter = false;
+
+  if (hostelId) {
+    hostelFilters.hostelId = hostelId;
+    applyHostelFilter = true;
+  } else if (hostelIds && Array.isArray(hostelIds) && hostelIds.length > 0) {
+    hostelFilters.hostelId = { in: hostelIds };
+    applyHostelFilter = true;
+  }
+
+  if (hostelStatus) {
+    hostelFilters.status = hostelStatus.toUpperCase();
+    applyHostelFilter = true;
+  }
+
+  if (applyHostelFilter) {
+    where.studentHostels = { some: hostelFilters };
+  }
+
+  if (search) {
+    where.OR = [
+      { fullName: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+      { phone: { contains: search, mode: 'insensitive' } },
+      { studentCode: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const studentsRecords = await prisma.student.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: limitNumber,
+    include: {
+      organization: { select: { id: true, name: true } },
+      course: { select: { id: true, name: true, code: true } },
+      department: { select: { id: true, name: true, code: true } },
+      batch: { select: { id: true, name: true, code: true } },
+      studentHostels: {
+        where: { status: "ALLOCATED" },
+        include: { hostel: { select: { id: true, name: true } } }
+      }
+    }
+  });
+
+  const totalRecords = await prisma.student.count({ where });
+
+  const students = studentsRecords.map(student => ({
+    _id: student.id,
+    studentId: student.studentCode,
+    organizationId: student.organizationId,
+    name: student.fullName,
+    email: student.email,
+    isActive: student.isActive,
+    createdAt: student.createdAt,
+    organization: student.organization ? {
+      _id: student.organization.id,
+      name: student.organization.name
+    } : null,
+    course: student.course ? {
+      _id: student.course.id,
+      name: student.course.name,
+      code: student.course.code
+    } : null,
+    department: student.department ? {
+      _id: student.department.id,
+      name: student.department.name,
+      code: student.department.code
+    } : null,
+    batch: student.batch ? {
+      _id: student.batch.id,
+      name: student.batch.name,
+      code: student.batch.code
+    } : null,
+    hostel: student.studentHostels?.[0]?.hostel ? {
+      _id: student.studentHostels[0].hostel.id,
+      name: student.studentHostels[0].hostel.name
+    } : null,
+  }));
+
+  return {
+    students,
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limitNumber),
+      hasNextPage: pageNumber < Math.ceil(totalRecords / limitNumber),
+      hasPreviousPage: pageNumber > 1,
+    },
+  };
+};
