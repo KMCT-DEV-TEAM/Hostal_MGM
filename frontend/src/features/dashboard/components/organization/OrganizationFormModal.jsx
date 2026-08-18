@@ -149,13 +149,13 @@ const OrganizationFormModal = ({
                             <div>
                                 <label className="block text-xs font-medium text-black mb-1">{t('phone_number')} <span className="text-red-500">*</span></label>
                                 <PhoneInput
-                                name="phone"
-                                value={formData.phone || ''}
-                                onChange={(val) => {
-                                    setErrors({ ...formData, phone: val });
-                                    setErrors(prev => ({ ...prev, phone: '' }));
-                                }}
-                            />
+                                    name="phone"
+                                    value={formData.phone || ''}
+                                    onChange={(val) => {
+                                        handleInputChange({ target: { name: 'phone', value: val } });
+                                        setErrors(prev => ({ ...prev, phone: '' }));
+                                    }}
+                                />
                                 {errors.phone && <p className="text-red-500 text-[10px] mt-1">{errors.phone}</p>}
                             </div>
                             {isEditMode && (

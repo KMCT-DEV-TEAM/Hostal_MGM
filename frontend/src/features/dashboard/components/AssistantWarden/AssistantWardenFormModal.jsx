@@ -159,7 +159,10 @@ export default function AssistantWardenFormModal({
                         <div>
                             <label className="block text-[10px] font-medium text-black mb-1">{t('assign_hostel')} <span className="text-red-500">*</span></label>
                             <Dropdown
-                                options={AVAILABLE_HOSTELS.map(h => ({ value: h._id || h, label: h.name || h }))}
+                                options={[
+                                    { value: 'Not Assigned', label: 'Not Assigned' },
+                                    ...AVAILABLE_HOSTELS.map(h => ({ value: h.id || h, label: h.name || h }))
+                                ]}
                                 value={assistantWardenForm.hostel}
                                 onChange={(val) => setAssistantWardenForm({ ...assistantWardenForm, hostel: val })}
                                 placeholder={t('select_hostel')}

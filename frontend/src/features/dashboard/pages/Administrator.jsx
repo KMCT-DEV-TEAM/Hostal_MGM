@@ -164,7 +164,8 @@ export default function Administrator() {
             try {
                 const res = await organizationService.getOrganizations({ limit: 100, status: 'All' });
                 if (res && res.data) {
-                    setOrganizations(res.data);
+                    const orgList = res.data.data || res.data || [];
+                    setOrganizations(Array.isArray(orgList) ? orgList : []);
                 }
             } catch (err) {
                 console.error("Failed to fetch organizations:", err);
@@ -200,7 +201,7 @@ export default function Administrator() {
         const socket = initSocket();
 
         const handleAdminEvent = (data) => {
-            if (data?.role === 'admin' || data?.bulk) {
+            if (!data?.role || data?.role?.toLowerCase() === 'admin' || data?.bulk) {
                 fetchAdmins();
             }
         };
@@ -220,7 +221,7 @@ export default function Administrator() {
     // SELECTION & ACTION HANDLERS
     // ==========================================
     const handleSelectAll = (mobileIds) => {
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : admins.map(w => w._id);
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : admins.map(w => w.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -263,9 +264,10 @@ export default function Administrator() {
         setIsStatusUpdating(true);
         try {
             const res = await adminService.toggleStatus(statusToUpdate.id);
-            if (res && res.data) {
+            if (res && (res.data || res.success)) {
                 const newIsActive = statusToUpdate.currentStatus !== 'Active';
-                setAdmins(admins.map(w => w._id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
+                setAdmins(admins.map(w => w.id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
+                fetchAdmins();
                 showSuccessToast('Status Updated', res?.message || `Administrator status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
             }
         } catch (error) {
@@ -279,7 +281,7 @@ export default function Administrator() {
     };
 
     const openChangeEmailModal = (admin) => {
-        setEmailChangeAdminId(admin._id);
+        setEmailChangeAdminId(admin.id);
         setEmailChangeForm(admin.email || '');
         setNewEmailForm('');
         setPasswordConfirm('');
@@ -287,13 +289,9 @@ export default function Administrator() {
         setIsEmailChangeModalOpen(true);
     };
 
-    const confirmEmailChange = async (e) => {
+    const handleConfirmEmailChange = async (e) => {
         e.preventDefault();
-        if (!isEmailVerified) return;
-        if (!passwordConfirm) {
-            showErrorToast('Validation Error', 'Please enter your password to confirm');
-            return;
-        }
+        if (!emailChangeAdminId || !newEmailForm || !passwordConfirm) return;
         setIsEmailUpdating(true);
         try {
             await adminService.updateEmail(emailChangeAdminId, {
@@ -302,9 +300,10 @@ export default function Administrator() {
                 password: passwordConfirm
             });
 
-            setAdmins(admins.map(a => a._id === emailChangeAdminId ? { ...a, email: newEmailForm } : a));
+            setAdmins(admins.map(a => a.id === emailChangeAdminId ? { ...a, email: newEmailForm } : a));
+            fetchAdmins();
 
-            if (selectedAdminDetail && selectedAdminDetail._id === emailChangeAdminId) {
+            if (selectedAdminDetail && selectedAdminDetail.id === emailChangeAdminId) {
                 setSelectedAdminDetail({ ...selectedAdminDetail, email: newEmailForm });
             }
 
@@ -339,8 +338,9 @@ export default function Administrator() {
             if (res && res.success) {
                 // Optimistically update local state
                 setAdmins(admins.map(admin =>
-                    selectedIds.includes(admin._id) ? { ...admin, isActive: bulkStatusToUpdate } : admin
+                    selectedIds.includes(admin.id) ? { ...admin, isActive: bulkStatusToUpdate } : admin
                 ));
+                fetchAdmins();
                 const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
                 showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} administrators`);
             }
@@ -366,11 +366,12 @@ export default function Administrator() {
         setIsOrgUpdating(true);
         try {
             const res = await adminService.updateOrganization(id, { organizationId });
-            if (res && res.data) {
-                const newOrg = organizations.find(o => o._id === organizationId);
+            if (res && (res.data || res.success)) {
+                const newOrg = organizations.find(o => o.id === organizationId);
                 setAdmins(admins.map(admin =>
-                    admin._id === id ? { ...admin, organization: newOrg ? newOrg : { _id: organizationId } } : admin
+                    admin.id === id ? { ...admin, organization: newOrg ? newOrg : { id: organizationId } } : admin
                 ));
+                fetchAdmins();
                 showSuccessToast('Organization Assigned', res?.message || 'Administrator organization updated successfully');
             }
         } catch (err) {
@@ -388,14 +389,14 @@ export default function Administrator() {
     // ==========================================
     const openAddAdminModal = () => {
         setEditingAdmin(null);
-        setAdminForm({ name: '', email: '', phone: '', organization: organizations[0]?._id || '', status: 'Active' });
+        setAdminForm({ name: '', email: '', phone: '', organization: organizations[0]?.id || '', status: 'Active' });
         setIsEmailVerified(false);
         setActiveModal('admin');
     };
 
     const openEditAdminModal = (admin) => {
         setEditingAdmin(admin);
-        setAdminForm({ ...admin, organization: admin.organization?._id || admin.organization });
+        setAdminForm({ ...admin, organization: admin.organization?.id || admin.organization });
         setIsEmailVerified(true);
         setActiveModal('admin');
     };
@@ -467,7 +468,7 @@ export default function Administrator() {
         if (editingAdmin) {
             try {
                 // Update Existing Record via API
-                const res = await adminService.updateAdmin(editingAdmin._id, {
+                const res = await adminService.updateAdmin(editingAdmin.id, {
                     name: adminForm.name,
                     phone: adminForm.phone
                 });
@@ -475,21 +476,22 @@ export default function Administrator() {
                 let updatedAdmin = { ...res.data };
 
                 // Check if Organization changed
-                const oldOrgId = editingAdmin.organization?._id || editingAdmin.organization;
+                const oldOrgId = editingAdmin.organization?.id || editingAdmin.organization;
                 if (adminForm.organization !== oldOrgId) {
-                    await adminService.updateOrganization(editingAdmin._id, { organizationId: adminForm.organization });
-                    const newOrg = organizations.find(o => o._id === adminForm.organization);
+                    await adminService.updateOrganization(editingAdmin.id, { organizationId: adminForm.organization });
+                    const newOrg = organizations.find(o => o.id === adminForm.organization);
                     updatedAdmin.organization = newOrg ? newOrg : { _id: adminForm.organization };
                 }
 
                 // Check if Status changed
                 if (adminForm.isActive !== editingAdmin.isActive) {
-                    await adminService.bulkToggleStatus({ ids: [editingAdmin._id], isActive: adminForm.isActive });
+                    await adminService.bulkToggleStatus({ ids: [editingAdmin.id], isActive: adminForm.isActive });
                     updatedAdmin.isActive = adminForm.isActive;
                 }
 
-                if (res && res.data) {
-                    setAdmins(admins.map(w => w._id === editingAdmin._id ? { ...w, ...updatedAdmin } : w));
+                if (res && (res.data || res.success)) {
+                    setAdmins(admins.map(w => w.id === editingAdmin.id ? { ...w, ...updatedAdmin } : w));
+                    fetchAdmins();
                     showSuccessToast('Administrator Updated', res?.message || 'Administrator details saved successfully');
                 }
             } catch (error) {
@@ -512,7 +514,7 @@ export default function Administrator() {
                     const newAdmin = res.data;
                     if (newAdmin) {
                         // Optimistically populate organization details for the table
-                        const org = organizations.find(o => o._id === adminForm.organization);
+                        const org = organizations.find(o => o.id === adminForm.organization);
                         const populatedAdmin = { ...newAdmin, organization: org || { _id: adminForm.organization } };
                         setAdmins(prev => [populatedAdmin, ...prev]);
                     }
@@ -799,7 +801,7 @@ export default function Administrator() {
                         {/* Title */}
                         <h3 className="text-xl font-bold text-[#0A437A]">Change Email</h3>
                         <p className="text-sm text-gray-400 mt-1 mb-6">
-                            Change the email of {admins.find(w => w._id === emailChangeAdminId)?.name || 'the administrator'}
+                            Change the email of {admins.find(w => w.id === emailChangeAdminId)?.name || 'the administrator'}
                         </p>
 
                         <hr className="border-gray-200 mb-6" />

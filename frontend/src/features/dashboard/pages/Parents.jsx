@@ -47,7 +47,7 @@ export default function Parents() {
     useEffect(() => {
         if (role === ROLES.SUPER_ADMIN) {
             getOrganizations({ limit: 100, status: 'Active' })
-                .then(res => setOrganizations(res.data || []))
+                .then(res => setOrganizations(Array.isArray(res.data?.data || res.data) ? (res.data?.data || res.data) : []))
                 .catch(err => console.error("Failed to fetch organizations", err));
         }
     }, [role]);

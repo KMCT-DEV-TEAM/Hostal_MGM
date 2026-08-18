@@ -6,6 +6,13 @@ import helmet from 'helmet';
 
 const app = express();
 
+// Disable ETags and caching to ensure fresh API responses
+app.set('etag', false);
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
@@ -18,6 +25,7 @@ const corsOptions = {
 app.use(compression());
 app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV !== "production") {
@@ -39,6 +47,8 @@ import passwordRequestRoutes from './modules/passwordRequests/passwordRequest.ro
 import userRoutes from './modules/users/user.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
 
+import studentRoutes from './modules/students/student.routes.js';
+
 // Generic Mounts
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
@@ -49,8 +59,11 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/complaint-categories', complaintCategoryRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/otps', otpRoutes);
+app.use('/api/otp', otpRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+app.use('/api/students', studentRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);
@@ -61,5 +74,8 @@ app.use('/api/super-admin/password-requests', passwordRequestRoutes);
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running smoothly" });
 });
+
+import errorMiddleware from './middlewares/error.middleware.js';
+app.use(errorMiddleware);
 
 export default app;

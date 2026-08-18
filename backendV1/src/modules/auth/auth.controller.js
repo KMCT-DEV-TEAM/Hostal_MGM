@@ -172,4 +172,34 @@ const logout = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Logout successful");
 });
 
+export const verifyPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  
+  if (!password) {
+    return sendError(res, 400, "Password is required");
+  }
+
+  let user = null;
+
+  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+    user = await prisma.student.findUnique({ where: { id: req.user.id } });
+  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+    user = await prisma.parent.findUnique({ where: { id: req.user.id } });
+  } else {
+    user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  }
+
+  if (!user) {
+    return sendError(res, 401, "User not found");
+  }
+
+  const isMatch = await comparePassword(password, user.passwordHash);
+
+  if (!isMatch) {
+    return sendError(res, 401, "Incorrect password");
+  }
+
+  return sendSuccess(res, 200, "Password verified successfully");
+});
+
 export { login, me, logout };

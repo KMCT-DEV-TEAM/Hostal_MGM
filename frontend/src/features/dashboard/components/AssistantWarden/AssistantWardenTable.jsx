@@ -91,9 +91,9 @@ export default function AssistantWardenTable({
                         minWidth=""
                         options={[
                             { value: "Not Assigned", label: "Not Assigned" },
-                            ...availableHostels.map(h => ({ value: h._id || h, label: h.name || h }))
+                            ...availableHostels.map(h => ({ value: h.id || h, label: h.name || h }))
                         ]}
-                        value={w.hostel?._id || w.hostel || 'Not Assigned'}
+                        value={w.hostel?.id || w.hostel || 'Not Assigned'}
                         onChange={(val) => handleHostelChange?.(w.id, val)}
                         triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 transition-colors"
                     />

@@ -62,7 +62,7 @@ export default function AdminsTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm]);
 
-  const getAdminId = (a) => a._id ?? a.id;
+  const getAdminId = (a) => a.id ?? a.id;
 
   // 1. Column Configuration
   const columns = [
@@ -90,16 +90,16 @@ export default function AdminsTable({
           <Dropdown
             minWidth=""
             options={(() => {
-              const opts = organizations.map(org => ({ value: org._id, label: org.name }));
+              const opts = organizations.map(org => ({ value: org.id, label: org.name }));
               if (a.organization && typeof a.organization === 'object') {
-                if (!opts.find(opt => opt.value === a.organization._id)) {
-                  opts.push({ value: a.organization._id, label: a.organization.name });
+                if (!opts.find(opt => opt.value === a.organization.id)) {
+                  opts.push({ value: a.organization.id, label: a.organization.name });
                 }
               }
               return opts;
             })()}
-            value={a.organization?._id || a.organization || ""}
-            onChange={(val) => onOrganizationChange?.(a._id, val)}
+            value={a.organization?.id || a.organization || ""}
+            onChange={(val) => onOrganizationChange?.(a.id, val)}
             placeholder={t('select_organization')}
             triggerClassName="px-3 py-1.5 text-xs font-regular text-start rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 transition-colors"
           />
@@ -125,7 +125,7 @@ export default function AdminsTable({
                 { value: "Inactive", label: t("inactive") },
               ]}
               value={isActive ? "Active" : "Inactive"}
-              onChange={() => onStatusChangeClick?.(a._id, isActive ? "Inactive" : "Active")}
+              onChange={() => onStatusChangeClick?.(a.id, isActive ? "Inactive" : "Active")}
               triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
             />
           </div>
