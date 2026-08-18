@@ -46,6 +46,7 @@ import hostelRoutes from './modules/hostels/hostel.routes.js';
 import passwordRequestRoutes from './modules/passwordRequests/passwordRequest.routes.js';
 import userRoutes from './modules/users/user.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
+import furnitureRoutes from './modules/furnitures/furniture.routes.js';
 
 import studentRoutes from './modules/students/student.routes.js';
 import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
@@ -65,6 +66,7 @@ app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/students', studentRoutes);
 app.use('/api/student-hostels', studentHostelRoutes);
+app.use('/api/furnitures', furnitureRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);

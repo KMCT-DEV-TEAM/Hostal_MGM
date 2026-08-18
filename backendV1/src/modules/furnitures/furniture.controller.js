@@ -1,0 +1,58 @@
+import asyncHandler from "../../utils/asyncHandler.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
+import * as furnitureService from "./furniture.service.js";
+import { prisma } from "../../config/prisma.js";
+import { createLogDb } from "../logs/log.service.js";
+
+const resolveUserScope = async (user) => {
+  let organizationId = null;
+  let hostelId = null;
+
+  if (user.role === "admin" && user.organization) {
+    organizationId = user.organization;
+  } else if (user.role === "warden") {
+    const wardenHostel = await prisma.hostelWarden.findFirst({
+      where: { userId: user.id }
+    });
+    if (wardenHostel) hostelId = wardenHostel.hostelId;
+  }
+
+  return { organizationId, hostelId };
+};
+
+export const createFurnitureType = asyncHandler(async (req, res) => {
+  try {
+    const scope = await resolveUserScope(req.user);
+    const data = {
+      organizationId: scope.organizationId || req.body.organizationId,
+      hostelId: scope.hostelId || req.body.hostelId,
+      name: req.body.name,
+      prefix: req.body.prefix,
+      description: req.body.description,
+      isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+      createdBy: req.user.id,
+      updatedBy: req.user.id,
+    };
+
+    const openingStock = req.body.openingStock || 0;
+
+    const newType = await furnitureService.createFurnitureTypeService(data, openingStock, req.user);
+
+    await createLogDb({
+      action: "Created Furniture Type",
+      entityType: "Furniture",
+      entityId: newType.id,
+      user: req.user.id,
+      userRole: req.user.role,
+      details: `Created furniture type: ${data.name}`,
+      status: "success"
+    });
+
+    return sendSuccess(res, 201, "Furniture Type created successfully.", newType);
+  } catch (error) {
+    if (error.code === "FT001" || error.code === "FT002") {
+      return sendError(res, 409, error.message);
+    }
+    throw error;
+  }
+});
