@@ -16,7 +16,7 @@ const BatchFormModal = ({
 }) => {
     const { t } = useTranslation();
     const [errors, setErrors] = React.useState({});
-    const selectedDept = (departments || []).find(d => d._id === formData.departmentId);
+    const selectedDept = (departments || []).find(d => d.id === formData.departmentId);
     const deptCode = selectedDept ? `${selectedDept.code}-` : '';
 
     return (
@@ -145,7 +145,7 @@ const BatchFormModal = ({
                             <Dropdown
                                 options={departments ? departments.map(dep => ({
                                     label: `${dep.name} (${dep.code})`,
-                                    value: dep._id
+                                    value: dep.id
                                 })) : []}
                                 value={formData.departmentId}
                                 onChange={(val) => {
