@@ -40,7 +40,7 @@ const studentApi = {
     api.patch(`/admin/students/bulk-status`, { ids, isActive }),
 
   //----super admin 
-  getStudentByIdBySuperAdmin: (id) => api.get(`/super-admin/students/${id}`),
+  getStudentByIdBySuperAdmin: (id) => api.get(`/students/${id}`),
 
   getStudentsBySuperAdmin: (params) =>
     api.get("/students/super-admin", { params }),

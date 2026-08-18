@@ -453,3 +453,142 @@ export const getStudentFurnitures = asyncHandler(async (req, res) => {
     assets: mappedAssets,
   });
 });
+
+export const getStudentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  const student = await prisma.student.findUnique({
+    where: { id },
+    include: {
+      organization: {
+        select: { id: true, name: true, code: true }
+      },
+      course: {
+        select: { id: true, name: true, code: true }
+      },
+      department: {
+        select: { id: true, name: true, code: true }
+      },
+      batch: {
+        select: { id: true, name: true, code: true }
+      },
+      studentHostels: {
+        where: { status: "ALLOCATED" },
+        include: {
+          hostel: {
+            select: { id: true, name: true, code: true, hostelType: true }
+          },
+          allocatedBy: {
+            select: { fullName: true }
+          }
+        }
+      },
+      studentParents: {
+        include: {
+          parent: true
+        }
+      }
+    }
+  });
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  // Handle manual mappings from relations
+  student.activeAllocation = student.studentHostels[0] || null;
+  student.hostel = student.activeAllocation?.hostel || null;
+
+  // Access control
+  if (user.role === "admin") {
+    const admin = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { organizationId: true }
+    });
+    if (!admin?.organizationId || student.organizationId !== admin.organizationId) {
+      return sendError(res, 403, "Access denied: Student belongs to another organization");
+    }
+  }
+
+  if (user.role === "warden") {
+    const wardenHostel = await prisma.hostelWarden.findFirst({
+      where: { userId: user.id }
+    });
+    const studentHostelId = student.hostel?.id || null;
+
+    if (!wardenHostel || studentHostelId !== wardenHostel.hostelId) {
+      return sendError(res, 403, "Access denied: Student belongs to another hostel");
+    }
+  }
+
+  // Parents
+  if (student.studentParents && student.studentParents.length > 0) {
+    student.parents = student.studentParents.map(sp => {
+      if (!sp.parent) return null;
+      const { passwordHash, ...parentData } = sp.parent;
+      return {
+        ...parentData,
+        _id: parentData.id,
+        relationship: sp.relationship,
+        defaultGuardian: sp.defaultGuardian,
+        status: sp.status
+      };
+    }).filter(Boolean);
+  } else {
+    student.parents = [];
+  }
+
+  // ID swapping for root objects
+  student.organizationId = student.organization?.id;
+  student.courseId = student.course?.id;
+  student.departmentId = student.department?.id;
+  student.batchId = student.batch?.id;
+  student.hostelId = student.hostel?.id;
+
+  // Need to add _id to objects to match mongoose populate output
+  if (student.organization) student.organization._id = student.organization.id;
+  if (student.course) student.course._id = student.course.id;
+  if (student.department) student.department._id = student.department.id;
+  if (student.batch) student.batch._id = student.batch.id;
+  if (student.hostel) {
+    student.hostel._id = student.hostel.id;
+    student.hostel.hosteltype = student.hostel.hostelType;
+  }
+  if (student.activeAllocation && student.activeAllocation.allocatedBy) {
+    student.activeAllocation.allocatedBy.name = student.activeAllocation.allocatedBy.fullName;
+  }
+
+  // Fetch Mentor
+  let mentorDetails = null;
+  if (student.batchId) {
+    const mentorAssignment = await prisma.mentorAssignment.findFirst({
+      where: {
+        batchId: student.batchId,
+        status: "ACTIVE",
+      },
+      include: {
+        mentor: {
+          select: { id: true, fullName: true, email: true, phone: true }
+        }
+      }
+    });
+    if (mentorAssignment?.mentor) {
+      mentorDetails = {
+        _id: mentorAssignment.mentor.id,
+        id: mentorAssignment.mentor.id,
+        name: mentorAssignment.mentor.fullName,
+        email: mentorAssignment.mentor.email,
+        phone: mentorAssignment.mentor.phone
+      };
+    }
+  }
+  if (mentorDetails) {
+    student.mentor = mentorDetails;
+  }
+
+  const { passwordHash, tempPassword, studentHostels, studentParents, ...sanitizedStudent } = student;
+  sanitizedStudent._id = sanitizedStudent.id;
+
+  return sendSuccess(res, 200, "Student details fetched successfully", sanitizedStudent);
+});
