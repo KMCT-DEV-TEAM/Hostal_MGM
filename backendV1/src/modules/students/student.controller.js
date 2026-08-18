@@ -1,7 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createStudentWithParentDb, updateStudentDb } from "./student.service.js";
-import { verifyOtpDb, deleteOtpDb } from "../otp/otp.service.js";
+import { createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
+import { verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
@@ -281,4 +281,314 @@ export const getAdminOrganizationData = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Organization data fetched successfully", {
     data: data[0]
   });
+});
+
+export const getAdminStats = asyncHandler(async (req, res) => {
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  if (!organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const studentCount = await prisma.student.count({
+    where: {
+      organizationId: organizationId
+    }
+  });
+
+  return sendSuccess(res, 200, "Admin stats fetched successfully", {
+    data: {
+      students: studentCount,
+    },
+  });
+});
+
+export const getStudentsByAdmin = asyncHandler(async (req, res) => {
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  if (!organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const result = await getStudentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentsByWarden = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const wardenHostels = await prisma.hostelWarden.findMany({
+    where: { userId: wardenId },
+    select: { hostelId: true }
+  });
+
+  if (!wardenHostels.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: req.query.limit || 10, hasNextPage: false, hasPreviousPage: false }
+    });
+  }
+
+  const hostelIds = wardenHostels.map(h => h.hostelId);
+
+  const result = await getStudentsService({
+    hostelIds,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentsBySuperAdmin = asyncHandler(async (req, res) => {
+  const { organizationId } = req.query;
+
+  const result = await getStudentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentsByMentor = asyncHandler(async (req, res) => {
+  const mentorId = req.user.id;
+
+  const activeAssignments = await prisma.mentorAssignment.findMany({
+    where: {
+      mentorId,
+      status: "ACTIVE",
+    },
+    select: { batchId: true }
+  });
+
+  if (!activeAssignments.length) {
+    return sendSuccess(res, 200, "Students fetched successfully", {
+      students: [],
+      pagination: {
+        page: 1,
+        limit: Number(req.query.limit) || 10,
+        totalRecords: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    });
+  }
+
+  const batchIds = activeAssignments.map(a => a.batchId);
+  const organizationId = req.user?.organizationId || req.user?.organization;
+
+  const result = await getStudentsService({
+    organizationId,
+    batchIds,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Students fetched successfully", result);
+});
+
+export const getStudentFilterOptions = asyncHandler(async (req, res) => {
+  const { organizationId, filterType, search, page, limit } = req.query;
+  const filters = await getStudentFilterOptionsService({
+    role: req.user.role,
+    userId: req.user.id,
+    organizationId,
+    filterType,
+    search,
+    page,
+    limit,
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    "Student filter options fetched successfully",
+    filterType ? filters : { filters }
+  );
+});
+
+export const getStudentFurnitures = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const student = await prisma.student.findUnique({
+    where: { id }
+  });
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  const assets = await prisma.furnitureAsset.findMany({
+    where: {
+      studentId: id,
+      status: "ALLOCATED",
+    },
+    include: {
+      furnitureType: {
+        select: {
+          id: true,
+          name: true,
+          prefix: true,
+        }
+      }
+    }
+  });
+
+  const mappedAssets = assets.map((asset) => {
+    const { furnitureType, ...rest } = asset;
+    return {
+      ...rest,
+      _id: rest.id,
+      furnitureTypeId: furnitureType ? {
+        _id: furnitureType.id,
+        name: furnitureType.name,
+        prefix: furnitureType.prefix,
+      } : null
+    };
+  });
+
+  return sendSuccess(res, 200, "Furniture assets fetched successfully", {
+    studentId: id,
+    assets: mappedAssets,
+  });
+});
+
+export const getStudentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  const student = await prisma.student.findUnique({
+    where: { id },
+    include: {
+      organization: {
+        select: { id: true, name: true, code: true }
+      },
+      course: {
+        select: { id: true, name: true, code: true }
+      },
+      department: {
+        select: { id: true, name: true, code: true }
+      },
+      batch: {
+        select: { id: true, name: true, code: true }
+      },
+      studentHostels: {
+        where: { status: "ALLOCATED" },
+        include: {
+          hostel: {
+            select: { id: true, name: true, code: true, hostelType: true }
+          },
+          allocatedBy: {
+            select: { fullName: true }
+          }
+        }
+      },
+      studentParents: {
+        include: {
+          parent: true
+        }
+      }
+    }
+  });
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  // Handle manual mappings from relations
+  student.activeAllocation = student.studentHostels[0] || null;
+  student.hostel = student.activeAllocation?.hostel || null;
+
+  // Access control
+  if (user.role === "admin") {
+    const admin = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { organizationId: true }
+    });
+    if (!admin?.organizationId || student.organizationId !== admin.organizationId) {
+      return sendError(res, 403, "Access denied: Student belongs to another organization");
+    }
+  }
+
+  if (user.role === "warden") {
+    const wardenHostel = await prisma.hostelWarden.findFirst({
+      where: { userId: user.id }
+    });
+    const studentHostelId = student.hostel?.id || null;
+
+    if (!wardenHostel || studentHostelId !== wardenHostel.hostelId) {
+      return sendError(res, 403, "Access denied: Student belongs to another hostel");
+    }
+  }
+
+  // Parents
+  if (student.studentParents && student.studentParents.length > 0) {
+    student.parents = student.studentParents.map(sp => {
+      if (!sp.parent) return null;
+      const { passwordHash, ...parentData } = sp.parent;
+      return {
+        ...parentData,
+        _id: parentData.id,
+        relationship: sp.relationship,
+        defaultGuardian: sp.defaultGuardian,
+        status: sp.status
+      };
+    }).filter(Boolean);
+  } else {
+    student.parents = [];
+  }
+
+  // ID swapping for root objects
+  student.organizationId = student.organization?.id;
+  student.courseId = student.course?.id;
+  student.departmentId = student.department?.id;
+  student.batchId = student.batch?.id;
+  student.hostelId = student.hostel?.id;
+
+  // Need to add _id to objects to match mongoose populate output
+  if (student.organization) student.organization._id = student.organization.id;
+  if (student.course) student.course._id = student.course.id;
+  if (student.department) student.department._id = student.department.id;
+  if (student.batch) student.batch._id = student.batch.id;
+  if (student.hostel) {
+    student.hostel._id = student.hostel.id;
+    student.hostel.hosteltype = student.hostel.hostelType;
+  }
+  if (student.activeAllocation && student.activeAllocation.allocatedBy) {
+    student.activeAllocation.allocatedBy.name = student.activeAllocation.allocatedBy.fullName;
+  }
+
+  // Fetch Mentor
+  let mentorDetails = null;
+  if (student.batchId) {
+    const mentorAssignment = await prisma.mentorAssignment.findFirst({
+      where: {
+        batchId: student.batchId,
+        status: "ACTIVE",
+      },
+      include: {
+        mentor: {
+          select: { id: true, fullName: true, email: true, phone: true }
+        }
+      }
+    });
+    if (mentorAssignment?.mentor) {
+      mentorDetails = {
+        _id: mentorAssignment.mentor.id,
+        id: mentorAssignment.mentor.id,
+        name: mentorAssignment.mentor.fullName,
+        email: mentorAssignment.mentor.email,
+        phone: mentorAssignment.mentor.phone
+      };
+    }
+  }
+  if (mentorDetails) {
+    student.mentor = mentorDetails;
+  }
+
+  const { passwordHash, tempPassword, studentHostels, studentParents, ...sanitizedStudent } = student;
+  sanitizedStudent._id = sanitizedStudent.id;
+
+  return sendSuccess(res, 200, "Student details fetched successfully", sanitizedStudent);
 });

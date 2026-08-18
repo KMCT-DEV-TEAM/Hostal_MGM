@@ -1,6 +1,6 @@
 import express from "express";
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent } from "./student.validation.js";
-import { createStudent, updateStudent, changeStudentEmail, getAdminOrganizationData } from "./student.controller.js";
+import { createStudent, updateStudent, changeStudentEmail, getAdminOrganizationData, getAdminStats, getStudentsByAdmin, getStudentsByWarden, getStudentsBySuperAdmin, getStudentsByMentor, getStudentFilterOptions, getStudentFurnitures, getStudentById } from "./student.controller.js";
 
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -12,6 +12,48 @@ router.get(
   authMiddleware,
   roleMiddleware("admin"),
   getAdminOrganizationData
+);
+
+router.get(
+  "/admin-stats",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getAdminStats
+);
+
+router.get(
+  "/admin",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getStudentsByAdmin
+);
+
+router.get(
+  "/warden",
+  authMiddleware,
+  roleMiddleware("warden", "assistant_warden"),
+  getStudentsByWarden
+);
+
+router.get(
+  "/super-admin",
+  authMiddleware,
+  roleMiddleware("super_admin"),
+  getStudentsBySuperAdmin
+);
+
+router.get(
+  "/mentor",
+  authMiddleware,
+  roleMiddleware("mentor"),
+  getStudentsByMentor
+);
+
+router.get(
+  "/filters",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin", "warden", "mentor", "assistant_warden"),
+  getStudentFilterOptions
 );
 
 router.post(
@@ -37,6 +79,21 @@ router.patch(
   roleMiddleware("admin", "super_admin"),
   validateStudentIdParam,
   changeStudentEmail
+);
+
+router.get(
+  "/:id/furnitures",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin", "warden", "assistant_warden"),
+  getStudentFurnitures
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden", "mentor", "assistant_warden"),
+  validateStudentIdParam,
+  getStudentById
 );
 
 export default router;
