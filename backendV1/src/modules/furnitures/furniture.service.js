@@ -104,3 +104,131 @@ export const createFurnitureTypeService = async (data, openingStock, actor) => {
     return { ...newType, _id: newType.id };
   });
 };
+
+export const adjustAssetCountService = async (typeId, newCount, actor) => {
+  return await prisma.$transaction(async (tx) => {
+    const type = await tx.furnitureType.findUnique({
+      where: { id: typeId }
+    });
+    if (!type) throw new Error("Furniture Type Not Found");
+
+    const currentCount = await tx.furnitureAsset.count({
+      where: {
+        furnitureTypeId: typeId,
+        status: { in: ["AVAILABLE", "ALLOCATED", "MAINTENANCE"] }
+      }
+    });
+
+    if (newCount === currentCount) {
+      return { status: "no_change" };
+    }
+
+    if (newCount > currentCount) {
+      let difference = newCount - currentCount;
+
+      const inactiveAssets = await tx.furnitureAsset.findMany({
+        where: {
+          furnitureTypeId: typeId,
+          status: "INACTIVE"
+        },
+        orderBy: { createdAt: 'asc' },
+        take: difference,
+        select: { id: true }
+      });
+
+      if (inactiveAssets.length > 0) {
+        const inactiveIds = inactiveAssets.map(a => a.id);
+
+        await tx.furnitureAsset.updateMany({
+          where: { id: { in: inactiveIds } },
+          data: { status: "AVAILABLE", updatedById: actor.id }
+        });
+
+        const timelines = inactiveIds.map(id => ({
+          furnitureAssetId: id,
+          action: "inventory increased",
+          previousStatus: "INACTIVE",
+          currentStatus: "AVAILABLE",
+          performedById: actor.id,
+          performedByRole: actor.role,
+          remarks: "Inventory Count Increased",
+        }));
+        await tx.furnitureAssetHistory.createMany({ data: timelines });
+
+        difference -= inactiveIds.length;
+      }
+
+      if (difference > 0) {
+        const latestAsset = await getLatestAssetIdByPrefixDb(type.prefix, tx);
+        let startingNumber = 1;
+        if (latestAsset && latestAsset.furnitureId) {
+          startingNumber = parseInt(latestAsset.furnitureId.split("-")[1], 10) + 1;
+        }
+
+        const generatedIds = Array.from({ length: difference }).map((_, i) => `${type.prefix}-${String(startingNumber + i).padStart(6, "0")}`);
+
+        const assetsToInsert = generatedIds.map((id) => ({
+          furnitureId: id,
+          furnitureTypeId: type.id,
+          status: "AVAILABLE",
+          studentId: null,
+          createdById: actor.id,
+          updatedById: actor.id,
+        }));
+
+        await tx.furnitureAsset.createMany({ data: assetsToInsert });
+
+        const createdAssets = await tx.furnitureAsset.findMany({
+          where: { furnitureId: { in: generatedIds } }
+        });
+
+        const timelines = createdAssets.map((asset) => ({
+          furnitureAssetId: asset.id,
+          action: "created",
+          currentStatus: "AVAILABLE",
+          performedById: actor.id,
+          performedByRole: actor.role,
+          remarks: "Count Increased",
+        }));
+        await tx.furnitureAssetHistory.createMany({ data: timelines });
+      }
+    } else {
+      const difference = currentCount - newCount;
+      const eligibleAssets = await tx.furnitureAsset.findMany({
+        where: {
+          furnitureTypeId: typeId,
+          status: "AVAILABLE",
+          studentId: null
+        },
+        orderBy: { createdAt: 'desc' },
+        take: difference,
+        select: { id: true }
+      });
+
+      if (eligibleAssets.length < difference) {
+        throw new Error(`Cannot reduce by ${difference} assets. Only ${eligibleAssets.length} are currently eligible (Available).`);
+      }
+
+      const assetIds = eligibleAssets.map((a) => a.id);
+
+      await tx.furnitureAsset.updateMany({
+        where: { id: { in: assetIds } },
+        data: { status: "INACTIVE", updatedById: actor.id }
+      });
+
+      const timelines = assetIds.map(id => ({
+        furnitureAssetId: id,
+        action: "inventory reduced",
+        previousStatus: "AVAILABLE",
+        currentStatus: "INACTIVE",
+        performedById: actor.id,
+        performedByRole: actor.role,
+        remarks: "Inventory Count Reduced",
+      }));
+
+      await tx.furnitureAssetHistory.createMany({ data: timelines });
+    }
+
+    return { status: "updated", previousCount: currentCount, newCount };
+  });
+};

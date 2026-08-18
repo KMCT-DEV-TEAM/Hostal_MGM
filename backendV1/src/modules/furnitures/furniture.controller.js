@@ -56,3 +56,22 @@ export const createFurnitureType = asyncHandler(async (req, res) => {
     throw error;
   }
 });
+
+export const adjustAssetCount = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+  const { count } = req.body;
+
+  const result = await furnitureService.adjustAssetCountService(typeId, count, req.user);
+
+  await createLogDb({
+    action: "Adjusted Furniture Asset Count",
+    entityType: "Furniture",
+    entityId: typeId,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Adjusted asset count by ${count} for furniture type ${typeId}`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "Asset count adjusted successfully.", result);
+});

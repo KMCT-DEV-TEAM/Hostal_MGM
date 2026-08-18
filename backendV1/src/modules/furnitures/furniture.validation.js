@@ -21,3 +21,24 @@ export const validateCreateFurnitureType = async (req, res, next) => {
     return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
   }
 };
+
+const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+export const validateAdjustAssetCount = async (req, res, next) => {
+  try {
+    const { typeId } = req.params;
+    const { count } = req.body;
+
+    if (!uuidRegex.test(typeId)) {
+      return res.status(400).json({ success: false, message: "Invalid Furniture Type ID." });
+    }
+
+    if (count === undefined || typeof count !== "number" || count < 0 || !Number.isInteger(count)) {
+      return res.status(400).json({ success: false, message: "Count must be a positive integer." });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Validation Error", error: error.message });
+  }
+};
