@@ -426,3 +426,67 @@ export const getFurnitureTypeDistributionService = async (matchQuery) => {
     count: d._count._all
   }));
 };
+
+export const getFurnitureTypesListService = async (matchQuery, skip, limit) => {
+  const types = await prisma.furnitureType.findMany({
+    where: matchQuery,
+    skip,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      organization: { select: { id: true, name: true } },
+      hostel: { select: { id: true, name: true } }
+    }
+  });
+
+  if (types.length === 0) return [];
+
+  const typeIds = types.map(t => t.id);
+
+  const assetCounts = await prisma.furnitureAsset.groupBy({
+    by: ['furnitureTypeId', 'status'],
+    where: { furnitureTypeId: { in: typeIds } },
+    _count: { _all: true }
+  });
+
+  const countMap = {};
+  for (const group of assetCounts) {
+    if (!countMap[group.furnitureTypeId]) {
+      countMap[group.furnitureTypeId] = {
+        total: 0,
+        available: 0,
+        allocated: 0,
+        maintenance: 0,
+        lost: 0,
+        scrap: 0
+      };
+    }
+    const status = group.status.toLowerCase();
+    const count = group._count._all;
+    
+    if (countMap[group.furnitureTypeId][status] !== undefined) {
+      countMap[group.furnitureTypeId][status] = count;
+      if (['available', 'allocated', 'maintenance'].includes(status)) {
+        countMap[group.furnitureTypeId].total += count;
+      }
+    }
+  }
+
+  return types.map(type => {
+    const counts = countMap[type.id] || {
+      total: 0, available: 0, allocated: 0, maintenance: 0, lost: 0, scrap: 0
+    };
+
+    return {
+      _id: type.id,
+      name: type.name,
+      prefix: type.prefix,
+      description: type.description,
+      isActive: type.isActive,
+      createdAt: type.createdAt,
+      organization: type.organization ? { _id: type.organization.id, name: type.organization.name } : null,
+      hostel: type.hostel ? { _id: type.hostel.id, name: type.hostel.name } : null,
+      ...counts
+    };
+  });
+};

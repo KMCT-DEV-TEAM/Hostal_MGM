@@ -8,7 +8,9 @@ import {
   allocateFurniture,
   returnFurniture,
   getDashboardSummary,
-  getAssetsDashboardSummary
+  getAssetsDashboardSummary,
+  getFurnitureTypes,
+  getFurnitureTypeDetails
 } from "./furniture.controller.js";
 
 import {
@@ -32,6 +34,20 @@ router.get(
   authMiddleware,
   roleMiddleware("super_admin", "admin", "warden"),
   getAssetsDashboardSummary
+);
+
+router.get(
+  "/types",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getFurnitureTypes
+);
+
+router.get(
+  "/types/:typeId",
+  authMiddleware,
+  roleMiddleware("super_admin", "admin", "warden"),
+  getFurnitureTypeDetails
 );
 
 router.post(

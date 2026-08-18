@@ -142,3 +142,81 @@ export const getAssetsDashboardSummary = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Assets Dashboard data retrieved.", { summary });
 });
+
+export const getFurnitureTypes = asyncHandler(async (req, res) => {
+  const matchQuery = {};
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin") {
+    matchQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    matchQuery.hostelId = scope.hostelId;
+  }
+
+  const search = req.query.search;
+  const isActive = req.query.isActive;
+
+  if (isActive !== undefined) {
+    matchQuery.isActive = isActive === "true";
+  }
+
+  if (search) {
+    matchQuery.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { prefix: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const types = await furnitureService.getFurnitureTypesListService(matchQuery, skip, limit);
+  const total = await prisma.furnitureType.count({ where: matchQuery });
+
+  return sendSuccess(res, 200, "Furniture Types retrieved.", { data: types, total, page, limit });
+});
+
+export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+  
+  const type = await prisma.furnitureType.findUnique({
+    where: { id: typeId },
+    include: {
+      organization: { select: { id: true, name: true } },
+      hostel: { select: { id: true, name: true } }
+    }
+  });
+
+  if (!type) return sendError(res, 404, "Furniture Type not found");
+
+  const scope = await resolveUserScope(req.user);
+
+  if (req.user.role === "admin" && type.organizationId !== scope.organizationId) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
+  }
+
+  if (req.user.role === "warden" && type.hostelId !== scope.hostelId) {
+    return sendError(res, 403, "Access denied. Furniture Type does not belong to your hostel.");
+  }
+
+  const currentCount = await prisma.furnitureAsset.count({
+    where: {
+      furnitureTypeId: typeId,
+      status: { in: ["AVAILABLE", "ALLOCATED", "MAINTENANCE"] }
+    }
+  });
+
+  // Remap ID for frontend compatibility
+  const mappedType = {
+    ...type,
+    _id: type.id,
+    organizationId: type.organization ? { _id: type.organization.id, name: type.organization.name } : null,
+    hostelId: type.hostel ? { _id: type.hostel.id, name: type.hostel.name } : null,
+    totalAssets: currentCount
+  };
+  delete mappedType.organization;
+  delete mappedType.hostel;
+
+  return sendSuccess(res, 200, "Furniture Type details retrieved.", mappedType);
+});
