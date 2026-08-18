@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Building2, ToggleRight, Pencil, Hash, Home, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 import Modal from '@/components/ui/Modal';
+import hostelService from '@/services/hostel.service';
 
 const AssistantWardenDetailView = ({ selectedAssistantWardenDetail, setView, openChangeEmailModal }) => {
     const [hostelDetails, setHostelDetails] = useState(null);
