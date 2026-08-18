@@ -155,7 +155,7 @@ const BatchManagement = () => {
             // Re-fetch or locally update the status
             setbatches((prevbatches) =>
                 prevbatches.map((batch) =>
-                    batch._id === statusToUpdate.id ? { ...batch, isActive: !batch.isActive } : batch
+                    batch.id === statusToUpdate.id ? { ...batch, isActive: !batch.isActive } : batch
                 )
             );
             setIsStatusConfirmOpen(false);
@@ -172,11 +172,11 @@ const BatchManagement = () => {
     const openModal = (mode, batch = null) => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && batch) {
-            setEditingId(batch._id);
+            setEditingId(batch.id);
 
             // Extract suffix code
-            const departmentIdValue = batch.departmentId?._id || batch.departmentId;
-            const department = departments.find(d => d._id === departmentIdValue);
+            const departmentIdValue = batch.departmentId?.id || batch.departmentId;
+            const department = departments.find(d => d.id === departmentIdValue);
             const prefix = department ? `${department.code}-` : '';
             const suffixCode = batch.code?.startsWith(prefix) ? batch.code.substring(prefix.length) : batch.code;
 
@@ -219,7 +219,7 @@ const BatchManagement = () => {
         try {
             setIsSubmitting(true);
 
-            const department = departments.find(d => d._id === formData.departmentId);
+            const department = departments.find(d => d.id === formData.departmentId);
             const prefix = department ? `${department.code}-` : '';
             const payload = {
                 ...formData,
@@ -258,8 +258,8 @@ const BatchManagement = () => {
     };
 
     const handleSelectAll = (mobileIds) => {
-        // Use _id instead of id
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : batches.map(h => h._id);
+        // Use id instead of _id
+        const currentVisibleIds = (Array.isArray(mobileIds) && (typeof mobileIds[0] === 'string' || typeof mobileIds[0] === 'number')) ? mobileIds : batches.map(h => h.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {

@@ -109,7 +109,7 @@ export default function CourseTable({
                                 { value: "Inactive", label: t("inactive") },
                             ]}
                             value={isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick?.(o._id, isActive)}
+                            onChange={() => handleStatusChangeClick?.(o.id, isActive)}
                             triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                         />
                     </div>
@@ -151,7 +151,7 @@ export default function CourseTable({
             { label: t("departments"), value: o.departmentsCount === 0 ? 0 : (o.departmentsCount || 0) },
             { label: t("batches"), value: o.batchesCount === 0 ? 0 : (o.batchesCount || 0) }
         ],
-        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o.id, o.isActive),
     };
 
     // 3. Toolbar Slots
@@ -261,7 +261,7 @@ export default function CourseTable({
                 hasMore: page < totalPages,
                 onLoadMore: () => setPage?.(prev => prev + 1),
             }}
-            getItemId={(o) => o._id}
+            getItemId={(o) => o.id}
         />
     );
 }

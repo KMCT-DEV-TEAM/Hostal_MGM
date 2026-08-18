@@ -82,7 +82,7 @@ export default function BatchTable({
             key: "department",
             header: t("department"),
             icon: Building2,
-            accessor: (o) => o.departmentId ? o.departmentId.name : "-"
+            accessor: (o) => o.department ? o.department.name : "-"
         },
         {
             key: "num_students",
@@ -110,7 +110,7 @@ export default function BatchTable({
                                 { value: "Inactive", label: t("inactive") },
                             ]}
                             value={isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick?.(o._id, isActive)}
+                            onChange={() => handleStatusChangeClick?.(o.id, isActive)}
                             triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                         />
                     </div>
@@ -146,11 +146,11 @@ export default function BatchTable({
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { icon: Building, value: (o) => o.departmentId?.courseId?.organizationId?.name || "-" },
-            { icon: Building2, value: (o) => o.departmentId?.name || "-" },
+            { icon: Building, value: (o) => o.department?.course?.organization?.name || "-" },
+            { icon: Building2, value: (o) => o.department?.name || "-" },
             { icon: GraduationCap, value: (o) => o.studentsCount || 0 }
         ],
-        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o.id, o.isActive),
     };
 
     // 3. Toolbar Slots
@@ -260,7 +260,7 @@ export default function BatchTable({
                 hasMore: page < totalPages,
                 onLoadMore: () => setPage?.(prev => prev + 1),
             }}
-            getItemId={(o) => o._id}
+            getItemId={(o) => o.id}
         />
     );
 }

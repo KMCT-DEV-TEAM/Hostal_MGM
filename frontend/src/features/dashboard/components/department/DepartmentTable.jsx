@@ -81,7 +81,7 @@ export default function DepartmentTable({
             key: "course",
             header: t("course"),
             icon: Building2,
-            accessor: (o) => o.courseId ? o.courseId.name : "-"
+            accessor: (o) => o.course?.name || o.courseId?.name || "-"
         },
         {
             key: "batches",
@@ -109,7 +109,7 @@ export default function DepartmentTable({
                                 { value: "Inactive", label: t("inactive") },
                             ]}
                             value={isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick?.(o._id, isActive)}
+                            onChange={() => handleStatusChangeClick?.(o.id, isActive)}
                             triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                         />
                     </div>
@@ -145,13 +145,13 @@ export default function DepartmentTable({
             color: Boolean(o.isActive) ? "green" : "red"
         }),
         fields: [
-            { icon: BookOpen, value: (o) => o.courseId?.name || "-" }
+            { icon: BookOpen, value: (o) => o.course?.name || o.courseId?.name || "-" }
         ],
         stats: (o) => [
             { label: t("students"), value: o.studentsCount || 0 },
             { label: t("num_batches"), value: o.batchesCount || 0 }
         ],
-        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o.id, o.isActive),
     };
 
     // 3. Toolbar Slots
@@ -261,7 +261,7 @@ export default function DepartmentTable({
                 hasMore: page < totalPages,
                 onLoadMore: () => setPage?.(prev => prev + 1),
             }}
-            getItemId={(o) => o._id}
+            getItemId={(o) => o.id}
         />
     );
 }

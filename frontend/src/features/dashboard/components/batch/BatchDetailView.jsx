@@ -25,7 +25,7 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
         if (!selectedBatchDetail) return;
         try {
             setLoading(true);
-            const id = selectedBatchDetail._id || selectedBatchDetail.id;
+            const id = selectedBatchDetail.id;
             const response = await BatchService.getBatchById(id);
             setBatch(response.data || response);
         } catch (err) {
@@ -80,7 +80,7 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
     const assignmentLoading = loading;
 
     // Extract organization ID safely
-    const orgId = displayBatch?.departmentId?.courseId?.organizationId?._id
+    const orgId = displayBatch?.department?.course?.organization?.id
         || displayBatch?.departmentId?.courseId?.organizationId
         || displayBatch?.organizationId;
 
@@ -237,7 +237,7 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
             <MentorAssignmentModal
                 isOpen={isAssignmentModalOpen}
                 onClose={() => setIsAssignmentModalOpen(false)}
-                batchId={displayBatch?._id || displayBatch?.id}
+                batchId={displayBatch?.id}
                 organizationId={orgId}
                 existingAssignmentId={activeAssignment?.assignmentId}
                 onSuccess={() => {
@@ -247,7 +247,7 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
 
             {selectedMentorForModal && (
                 <MentorDetailsModal
-                    mentor={{ _id: typeof selectedMentorForModal === 'string' ? selectedMentorForModal : selectedMentorForModal._id }}
+                    mentor={{ id: typeof selectedMentorForModal === 'string' ? selectedMentorForModal : selectedMentorForModal.id }}
                     onClose={() => setSelectedMentorForModal(null)}
                     zIndex={60}
                 />

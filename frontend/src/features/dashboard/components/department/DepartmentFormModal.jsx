@@ -16,7 +16,7 @@ const DepartmentFormModal = ({
 }) => {
     const { t } = useTranslation();
     const [errors, setErrors] = React.useState({});
-    const selectedCourse = (courses || []).find(c => c._id === formData.courseId);
+    const selectedCourse = (courses || []).find(c => c.id === formData.courseId);
     const courseCode = selectedCourse ? selectedCourse.code : '';
 
     return (
@@ -113,7 +113,7 @@ const DepartmentFormModal = ({
                             <Dropdown
                                 options={courses ? courses.map(course => ({
                                     label: `${course.name} (${course.code})`,
-                                    value: course._id
+                                    value: course.id
                                 })) : []}
                                 value={formData.courseId}
                                 onChange={(val) => {
