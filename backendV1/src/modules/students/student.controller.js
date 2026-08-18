@@ -409,3 +409,47 @@ export const getStudentFilterOptions = asyncHandler(async (req, res) => {
     filterType ? filters : { filters }
   );
 });
+
+export const getStudentFurnitures = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const student = await prisma.student.findUnique({
+    where: { id }
+  });
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  const assets = await prisma.furnitureAsset.findMany({
+    where: {
+      studentId: id,
+      status: "ALLOCATED",
+    },
+    include: {
+      furnitureType: {
+        select: {
+          id: true,
+          name: true,
+          prefix: true,
+        }
+      }
+    }
+  });
+
+  const mappedAssets = assets.map((asset) => {
+    const { furnitureType, ...rest } = asset;
+    return {
+      ...rest,
+      _id: rest.id,
+      furnitureTypeId: furnitureType ? {
+        _id: furnitureType.id,
+        name: furnitureType.name,
+        prefix: furnitureType.prefix,
+      } : null
+    };
+  });
+
+  return sendSuccess(res, 200, "Furniture assets fetched successfully", {
+    studentId: id,
+    assets: mappedAssets,
+  });
+});
