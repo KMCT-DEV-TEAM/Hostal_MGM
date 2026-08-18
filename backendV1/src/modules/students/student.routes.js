@@ -1,6 +1,6 @@
 import express from "express";
 import { validateCreateStudent, validateStudentIdParam, validateUpdateStudent } from "./student.validation.js";
-import { createStudent, updateStudent } from "./student.controller.js";
+import { createStudent, updateStudent, changeStudentEmail } from "./student.controller.js";
 
 // Dummy auth and role middlewares just so it runs without crashing, assuming they'll be replaced or use existing.
 // Since we don't have them in the new folder, we will create stubs or you can replace them.
@@ -29,6 +29,14 @@ router.put(
   validateStudentIdParam,
   validateUpdateStudent,
   updateStudent
+);
+
+router.patch(
+  "/:id/change-email",
+  authMiddleware,
+  roleMiddleware("admin", "super_admin"),
+  validateStudentIdParam,
+  changeStudentEmail
 );
 
 export default router;

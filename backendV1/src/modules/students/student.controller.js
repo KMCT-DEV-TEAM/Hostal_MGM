@@ -174,3 +174,92 @@ export const updateStudent = asyncHandler(async (req, res) => {
     data: newStudent,
   });
 });
+
+export const changeStudentEmail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { oldEmail, newEmail, otp } = req.body;
+
+  if (!oldEmail || !newEmail || !otp) {
+    return sendError(res, 400, "oldEmail, newEmail, and otp are required");
+  }
+
+  const normalizedOldEmail = String(oldEmail).trim().toLowerCase();
+  const normalizedNewEmail = String(newEmail).trim().toLowerCase();
+
+  if (normalizedOldEmail === normalizedNewEmail) {
+    return sendError(res, 400, "New email must be different from current email");
+  }
+
+  const student = await prisma.student.findUnique({
+    where: { id }
+  });
+
+  if (!student) {
+    return sendError(res, 404, "Student not found");
+  }
+
+  if (req.user?.role === "admin" || req.user?.role === "ADMIN") {
+    const admin = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { organizationId: true }
+    });
+
+    if (!admin?.organizationId) {
+      return sendError(res, 400, "Admin is not assigned to any organization");
+    }
+
+    if (String(student.organizationId) !== String(admin.organizationId)) {
+      return sendError(res, 403, "You can update only students in your organization");
+    }
+  }
+
+  if (student.email !== normalizedOldEmail) {
+    return sendError(res, 400, "Current email does not match");
+  }
+
+  const existingStudent = await prisma.student.findFirst({
+    where: {
+      email: normalizedNewEmail,
+      id: { not: id }
+    }
+  });
+
+  if (existingStudent) {
+    return sendError(res, 400, "Student email already exists");
+  }
+
+  const isOtpValid = await verifyOtpDb(normalizedNewEmail, otp);
+
+  if (!isOtpValid) {
+    return sendError(res, 400, "Invalid or expired OTP");
+  }
+
+  const updatedStudent = await prisma.student.update({
+    where: { id },
+    data: {
+      email: normalizedNewEmail,
+      isVerified: true
+    }
+  });
+
+  await deleteOtpDb(normalizedNewEmail);
+
+  await createLogDb({
+    action: "Changed Student Email",
+    entityType: "Student",
+    entityId: updatedStudent.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Student email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
+    status: "success"
+  });
+
+  orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'EMAIL_CHANGED_CONFIRMATION',
+    target: { type: 'STUDENT', filter: { studentId: updatedStudent.id } },
+    data: { studentName: updatedStudent.fullName, studentId: updatedStudent.id }
+  }).catch(err => console.error("[Notification Error] EMAIL_CHANGED_CONFIRMATION:", err));
+
+  return sendSuccess(res, 200, "Email updated successfully");
+});
