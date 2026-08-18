@@ -389,3 +389,118 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "All Hostel Assets retrieved.", { assets, total, page, limit });
 });
+
+export const getFurnitureAssetDetails = asyncHandler(async (req, res) => {
+  const { assetId } = req.params;
+
+  if (!uuidRegex.test(assetId)) {
+    return sendError(res, 400, "Invalid Asset ID");
+  }
+
+  const assetDetails = await furnitureService.getFurnitureAssetDetailsService(assetId);
+
+  if (!assetDetails) {
+    return sendError(res, 404, "Asset not found");
+  }
+
+  return sendSuccess(res, 200, "Asset details retrieved.", assetDetails);
+});
+
+export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
+  const scope = await resolveUserScope(req.user);
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const search = req.query.search;
+
+  const query = { isActive: true };
+  if (req.user.role === "admin") {
+    query.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    query.hostelId = scope.hostelId;
+  }
+  if (req.query.hostelId) {
+    query.hostelId = req.query.hostelId;
+  }
+
+  if (search) {
+    query.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { prefix: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const types = await prisma.furnitureType.findMany({
+    where: query,
+    select: { id: true, name: true, prefix: true },
+    skip,
+    take: limit
+  });
+
+  const total = await prisma.furnitureType.count({ where: query });
+  
+  const mappedTypes = types.map(t => ({
+    _id: t.id,
+    name: t.name,
+    prefix: t.prefix
+  }));
+
+  return sendSuccess(res, 200, "Active furniture types retrieved.", { types: mappedTypes, total, page, limit });
+});
+
+export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+
+  if (!uuidRegex.test(typeId)) {
+    return sendError(res, 400, "Invalid Furniture Type ID");
+  }
+
+  const scope = await resolveUserScope(req.user);
+
+  const typeQuery = { id: typeId, isActive: true };
+  if (req.user.role === "admin") {
+    typeQuery.organizationId = scope.organizationId;
+  } else if (req.user.role === "warden") {
+    typeQuery.hostelId = scope.hostelId;
+  }
+
+  const typeExists = await prisma.furnitureType.findFirst({
+    where: typeQuery,
+    select: { id: true }
+  });
+
+  if (!typeExists) {
+    return sendError(res, 403, "Access denied or Furniture Type not found.");
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const search = req.query.search;
+
+  const assetQuery = {
+    furnitureTypeId: typeId,
+    status: "AVAILABLE"
+  };
+
+  if (search) {
+    assetQuery.furnitureId = { contains: search, mode: "insensitive" };
+  }
+
+  const assets = await prisma.furnitureAsset.findMany({
+    where: assetQuery,
+    select: { id: true, furnitureId: true },
+    skip,
+    take: limit
+  });
+
+  const total = await prisma.furnitureAsset.count({ where: assetQuery });
+
+  const mappedAssets = assets.map(a => ({
+    _id: a.id,
+    furnitureId: a.furnitureId
+  }));
+
+  return sendSuccess(res, 200, "Available furniture assets retrieved.", { assets: mappedAssets, total, page, limit });
+});

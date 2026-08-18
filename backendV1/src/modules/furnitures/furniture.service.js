@@ -633,3 +633,52 @@ export const changeLifecycleStatusService = async (asset, newStatus, actionName,
     return true;
   });
 };
+
+export const getFurnitureAssetDetailsService = async (assetId) => {
+  const asset = await prisma.furnitureAsset.findUnique({
+    where: { id: assetId },
+    include: {
+      furnitureType: { select: { name: true, prefix: true } },
+      student: { select: { id: true, name: true } },
+      histories: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          student: { select: { id: true, name: true } },
+          performedBy: { select: { fullName: true } }
+        }
+      }
+    }
+  });
+
+  if (!asset) return null;
+
+  return {
+    _id: asset.id,
+    furnitureId: asset.furnitureId,
+    status: asset.status.toLowerCase(),
+    createdAt: asset.createdAt,
+    furnitureName: asset.furnitureType?.name,
+    prefix: asset.furnitureType?.prefix,
+    currentAssignment: asset.student ? {
+      studentName: asset.student.name,
+      studentId: asset.student.id,
+      assignedDate: asset.updatedAt
+    } : null,
+    timeline: asset.histories.map(h => ({
+      _id: h.id,
+      action: h.action,
+      previousStatus: h.previousStatus ? h.previousStatus.toLowerCase() : null,
+      currentStatus: h.currentStatus ? h.currentStatus.toLowerCase() : null,
+      remarks: h.remarks,
+      createdAt: h.createdAt,
+      student: h.student ? {
+        name: h.student.name,
+        _id: h.student.id
+      } : null,
+      performedBy: h.performedBy ? {
+        name: h.performedBy.fullName,
+        role: h.performedByRole
+      } : null
+    }))
+  };
+};
