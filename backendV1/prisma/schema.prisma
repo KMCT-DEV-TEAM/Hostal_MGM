@@ -146,9 +146,10 @@ enum NotificationType {
 }
 
 enum StudentHostelStatus {
-  ALLOCATED
-  VACATED
-  TRANSFERRED
+  active
+  vacated
+  transferred
+  cancelled
 }
 
 enum MentorAssignmentStatus {

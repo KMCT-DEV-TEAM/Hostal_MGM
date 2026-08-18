@@ -1,8 +1,8 @@
 import { prisma } from '../../config/prisma.js';
-import { logger } from '../../../utils/logger.js';
+import { logger } from '../../utils/logger.js';
 
 class NotificationRepository {
-    
+
     // 9. Centralized Error Handling wrapper
     async _executeWithCatch(operation, context) {
         try {
@@ -96,11 +96,11 @@ class NotificationRepository {
         return this._executeWithCatch(async () => {
             // updateMany safely executes an atomic conditional update, preventing read-write race conditions.
             const result = await prisma.notification.updateMany({
-                where: { 
-                    id: notificationId, 
-                    recipientId, 
-                    isRead: false, 
-                    deletedAt: null 
+                where: {
+                    id: notificationId,
+                    recipientId,
+                    isRead: false,
+                    deletedAt: null
                 },
                 data: {
                     isRead: true,
@@ -116,7 +116,7 @@ class NotificationRepository {
         return this._executeWithCatch(async () => {
             const result = await prisma.notification.updateMany({
                 where: { recipientId, recipientModel, isRead: false, deletedAt: null },
-                data: { 
+                data: {
                     isRead: true,
                     deliveryInAppStatus: 'READ',
                     deliveryInAppReadAt: new Date()
