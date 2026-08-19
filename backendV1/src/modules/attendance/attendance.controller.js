@@ -2,7 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
 import jwt from "jsonwebtoken";
-import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb } from "./attendance.service.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -170,4 +170,27 @@ export const scanStudent = asyncHandler(async (req, res) => {
   } catch (error) {
     return sendError(res, 400, error.message);
   }
+});
+
+export const completeAttendanceWindow = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const scope = await getScope(req);
+
+  if (![ROLES.WARDEN, ROLES.ASSISTANT_WARDEN].includes(scope.role)) {
+    return sendError(res, 403, "Only wardens can complete an attendance window.");
+  }
+
+  const window = await closeAttendanceWindow(id, scope.userId);
+
+  await createLogDb({
+    action: "Completed Attendance Window",
+    entityType: "Attendance",
+    entityId: id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Warden closed/completed attendance window`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "Attendance window completed successfully", window);
 });

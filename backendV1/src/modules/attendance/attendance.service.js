@@ -438,3 +438,99 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
     };
   });
 };
+
+export const closeAttendanceWindow = async (windowId, completedBy) => {
+  const window = await prisma.attendanceWindow.findFirst({
+    where: { id: windowId, status: "OPEN" }
+  });
+
+  if (!window) {
+    throw new Error("Window is already completed or does not exist.");
+  }
+
+  const activeStudents = await prisma.student.findMany({
+    where: {
+      isActive: true,
+      studentHostels: { some: { hostelId: window.hostelId, status: "active" } }
+    },
+    select: { id: true }
+  });
+
+  const activeStudentIds = activeStudents.map(s => s.id);
+
+  const records = await prisma.attendanceRecord.findMany({
+    where: { attendanceWindowId: windowId, studentId: { in: activeStudentIds } },
+    select: { studentId: true }
+  });
+
+  const presentSet = new Set(records.map(r => r.studentId));
+  const absentIds = activeStudentIds.filter(id => !presentSet.has(id));
+
+  if (absentIds.length > 0) {
+    const onLeavePasses = await prisma.pass.findMany({
+      where: {
+        studentId: { in: absentIds },
+        status: "APPROVED"
+      },
+      include: {
+        gateLogs: {
+          orderBy: { eventTime: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    const onLeaveSet = new Set(
+      onLeavePasses
+        .filter(p => p.gateLogs.length > 0 && p.gateLogs[0].eventType === "LEFT")
+        .map(p => p.studentId)
+    );
+
+    const absentRecords = absentIds.map(studentId => ({
+      attendanceWindowId: windowId,
+      studentId: studentId,
+      hostelId: window.hostelId,
+      scannedById: completedBy,
+      status: onLeaveSet.has(studentId) ? "ON_LEAVE" : "ABSENT",
+      remarks: onLeaveSet.has(studentId)
+        ? "Marked as on leave automatically upon window completion."
+        : "Marked absent automatically upon window completion."
+    }));
+
+    await prisma.attendanceRecord.createMany({
+      data: absentRecords
+    });
+  }
+
+  const updatedWindow = await prisma.attendanceWindow.update({
+    where: { id: windowId },
+    data: {
+      status: "COMPLETED",
+      completedAt: new Date(),
+      completedById: completedBy,
+      absentCount: absentIds.length
+    }
+  });
+
+  orchestratorService.triggerNotification({
+    eventName: 'ATTENDANCE_CLOSED',
+    target: { type: 'HOSTEL', filter: { hostelId: window.hostelId } },
+    data: {
+      category: 'ATTENDANCE',
+      priority: 'NORMAL'
+    },
+    channels: ['in-app', 'push']
+  }).catch(err => console.error("[Notification] Failed to trigger ATTENDANCE_CLOSED:", err));
+
+  return {
+    _id: updatedWindow.id,
+    hostelId: updatedWindow.hostelId,
+    attendanceDate: updatedWindow.attendanceDate,
+    status: updatedWindow.status.toLowerCase(),
+    totalStudents: updatedWindow.totalStudents,
+    scannedCount: updatedWindow.scannedCount,
+    presentCount: updatedWindow.presentCount,
+    absentCount: updatedWindow.absentCount,
+    completedAt: updatedWindow.completedAt
+  };
+};

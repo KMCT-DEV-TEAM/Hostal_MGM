@@ -5,7 +5,8 @@ import {
   getAttendanceWindowDetails,
   getDashboardStats,
   getAttendanceRecords,
-  scanStudent
+  scanStudent,
+  completeAttendanceWindow
 } from "./attendance.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -58,6 +59,14 @@ router.post(
   validateWindowIdParam,
   validateScanQR,
   scanStudent
+);
+
+router.post(
+  "/windows/:id/complete",
+  authMiddleware,
+  roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
+  validateWindowIdParam,
+  completeAttendanceWindow
 );
 
 export default router;
