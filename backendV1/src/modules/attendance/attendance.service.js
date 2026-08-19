@@ -8,6 +8,21 @@ const getStartOfDay = (date) => {
   return d;
 };
 
+const capitalize = (str) => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).replace(/_/g, " ");
+};
+
+const formatTime = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+};
+
+const formatDate = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 export const createAttendanceWindowDb = async (hostelId, wardenId) => {
   const today = getStartOfDay(new Date());
 
@@ -735,4 +750,48 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       windowStats: updatedCounts
     };
   });
+};
+
+export const getStudentDashboardStatsDb = async (studentId) => {
+  const todayStart = getStartOfDay(new Date());
+
+  const todayRecord = await prisma.attendanceRecord.findFirst({
+    where: {
+      studentId,
+      scannedAt: { gte: todayStart }
+    },
+    orderBy: { scannedAt: 'desc' }
+  });
+
+  let today = null;
+  if (todayRecord) {
+    today = {
+      status: capitalize(todayRecord.status.toLowerCase()),
+      markedAt: formatTime(todayRecord.scannedAt),
+      date: formatDate(todayRecord.scannedAt)
+    };
+  }
+
+  const records = await prisma.attendanceRecord.groupBy({
+    by: ['status'],
+    where: { studentId },
+    _count: { status: true }
+  });
+
+  let present = 0;
+  let absent = 0;
+
+  for (const record of records) {
+    if (record.status === "PRESENT") present = record._count.status;
+    if (record.status === "ABSENT") absent = record._count.status;
+  }
+
+  const totalCount = present + absent;
+  const summary = {
+    present,
+    absent,
+    percentage: totalCount > 0 ? parseFloat(((present / totalCount) * 100).toFixed(2)) : 0
+  };
+
+  return { today, summary };
 };

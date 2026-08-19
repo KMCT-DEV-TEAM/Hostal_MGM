@@ -2,7 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
 import jwt from "jsonwebtoken";
-import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb } from "./attendance.service.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb, getStudentDashboardStatsDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -227,5 +227,52 @@ export const correctAttendance = asyncHandler(async (req, res) => {
   } catch (error) {
     const code = error.statusCode || 500;
     return sendError(res, code, error.message);
+  }
+});
+
+const resolveStudentId = async (req) => {
+  if ([ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR].includes(req.user.role)) {
+    if (!req.query.studentId && !req.params.studentId) {
+      throw new Error("studentId is required for staff roles to view student details.");
+    }
+    return req.query.studentId || req.params.studentId;
+  }
+
+  if (req.user.role === ROLES.PARENT) {
+    const parent = await prisma.parent.findUnique({
+      where: { id: req.user.id },
+      select: { isActive: true }
+    });
+    
+    if (!parent || !parent.isActive) {
+      throw new Error("Parent account is inactive or not found");
+    }
+
+    const requestedStudentId = req.student?.id || req.query.studentId || req.params.studentId;
+
+    if (requestedStudentId) {
+      const isLinked = await prisma.studentParent.findFirst({
+        where: {
+          parentId: req.user.id,
+          studentId: requestedStudentId,
+          status: "ACTIVE"
+        }
+      });
+      if (!isLinked) {
+        throw new Error("You are not authorized to view this student's records.");
+      }
+      return requestedStudentId;
+    }
+  }
+  return req.user.id;
+};
+
+export const getAttendanceDashboard = asyncHandler(async (req, res) => {
+  try {
+    const studentId = await resolveStudentId(req);
+    const result = await getStudentDashboardStatsDb(studentId);
+    return sendSuccess(res, 200, "Dashboard stats fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
   }
 });

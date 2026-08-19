@@ -7,7 +7,8 @@ import {
   getAttendanceRecords,
   scanStudent,
   completeAttendanceWindow,
-  correctAttendance
+  correctAttendance,
+  getAttendanceDashboard
 } from "./attendance.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -74,8 +75,23 @@ router.patch(
   "/windows/:id/students/:studentId",
   authMiddleware,
   roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
-  validateWindowIdParam, // Will validate :id as windowId (regex catches it), wait, does it validate :studentId? The original code didn't specifically validate studentId with a middleware in routes.
+  validateWindowIdParam,
   correctAttendance
+);
+
+router.get(
+  "/dashboard/student",
+  authMiddleware,
+  roleMiddleware(ROLES.STUDENT, ROLES.PARENT, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  getAttendanceDashboard
+);
+
+// Fallback old route (if any frontend dependencies still hit it)
+router.get(
+  "/dashboard/student/:studentId",
+  authMiddleware,
+  roleMiddleware(ROLES.PARENT, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  getAttendanceDashboard
 );
 
 export default router;
