@@ -858,3 +858,54 @@ export const getStudentAttendanceHistoryDb = async (studentId, query) => {
     }
   };
 };
+
+export const getStudentAttendanceCalendarDb = async (studentId, month, year) => {
+  const m = parseInt(month);
+  const y = parseInt(year);
+  const startDate = new Date(Date.UTC(y, m - 1, 1));
+  const endDate = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+
+  const records = await prisma.attendanceRecord.findMany({
+    where: {
+      studentId,
+      scannedAt: { gte: startDate, lte: endDate }
+    },
+    select: { scannedAt: true, status: true }
+  });
+
+  let present = 0;
+  let absent = 0;
+
+  const events = records.map(r => {
+    if (r.status === ATTENDANCE_STATUS.PRESENT) present++;
+    if (r.status === ATTENDANCE_STATUS.ABSENT) absent++;
+    return {
+      date: formatDate(r.scannedAt),
+      status: r.status.toLowerCase()
+    };
+  });
+
+  const activeHostelAssignment = await prisma.studentHostel.findFirst({
+    where: { studentId, status: STUDENT_HOSTEL_STATUS.ACTIVE },
+    select: { hostelId: true }
+  });
+
+  let notMarked = 0;
+  if (activeHostelAssignment && activeHostelAssignment.hostelId) {
+    const totalWindows = await prisma.attendanceWindow.count({
+      where: {
+        hostelId: activeHostelAssignment.hostelId,
+        attendanceDate: { gte: startDate, lte: endDate },
+        status: ATTENDANCE_WINDOW_STATUS.COMPLETED
+      }
+    });
+    notMarked = Math.max(0, totalWindows - (present + absent));
+  }
+
+  return {
+    month: m,
+    year: y,
+    summary: { present, absent, notMarked },
+    events
+  };
+};

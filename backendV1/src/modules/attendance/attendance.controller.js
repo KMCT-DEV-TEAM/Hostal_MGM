@@ -2,7 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
 import jwt from "jsonwebtoken";
-import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb, getStudentDashboardStatsDb, getStudentAttendanceHistoryDb } from "./attendance.service.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb, getStudentDashboardStatsDb, getStudentAttendanceHistoryDb, getStudentAttendanceCalendarDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 import { STUDENT_HOSTEL_STATUS, MENTOR_ASSIGNMENT_STATUS, PARENT_STATUS } from "../../constants/status.js";
@@ -284,6 +284,17 @@ export const getAttendanceHistory = asyncHandler(async (req, res) => {
     const studentId = await resolveStudentId(req);
     const result = await getStudentAttendanceHistoryDb(studentId, req.query);
     return sendSuccess(res, 200, "Attendance history fetched successfully", result);
+  } catch (error) {
+    return sendError(res, 403, error.message);
+  }
+});
+
+export const getAttendanceCalendar = asyncHandler(async (req, res) => {
+  const { month, year } = req.query;
+  try {
+    const studentId = await resolveStudentId(req);
+    const result = await getStudentAttendanceCalendarDb(studentId, month, year);
+    return sendSuccess(res, 200, "Calendar events fetched successfully", result);
   } catch (error) {
     return sendError(res, 403, error.message);
   }
