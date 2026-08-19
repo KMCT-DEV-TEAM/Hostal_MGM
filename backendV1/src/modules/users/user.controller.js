@@ -42,6 +42,12 @@ const getPaginatedUsersByRole = async (role, page, limit, status, search, additi
         isVerified: true,
         createdAt: true,
         organization: true,
+        settings: true,
+        complaintsAssigned: {
+          select: {
+            status: true
+          }
+        },
         hostelWardens: {
           select: {
             hostel: {
@@ -732,6 +738,190 @@ export const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
     where: { id: { in: ids } },
     data: { isActive }
   });
+
+  return sendSuccess(res, 200, "Bulk status updated successfully");
+});
+
+// --- MAINTENANCE STAFF ROUTES ---
+
+export const getMaintenanceStaff = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const status = req.query.status;
+  const search = req.query.search;
+
+  const { users, totalCount } = await getPaginatedUsersByRole("MAINTENANCE_STAFF", page, limit, status, search);
+
+  const mappedUsers = users.map(user => {
+    let specialization = '';
+    let assignedTask = '';
+    
+    if (user.settings) {
+        specialization = user.settings.specialization || '';
+        assignedTask = user.settings.assignedTask || '';
+    }
+
+    let taskAssignedCount = user.complaintsAssigned ? user.complaintsAssigned.length : 0;
+    let taskResolvedCount = user.complaintsAssigned ? user.complaintsAssigned.filter(c => c.status === 'RESOLVED').length : 0;
+    let taskPendingCount = user.complaintsAssigned ? user.complaintsAssigned.filter(c => ['PENDING', 'IN_PROGRESS'].includes(c.status)).length : 0;
+
+    return {
+      ...user,
+      id: user.id,
+      _id: user.id,
+      name: user.fullName,
+      status: user.isActive ? 'Active' : 'Inactive',
+      specialization,
+      assignedTask,
+      taskAssignedCount,
+      taskResolvedCount,
+      taskPendingCount,
+      // exclude nested relations to prevent noise
+      complaintsAssigned: undefined, 
+    };
+  });
+
+  return sendSuccess(res, 200, "Maintenance Staff fetched successfully", {
+    count: mappedUsers.length,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+    data: mappedUsers
+  });
+});
+
+export const createMaintenanceStaff = asyncHandler(async (req, res) => {
+  const { name, email, phone, specialization, assignedTask, organizationId } = req.body;
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+      return sendError(res, 400, "Email already exists");
+  }
+
+  const temporaryPassword = Math.random().toString(36).slice(-8);
+  const { hashPassword } = await import("../../utils/hash.js");
+  const hashedPassword = await hashPassword(temporaryPassword);
+
+  const staff = await prisma.$transaction(async (tx) => {
+      const newStaff = await tx.user.create({
+          data: {
+              fullName: name,
+              email,
+              phone,
+              passwordHash: hashedPassword,
+              tempPassword: true,
+              role: "MAINTENANCE_STAFF",
+              organizationId: organizationId || null,
+              settings: { specialization, assignedTask },
+              createdBy: req.user?.id || req.user?._id
+          }
+      });
+
+      if (req.user?.id || req.user?._id) {
+          const userId = req.user.id || req.user._id;
+          await tx.auditLog.create({
+              data: {
+                  action: "Created Maintenance Staff",
+                  module: "User",
+                  entityId: newStaff.id,
+                  userId: userId,
+                  newData: { name, email, phone, specialization, assignedTask }
+              }
+          });
+      }
+
+      return newStaff;
+  });
+
+  const subject = "Your Maintenance Staff Account Details";
+  const text = `Hello ${name}\n\nYour maintenance staff account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+  const html = `<p>Hello ${name},</p><p>Your maintenance staff account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+  try {
+      const { sendMail } = await import("../../utils/mailer.js");
+      await sendMail(email, subject, text, html);
+  } catch (error) {
+      console.error("Failed to send temporary password email:", error);
+  }
+
+  // Cleanup OTP record once created
+  const { deleteOtpDb } = await import("../otps/otp.service.js");
+  await deleteOtpDb(email);
+
+  const io = getIo();
+  if (io) {
+      io.emit('userCreated', { role: 'maintenance_staff', data: staff });
+  }
+
+  return sendSuccess(res, 201, "Maintenance Staff created successfully", { data: staff });
+});
+
+export const updateMaintenanceStaff = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, specialization, assignedTask } = req.body;
+  
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
+
+  const currentSettings = user.settings && typeof user.settings === 'object' ? user.settings : {};
+  const newSettings = {
+    ...currentSettings,
+    ...(specialization !== undefined && { specialization }),
+    ...(assignedTask !== undefined && { assignedTask })
+  };
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: {
+      fullName: name,
+      phone,
+      settings: newSettings
+    }
+  });
+
+  const io = getIo();
+  if (io) {
+      io.emit('userUpdated', { role: 'maintenance_staff', data: updatedUser });
+  }
+
+  return sendSuccess(res, 200, "Maintenance Staff updated successfully", { data: updatedUser });
+});
+
+export const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await prisma.user.findUnique({ where: { id } });
+  
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: { isActive: !user.isActive }
+  });
+
+  const io = getIo();
+  if (io) {
+      io.emit('userUpdated', { role: 'maintenance_staff', data: updatedUser });
+  }
+
+  return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
+});
+
+export const bulkToggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+  
+  await prisma.user.updateMany({
+    where: { id: { in: ids }, role: "MAINTENANCE_STAFF" },
+    data: { isActive }
+  });
+
+  const io = getIo();
+  if (io) {
+      io.emit('userUpdated', { role: 'maintenance_staff', bulk: true });
+  }
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });
