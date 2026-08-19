@@ -1,0 +1,37 @@
+components:
+  schemas:
+    Shared_PaginatedResponseEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          type: object
+          properties:
+            pagination:
+              $ref: '#/components/schemas/Shared_OffsetPaginationMeta'
+
+    Shared_AsyncResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - jobId
+            - statusUrl
+            - status
+          properties:
+            jobId:
+              type: string
+            statusUrl:
+              type: string
+              format: uri
+            status:
+              type: string
+            estimatedCompletionTime:
+              type: string
+              format: date-time

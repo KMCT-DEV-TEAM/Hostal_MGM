@@ -3,6 +3,7 @@ import cors from "cors";
 import morgan from "morgan";
 import compression from 'compression';
 import helmet from 'helmet';
+import { setupSwagger } from './config/swagger/swagger.setup.js';
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use(cors(corsOptions));
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
+
+setupSwagger(app);
 
 import authRoutes from './modules/auth/auth.routes.js';
 import announcementRoutes from './modules/announcements/announcement.routes.js';
