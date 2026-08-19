@@ -1,7 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
-import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb } from "./attendance.service.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -94,6 +94,13 @@ export const getAttendanceWindows = asyncHandler(async (req, res) => {
   const scope = await getScope(req);
   const result = await getAttendanceWindowsDb(req.query, scope);
   return sendSuccess(res, 200, "Attendance windows fetched successfully", result);
+});
+
+export const getDashboardStats = asyncHandler(async (req, res) => {
+  const scope = await getScope(req);
+  const { date } = req.query;
+  const result = await getDashboardStatsDb(date, scope);
+  return sendSuccess(res, 200, "Dashboard stats fetched successfully", result);
 });
 
 export const getAttendanceWindowDetails = asyncHandler(async (req, res) => {

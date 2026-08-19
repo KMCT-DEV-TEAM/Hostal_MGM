@@ -202,3 +202,58 @@ export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
     windowStartedByName: window.startedBy ? window.startedBy.fullName : null
   };
 };
+
+export const getDashboardStatsDb = async (dateStr, scope) => {
+  const queryDate = getStartOfDay(dateStr || new Date());
+  
+  const where = {
+    attendanceDate: queryDate
+  };
+
+  if (scope.role === ROLES.WARDEN || scope.role === ROLES.ASSISTANT_WARDEN) {
+    where.hostelId = scope.hostelId;
+  } else if (scope.role === ROLES.MENTOR) {
+    where.hostelId = { in: scope.hostelIds || [] };
+  }
+
+  const windows = await prisma.attendanceWindow.findMany({
+    where,
+    include: {
+      startedBy: { select: { fullName: true } }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (windows.length === 0) {
+    return {
+      totalStudents: 0,
+      presentToday: 0,
+      absentToday: 0,
+      windowStatus: null,
+      windowStartedAt: null,
+      windowStartedByName: null
+    };
+  }
+
+  let totalStudents = 0;
+  let presentToday = 0;
+  let absentToday = 0;
+
+  for (const w of windows) {
+    totalStudents += w.totalStudents || 0;
+    presentToday += w.presentCount || 0;
+    absentToday += w.absentCount || 0;
+  }
+
+  const firstWindow = windows[0];
+
+  return {
+    totalStudents,
+    presentToday,
+    absentToday,
+    windowId: firstWindow.id,
+    windowStatus: firstWindow.status.toLowerCase(),
+    windowStartedAt: firstWindow.createdAt,
+    windowStartedByName: firstWindow.startedBy ? firstWindow.startedBy.fullName : null
+  };
+};
