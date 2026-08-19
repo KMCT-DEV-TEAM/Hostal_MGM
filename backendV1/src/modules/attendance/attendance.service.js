@@ -173,3 +173,32 @@ export const getAttendanceWindowsDb = async (query, scope) => {
     },
   };
 };
+
+export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
+  const where = { id: windowId };
+  
+  if (scope.role === ROLES.WARDEN || scope.role === ROLES.ASSISTANT_WARDEN) {
+    where.hostelId = scope.hostelId;
+  }
+
+  const window = await prisma.attendanceWindow.findFirst({
+    where,
+    include: {
+      hostel: { select: { id: true, name: true } },
+      startedBy: { select: { id: true, fullName: true, email: true } },
+      completedBy: { select: { id: true, fullName: true, email: true } }
+    }
+  });
+
+  if (!window) return null;
+
+  return {
+    totalStudents: window.totalStudents,
+    presentToday: window.presentCount,
+    absentToday: window.absentCount,
+    windowId: window.id,
+    windowStatus: window.status.toLowerCase(),
+    windowStartedAt: window.startedAt,
+    windowStartedByName: window.startedBy ? window.startedBy.fullName : null
+  };
+};

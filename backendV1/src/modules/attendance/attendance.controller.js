@@ -1,7 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
-import { createAttendanceWindowDb, getAttendanceWindowsDb } from "./attendance.service.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -94,4 +94,16 @@ export const getAttendanceWindows = asyncHandler(async (req, res) => {
   const scope = await getScope(req);
   const result = await getAttendanceWindowsDb(req.query, scope);
   return sendSuccess(res, 200, "Attendance windows fetched successfully", result);
+});
+
+export const getAttendanceWindowDetails = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const scope = await getScope(req);
+
+  const window = await getAttendanceWindowDetailsDb(id, scope);
+  if (!window) {
+    return sendError(res, 404, "Attendance window not found or you don't have access.");
+  }
+
+  return sendSuccess(res, 200, "Attendance window details fetched successfully", window);
 });
