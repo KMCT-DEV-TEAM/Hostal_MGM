@@ -3,7 +3,8 @@ import {
   createAttendanceWindow,
   getAttendanceWindows,
   getAttendanceWindowDetails,
-  getDashboardStats
+  getDashboardStats,
+  getAttendanceRecords
 } from "./attendance.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -39,6 +40,14 @@ router.get(
   roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
   validateWindowIdParam,
   getAttendanceWindowDetails
+);
+
+router.get(
+  "/windows/:id/records",
+  authMiddleware,
+  roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  validateWindowIdParam,
+  getAttendanceRecords
 );
 
 export default router;

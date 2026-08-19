@@ -257,3 +257,107 @@ export const getDashboardStatsDb = async (dateStr, scope) => {
     windowStartedByName: firstWindow.startedBy ? firstWindow.startedBy.fullName : null
   };
 };
+
+export const getAttendanceRecordsDb = async (windowId, query, scope) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const window = await prisma.attendanceWindow.findUnique({
+    where: { id: windowId },
+    select: { hostelId: true }
+  });
+
+  let totalStudentsCount = 0;
+  if (window && window.hostelId) {
+    totalStudentsCount = await prisma.studentHostel.count({
+      where: {
+        hostelId: window.hostelId,
+        status: "active"
+      }
+    });
+  }
+
+  const where = { attendanceWindowId: windowId };
+
+  if (query.status) {
+    where.status = query.status.toUpperCase();
+  }
+
+  if (query.fromDate || query.toDate) {
+    where.scannedAt = {};
+    if (query.fromDate) where.scannedAt.gte = new Date(query.fromDate);
+    if (query.toDate) where.scannedAt.lte = new Date(new Date(query.toDate).setHours(23, 59, 59, 999));
+  }
+
+  const studentMatch = {};
+  if (query.search) {
+    studentMatch.OR = [
+      { name: { contains: query.search, mode: 'insensitive' } },
+      { studentId: { contains: query.search, mode: 'insensitive' } }
+    ];
+  }
+  if (query.room) {
+    studentMatch.roomNumber = { contains: query.room, mode: 'insensitive' };
+  }
+  if (query.organizationId) {
+    studentMatch.organizationId = query.organizationId;
+  }
+  if (query.courseId) {
+    studentMatch.courseId = query.courseId;
+  }
+  if (query.departmentId) {
+    studentMatch.departmentId = query.departmentId;
+  }
+  if (query.batchId) {
+    studentMatch.batchId = query.batchId;
+  }
+
+  if (Object.keys(studentMatch).length > 0) {
+    where.student = studentMatch;
+  }
+
+  const [records, totalRecords] = await Promise.all([
+    prisma.attendanceRecord.findMany({
+      where,
+      orderBy: { scannedAt: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        student: { select: { id: true, name: true, studentId: true, roomNumber: true } },
+        scannedBy: { select: { id: true, fullName: true } }
+      }
+    }),
+    prisma.attendanceRecord.count({ where })
+  ]);
+
+  const formattedRecords = records.map(r => ({
+    _id: r.id,
+    status: r.status.toLowerCase(),
+    scannedAt: r.scannedAt,
+    remarks: r.remarks,
+    student: r.student ? {
+      _id: r.student.id,
+      name: r.student.name,
+      studentId: r.student.studentId,
+      room: r.student.roomNumber
+    } : null,
+    scannedBy: r.scannedBy ? {
+      _id: r.scannedBy.id,
+      name: r.scannedBy.fullName
+    } : null
+  }));
+
+  return {
+    records: formattedRecords,
+    totalStudentsCount,
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limit),
+      hasNextPage: page * limit < totalRecords,
+      hasPreviousPage: page > 1,
+    }
+  };
+};
