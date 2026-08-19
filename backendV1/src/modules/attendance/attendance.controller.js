@@ -1,7 +1,8 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
-import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb } from "./attendance.service.js";
+import jwt from "jsonwebtoken";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -126,4 +127,47 @@ export const getAttendanceRecords = asyncHandler(async (req, res) => {
 
   const result = await getAttendanceRecordsDb(id, req.query, scope);
   return sendSuccess(res, 200, "Attendance records fetched successfully", result);
+});
+
+export const scanStudent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { qrToken } = req.body;
+  const scope = await getScope(req);
+
+  if (![ROLES.WARDEN, ROLES.ASSISTANT_WARDEN].includes(scope.role)) {
+    return sendError(res, 403, "Only wardens can scan students.");
+  }
+
+  let studentId;
+  try {
+    try {
+      const parsedToken = JSON.parse(qrToken);
+      if (parsedToken._id || parsedToken.studentId) {
+        studentId = parsedToken._id || parsedToken.studentId;
+      }
+    } catch (e) {
+      // Ignore JSON parse error, fall back to JWT
+    }
+
+    if (!studentId) {
+      const decoded = jwt.verify(qrToken, process.env.JWT_ACCESS_TOKEN);
+      if (decoded.type !== "attendance_qr") {
+        return sendError(res, 400, "Invalid QR code.");
+      }
+      studentId = decoded.studentId || decoded.id;
+    }
+  } catch (err) {
+    return sendError(res, 400, "Invalid or expired QR code.");
+  }
+
+  if (!studentId) {
+    return sendError(res, 400, "Invalid QR code payload.");
+  }
+
+  try {
+    const result = await scanStudentDb(id, studentId, scope.userId);
+    return sendSuccess(res, 201, "Attendance marked successfully", result);
+  } catch (error) {
+    return sendError(res, 400, error.message);
+  }
 });

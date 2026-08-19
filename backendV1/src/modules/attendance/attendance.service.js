@@ -361,3 +361,80 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     }
   };
 };
+
+export const scanStudentDb = async (windowId, studentId, wardenId) => {
+  return await prisma.$transaction(async (tx) => {
+    const window = await tx.attendanceWindow.findFirst({
+      where: { id: windowId, status: "OPEN" },
+      select: { id: true, hostelId: true }
+    });
+
+    if (!window) {
+      throw new Error("Attendance window is closed or does not exist.");
+    }
+
+    const hostel = await tx.hostel.findFirst({
+      where: { id: window.hostelId, isActive: true },
+      select: { id: true }
+    });
+
+    if (!hostel) {
+      throw new Error("Hostel is inactive or does not exist.");
+    }
+
+    const studentExists = await tx.student.findFirst({
+      where: { id: studentId, isActive: true },
+      select: { id: true, studentCode: true, fullName: true, studentHostels: { where: { status: "active" }, select: { hostelId: true } } }
+    });
+
+    if (!studentExists) {
+      throw new Error("Student is inactive or does not exist.");
+    }
+
+    const activeHostel = studentExists.studentHostels[0];
+    if (!activeHostel || activeHostel.hostelId !== window.hostelId) {
+      throw new Error("Student does not belong to this hostel.");
+    }
+
+    let record;
+    try {
+      record = await tx.attendanceRecord.create({
+        data: {
+          attendanceWindowId: window.id,
+          studentId: studentExists.id,
+          hostelId: window.hostelId,
+          scannedById: wardenId,
+          status: "PRESENT",
+          scannedAt: new Date()
+        }
+      });
+    } catch (err) {
+      if (err.code === "P2002") {
+        throw new Error("Student has already been scanned in this window.");
+      }
+      throw err;
+    }
+
+    await tx.attendanceWindow.update({
+      where: { id: window.id },
+      data: {
+        scannedCount: { increment: 1 },
+        presentCount: { increment: 1 }
+      }
+    });
+
+    return {
+      attendance: {
+        _id: record.id,
+        status: record.status.toLowerCase(),
+        scannedAt: record.scannedAt
+      },
+      student: {
+        _id: studentExists.id,
+        studentId: studentExists.studentCode,
+        name: studentExists.fullName,
+        profileImage: null
+      }
+    };
+  });
+};
