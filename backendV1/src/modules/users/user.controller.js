@@ -130,15 +130,199 @@ export const getAssistantWardens = asyncHandler(async (req, res) => {
   const status = req.query.status;
   const search = req.query.search;
 
-  // Since 'ASSISTANT_WARDEN' is not in Prisma's Role enum, we'll return empty for now
-  // unless we add it to the schema.
-  return sendSuccess(res, 200, "Assistant Wardens fetched successfully", {
-    count: 0,
-    totalCount: 0,
-    currentPage: page,
-    totalPages: 0,
-    data: []
+  const { users, totalCount } = await getPaginatedUsersByRole("ASSISTANT_WARDEN", page, limit, status, search);
+
+  const mappedUsers = users.map(user => {
+    const rawHostel = user.hostelWardens && user.hostelWardens.length > 0 ? user.hostelWardens[0].hostel : null;
+    const hostel = rawHostel ? {
+      ...rawHostel,
+      status: rawHostel.isActive ? 'Active' : 'Inactive',
+      hosteltype: rawHostel.hostelType ? rawHostel.hostelType.toLowerCase() : rawHostel.hosteltype
+    } : null;
+
+    return {
+      ...user,
+      id: user.id,
+      _id: user.id,
+      name: user.fullName,
+      status: user.isActive ? 'Active' : 'Inactive',
+      hostel
+    };
   });
+
+  return sendSuccess(res, 200, "Assistant Wardens fetched successfully", {
+    count: mappedUsers.length,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+    data: mappedUsers
+  });
+});
+
+export const getAssistantWardenById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: {
+      hostelWardens: {
+        include: {
+          hostel: true
+        }
+      }
+    }
+  });
+
+  if (!user || user.role !== 'ASSISTANT_WARDEN') {
+    return sendError(res, 404, "Assistant Warden not found");
+  }
+
+  return sendSuccess(res, 200, "Assistant Warden fetched successfully", { data: user });
+});
+
+export const createAssistantWarden = asyncHandler(async (req, res) => {
+  const { name, email, phone, hostelId } = req.body;
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+      return sendError(res, 400, "Email already exists");
+  }
+
+  if (hostelId && hostelId !== 'Not Assigned') {
+      const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
+      if (!hostelExists) {
+          return sendError(res, 404, "Hostel not found");
+      }
+  }
+
+  const temporaryPassword = Math.random().toString(36).slice(-8);
+  const hashedPassword = await hashPassword(temporaryPassword);
+
+  const warden = await prisma.$transaction(async (tx) => {
+      const newWarden = await tx.user.create({
+          data: {
+              fullName: name,
+              email,
+              phone,
+              passwordHash: hashedPassword,
+              tempPassword: true,
+              role: "ASSISTANT_WARDEN",
+              createdBy: req.user?.id || req.user?._id
+          }
+      });
+
+      if (hostelId && hostelId !== 'Not Assigned') {
+          await tx.hostelWarden.create({
+              data: {
+                  hostelId: hostelId,
+                  userId: newWarden.id
+              }
+          });
+      }
+
+      if (req.user?.id || req.user?._id) {
+          const userId = req.user.id || req.user._id;
+          await tx.auditLog.create({
+              data: {
+                  action: "Created Assistant Warden",
+                  module: "User",
+                  entityId: newWarden.id,
+                  userId: userId,
+                  newData: { name, email, phone, hostelId }
+              }
+          });
+      }
+
+      return newWarden;
+  });
+
+  const subject = "Your Assistant Warden Account Details";
+  const text = `Hello ${name}\n\nYour assistant warden account has been created. Your temporary password is: ${temporaryPassword}\n\nPlease log in and change your password immediately.`;
+  const html = `<p>Hello ${name},</p><p>Your assistant warden account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
+
+  try {
+      await sendMail(email, subject, text, html);
+  } catch (error) {
+      console.error("Failed to send temporary password email:", error);
+  }
+
+  await deleteOtpDb(email);
+
+  const io = getIo();
+  if (io) {
+      io.emit('userCreated', { role: 'assistantWarden', data: warden });
+  }
+
+  return sendSuccess(res, 201, "Assistant Warden created successfully", { data: warden });
+});
+
+export const updateAssistantWarden = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, phone } = req.body;
+  
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: {
+      fullName: name,
+      phone
+    }
+  });
+
+  return sendSuccess(res, 200, "Assistant Warden updated successfully", { data: updatedUser });
+});
+
+export const updateAssistantWardenHostel = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { hostelId } = req.body;
+
+  if (!hostelId || hostelId === 'Not Assigned') {
+    await prisma.hostelWarden.deleteMany({
+      where: { userId: id }
+    });
+    return sendSuccess(res, 200, "Hostel unassigned successfully");
+  }
+
+  const existingHostelWarden = await prisma.hostelWarden.findFirst({
+    where: { userId: id }
+  });
+
+  if (existingHostelWarden) {
+    await prisma.hostelWarden.update({
+      where: { id: existingHostelWarden.id },
+      data: { hostelId }
+    });
+  } else {
+    await prisma.hostelWarden.create({
+      data: {
+        userId: id,
+        hostelId
+      }
+    });
+  }
+
+  return sendSuccess(res, 200, "Hostel assigned successfully");
+});
+
+export const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await prisma.user.findUnique({ where: { id } });
+  
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: { isActive: !user.isActive }
+  });
+
+  return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
+});
+
+export const bulkToggleAssistantWardenStatus = asyncHandler(async (req, res) => {
+  const { ids, isActive } = req.body;
+  
+  await prisma.user.updateMany({
+    where: { id: { in: ids } },
+    data: { isActive }
+  });
+
+  return sendSuccess(res, 200, "Bulk status updated successfully");
 });
 
 export const createAdmin = asyncHandler(async (req, res) => {

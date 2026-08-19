@@ -10,6 +10,12 @@ import {
   updateUserEmail,
   getWardens,
   getAssistantWardens,
+  getAssistantWardenById,
+  createAssistantWarden,
+  updateAssistantWarden,
+  updateAssistantWardenHostel,
+  toggleAssistantWardenStatus,
+  bulkToggleAssistantWardenStatus,
   createWarden,
   updateWarden,
   updateEmail,
@@ -67,7 +73,20 @@ router.route('/wardens/:id/toggle-status')
 
 // --- ASSISTANT WARDEN ROUTES ---
 router.route('/assistant-wardens')
-  .get(getAssistantWardens);
+  .get(getAssistantWardens)
+  .post(createAssistantWarden);
+
+router.post('/assistant-wardens/bulk-toggle-status', bulkToggleAssistantWardenStatus);
+
+router.route('/assistant-wardens/:id')
+  .get(getAssistantWardenById)
+  .patch(updateAssistantWarden);
+
+router.route('/assistant-wardens/:id/hostel')
+  .patch(updateAssistantWardenHostel);
+
+router.route('/assistant-wardens/:id/toggle-status')
+  .patch(toggleAssistantWardenStatus);
 
 export default router;
 
