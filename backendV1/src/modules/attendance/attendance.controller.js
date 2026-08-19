@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb, getStudentDashboardStatsDb, getStudentAttendanceHistoryDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
+import { STUDENT_HOSTEL_STATUS, MENTOR_ASSIGNMENT_STATUS, PARENT_STATUS } from "../../constants/status.js";
 
 const getScope = async (req) => {
   const scope = {
@@ -17,7 +18,7 @@ const getScope = async (req) => {
     const hostel = await prisma.hostel.findFirst({
       where: {
         wardens: {
-          some: { id: req.user.id }
+          some: { userId: req.user.id }
         },
         isActive: true
       },
@@ -31,7 +32,7 @@ const getScope = async (req) => {
     const activeAssignments = await prisma.mentorAssignment.findMany({
       where: {
         mentorId: req.user.id,
-        status: "ACTIVE",
+        status: MENTOR_ASSIGNMENT_STATUS.ACTIVE,
       },
       select: { batchId: true }
     });
@@ -42,7 +43,7 @@ const getScope = async (req) => {
       const students = await prisma.studentHostel.findMany({
         where: {
           student: { batchId: { in: batchIds } },
-          status: "ALLOCATED"
+          status: STUDENT_HOSTEL_STATUS.ACTIVE
         },
         select: { hostelId: true }
       });
@@ -60,6 +61,7 @@ const getScope = async (req) => {
 export const createAttendanceWindow = asyncHandler(async (req, res) => {
   const scope = await getScope(req);
 
+  console.log('this is scope:************', scope)
   if (scope.role !== ROLES.WARDEN && scope.role !== ROLES.ASSISTANT_WARDEN) {
     return sendError(res, 403, "Only wardens can create an attendance window.");
   }
@@ -243,7 +245,7 @@ const resolveStudentId = async (req) => {
       where: { id: req.user.id },
       select: { isActive: true }
     });
-    
+
     if (!parent || !parent.isActive) {
       throw new Error("Parent account is inactive or not found");
     }
@@ -255,7 +257,7 @@ const resolveStudentId = async (req) => {
         where: {
           parentId: req.user.id,
           studentId: requestedStudentId,
-          status: "ACTIVE"
+          status: PARENT_STATUS.ACTIVE
         }
       });
       if (!isLinked) {

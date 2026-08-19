@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma.js";
 import { orchestratorService } from "../notification/services/orchestrator.service.js";
 import { ROLES } from "../../constants/roles.js";
+import { ATTENDANCE_STATUS, ATTENDANCE_WINDOW_STATUS, STUDENT_HOSTEL_STATUS, PASS_STATUS, GATE_EVENT_TYPE } from "../../constants/status.js";
 
 const getStartOfDay = (date) => {
   const d = new Date(date);
@@ -48,23 +49,23 @@ export const createAttendanceWindowDb = async (hostelId, wardenId) => {
   await prisma.attendanceWindow.updateMany({
     where: {
       hostelId,
-      status: "OPEN",
+      status: ATTENDANCE_WINDOW_STATUS.OPEN,
       attendanceDate: { lt: today },
     },
     data: {
-      status: "COMPLETED",
+      status: ATTENDANCE_WINDOW_STATUS.COMPLETED,
       completedAt: new Date(),
       completedById: wardenId
     }
   });
 
   // Count active students in the hostel
-  // MongoDB did: Student.countDocuments({ hostelId, isActive: true, hostelStatus: "active" })
-  // In Prisma, we check StudentHostel with status ALLOCATED
+  // MongoDB did: Student.countDocuments({ hostelId, isActive: true, hostelStatus: STUDENT_HOSTEL_STATUS.ACTIVE })
+  // In Prisma, we check StudentHostel with status active
   const totalStudents = await prisma.studentHostel.count({
     where: {
-      hostelId,
-      status: "ALLOCATED",
+      hostelId: hostelId,
+      status: STUDENT_HOSTEL_STATUS.ACTIVE,
       student: { isActive: true }
     }
   });
@@ -74,7 +75,7 @@ export const createAttendanceWindowDb = async (hostelId, wardenId) => {
       hostelId,
       attendanceDate: today,
       totalStudents,
-      status: "OPEN",
+      status: ATTENDANCE_WINDOW_STATUS.OPEN,
       startedById: wardenId,
       startedAt: new Date() // Add startedAt since it's in the schema
     }
@@ -191,7 +192,7 @@ export const getAttendanceWindowsDb = async (query, scope) => {
 
 export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
   const where = { id: windowId };
-  
+
   if (scope.role === ROLES.WARDEN || scope.role === ROLES.ASSISTANT_WARDEN) {
     where.hostelId = scope.hostelId;
   }
@@ -220,7 +221,7 @@ export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
 
 export const getDashboardStatsDb = async (dateStr, scope) => {
   const queryDate = getStartOfDay(dateStr || new Date());
-  
+
   const where = {
     attendanceDate: queryDate
   };
@@ -288,7 +289,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     totalStudentsCount = await prisma.studentHostel.count({
       where: {
         hostelId: window.hostelId,
-        status: "active"
+        status: STUDENT_HOSTEL_STATUS.ACTIVE
       }
     });
   }
@@ -308,12 +309,14 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   const studentMatch = {};
   if (query.search) {
     studentMatch.OR = [
-      { name: { contains: query.search, mode: 'insensitive' } },
-      { studentId: { contains: query.search, mode: 'insensitive' } }
+      { fullName: { contains: query.search, mode: 'insensitive' } },
+      { studentCode: { contains: query.search, mode: 'insensitive' } }
     ];
   }
   if (query.room) {
-    studentMatch.roomNumber = { contains: query.room, mode: 'insensitive' };
+    studentMatch.studentHostels = {
+      some: { roomNumber: { contains: query.room, mode: 'insensitive' }, status: STUDENT_HOSTEL_STATUS.ACTIVE }
+    };
   }
   if (query.organizationId) {
     studentMatch.organizationId = query.organizationId;
@@ -339,7 +342,14 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
       skip,
       take: limit,
       include: {
-        student: { select: { id: true, name: true, studentId: true, roomNumber: true } },
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            studentCode: true,
+            studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { roomNumber: true } }
+          }
+        },
         scannedBy: { select: { id: true, fullName: true } }
       }
     }),
@@ -353,9 +363,9 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     remarks: r.remarks,
     student: r.student ? {
       _id: r.student.id,
-      name: r.student.name,
-      studentId: r.student.studentId,
-      room: r.student.roomNumber
+      name: r.student.fullName,
+      studentId: r.student.studentCode,
+      room: r.student.studentHostels?.[0]?.roomNumber || null
     } : null,
     scannedBy: r.scannedBy ? {
       _id: r.scannedBy.id,
@@ -380,7 +390,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
 export const scanStudentDb = async (windowId, studentId, wardenId) => {
   return await prisma.$transaction(async (tx) => {
     const window = await tx.attendanceWindow.findFirst({
-      where: { id: windowId, status: "OPEN" },
+      where: { id: windowId, status: ATTENDANCE_WINDOW_STATUS.OPEN },
       select: { id: true, hostelId: true }
     });
 
@@ -399,7 +409,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
 
     const studentExists = await tx.student.findFirst({
       where: { id: studentId, isActive: true },
-      select: { id: true, studentCode: true, fullName: true, studentHostels: { where: { status: "active" }, select: { hostelId: true } } }
+      select: { id: true, studentCode: true, fullName: true, studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { hostelId: true } } }
     });
 
     if (!studentExists) {
@@ -419,7 +429,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
           studentId: studentExists.id,
           hostelId: window.hostelId,
           scannedById: wardenId,
-          status: "PRESENT",
+          status: ATTENDANCE_STATUS.PRESENT,
           scannedAt: new Date()
         }
       });
@@ -456,7 +466,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
 
 export const closeAttendanceWindow = async (windowId, completedBy) => {
   const window = await prisma.attendanceWindow.findFirst({
-    where: { id: windowId, status: "OPEN" }
+    where: { id: windowId, status: ATTENDANCE_WINDOW_STATUS.OPEN }
   });
 
   if (!window) {
@@ -466,7 +476,7 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
   const activeStudents = await prisma.student.findMany({
     where: {
       isActive: true,
-      studentHostels: { some: { hostelId: window.hostelId, status: "active" } }
+      studentHostels: { some: { hostelId: window.hostelId, status: STUDENT_HOSTEL_STATUS.ACTIVE } }
     },
     select: { id: true }
   });
@@ -485,7 +495,7 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
     const onLeavePasses = await prisma.pass.findMany({
       where: {
         studentId: { in: absentIds },
-        status: "APPROVED"
+        status: PASS_STATUS.APPROVED
       },
       include: {
         gateLogs: {
@@ -497,7 +507,7 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
 
     const onLeaveSet = new Set(
       onLeavePasses
-        .filter(p => p.gateLogs.length > 0 && p.gateLogs[0].eventType === "LEFT")
+        .filter(p => p.gateLogs.length > 0 && p.gateLogs[0].eventType === GATE_EVENT_TYPE.LEFT)
         .map(p => p.studentId)
     );
 
@@ -506,7 +516,7 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
       studentId: studentId,
       hostelId: window.hostelId,
       scannedById: completedBy,
-      status: onLeaveSet.has(studentId) ? "ON_LEAVE" : "ABSENT",
+      status: onLeaveSet.has(studentId) ? ATTENDANCE_STATUS.ON_LEAVE : ATTENDANCE_STATUS.ABSENT,
       remarks: onLeaveSet.has(studentId)
         ? "Marked as on leave automatically upon window completion."
         : "Marked absent automatically upon window completion."
@@ -520,7 +530,7 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
   const updatedWindow = await prisma.attendanceWindow.update({
     where: { id: windowId },
     data: {
-      status: "COMPLETED",
+      status: ATTENDANCE_WINDOW_STATUS.COMPLETED,
       completedAt: new Date(),
       completedById: completedBy,
       absentCount: absentIds.length
@@ -552,7 +562,7 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
 
 const recalculateWindowStats = async (windowId, tx) => {
   const db = tx || prisma;
-  
+
   const records = await db.attendanceRecord.groupBy({
     by: ['status'],
     where: { attendanceWindowId: windowId },
@@ -564,9 +574,9 @@ const recalculateWindowStats = async (windowId, tx) => {
   let onLeaveCount = 0;
 
   for (const record of records) {
-    if (record.status === "PRESENT") presentCount = record._count.status;
-    if (record.status === "ABSENT") absentCount = record._count.status;
-    if (record.status === "ON_LEAVE") onLeaveCount = record._count.status;
+    if (record.status === ATTENDANCE_STATUS.PRESENT) presentCount = record._count.status;
+    if (record.status === ATTENDANCE_STATUS.ABSENT) absentCount = record._count.status;
+    if (record.status === ATTENDANCE_STATUS.ON_LEAVE) onLeaveCount = record._count.status;
   }
 
   const scannedCount = presentCount + absentCount + onLeaveCount;
@@ -597,7 +607,7 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       throw err;
     }
 
-    if (window.status !== "OPEN") {
+    if (window.status !== ATTENDANCE_WINDOW_STATUS.OPEN) {
       const err = new Error("Attendance window has already been completed.");
       err.statusCode = 422;
       throw err;
@@ -607,7 +617,7 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       where: {
         id: studentId,
         isActive: true,
-        studentHostels: { some: { hostelId: wardenHostelId, status: "active" } }
+        studentHostels: { some: { hostelId: wardenHostelId, status: STUDENT_HOSTEL_STATUS.ACTIVE } }
       },
       select: { id: true, studentCode: true, fullName: true }
     });
@@ -618,39 +628,39 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       throw err;
     }
 
-    const ALLOWED_STATUSES = ["present", "absent", "on_leave"];
-    if (!ALLOWED_STATUSES.includes(status)) {
-      const err = new Error(`Invalid status. Must be one of: ${ALLOWED_STATUSES.join(", ")}.`);
+    const ALLOWED_STATUSES = [ATTENDANCE_STATUS.PRESENT, ATTENDANCE_STATUS.ABSENT, ATTENDANCE_STATUS.ON_LEAVE];
+    const prismaStatus = status.toUpperCase();
+
+    if (!ALLOWED_STATUSES.includes(prismaStatus)) {
+      const err = new Error(`Invalid status. Must be one of: present, absent, on_leave.`);
       err.statusCode = 400;
       throw err;
     }
-
-    const prismaStatus = status.toUpperCase();
 
     const existingRecord = await tx.attendanceRecord.findFirst({
       where: { attendanceWindowId: windowId, studentId: student.id },
       include: { corrections: true }
     });
 
-    const currentStatus = existingRecord ? existingRecord.status.toLowerCase() : null;
+    const currentStatus = existingRecord ? existingRecord.status : null;
 
-    if (currentStatus === status) {
+    if (currentStatus === prismaStatus) {
       const label = status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
       const err = new Error(`Attendance is already marked as ${label}.`);
       err.statusCode = 409;
       throw err;
     }
 
-    if (!existingRecord && !["present", "absent"].includes(status)) {
+    if (!existingRecord && ![ATTENDANCE_STATUS.PRESENT, ATTENDANCE_STATUS.ABSENT].includes(prismaStatus)) {
       const err = new Error("Cannot create an attendance record with this status. Only 'present' or 'absent' are allowed for new records.");
       err.statusCode = 422;
       throw err;
     }
 
     const remarksRequired =
-      (currentStatus === "present" && status === "absent") ||
-      (currentStatus === "on_leave" && status === "present") ||
-      (currentStatus === "present" && status === "on_leave");
+      (currentStatus === ATTENDANCE_STATUS.PRESENT && prismaStatus === ATTENDANCE_STATUS.ABSENT) ||
+      (currentStatus === ATTENDANCE_STATUS.ON_LEAVE && prismaStatus === ATTENDANCE_STATUS.PRESENT) ||
+      (currentStatus === ATTENDANCE_STATUS.PRESENT && prismaStatus === ATTENDANCE_STATUS.ON_LEAVE);
 
     if (remarksRequired) {
       if (!remarks || remarks.trim().length < 5) {
@@ -665,14 +675,14 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       }
     }
 
-    if (currentStatus === "present" && status === "on_leave") {
+    if (currentStatus === ATTENDANCE_STATUS.PRESENT && prismaStatus === ATTENDANCE_STATUS.ON_LEAVE) {
       const activePass = await tx.pass.findFirst({
         where: {
           studentId,
-          status: "APPROVED",
+          status: PASS_STATUS.APPROVED,
           gateLogs: {
-            some: { eventType: "LEFT" },
-            none: { eventType: "RETURNED" }
+            some: { eventType: GATE_EVENT_TYPE.LEFT },
+            none: { eventType: GATE_EVENT_TYPE.RETURNED }
           }
         }
       });
@@ -782,8 +792,8 @@ export const getStudentDashboardStatsDb = async (studentId) => {
   let absent = 0;
 
   for (const record of records) {
-    if (record.status === "PRESENT") present = record._count.status;
-    if (record.status === "ABSENT") absent = record._count.status;
+    if (record.status === ATTENDANCE_STATUS.PRESENT) present = record._count.status;
+    if (record.status === ATTENDANCE_STATUS.ABSENT) absent = record._count.status;
   }
 
   const totalCount = present + absent;
