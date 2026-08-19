@@ -8,7 +8,8 @@ import {
   scanStudent,
   completeAttendanceWindow,
   correctAttendance,
-  getAttendanceDashboard
+  getAttendanceDashboard,
+  getAttendanceHistory
 } from "./attendance.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -92,6 +93,20 @@ router.get(
   authMiddleware,
   roleMiddleware(ROLES.PARENT, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
   getAttendanceDashboard
+);
+
+router.get(
+  "/history/student",
+  authMiddleware,
+  roleMiddleware(ROLES.STUDENT, ROLES.PARENT, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  getAttendanceHistory
+);
+
+router.get(
+  "/history/student/:studentId",
+  authMiddleware,
+  roleMiddleware(ROLES.PARENT, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  getAttendanceHistory
 );
 
 export default router;

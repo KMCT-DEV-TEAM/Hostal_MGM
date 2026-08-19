@@ -795,3 +795,56 @@ export const getStudentDashboardStatsDb = async (studentId) => {
 
   return { today, summary };
 };
+
+export const getStudentAttendanceHistoryDb = async (studentId, query) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const where = { studentId };
+
+  if (query.status) {
+    where.status = query.status.toUpperCase();
+  }
+
+  if (query.fromDate || query.toDate) {
+    where.scannedAt = {};
+    if (query.fromDate) where.scannedAt.gte = getStartOfDay(query.fromDate);
+    if (query.toDate) where.scannedAt.lte = new Date(new Date(query.toDate).setUTCHours(23, 59, 59, 999));
+  }
+
+  const [totalRecords, records] = await Promise.all([
+    prisma.attendanceRecord.count({ where }),
+    prisma.attendanceRecord.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { scannedAt: 'desc' },
+      include: {
+        scannedBy: {
+          select: { fullName: true }
+        }
+      }
+    })
+  ]);
+
+  const formattedRecords = records.map(record => ({
+    id: record.id,
+    date: formatDate(record.scannedAt),
+    markedAt: formatTime(record.scannedAt),
+    status: capitalize(record.status.toLowerCase()),
+    wardenName: record.scannedBy ? record.scannedBy.fullName : null
+  }));
+
+  return {
+    records: formattedRecords,
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limit),
+      hasNextPage: page * limit < totalRecords,
+      hasPrevPage: page > 1
+    }
+  };
+};
