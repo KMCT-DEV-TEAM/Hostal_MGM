@@ -90,3 +90,50 @@ components:
             defaultGuardian:
               type: boolean
               example: true
+
+    Parent_UpdateRequest:
+      type: object
+      properties:
+        parentName:
+          type: string
+          description: Full name of the parent/guardian.
+          example: "Jane Doe"
+        email:
+          type: string
+          format: email
+          description: New email address.
+          example: "janedoe@example.com"
+        phone:
+          type: string
+          description: Contact phone number.
+          example: "+919876543211"
+        relationship:
+          type: string
+          description: Relationship to the student.
+          example: "Mother"
+        defaultGuardian:
+          type: boolean
+          description: Whether this parent is the primary contact.
+          example: true
+
+    Parent_ChangeEmailRequest:
+      type: object
+      required:
+        - oldEmail
+        - newEmail
+        - otp
+      properties:
+        oldEmail:
+          type: string
+          format: email
+          description: The current email address of the parent.
+          example: "oldemail@example.com"
+        newEmail:
+          type: string
+          format: email
+          description: The new email address for the parent.
+          example: "newemail@example.com"
+        otp:
+          type: string
+          description: The 6-digit OTP sent to the new email address.
+          example: "123456"

@@ -11,6 +11,7 @@ import {
   syncHostelOrganizations,
   getHostelHistoryDb,
   getStudentHostelTimelineDb,
+  updateAllocationStatus,
 } from "./studentHostel.repository.js";
 
 // ---------------------------------------------------------------------------
@@ -476,7 +477,7 @@ export const vacateHostelService = async (studentId, data, currentUser) => {
  */
 export const getHostelHistoryService = async (query) => {
   const result = await getHostelHistoryDb(query);
-  
+
   const totalPages = Math.ceil(result.total / result.limitNumber);
 
   return {

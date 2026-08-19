@@ -68,3 +68,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Shared_ConflictErrorResponse'
+
+  /parents/{id}:
+    put:
+      tags:
+        - Parents
+      summary: Update parent profile
+      description: Updates parent details. If email is provided, it checks for uniqueness.
+      operationId: updateParent
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The parent's unique ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Parent_UpdateRequest'
+      responses:
+        '200':
+          description: Parent updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_Response'
+        '400':
+          description: Validation error or email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '403':
+          description: Unauthorized to access this parent profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+        '404':
+          description: Parent not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+
+  /parents/{id}/change-email:
+    patch:
+      tags:
+        - Parents
+      summary: Change parent email
+      description: Changes a parent's email address and verifies it via OTP.
+      operationId: changeParentEmail
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The parent's unique ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Parent_ChangeEmailRequest'
+      responses:
+        '200':
+          description: Parent email updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_Response'
+        '400':
+          description: Validation error, email already exists, or invalid OTP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '403':
+          description: Unauthorized to access this parent profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+        '404':
+          description: Parent not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
