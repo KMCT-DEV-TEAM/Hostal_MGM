@@ -49,6 +49,7 @@ import notificationRoutes from './modules/notification/notification.routes.js';
 
 import studentRoutes from './modules/students/student.routes.js';
 import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
+import parentRoutes from './modules/parent/parent.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
@@ -65,6 +66,7 @@ app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/students', studentRoutes);
 app.use('/api/student-hostels', studentHostelRoutes);
+app.use('/api/parents', parentRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);

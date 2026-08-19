@@ -6,9 +6,886 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==========================================
-// ENUMS
-// ==========================================
+model Organization {
+  id                 String                     @id @default(uuid()) @db.Uuid
+  name               String                     @db.VarChar(255)
+  code               String                     @unique @db.VarChar(50)
+  organisationNumber String                     @unique @map("organisation_number") @db.VarChar(100)
+  adminId            String?                    @map("admin_id") @db.Uuid
+  email              String?                    @db.VarChar(255)
+  phone              String?                    @db.VarChar(20)
+  address            String?
+  isActive           Boolean                    @default(true) @map("is_active")
+  createdAt          DateTime                   @default(now()) @map("created_at")
+  updatedAt          DateTime                   @updatedAt @map("updated_at")
+  deletedAt          DateTime?                  @map("deleted_at")
+  announcements      AnnouncementOrganization[]
+  auditLogs          AuditLog[]
+  complaints         Complaint[]
+  courses            Course[]
+  furnitureTypes     FurnitureType[]
+  hostels            HostelOrganization[]
+  mentorAssignments  MentorAssignment[]
+  admin              User?                      @relation("OrganizationAdmin", fields: [adminId], references: [id])
+  passes             Pass[]
+  studentHostels     StudentHostel[]
+  students           Student[]
+  users              User[]                     @relation("OrganizationUsers")
+
+  @@index([adminId])
+  @@index([isActive])
+  @@map("organizations")
+}
+
+model Hostel {
+  id                String               @id @default(uuid()) @db.Uuid
+  name              String               @db.VarChar(255)
+  code              String               @unique @db.VarChar(50)
+  email             String?              @db.VarChar(255)
+  phone             String?              @db.VarChar(20)
+  location          String?
+  capacity          Int?
+  hostelType        HostelType           @map("hostel_type")
+  adminId           String?              @map("admin_id") @db.Uuid
+  isActive          Boolean              @default(true) @map("is_active")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  deletedAt         DateTime?            @map("deleted_at")
+  announcements     AnnouncementHostel[]
+  attendanceRecords AttendanceRecord[]
+  attendanceWindows AttendanceWindow[]
+  complaints        Complaint[]
+  furnitureTypes    FurnitureType[]
+  organizations     HostelOrganization[]
+  wardens           HostelWarden[]
+  admin             User?                @relation("HostelAdmin", fields: [adminId], references: [id])
+  passes            Pass[]
+  studentHostels    StudentHostel[]
+  visitorVisits     VisitorVisit[]
+
+  @@index([adminId])
+  @@index([isActive])
+  @@map("hostels")
+}
+
+model HostelOrganization {
+  id             String       @id @default(uuid()) @db.Uuid
+  hostelId       String       @map("hostel_id") @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  hostel         Hostel       @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([hostelId, organizationId])
+  @@index([hostelId])
+  @@index([organizationId])
+  @@map("hostel_organizations")
+}
+
+model HostelWarden {
+  id       String @id @default(uuid()) @db.Uuid
+  hostelId String @map("hostel_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+  hostel   Hostel @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([hostelId, userId])
+  @@index([hostelId])
+  @@index([userId])
+  @@map("hostel_wardens")
+}
+
+model Course {
+  id               String       @id @default(uuid()) @db.Uuid
+  name             String       @db.VarChar(255)
+  code             String       @unique @db.VarChar(50)
+  organizationId   String       @map("organization_id") @db.Uuid
+  departmentsCount Int          @default(0) @map("departments_count")
+  batchesCount     Int          @default(0) @map("batches_count")
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  deletedAt        DateTime?    @map("deleted_at")
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  departments      Department[]
+  students         Student[]
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("courses")
+}
+
+model Department {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(255)
+  code         String    @unique @db.VarChar(50)
+  courseId     String    @map("course_id") @db.Uuid
+  batchesCount Int       @default(0) @map("batches_count")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  batches      Batch[]
+  course       Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  students     Student[]
+
+  @@index([courseId])
+  @@index([isActive])
+  @@map("departments")
+}
+
+model Batch {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String             @db.VarChar(255)
+  code              String             @unique @db.VarChar(50)
+  departmentId      String             @map("department_id") @db.Uuid
+  startYear         Int                @map("start_year")
+  endYear           Int                @map("end_year")
+  studentsCount     Int                @default(0) @map("students_count")
+  isActive          Boolean            @default(true) @map("is_active")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  mentorAssignments MentorAssignment[]
+  students          Student[]
+
+  @@index([departmentId])
+  @@index([isActive])
+  @@map("batches")
+}
+
+model User {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  organizationId      String?                 @map("organization_id") @db.Uuid
+  employeeCode        String?                 @map("employee_code") @db.VarChar(50)
+  fullName            String                  @map("full_name") @db.VarChar(255)
+  email               String                  @unique @db.VarChar(255)
+  phone               String?                 @db.VarChar(20)
+  passwordHash        String                  @map("password_hash")
+  role                Role
+  isActive            Boolean                 @default(true) @map("is_active")
+  isVerified          Boolean                 @default(false) @map("is_verified")
+  tempPassword        Boolean                 @default(false) @map("temp_password")
+  failedLoginAttempts Int                     @default(0) @map("failed_login_attempts")
+  lockUntil           DateTime?               @map("lock_until")
+  lastLoginAt         DateTime?               @map("last_login_at")
+  settings            Json?
+  createdBy           String?                 @map("created_by") @db.Uuid
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  deletedAt           DateTime?               @map("deleted_at")
+  activityLogs        ActivityLog[]
+  announcements       Announcement[]
+  attendanceCorrect   AttendanceCorrection[]
+  attendanceRecScan   AttendanceRecord[]      @relation("RecordScannedBy")
+  attendanceWinComp   AttendanceWindow[]      @relation("WindowCompletedBy")
+  attendanceWinStart  AttendanceWindow[]      @relation("WindowStartedBy")
+  auditLogs           AuditLog[]
+  complaintsAssigned  Complaint[]             @relation("ComplaintAssignedStaff")
+  furnitureAssetHist  FurnitureAssetHistory[]
+  furnitureAssetsCr   FurnitureAsset[]        @relation("FurnitureAssetCreator")
+  furnitureAssetsUp   FurnitureAsset[]        @relation("FurnitureAssetUpdater")
+  furnitureTypesCr    FurnitureType[]         @relation("FurnitureTypeCreator")
+  furnitureTypesUp    FurnitureType[]         @relation("FurnitureTypeUpdater")
+  hostelWardens       HostelWarden[]
+  administeredHostels Hostel[]                @relation("HostelAdmin")
+  assignedByMentors   MentorAssignment[]      @relation("AssignedBy")
+  mentorAssignments   MentorAssignment[]      @relation("MentorUser")
+  administeredOrgs    Organization[]          @relation("OrganizationAdmin")
+  passApprovals       PassApproval[]
+  passGateLogsCor     PassGateLog[]           @relation("GateLogCorrector")
+  passGateLogsRec     PassGateLog[]           @relation("GateLogRecorder")
+  passesCreated       Pass[]                  @relation("PassCreator")
+  passwordRequests    PasswordRequest[]
+  studentHostelAlloc  StudentHostel[]         @relation("AllocatedBy")
+  studentHostelVac    StudentHostel[]         @relation("VacatedBy")
+  userSessions        UserSession[]
+  creator             User?                   @relation("UserCreator", fields: [createdBy], references: [id])
+  createdUsers        User[]                  @relation("UserCreator")
+  organization        Organization?           @relation("OrganizationUsers", fields: [organizationId], references: [id])
+  visitorVisitsIn     VisitorVisit[]          @relation("CheckInStaff")
+  visitorVisitsOut    VisitorVisit[]          @relation("CheckOutStaff")
+
+  @@index([email])
+  @@index([organizationId])
+  @@index([isActive])
+  @@index([role])
+  @@map("users")
+}
+
+model Student {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  studentCode         String                  @unique @map("student_code") @db.VarChar(50)
+  organizationId      String                  @map("organization_id") @db.Uuid
+  courseId            String?                 @map("course_id") @db.Uuid
+  departmentId        String?                 @map("department_id") @db.Uuid
+  batchId             String?                 @map("batch_id") @db.Uuid
+  fullName            String                  @map("full_name") @db.VarChar(255)
+  email               String                  @unique @db.VarChar(255)
+  passwordHash        String                  @map("password_hash")
+  tempPassword        Boolean                 @default(false) @map("temp_password")
+  phone               String?                 @db.VarChar(20)
+  gender              String?                 @db.VarChar(20)
+  dob                 DateTime?               @db.Date
+  academicYear        String?                 @map("academic_year") @db.VarChar(50)
+  address             String?
+  settings            Json?
+  isActive            Boolean                 @default(true) @map("is_active")
+  isVerified          Boolean                 @default(false) @map("is_verified")
+  joiningDate         DateTime?               @map("joining_date") @db.Date
+  failedLoginAttempts Int                     @default(0) @map("failed_login_attempts")
+  lockUntil           DateTime?               @map("lock_until")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  deletedAt           DateTime?               @map("deleted_at")
+  attendanceRecs      AttendanceRecord[]
+  complaints          Complaint[]
+  furnitureHist       FurnitureAssetHistory[]
+  furnitureAssets     FurnitureAsset[]
+  passGateLogs        PassGateLog[]
+  passes              Pass[]
+  studentHostels      StudentHostel[]
+  studentParents      StudentParent[]
+  batch               Batch?                  @relation(fields: [batchId], references: [id])
+  course              Course?                 @relation(fields: [courseId], references: [id])
+  department          Department?             @relation(fields: [departmentId], references: [id])
+  organization        Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  visitRequests       VisitRequest[]
+  visitorVisits       VisitorVisitStudent[]
+
+  @@index([organizationId])
+  @@index([batchId])
+  @@index([email])
+  @@index([studentCode])
+  @@map("students")
+}
+
+model Parent {
+  id                  String          @id @default(uuid()) @db.Uuid
+  full_name           String          @db.VarChar(255)
+  phone               String          @unique @db.VarChar(20)
+  email               String?         @unique @db.VarChar(255)
+  passwordHash        String          @map("password_hash")
+  tempPassword        Boolean         @default(false) @map("temp_password")
+  isVerified          Boolean         @default(false) @map("is_verified")
+  isActive            Boolean         @default(true) @map("is_active")
+  failedLoginAttempts Int             @default(0) @map("failed_login_attempts")
+  lockUntil           DateTime?       @map("lock_until")
+  settings            Json?
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  deletedAt           DateTime?       @map("deleted_at")
+  passes              Pass[]
+  studentParents      StudentParent[]
+  visitRequests       VisitRequest[]
+  visitors            Visitor[]
+
+  @@index([phone])
+  @@index([email])
+  @@map("parents")
+}
+
+model UserSession {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  refreshTokenHash String   @map("refresh_token_hash")
+  deviceId         String?  @map("device_id")
+  deviceName       String?  @map("device_name")
+  browser          String?
+  operatingSystem  String?  @map("operating_system")
+  ipAddress        String?  @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  isActive         Boolean  @default(true) @map("is_active")
+  lastActivityAt   DateTime @default(now()) @map("last_activity_at")
+  expiresAt        DateTime @map("expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+model AuditLog {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String?       @map("organization_id") @db.Uuid
+  userId         String?       @map("user_id") @db.Uuid
+  action         String        @db.VarChar(100)
+  module         String        @db.VarChar(100)
+  entityId       String?       @map("entity_id") @db.Uuid
+  oldData        Json?         @map("old_data")
+  newData        Json?         @map("new_data")
+  ipAddress      String?       @map("ip_address") @db.VarChar(50)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([module])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model StudentParent {
+  id              String   @id @default(uuid()) @db.Uuid
+  studentId       String   @map("student_id") @db.Uuid
+  parentId        String   @map("parent_id") @db.Uuid
+  relationship    String   @db.VarChar(20)
+  defaultGuardian Boolean  @default(false) @map("default_guardian")
+  status          String   @default("active") @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  parent          Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, parentId])
+  @@index([studentId])
+  @@index([parentId])
+  @@map("student_parents")
+}
+
+model StudentHostel {
+  id                   String              @id @default(uuid()) @db.Uuid
+  studentId            String              @map("student_id") @db.Uuid
+  organizationId       String              @map("organization_id") @db.Uuid
+  hostelId             String              @map("hostel_id") @db.Uuid
+  roomNumber           String              @map("room_number") @db.VarChar(50)
+  status               StudentHostelStatus
+  joinedAt             DateTime            @map("joined_at")
+  vacatedAt            DateTime?           @map("vacated_at")
+  allocatedById        String              @map("allocated_by") @db.Uuid
+  vacatedById          String?             @map("vacated_by") @db.Uuid
+  reason               String?
+  remarks              String?
+  previousAllocationId String?             @map("previous_allocation_id") @db.Uuid
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  allocatedBy          User                @relation("AllocatedBy", fields: [allocatedById], references: [id])
+  hostel               Hostel              @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  organization         Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  previousAllocation   StudentHostel?      @relation("AllocationHistory", fields: [previousAllocationId], references: [id])
+  nextAllocations      StudentHostel[]     @relation("AllocationHistory")
+  student              Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  vacatedBy            User?               @relation("VacatedBy", fields: [vacatedById], references: [id])
+
+  @@index([studentId])
+  @@index([hostelId])
+  @@index([status])
+  @@map("student_hostels")
+}
+
+model MentorAssignment {
+  id             String                 @id @default(uuid()) @db.Uuid
+  organizationId String                 @map("organization_id") @db.Uuid
+  mentorId       String                 @map("mentor_id") @db.Uuid
+  batchId        String                 @map("batch_id") @db.Uuid
+  status         MentorAssignmentStatus
+  assignedById   String                 @map("assigned_by") @db.Uuid
+  assignedAt     DateTime               @map("assigned_at")
+  endedAt        DateTime?              @map("ended_at")
+  remarks        String?
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+  assignedBy     User                   @relation("AssignedBy", fields: [assignedById], references: [id])
+  batch          Batch                  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  mentor         User                   @relation("MentorUser", fields: [mentorId], references: [id], onDelete: Cascade)
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([mentorId])
+  @@index([batchId])
+  @@index([status])
+  @@map("mentor_assignments")
+}
+
+model AttendanceWindow {
+  id             String                 @id @default(uuid()) @db.Uuid
+  hostelId       String                 @map("hostel_id") @db.Uuid
+  attendanceDate DateTime               @map("attendance_date") @db.Date
+  totalStudents  Int                    @default(0) @map("total_students")
+  scannedCount   Int                    @default(0) @map("scanned_count")
+  presentCount   Int                    @default(0) @map("present_count")
+  absentCount    Int                    @default(0) @map("absent_count")
+  onLeaveCount   Int                    @default(0) @map("on_leave_count")
+  status         AttendanceWindowStatus
+  startedById    String                 @map("started_by") @db.Uuid
+  completedById  String?                @map("completed_by") @db.Uuid
+  startedAt      DateTime?              @map("started_at")
+  completedAt    DateTime?              @map("completed_at")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+  records        AttendanceRecord[]
+  completedBy    User?                  @relation("WindowCompletedBy", fields: [completedById], references: [id])
+  hostel         Hostel                 @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  startedBy      User                   @relation("WindowStartedBy", fields: [startedById], references: [id])
+
+  @@unique([hostelId, attendanceDate])
+  @@index([hostelId])
+  @@index([attendanceDate])
+  @@map("attendance_windows")
+}
+
+model AttendanceRecord {
+  id                 String                 @id @default(uuid()) @db.Uuid
+  attendanceWindowId String                 @map("attendance_window_id") @db.Uuid
+  studentId          String                 @map("student_id") @db.Uuid
+  hostelId           String                 @map("hostel_id") @db.Uuid
+  scannedById        String                 @map("scanned_by") @db.Uuid
+  scannedAt          DateTime?              @map("scanned_at")
+  status             AttendanceStatus
+  remarks            String?
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  corrections        AttendanceCorrection[]
+  window             AttendanceWindow       @relation(fields: [attendanceWindowId], references: [id], onDelete: Cascade)
+  hostel             Hostel                 @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  scannedBy          User                   @relation("RecordScannedBy", fields: [scannedById], references: [id])
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([attendanceWindowId, studentId])
+  @@index([studentId])
+  @@index([attendanceWindowId])
+  @@map("attendance_records")
+}
+
+model AttendanceCorrection {
+  id                 String            @id @default(uuid()) @db.Uuid
+  attendanceRecordId String            @map("attendance_record_id") @db.Uuid
+  previousStatus     AttendanceStatus? @map("previous_status")
+  newStatus          AttendanceStatus? @map("new_status")
+  remarks            String?
+  correctedById      String            @map("corrected_by") @db.Uuid
+  correctedAt        DateTime?         @map("corrected_at")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  record             AttendanceRecord  @relation(fields: [attendanceRecordId], references: [id], onDelete: Cascade)
+  correctedBy        User              @relation(fields: [correctedById], references: [id])
+
+  @@index([attendanceRecordId])
+  @@map("attendance_corrections")
+}
+
+model Pass {
+  id               String           @id @default(uuid()) @db.Uuid
+  organizationId   String           @map("organization_id") @db.Uuid
+  hostelId         String           @map("hostel_id") @db.Uuid
+  studentId        String           @map("student_id") @db.Uuid
+  parentId         String           @map("parent_id") @db.Uuid
+  passType         PassType         @map("pass_type")
+  outPassCategory  OutPassCategory? @map("out_pass_category")
+  reason           String
+  fromDate         DateTime?        @map("from_date")
+  toDate           DateTime?        @map("to_date")
+  expectedReturnAt DateTime?        @map("expected_return_at")
+  status           PassStatus
+  createdById      String           @map("created_by") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  approvals        PassApproval[]
+  gateLogs         PassGateLog[]
+  createdBy        User             @relation("PassCreator", fields: [createdById], references: [id])
+  hostel           Hostel           @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent           Parent           @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student          Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([hostelId])
+  @@index([status])
+  @@map("passes")
+}
+
+model PassApproval {
+  id            String         @id @default(uuid()) @db.Uuid
+  passId        String         @map("pass_id") @db.Uuid
+  approvalLevel ApprovalLevel  @map("approval_level")
+  status        ApprovalStatus
+  actionById    String         @map("action_by") @db.Uuid
+  remarks       String?
+  actionAt      DateTime       @map("action_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  actionBy      User           @relation(fields: [actionById], references: [id])
+  pass          Pass           @relation(fields: [passId], references: [id], onDelete: Cascade)
+
+  @@index([passId])
+  @@map("pass_approvals")
+}
+
+model PassGateLog {
+  id               String        @id @default(uuid()) @db.Uuid
+  passId           String        @map("pass_id") @db.Uuid
+  studentId        String        @map("student_id") @db.Uuid
+  eventType        GateEventType @map("event_type")
+  eventTime        DateTime      @map("event_time")
+  recordedAt       DateTime      @map("recorded_at")
+  recordedById     String        @map("recorded_by") @db.Uuid
+  remarks          String?
+  isCorrected      Boolean       @default(false) @map("is_corrected")
+  correctedById    String?       @map("corrected_by") @db.Uuid
+  correctedAt      DateTime?     @map("corrected_at")
+  correctionReason String?       @map("correction_reason")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  correctedBy      User?         @relation("GateLogCorrector", fields: [correctedById], references: [id])
+  pass             Pass          @relation(fields: [passId], references: [id], onDelete: Cascade)
+  recordedBy       User          @relation("GateLogRecorder", fields: [recordedById], references: [id])
+  student          Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([passId])
+  @@index([studentId])
+  @@map("pass_gate_logs")
+}
+
+model ComplaintCategory {
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @unique @db.VarChar(255)
+  description String?
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+  complaints  Complaint[]
+
+  @@map("complaint_categories")
+}
+
+model Complaint {
+  id              String            @id @default(uuid()) @db.Uuid
+  studentId       String            @map("student_id") @db.Uuid
+  hostelId        String            @map("hostel_id") @db.Uuid
+  organizationId  String            @map("organization_id") @db.Uuid
+  categoryId      String            @map("category_id") @db.Uuid
+  roomNo          String            @map("room_no") @db.VarChar(50)
+  subject         String            @db.VarChar(255)
+  description     String?
+  status          ComplaintStatus   @default(PENDING)
+  priority        Priority          @default(MEDIUM)
+  assignedStaffId String?           @map("assigned_staff") @db.Uuid
+  materialsUsed   String?           @map("materials_used")
+  resolutionNotes String?           @map("resolution_notes")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+  assignedStaff   User?             @relation("ComplaintAssignedStaff", fields: [assignedStaffId], references: [id])
+  category        ComplaintCategory @relation(fields: [categoryId], references: [id])
+  hostel          Hostel            @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  student         Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([hostelId])
+  @@index([status])
+  @@map("complaints")
+}
+
+model Announcement {
+  id            String                     @id @default(uuid()) @db.Uuid
+  title         String                     @db.VarChar(255)
+  message       String
+  createdById   String                     @map("created_by") @db.Uuid
+  creatorRole   String                     @map("creator_role") @db.VarChar(50)
+  targetType    TargetType                 @map("target_type")
+  isActive      Boolean                    @default(true) @map("is_active")
+  status        AnnouncementStatus         @default(ACTIVE)
+  scheduledAt   DateTime?                  @map("scheduled_at")
+  expiresAt     DateTime?                  @map("expires_at")
+  createdAt     DateTime                   @default(now()) @map("created_at")
+  updatedAt     DateTime                   @updatedAt @map("updated_at")
+  deletedAt     DateTime?                  @map("deleted_at")
+  hostels       AnnouncementHostel[]
+  organizations AnnouncementOrganization[]
+  createdBy     User                       @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@index([status])
+  @@index([targetType])
+  @@map("announcements")
+}
+
+model AnnouncementOrganization {
+  id             String       @id @default(uuid()) @db.Uuid
+  announcementId String       @map("announcement_id") @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, organizationId])
+  @@map("announcement_organizations")
+}
+
+model AnnouncementHostel {
+  id             String       @id @default(uuid()) @db.Uuid
+  announcementId String       @map("announcement_id") @db.Uuid
+  hostelId       String       @map("hostel_id") @db.Uuid
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  hostel         Hostel       @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, hostelId])
+  @@map("announcement_hostels")
+}
+
+model Visitor {
+  id            String             @id @default(uuid()) @db.Uuid
+  name          String             @db.VarChar(255)
+  phone         String             @unique @db.VarChar(20)
+  email         String?            @db.VarChar(255)
+  idProofType   IdProofType        @map("id_proof_type")
+  idProofNumber String             @map("id_proof_number") @db.VarChar(100)
+  address       String?
+  photoUrl      String?            @map("photo_url")
+  status        VisitorStatus      @default(ACTIVE)
+  createdById   String             @map("created_by") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  deletedAt     DateTime?          @map("deleted_at")
+  visitRequests VisitRequest[]
+  changeLogs    VisitorChangeLog[]
+  createdBy     Parent             @relation(fields: [createdById], references: [id])
+
+  @@index([phone])
+  @@index([status])
+  @@map("visitors")
+}
+
+model VisitorChangeLog {
+  id              String    @id @default(uuid()) @db.Uuid
+  visitorId       String    @map("visitor_id") @db.Uuid
+  action          String    @db.VarChar(50)
+  performedById   String    @map("performed_by") @db.Uuid
+  performedByRole String    @map("performed_by_role") @db.VarChar(20)
+  reason          String?
+  timestamp       DateTime?
+  visitor         Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  @@index([visitorId])
+  @@map("visitor_change_logs")
+}
+
+model VisitRequest {
+  id           String             @id @default(uuid()) @db.Uuid
+  visitorId    String             @map("visitor_id") @db.Uuid
+  parentId     String?            @map("parent_id") @db.Uuid
+  studentId    String             @map("student_id") @db.Uuid
+  relationship String             @db.VarChar(50)
+  purpose      String             @db.VarChar(255)
+  status       VisitRequestStatus @default(PENDING)
+  remarks      String?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  parent       Parent?            @relation(fields: [parentId], references: [id])
+  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  visitor      Visitor            @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  @@index([visitorId])
+  @@index([studentId])
+  @@index([status])
+  @@map("visit_requests")
+}
+
+model VisitorVisit {
+  id               String                @id @default(uuid()) @db.Uuid
+  visitorRefId     String                @map("visitor_ref_id") @db.Uuid
+  visitorRefType   String                @map("visitor_ref_type") @db.VarChar(20)
+  hostelId         String                @map("hostel_id") @db.Uuid
+  purpose          String                @db.VarChar(255)
+  status           VisitStatus           @default(CHECKED_IN)
+  checkInTime      DateTime              @map("check_in_time")
+  expectedExitTime DateTime              @map("expected_exit_time")
+  checkOutTime     DateTime?             @map("check_out_time")
+  checkedInById    String?               @map("checked_in_by") @db.Uuid
+  checkedOutById   String?               @map("checked_out_by") @db.Uuid
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  visitStudents    VisitorVisitStudent[]
+  checkedInBy      User?                 @relation("CheckInStaff", fields: [checkedInById], references: [id])
+  checkedOutBy     User?                 @relation("CheckOutStaff", fields: [checkedOutById], references: [id])
+  hostel           Hostel                @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+
+  @@index([visitorRefId, visitorRefType])
+  @@index([hostelId])
+  @@index([status])
+  @@map("visitor_visits")
+}
+
+model VisitorVisitStudent {
+  id             String       @id @default(uuid()) @db.Uuid
+  visitorVisitId String       @map("visitor_visit_id") @db.Uuid
+  studentId      String       @map("student_id") @db.Uuid
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  visitorVisit   VisitorVisit @relation(fields: [visitorVisitId], references: [id], onDelete: Cascade)
+
+  @@unique([visitorVisitId, studentId])
+  @@map("visitor_visit_students")
+}
+
+model FurnitureType {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  hostelId       String           @map("hostel_id") @db.Uuid
+  name           String           @db.VarChar(100)
+  prefix         String           @db.VarChar(10)
+  description    String?          @db.VarChar(500)
+  isActive       Boolean          @default(true) @map("is_active")
+  createdById    String?          @map("created_by") @db.Uuid
+  updatedById    String?          @map("updated_by") @db.Uuid
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  deletedAt      DateTime?        @map("deleted_at")
+  assets         FurnitureAsset[]
+  createdBy      User?            @relation("FurnitureTypeCreator", fields: [createdById], references: [id])
+  hostel         Hostel           @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  updatedBy      User?            @relation("FurnitureTypeUpdater", fields: [updatedById], references: [id])
+
+  @@index([hostelId])
+  @@map("furniture_types")
+}
+
+model FurnitureAsset {
+  id              String                  @id @default(uuid()) @db.Uuid
+  furnitureId     String                  @unique @map("furniture_id") @db.VarChar(50)
+  furnitureTypeId String                  @map("furniture_type_id") @db.Uuid
+  studentId       String?                 @map("student_id") @db.Uuid
+  status          FurnitureStatus         @default(AVAILABLE)
+  remarks         String?
+  createdById     String?                 @map("created_by") @db.Uuid
+  updatedById     String?                 @map("updated_by") @db.Uuid
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  deletedAt       DateTime?               @map("deleted_at")
+  histories       FurnitureAssetHistory[]
+  createdBy       User?                   @relation("FurnitureAssetCreator", fields: [createdById], references: [id])
+  furnitureType   FurnitureType           @relation(fields: [furnitureTypeId], references: [id], onDelete: Cascade)
+  student         Student?                @relation(fields: [studentId], references: [id])
+  updatedBy       User?                   @relation("FurnitureAssetUpdater", fields: [updatedById], references: [id])
+
+  @@index([furnitureTypeId])
+  @@index([studentId])
+  @@index([status])
+  @@map("furniture_assets")
+}
+
+model FurnitureAssetHistory {
+  id               String           @id @default(uuid()) @db.Uuid
+  furnitureAssetId String           @map("furniture_asset_id") @db.Uuid
+  action           String           @db.VarChar(50)
+  previousStatus   FurnitureStatus? @map("previous_status")
+  currentStatus    FurnitureStatus? @map("current_status")
+  performedById    String?          @map("performed_by") @db.Uuid
+  performedByRole  String?          @map("performed_by_role") @db.VarChar(50)
+  studentId        String?          @map("student_id") @db.Uuid
+  remarks          String?
+  metadata         Json?
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  asset            FurnitureAsset   @relation(fields: [furnitureAssetId], references: [id], onDelete: Cascade)
+  performedBy      User?            @relation(fields: [performedById], references: [id])
+  student          Student?         @relation(fields: [studentId], references: [id])
+
+  @@index([furnitureAssetId])
+  @@map("furniture_asset_histories")
+}
+
+model Notification {
+  id                    String               @id @default(uuid()) @db.Uuid
+  recipientId           String               @map("recipient_id") @db.Uuid
+  recipientModel        String               @map("recipient_model") @db.VarChar(20)
+  recipientSnapshotName String?              @map("recipient_snapshot_name") @db.VarChar(255)
+  recipientSnapshotRole String?              @map("recipient_snapshot_role") @db.VarChar(50)
+  senderId              String?              @map("sender_id") @db.Uuid
+  senderModel           String?              @map("sender_model") @db.VarChar(20)
+  senderSnapshotName    String?              @map("sender_snapshot_name") @db.VarChar(255)
+  senderSnapshotRole    String?              @map("sender_snapshot_role") @db.VarChar(50)
+  eventType             String               @map("event_type") @db.VarChar(100)
+  eventCategory         String               @map("event_category") @db.VarChar(100)
+  eventPriority         NotificationPriority @default(NORMAL) @map("event_priority")
+  eventTypeLabel        String               @map("event_type_label") @db.VarChar(100)
+  title                 String               @db.VarChar(255)
+  message               String
+  link                  String?
+  type                  NotificationType     @default(INFO)
+  isRead                Boolean              @default(false) @map("is_read")
+  metadata              Json?
+  deliveryInAppStatus   NotificationStatus?  @map("delivery_in_app_status")
+  deliveryInAppAttempts Int                  @default(0) @map("delivery_in_app_attempts")
+  deliveryInAppSentAt   DateTime?            @map("delivery_in_app_sent_at")
+  deliveryInAppReadAt   DateTime?            @map("delivery_in_app_read_at")
+  deliveryPushStatus    NotificationStatus?  @map("delivery_push_status")
+  deliveryPushAttempts  Int                  @default(0) @map("delivery_push_attempts")
+  deliveryPushSentAt    DateTime?            @map("delivery_push_sent_at")
+  deliveryPushReadAt    DateTime?            @map("delivery_push_read_at")
+  deliveryEmailStatus   NotificationStatus?  @map("delivery_email_status")
+  deliveryEmailAttempts Int                  @default(0) @map("delivery_email_attempts")
+  deliveryEmailSentAt   DateTime?            @map("delivery_email_sent_at")
+  deliveryEmailReadAt   DateTime?            @map("delivery_email_read_at")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  deletedAt             DateTime?            @map("deleted_at")
+
+  @@index([recipientId, recipientModel, deletedAt])
+  @@index([recipientId, recipientModel, isRead, deletedAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id             String    @id @default(uuid()) @db.Uuid
+  recipientId    String    @map("recipient_id") @db.Uuid
+  recipientModel String    @map("recipient_model") @db.VarChar(20)
+  endpoint       String    @unique
+  keyP256dh      String    @map("key_p256dh")
+  keyAuth        String    @map("key_auth")
+  isActive       Boolean   @default(true) @map("is_active")
+  inactiveAt     DateTime? @map("inactive_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([recipientId, recipientModel])
+  @@map("push_subscriptions")
+}
+
+model Otp {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @db.VarChar(255)
+  otp       String   @db.VarChar(10)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("otps")
+}
+
+model PasswordRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  newPassword String   @map("new_password")
+  status      String   @default("pending") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_requests")
+}
+
+model ActivityLog {
+  id         String       @id @default(uuid()) @db.Uuid
+  action     String       @db.VarChar(100)
+  entityType String       @map("entity_type") @db.VarChar(50)
+  entityId   String?      @map("entity_id") @db.Uuid
+  userId     String       @map("user_id") @db.Uuid
+  userRole   String       @map("user_role") @db.VarChar(50)
+  details    String
+  status     ActionStatus @default(SUCCESS)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("activity_logs")
+}
 
 enum NotificationStatus {
   PENDING
@@ -26,6 +903,8 @@ enum Role {
   SUPER_ADMIN
   ADMIN
   WARDEN
+  ASSISTANT_WARDEN
+  MAINTENANCE_STAFF
   MENTOR
 }
 
@@ -175,991 +1054,4 @@ enum ActionStatus {
   SUCCESS
   ERROR
   WARNING
-}
-
-// ==========================================
-// CORE / MASTER TABLES
-// ==========================================
-
-model Organization {
-  id                 String    @id @default(uuid()) @db.Uuid
-  name               String    @db.VarChar(255)
-  code               String    @unique @db.VarChar(50)
-  organisationNumber String    @unique @map("organisation_number") @db.VarChar(100)
-  adminId            String?   @map("admin_id") @db.Uuid
-  email              String?   @db.VarChar(255)
-  phone              String?   @db.VarChar(20)
-  address            String?   @db.Text
-  isActive           Boolean   @default(true) @map("is_active")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  deletedAt          DateTime? @map("deleted_at") // Soft delete
-
-  admin User? @relation("OrganizationAdmin", fields: [adminId], references: [id], onDelete: SetNull)
-
-  // Relations
-  hostels           HostelOrganization[]
-  courses           Course[]
-  users             User[]                     @relation("OrganizationUsers")
-  students          Student[]
-  studentHostels    StudentHostel[]
-  mentorAssignments MentorAssignment[]
-  passes            Pass[]
-  complaints        Complaint[]
-  announcements     AnnouncementOrganization[]
-  furnitureTypes    FurnitureType[]
-  auditLogs         AuditLog[]
-
-  @@index([adminId])
-  @@index([isActive])
-  @@map("organizations")
-}
-
-model Hostel {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String     @db.VarChar(255)
-  code       String     @unique @db.VarChar(50)
-  email      String?    @db.VarChar(255)
-  phone      String?    @db.VarChar(20)
-  location   String?    @db.Text
-  capacity   Int?
-  hostelType HostelType @map("hostel_type")
-  adminId    String?    @map("admin_id") @db.Uuid
-  isActive   Boolean    @default(true) @map("is_active")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
-  deletedAt  DateTime?  @map("deleted_at")
-
-  admin User? @relation("HostelAdmin", fields: [adminId], references: [id], onDelete: SetNull)
-
-  // Relations
-  organizations     HostelOrganization[]
-  wardens           HostelWarden[]
-  studentHostels    StudentHostel[]
-  attendanceWindows AttendanceWindow[]
-  attendanceRecords AttendanceRecord[]
-  passes            Pass[]
-  complaints        Complaint[]
-  announcements     AnnouncementHostel[]
-  visitorVisits     VisitorVisit[]
-  furnitureTypes    FurnitureType[]
-
-  @@index([adminId])
-  @@index([isActive])
-  @@map("hostels")
-}
-
-model HostelOrganization {
-  id             String @id @default(uuid()) @db.Uuid
-  hostelId       String @map("hostel_id") @db.Uuid
-  organizationId String @map("organization_id") @db.Uuid
-
-  hostel       Hostel       @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@unique([hostelId, organizationId])
-  @@index([hostelId])
-  @@index([organizationId])
-  @@map("hostel_organizations")
-}
-
-model HostelWarden {
-  id       String @id @default(uuid()) @db.Uuid
-  hostelId String @map("hostel_id") @db.Uuid
-  userId   String @map("user_id") @db.Uuid
-
-  hostel Hostel @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([hostelId, userId])
-  @@index([hostelId])
-  @@index([userId])
-  @@map("hostel_wardens")
-}
-
-model Course {
-  id               String    @id @default(uuid()) @db.Uuid
-  name             String    @db.VarChar(255)
-  code             String    @unique @db.VarChar(50)
-  organizationId   String    @map("organization_id") @db.Uuid
-  departmentsCount Int       @default(0) @map("departments_count")
-  batchesCount     Int       @default(0) @map("batches_count")
-  isActive         Boolean   @default(true) @map("is_active")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  deletedAt        DateTime? @map("deleted_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  departments  Department[]
-  students     Student[]
-
-  @@index([organizationId])
-  @@index([isActive])
-  @@map("courses")
-}
-
-model Department {
-  id           String    @id @default(uuid()) @db.Uuid
-  name         String    @db.VarChar(255)
-  code         String    @unique @db.VarChar(50)
-  courseId     String    @map("course_id") @db.Uuid
-  batchesCount Int       @default(0) @map("batches_count")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
-
-  course   Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  batches  Batch[]
-  students Student[]
-
-  @@index([courseId])
-  @@index([isActive])
-  @@map("departments")
-}
-
-model Batch {
-  id            String    @id @default(uuid()) @db.Uuid
-  name          String    @db.VarChar(255)
-  code          String    @unique @db.VarChar(50)
-  departmentId  String    @map("department_id") @db.Uuid
-  startYear     Int       @map("start_year")
-  endYear       Int       @map("end_year")
-  studentsCount Int       @default(0) @map("students_count")
-  isActive      Boolean   @default(true) @map("is_active")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
-
-  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  students          Student[]
-  mentorAssignments MentorAssignment[]
-
-  @@index([departmentId])
-  @@index([isActive])
-  @@map("batches")
-}
-
-// ==========================================
-// USER / IDENTITY TABLES
-// ==========================================
-
-model User {
-  id                  String    @id @default(uuid()) @db.Uuid
-  organizationId      String?   @map("organization_id") @db.Uuid
-  employeeCode        String?   @map("employee_code") @db.VarChar(50)
-  fullName            String    @map("full_name") @db.VarChar(255)
-  email               String    @unique @db.VarChar(255)
-  phone               String?   @db.VarChar(20)
-  passwordHash        String    @map("password_hash") @db.Text
-  role                Role // Converted to enum
-  isActive            Boolean   @default(true) @map("is_active")
-  isVerified          Boolean   @default(false) @map("is_verified")
-  tempPassword        Boolean   @default(false) @map("temp_password")
-  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
-  lockUntil           DateTime? @map("lock_until")
-  lastLoginAt         DateTime? @map("last_login_at")
-  settings            Json?
-  createdBy           String?   @map("created_by") @db.Uuid
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  deletedAt           DateTime? @map("deleted_at")
-
-  organization Organization? @relation("OrganizationUsers", fields: [organizationId], references: [id], onDelete: SetNull)
-  creator      User?         @relation("UserCreator", fields: [createdBy], references: [id], onDelete: SetNull)
-  createdUsers User[]        @relation("UserCreator")
-
-  // Back relations
-  administeredOrgs    Organization[]          @relation("OrganizationAdmin")
-  administeredHostels Hostel[]                @relation("HostelAdmin")
-  hostelWardens       HostelWarden[]
-  studentHostelAlloc  StudentHostel[]         @relation("AllocatedBy")
-  studentHostelVac    StudentHostel[]         @relation("VacatedBy")
-  mentorAssignments   MentorAssignment[]      @relation("MentorUser")
-  assignedByMentors   MentorAssignment[]      @relation("AssignedBy")
-  attendanceWinStart  AttendanceWindow[]      @relation("WindowStartedBy")
-  attendanceWinComp   AttendanceWindow[]      @relation("WindowCompletedBy")
-  attendanceRecScan   AttendanceRecord[]      @relation("RecordScannedBy")
-  attendanceCorrect   AttendanceCorrection[]
-  passesCreated       Pass[]                  @relation("PassCreator")
-  passApprovals       PassApproval[]
-  passGateLogsRec     PassGateLog[]           @relation("GateLogRecorder")
-  passGateLogsCor     PassGateLog[]           @relation("GateLogCorrector")
-  complaintsAssigned  Complaint[]             @relation("ComplaintAssignedStaff")
-  announcements       Announcement[]
-  visitorVisitsIn     VisitorVisit[]          @relation("CheckInStaff")
-  visitorVisitsOut    VisitorVisit[]          @relation("CheckOutStaff")
-  furnitureTypesCr    FurnitureType[]         @relation("FurnitureTypeCreator")
-  furnitureTypesUp    FurnitureType[]         @relation("FurnitureTypeUpdater")
-  furnitureAssetsCr   FurnitureAsset[]        @relation("FurnitureAssetCreator")
-  furnitureAssetsUp   FurnitureAsset[]        @relation("FurnitureAssetUpdater")
-  furnitureAssetHist  FurnitureAssetHistory[]
-  passwordRequests    PasswordRequest[]
-  auditLogs           AuditLog[]
-  activityLogs        ActivityLog[]
-  userSessions        UserSession[]
-
-  @@index([email])
-  @@index([organizationId])
-  @@index([isActive])
-  @@index([role])
-  @@map("users")
-}
-
-model Student {
-  id                  String    @id @default(uuid()) @db.Uuid
-  studentCode         String    @unique @map("student_code") @db.VarChar(50)
-  organizationId      String    @map("organization_id") @db.Uuid
-  courseId            String?   @map("course_id") @db.Uuid
-  departmentId        String?   @map("department_id") @db.Uuid
-  batchId             String?   @map("batch_id") @db.Uuid
-  fullName            String    @map("full_name") @db.VarChar(255)
-  email               String    @unique @db.VarChar(255)
-  passwordHash        String    @map("password_hash") @db.Text
-  tempPassword        Boolean   @default(false) @map("temp_password")
-  phone               String?   @db.VarChar(20)
-  gender              String?   @db.VarChar(20) // Could be enum, kept String for flexibility
-  dob                 DateTime? @db.Date
-  academicYear        String?   @map("academic_year") @db.VarChar(50)
-  address             String?   @db.Text
-  settings            Json?
-  isActive            Boolean   @default(true) @map("is_active")
-  isVerified          Boolean   @default(false) @map("is_verified")
-  joiningDate         DateTime? @map("joining_date") @db.Date
-  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
-  lockUntil           DateTime? @map("lock_until")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  deletedAt           DateTime? @map("deleted_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  batch        Batch?       @relation(fields: [batchId], references: [id], onDelete: SetNull)
-
-  // Relations
-  studentParents  StudentParent[]
-  studentHostels  StudentHostel[]
-  attendanceRecs  AttendanceRecord[]
-  passes          Pass[]
-  passGateLogs    PassGateLog[]
-  complaints      Complaint[]
-  visitRequests   VisitRequest[]
-  visitorVisits   VisitorVisitStudent[]
-  furnitureAssets FurnitureAsset[]
-  furnitureHist   FurnitureAssetHistory[]
-
-  @@index([organizationId])
-  @@index([batchId])
-  @@index([email])
-  @@index([studentCode])
-  @@map("students")
-}
-
-model Parent {
-  id                  String    @id @default(uuid()) @db.Uuid
-  fullName            String    @map("full_name") @db.VarChar(255)
-  phone               String    @unique @db.VarChar(20)
-  email               String?   @unique @db.VarChar(255)
-  passwordHash        String    @map("password_hash") @db.Text
-  tempPassword        Boolean   @default(false) @map("temp_password")
-  isVerified          Boolean   @default(false) @map("is_verified")
-  isActive            Boolean   @default(true) @map("is_active")
-  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
-  lockUntil           DateTime? @map("lock_until")
-  settings            Json?
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  deletedAt           DateTime? @map("deleted_at")
-
-  studentParents StudentParent[]
-  passes         Pass[]
-  visitors       Visitor[]
-  visitRequests  VisitRequest[]
-
-  @@index([phone])
-  @@index([email])
-  @@map("parents")
-}
-
-// ==========================================
-// SESSION & SECURITY
-// ==========================================
-
-model UserSession {
-  id               String   @id @default(uuid()) @db.Uuid
-  userId           String   @map("user_id") @db.Uuid
-  refreshTokenHash String   @map("refresh_token_hash")
-  deviceId         String?  @map("device_id")
-  deviceName       String?  @map("device_name")
-  browser          String?
-  operatingSystem  String?  @map("operating_system")
-  ipAddress        String?  @map("ip_address")
-  userAgent        String?  @map("user_agent")
-  isActive         Boolean  @default(true) @map("is_active")
-  lastActivityAt   DateTime @default(now()) @map("last_activity_at")
-  expiresAt        DateTime @map("expires_at")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([deviceId])
-  @@index([isActive])
-  @@index([expiresAt])
-  @@map("user_sessions")
-}
-
-model AuditLog {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String?  @map("organization_id") @db.Uuid
-  userId         String?  @map("user_id") @db.Uuid
-  action         String   @db.VarChar(100)
-  module         String   @db.VarChar(100)
-  entityId       String?  @map("entity_id") @db.Uuid
-  oldData        Json?    @map("old_data")
-  newData        Json?    @map("new_data")
-  ipAddress      String?  @map("ip_address") @db.VarChar(50)
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId])
-  @@index([userId])
-  @@index([module])
-  @@index([entityId])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-// ==========================================
-// LINKING / JUNCTION TABLES
-// ==========================================
-
-model StudentParent {
-  id              String   @id @default(uuid()) @db.Uuid
-  studentId       String   @map("student_id") @db.Uuid
-  parentId        String   @map("parent_id") @db.Uuid
-  relationship    String   @db.VarChar(20)
-  defaultGuardian Boolean  @default(false) @map("default_guardian")
-  status          String   @default("active") @db.VarChar(20)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-
-  @@unique([studentId, parentId])
-  @@index([studentId])
-  @@index([parentId])
-  @@map("student_parents")
-}
-
-model StudentHostel {
-  id                   String              @id @default(uuid()) @db.Uuid
-  studentId            String              @map("student_id") @db.Uuid
-  organizationId       String              @map("organization_id") @db.Uuid
-  hostelId             String              @map("hostel_id") @db.Uuid
-  roomNumber           String              @map("room_number") @db.VarChar(50)
-  status               StudentHostelStatus
-  joinedAt             DateTime            @map("joined_at")
-  vacatedAt            DateTime?           @map("vacated_at")
-  allocatedById        String              @map("allocated_by") @db.Uuid
-  vacatedById          String?             @map("vacated_by") @db.Uuid
-  reason               String?             @db.Text
-  remarks              String?             @db.Text
-  previousAllocationId String?             @map("previous_allocation_id") @db.Uuid
-  createdAt            DateTime            @default(now()) @map("created_at")
-  updatedAt            DateTime            @updatedAt @map("updated_at")
-
-  student            Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  hostel             Hostel          @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  allocatedBy        User            @relation("AllocatedBy", fields: [allocatedById], references: [id])
-  vacatedBy          User?           @relation("VacatedBy", fields: [vacatedById], references: [id])
-  previousAllocation StudentHostel?  @relation("AllocationHistory", fields: [previousAllocationId], references: [id])
-  nextAllocations    StudentHostel[] @relation("AllocationHistory")
-
-  @@index([studentId])
-  @@index([hostelId])
-  @@index([status])
-  @@map("student_hostels")
-}
-
-// ==========================================
-// MENTOR ASSIGNMENT
-// ==========================================
-
-model MentorAssignment {
-  id             String                 @id @default(uuid()) @db.Uuid
-  organizationId String                 @map("organization_id") @db.Uuid
-  mentorId       String                 @map("mentor_id") @db.Uuid
-  batchId        String                 @map("batch_id") @db.Uuid
-  status         MentorAssignmentStatus
-  assignedById   String                 @map("assigned_by") @db.Uuid
-  assignedAt     DateTime               @map("assigned_at")
-  endedAt        DateTime?              @map("ended_at")
-  remarks        String?                @db.Text
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @updatedAt @map("updated_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  mentor       User         @relation("MentorUser", fields: [mentorId], references: [id], onDelete: Cascade)
-  batch        Batch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  assignedBy   User         @relation("AssignedBy", fields: [assignedById], references: [id])
-
-  @@index([mentorId])
-  @@index([batchId])
-  @@index([status])
-  @@map("mentor_assignments")
-}
-
-// ==========================================
-// ATTENDANCE
-// ==========================================
-
-model AttendanceWindow {
-  id             String                 @id @default(uuid()) @db.Uuid
-  hostelId       String                 @map("hostel_id") @db.Uuid
-  attendanceDate DateTime               @map("attendance_date") @db.Date
-  totalStudents  Int                    @default(0) @map("total_students")
-  scannedCount   Int                    @default(0) @map("scanned_count")
-  presentCount   Int                    @default(0) @map("present_count")
-  absentCount    Int                    @default(0) @map("absent_count")
-  onLeaveCount   Int                    @default(0) @map("on_leave_count")
-  status         AttendanceWindowStatus
-  startedById    String                 @map("started_by") @db.Uuid
-  completedById  String?                @map("completed_by") @db.Uuid
-  startedAt      DateTime?              @map("started_at")
-  completedAt    DateTime?              @map("completed_at")
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @updatedAt @map("updated_at")
-
-  hostel      Hostel             @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  startedBy   User               @relation("WindowStartedBy", fields: [startedById], references: [id])
-  completedBy User?              @relation("WindowCompletedBy", fields: [completedById], references: [id])
-  records     AttendanceRecord[]
-
-  @@unique([hostelId, attendanceDate])
-  @@index([hostelId])
-  @@index([attendanceDate])
-  @@map("attendance_windows")
-}
-
-model AttendanceRecord {
-  id                 String           @id @default(uuid()) @db.Uuid
-  attendanceWindowId String           @map("attendance_window_id") @db.Uuid
-  studentId          String           @map("student_id") @db.Uuid
-  hostelId           String           @map("hostel_id") @db.Uuid
-  scannedById        String           @map("scanned_by") @db.Uuid
-  scannedAt          DateTime?        @map("scanned_at")
-  status             AttendanceStatus
-  remarks            String?          @db.Text
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
-
-  window      AttendanceWindow       @relation(fields: [attendanceWindowId], references: [id], onDelete: Cascade)
-  student     Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  hostel      Hostel                 @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  scannedBy   User                   @relation("RecordScannedBy", fields: [scannedById], references: [id])
-  corrections AttendanceCorrection[]
-
-  @@unique([attendanceWindowId, studentId])
-  @@index([studentId])
-  @@index([attendanceWindowId])
-  @@map("attendance_records")
-}
-
-model AttendanceCorrection {
-  id                 String            @id @default(uuid()) @db.Uuid
-  attendanceRecordId String            @map("attendance_record_id") @db.Uuid
-  previousStatus     AttendanceStatus? @map("previous_status")
-  newStatus          AttendanceStatus? @map("new_status")
-  remarks            String?           @db.Text
-  correctedById      String            @map("corrected_by") @db.Uuid
-  correctedAt        DateTime?         @map("corrected_at")
-  createdAt          DateTime          @default(now()) @map("created_at")
-
-  record      AttendanceRecord @relation(fields: [attendanceRecordId], references: [id], onDelete: Cascade)
-  correctedBy User             @relation(fields: [correctedById], references: [id])
-
-  @@index([attendanceRecordId])
-  @@map("attendance_corrections")
-}
-
-// ==========================================
-// PASSES
-// ==========================================
-
-model Pass {
-  id               String           @id @default(uuid()) @db.Uuid
-  organizationId   String           @map("organization_id") @db.Uuid
-  hostelId         String           @map("hostel_id") @db.Uuid
-  studentId        String           @map("student_id") @db.Uuid
-  parentId         String           @map("parent_id") @db.Uuid
-  passType         PassType         @map("pass_type")
-  outPassCategory  OutPassCategory? @map("out_pass_category")
-  reason           String           @db.Text
-  fromDate         DateTime?        @map("from_date")
-  toDate           DateTime?        @map("to_date")
-  expectedReturnAt DateTime?        @map("expected_return_at")
-  status           PassStatus
-  createdById      String           @map("created_by") @db.Uuid
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  hostel       Hostel       @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  parent       Parent       @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  createdBy    User         @relation("PassCreator", fields: [createdById], references: [id])
-
-  approvals PassApproval[]
-  gateLogs  PassGateLog[]
-
-  @@index([studentId])
-  @@index([hostelId])
-  @@index([status])
-  @@map("passes")
-}
-
-model PassApproval {
-  id            String         @id @default(uuid()) @db.Uuid
-  passId        String         @map("pass_id") @db.Uuid
-  approvalLevel ApprovalLevel  @map("approval_level")
-  status        ApprovalStatus
-  actionById    String         @map("action_by") @db.Uuid
-  remarks       String?        @db.Text
-  actionAt      DateTime       @map("action_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-
-  pass     Pass @relation(fields: [passId], references: [id], onDelete: Cascade)
-  actionBy User @relation(fields: [actionById], references: [id])
-
-  @@index([passId])
-  @@map("pass_approvals")
-}
-
-model PassGateLog {
-  id               String        @id @default(uuid()) @db.Uuid
-  passId           String        @map("pass_id") @db.Uuid
-  studentId        String        @map("student_id") @db.Uuid
-  eventType        GateEventType @map("event_type")
-  eventTime        DateTime      @map("event_time")
-  recordedAt       DateTime      @map("recorded_at")
-  recordedById     String        @map("recorded_by") @db.Uuid
-  remarks          String?       @db.Text
-  isCorrected      Boolean       @default(false) @map("is_corrected")
-  correctedById    String?       @map("corrected_by") @db.Uuid
-  correctedAt      DateTime?     @map("corrected_at")
-  correctionReason String?       @map("correction_reason") @db.Text
-  createdAt        DateTime      @default(now()) @map("created_at")
-
-  pass        Pass    @relation(fields: [passId], references: [id], onDelete: Cascade)
-  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  recordedBy  User    @relation("GateLogRecorder", fields: [recordedById], references: [id])
-  correctedBy User?   @relation("GateLogCorrector", fields: [correctedById], references: [id])
-
-  @@index([passId])
-  @@index([studentId])
-  @@map("pass_gate_logs")
-}
-
-// ==========================================
-// COMPLAINTS
-// ==========================================
-
-model ComplaintCategory {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique @db.VarChar(255)
-  description String?   @db.Text
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-
-  complaints Complaint[]
-
-  @@map("complaint_categories")
-}
-
-model Complaint {
-  id              String          @id @default(uuid()) @db.Uuid
-  studentId       String          @map("student_id") @db.Uuid
-  hostelId        String          @map("hostel_id") @db.Uuid
-  organizationId  String          @map("organization_id") @db.Uuid
-  categoryId      String          @map("category_id") @db.Uuid
-  roomNo          String          @map("room_no") @db.VarChar(50)
-  subject         String          @db.VarChar(255)
-  description     String?         @db.Text
-  status          ComplaintStatus @default(PENDING)
-  priority        Priority        @default(MEDIUM)
-  assignedStaffId String?         @map("assigned_staff") @db.Uuid
-  materialsUsed   String?         @map("materials_used") @db.Text
-  resolutionNotes String?         @map("resolution_notes") @db.Text
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  deletedAt       DateTime?       @map("deleted_at")
-
-  student       Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  hostel        Hostel            @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  category      ComplaintCategory @relation(fields: [categoryId], references: [id])
-  assignedStaff User?             @relation("ComplaintAssignedStaff", fields: [assignedStaffId], references: [id], onDelete: SetNull)
-
-  @@index([studentId])
-  @@index([hostelId])
-  @@index([status])
-  @@map("complaints")
-}
-
-// ==========================================
-// ANNOUNCEMENTS
-// ==========================================
-
-model Announcement {
-  id          String             @id @default(uuid()) @db.Uuid
-  title       String             @db.VarChar(255)
-  message     String             @db.Text
-  createdById String             @map("created_by") @db.Uuid
-  creatorRole String             @map("creator_role") @db.VarChar(50)
-  targetType  TargetType         @map("target_type")
-  isActive    Boolean            @default(true) @map("is_active")
-  status      AnnouncementStatus @default(ACTIVE)
-  scheduledAt DateTime?          @map("scheduled_at")
-  expiresAt   DateTime?          @map("expires_at")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-  deletedAt   DateTime?          @map("deleted_at")
-
-  createdBy     User                       @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  organizations AnnouncementOrganization[]
-  hostels       AnnouncementHostel[]
-
-  @@index([createdById])
-  @@index([status])
-  @@index([targetType])
-  @@map("announcements")
-}
-
-model AnnouncementOrganization {
-  id             String @id @default(uuid()) @db.Uuid
-  announcementId String @map("announcement_id") @db.Uuid
-  organizationId String @map("organization_id") @db.Uuid
-
-  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@unique([announcementId, organizationId])
-  @@map("announcement_organizations")
-}
-
-model AnnouncementHostel {
-  id             String @id @default(uuid()) @db.Uuid
-  announcementId String @map("announcement_id") @db.Uuid
-  hostelId       String @map("hostel_id") @db.Uuid
-
-  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  hostel       Hostel       @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-
-  @@unique([announcementId, hostelId])
-  @@map("announcement_hostels")
-}
-
-// ==========================================
-// VISITOR MANAGEMENT
-// ==========================================
-
-model Visitor {
-  id            String        @id @default(uuid()) @db.Uuid
-  name          String        @db.VarChar(255)
-  phone         String        @unique @db.VarChar(20)
-  email         String?       @db.VarChar(255)
-  idProofType   IdProofType   @map("id_proof_type")
-  idProofNumber String        @map("id_proof_number") @db.VarChar(100)
-  address       String?       @db.Text
-  photoUrl      String?       @map("photo_url") @db.Text
-  status        VisitorStatus @default(ACTIVE)
-  createdById   String        @map("created_by") @db.Uuid
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  deletedAt     DateTime?     @map("deleted_at")
-
-  createdBy     Parent             @relation(fields: [createdById], references: [id])
-  changeLogs    VisitorChangeLog[]
-  visitRequests VisitRequest[]
-
-  @@index([phone])
-  @@index([status])
-  @@map("visitors")
-}
-
-model VisitorChangeLog {
-  id              String    @id @default(uuid()) @db.Uuid
-  visitorId       String    @map("visitor_id") @db.Uuid
-  action          String    @db.VarChar(50)
-  performedById   String    @map("performed_by") @db.Uuid
-  performedByRole String    @map("performed_by_role") @db.VarChar(20)
-  reason          String?   @db.Text
-  timestamp       DateTime?
-
-  visitor Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-
-  @@index([visitorId])
-  @@map("visitor_change_logs")
-}
-
-model VisitRequest {
-  id           String             @id @default(uuid()) @db.Uuid
-  visitorId    String             @map("visitor_id") @db.Uuid
-  parentId     String?            @map("parent_id") @db.Uuid
-  studentId    String             @map("student_id") @db.Uuid
-  relationship String             @db.VarChar(50)
-  purpose      String             @db.VarChar(255)
-  status       VisitRequestStatus @default(PENDING)
-  remarks      String?            @db.Text
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
-
-  visitor Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  parent  Parent? @relation(fields: [parentId], references: [id], onDelete: SetNull)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([visitorId])
-  @@index([studentId])
-  @@index([status])
-  @@map("visit_requests")
-}
-
-model VisitorVisit {
-  id               String      @id @default(uuid()) @db.Uuid
-  visitorRefId     String      @map("visitor_ref_id") @db.Uuid // Polymorphic (Parent or Visitor ID)
-  visitorRefType   String      @map("visitor_ref_type") @db.VarChar(20) // "Parent" | "Visitor"
-  hostelId         String      @map("hostel_id") @db.Uuid
-  purpose          String      @db.VarChar(255)
-  status           VisitStatus @default(CHECKED_IN)
-  checkInTime      DateTime    @map("check_in_time")
-  expectedExitTime DateTime    @map("expected_exit_time")
-  checkOutTime     DateTime?   @map("check_out_time")
-  checkedInById    String?     @map("checked_in_by") @db.Uuid
-  checkedOutById   String?     @map("checked_out_by") @db.Uuid
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
-
-  hostel        Hostel                @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  checkedInBy   User?                 @relation("CheckInStaff", fields: [checkedInById], references: [id])
-  checkedOutBy  User?                 @relation("CheckOutStaff", fields: [checkedOutById], references: [id])
-  visitStudents VisitorVisitStudent[]
-
-  @@index([visitorRefId, visitorRefType])
-  @@index([hostelId])
-  @@index([status])
-  @@map("visitor_visits")
-}
-
-model VisitorVisitStudent {
-  id             String @id @default(uuid()) @db.Uuid
-  visitorVisitId String @map("visitor_visit_id") @db.Uuid
-  studentId      String @map("student_id") @db.Uuid
-
-  visitorVisit VisitorVisit @relation(fields: [visitorVisitId], references: [id], onDelete: Cascade)
-  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([visitorVisitId, studentId])
-  @@map("visitor_visit_students")
-}
-
-// ==========================================
-// FURNITURE MANAGEMENT
-// ==========================================
-
-model FurnitureType {
-  id             String    @id @default(uuid()) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  hostelId       String    @map("hostel_id") @db.Uuid
-  name           String    @db.VarChar(100)
-  prefix         String    @db.VarChar(10)
-  description    String?   @db.VarChar(500)
-  isActive       Boolean   @default(true) @map("is_active")
-  createdById    String?   @map("created_by") @db.Uuid
-  updatedById    String?   @map("updated_by") @db.Uuid
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
-
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  hostel       Hostel           @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  createdBy    User?            @relation("FurnitureTypeCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy    User?            @relation("FurnitureTypeUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
-  assets       FurnitureAsset[]
-
-  @@index([hostelId])
-  @@map("furniture_types")
-}
-
-model FurnitureAsset {
-  id              String          @id @default(uuid()) @db.Uuid
-  furnitureId     String          @unique @map("furniture_id") @db.VarChar(50) // e.g. CHR-001
-  furnitureTypeId String          @map("furniture_type_id") @db.Uuid
-  studentId       String?         @map("student_id") @db.Uuid
-  status          FurnitureStatus @default(AVAILABLE)
-  remarks         String?         @db.Text
-  createdById     String?         @map("created_by") @db.Uuid
-  updatedById     String?         @map("updated_by") @db.Uuid
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  deletedAt       DateTime?       @map("deleted_at")
-
-  furnitureType FurnitureType           @relation(fields: [furnitureTypeId], references: [id], onDelete: Cascade)
-  student       Student?                @relation(fields: [studentId], references: [id], onDelete: SetNull)
-  createdBy     User?                   @relation("FurnitureAssetCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy     User?                   @relation("FurnitureAssetUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
-  histories     FurnitureAssetHistory[]
-
-  @@index([furnitureTypeId])
-  @@index([studentId])
-  @@index([status])
-  @@map("furniture_assets")
-}
-
-model FurnitureAssetHistory {
-  id               String           @id @default(uuid()) @db.Uuid
-  furnitureAssetId String           @map("furniture_asset_id") @db.Uuid
-  action           String           @db.VarChar(50)
-  previousStatus   FurnitureStatus? @map("previous_status")
-  currentStatus    FurnitureStatus? @map("current_status")
-  performedById    String?          @map("performed_by") @db.Uuid
-  performedByRole  String?          @map("performed_by_role") @db.VarChar(50)
-  studentId        String?          @map("student_id") @db.Uuid
-  remarks          String?          @db.Text
-  metadata         Json?
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-
-  asset       FurnitureAsset @relation(fields: [furnitureAssetId], references: [id], onDelete: Cascade)
-  performedBy User?          @relation(fields: [performedById], references: [id], onDelete: SetNull)
-  student     Student?       @relation(fields: [studentId], references: [id], onDelete: SetNull)
-
-  @@index([furnitureAssetId])
-  @@map("furniture_asset_histories")
-}
-
-// ==========================================
-// NOTIFICATIONS & PUSH
-// ==========================================
-
-model Notification {
-  id                    String               @id @default(uuid()) @db.Uuid
-  recipientId           String               @map("recipient_id") @db.Uuid
-  recipientModel        String               @map("recipient_model") @db.VarChar(20)
-  recipientSnapshotName String?              @map("recipient_snapshot_name") @db.VarChar(255)
-  recipientSnapshotRole String?              @map("recipient_snapshot_role") @db.VarChar(50)
-  senderId              String?              @map("sender_id") @db.Uuid
-  senderModel           String?              @map("sender_model") @db.VarChar(20)
-  senderSnapshotName    String?              @map("sender_snapshot_name") @db.VarChar(255)
-  senderSnapshotRole    String?              @map("sender_snapshot_role") @db.VarChar(50)
-  eventType             String               @map("event_type") @db.VarChar(100)
-  eventCategory         String               @map("event_category") @db.VarChar(100)
-  eventPriority         NotificationPriority @default(NORMAL) @map("event_priority")
-  eventTypeLabel        String               @map("event_type_label") @db.VarChar(100)
-  title                 String               @db.VarChar(255)
-  message               String               @db.Text
-  link                  String?              @db.Text
-  type                  NotificationType     @default(INFO)
-  isRead                Boolean              @default(false) @map("is_read")
-  metadata              Json?
-  
-  // Refactored Delivery Fields (Replaces Json? deliveryInApp)
-  deliveryInAppStatus   NotificationStatus?  @map("delivery_in_app_status")
-  deliveryInAppAttempts Int                  @default(0) @map("delivery_in_app_attempts")
-  deliveryInAppSentAt   DateTime?            @map("delivery_in_app_sent_at")
-  deliveryInAppReadAt   DateTime?            @map("delivery_in_app_read_at")
-  
-  deliveryPushStatus    NotificationStatus?  @map("delivery_push_status")
-  deliveryPushAttempts  Int                  @default(0) @map("delivery_push_attempts")
-  deliveryPushSentAt    DateTime?            @map("delivery_push_sent_at")
-  deliveryPushReadAt    DateTime?            @map("delivery_push_read_at")
-
-  deliveryEmailStatus   NotificationStatus?  @map("delivery_email_status")
-  deliveryEmailAttempts Int                  @default(0) @map("delivery_email_attempts")
-  deliveryEmailSentAt   DateTime?            @map("delivery_email_sent_at")
-  deliveryEmailReadAt   DateTime?            @map("delivery_email_read_at")
-
-  createdAt             DateTime             @default(now()) @map("created_at")
-  updatedAt             DateTime             @updatedAt @map("updated_at")
-  deletedAt             DateTime?            @map("deleted_at")
-
-  @@index([recipientId, recipientModel, deletedAt])
-  @@index([recipientId, recipientModel, isRead, deletedAt])
-  @@index([createdAt])
-  @@map("notifications")
-}
-
-model PushSubscription {
-  id             String    @id @default(uuid()) @db.Uuid
-  recipientId    String    @map("recipient_id") @db.Uuid
-  recipientModel String    @map("recipient_model") @db.VarChar(20)
-  endpoint       String    @unique @db.Text
-  keyP256dh      String    @map("key_p256dh") @db.Text
-  keyAuth        String    @map("key_auth") @db.Text
-  isActive       Boolean   @default(true) @map("is_active")
-  inactiveAt     DateTime? @map("inactive_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-
-  @@index([recipientId, recipientModel])
-  @@map("push_subscriptions")
-}
-
-// ==========================================
-// AUTH / UTILITY TABLES
-// ==========================================
-
-model Otp {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String   @db.VarChar(255)
-  otp       String   @db.VarChar(10)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([email])
-  @@map("otps")
-}
-
-model PasswordRequest {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  newPassword String   @map("new_password") @db.Text
-  status      String   @default("pending") @db.VarChar(20)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("password_requests")
-}
-
-// ==========================================
-// AUDIT / ACTIVITY LOGS
-// ==========================================
-
-model ActivityLog {
-  id         String       @id @default(uuid()) @db.Uuid
-  action     String       @db.VarChar(100)
-  entityType String       @map("entity_type") @db.VarChar(50)
-  entityId   String?      @map("entity_id") @db.Uuid
-  userId     String       @map("user_id") @db.Uuid
-  userRole   String       @map("user_role") @db.VarChar(50)
-  details    String       @db.Text
-  status     ActionStatus @default(SUCCESS)
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([entityType, entityId])
-  @@index([userId])
-  @@map("activity_logs")
 }
