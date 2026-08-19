@@ -1,7 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import prisma from "../../config/prisma.js";
-import { createAttendanceWindowDb } from "./attendance.service.js";
+import { prisma } from "../../config/prisma.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -22,7 +22,7 @@ const getScope = async (req) => {
       },
       select: { id: true }
     });
-    
+
     if (hostel) {
       scope.hostelId = hostel.id;
     }
@@ -37,7 +37,7 @@ const getScope = async (req) => {
 
     if (activeAssignments.length > 0) {
       const batchIds = activeAssignments.map(({ batchId }) => batchId);
-      
+
       const students = await prisma.studentHostel.findMany({
         where: {
           student: { batchId: { in: batchIds } },
@@ -45,7 +45,7 @@ const getScope = async (req) => {
         },
         select: { hostelId: true }
       });
-      
+
       const hostelIds = [...new Set(students.map(s => s.hostelId).filter(Boolean))];
       scope.hostelIds = hostelIds;
     } else {
@@ -88,4 +88,10 @@ export const createAttendanceWindow = asyncHandler(async (req, res) => {
     "Attendance window created successfully",
     attendanceWindow
   );
+});
+
+export const getAttendanceWindows = asyncHandler(async (req, res) => {
+  const scope = await getScope(req);
+  const result = await getAttendanceWindowsDb(req.query, scope);
+  return sendSuccess(res, 200, "Attendance windows fetched successfully", result);
 });
