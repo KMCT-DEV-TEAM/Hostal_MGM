@@ -2,7 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
 import jwt from "jsonwebtoken";
-import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow } from "./attendance.service.js";
+import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb } from "./attendance.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
@@ -193,4 +193,39 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, 200, "Attendance window completed successfully", window);
+});
+
+export const correctAttendance = asyncHandler(async (req, res) => {
+  const { id: windowId, studentId } = req.params;
+  const { status, remarks } = req.body;
+  const scope = await getScope(req);
+
+  if (!scope.hostelId) {
+    return sendError(res, 403, "No active hostel assignment found for this warden.");
+  }
+
+  try {
+    const result = await correctAttendanceDb(
+      windowId,
+      studentId,
+      scope.userId,
+      scope.hostelId,
+      { status, remarks }
+    );
+
+    await createLogDb({
+      action: "Manual Attendance Correction",
+      entityType: "Attendance",
+      entityId: windowId,
+      user: req.user.id,
+      userRole: req.user.role,
+      details: `Warden manually corrected attendance for student ${studentId} to status: ${status}. Remarks: ${remarks || 'N/A'}`,
+      status: "success"
+    });
+
+    return sendSuccess(res, 200, "Attendance corrected successfully.", result);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return sendError(res, code, error.message);
+  }
 });

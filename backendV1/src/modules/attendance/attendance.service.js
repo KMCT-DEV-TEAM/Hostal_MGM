@@ -534,3 +534,205 @@ export const closeAttendanceWindow = async (windowId, completedBy) => {
     completedAt: updatedWindow.completedAt
   };
 };
+
+const recalculateWindowStats = async (windowId, tx) => {
+  const db = tx || prisma;
+  
+  const records = await db.attendanceRecord.groupBy({
+    by: ['status'],
+    where: { attendanceWindowId: windowId },
+    _count: { status: true }
+  });
+
+  let presentCount = 0;
+  let absentCount = 0;
+  let onLeaveCount = 0;
+
+  for (const record of records) {
+    if (record.status === "PRESENT") presentCount = record._count.status;
+    if (record.status === "ABSENT") absentCount = record._count.status;
+    if (record.status === "ON_LEAVE") onLeaveCount = record._count.status;
+  }
+
+  const scannedCount = presentCount + absentCount + onLeaveCount;
+
+  await db.attendanceWindow.update({
+    where: { id: windowId },
+    data: { presentCount, absentCount, onLeaveCount, scannedCount }
+  });
+
+  return { presentCount, absentCount, onLeaveCount, scannedCount };
+};
+
+export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenHostelId, { status, remarks }) => {
+  return await prisma.$transaction(async (tx) => {
+    const window = await tx.attendanceWindow.findUnique({
+      where: { id: windowId }
+    });
+
+    if (!window) {
+      const err = new Error("Attendance window not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (window.hostelId !== wardenHostelId) {
+      const err = new Error("You are not allowed to modify this attendance window.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    if (window.status !== "OPEN") {
+      const err = new Error("Attendance window has already been completed.");
+      err.statusCode = 422;
+      throw err;
+    }
+
+    const student = await tx.student.findFirst({
+      where: {
+        id: studentId,
+        isActive: true,
+        studentHostels: { some: { hostelId: wardenHostelId, status: "active" } }
+      },
+      select: { id: true, studentCode: true, fullName: true }
+    });
+
+    if (!student) {
+      const err = new Error("Student is inactive, does not exist, or does not belong to this hostel.");
+      err.statusCode = 422;
+      throw err;
+    }
+
+    const ALLOWED_STATUSES = ["present", "absent", "on_leave"];
+    if (!ALLOWED_STATUSES.includes(status)) {
+      const err = new Error(`Invalid status. Must be one of: ${ALLOWED_STATUSES.join(", ")}.`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const prismaStatus = status.toUpperCase();
+
+    const existingRecord = await tx.attendanceRecord.findFirst({
+      where: { attendanceWindowId: windowId, studentId: student.id },
+      include: { corrections: true }
+    });
+
+    const currentStatus = existingRecord ? existingRecord.status.toLowerCase() : null;
+
+    if (currentStatus === status) {
+      const label = status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
+      const err = new Error(`Attendance is already marked as ${label}.`);
+      err.statusCode = 409;
+      throw err;
+    }
+
+    if (!existingRecord && !["present", "absent"].includes(status)) {
+      const err = new Error("Cannot create an attendance record with this status. Only 'present' or 'absent' are allowed for new records.");
+      err.statusCode = 422;
+      throw err;
+    }
+
+    const remarksRequired =
+      (currentStatus === "present" && status === "absent") ||
+      (currentStatus === "on_leave" && status === "present") ||
+      (currentStatus === "present" && status === "on_leave");
+
+    if (remarksRequired) {
+      if (!remarks || remarks.trim().length < 5) {
+        const err = new Error("Remarks are required for this status change (minimum 5 characters).");
+        err.statusCode = 400;
+        throw err;
+      }
+      if (remarks.trim().length > 300) {
+        const err = new Error("Remarks must not exceed 300 characters.");
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
+    if (currentStatus === "present" && status === "on_leave") {
+      const activePass = await tx.pass.findFirst({
+        where: {
+          studentId,
+          status: "APPROVED",
+          gateLogs: {
+            some: { eventType: "LEFT" },
+            none: { eventType: "RETURNED" }
+          }
+        }
+      });
+
+      if (!activePass) {
+        const err = new Error("Student does not have an active approved leave.");
+        err.statusCode = 422;
+        throw err;
+      }
+    }
+
+    let updatedRecord;
+
+    if (existingRecord) {
+      updatedRecord = await tx.attendanceRecord.update({
+        where: { id: existingRecord.id },
+        data: {
+          status: prismaStatus,
+          remarks: remarks ? remarks.trim() : existingRecord.remarks,
+          corrections: {
+            create: {
+              previousStatus: existingRecord.status,
+              newStatus: prismaStatus,
+              remarks: remarks ? remarks.trim() : null,
+              correctedById: wardenId,
+              correctedAt: new Date()
+            }
+          }
+        },
+        include: { corrections: true }
+      });
+    } else {
+      updatedRecord = await tx.attendanceRecord.create({
+        data: {
+          attendanceWindowId: windowId,
+          studentId,
+          hostelId: wardenHostelId,
+          scannedById: wardenId,
+          status: prismaStatus,
+          remarks: remarks ? remarks.trim() : null,
+          corrections: {
+            create: {
+              previousStatus: null,
+              newStatus: prismaStatus,
+              remarks: remarks ? remarks.trim() : null,
+              correctedById: wardenId,
+              correctedAt: new Date()
+            }
+          }
+        },
+        include: { corrections: true }
+      });
+    }
+
+    const updatedCounts = await recalculateWindowStats(windowId, tx);
+
+    return {
+      record: {
+        _id: updatedRecord.id,
+        status: updatedRecord.status.toLowerCase(),
+        remarks: updatedRecord.remarks,
+        correctionHistory: updatedRecord.corrections.map(c => ({
+          previousStatus: c.previousStatus ? c.previousStatus.toLowerCase() : null,
+          newStatus: c.newStatus.toLowerCase(),
+          remarks: c.remarks,
+          wardenId: c.correctedById,
+          changedAt: c.correctedAt
+        }))
+      },
+      student: {
+        _id: student.id,
+        studentId: student.studentCode,
+        name: student.fullName
+      },
+      windowStats: updatedCounts
+    };
+  });
+};
