@@ -8,7 +8,8 @@ import {
   toggleParentStatusDb,
   setDefaultGuardianDb,
   getParentsService,
-  exportParentsService
+  exportParentsService,
+  getParentStudentsService
 } from "./parent.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { checkStudentAccess, checkParentAccess } from "./parent.scope.js";
@@ -429,4 +430,21 @@ export const exportParentsBySuperAdmin = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, 200, "Parents exported successfully", result);
+});
+
+export const getParentStudents = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  // Enforce parent access (handled by roleMiddleware, but keeping for exact 1:1 legacy logic parity)
+  if (req.user.role !== "parent") {
+    return sendError(res, 403, "Access denied. Only parents can access this resource.");
+  }
+
+  const students = await getParentStudentsService(parentId, req.query);
+  
+  return sendSuccess(
+    res,
+    200,
+    "Students retrieved successfully.",
+    students
+  );
 });

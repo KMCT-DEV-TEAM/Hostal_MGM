@@ -566,3 +566,59 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Parent_ListResponse/properties/data/properties/parents/items'
+
+  /parents/students:
+    get:
+      tags:
+        - Parents
+      summary: Get parent's linked students
+      description: Returns a list of active students linked to the authenticated parent.
+      operationId: getParentStudents
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: studentStatus
+          schema:
+            type: string
+            enum: [active, inactive]
+        - in: query
+          name: hostelStatus
+          schema:
+            type: string
+            enum: [active, inactive]
+        - in: query
+          name: hostelId
+          schema:
+            type: string
+        - in: query
+          name: courseId
+          schema:
+            type: string
+        - in: query
+          name: departmentId
+          schema:
+            type: string
+        - in: query
+          name: batchId
+          schema:
+            type: string
+        - in: query
+          name: organizationId
+          schema:
+            type: string
+        - in: query
+          name: studentId
+          schema:
+            type: string
+        - in: query
+          name: studentName
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of linked students
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_StudentResponse'

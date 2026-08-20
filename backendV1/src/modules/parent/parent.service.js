@@ -531,3 +531,103 @@ export const exportParentsService = async ({ organizationId, query }) => {
 
   return { parents };
 };
+
+export const getParentStudentsService = async (parentId, filters = {}) => {
+  const studentFilters = {};
+
+  if (filters.studentStatus) {
+    if (!["active", "inactive"].includes(filters.studentStatus)) {
+      throw new Error("Invalid studentStatus. Allowed values: active, inactive");
+    }
+    studentFilters.isActive = filters.studentStatus === "active";
+  }
+
+  // Setup hostel filters for Prisma's StudentHostel relation
+  const hostelFilters = {};
+  let hasHostelFilter = false;
+
+  if (filters.hostelStatus) {
+    if (!["active", "inactive"].includes(filters.hostelStatus)) {
+      throw new Error("Invalid hostelStatus. Allowed values: active, inactive");
+    }
+    // Only "active" means they currently reside there. If "inactive", it means no active allocation.
+    if (filters.hostelStatus === "active") {
+      hostelFilters.status = "active";
+      hasHostelFilter = true;
+    } else {
+      // In Prisma, we might handle "inactive" by enforcing they don't have an active StudentHostel.
+      studentFilters.studentHostels = { none: { status: "active" } };
+    }
+  }
+
+  if (filters.hostelId) {
+    hostelFilters.hostelId = filters.hostelId;
+    hostelFilters.status = "active";
+    hasHostelFilter = true;
+  }
+
+  if (hasHostelFilter) {
+    studentFilters.studentHostels = { some: hostelFilters };
+  }
+
+  if (filters.courseId) studentFilters.courseId = filters.courseId;
+  if (filters.departmentId) studentFilters.departmentId = filters.departmentId;
+  if (filters.batchId) studentFilters.batchId = filters.batchId;
+  if (filters.organizationId) studentFilters.organizationId = filters.organizationId;
+
+  if (filters.studentId) {
+    // Attempting to maintain the fallback of 'admissionNo' vs UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(filters.studentId)) {
+      studentFilters.id = filters.studentId;
+    } else {
+      studentFilters.admissionNo = filters.studentId;
+    }
+  }
+
+  if (filters.studentName) {
+    studentFilters.name = { contains: filters.studentName, mode: "insensitive" };
+  }
+
+  const links = await prisma.studentParent.findMany({
+    where: {
+      parentId: parentId,
+      status: "active",
+      student: studentFilters
+    },
+    include: {
+      student: {
+        include: {
+          course: true,
+          department: true,
+          batch: true,
+          studentHostels: {
+            where: { status: "active" },
+            include: { hostel: true }
+          }
+        }
+      }
+    },
+    orderBy: {
+      student: { name: "asc" }
+    }
+  });
+
+  return links.map(link => {
+    const activeHostel = link.student.studentHostels[0];
+    return {
+      _id: link.student.id,
+      studentId: link.student.admissionNo,
+      name: link.student.name,
+      roomNumber: activeHostel?.roomNumber || null,
+      hostelId: activeHostel?.hostel.id || null,
+      hostelName: activeHostel?.hostel.name || null,
+      courseId: link.student.course?.id || null,
+      courseName: link.student.course?.name || null,
+      departmentId: link.student.department?.id || null,
+      departmentName: link.student.department?.name || null,
+      batchId: link.student.batch?.id || null,
+      batchName: link.student.batch?.name || null
+    };
+  });
+};

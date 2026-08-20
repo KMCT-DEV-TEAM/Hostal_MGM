@@ -20,7 +20,8 @@ import {
   getParentsByAdmin,
   getParentsBySuperAdmin,
   exportParentsByAdmin,
-  exportParentsBySuperAdmin
+  exportParentsBySuperAdmin,
+  getParentStudents
 } from "./parent.controller.js";
 import { toggleParentStatusDb } from "./parent.service.js";
 
@@ -31,6 +32,13 @@ router.get(
   authMiddleware,
   roleMiddleware(ROLES.ADMIN),
   getParentsByAdmin
+);
+
+router.get(
+  "/students",
+  authMiddleware,
+  roleMiddleware(ROLES.PARENT),
+  getParentStudents
 );
 
 router.get(
