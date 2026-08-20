@@ -3,14 +3,15 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import * as furnitureService from "./furniture.service.js";
 import { prisma } from "../../config/prisma.js";
 import { createLogDb } from "../logs/log.service.js";
+import { ROLES } from "../../constants/roles.js";
 
 const resolveUserScope = async (user) => {
   let organizationId = null;
   let hostelId = null;
 
-  if (user.role === "admin" && user.organization) {
+  if (user.role === ROLES.ADMIN && user.organization) {
     organizationId = user.organization;
-  } else if (user.role === "warden") {
+  } else if (user.role === ROLES.WARDEN) {
     const wardenHostel = await prisma.hostelWarden.findFirst({
       where: { userId: user.id }
     });
@@ -116,9 +117,9 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
   const matchQuery = {};
   const scope = await resolveUserScope(req.user);
 
-  if (req.user.role === "admin") {
+  if (req.user.role === ROLES.ADMIN) {
     matchQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === ROLES.WARDEN) {
     matchQuery.hostelId = scope.hostelId;
   }
 
@@ -132,9 +133,9 @@ export const getAssetsDashboardSummary = asyncHandler(async (req, res) => {
   const matchQuery = {};
   const scope = await resolveUserScope(req.user);
 
-  if (req.user.role === "admin") {
+  if (req.user.role === ROLES.ADMIN) {
     matchQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === ROLES.WARDEN) {
     matchQuery.hostelId = scope.hostelId;
   }
 
@@ -147,9 +148,9 @@ export const getFurnitureTypes = asyncHandler(async (req, res) => {
   const matchQuery = {};
   const scope = await resolveUserScope(req.user);
 
-  if (req.user.role === "admin") {
+  if (req.user.role === ROLES.ADMIN) {
     matchQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === ROLES.WARDEN) {
     matchQuery.hostelId = scope.hostelId;
   }
 
@@ -192,11 +193,11 @@ export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
 
   const scope = await resolveUserScope(req.user);
 
-  if (req.user.role === "admin" && type.organizationId !== scope.organizationId) {
+  if (req.user.role === ROLES.ADMIN && type.organizationId !== scope.organizationId) {
     return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
   }
 
-  if (req.user.role === "warden" && type.hostelId !== scope.hostelId) {
+  if (req.user.role === ROLES.WARDEN && type.hostelId !== scope.hostelId) {
     return sendError(res, 403, "Access denied. Furniture Type does not belong to your hostel.");
   }
 
@@ -233,7 +234,7 @@ export const updateFurnitureType = asyncHandler(async (req, res) => {
 
   const scope = await resolveUserScope(req.user);
 
-  if (req.user.role === "admin" && typeToUpdate.organizationId !== scope.organizationId) {
+  if (req.user.role === ROLES.ADMIN && typeToUpdate.organizationId !== scope.organizationId) {
     return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
   }
 
@@ -271,7 +272,7 @@ export const deleteFurnitureType = asyncHandler(async (req, res) => {
 
   const scope = await resolveUserScope(req.user);
 
-  if (req.user.role === "admin" && typeToDelete.organizationId !== scope.organizationId) {
+  if (req.user.role === ROLES.ADMIN && typeToDelete.organizationId !== scope.organizationId) {
     return sendError(res, 403, "Access denied. Furniture Type does not belong to your organization.");
   }
 
@@ -364,9 +365,9 @@ export const getAllHostelFurnitureAssets = asyncHandler(async (req, res) => {
   const scope = await resolveUserScope(req.user);
 
   const typeQuery = {};
-  if (req.user.role === "admin") {
+  if (req.user.role === ROLES.ADMIN) {
     typeQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === ROLES.WARDEN) {
     typeQuery.hostelId = scope.hostelId;
   }
 
@@ -415,9 +416,9 @@ export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
   const search = req.query.search;
 
   const query = { isActive: true };
-  if (req.user.role === "admin") {
+  if (req.user.role === ROLES.ADMIN) {
     query.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === ROLES.WARDEN) {
     query.hostelId = scope.hostelId;
   }
   if (req.query.hostelId) {
@@ -459,9 +460,9 @@ export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => 
   const scope = await resolveUserScope(req.user);
 
   const typeQuery = { id: typeId, isActive: true };
-  if (req.user.role === "admin") {
+  if (req.user.role === ROLES.ADMIN) {
     typeQuery.organizationId = scope.organizationId;
-  } else if (req.user.role === "warden") {
+  } else if (req.user.role === ROLES.WARDEN) {
     typeQuery.hostelId = scope.hostelId;
   }
 

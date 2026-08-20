@@ -1,0 +1,14 @@
+openapi: 3.1.0
+info:
+  title: Hostel Management System API
+  version: 1.0.0
+  description: API Documentation for the Modular Monolith Hostel Management System.
+tags:
+  - name: Global Components
+    description: Shared schemas, responses, and errors.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

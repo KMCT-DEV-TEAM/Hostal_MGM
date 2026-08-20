@@ -1,0 +1,63 @@
+components:
+  schemas:
+    Shared_StandardErrorResponse:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+        - traceId
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the problem type.
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+        status:
+          type: integer
+          description: The HTTP status code.
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence of the problem.
+        traceId:
+          type: string
+          format: uuid
+          description: Unique correlation ID for tracing.
+
+    Shared_ValidationErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/Shared_StandardErrorResponse'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                $ref: '#/components/schemas/Shared_ValidationErrorDetail'
+    
+    Shared_ValidationErrorDetail:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    Shared_ConflictErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/Shared_StandardErrorResponse'
+        - type: object
+          properties:
+            errorCode:
+              type: string
+              description: UPPER_SNAKE_CASE business logic error code.

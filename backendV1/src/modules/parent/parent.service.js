@@ -124,3 +124,108 @@ export const createParentDb = async (data) => {
   };
 };
 
+export const updateParentDb = async (parentProfileId, data) => {
+  const parentProfile = await prisma.parent.findUnique({ where: { id: parentProfileId }});
+  if (!parentProfile) return null;
+
+  if (data.email && data.email !== parentProfile.email) {
+    const existing = await prisma.parent.findFirst({ where: { email: data.email, id: { not: parentProfileId } } });
+    if (existing) {
+      throw new Error("Parent email already exists");
+    }
+  }
+
+  if (data.phone && data.phone !== parentProfile.phone) {
+    const existing = await prisma.parent.findFirst({ where: { phone: data.phone, id: { not: parentProfileId } } });
+    if (existing) {
+      throw new Error("Parent phone already exists");
+    }
+  }
+
+  const parentData = {};
+  if (data.email !== undefined) parentData.email = data.email;
+  if (data.parentName !== undefined) parentData.parentName = data.parentName;
+  if (data.phone !== undefined) parentData.phone = data.phone;
+  // if (data.address !== undefined) parentData.address = data.address; // Schema has no address for Parent
+
+  if (Object.keys(parentData).length > 0) {
+    await prisma.parent.update({ where: { id: parentProfileId }, data: parentData });
+  }
+
+  // Handle M:N relationship fields using a transaction
+  if (data.relationship !== undefined || data.defaultGuardian !== undefined) {
+    await prisma.$transaction(async (tx) => {
+      const links = await tx.studentParent.findMany({ where: { parentId: parentProfileId } });
+
+      for (const link of links) {
+        const linkData = {};
+        if (data.relationship !== undefined) {
+          linkData.relationship = data.relationship;
+        }
+
+        if (data.defaultGuardian === true) {
+          await tx.studentParent.updateMany({
+            where: { studentId: link.studentId, parentId: { not: parentProfileId } },
+            data: { defaultGuardian: false }
+          });
+          linkData.defaultGuardian = true;
+        } else if (data.defaultGuardian === false) {
+          const linkCount = await tx.studentParent.count({ where: { studentId: link.studentId } });
+          if (linkCount <= 1) {
+            linkData.defaultGuardian = true; // Must have at least one
+          } else {
+            linkData.defaultGuardian = false;
+            const otherDefault = await tx.studentParent.findFirst({
+              where: { studentId: link.studentId, parentId: { not: parentProfileId }, defaultGuardian: true }
+            });
+            if (!otherDefault) {
+              const nextParent = await tx.studentParent.findFirst({
+                where: { studentId: link.studentId, parentId: { not: parentProfileId } }
+              });
+              if (nextParent) {
+                await tx.studentParent.update({
+                  where: { id: nextParent.id },
+                  data: { defaultGuardian: true }
+                });
+              }
+            }
+          }
+        }
+        
+        if (Object.keys(linkData).length > 0) {
+          await tx.studentParent.update({
+             where: { id: link.id },
+             data: linkData
+          });
+        }
+      }
+    });
+  }
+
+  const updatedParent = await prisma.parent.findUnique({ where: { id: parentProfileId }});
+  const mockLink = await prisma.studentParent.findFirst({ where: { parentId: parentProfileId } });
+  
+  const responseObj = { ...updatedParent, _id: updatedParent.id };
+  responseObj.studentId = mockLink ? mockLink.studentId : null;
+  responseObj.relationship = mockLink ? mockLink.relationship : (data.relationship || "guardian");
+  responseObj.defaultGuardian = mockLink ? mockLink.defaultGuardian : (data.defaultGuardian || false);
+
+  return { parentProfile: responseObj };
+};
+
+export const changeParentEmailDb = async (parentId, newEmail) => {
+  const existingParent = await prisma.parent.findFirst({
+    where: { email: newEmail, id: { not: parentId } }
+  });
+
+  if (existingParent) {
+    throw new Error("Parent email already exists");
+  }
+
+  const parent = await prisma.parent.update({
+    where: { id: parentId },
+    data: { email: newEmail, isVerified: true }
+  });
+
+  return parent;
+};

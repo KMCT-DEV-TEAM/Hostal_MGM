@@ -1,0 +1,43 @@
+components:
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: The page number requested.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      description: The maximum number of items to return per page.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    Shared_OffsetPaginationMeta:
+      type: object
+      required:
+        - totalItems
+        - totalPages
+        - currentPage
+        - itemsPerPage
+      properties:
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+        currentPage:
+          type: integer
+        itemsPerPage:
+          type: integer
+        hasNextPage:
+          type: boolean
+        hasPrevPage:
+          type: boolean

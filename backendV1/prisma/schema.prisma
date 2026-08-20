@@ -179,6 +179,18 @@ enum ActionStatus {
   WARNING
 }
 
+enum ParentRelationship {
+  father
+  mother
+  guardian
+  other
+}
+
+enum ParentStatus {
+  active
+  inactive
+}
+
 // ==========================================
 // CORE / MASTER TABLES
 // ==========================================
@@ -438,10 +450,10 @@ model Student {
 
 model Parent {
   id                  String          @id @default(uuid()) @db.Uuid
-  full_name           String          @db.VarChar(255)
+  parentName          String          @map("parent_name") @db.VarChar(255)
   phone               String          @unique @db.VarChar(20)
   email               String?         @unique @db.VarChar(255)
-  passwordHash        String          @map("password_hash")
+  password            String
   tempPassword        Boolean         @default(false) @map("temp_password")
   isVerified          Boolean         @default(false) @map("is_verified")
   isActive            Boolean         @default(true) @map("is_active")
@@ -511,9 +523,9 @@ model StudentParent {
   id              String   @id @default(uuid()) @db.Uuid
   studentId       String   @map("student_id") @db.Uuid
   parentId        String   @map("parent_id") @db.Uuid
-  relationship    String   @db.VarChar(20)
+  relationship    ParentRelationship @default(guardian)
   defaultGuardian Boolean  @default(false) @map("default_guardian")
-  status          String   @default("active") @db.VarChar(20)
+  status          ParentStatus @default(active)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   parent          Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
