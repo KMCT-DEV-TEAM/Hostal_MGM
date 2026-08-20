@@ -167,11 +167,11 @@ const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loading
                                 </div>
                             </div>
                             {announcement.status && (
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${announcement.status === 'active' ? 'bg-green-100 text-green-700' :
-                                    announcement.status === 'scheduled' ? 'bg-orange-100 text-orange-700' :
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${announcement.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-700' :
+                                    announcement.status.toLowerCase() === 'scheduled' ? 'bg-orange-100 text-orange-700' :
                                         'bg-gray-100 text-gray-700'
                                     }`}>
-                                    {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
+                                    {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1).toLowerCase()}
                                 </span>
                             )}
                         </div>
