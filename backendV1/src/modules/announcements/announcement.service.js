@@ -6,7 +6,7 @@ export const triggerAnnouncementNotifications = async (announcementId) => {
         const announcement = await prisma.announcement.findUnique({
             where: { id: announcementId },
             include: {
-                createdBy: { select: { id: true, fullName: true, role: true } },
+                createdBy: { select: { id: true, name: true, role: true } },
                 organizations: true,
                 hostels: true
             }
@@ -17,7 +17,7 @@ export const triggerAnnouncementNotifications = async (announcementId) => {
         const sender = { 
             id: announcement.createdBy.id, 
             model: 'User', 
-            snapshot: { name: announcement.createdBy.fullName, role: announcement.createdBy.role } 
+            snapshot: { name: announcement.createdBy.name, role: announcement.createdBy.role } 
         };
 
         const { title, message, targetType, organizations, hostels } = announcement;
