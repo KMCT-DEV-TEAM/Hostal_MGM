@@ -286,3 +286,283 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Shared_ErrorResponse'
+
+  /parents/admin:
+    get:
+      tags:
+        - Parents
+      summary: Get parents (Admin)
+      description: Fetches a paginated list of parents for the admin's organization. Supports search and filtering.
+      operationId: getParentsByAdmin
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of records per page
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term for parent name, email, phone, relationship, student name, student email, or admissionNo
+        - in: query
+          name: relationship
+          schema:
+            type: string
+          description: Filter by relationship (e.g., father, mother, guardian, other)
+        - in: query
+          name: defaultGuardian
+          schema:
+            type: boolean
+          description: Filter by default guardian status
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+          description: Filter by parent active status
+      responses:
+        '200':
+          description: Parents fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_ListResponse'
+
+  /parents/super-admin:
+    get:
+      tags:
+        - Parents
+      summary: Get parents (Super Admin)
+      description: Fetches a paginated list of parents. Supports search and filtering by organizationId.
+      operationId: getParentsBySuperAdmin
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: organizationId
+          schema:
+            type: string
+          description: Filter by organization ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: relationship
+          schema:
+            type: string
+        - in: query
+          name: defaultGuardian
+          schema:
+            type: boolean
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Parents fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_ListResponse'
+
+  /parents/warden:
+    get:
+      tags:
+        - Parents
+      summary: Get parents (Warden)
+      description: Fetches parents of students currently residing in hostels managed by the warden. Only returns active parents.
+      operationId: getParentsByWarden
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: relationship
+          schema:
+            type: string
+        - in: query
+          name: defaultGuardian
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Parents fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_ListResponse'
+
+  /parents/mentor:
+    get:
+      tags:
+        - Parents
+      summary: Get parents (Mentor)
+      description: Fetches parents of students belonging to batches mentored by the user. Only returns active parents.
+      operationId: getParentsByMentor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: relationship
+          schema:
+            type: string
+        - in: query
+          name: defaultGuardian
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Parents fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parent_ListResponse'
+
+  /parents/export/admin:
+    get:
+      tags:
+        - Parents
+      summary: Export parents (Admin)
+      description: Exports the parent list for the admin's organization. Supports search and filtering.
+      operationId: exportParentsByAdmin
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term for parent name, email, phone, relationship, student name, student email, or admissionNo
+        - in: query
+          name: relationship
+          schema:
+            type: string
+          description: Filter by relationship (e.g., father, mother, guardian, other)
+        - in: query
+          name: defaultGuardian
+          schema:
+            type: boolean
+          description: Filter by default guardian status
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+          description: Filter by parent active status
+      responses:
+        '200':
+          description: Parents exported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      parents:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Parent_ListResponse/properties/data/properties/parents/items'
+
+  /parents/export/super-admin:
+    get:
+      tags:
+        - Parents
+      summary: Export parents (Super Admin)
+      description: Exports parent data globally or by organization. Supports search and filtering.
+      operationId: exportParentsBySuperAdmin
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: organizationId
+          schema:
+            type: string
+          description: Filter by organization ID
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: relationship
+          schema:
+            type: string
+        - in: query
+          name: defaultGuardian
+          schema:
+            type: boolean
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Parents exported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      parents:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Parent_ListResponse/properties/data/properties/parents/items'

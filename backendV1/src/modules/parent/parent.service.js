@@ -329,3 +329,205 @@ export const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => 
 
   return { parentProfile: { ...parentProfile, _id: parentProfile.id, defaultGuardian } };
 };
+
+export const getParentsService = async ({ organizationId, hostelIds, batchIds, query }) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const where = {};
+
+  if (relationship) {
+    where.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    where.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    where.parent = { isActive: isActive === "true" };
+  }
+
+  const studentFilters = {};
+
+  if (studentId) {
+    studentFilters.id = studentId;
+  }
+
+  if (organizationId) {
+    studentFilters.organizationId = organizationId;
+  }
+
+  if (hostelIds && Array.isArray(hostelIds) && hostelIds.length > 0) {
+    studentFilters.studentHostels = {
+      some: { hostelId: { in: hostelIds }, status: "active" }
+    };
+  }
+
+  if (batchIds && Array.isArray(batchIds) && batchIds.length > 0) {
+    studentFilters.batchId = { in: batchIds };
+  }
+
+  if (Object.keys(studentFilters).length > 0) {
+    where.student = studentFilters;
+  }
+
+  if (search) {
+    where.OR = [
+      { parent: { parentName: { contains: search, mode: "insensitive" } } },
+      { parent: { email: { contains: search, mode: "insensitive" } } },
+      { parent: { phone: { contains: search, mode: "insensitive" } } },
+      { relationship: { contains: search, mode: "insensitive" } },
+      { student: { name: { contains: search, mode: "insensitive" } } },
+      { student: { email: { contains: search, mode: "insensitive" } } },
+      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const studentParents = await prisma.studentParent.findMany({
+    where,
+    include: {
+      parent: true,
+      student: {
+        include: {
+          organization: true,
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: limitNumber,
+  });
+
+  const totalRecords = await prisma.studentParent.count({ where });
+
+  const parents = studentParents.map(sp => ({
+    _id: sp.parent.id,
+    parentName: sp.parent.parentName,
+    relationship: sp.relationship,
+    phone: sp.parent.phone,
+    email: sp.parent.email,
+    defaultGuardian: sp.defaultGuardian,
+    isActive: sp.parent.isActive,
+    createdAt: sp.parent.createdAt,
+    student: {
+      _id: sp.student.id,
+      admissionNo: sp.student.admissionNo,
+      name: sp.student.name,
+      email: sp.student.email,
+      organizationId: sp.student.organizationId,
+    },
+    organization: sp.student.organization ? {
+      _id: sp.student.organization.id,
+      name: sp.student.organization.name,
+    } : null,
+  }));
+
+  return {
+    parents,
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limitNumber),
+    },
+  };
+};
+
+export const exportParentsService = async ({ organizationId, query }) => {
+  const {
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const where = {};
+
+  if (relationship) {
+    where.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    where.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    where.parent = { isActive: isActive === "true" };
+  }
+
+  const studentFilters = {};
+
+  if (studentId) {
+    studentFilters.id = studentId;
+  }
+
+  if (organizationId) {
+    studentFilters.organizationId = organizationId;
+  }
+
+  if (Object.keys(studentFilters).length > 0) {
+    where.student = studentFilters;
+  }
+
+  if (search) {
+    where.OR = [
+      { parent: { parentName: { contains: search, mode: "insensitive" } } },
+      { parent: { email: { contains: search, mode: "insensitive" } } },
+      { parent: { phone: { contains: search, mode: "insensitive" } } },
+      { relationship: { contains: search, mode: "insensitive" } },
+      { student: { name: { contains: search, mode: "insensitive" } } },
+      { student: { email: { contains: search, mode: "insensitive" } } },
+      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const studentParents = await prisma.studentParent.findMany({
+    where,
+    include: {
+      parent: true,
+      student: {
+        include: {
+          organization: true,
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const parents = studentParents.map(sp => ({
+    _id: sp.parent.id,
+    parentName: sp.parent.parentName,
+    relationship: sp.relationship,
+    phone: sp.parent.phone,
+    email: sp.parent.email,
+    defaultGuardian: sp.defaultGuardian,
+    isActive: sp.parent.isActive,
+    createdAt: sp.parent.createdAt,
+    student: {
+      _id: sp.student.id,
+      admissionNo: sp.student.admissionNo,
+      name: sp.student.name,
+      email: sp.student.email,
+      organizationId: sp.student.organizationId,
+    },
+    organization: sp.student.organization ? {
+      _id: sp.student.organization.id,
+      name: sp.student.organization.name,
+    } : null,
+  }));
+
+  return { parents };
+};
