@@ -7,18 +7,23 @@ import {
   updateAnnouncement,
   deleteAnnouncement
 } from './announcement.controller.js';
+import {
+  validateCreateAnnouncement,
+  validateAnnouncementIdParam,
+  validateUpdateAnnouncement
+} from './announcement.validation.js';
 
 const router = express.Router();
 
 router.use(protect); // Apply protect middleware to all routes
 
 router.route('/')
-  .post(createAnnouncement)
+  .post(validateCreateAnnouncement, createAnnouncement)
   .get(getAnnouncements);
 
 router.route('/:id')
-  .get(getAnnouncementById)
-  .put(updateAnnouncement)
-  .delete(deleteAnnouncement);
+  .get(validateAnnouncementIdParam, getAnnouncementById)
+  .put(validateAnnouncementIdParam, validateUpdateAnnouncement, updateAnnouncement)
+  .delete(validateAnnouncementIdParam, deleteAnnouncement);
 
 export default router;
