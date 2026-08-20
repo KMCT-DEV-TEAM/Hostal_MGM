@@ -105,14 +105,14 @@ export const createStudentWithParentDb = async (data, tx) => {
       await checkParentConflict(existingParent, { parentName, phone: parentPhone, tx });
     }
 
-    const nameDiffers = existingParent.name !== parentName;
+    const nameDiffers = existingParent.parentName !== parentName;
     const phoneDiffers = existingParent.phone !== parentPhone;
 
     if (resolutionAction === 'update_existing' || (!resolutionAction && !nameDiffers && !phoneDiffers)) {
       existingParent = await tx.parent.update({
         where: { id: existingParent.id },
         data: {
-          name: parentName || existingParent.name,
+          parentName: parentName || existingParent.parentName,
           email: parentEmail || existingParent.email,
           phone: parentPhone || existingParent.phone
         }
@@ -122,7 +122,7 @@ export const createStudentWithParentDb = async (data, tx) => {
   } else {
     parentRecord = await tx.parent.create({
       data: {
-        name: parentName,
+        parentName: parentName,
         phone: parentPhone,
         email: parentEmail,
         password: hashedParentPassword,

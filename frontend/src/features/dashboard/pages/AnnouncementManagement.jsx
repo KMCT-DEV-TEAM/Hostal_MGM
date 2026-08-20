@@ -66,9 +66,9 @@ const AnnouncementManagement = () => {
                         return [...prev, ...newItems];
                     });
                 }
-                if (res.pagination) {
-                    setHasMore(res.pagination.hasMore);
-                    setPage(res.pagination.page);
+                if (res.meta) {
+                    setHasMore(res.meta.hasMore);
+                    setPage(res.meta.page);
                 }
             }
         } catch (err) {
