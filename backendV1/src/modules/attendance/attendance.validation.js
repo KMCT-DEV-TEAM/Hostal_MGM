@@ -12,3 +12,16 @@ export const validateWindowIdParam = (req, res, next) => {
 
   next();
 };
+
+export const validateScanQR = (req, res, next) => {
+  const { qrToken } = req.body;
+
+  if (!qrToken || qrToken.trim() === "") {
+    return res.status(400).json({
+      success: false,
+      message: "QR Token is required.",
+    });
+  }
+
+  next();
+};

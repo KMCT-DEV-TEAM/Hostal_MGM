@@ -1,16 +1,16 @@
 import apiClient from '@/services/axios';
 
 // --- WARDEN API ---
-export const getWindowsByWarden = (params) => apiClient.get('/warden/attendance/windows', { params });
-export const getDashboardStatsByWarden = (params) => apiClient.get('/warden/attendance/stats', { params });
-export const createWindowsByWarden = () => apiClient.post('/warden/attendance/windows');
-export const getWindowDetailsByWarden = (id) => apiClient.get(`/warden/attendance/windows/${id}`);
-export const getRecordsByWarden = (id, params) => apiClient.get(`/warden/attendance/windows/${id}/records`, { params });
+export const getWindowsByWarden = (params) => apiClient.get('/attendance/windows', { params });
+export const getDashboardStatsByWarden = (params) => apiClient.get('/attendance/stats', { params });
+export const createWindowsByWarden = () => apiClient.post('/attendance/window');
+export const getWindowDetailsByWarden = (id) => apiClient.get(`/attendance/windows/${id}`);
+export const getRecordsByWarden = (id, params) => apiClient.get(`/attendance/windows/${id}/records`, { params });
 
-export const scanStudentByWarden = (id, data) => apiClient.post(`/warden/attendance/windows/${id}/scan`, data);
-export const completeWindowByWarden = (id) => apiClient.patch(`/warden/attendance/windows/${id}/complete`);
-export const getStudentCalendarByWarden = (params) => apiClient.get('/warden/attendance/student-calendar', { params });
-export const correctAttendanceByWarden = (windowId, studentId, data) => apiClient.patch(`/warden/attendance/windows/${windowId}/students/${studentId}`, data);
+export const scanStudentByWarden = (id, data) => apiClient.post(`/attendance/windows/${id}/scan`, data);
+export const completeWindowByWarden = (id) => apiClient.patch(`/attendance/windows/${id}/complete`);
+export const getStudentCalendarByWarden = (params) => apiClient.get('/attendance/student-calendar', { params });
+export const correctAttendanceByWarden = (windowId, studentId, data) => apiClient.patch(`/attendance/windows/${windowId}/students/${studentId}`, data);
 
 // --- ADMIN API ---
 export const getWindowsByAdmin = (params) => apiClient.get('/admin/attendance/windows', { params });
