@@ -21,7 +21,7 @@ import ParentConflictModal from "@/components/ui/ParentConflictModal";
 // for fields where Zod's default message isn't useful (enums, picked
 // fields that fall back to "received undefined", etc).
 const FIELD_LABELS = {
-  studentId: "Admission number",
+  admissionNo: "Admission number",
   name: "Name",
   email: "Email",
   parentEmail: "Parent email",
@@ -79,7 +79,7 @@ function toFieldErrors(zodError) {
 
 function toIdString(value) {
   if (!value) return "";
-  return typeof value === "string" ? value : value._id || "";
+  return typeof value === "string" ? value : value.id || value._id || "";
 }
 
 // updateStudentSchema is a ZodEffects (because of .refine()), so the plain
@@ -201,9 +201,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingHostels, setLoadingHostels] = useState(false);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [organizationId, setOrganizationId] = useState(toIdString(editingStudent?.organization?._id || editingStudent?.organizationId) || "");
+  const [organizationId, setOrganizationId] = useState(toIdString(editingStudent?.organization?.id || editingStudent?.organization?._id || editingStudent?.organizationId) || "");
   const [hostelId, setHostelId] = useState(
-    toIdString(editingStudent?.hostel?._id || editingStudent?.hostelId) || "",
+    toIdString(editingStudent?.hostel?.id || editingStudent?.hostel?._id || editingStudent?.hostelId) || "",
   );
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -211,9 +211,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingBatches, setLoadingBatches] = useState(false);
-  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?._id || editingStudent?.courseId) || "");
-  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?._id || editingStudent?.departmentId) || "");
-  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?._id || editingStudent?.batchId) || "");
+  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?.id || editingStudent?.course?._id || editingStudent?.courseId) || "");
+  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?.id || editingStudent?.department?._id || editingStudent?.departmentId) || "");
+  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?.id || editingStudent?.batch?._id || editingStudent?.batchId) || "");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Fields that were previously plain uncontrolled <input>/<select> elements
@@ -223,7 +223,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [relationship, setRelationship] = useState("");
 
   const [name, setName] = useState(editingStudent?.name || "");
-  const [studentId, setStudentId] = useState(editingStudent?.studentId || "");
+  const [admissionNo, setAdmissionNo] = useState(editingStudent?.admissionNo || "");
   const [dob, setDob] = useState(editingStudent?.dob?.split("T")[0] || "");
   const [address, setAddress] = useState(editingStudent?.address || "");
   const [phone, setPhone] = useState(editingStudent?.phone || "");
@@ -419,7 +419,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       // clears stale cross-org references instead of silently keeping them.
       const payload = { ...result.data };
       const originalOrgId = toIdString(
-        editingStudent?.organization?._id || editingStudent?.organizationId
+        editingStudent?.organization?.id || editingStudent?.organization?._id || editingStudent?.organizationId
       );
       if (payload.organizationId && payload.organizationId !== originalOrgId) {
         if (!courseId) payload.courseId = null;
@@ -574,24 +574,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   const courseOptions = [
     { value: "", label: organizationId ? "Select course" : "Select an organization first" },
-    ...courses.map((c) => ({ value: c._id, label: c.name })),
+    ...courses.map((c) => ({ value: c.id || c._id, label: c.name })),
   ];
 
   const departmentOptions = [
     { value: "", label: courseId ? "Select department" : "Select a course first" },
-    ...departments.map((d) => ({ value: d._id, label: d.name })),
+    ...departments.map((d) => ({ value: d.id || d._id, label: d.name })),
   ];
 
   const batchOptions = [
     { value: "", label: departmentId ? "Select batch" : "Select a department first" },
-    ...batches.map((b) => ({ value: b._id, label: b.name })),
+    ...batches.map((b) => ({ value: b.id || b._id, label: b.name })),
   ];
 
 
 
   const organizationOptions = [
     { value: "", label: "Select organization" },
-    ...organizations.map((org) => ({ value: org._id, label: org.name })),
+    ...organizations.map((org) => ({ value: org.id || org._id, label: org.name })),
   ];
 
   const dropdownTriggerClass =
@@ -884,300 +884,300 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   return (
     <>
       <Modal bottomSheetOnMobile={true}
-      isOpen={true}
-      onClose={onClose}
-      title="Add New Student"
-      subtitle="Fill in the details to manually create a new Student"
-      maxWidth="max-w-4xl"
-      asForm={true}
-      onSubmit={handleSubmit}
-      footer={
-        <>
-          <button
-            type="submit"
-            disabled={saving || !emailVerified.student || !emailVerified.parent}
-            className="px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#0A437A]/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsDiscardConfirmOpen(true)}
+        isOpen={true}
+        onClose={onClose}
+        title="Add New Student"
+        subtitle="Fill in the details to manually create a new Student"
+        maxWidth="max-w-4xl"
+        asForm={true}
+        onSubmit={handleSubmit}
+        footer={
+          <>
+            <button
+              type="submit"
+              disabled={saving || !emailVerified.student || !emailVerified.parent}
+              className="px-6 py-2 bg-[#0A437A] text-white rounded-lg text-xs font-medium hover:bg-[#0A437A]/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDiscardConfirmOpen(true)}
 
-            className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-        </>
-      }
-    >
-      <div className="space-y-8">
-        <EmailVerificationModal
-          isOpen={verifyModalOpen}
-          onClose={() => setVerifyModalOpen(false)}
-          onVerify={handleVerifyOtpSubmit}
-          email={verifyTarget === "student" ? studentEmail : parentEmail}
-          isSubmitting={verifyingOtp}
-          onResend={() => sendEmailOtp(verifyTarget === "student" ? studentEmail : parentEmail, verifyTarget, true)}
-          error={otpErrors[verifyTarget]}
-        />
+              className="px-6 py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-8">
+          <EmailVerificationModal
+            isOpen={verifyModalOpen}
+            onClose={() => setVerifyModalOpen(false)}
+            onVerify={handleVerifyOtpSubmit}
+            email={verifyTarget === "student" ? studentEmail : parentEmail}
+            isSubmitting={verifyingOtp}
+            onResend={() => sendEmailOtp(verifyTarget === "student" ? studentEmail : parentEmail, verifyTarget, true)}
+            error={otpErrors[verifyTarget]}
+          />
 
-        {/* Basic Info */}
-        <section>
-          <SectionHeader title="Basic Info" subtitle="Basic contact information of the student" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <Field label="Admission No *" error={fieldErrors.studentId}>
-              <input
-                name="studentId"
-                value={studentId}
-                required
-                onChange={(e) => {
-                  setStudentId(e.target.value);
-                  clearFieldError("studentId");
-                }}
-                onBlur={(e) => validateField("studentId", e.target.value)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                placeholder="Enter the student id"
-              />
-            </Field>
+          {/* Basic Info */}
+          <section>
+            <SectionHeader title="Basic Info" subtitle="Basic contact information of the student" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <Field label="Admission No *" error={fieldErrors.admissionNo}>
+                <input
+                  name="admissionNo"
+                  value={admissionNo}
+                  required
+                  onChange={(e) => {
+                    setAdmissionNo(e.target.value);
+                    clearFieldError("admissionNo");
+                  }}
+                  onBlur={(e) => validateField("admissionNo", e.target.value)}
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                  placeholder="Enter the student id"
+                />
+              </Field>
 
-            <Field label="Full Name *" error={fieldErrors.name}>
-              <input
-                name="name"
-                value={name}
-                required
-                onChange={(e) => {
-                  setName(e.target.value);
-                  clearFieldError("name");
-                }}
-                onBlur={(e) => validateField("name", e.target.value)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-                placeholder="Enter your full name"
-              />
-            </Field>
+              <Field label="Full Name *" error={fieldErrors.name}>
+                <input
+                  name="name"
+                  value={name}
+                  required
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearFieldError("name");
+                  }}
+                  onBlur={(e) => validateField("name", e.target.value)}
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                  placeholder="Enter your full name"
+                />
+              </Field>
 
-            <Field label="Gender *" error={fieldErrors.gender}>
-              <Dropdown
-                options={GENDER_OPTIONS_WITH_PLACEHOLDER}
-                value={gender}
-                onChange={handleGenderChange}
-                className="w-full"
-                minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!gender ? "text-gray-400" : ""}`}
-              />
-              <input type="hidden" name="gender" value={gender} required />
-            </Field>
-
-            <Field label="Date Of Birth *" error={fieldErrors.dob}>
-              <input
-                name="dob"
-                type="date"
-                value={dob}
-                max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0]}
-                onChange={(e) => {
-                  setDob(e.target.value);
-                  clearFieldError("dob");
-                }}
-                onBlur={(e) => validateField("dob", e.target.value)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg text-xs  outline-none focus:border-secondary"
-              />
-              {dob && (
-                <p className="text-[10.5px] text-gray-500 mt-1 font-medium">
-                  Age: {(() => {
-                    const d = new Date(dob);
-                    const t = new Date();
-                    let a = t.getFullYear() - d.getFullYear();
-                    const m = t.getMonth() - d.getMonth();
-                    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
-                    return a >= 0 ? a : 0;
-                  })()} years
-                </p>
-              )}
-            </Field>
-          </div>
-        </section>
-
-        {/* Academic Information */}
-        <section>
-          <SectionHeader title="Academic Information" subtitle="Academic information of the student" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {role === ROLES.SUPER_ADMIN ? (
-              <Field label="Organization *" error={fieldErrors.organizationId}>
+              <Field label="Gender *" error={fieldErrors.gender}>
                 <Dropdown
-                  options={organizationOptions}
-                  value={organizationId}
-                  onChange={handleOrganizationChange}
+                  options={GENDER_OPTIONS_WITH_PLACEHOLDER}
+                  value={gender}
+                  onChange={handleGenderChange}
                   className="w-full"
                   minWidth=""
-                  triggerClassName={`${dropdownTriggerClass} ${!organizationId ? "text-gray-400" : ""}`}
+                  triggerClassName={`${dropdownTriggerClass} ${!gender ? "text-gray-400" : ""}`}
                 />
-                <input type="hidden" name="organizationId" value={organizationId} required />
-                {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
+                <input type="hidden" name="gender" value={gender} required />
               </Field>
-            ) : (
-              <input type="hidden" name="organizationId" value={organizationId} />
-            )}
 
-            <Field label="Course *" error={fieldErrors.courseId}>
-              <Dropdown
-                options={courseOptions}
-                value={courseId}
-                onChange={handleCourseChange}
-                className="w-full"
-                minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!courseId ? "text-gray-400" : ""}`}
-              />
-              <input type="hidden" name="courseId" value={courseId} required />
-              {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
-            </Field>
+              <Field label="Date Of Birth *" error={fieldErrors.dob}>
+                <input
+                  name="dob"
+                  type="date"
+                  value={dob}
+                  max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0]}
+                  onChange={(e) => {
+                    setDob(e.target.value);
+                    clearFieldError("dob");
+                  }}
+                  onBlur={(e) => validateField("dob", e.target.value)}
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs  outline-none focus:border-secondary"
+                />
+                {dob && (
+                  <p className="text-[10.5px] text-gray-500 mt-1 font-medium">
+                    Age: {(() => {
+                      const d = new Date(dob);
+                      const t = new Date();
+                      let a = t.getFullYear() - d.getFullYear();
+                      const m = t.getMonth() - d.getMonth();
+                      if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+                      return a >= 0 ? a : 0;
+                    })()} years
+                  </p>
+                )}
+              </Field>
+            </div>
+          </section>
 
-            <Field label="Department *" error={fieldErrors.departmentId}>
-              <Dropdown
-                options={departmentOptions}
-                value={departmentId}
-                onChange={handleDepartmentChange}
-                disabled={!courseId}
-                className="w-full"
-                minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!departmentId ? "text-gray-400" : ""} ${!courseId ? "opacity-60 pointer-events-none" : ""}`}
-              />
-              <input type="hidden" name="departmentId" value={departmentId} required />
-              {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
-            </Field>
+          {/* Academic Information */}
+          <section>
+            <SectionHeader title="Academic Information" subtitle="Academic information of the student" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {role === ROLES.SUPER_ADMIN ? (
+                <Field label="Organization *" error={fieldErrors.organizationId}>
+                  <Dropdown
+                    options={organizationOptions}
+                    value={organizationId}
+                    onChange={handleOrganizationChange}
+                    className="w-full"
+                    minWidth=""
+                    triggerClassName={`${dropdownTriggerClass} ${!organizationId ? "text-gray-400" : ""}`}
+                  />
+                  <input type="hidden" name="organizationId" value={organizationId} required />
+                  {loadingOrganizations && <p className="text-xs text-text-secondary mt-2">Loading organizations...</p>}
+                </Field>
+              ) : (
+                <input type="hidden" name="organizationId" value={organizationId} />
+              )}
 
-            <Field label="Batch" error={fieldErrors.batchId}>
-              <Dropdown
-                options={batchOptions}
-                value={batchId}
-                onChange={handleBatchChange}
-                disabled={!departmentId}
-                className="w-full"
-                minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!batchId ? "text-gray-400" : ""} ${!departmentId ? "opacity-60 pointer-events-none" : ""}`}
-              />
-              <input type="hidden" name="batchId" value={batchId} />
-              {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
-            </Field>
+              <Field label="Course *" error={fieldErrors.courseId}>
+                <Dropdown
+                  options={courseOptions}
+                  value={courseId}
+                  onChange={handleCourseChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!courseId ? "text-gray-400" : ""}`}
+                />
+                <input type="hidden" name="courseId" value={courseId} required />
+                {loadingCourses && <p className="text-xs text-text-secondary mt-2">Loading courses...</p>}
+              </Field>
+
+              <Field label="Department *" error={fieldErrors.departmentId}>
+                <Dropdown
+                  options={departmentOptions}
+                  value={departmentId}
+                  onChange={handleDepartmentChange}
+                  disabled={!courseId}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!departmentId ? "text-gray-400" : ""} ${!courseId ? "opacity-60 pointer-events-none" : ""}`}
+                />
+                <input type="hidden" name="departmentId" value={departmentId} required />
+                {loadingDepartments && <p className="text-xs text-text-secondary mt-2">Loading departments...</p>}
+              </Field>
+
+              <Field label="Batch" error={fieldErrors.batchId}>
+                <Dropdown
+                  options={batchOptions}
+                  value={batchId}
+                  onChange={handleBatchChange}
+                  disabled={!departmentId}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!batchId ? "text-gray-400" : ""} ${!departmentId ? "opacity-60 pointer-events-none" : ""}`}
+                />
+                <input type="hidden" name="batchId" value={batchId} />
+                {loadingBatches && <p className="text-xs text-text-secondary mt-2">Loading batches...</p>}
+              </Field>
 
 
 
 
-          </div>
-        </section>
+            </div>
+          </section>
 
-        {/* Contact Information */}
-        <section>
-          <SectionHeader title="Contact Information" subtitle="Contact information of the student" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <Field label="Phone Number *" error={fieldErrors.phone}>
-              <PhoneInput
-                name="phone"
-                value={phone}
-                onChange={(val) => {
-                  setPhone(val);
-                  clearFieldError("phone");
-                }}
-                onBlur={(e) => validateField("phone", e.target.value)}
-              />
-            </Field>
+          {/* Contact Information */}
+          <section>
+            <SectionHeader title="Contact Information" subtitle="Contact information of the student" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <Field label="Phone Number *" error={fieldErrors.phone}>
+                <PhoneInput
+                  name="phone"
+                  value={phone}
+                  onChange={(val) => {
+                    setPhone(val);
+                    clearFieldError("phone");
+                  }}
+                  onBlur={(e) => validateField("phone", e.target.value)}
+                />
+              </Field>
 
-            {renderEmailField({
-              type: "student",
-              value: studentEmail,
-              onValueChange: setStudentEmail,
-              label: "Email Address *",
-              name: "email",
-            })}
-          </div>
-          <input type="hidden" name="studentOtp" value={studentOtp} />
-        </section>
+              {renderEmailField({
+                type: "student",
+                value: studentEmail,
+                onValueChange: setStudentEmail,
+                label: "Email Address *",
+                name: "email",
+              })}
+            </div>
+            <input type="hidden" name="studentOtp" value={studentOtp} />
+          </section>
 
-        {/* Address Information */}
-        <section>
-          <SectionHeader title="Address Information" subtitle="Address information of the student" />
-          <Field label="Full Address *" error={fieldErrors.address}>
-            <textarea
-              name="address"
-              value={address}
-              onChange={(e) => {
-                setAddress(e.target.value);
-                clearFieldError("address");
-              }}
-              onBlur={(e) => validateField("address", e.target.value)}
-              className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
-              style={{ minHeight: 106 }}
-              placeholder="Enter your address"
-            />
-          </Field>
-        </section>
-
-        {/* Parent Information */}
-        <section>
-          <h3 className="text-sm font-medium text-primary mb-4 pb-2 border-b border-gray-200">
-            Parent Information
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <Field label="Full Name *" error={fieldErrors.parentName}>
-              <input
-                name="parentName"
-                value={parentName}
-                required
+          {/* Address Information */}
+          <section>
+            <SectionHeader title="Address Information" subtitle="Address information of the student" />
+            <Field label="Full Address *" error={fieldErrors.address}>
+              <textarea
+                name="address"
+                value={address}
                 onChange={(e) => {
-                  setParentName(e.target.value);
-                  clearFieldError("parentName");
+                  setAddress(e.target.value);
+                  clearFieldError("address");
                 }}
-                onBlur={(e) => validateField("parentName", e.target.value)}
-                placeholder="Enter the name"
+                onBlur={(e) => validateField("address", e.target.value)}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                style={{ minHeight: 106 }}
+                placeholder="Enter your address"
               />
             </Field>
+          </section>
 
-            <Field label="Relation *" error={fieldErrors.relationship}>
-              <Dropdown
-                options={RELATIONSHIP_OPTIONS}
-                value={relationship}
-                onChange={handleRelationshipChange}
-                className="w-full"
-                minWidth=""
-                triggerClassName={`${dropdownTriggerClass} ${!relationship ? "text-gray-400" : ""}`}
-              />
-              <input type="hidden" name="relationship" value={relationship} required />
-            </Field>
+          {/* Parent Information */}
+          <section>
+            <h3 className="text-sm font-medium text-primary mb-4 pb-2 border-b border-gray-200">
+              Parent Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <Field label="Full Name *" error={fieldErrors.parentName}>
+                <input
+                  name="parentName"
+                  value={parentName}
+                  required
+                  onChange={(e) => {
+                    setParentName(e.target.value);
+                    clearFieldError("parentName");
+                  }}
+                  onBlur={(e) => validateField("parentName", e.target.value)}
+                  placeholder="Enter the name"
+                  className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-secondary"
+                />
+              </Field>
 
-            <Field label="Phone Number *" error={fieldErrors.parentPhone}>
-              <PhoneInput
-                name="parentPhone"
-                value={parentPhone}
-                onChange={(val) => {
-                  setParentPhone(val);
-                  clearFieldError("parentPhone");
-                }}
-                onBlur={(e) => validateField("parentPhone", e.target.value)}
-              />
-            </Field>
+              <Field label="Relation *" error={fieldErrors.relationship}>
+                <Dropdown
+                  options={RELATIONSHIP_OPTIONS}
+                  value={relationship}
+                  onChange={handleRelationshipChange}
+                  className="w-full"
+                  minWidth=""
+                  triggerClassName={`${dropdownTriggerClass} ${!relationship ? "text-gray-400" : ""}`}
+                />
+                <input type="hidden" name="relationship" value={relationship} required />
+              </Field>
 
-            {renderEmailField({
-              type: "parent",
-              value: parentEmail,
-              onValueChange: setParentEmail,
-              label: "Email Address *",
-              name: "parentEmail",
-            })}
-          </div>
-          <input type="hidden" name="parentOtp" value={parentOtp} />
-        </section>
-      </div>
-      <ConfirmationModal
-        isOpen={isDiscardConfirmOpen}
-        onClose={() => setIsDiscardConfirmOpen(false)}
-        onConfirm={confirmDiscard}
-        title="Discard Changes"
-        message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
-        confirmText="Discard"
-        cancelText="Continue Editing"
-        confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
-      />
-    </Modal>
+              <Field label="Phone Number *" error={fieldErrors.parentPhone}>
+                <PhoneInput
+                  name="parentPhone"
+                  value={parentPhone}
+                  onChange={(val) => {
+                    setParentPhone(val);
+                    clearFieldError("parentPhone");
+                  }}
+                  onBlur={(e) => validateField("parentPhone", e.target.value)}
+                />
+              </Field>
+
+              {renderEmailField({
+                type: "parent",
+                value: parentEmail,
+                onValueChange: setParentEmail,
+                label: "Email Address *",
+                name: "parentEmail",
+              })}
+            </div>
+            <input type="hidden" name="parentOtp" value={parentOtp} />
+          </section>
+        </div>
+        <ConfirmationModal
+          isOpen={isDiscardConfirmOpen}
+          onClose={() => setIsDiscardConfirmOpen(false)}
+          onConfirm={confirmDiscard}
+          title="Discard Changes"
+          message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+          confirmText="Discard"
+          cancelText="Continue Editing"
+          confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+        />
+      </Modal>
 
       <ParentConflictModal
         isOpen={isConflictModalOpen}
