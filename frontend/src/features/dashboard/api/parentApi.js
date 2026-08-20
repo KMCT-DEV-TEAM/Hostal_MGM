@@ -58,13 +58,13 @@ const parentApi = {
     api.patch(`/super-admin/parents/bulk-status`, payload),
 
   createParentBySuperAdmin: (payload) =>
-    api.post("/super-admin/parents", payload),
+    api.post("/parents", payload),
 
   resolveParentConflictBySuperAdmin: (payload) =>
     api.post("/super-admin/parents/resolve-conflict", payload),
 
   setDefaultGuardianBySuperAdmin: (id) =>
-    api.patch(`/super-admin/parents/${id}/default-guardian`, {
+    api.patch(`/parents/${id}/default-guardian`, {
       defaultGuardian: true,
     }),
 

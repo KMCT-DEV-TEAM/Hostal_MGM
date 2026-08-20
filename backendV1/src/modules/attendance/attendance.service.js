@@ -880,7 +880,7 @@ export const getStudentAttendanceCalendarDb = async (studentId, month, year) => 
     if (r.status === ATTENDANCE_STATUS.PRESENT) present++;
     if (r.status === ATTENDANCE_STATUS.ABSENT) absent++;
     return {
-      date: formatDate(r.scannedAt),
+      date: r.scannedAt.toISOString().split('T')[0],
       status: r.status.toLowerCase()
     };
   });

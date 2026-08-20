@@ -71,12 +71,12 @@ export default function ManageHostelModal({ isOpen, onClose, student, onSave }) 
       setHostelsMap(prev => {
         const newMap = { ...prev };
         data.forEach(h => {
-          newMap[h._id] = { label: h.name };
+          newMap[h.id] = { label: h.name };
         });
         return newMap;
       });
       return {
-        options: data.map(h => ({ label: h.name, value: h._id })),
+        options: data.map(h => ({ label: h.name, value: h.id })),
         hasMore: data.length === 20
       };
     } catch (error) {

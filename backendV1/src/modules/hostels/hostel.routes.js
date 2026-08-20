@@ -22,6 +22,10 @@ router.route('/')
 router.route('/bulk-status')
   .patch(bulkToggleHostelStatus);
 
+// Needs to be before /:id to prevent "selection" being treated as an id
+router.route('/selection')
+  .get(getHostels);
+
 router.route('/:id')
   .get(getHostelById)
   .patch(updateHostel)
