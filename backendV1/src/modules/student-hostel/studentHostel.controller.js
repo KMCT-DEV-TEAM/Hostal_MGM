@@ -122,7 +122,7 @@ export const getHostelHistory = asyncHandler(async (req, res) => {
     student: item.student ? {
       id: item.student.id,
       name: item.student.name,
-      studentId: item.student.studentId,
+      admissionNo: item.student.admissionNo,
       email: item.student.email
     } : null,
     hostel: item.hostel ? {

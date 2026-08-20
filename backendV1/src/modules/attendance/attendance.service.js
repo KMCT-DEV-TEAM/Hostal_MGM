@@ -310,7 +310,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   if (query.search) {
     studentMatch.OR = [
       { name: { contains: query.search, mode: 'insensitive' } },
-      { studentId: { contains: query.search, mode: 'insensitive' } }
+      { admissionNo: { contains: query.search, mode: 'insensitive' } }
     ];
   }
   if (query.room) {
@@ -346,7 +346,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
           select: {
             id: true,
             name: true,
-            studentId: true,
+            admissionNo: true,
             studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { roomNumber: true } }
           }
         },
@@ -364,7 +364,7 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     student: r.student ? {
       _id: r.student.id,
       name: r.student.name,
-      studentId: r.student.studentId,
+      admissionNo: r.student.admissionNo,
       room: r.student.studentHostels?.[0]?.roomNumber || null
     } : null,
     scannedBy: r.scannedBy ? {
@@ -409,7 +409,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
 
     const studentExists = await tx.student.findFirst({
       where: { id: studentId, isActive: true },
-      select: { id: true, studentId: true, name: true, studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { hostelId: true } } }
+      select: { id: true, admissionNo: true, name: true, studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { hostelId: true } } }
     });
 
     if (!studentExists) {
@@ -456,7 +456,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
       },
       student: {
         _id: studentExists.id,
-        studentId: studentExists.studentId,
+        admissionNo: studentExists.admissionNo,
         name: studentExists.name,
         profileImage: null
       }
@@ -619,7 +619,7 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
         isActive: true,
         studentHostels: { some: { hostelId: wardenHostelId, status: STUDENT_HOSTEL_STATUS.ACTIVE } }
       },
-      select: { id: true, studentId: true, name: true }
+      select: { id: true, admissionNo: true, name: true }
     });
 
     if (!student) {
@@ -754,7 +754,7 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       },
       student: {
         _id: student.id,
-        studentId: student.studentId,
+        admissionNo: student.admissionNo,
         name: student.name
       },
       windowStats: updatedCounts

@@ -62,7 +62,7 @@ export const getHostelHistoryDb = async (query) => {
   if (search) {
     where.OR = [
       { student: { name: { contains: search, mode: "insensitive" } } },
-      { student: { studentId: { contains: search, mode: "insensitive" } } },
+      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
       { hostel: { name: { contains: search, mode: "insensitive" } } },
       { roomNumber: { contains: search, mode: "insensitive" } },
     ];
@@ -83,7 +83,7 @@ export const getHostelHistoryDb = async (query) => {
           select: {
             id: true,
             name: true,
-            studentId: true,
+            admissionNo: true,
             email: true,
           }
         },

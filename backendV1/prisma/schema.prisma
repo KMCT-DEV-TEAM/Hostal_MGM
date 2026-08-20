@@ -215,7 +215,7 @@ model User {
 
 model Student {
   id                  String                  @id @default(uuid()) @db.Uuid
-  student_id          String                  @unique(map: "students_student_code_key") @db.VarChar(50)
+  admissionNo         String                  @unique(map: "students_student_code_key") @map("admission_no") @db.VarChar(50)
   organizationId      String                  @map("organization_id") @db.Uuid
   courseId            String?                 @map("course_id") @db.Uuid
   departmentId        String?                 @map("department_id") @db.Uuid
@@ -256,7 +256,7 @@ model Student {
   @@index([organizationId])
   @@index([batchId])
   @@index([email])
-  @@index([student_id], map: "students_student_code_idx")
+  @@index([admissionNo], map: "students_student_code_idx")
   @@map("students")
 }
 

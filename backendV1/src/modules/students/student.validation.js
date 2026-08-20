@@ -1,6 +1,6 @@
 const validateCreateStudent = (req, res, next) => {
   const {
-    studentId,
+    admissionNo,
     organizationId,
     name,
     email,
@@ -17,8 +17,8 @@ const validateCreateStudent = (req, res, next) => {
     return res.status(400).json({ success: false, message: "organizationId is required" });
   }
 
-  if (!studentId) {
-    return res.status(400).json({ success: false, message: "studentId is required" });
+  if (!admissionNo) {
+    return res.status(400).json({ success: false, message: "admissionNo is required" });
   }
 
   if (!name || !email || !phone) {
@@ -61,7 +61,7 @@ const validateUpdateStudent = (req, res, next) => {
     batchId,
     address,
     isActive,
-    studentId
+    admissionNo
   } = req.body;
 
   if (
@@ -76,7 +76,7 @@ const validateUpdateStudent = (req, res, next) => {
     !batchId &&
     !address &&
     isActive === undefined &&
-    !studentId
+    !admissionNo
   ) {
     return res.status(400).json({
       success: false,

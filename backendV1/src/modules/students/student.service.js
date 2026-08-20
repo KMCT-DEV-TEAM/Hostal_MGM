@@ -46,7 +46,7 @@ const checkParentConflict = async (existingParent, { parentName, phone, tx }) =>
 
 export const createStudentWithParentDb = async (data, tx) => {
   const {
-    studentId,
+    admissionNo,
     organizationId,
     name,
     gender,
@@ -72,7 +72,7 @@ export const createStudentWithParentDb = async (data, tx) => {
 
   const student = await tx.student.create({
     data: {
-      studentId,
+      admissionNo,
       organizationId,
       name: name,
       gender,
@@ -183,7 +183,7 @@ export const updateStudentDb = async (studentId, data) => {
   }
 
   const allowedFieldsMap = {
-    studentId: "studentId",
+    admissionNo: "admissionNo",
     name: "name",
     email: "email",
     phone: "phone",
@@ -289,7 +289,7 @@ export const getStudentsService = async ({
       { name: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
       { phone: { contains: search, mode: 'insensitive' } },
-      { studentId: { contains: search, mode: 'insensitive' } },
+      { admissionNo: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -314,7 +314,7 @@ export const getStudentsService = async ({
 
   const students = studentsRecords.map(student => ({
     _id: student.id,
-    studentId: student.studentId,
+    admissionNo: student.admissionNo,
     organizationId: student.organizationId,
     name: student.name,
     email: student.email,

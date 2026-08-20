@@ -188,7 +188,7 @@ class ParentRepository {
 
       return {
         _id: s.id,
-        studentId: s.studentId,
+        admissionNo: s.admissionNo,
         name: s.name,
         roomNumber: activeHostelAlloc ? activeHostelAlloc.roomNumber : null,
         hostelId: activeHostelAlloc ? activeHostelAlloc.hostel.id : null,

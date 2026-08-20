@@ -143,7 +143,7 @@ const me = asyncHandler(async (req, res) => {
         const qrToken = jwt.sign(
           {
             studentId: user.id,
-            idString: user.studentId,
+            admissionNo: user.admissionNo,
             name: user.name,
             roomNo: activeAllocation?.roomNumber || null,
             type: "attendance_qr",

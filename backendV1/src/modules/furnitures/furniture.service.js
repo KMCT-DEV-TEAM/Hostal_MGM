@@ -501,7 +501,7 @@ export const getFurnitureAssetsListService = async (matchQuery, skip, limit) => 
     take: limit,
     orderBy: { createdAt: 'desc' },
     include: {
-      student: { select: { id: true, name: true, studentId: true } },
+      student: { select: { id: true, name: true, admissionNo: true } },
       furnitureType: {
         include: {
           organization: { select: { id: true, name: true } },
@@ -535,7 +535,7 @@ export const getFurnitureAssetsListService = async (matchQuery, skip, limit) => 
     studentId: asset.student ? {
       _id: asset.student.id,
       name: asset.student.name,
-      studentId: asset.student.studentId
+      admissionNo: asset.student.admissionNo
     } : null
   }));
 };
