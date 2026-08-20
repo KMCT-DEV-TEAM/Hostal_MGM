@@ -60,7 +60,7 @@ export const getHostels = asyncHandler(async (req, res) => {
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        admin: { select: { fullName: true } }
+        admin: { select: { name: true } }
       }
     }),
     prisma.hostel.count({ where: whereClause })
@@ -81,7 +81,7 @@ export const getHostelById = asyncHandler(async (req, res) => {
   const hostel = await prisma.hostel.findUnique({
     where: { id },
     include: {
-      admin: { select: { fullName: true, email: true, phone: true } }
+      admin: { select: { name: true, email: true, phone: true } }
     }
   });
 

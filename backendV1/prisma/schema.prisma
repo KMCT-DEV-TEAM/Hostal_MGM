@@ -6,194 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==========================================
-// ENUMS
-// ==========================================
-
-enum NotificationStatus {
-  PENDING
-  DELIVERED
-  FAILED
-  READ
-}
-
-enum HostelType {
-  BOYS
-  GIRLS
-}
-
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  WARDEN
-  ASSISTANT_WARDEN
-  MENTOR
-  MAINTENANCE_STAFF
-}
-
-enum PassType {
-  HOME_PASS
-  OUT_PASS
-}
-
-enum OutPassCategory {
-  IN_HOUSE
-  OUT_HOUSE
-}
-
-enum PassStatus {
-  PENDING_PARENT
-  PENDING_ADMIN
-  APPROVED
-  REJECTED
-  CANCELLED
-  COMPLETED
-}
-
-enum ApprovalLevel {
-  PARENT
-  ADMIN
-  WARDEN
-}
-
-enum ApprovalStatus {
-  APPROVED
-  REJECTED
-}
-
-enum GateEventType {
-  LEFT
-  RETURNED
-}
-
-enum ComplaintStatus {
-  PENDING
-  IN_PROGRESS
-  AWAITING
-  RESOLVED
-  REJECTED
-  INCOMPLETE
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum TargetType {
-  GENERAL
-  ORGANIZATION
-  HOSTEL
-}
-
-enum AnnouncementStatus {
-  SCHEDULED
-  ACTIVE
-  EXPIRED
-  DELETED
-}
-
-enum IdProofType {
-  AADHAAR
-  PASSPORT
-  DRIVING_LICENSE
-  VOTER_ID
-  PAN
-}
-
-enum VisitorStatus {
-  ACTIVE
-  INACTIVE
-  BLACKLISTED
-  DELETED
-}
-
-enum VisitRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
-enum VisitStatus {
-  CHECKED_IN
-  CHECKED_OUT
-  OVERSTAYED
-}
-
-enum FurnitureStatus {
-  AVAILABLE
-  ALLOCATED
-  MAINTENANCE
-  INACTIVE
-  LOST
-  SCRAP
-}
-
-enum NotificationPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-enum NotificationType {
-  INFO
-  SUCCESS
-  WARNING
-  ERROR
-  SYSTEM
-  ALERT
-}
-
-enum StudentHostelStatus {
-  active
-  vacated
-  transferred
-  cancelled
-}
-
-enum MentorAssignmentStatus {
-  ACTIVE
-  TRANSFERRED
-  COMPLETED
-  CANCELLED
-}
-
-enum AttendanceWindowStatus {
-  OPEN
-  COMPLETED
-}
-
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  LATE
-  ON_LEAVE
-}
-
-enum ActionStatus {
-  SUCCESS
-  ERROR
-  WARNING
-}
-
-enum ParentRelationship {
-  father
-  mother
-  guardian
-  other
-}
-
-enum ParentStatus {
-  active
-  inactive
-}
-
-// ==========================================
-// CORE / MASTER TABLES
-// ==========================================
 model Organization {
   id                 String                     @id @default(uuid()) @db.Uuid
   name               String                     @db.VarChar(255)
@@ -346,10 +158,10 @@ model User {
   id                  String                  @id @default(uuid()) @db.Uuid
   organizationId      String?                 @map("organization_id") @db.Uuid
   employeeCode        String?                 @map("employee_code") @db.VarChar(50)
-  fullName            String                  @map("full_name") @db.VarChar(255)
+  name                String                  @map("full_name") @db.VarChar(255)
   email               String                  @unique @db.VarChar(255)
   phone               String?                 @db.VarChar(20)
-  passwordHash        String                  @map("password_hash")
+  password            String                  @map("password_hash")
   role                Role
   isActive            Boolean                 @default(true) @map("is_active")
   isVerified          Boolean                 @default(false) @map("is_verified")
@@ -403,14 +215,14 @@ model User {
 
 model Student {
   id                  String                  @id @default(uuid()) @db.Uuid
-  studentCode         String                  @unique @map("student_code") @db.VarChar(50)
+  student_id          String                  @unique(map: "students_student_code_key") @db.VarChar(50)
   organizationId      String                  @map("organization_id") @db.Uuid
   courseId            String?                 @map("course_id") @db.Uuid
   departmentId        String?                 @map("department_id") @db.Uuid
   batchId             String?                 @map("batch_id") @db.Uuid
-  fullName            String                  @map("full_name") @db.VarChar(255)
+  name                String                  @db.VarChar(255)
   email               String                  @unique @db.VarChar(255)
-  passwordHash        String                  @map("password_hash")
+  password            String
   tempPassword        Boolean                 @default(false) @map("temp_password")
   phone               String?                 @db.VarChar(20)
   gender              String?                 @db.VarChar(20)
@@ -444,7 +256,7 @@ model Student {
   @@index([organizationId])
   @@index([batchId])
   @@index([email])
-  @@index([studentCode])
+  @@index([student_id], map: "students_student_code_idx")
   @@map("students")
 }
 
@@ -520,16 +332,16 @@ model AuditLog {
 }
 
 model StudentParent {
-  id              String   @id @default(uuid()) @db.Uuid
-  studentId       String   @map("student_id") @db.Uuid
-  parentId        String   @map("parent_id") @db.Uuid
+  id              String             @id @default(uuid()) @db.Uuid
+  studentId       String             @map("student_id") @db.Uuid
+  parentId        String             @map("parent_id") @db.Uuid
+  defaultGuardian Boolean            @default(false) @map("default_guardian")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
   relationship    ParentRelationship @default(guardian)
-  defaultGuardian Boolean  @default(false) @map("default_guardian")
-  status          ParentStatus @default(active)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  parent          Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status          ParentStatus       @default(active)
+  parent          Parent             @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student         Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, parentId])
   @@index([studentId])
@@ -996,21 +808,21 @@ model Notification {
   type                  NotificationType     @default(INFO)
   isRead                Boolean              @default(false) @map("is_read")
   metadata              Json?
-  deliveryInAppStatus   NotificationStatus?  @map("delivery_in_app_status")
-  deliveryInAppAttempts Int                  @default(0) @map("delivery_in_app_attempts")
-  deliveryInAppSentAt   DateTime?            @map("delivery_in_app_sent_at")
-  deliveryInAppReadAt   DateTime?            @map("delivery_in_app_read_at")
-  deliveryPushStatus    NotificationStatus?  @map("delivery_push_status")
-  deliveryPushAttempts  Int                  @default(0) @map("delivery_push_attempts")
-  deliveryPushSentAt    DateTime?            @map("delivery_push_sent_at")
-  deliveryPushReadAt    DateTime?            @map("delivery_push_read_at")
-  deliveryEmailStatus   NotificationStatus?  @map("delivery_email_status")
-  deliveryEmailAttempts Int                  @default(0) @map("delivery_email_attempts")
-  deliveryEmailSentAt   DateTime?            @map("delivery_email_sent_at")
-  deliveryEmailReadAt   DateTime?            @map("delivery_email_read_at")
   createdAt             DateTime             @default(now()) @map("created_at")
   updatedAt             DateTime             @updatedAt @map("updated_at")
   deletedAt             DateTime?            @map("deleted_at")
+  deliveryEmailAttempts Int                  @default(0) @map("delivery_email_attempts")
+  deliveryEmailReadAt   DateTime?            @map("delivery_email_read_at")
+  deliveryEmailSentAt   DateTime?            @map("delivery_email_sent_at")
+  deliveryEmailStatus   NotificationStatus?  @map("delivery_email_status")
+  deliveryInAppAttempts Int                  @default(0) @map("delivery_in_app_attempts")
+  deliveryInAppReadAt   DateTime?            @map("delivery_in_app_read_at")
+  deliveryInAppSentAt   DateTime?            @map("delivery_in_app_sent_at")
+  deliveryInAppStatus   NotificationStatus?  @map("delivery_in_app_status")
+  deliveryPushAttempts  Int                  @default(0) @map("delivery_push_attempts")
+  deliveryPushReadAt    DateTime?            @map("delivery_push_read_at")
+  deliveryPushSentAt    DateTime?            @map("delivery_push_sent_at")
+  deliveryPushStatus    NotificationStatus?  @map("delivery_push_status")
 
   @@index([recipientId, recipientModel, deletedAt])
   @@index([recipientId, recipientModel, isRead, deletedAt])
@@ -1073,4 +885,185 @@ model ActivityLog {
   @@index([entityType, entityId])
   @@index([userId])
   @@map("activity_logs")
+}
+
+enum NotificationStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum HostelType {
+  BOYS
+  GIRLS
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  WARDEN
+  MENTOR
+  ASSISTANT_WARDEN
+  MAINTENANCE_STAFF
+}
+
+enum PassType {
+  HOME_PASS
+  OUT_PASS
+}
+
+enum OutPassCategory {
+  IN_HOUSE
+  OUT_HOUSE
+}
+
+enum PassStatus {
+  PENDING_PARENT
+  PENDING_ADMIN
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum ApprovalLevel {
+  PARENT
+  ADMIN
+  WARDEN
+}
+
+enum ApprovalStatus {
+  APPROVED
+  REJECTED
+}
+
+enum GateEventType {
+  LEFT
+  RETURNED
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  AWAITING
+  RESOLVED
+  REJECTED
+  INCOMPLETE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TargetType {
+  GENERAL
+  ORGANIZATION
+  HOSTEL
+}
+
+enum AnnouncementStatus {
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+  DELETED
+}
+
+enum IdProofType {
+  AADHAAR
+  PASSPORT
+  DRIVING_LICENSE
+  VOTER_ID
+  PAN
+}
+
+enum VisitorStatus {
+  ACTIVE
+  INACTIVE
+  BLACKLISTED
+  DELETED
+}
+
+enum VisitRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum VisitStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  OVERSTAYED
+}
+
+enum FurnitureStatus {
+  AVAILABLE
+  ALLOCATED
+  MAINTENANCE
+  INACTIVE
+  LOST
+  SCRAP
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+  ALERT
+}
+
+enum StudentHostelStatus {
+  active
+  vacated
+  transferred
+  cancelled
+}
+
+enum MentorAssignmentStatus {
+  ACTIVE
+  TRANSFERRED
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceWindowStatus {
+  OPEN
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  ON_LEAVE
+}
+
+enum ActionStatus {
+  SUCCESS
+  ERROR
+  WARNING
+}
+
+enum ParentRelationship {
+  father
+  mother
+  guardian
+  other
+}
+
+enum ParentStatus {
+  active
+  inactive
 }

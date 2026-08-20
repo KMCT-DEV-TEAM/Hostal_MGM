@@ -84,7 +84,7 @@ class ParentRepository {
         student: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
             courseId: true,
             batchId: true,
             academicYear: true
@@ -98,7 +98,7 @@ class ParentRepository {
       ...link,
       studentId: {
         _id: link.student.id,
-        name: link.student.fullName,
+        name: link.student.name,
         course: link.student.courseId,
         batch: link.student.batchId,
         academicYear: link.student.academicYear
@@ -156,7 +156,7 @@ class ParentRepository {
     if (filters.batchId) studentFilter.batchId = filters.batchId;
 
     if (filters.studentId) studentFilter.id = filters.studentId;
-    if (filters.studentName) studentFilter.fullName = { contains: filters.studentName, mode: 'insensitive' };
+    if (filters.studentName) studentFilter.name = { contains: filters.studentName, mode: 'insensitive' };
 
     const links = await prisma.studentParent.findMany({
       where: {
@@ -178,7 +178,7 @@ class ParentRepository {
         }
       },
       orderBy: {
-        student: { fullName: 'asc' }
+        student: { name: 'asc' }
       }
     });
 
@@ -188,8 +188,8 @@ class ParentRepository {
 
       return {
         _id: s.id,
-        studentId: s.studentCode,
-        name: s.fullName,
+        studentId: s.studentId,
+        name: s.name,
         roomNumber: activeHostelAlloc ? activeHostelAlloc.roomNumber : null,
         hostelId: activeHostelAlloc ? activeHostelAlloc.hostel.id : null,
         hostelName: activeHostelAlloc ? activeHostelAlloc.hostel.name : null,
