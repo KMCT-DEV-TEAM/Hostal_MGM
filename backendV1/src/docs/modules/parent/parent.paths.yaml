@@ -164,3 +164,125 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Shared_ErrorResponse'
+
+  /parents/{id}/toggle-status:
+    patch:
+      tags:
+        - Parents
+      summary: Toggle parent status
+      description: Activates or deactivates a parent account.
+      operationId: toggleParentStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The parent's unique ID
+      responses:
+        '200':
+          description: Parent status updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Parent activated successfully"
+                  data:
+                    type: object
+                    properties:
+                      parentId:
+                        type: string
+                        example: "e9b5f4d3-1a2c-4b5d-9c8e-7f6a5b4c3d2e"
+                      isActive:
+                        type: boolean
+                        example: true
+        '403':
+          description: Unauthorized to access this parent profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+        '404':
+          description: Parent not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+
+  /parents/{id}/default-guardian:
+    patch:
+      tags:
+        - Parents
+      summary: Set or remove parent as default guardian
+      description: Sets or removes the parent as the default guardian for a student. A student must have at least one default guardian.
+      operationId: setDefaultGuardian
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The parent's unique ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - defaultGuardian
+              properties:
+                defaultGuardian:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Default guardian status updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Parent set as default guardian successfully"
+                  data:
+                    type: object
+                    properties:
+                      parentId:
+                        type: string
+                        example: "e9b5f4d3-1a2c-4b5d-9c8e-7f6a5b4c3d2e"
+                      defaultGuardian:
+                        type: boolean
+                        example: true
+        '400':
+          description: Validation error or business rule violation (e.g. removing the only default guardian).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+        '403':
+          description: Unauthorized to access this parent profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+        '404':
+          description: Parent not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'

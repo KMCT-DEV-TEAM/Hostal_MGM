@@ -153,8 +153,8 @@ export const getAttendanceWindowsDb = async (query, scope) => {
       take: limit,
       include: {
         hostel: { select: { id: true, name: true } },
-        startedBy: { select: { id: true, fullName: true, email: true } },
-        completedBy: { select: { id: true, fullName: true, email: true } }
+        startedBy: { select: { id: true, name: true, email: true } },
+        completedBy: { select: { id: true, name: true, email: true } }
       }
     }),
     prisma.attendanceWindow.count({ where })
@@ -173,8 +173,8 @@ export const getAttendanceWindowsDb = async (query, scope) => {
     completedAt: w.completedAt,
     createdAt: w.createdAt,
     hostel: w.hostel ? { _id: w.hostel.id, name: w.hostel.name } : null,
-    startedBy: w.startedBy ? { _id: w.startedBy.id, name: w.startedBy.fullName, email: w.startedBy.email } : null,
-    completedBy: w.completedBy ? { _id: w.completedBy.id, name: w.completedBy.fullName, email: w.completedBy.email } : null
+    startedBy: w.startedBy ? { _id: w.startedBy.id, name: w.startedBy.name, email: w.startedBy.email } : null,
+    completedBy: w.completedBy ? { _id: w.completedBy.id, name: w.completedBy.name, email: w.completedBy.email } : null
   }));
 
   return {
@@ -201,8 +201,8 @@ export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
     where,
     include: {
       hostel: { select: { id: true, name: true } },
-      startedBy: { select: { id: true, fullName: true, email: true } },
-      completedBy: { select: { id: true, fullName: true, email: true } }
+      startedBy: { select: { id: true, name: true, email: true } },
+      completedBy: { select: { id: true, name: true, email: true } }
     }
   });
 
@@ -215,7 +215,7 @@ export const getAttendanceWindowDetailsDb = async (windowId, scope) => {
     windowId: window.id,
     windowStatus: window.status.toLowerCase(),
     windowStartedAt: window.startedAt,
-    windowStartedByName: window.startedBy ? window.startedBy.fullName : null
+    windowStartedByName: window.startedBy ? window.startedBy.name : null
   };
 };
 
@@ -235,7 +235,7 @@ export const getDashboardStatsDb = async (dateStr, scope) => {
   const windows = await prisma.attendanceWindow.findMany({
     where,
     include: {
-      startedBy: { select: { fullName: true } }
+      startedBy: { select: { name: true } }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -270,7 +270,7 @@ export const getDashboardStatsDb = async (dateStr, scope) => {
     windowId: firstWindow.id,
     windowStatus: firstWindow.status.toLowerCase(),
     windowStartedAt: firstWindow.createdAt,
-    windowStartedByName: firstWindow.startedBy ? firstWindow.startedBy.fullName : null
+    windowStartedByName: firstWindow.startedBy ? firstWindow.startedBy.name : null
   };
 };
 
@@ -309,8 +309,8 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
   const studentMatch = {};
   if (query.search) {
     studentMatch.OR = [
-      { fullName: { contains: query.search, mode: 'insensitive' } },
-      { studentCode: { contains: query.search, mode: 'insensitive' } }
+      { name: { contains: query.search, mode: 'insensitive' } },
+      { admissionNo: { contains: query.search, mode: 'insensitive' } }
     ];
   }
   if (query.room) {
@@ -345,12 +345,12 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
         student: {
           select: {
             id: true,
-            fullName: true,
-            studentCode: true,
+            name: true,
+            admissionNo: true,
             studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { roomNumber: true } }
           }
         },
-        scannedBy: { select: { id: true, fullName: true } }
+        scannedBy: { select: { id: true, name: true } }
       }
     }),
     prisma.attendanceRecord.count({ where })
@@ -363,13 +363,13 @@ export const getAttendanceRecordsDb = async (windowId, query, scope) => {
     remarks: r.remarks,
     student: r.student ? {
       _id: r.student.id,
-      name: r.student.fullName,
-      studentId: r.student.studentCode,
+      name: r.student.name,
+      admissionNo: r.student.admissionNo,
       room: r.student.studentHostels?.[0]?.roomNumber || null
     } : null,
     scannedBy: r.scannedBy ? {
       _id: r.scannedBy.id,
-      name: r.scannedBy.fullName
+      name: r.scannedBy.name
     } : null
   }));
 
@@ -409,7 +409,7 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
 
     const studentExists = await tx.student.findFirst({
       where: { id: studentId, isActive: true },
-      select: { id: true, studentCode: true, fullName: true, studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { hostelId: true } } }
+      select: { id: true, admissionNo: true, name: true, studentHostels: { where: { status: STUDENT_HOSTEL_STATUS.ACTIVE }, select: { hostelId: true } } }
     });
 
     if (!studentExists) {
@@ -456,8 +456,8 @@ export const scanStudentDb = async (windowId, studentId, wardenId) => {
       },
       student: {
         _id: studentExists.id,
-        studentId: studentExists.studentCode,
-        name: studentExists.fullName,
+        admissionNo: studentExists.admissionNo,
+        name: studentExists.name,
         profileImage: null
       }
     };
@@ -619,7 +619,7 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
         isActive: true,
         studentHostels: { some: { hostelId: wardenHostelId, status: STUDENT_HOSTEL_STATUS.ACTIVE } }
       },
-      select: { id: true, studentCode: true, fullName: true }
+      select: { id: true, admissionNo: true, name: true }
     });
 
     if (!student) {
@@ -754,8 +754,8 @@ export const correctAttendanceDb = async (windowId, studentId, wardenId, wardenH
       },
       student: {
         _id: student.id,
-        studentId: student.studentCode,
-        name: student.fullName
+        admissionNo: student.admissionNo,
+        name: student.name
       },
       windowStats: updatedCounts
     };
@@ -832,7 +832,7 @@ export const getStudentAttendanceHistoryDb = async (studentId, query) => {
       orderBy: { scannedAt: 'desc' },
       include: {
         scannedBy: {
-          select: { fullName: true }
+          select: { name: true }
         }
       }
     })
@@ -843,7 +843,7 @@ export const getStudentAttendanceHistoryDb = async (studentId, query) => {
     date: formatDate(record.scannedAt),
     markedAt: formatTime(record.scannedAt),
     status: capitalize(record.status.toLowerCase()),
-    wardenName: record.scannedBy ? record.scannedBy.fullName : null
+    wardenName: record.scannedBy ? record.scannedBy.name : null
   }));
 
   return {

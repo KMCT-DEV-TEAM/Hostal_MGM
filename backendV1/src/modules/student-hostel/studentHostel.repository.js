@@ -10,7 +10,7 @@ export const getStudentById = (studentId) =>
     where: { id: studentId },
     select: {
       id: true,
-      fullName: true, // MongoDB field: student.name
+      name: true, // MongoDB field: student.name
       organizationId: true,
       isActive: true,
     },
@@ -61,8 +61,8 @@ export const getHostelHistoryDb = async (query) => {
   }
   if (search) {
     where.OR = [
-      { student: { fullName: { contains: search, mode: "insensitive" } } },
-      { student: { studentCode: { contains: search, mode: "insensitive" } } },
+      { student: { name: { contains: search, mode: "insensitive" } } },
+      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
       { hostel: { name: { contains: search, mode: "insensitive" } } },
       { roomNumber: { contains: search, mode: "insensitive" } },
     ];
@@ -82,8 +82,8 @@ export const getHostelHistoryDb = async (query) => {
         student: {
           select: {
             id: true,
-            fullName: true,
-            studentCode: true,
+            name: true,
+            admissionNo: true,
             email: true,
           }
         },
@@ -104,13 +104,13 @@ export const getHostelHistoryDb = async (query) => {
         allocatedBy: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
           }
         },
         vacatedBy: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
           }
         }
       }
@@ -139,13 +139,13 @@ export const getStudentHostelTimelineDb = async (studentId) => {
       allocatedBy: {
         select: {
           id: true,
-          fullName: true,
+          name: true,
         }
       },
       vacatedBy: {
         select: {
           id: true,
-          fullName: true,
+          name: true,
         }
       }
     }

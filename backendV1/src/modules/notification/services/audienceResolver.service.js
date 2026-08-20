@@ -61,13 +61,13 @@ class AudienceResolverService {
 
         const parents = await prisma.parent.findMany({
             where,
-            select: { id: true, fullName: true, email: true, phone: true }
+            select: { id: true, name: true, email: true, phone: true }
         });
 
         return parents.map(p => ({
             id: p.id,
             recipientType: RecipientModel.PARENT,
-            name: p.fullName,
+            name: p.name,
             email: p.email,
             phone: p.phone
         }));
@@ -83,13 +83,13 @@ class AudienceResolverService {
 
         const users = await prisma.user.findMany({
             where,
-            select: { id: true, fullName: true, email: true, phone: true, role: true }
+            select: { id: true, name: true, email: true, phone: true, role: true }
         });
 
         return users.map(u => ({
             id: u.id,
             recipientType: RecipientModel.USER,
-            name: u.fullName,
+            name: u.name,
             email: u.email,
             phone: u.phone,
             role: u.role

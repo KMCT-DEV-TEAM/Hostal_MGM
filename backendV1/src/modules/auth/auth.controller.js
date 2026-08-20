@@ -61,7 +61,7 @@ const login = asyncHandler(async (req, res) => {
     return sendError(res, 403, `Account locked due to too many failed attempts. Try again in ${remainingSecs} seconds`);
   }
 
-  const isMatch = await comparePassword(password, user.passwordHash);
+  const isMatch = await comparePassword(password, user.password);
 
   if (!isMatch) {
     const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
@@ -143,8 +143,8 @@ const me = asyncHandler(async (req, res) => {
         const qrToken = jwt.sign(
           {
             studentId: user.id,
-            idString: user.studentCode,
-            name: user.fullName,
+            admissionNo: user.admissionNo,
+            name: user.name,
             roomNo: activeAllocation?.roomNumber || null,
             type: "attendance_qr",
           },
@@ -188,7 +188,7 @@ const me = asyncHandler(async (req, res) => {
     return sendError(res, 401, "User not found or deactivated");
   }
   
-  delete user.passwordHash;
+  delete user.password;
   delete user.password;
 
   return sendSuccess(res, 200, "Token is valid", { user });
@@ -220,7 +220,7 @@ export const verifyPassword = asyncHandler(async (req, res) => {
     return sendError(res, 401, "User not found");
   }
 
-  const isMatch = await comparePassword(password, user.passwordHash);
+  const isMatch = await comparePassword(password, user.password);
 
   if (!isMatch) {
     return sendError(res, 401, "Incorrect password");

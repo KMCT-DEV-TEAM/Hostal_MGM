@@ -4,7 +4,9 @@ import { deleteOtpDb, verifyOtpDb } from "../otps/otp.service.js";
 import { 
   createParentDb,
   updateParentDb,
-  changeParentEmailDb
+  changeParentEmailDb,
+  toggleParentStatusDb,
+  setDefaultGuardianDb
 } from "./parent.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { checkStudentAccess, checkParentAccess } from "./parent.scope.js";
@@ -267,5 +269,48 @@ export const changeParentEmail = asyncHandler(async (req, res) => {
       relationship: undefined,
       defaultGuardian: undefined,
     },
+  });
+});
+
+export const setDefaultGuardian = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { defaultGuardian } = req.body;
+
+  if (typeof defaultGuardian !== "boolean") {
+    return sendError(res, 400, "defaultGuardian must be a boolean");
+  }
+
+  let parentContext;
+  try {
+    parentContext = await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
+  }
+
+  const result = await setDefaultGuardianDb(id, defaultGuardian);
+
+  if (!result) {
+    return sendError(res, 404, "Parent not found");
+  }
+
+  const message = defaultGuardian
+    ? "Parent set as default guardian successfully"
+    : "Parent removed as default guardian successfully";
+
+  await createLogDb({
+    action: defaultGuardian ? "Set Default Guardian" : "Removed Default Guardian",
+    module: "Parent",
+    entityId: id,
+    user: req.user.id || req.user._id,
+    userRole: req.user.role,
+    details: `Parent ${defaultGuardian ? 'set as' : 'removed as'} default guardian`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, message, {
+    data: {
+      parentId: result.parentProfile.id,
+      defaultGuardian: result.parentProfile.defaultGuardian,
+    }
   });
 });

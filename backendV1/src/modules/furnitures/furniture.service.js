@@ -501,7 +501,7 @@ export const getFurnitureAssetsListService = async (matchQuery, skip, limit) => 
     take: limit,
     orderBy: { createdAt: 'desc' },
     include: {
-      student: { select: { id: true, name: true, studentCode: true } },
+      student: { select: { id: true, name: true, admissionNo: true } },
       furnitureType: {
         include: {
           organization: { select: { id: true, name: true } },
@@ -535,7 +535,7 @@ export const getFurnitureAssetsListService = async (matchQuery, skip, limit) => 
     studentId: asset.student ? {
       _id: asset.student.id,
       name: asset.student.name,
-      studentId: asset.student.studentCode
+      admissionNo: asset.student.admissionNo
     } : null
   }));
 };
@@ -644,7 +644,7 @@ export const getFurnitureAssetDetailsService = async (assetId) => {
         orderBy: { createdAt: 'desc' },
         include: {
           student: { select: { id: true, name: true } },
-          performedBy: { select: { fullName: true } }
+          performedBy: { select: { name: true } }
         }
       }
     }
@@ -676,7 +676,7 @@ export const getFurnitureAssetDetailsService = async (assetId) => {
         _id: h.student.id
       } : null,
       performedBy: h.performedBy ? {
-        name: h.performedBy.fullName,
+        name: h.performedBy.name,
         role: h.performedByRole
       } : null
     }))

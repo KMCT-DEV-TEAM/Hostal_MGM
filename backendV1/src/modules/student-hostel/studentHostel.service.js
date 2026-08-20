@@ -188,7 +188,7 @@ const allocateStudentToHostelService = async (
     student: {
       _id: student.id, // matches MongoDB result.student._id
       id: student.id,
-      name: student.fullName, // DEVIATION 5 fix — "name" not "fullName"
+      name: student.name, // DEVIATION 5 fix — "name" not "name"
       roomNumber: newAllocation.roomNumber, // derived from allocation source-of-truth for API compatibility
       hostelStatus: "active", // derived from allocation source-of-truth for API compatibility
     },
@@ -313,7 +313,7 @@ const changeHostelInternal = async (
     student: {
       _id: student.id,
       id: student.id,
-      name: student.fullName,
+      name: student.name,
       roomNumber: newAllocation.roomNumber,
       hostelStatus: "active",
     },
@@ -432,8 +432,8 @@ export const vacateHostelService = async (studentId, data, currentUser) => {
       select: { userId: true }
     }).then(wardens => wardens.map(w => w.userId));
 
-    const sender = currentUser ? { id: actorId, role: currentUser.role, name: currentUser.fullName } : null;
-    const studentName = txStudent.fullName;
+    const sender = currentUser ? { id: actorId, role: currentUser.role, name: currentUser.name } : null;
+    const studentName = txStudent.name;
 
     // Notify Student and Parent
     orchestratorService.triggerNotification({
@@ -466,7 +466,7 @@ export const vacateHostelService = async (studentId, data, currentUser) => {
     newAllocation: updatedAllocation,
     student: {
       ...txStudent,
-      name: txStudent.fullName // Map for legacy compatibility if needed
+      name: txStudent.name // Map for legacy compatibility if needed
     },
     oldHostelId
   };

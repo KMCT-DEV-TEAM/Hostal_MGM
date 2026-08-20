@@ -20,7 +20,7 @@ const getPaginatedUsersByRole = async (role, page, limit, status, search, additi
 
   if (search) {
     whereClause.OR = [
-      { fullName: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
       { phone: { contains: search, mode: 'insensitive' } }
     ];
@@ -34,7 +34,7 @@ const getPaginatedUsersByRole = async (role, page, limit, status, search, additi
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        fullName: true,
+        name: true,
         email: true,
         phone: true,
         role: true,
@@ -80,10 +80,10 @@ export const getAdmins = asyncHandler(async (req, res) => {
   // We are looking for ADMIN role
   const { users, totalCount } = await getPaginatedUsersByRole("ADMIN", page, limit, status, search);
 
-  // Note: The frontend expects 'name' instead of 'fullName' based on old mongoose schema
+  // Note: The frontend expects 'name' instead of 'name' based on old mongoose schema
   const mappedUsers = users.map(user => ({
     ...user,
-    name: user.fullName
+    name: user.name
   }));
 
   return sendSuccess(res, 200, "Admins fetched successfully", {
@@ -115,7 +115,7 @@ export const getWardens = asyncHandler(async (req, res) => {
       ...user,
       id: user.id,
       _id: user.id,
-      name: user.fullName,
+      name: user.name,
       status: user.isActive ? 'Active' : 'Inactive',
       hostel
     };
@@ -150,7 +150,7 @@ export const getAssistantWardens = asyncHandler(async (req, res) => {
       ...user,
       id: user.id,
       _id: user.id,
-      name: user.fullName,
+      name: user.name,
       status: user.isActive ? 'Active' : 'Inactive',
       hostel
     };
@@ -206,10 +206,10 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
   const warden = await prisma.$transaction(async (tx) => {
       const newWarden = await tx.user.create({
           data: {
-              fullName: name,
+              name: name,
               email,
               phone,
-              passwordHash: hashedPassword,
+              password: hashedPassword,
               tempPassword: true,
               role: "ASSISTANT_WARDEN",
               createdBy: req.user?.id || req.user?._id
@@ -268,7 +268,7 @@ export const updateAssistantWarden = asyncHandler(async (req, res) => {
   const updatedUser = await prisma.user.update({
     where: { id },
     data: {
-      fullName: name,
+      name: name,
       phone
     }
   });
@@ -341,10 +341,10 @@ export const createAdmin = asyncHandler(async (req, res) => {
   const hashed = await hashPassword(tempPass);
   const admin = await prisma.user.create({
     data: {
-      fullName: name,
+      name: name,
       email,
       phone,
-      passwordHash: hashed,
+      password: hashed,
       role: "ADMIN",
       organizationId,
     },
@@ -370,7 +370,7 @@ export const createAdmin = asyncHandler(async (req, res) => {
   return sendSuccess(res, 201, "Admin created successfully", {
     admin: {
       id: admin.id,
-      name: admin.fullName,
+      name: admin.name,
       email: admin.email,
       phone: admin.phone,
       role: admin.role,
@@ -385,7 +385,7 @@ export const updateAdmin = asyncHandler(async (req, res) => {
   const { name, phone, status, isActive } = req.body;
 
   const updateData = {};
-  if (name !== undefined) updateData.fullName = name;
+  if (name !== undefined) updateData.name = name;
   if (phone !== undefined) updateData.phone = phone;
   if (isActive !== undefined) updateData.isActive = isActive;
   else if (status !== undefined) updateData.isActive = status === 'Active';
@@ -401,7 +401,7 @@ export const updateAdmin = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Admin updated successfully", {
     admin: {
       id: admin.id,
-      name: admin.fullName,
+      name: admin.name,
       email: admin.email,
       phone: admin.phone,
       role: admin.role,
@@ -456,7 +456,7 @@ export const updateAdminOrganization = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Admin organization updated successfully", {
     admin: {
       id: updatedAdmin.id,
-      name: updatedAdmin.fullName,
+      name: updatedAdmin.name,
       email: updatedAdmin.email,
       phone: updatedAdmin.phone,
       organization: updatedAdmin.organization,
@@ -489,7 +489,7 @@ export const toggleAdminStatus = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, message, {
     admin: {
       id: updatedAdmin.id,
-      name: updatedAdmin.fullName,
+      name: updatedAdmin.name,
       email: updatedAdmin.email,
       role: updatedAdmin.role,
       isActive: updatedAdmin.isActive,
@@ -536,7 +536,7 @@ export const updateUserEmail = asyncHandler(async (req, res) => {
   }
 
   const { comparePassword } = await import("../../utils/hash.js");
-  const isMatch = await comparePassword(password, currentUser.passwordHash);
+  const isMatch = await comparePassword(password, currentUser.password);
   if (!isMatch) {
     return sendError(res, 401, "Invalid password");
   }
@@ -568,7 +568,7 @@ export const updateUserEmail = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "User email updated successfully", {
     user: {
       id: updatedUser.id,
-      name: updatedUser.fullName,
+      name: updatedUser.name,
       email: updatedUser.email,
       phone: updatedUser.phone,
       role: updatedUser.role,
@@ -599,10 +599,10 @@ export const createWarden = asyncHandler(async (req, res) => {
   const warden = await prisma.$transaction(async (tx) => {
       const newWarden = await tx.user.create({
           data: {
-              fullName: name,
+              name: name,
               email,
               phone,
-              passwordHash: hashedPassword,
+              password: hashedPassword,
               tempPassword: true,
               role: "WARDEN",
               createdBy: req.user?.id || req.user?._id
@@ -662,7 +662,7 @@ export const updateWarden = asyncHandler(async (req, res) => {
   const updatedUser = await prisma.user.update({
     where: { id },
     data: {
-      fullName: name,
+      name: name,
       phone
     }
   });
@@ -769,7 +769,7 @@ export const getMaintenanceStaff = asyncHandler(async (req, res) => {
       ...user,
       id: user.id,
       _id: user.id,
-      name: user.fullName,
+      name: user.name,
       status: user.isActive ? 'Active' : 'Inactive',
       specialization,
       assignedTask,
@@ -805,10 +805,10 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
   const staff = await prisma.$transaction(async (tx) => {
       const newStaff = await tx.user.create({
           data: {
-              fullName: name,
+              name: name,
               email,
               phone,
-              passwordHash: hashedPassword,
+              password: hashedPassword,
               tempPassword: true,
               role: "MAINTENANCE_STAFF",
               organizationId: organizationId || null,
@@ -875,7 +875,7 @@ export const updateMaintenanceStaff = asyncHandler(async (req, res) => {
   const updatedUser = await prisma.user.update({
     where: { id },
     data: {
-      fullName: name,
+      name: name,
       phone,
       settings: newSettings
     }
