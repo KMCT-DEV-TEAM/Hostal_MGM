@@ -4,17 +4,19 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 import { ROLES } from "../../constants/roles.js";
 
-import { 
-  validateCreateParent, 
+import {
+  validateCreateParent,
   validateUpdateParent,
-  validateParentIdParam 
+  validateParentIdParam
 } from "./parent.validation.js";
-import { 
-  createParent, 
+import {
+  createParent,
   resolveParentConflict,
   updateParent,
-  changeParentEmail
+  changeParentEmail,
+  setDefaultGuardian
 } from "./parent.controller.js";
+import { toggleParentStatusDb } from "./parent.service.js";
 
 const router = express.Router();
 
@@ -49,6 +51,23 @@ router.patch(
   roleMiddleware(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
   validateParentIdParam,
   changeParentEmail
+);
+
+router.patch(
+  "/:id/toggle-status",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  validateParentIdParam,
+  toggleParentStatusDb
+);
+
+router.patch(
+  "/:id/default-guardian",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
+  validateParentIdParam,
+  validateUpdateParent,
+  setDefaultGuardian
 );
 
 export default router;
