@@ -6,13 +6,13 @@ const verifyStudentAccess = async (req, res, next) => {
     const roleLower = (req.user?.role || "").toLowerCase();
 
     if (roleLower !== "parent") {
-      if (["admin", "superadmin", "super_admin", "warden", "assistant_warden", "mentor"].includes(roleLower)) {
+      if (["admin", "superadmin", "super_admin", "warden", "assistant_warden", "mentor", "student"].includes(roleLower)) {
         return next();
       }
       return sendError(res, 403, "Access denied. Only parents can access these resources.");
     }
 
-    const studentId = req.params.studentId || req.body.studentId;
+    const studentId = req.params?.studentId || req.body?.studentId || req.query?.studentId;
     if (!studentId) {
       return sendError(res, 400, "Student ID is required to access this resource.");
     }

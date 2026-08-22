@@ -118,3 +118,94 @@ components:
             updatedAt:
               type: string
               format: date-time
+
+    Pass_UnifiedListingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Passes loaded successfully."
+        data:
+          type: object
+          properties:
+            mode:
+              type: string
+              example: "requests"
+            summary:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  example: 5
+                approved:
+                  type: integer
+                  example: 2
+                pending:
+                  type: integer
+                  example: 3
+            data:
+              type: array
+              items:
+                type: object
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                limit:
+                  type: integer
+                  example: 10
+                totalRecords:
+                  type: integer
+                  example: 5
+                totalPages:
+                  type: integer
+                  example: 1
+                hasNextPage:
+                  type: boolean
+                  example: false
+                hasPreviousPage:
+                  type: boolean
+                  example: false
+
+    Pass_ListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Passes loaded successfully."
+        data:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                limit:
+                  type: integer
+                  example: 10
+                totalRecords:
+                  type: integer
+                  example: 5
+                totalPages:
+                  type: integer
+                  example: 1
+                hasNextPage:
+                  type: boolean
+                  example: false
+                hasPreviousPage:
+                  type: boolean
+                  example: false
