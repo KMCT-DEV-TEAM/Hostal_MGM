@@ -25,14 +25,21 @@ export const createPass = asyncHandler(async (req, res) => {
     return sendError(res, 404, "We couldn't find your student account.");
   }
 
-  if (!student.hostelId) {
+  const activeHostelAllocation = await prisma.studentHostel.findFirst({
+    where: {
+      studentId: studentId,
+      status: "active"
+    }
+  });
+
+  if (!activeHostelAllocation) {
     return sendError(res, 400, "It looks like you haven't been assigned to a hostel yet.");
   }
 
   const defaultGuardianLink = await prisma.studentParent.findFirst({
     where: {
       studentId,
-      status: "ACTIVE",
+      status: "active",
       defaultGuardian: true
     }
   });
@@ -56,29 +63,31 @@ export const createPass = asyncHandler(async (req, res) => {
   }
 
   const passData = {
-    hostelId: student.hostelId,
+    organizationId: student.organizationId,
+    hostelId: activeHostelAllocation.hostelId,
     studentId,
     parentId: parent.id,
     passType,
     reason,
-    timeline: [
-      {
-        action: "created",
-        actorId: studentId,
-        actorRole: "student",
-        remarks: "Pass request submitted.",
-      },
-    ],
+    status: "pending_parent",
   };
 
   if (passType === "home_pass") {
-    passData.fromDate = fromDate;
-    passData.toDate = toDate;
-    passData.totalDays = totalDays;
+    passData.fromDate = new Date(fromDate);
+    passData.toDate = new Date(toDate);
   } else if (passType === "out_pass") {
-    passData.date = date;
-    passData.outTime = outTime;
-    passData.expectedReturnTime = expectedReturnTime;
+    const passDate = new Date(date);
+    const [outHour, outMinute] = outTime.split(":").map(Number);
+    const [returnHour, returnMinute] = expectedReturnTime.split(":").map(Number);
+
+    const outDateTime = new Date(passDate);
+    outDateTime.setHours(outHour, outMinute, 0, 0);
+
+    const returnDateTime = new Date(passDate);
+    returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+    passData.fromDate = outDateTime;
+    passData.expectedReturnAt = returnDateTime;
     passData.outPassCategory = outPassCategory;
   }
 
@@ -102,15 +111,6 @@ export const createPass = asyncHandler(async (req, res) => {
       link
     }
   }).catch(err => console.error("Notification Error:", err));
-
-  await createLogDb({
-    action: "PASS_CREATED",
-    entityType: "PASS",
-    entityId: newPass.id,
-    actorId: req.user.id,
-    actorRole: req.user.role,
-    metadata: { passType, reason },
-  });
 
   return sendSuccess(res, 201, "Pass created successfully", newPass);
 });

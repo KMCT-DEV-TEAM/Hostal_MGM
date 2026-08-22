@@ -62,6 +62,8 @@ model Hostel {
   passes            Pass[]
   studentHostels    StudentHostel[]
   visitorVisits     VisitorVisit[]
+  timelineOldHostels PassTimeline[]      @relation("TimelineOldHostel")
+  timelineNewHostels PassTimeline[]      @relation("TimelineNewHostel")
 
   @@index([adminId])
   @@index([isActive])
@@ -195,7 +197,6 @@ model User {
   passApprovals       PassApproval[]
   passGateLogsCor     PassGateLog[]           @relation("GateLogCorrector")
   passGateLogsRec     PassGateLog[]           @relation("GateLogRecorder")
-  passesCreated       Pass[]                  @relation("PassCreator")
   passwordRequests    PasswordRequest[]
   studentHostelAlloc  StudentHostel[]         @relation("AllocatedBy")
   studentHostelVac    StudentHostel[]         @relation("VacatedBy")
@@ -483,12 +484,11 @@ model Pass {
   toDate           DateTime?        @map("to_date")
   expectedReturnAt DateTime?        @map("expected_return_at")
   status           PassStatus
-  createdById      String           @map("created_by") @db.Uuid
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
   approvals        PassApproval[]
   gateLogs         PassGateLog[]
-  createdBy        User             @relation("PassCreator", fields: [createdById], references: [id])
+  timeline         PassTimeline[]
   hostel           Hostel           @relation(fields: [hostelId], references: [id], onDelete: Cascade)
   organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parent           Parent           @relation(fields: [parentId], references: [id], onDelete: Cascade)
@@ -1115,4 +1115,46 @@ enum ParentRelationship {
 enum ParentStatus {
   active
   inactive
+}
+
+enum PassTimelineAction {
+  created
+  updated
+  parent_approved
+  parent_rejected
+  admin_approved
+  admin_rejected
+  admin_cancelled
+  warden_marked_out
+  warden_marked_returned
+  student_edited_leave
+  parent_edited_leave
+  approval_reset
+  student_cancelled_request
+  parent_cancelled_request
+  cancelled
+  returned
+  completed
+  hostel_transferred
+}
+
+model PassTimeline {
+  id            String             @id @default(uuid()) @db.Uuid
+  passId        String             @map("pass_id") @db.Uuid
+  action        PassTimelineAction
+  actorId       String             @map("actor_id") @db.Uuid
+  actorRole     String             @map("actor_role") @db.VarChar(50)
+  oldHostelId   String?            @map("old_hostel_id") @db.Uuid
+  newHostelId   String?            @map("new_hostel_id") @db.Uuid
+  remarks       String?
+  timestamp     DateTime           @default(now())
+
+  pass          Pass               @relation(fields: [passId], references: [id], onDelete: Cascade)
+  oldHostel     Hostel?            @relation("TimelineOldHostel", fields: [oldHostelId], references: [id])
+  newHostel     Hostel?            @relation("TimelineNewHostel", fields: [newHostelId], references: [id])
+
+  @@index([passId])
+  @@index([actorId])
+  @@index([timestamp])
+  @@map("pass_timelines")
 }
