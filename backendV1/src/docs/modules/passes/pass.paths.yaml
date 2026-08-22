@@ -1,0 +1,35 @@
+paths:
+  /passes:
+    post:
+      tags:
+        - Passes
+      summary: Create a new pass
+      description: Creates a new pass request (Home Pass or Out Pass) for the authenticated student.
+      operationId: createPass
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pass_CreateRequest'
+      responses:
+        '201':
+          description: Pass created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error or missing details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '404':
+          description: Student account or default guardian not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_StandardErrorResponse'

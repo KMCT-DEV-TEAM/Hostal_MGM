@@ -6,7 +6,7 @@ const verifyStudentAccess = async (req, res, next) => {
     const roleLower = (req.user?.role || "").toLowerCase();
 
     if (roleLower !== "parent") {
-      if (["admin", "superadmin", "super_admin"].includes(roleLower)) {
+      if (["admin", "superadmin", "super_admin", "warden", "assistant_warden", "mentor"].includes(roleLower)) {
         return next();
       }
       return sendError(res, 403, "Access denied. Only parents can access these resources.");

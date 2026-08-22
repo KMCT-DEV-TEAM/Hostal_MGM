@@ -42,6 +42,18 @@ paths:
                 batchId:
                   type: string
                   format: uuid
+                parentName:
+                  type: string
+                parentEmail:
+                  type: string
+                parentPhone:
+                  type: string
+                relationship:
+                  type: string
+                studentOtp:
+                  type: string
+                parentOtp:
+                  type: string
       responses:
         '201':
           description: Student created successfully

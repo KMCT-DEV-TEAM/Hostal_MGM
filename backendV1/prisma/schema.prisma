@@ -158,7 +158,7 @@ model User {
   id                  String                  @id @default(uuid()) @db.Uuid
   organizationId      String?                 @map("organization_id") @db.Uuid
   employeeCode        String?                 @map("employee_code") @db.VarChar(50)
-  name                String                  @map("full_name") @db.VarChar(255)
+  name                String                  @db.VarChar(255)
   email               String                  @unique @db.VarChar(255)
   phone               String?                 @db.VarChar(20)
   password            String                  @map("password_hash")
@@ -205,6 +205,8 @@ model User {
   organization        Organization?           @relation("OrganizationUsers", fields: [organizationId], references: [id])
   visitorVisitsIn     VisitorVisit[]          @relation("CheckInStaff")
   visitorVisitsOut    VisitorVisit[]          @relation("CheckOutStaff")
+  visitRequestTms     VisitRequestTimeline[]
+  visitorVisitTms     VisitorVisitTimeline[]
 
   @@index([email])
   @@index([organizationId])
@@ -644,6 +646,8 @@ model Visitor {
   changeLogs    VisitorChangeLog[]
   createdBy     Parent             @relation(fields: [createdById], references: [id])
 
+  @@unique([idProofType, idProofNumber])
+  @@index([name])
   @@index([phone])
   @@index([status])
   @@map("visitors")
@@ -664,20 +668,22 @@ model VisitorChangeLog {
 }
 
 model VisitRequest {
-  id           String             @id @default(uuid()) @db.Uuid
-  visitorId    String             @map("visitor_id") @db.Uuid
-  parentId     String?            @map("parent_id") @db.Uuid
-  studentId    String             @map("student_id") @db.Uuid
-  relationship String             @db.VarChar(50)
-  purpose      String             @db.VarChar(255)
-  status       VisitRequestStatus @default(PENDING)
-  remarks      String?
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
-  parent       Parent?            @relation(fields: [parentId], references: [id])
-  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  visitor      Visitor            @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  id               String                 @id @default(uuid()) @db.Uuid
+  visitorId        String                 @map("visitor_id") @db.Uuid
+  parentId         String?                @map("parent_id") @db.Uuid
+  studentId        String                 @map("student_id") @db.Uuid
+  relationship     String                 @db.VarChar(50)
+  purpose          String                 @db.VarChar(255)
+  status           VisitRequestStatus     @default(PENDING)
+  remarks          String?
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  parent           Parent?                @relation(fields: [parentId], references: [id])
+  student          Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  visitor          Visitor                @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  approvalTimeline VisitRequestTimeline[]
 
+  @@index([visitorId, studentId, status])
   @@index([visitorId])
   @@index([studentId])
   @@index([status])
@@ -685,28 +691,61 @@ model VisitRequest {
 }
 
 model VisitorVisit {
-  id               String                @id @default(uuid()) @db.Uuid
-  visitorRefId     String                @map("visitor_ref_id") @db.Uuid
-  visitorRefType   String                @map("visitor_ref_type") @db.VarChar(20)
-  hostelId         String                @map("hostel_id") @db.Uuid
-  purpose          String                @db.VarChar(255)
-  status           VisitStatus           @default(CHECKED_IN)
-  checkInTime      DateTime              @map("check_in_time")
-  expectedExitTime DateTime              @map("expected_exit_time")
-  checkOutTime     DateTime?             @map("check_out_time")
-  checkedInById    String?               @map("checked_in_by") @db.Uuid
-  checkedOutById   String?               @map("checked_out_by") @db.Uuid
-  createdAt        DateTime              @default(now()) @map("created_at")
-  updatedAt        DateTime              @updatedAt @map("updated_at")
+  id               String                 @id @default(uuid()) @db.Uuid
+  visitorRefId     String                 @map("visitor_ref_id") @db.Uuid
+  visitorRefType   String                 @map("visitor_ref_type") @db.VarChar(20)
+  hostelId         String                 @map("hostel_id") @db.Uuid
+  purpose          String                 @db.VarChar(255)
+  status           VisitStatus            @default(CHECKED_IN)
+  checkInTime      DateTime               @map("check_in_time")
+  expectedExitTime DateTime               @map("expected_exit_time")
+  checkOutTime     DateTime?              @map("check_out_time")
+  checkedInById    String?                @map("checked_in_by") @db.Uuid
+  checkedOutById   String?                @map("checked_out_by") @db.Uuid
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
   visitStudents    VisitorVisitStudent[]
-  checkedInBy      User?                 @relation("CheckInStaff", fields: [checkedInById], references: [id])
-  checkedOutBy     User?                 @relation("CheckOutStaff", fields: [checkedOutById], references: [id])
-  hostel           Hostel                @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  checkedInBy      User?                  @relation("CheckInStaff", fields: [checkedInById], references: [id])
+  checkedOutBy     User?                  @relation("CheckOutStaff", fields: [checkedOutById], references: [id])
+  hostel           Hostel                 @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  visitTimeline    VisitorVisitTimeline[]
 
   @@index([visitorRefId, visitorRefType])
   @@index([hostelId])
   @@index([status])
+  // REQUIRES RAW SQL MIGRATION: CREATE UNIQUE INDEX visitor_visits_active_checkin_idx ON visitor_visits (visitor_ref_id, visitor_ref_type, status) WHERE status = 'CHECKED_IN';
   @@map("visitor_visits")
+}
+
+model VisitRequestTimeline {
+  id              String   @id @default(uuid()) @db.Uuid
+  visitRequestId  String   @map("visit_request_id") @db.Uuid
+  action          String   @db.VarChar(50)
+  performedById   String   @map("performed_by") @db.Uuid
+  performedByRole String   @map("performed_by_role") @db.VarChar(50)
+  remarks         String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  performedBy  User         @relation(fields: [performedById], references: [id])
+  visitRequest VisitRequest @relation(fields: [visitRequestId], references: [id], onDelete: Cascade)
+
+  @@index([visitRequestId])
+  @@map("visit_request_timelines")
+}
+
+model VisitorVisitTimeline {
+  id             String   @id @default(uuid()) @db.Uuid
+  visitorVisitId String   @map("visitor_visit_id") @db.Uuid
+  action         String   @db.VarChar(50)
+  performedById  String?  @map("performed_by") @db.Uuid
+  remarks        String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  performedBy  User?        @relation(fields: [performedById], references: [id])
+  visitorVisit VisitorVisit @relation(fields: [visitorVisitId], references: [id], onDelete: Cascade)
+
+  @@index([visitorVisitId])
+  @@map("visitor_visit_timelines")
 }
 
 model VisitorVisitStudent {
@@ -909,22 +948,23 @@ enum Role {
 }
 
 enum PassType {
-  HOME_PASS
-  OUT_PASS
+  home_pass
+  out_pass
 }
 
 enum OutPassCategory {
-  IN_HOUSE
-  OUT_HOUSE
+  in_house
+  out_house
 }
 
 enum PassStatus {
-  PENDING_PARENT
-  PENDING_ADMIN
-  APPROVED
-  REJECTED
-  CANCELLED
-  COMPLETED
+  pending_parent
+  pending_admin
+  approved
+  rejected
+  cancelled
+  completed
+  returned
 }
 
 enum ApprovalLevel {
@@ -977,6 +1017,7 @@ enum IdProofType {
   DRIVING_LICENSE
   VOTER_ID
   PAN
+  OTHER
 }
 
 enum VisitorStatus {
@@ -991,12 +1032,20 @@ enum VisitRequestStatus {
   APPROVED
   REJECTED
   CANCELLED
+  REVOKED
+  INACTIVE
+  COMPLETED
+  EXPIRED
+  ACTIVE
+  BLACKLISTED
 }
 
 enum VisitStatus {
   CHECKED_IN
   CHECKED_OUT
   OVERSTAYED
+  EXTENDED
+  COMPLETED
 }
 
 enum FurnitureStatus {
