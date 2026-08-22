@@ -188,6 +188,7 @@ const me = asyncHandler(async (req, res) => {
     return sendError(res, 401, "User not found or deactivated");
   }
   
+  user.temppass = Boolean(user.tempPassword);
   delete user.passwordHash;
   delete user.password;
 
@@ -197,6 +198,73 @@ const me = asyncHandler(async (req, res) => {
 const logout = asyncHandler(async (req, res) => {
   res.clearCookie("refreshToken", refreshTokenCookieOptions);
   return sendSuccess(res, 200, "Logout successful");
+});
+
+export const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!oldPassword || !newPassword) {
+    return sendError(res, 400, "Old and new password are required");
+  }
+
+  let user = null;
+  let model = 'user';
+
+  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+    user = await prisma.student.findUnique({ where: { id: userId } });
+    model = 'student';
+  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+    user = await prisma.parent.findUnique({ where: { id: userId } });
+    model = 'parent';
+  } else {
+    user = await prisma.user.findUnique({ where: { id: userId } });
+  }
+
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
+
+  const isMatch = await comparePassword(oldPassword, user.passwordHash);
+  if (!isMatch) {
+    return sendError(res, 401, "Invalid current password");
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  if (model === 'student') {
+    await prisma.student.update({
+      where: { id: userId },
+      data: {
+        passwordHash: hashedPassword,
+        tempPassword: false,
+        failedLoginAttempts: 0,
+        lockUntil: null
+      }
+    });
+  } else if (model === 'parent') {
+    await prisma.parent.update({
+      where: { id: userId },
+      data: {
+        passwordHash: hashedPassword,
+        tempPassword: false,
+        failedLoginAttempts: 0,
+        lockUntil: null
+      }
+    });
+  } else {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: hashedPassword,
+        tempPassword: false,
+        failedLoginAttempts: 0,
+        lockUntil: null
+      }
+    });
+  }
+
+  return sendSuccess(res, 200, "Password changed successfully");
 });
 
 export const verifyPassword = asyncHandler(async (req, res) => {
