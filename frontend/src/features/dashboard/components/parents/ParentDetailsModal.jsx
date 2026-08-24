@@ -5,6 +5,8 @@ import ChangeEmailModal from '../students/ChangeEmailModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { changeParentEmail } from '@/services/parent.service';
 import InfoRow from '@/components/ui/InfoRow';
+import DetailCard from '@/components/ui/DetailCard';
+import DetailRow from '@/components/ui/DetailRow';
 
 export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
     const role = useAuthStore((s) => s.user?.role);
@@ -39,67 +41,58 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
             maxWidth="max-w-5xl"
         >
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* Main Content Area */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-3 space-y-6">
                     {/* Basic Info */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-semibold text-primary mb-1">Basic Info</h3>
-                        <p className="text-xs text-gray-400 mb-6">Basic contact information of the Parent</p>
-                        <div className="space-y-1">
-                            <InfoRow label="Full Name">{parent.parentName}</InfoRow>
-                            <InfoRow label="Phone No">{parent.phone}</InfoRow>
-                            <InfoRow label="Email">
-                                <div className="flex items-center justify-between w-full">
-                                    <span>{parent.email}</span>
-                                    {
-                                        role !== "mentor" && <button
-                                            type="button"
-                                            className="ml-2 p-1 rounded text-text-secondary hover:text-primary transition cursor-pointer"
-                                            onClick={() => setIsEmailModalOpen(true)}
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                    }
-                                </div>
-                            </InfoRow>
-                            <InfoRow label="Status">
-                                <span className="flex items-center">
-                                    <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
-                                    {parent.isActive === true ? 'Active' : 'Inactive'}
-                                </span>
-                            </InfoRow>
-                        </div>
-                    </div>
-
-                    {/* Linked Student Info */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-semibold text-primary mb-1">Linked Student Information</h3>
-                        <p className="text-xs text-gray-400 mb-6">Information of the linked Student</p>
-                        <div className="space-y-1">
-                            <InfoRow label="Full Name">{parent.student.name}</InfoRow>
-                            <InfoRow label="Assigned Hostel">Kmct Engineering Hostel</InfoRow>
-                            <InfoRow label="Email">{typeof parent.student === 'object' ? parent.student?.email || 'N/A' : 'student@gmail.com'}</InfoRow>
-                            <InfoRow label="Full Address">Abc street, saojini nagar india</InfoRow>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Summary Sidebar */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                    <h3 className="text-lg font-semibold text-primary mb-4">Parent Summary</h3>
-                    <div className="space-y-1">
-                        <InfoRow label="Full Name">{parent.parentName}</InfoRow>
-                        <InfoRow label="Relation">{parent.relationship}</InfoRow>
-                        <InfoRow label="Student Name">{typeof parent.student === 'object' ? parent.student?.name : parent.student}</InfoRow>
-                        <InfoRow label="Hostel">Kmct Engineering Hostel</InfoRow>
-                        <InfoRow label="Status">
+                    <DetailCard title="Basic Info" subtitle="Basic contact information of the Parent">
+                        <DetailRow label="Full Name" value={parent.parentName} />
+                        <DetailRow label="Phone No" value={parent.phone} />
+                        <DetailRow label="Email" value={
+                            <div className="flex items-center justify-between w-full">
+                                <span>{parent.email}</span>
+                                {
+                                    role !== "mentor" && <button
+                                        type="button"
+                                        className="ml-2 p-1 rounded text-text-secondary hover:text-primary transition cursor-pointer"
+                                        onClick={() => setIsEmailModalOpen(true)}
+                                    >
+                                        <Pencil size={16} />
+                                    </button>
+                                }
+                            </div>
+                        } />
+                        <DetailRow label="Status" value={
                             <span className="flex items-center">
                                 <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
                                 {parent.isActive === true ? 'Active' : 'Inactive'}
                             </span>
-                        </InfoRow>
-                    </div>
+                        } />
+                    </DetailCard>
+
+                    {/* Linked Student Info */}
+                    <DetailCard title="Linked Student Information" subtitle="Information of the linked Student">
+                        <DetailRow label="Full Name" value={parent.student.name} />
+                        <DetailRow label="Assigned Hostel" value="Kmct Engineering Hostel" />
+                        <DetailRow label="Email" value={typeof parent.student === 'object' ? parent.student?.email || 'N/A' : 'student@gmail.com'} />
+                        <DetailRow label="Full Address" value="Abc street, saojini nagar india" />
+                    </DetailCard>
+                </div>
+
+                {/* Right Summary Sidebar */}
+                <div className='lg:col-span-2 space-y-6'>
+                    <DetailCard title="Parent Summary" className="h-fit">
+                        <DetailRow label="Full Name" value={parent.parentName} />
+                        <DetailRow label="Relation" value={parent.relationship} />
+                        <DetailRow label="Student Name" value={typeof parent.student === 'object' ? parent.student?.name : parent.student} />
+                        <DetailRow label="Hostel" value="Kmct Engineering Hostel" />
+                        <DetailRow label="Status" value={
+                            <span className="flex items-center">
+                                <span className={`w-2 h-2 rounded-full ${parent.isActive === true ? 'bg-green-500' : 'bg-red-500'} mr-2`}></span>
+                                {parent.isActive === true ? 'Active' : 'Inactive'}
+                            </span>
+                        } />
+                    </DetailCard>
                 </div>
             </div>
 
