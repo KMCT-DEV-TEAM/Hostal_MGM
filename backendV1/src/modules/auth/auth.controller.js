@@ -189,7 +189,6 @@ const me = asyncHandler(async (req, res) => {
   }
   
   delete user.password;
-  delete user.password;
 
   return sendSuccess(res, 200, "Token is valid", { user });
 });

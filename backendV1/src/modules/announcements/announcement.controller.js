@@ -182,7 +182,7 @@ export const getAnnouncements = asyncHandler(async (req, res) => {
     prisma.announcement.findMany({
       where,
       include: {
-        createdBy: { select: { id: true, fullName: true, role: true } },
+        createdBy: { select: { id: true, name: true, role: true } },
         organizations: { include: { organization: { select: { id: true, name: true } } } },
         hostels: { include: { hostel: { select: { id: true, name: true } } } }
       },
@@ -198,7 +198,7 @@ export const getAnnouncements = asyncHandler(async (req, res) => {
     createdBy: {
       _id: ann.createdBy.id,
       id: ann.createdBy.id,
-      name: ann.createdBy.fullName,
+      name: ann.createdBy.name,
       role: ann.createdBy.role
     },
     targetOrganizations: ann.organizations.map(o => ({ _id: o.organization.id, id: o.organization.id, name: o.organization.name })),
@@ -223,7 +223,7 @@ export const getAnnouncementById = asyncHandler(async (req, res) => {
   const announcement = await prisma.announcement.findUnique({
     where: { id },
     include: {
-      createdBy: { select: { id: true, fullName: true, role: true } },
+      createdBy: { select: { id: true, name: true, role: true } },
       organizations: { include: { organization: { select: { id: true, name: true } } } },
       hostels: { include: { hostel: { select: { id: true, name: true } } } }
     }
@@ -239,7 +239,7 @@ export const getAnnouncementById = asyncHandler(async (req, res) => {
     createdBy: {
       _id: announcement.createdBy.id,
       id: announcement.createdBy.id,
-      name: announcement.createdBy.fullName,
+      name: announcement.createdBy.name,
       role: announcement.createdBy.role
     },
     targetOrganizations: announcement.organizations.map(o => ({ _id: o.organization.id, id: o.organization.id, name: o.organization.name })),
