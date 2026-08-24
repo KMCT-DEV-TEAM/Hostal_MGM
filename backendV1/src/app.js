@@ -50,6 +50,7 @@ import passwordRequestRoutes from './modules/passwordRequests/passwordRequest.ro
 import userRoutes from './modules/users/user.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
 import furnitureRoutes from './modules/furnitures/furniture.routes.js';
+import passRoutes from './modules/passes/pass.routes.js';
 
 import studentRoutes from './modules/students/student.routes.js';
 import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
@@ -74,6 +75,7 @@ app.use('/api/student-hostels', studentHostelRoutes);
 app.use('/api/parents', parentRoutes);
 app.use('/api/furnitures', furnitureRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/passes', passRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);

@@ -30,7 +30,7 @@ const authMiddleware = async (req, res, next) => {
     } else if (roleLower === "parent") {
       user = await prisma.parent.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, isActive: true, name: true },
+        select: { id: true, email: true, isActive: true, parentName: true },
       });
       if (user) user.role = "parent";
     } else {

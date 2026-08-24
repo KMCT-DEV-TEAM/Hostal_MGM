@@ -26,9 +26,9 @@ const seedSuperAdmin = async () => {
       update: {},
 
       create: {
-        fullName: process.env.SUPER_ADMIN_NAME,
+        name: process.env.SUPER_ADMIN_NAME,
         email: process.env.SUPER_ADMIN_EMAIL,
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         role: "SUPER_ADMIN",
       },
     });

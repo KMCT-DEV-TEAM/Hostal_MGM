@@ -329,3 +329,305 @@ export const setDefaultGuardianDb = async (parentProfileId, defaultGuardian) => 
 
   return { parentProfile: { ...parentProfile, _id: parentProfile.id, defaultGuardian } };
 };
+
+export const getParentsService = async ({ organizationId, hostelIds, batchIds, query }) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const where = {};
+
+  if (relationship) {
+    where.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    where.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    where.parent = { isActive: isActive === "true" };
+  }
+
+  const studentFilters = {};
+
+  if (studentId) {
+    studentFilters.id = studentId;
+  }
+
+  if (organizationId) {
+    studentFilters.organizationId = organizationId;
+  }
+
+  if (hostelIds && Array.isArray(hostelIds) && hostelIds.length > 0) {
+    studentFilters.studentHostels = {
+      some: { hostelId: { in: hostelIds }, status: "active" }
+    };
+  }
+
+  if (batchIds && Array.isArray(batchIds) && batchIds.length > 0) {
+    studentFilters.batchId = { in: batchIds };
+  }
+
+  if (Object.keys(studentFilters).length > 0) {
+    where.student = studentFilters;
+  }
+
+  if (search) {
+    where.OR = [
+      { parent: { parentName: { contains: search, mode: "insensitive" } } },
+      { parent: { email: { contains: search, mode: "insensitive" } } },
+      { parent: { phone: { contains: search, mode: "insensitive" } } },
+      { relationship: { contains: search, mode: "insensitive" } },
+      { student: { name: { contains: search, mode: "insensitive" } } },
+      { student: { email: { contains: search, mode: "insensitive" } } },
+      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const studentParents = await prisma.studentParent.findMany({
+    where,
+    include: {
+      parent: true,
+      student: {
+        include: {
+          organization: true,
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: limitNumber,
+  });
+
+  const totalRecords = await prisma.studentParent.count({ where });
+
+  const parents = studentParents.map(sp => ({
+    _id: sp.parent.id,
+    parentName: sp.parent.parentName,
+    relationship: sp.relationship,
+    phone: sp.parent.phone,
+    email: sp.parent.email,
+    defaultGuardian: sp.defaultGuardian,
+    isActive: sp.parent.isActive,
+    createdAt: sp.parent.createdAt,
+    student: {
+      _id: sp.student.id,
+      admissionNo: sp.student.admissionNo,
+      name: sp.student.name,
+      email: sp.student.email,
+      organizationId: sp.student.organizationId,
+    },
+    organization: sp.student.organization ? {
+      _id: sp.student.organization.id,
+      name: sp.student.organization.name,
+    } : null,
+  }));
+
+  return {
+    parents,
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limitNumber),
+    },
+  };
+};
+
+export const exportParentsService = async ({ organizationId, query }) => {
+  const {
+    search = "",
+    relationship,
+    defaultGuardian,
+    isActive,
+    studentId,
+  } = query;
+
+  const where = {};
+
+  if (relationship) {
+    where.relationship = relationship;
+  }
+
+  if (typeof defaultGuardian !== "undefined") {
+    where.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  if (typeof isActive !== "undefined") {
+    where.parent = { isActive: isActive === "true" };
+  }
+
+  const studentFilters = {};
+
+  if (studentId) {
+    studentFilters.id = studentId;
+  }
+
+  if (organizationId) {
+    studentFilters.organizationId = organizationId;
+  }
+
+  if (Object.keys(studentFilters).length > 0) {
+    where.student = studentFilters;
+  }
+
+  if (search) {
+    where.OR = [
+      { parent: { parentName: { contains: search, mode: "insensitive" } } },
+      { parent: { email: { contains: search, mode: "insensitive" } } },
+      { parent: { phone: { contains: search, mode: "insensitive" } } },
+      { relationship: { contains: search, mode: "insensitive" } },
+      { student: { name: { contains: search, mode: "insensitive" } } },
+      { student: { email: { contains: search, mode: "insensitive" } } },
+      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const studentParents = await prisma.studentParent.findMany({
+    where,
+    include: {
+      parent: true,
+      student: {
+        include: {
+          organization: true,
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const parents = studentParents.map(sp => ({
+    _id: sp.parent.id,
+    parentName: sp.parent.parentName,
+    relationship: sp.relationship,
+    phone: sp.parent.phone,
+    email: sp.parent.email,
+    defaultGuardian: sp.defaultGuardian,
+    isActive: sp.parent.isActive,
+    createdAt: sp.parent.createdAt,
+    student: {
+      _id: sp.student.id,
+      admissionNo: sp.student.admissionNo,
+      name: sp.student.name,
+      email: sp.student.email,
+      organizationId: sp.student.organizationId,
+    },
+    organization: sp.student.organization ? {
+      _id: sp.student.organization.id,
+      name: sp.student.organization.name,
+    } : null,
+  }));
+
+  return { parents };
+};
+
+export const getParentStudentsService = async (parentId, filters = {}) => {
+  const studentFilters = {};
+
+  if (filters.studentStatus) {
+    if (!["active", "inactive"].includes(filters.studentStatus)) {
+      throw new Error("Invalid studentStatus. Allowed values: active, inactive");
+    }
+    studentFilters.isActive = filters.studentStatus === "active";
+  }
+
+  // Setup hostel filters for Prisma's StudentHostel relation
+  const hostelFilters = {};
+  let hasHostelFilter = false;
+
+  if (filters.hostelStatus) {
+    if (!["active", "inactive"].includes(filters.hostelStatus)) {
+      throw new Error("Invalid hostelStatus. Allowed values: active, inactive");
+    }
+    // Only "active" means they currently reside there. If "inactive", it means no active allocation.
+    if (filters.hostelStatus === "active") {
+      hostelFilters.status = "active";
+      hasHostelFilter = true;
+    } else {
+      // In Prisma, we might handle "inactive" by enforcing they don't have an active StudentHostel.
+      studentFilters.studentHostels = { none: { status: "active" } };
+    }
+  }
+
+  if (filters.hostelId) {
+    hostelFilters.hostelId = filters.hostelId;
+    hostelFilters.status = "active";
+    hasHostelFilter = true;
+  }
+
+  if (hasHostelFilter) {
+    studentFilters.studentHostels = { some: hostelFilters };
+  }
+
+  if (filters.courseId) studentFilters.courseId = filters.courseId;
+  if (filters.departmentId) studentFilters.departmentId = filters.departmentId;
+  if (filters.batchId) studentFilters.batchId = filters.batchId;
+  if (filters.organizationId) studentFilters.organizationId = filters.organizationId;
+
+  if (filters.studentId) {
+    // Attempting to maintain the fallback of 'admissionNo' vs UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(filters.studentId)) {
+      studentFilters.id = filters.studentId;
+    } else {
+      studentFilters.admissionNo = filters.studentId;
+    }
+  }
+
+  if (filters.studentName) {
+    studentFilters.name = { contains: filters.studentName, mode: "insensitive" };
+  }
+
+  const links = await prisma.studentParent.findMany({
+    where: {
+      parentId: parentId,
+      status: "active",
+      student: studentFilters
+    },
+    include: {
+      student: {
+        include: {
+          course: true,
+          department: true,
+          batch: true,
+          studentHostels: {
+            where: { status: "active" },
+            include: { hostel: true }
+          }
+        }
+      }
+    },
+    orderBy: {
+      student: { name: "asc" }
+    }
+  });
+
+  return links.map(link => {
+    const activeHostel = link.student.studentHostels[0];
+    return {
+      _id: link.student.id,
+      studentId: link.student.admissionNo,
+      name: link.student.name,
+      roomNumber: activeHostel?.roomNumber || null,
+      hostelId: activeHostel?.hostel.id || null,
+      hostelName: activeHostel?.hostel.name || null,
+      courseId: link.student.course?.id || null,
+      courseName: link.student.course?.name || null,
+      departmentId: link.student.department?.id || null,
+      departmentName: link.student.department?.name || null,
+      batchId: link.student.batch?.id || null,
+      batchName: link.student.batch?.name || null
+    };
+  });
+};

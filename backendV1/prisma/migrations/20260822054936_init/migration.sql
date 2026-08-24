@@ -1,17 +1,20 @@
 -- CreateEnum
+CREATE TYPE "NotificationStatus" AS ENUM ('PENDING', 'DELIVERED', 'FAILED', 'READ');
+
+-- CreateEnum
 CREATE TYPE "HostelType" AS ENUM ('BOYS', 'GIRLS');
 
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'WARDEN', 'MENTOR');
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'WARDEN', 'MENTOR', 'ASSISTANT_WARDEN', 'MAINTENANCE_STAFF');
 
 -- CreateEnum
-CREATE TYPE "PassType" AS ENUM ('HOME_PASS', 'OUT_PASS');
+CREATE TYPE "PassType" AS ENUM ('home_pass', 'out_pass');
 
 -- CreateEnum
-CREATE TYPE "OutPassCategory" AS ENUM ('IN_HOUSE', 'OUT_HOUSE');
+CREATE TYPE "OutPassCategory" AS ENUM ('in_house', 'out_house');
 
 -- CreateEnum
-CREATE TYPE "PassStatus" AS ENUM ('PENDING_PARENT', 'PENDING_ADMIN', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED');
+CREATE TYPE "PassStatus" AS ENUM ('pending_parent', 'pending_admin', 'approved', 'rejected', 'cancelled', 'completed', 'returned');
 
 -- CreateEnum
 CREATE TYPE "ApprovalLevel" AS ENUM ('PARENT', 'ADMIN', 'WARDEN');
@@ -56,7 +59,7 @@ CREATE TYPE "NotificationPriority" AS ENUM ('LOW', 'NORMAL', 'HIGH', 'URGENT');
 CREATE TYPE "NotificationType" AS ENUM ('INFO', 'SUCCESS', 'WARNING', 'ERROR', 'SYSTEM', 'ALERT');
 
 -- CreateEnum
-CREATE TYPE "StudentHostelStatus" AS ENUM ('ALLOCATED', 'VACATED', 'TRANSFERRED');
+CREATE TYPE "StudentHostelStatus" AS ENUM ('active', 'vacated', 'transferred', 'cancelled');
 
 -- CreateEnum
 CREATE TYPE "MentorAssignmentStatus" AS ENUM ('ACTIVE', 'TRANSFERRED', 'COMPLETED', 'CANCELLED');
@@ -69,6 +72,12 @@ CREATE TYPE "AttendanceStatus" AS ENUM ('PRESENT', 'ABSENT', 'LATE', 'ON_LEAVE')
 
 -- CreateEnum
 CREATE TYPE "ActionStatus" AS ENUM ('SUCCESS', 'ERROR', 'WARNING');
+
+-- CreateEnum
+CREATE TYPE "ParentRelationship" AS ENUM ('father', 'mother', 'guardian', 'other');
+
+-- CreateEnum
+CREATE TYPE "ParentStatus" AS ENUM ('active', 'inactive');
 
 -- CreateTable
 CREATE TABLE "organizations" (
@@ -178,7 +187,7 @@ CREATE TABLE "users" (
     "id" UUID NOT NULL,
     "organization_id" UUID,
     "employee_code" VARCHAR(50),
-    "full_name" VARCHAR(255) NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "phone" VARCHAR(20),
     "password_hash" TEXT NOT NULL,
@@ -201,14 +210,14 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "students" (
     "id" UUID NOT NULL,
-    "student_code" VARCHAR(50) NOT NULL,
+    "admission_no" VARCHAR(50) NOT NULL,
     "organization_id" UUID NOT NULL,
     "course_id" UUID,
     "department_id" UUID,
     "batch_id" UUID,
-    "full_name" VARCHAR(255) NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
-    "password_hash" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "temp_password" BOOLEAN NOT NULL DEFAULT false,
     "phone" VARCHAR(20),
     "gender" VARCHAR(20),
@@ -231,10 +240,10 @@ CREATE TABLE "students" (
 -- CreateTable
 CREATE TABLE "parents" (
     "id" UUID NOT NULL,
-    "full_name" VARCHAR(255) NOT NULL,
+    "parent_name" VARCHAR(255) NOT NULL,
     "phone" VARCHAR(20) NOT NULL,
     "email" VARCHAR(255),
-    "password_hash" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "temp_password" BOOLEAN NOT NULL DEFAULT false,
     "is_verified" BOOLEAN NOT NULL DEFAULT false,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
@@ -289,11 +298,11 @@ CREATE TABLE "student_parents" (
     "id" UUID NOT NULL,
     "student_id" UUID NOT NULL,
     "parent_id" UUID NOT NULL,
-    "relationship" VARCHAR(20) NOT NULL,
     "default_guardian" BOOLEAN NOT NULL DEFAULT false,
-    "status" VARCHAR(20) NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "relationship" "ParentRelationship" NOT NULL DEFAULT 'guardian',
+    "status" "ParentStatus" NOT NULL DEFAULT 'active',
 
     CONSTRAINT "student_parents_pkey" PRIMARY KEY ("id")
 );
@@ -663,11 +672,21 @@ CREATE TABLE "notifications" (
     "type" "NotificationType" NOT NULL DEFAULT 'INFO',
     "is_read" BOOLEAN NOT NULL DEFAULT false,
     "metadata" JSONB,
-    "delivery_in_app" JSONB,
-    "delivery_email" JSONB,
-    "delivery_push" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+    "delivery_email_attempts" INTEGER NOT NULL DEFAULT 0,
+    "delivery_email_read_at" TIMESTAMP(3),
+    "delivery_email_sent_at" TIMESTAMP(3),
+    "delivery_email_status" "NotificationStatus",
+    "delivery_in_app_attempts" INTEGER NOT NULL DEFAULT 0,
+    "delivery_in_app_read_at" TIMESTAMP(3),
+    "delivery_in_app_sent_at" TIMESTAMP(3),
+    "delivery_in_app_status" "NotificationStatus",
+    "delivery_push_attempts" INTEGER NOT NULL DEFAULT 0,
+    "delivery_push_read_at" TIMESTAMP(3),
+    "delivery_push_sent_at" TIMESTAMP(3),
+    "delivery_push_status" "NotificationStatus",
 
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
@@ -808,7 +827,7 @@ CREATE INDEX "users_is_active_idx" ON "users"("is_active");
 CREATE INDEX "users_role_idx" ON "users"("role");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "students_student_code_key" ON "students"("student_code");
+CREATE UNIQUE INDEX "students_student_code_key" ON "students"("admission_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "students_email_key" ON "students"("email");
@@ -823,7 +842,7 @@ CREATE INDEX "students_batch_id_idx" ON "students"("batch_id");
 CREATE INDEX "students_email_idx" ON "students"("email");
 
 -- CreateIndex
-CREATE INDEX "students_student_code_idx" ON "students"("student_code");
+CREATE INDEX "students_student_code_idx" ON "students"("admission_no");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "parents_phone_key" ON "parents"("phone");
@@ -1009,10 +1028,10 @@ CREATE INDEX "furniture_assets_status_idx" ON "furniture_assets"("status");
 CREATE INDEX "furniture_asset_histories_furniture_asset_id_idx" ON "furniture_asset_histories"("furniture_asset_id");
 
 -- CreateIndex
-CREATE INDEX "notifications_recipient_id_recipient_model_idx" ON "notifications"("recipient_id", "recipient_model");
+CREATE INDEX "notifications_recipient_id_recipient_model_deleted_at_idx" ON "notifications"("recipient_id", "recipient_model", "deleted_at");
 
 -- CreateIndex
-CREATE INDEX "notifications_is_read_idx" ON "notifications"("is_read");
+CREATE INDEX "notifications_recipient_id_recipient_model_is_read_deleted__idx" ON "notifications"("recipient_id", "recipient_model", "is_read", "deleted_at");
 
 -- CreateIndex
 CREATE INDEX "notifications_created_at_idx" ON "notifications"("created_at");
@@ -1063,13 +1082,13 @@ ALTER TABLE "departments" ADD CONSTRAINT "departments_course_id_fkey" FOREIGN KE
 ALTER TABLE "batches" ADD CONSTRAINT "batches_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "users" ADD CONSTRAINT "users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "students" ADD CONSTRAINT "students_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "users" ADD CONSTRAINT "users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "students" ADD CONSTRAINT "students_batch_id_fkey" FOREIGN KEY ("batch_id") REFERENCES "batches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "students" ADD CONSTRAINT "students_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "courses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1078,7 +1097,7 @@ ALTER TABLE "students" ADD CONSTRAINT "students_course_id_fkey" FOREIGN KEY ("co
 ALTER TABLE "students" ADD CONSTRAINT "students_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "students" ADD CONSTRAINT "students_batch_id_fkey" FOREIGN KEY ("batch_id") REFERENCES "batches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "students" ADD CONSTRAINT "students_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1090,40 +1109,43 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_organization_id_fkey" FOREIG
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "student_parents" ADD CONSTRAINT "student_parents_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "student_parents" ADD CONSTRAINT "student_parents_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "parents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "student_parents" ADD CONSTRAINT "student_parents_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_allocated_by_fkey" FOREIGN KEY ("allocated_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_vacated_by_fkey" FOREIGN KEY ("vacated_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_previous_allocation_id_fkey" FOREIGN KEY ("previous_allocation_id") REFERENCES "student_hostels"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_mentor_id_fkey" FOREIGN KEY ("mentor_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "student_hostels" ADD CONSTRAINT "student_hostels_vacated_by_fkey" FOREIGN KEY ("vacated_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_assigned_by_fkey" FOREIGN KEY ("assigned_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_batch_id_fkey" FOREIGN KEY ("batch_id") REFERENCES "batches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_assigned_by_fkey" FOREIGN KEY ("assigned_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_mentor_id_fkey" FOREIGN KEY ("mentor_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "mentor_assignments" ADD CONSTRAINT "mentor_assignments_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "attendance_windows" ADD CONSTRAINT "attendance_windows_completed_by_fkey" FOREIGN KEY ("completed_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "attendance_windows" ADD CONSTRAINT "attendance_windows_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1132,13 +1154,7 @@ ALTER TABLE "attendance_windows" ADD CONSTRAINT "attendance_windows_hostel_id_fk
 ALTER TABLE "attendance_windows" ADD CONSTRAINT "attendance_windows_started_by_fkey" FOREIGN KEY ("started_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "attendance_windows" ADD CONSTRAINT "attendance_windows_completed_by_fkey" FOREIGN KEY ("completed_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_attendance_window_id_fkey" FOREIGN KEY ("attendance_window_id") REFERENCES "attendance_windows"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1147,46 +1163,52 @@ ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_hostel_id_fk
 ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_scanned_by_fkey" FOREIGN KEY ("scanned_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "attendance_corrections" ADD CONSTRAINT "attendance_corrections_attendance_record_id_fkey" FOREIGN KEY ("attendance_record_id") REFERENCES "attendance_records"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "attendance_corrections" ADD CONSTRAINT "attendance_corrections_corrected_by_fkey" FOREIGN KEY ("corrected_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "passes" ADD CONSTRAINT "passes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "passes" ADD CONSTRAINT "passes_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "passes" ADD CONSTRAINT "passes_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "passes" ADD CONSTRAINT "passes_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "passes" ADD CONSTRAINT "passes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "passes" ADD CONSTRAINT "passes_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "parents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "passes" ADD CONSTRAINT "passes_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "pass_approvals" ADD CONSTRAINT "pass_approvals_pass_id_fkey" FOREIGN KEY ("pass_id") REFERENCES "passes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "passes" ADD CONSTRAINT "passes_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "pass_approvals" ADD CONSTRAINT "pass_approvals_action_by_fkey" FOREIGN KEY ("action_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_pass_id_fkey" FOREIGN KEY ("pass_id") REFERENCES "passes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_recorded_by_fkey" FOREIGN KEY ("recorded_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "pass_approvals" ADD CONSTRAINT "pass_approvals_pass_id_fkey" FOREIGN KEY ("pass_id") REFERENCES "passes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_corrected_by_fkey" FOREIGN KEY ("corrected_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "complaints" ADD CONSTRAINT "complaints_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_pass_id_fkey" FOREIGN KEY ("pass_id") REFERENCES "passes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_recorded_by_fkey" FOREIGN KEY ("recorded_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pass_gate_logs" ADD CONSTRAINT "pass_gate_logs_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "complaints" ADD CONSTRAINT "complaints_assigned_staff_fkey" FOREIGN KEY ("assigned_staff") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "complaints" ADD CONSTRAINT "complaints_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "complaint_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "complaints" ADD CONSTRAINT "complaints_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1195,10 +1217,7 @@ ALTER TABLE "complaints" ADD CONSTRAINT "complaints_hostel_id_fkey" FOREIGN KEY 
 ALTER TABLE "complaints" ADD CONSTRAINT "complaints_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "complaints" ADD CONSTRAINT "complaints_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "complaint_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "complaints" ADD CONSTRAINT "complaints_assigned_staff_fkey" FOREIGN KEY ("assigned_staff") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "complaints" ADD CONSTRAINT "complaints_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "announcements" ADD CONSTRAINT "announcements_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1222,16 +1241,13 @@ ALTER TABLE "visitors" ADD CONSTRAINT "visitors_created_by_fkey" FOREIGN KEY ("c
 ALTER TABLE "visitor_change_logs" ADD CONSTRAINT "visitor_change_logs_visitor_id_fkey" FOREIGN KEY ("visitor_id") REFERENCES "visitors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "visit_requests" ADD CONSTRAINT "visit_requests_visitor_id_fkey" FOREIGN KEY ("visitor_id") REFERENCES "visitors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "visit_requests" ADD CONSTRAINT "visit_requests_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "parents"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "visit_requests" ADD CONSTRAINT "visit_requests_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "visitor_visits" ADD CONSTRAINT "visitor_visits_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "visit_requests" ADD CONSTRAINT "visit_requests_visitor_id_fkey" FOREIGN KEY ("visitor_id") REFERENCES "visitors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "visitor_visits" ADD CONSTRAINT "visitor_visits_checked_in_by_fkey" FOREIGN KEY ("checked_in_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1240,31 +1256,34 @@ ALTER TABLE "visitor_visits" ADD CONSTRAINT "visitor_visits_checked_in_by_fkey" 
 ALTER TABLE "visitor_visits" ADD CONSTRAINT "visitor_visits_checked_out_by_fkey" FOREIGN KEY ("checked_out_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "visitor_visit_students" ADD CONSTRAINT "visitor_visit_students_visitor_visit_id_fkey" FOREIGN KEY ("visitor_visit_id") REFERENCES "visitor_visits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "visitor_visits" ADD CONSTRAINT "visitor_visits_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "visitor_visit_students" ADD CONSTRAINT "visitor_visit_students_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "furniture_types" ADD CONSTRAINT "furniture_types_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "furniture_types" ADD CONSTRAINT "furniture_types_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "visitor_visit_students" ADD CONSTRAINT "visitor_visit_students_visitor_visit_id_fkey" FOREIGN KEY ("visitor_visit_id") REFERENCES "visitor_visits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "furniture_types" ADD CONSTRAINT "furniture_types_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "furniture_types" ADD CONSTRAINT "furniture_types_hostel_id_fkey" FOREIGN KEY ("hostel_id") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "furniture_types" ADD CONSTRAINT "furniture_types_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "furniture_types" ADD CONSTRAINT "furniture_types_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "furniture_assets" ADD CONSTRAINT "furniture_assets_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "furniture_assets" ADD CONSTRAINT "furniture_assets_furniture_type_id_fkey" FOREIGN KEY ("furniture_type_id") REFERENCES "furniture_types"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "furniture_assets" ADD CONSTRAINT "furniture_assets_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "furniture_assets" ADD CONSTRAINT "furniture_assets_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "furniture_assets" ADD CONSTRAINT "furniture_assets_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
