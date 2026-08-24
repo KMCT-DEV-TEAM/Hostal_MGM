@@ -1,0 +1,200 @@
+paths:
+  /passes:
+    post:
+      tags:
+        - Passes
+      summary: Create a new pass
+      description: Creates a new pass request (Home Pass or Out Pass) for the authenticated student.
+      operationId: createPass
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pass_CreateRequest'
+      responses:
+        '201':
+          description: Pass created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error or missing details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '404':
+          description: Student account or default guardian not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_StandardErrorResponse'
+    get:
+      tags:
+        - Passes
+      summary: Get student passes (Unified)
+      description: Retrieves a unified, paginated list of pass requests or history for the authenticated student. Includes summary statistics (total, approved, pending) and supports filtering by status, pass type, date range, and search terms.
+      operationId: getMyPassesUnified
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: studentId
+          in: query
+          description: Required for Parents. The ID of the student to fetch passes for.
+          required: false
+          schema:
+            type: string
+        - name: mode
+          in: query
+          description: Defines the status buckets. Use "requests" for active passes, or "history" for past/completed passes. Overridden if 'status' is explicitly provided.
+          required: false
+          schema:
+            type: string
+            enum: [requests, history]
+            default: requests
+        - name: status
+          in: query
+          description: Explicitly filter by a specific pass status.
+          required: false
+          schema:
+            type: string
+            enum: [pending_parent, pending_admin, approved, rejected, cancelled, returned, completed]
+        - name: passType
+          in: query
+          description: Filter by pass type.
+          required: false
+          schema:
+            type: string
+            enum: [home_pass, out_pass]
+        - name: category
+          in: query
+          description: Filter by out pass category.
+          required: false
+          schema:
+            type: string
+            enum: [in_house, out_house]
+        - name: fromDate
+          in: query
+          description: Filter passes starting from this date (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: Filter passes up to this date (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: search
+          in: query
+          description: Search term to match against the pass reason.
+          required: false
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          description: Field to sort by.
+          required: false
+          schema:
+            type: string
+            enum: [createdAt, fromDate, date]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort direction.
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: page
+          in: query
+          description: Page number for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page.
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Passes loaded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_UnifiedListingResponse'
+        '400':
+          description: Validation error in query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+  /passes/parent-list:
+    get:
+      tags:
+        - Passes
+      summary: Get parent passes (Legacy)
+      description: Retrieves a paginated list of pass requests for a parent (Legacy listing).
+      operationId: getPasses
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: studentId
+          in: query
+          description: The ID of the student.
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Explicitly filter by a specific pass status.
+          required: false
+          schema:
+            type: string
+            enum: [pending_parent, pending_admin, approved, rejected, cancelled, returned, completed]
+        - name: passType
+          in: query
+          description: Filter by pass type.
+          required: false
+          schema:
+            type: string
+            enum: [home_pass, out_pass]
+        - name: category
+          in: query
+          description: Filter by out pass category.
+          required: false
+          schema:
+            type: string
+            enum: [in_house, out_house]
+        - name: page
+          in: query
+          description: Page number for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page.
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Passes loaded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_ListResponse'

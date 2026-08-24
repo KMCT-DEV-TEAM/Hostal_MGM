@@ -93,7 +93,7 @@ export const createStudent = asyncHandler(async (req, res) => {
     });
 
     const studentId = result.student?.id || result.id;
-    const studentName = result.student?.fullName || req.body.name || '';
+    const studentName = result.student?.name || req.body.name || '';
 
     orchestratorService.triggerNotification({
       sender: buildSender(req.user),
@@ -259,7 +259,7 @@ export const changeStudentEmail = asyncHandler(async (req, res) => {
     sender: buildSender(req.user),
     eventName: 'EMAIL_CHANGED_CONFIRMATION',
     target: { type: 'STUDENT', filter: { studentId: updatedStudent.id } },
-    data: { studentName: updatedStudent.fullName, studentId: updatedStudent.id }
+    data: { studentName: updatedStudent.name, studentId: updatedStudent.id }
   }).catch(err => console.error("[Notification Error] EMAIL_CHANGED_CONFIRMATION:", err));
 
   return sendSuccess(res, 200, "Email updated successfully");
@@ -480,7 +480,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
             select: { id: true, name: true, code: true, hostelType: true }
           },
           allocatedBy: {
-            select: { fullName: true }
+            select: { name: true }
           }
         }
       },
@@ -526,7 +526,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
   if (student.studentParents && student.studentParents.length > 0) {
     student.parents = student.studentParents.map(sp => {
       if (!sp.parent) return null;
-      const { passwordHash, ...parentData } = sp.parent;
+      const { password, ...parentData } = sp.parent;
       return {
         ...parentData,
         _id: parentData.id,
@@ -556,7 +556,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
     student.hostel.hosteltype = student.hostel.hostelType;
   }
   if (student.activeAllocation && student.activeAllocation.allocatedBy) {
-    student.activeAllocation.allocatedBy.name = student.activeAllocation.allocatedBy.fullName;
+    student.activeAllocation.allocatedBy.name = student.activeAllocation.allocatedBy.name;
   }
 
   // Fetch Mentor
@@ -569,7 +569,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
       },
       include: {
         mentor: {
-          select: { id: true, fullName: true, email: true, phone: true }
+          select: { id: true, name: true, email: true, phone: true }
         }
       }
     });
@@ -577,7 +577,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
       mentorDetails = {
         _id: mentorAssignment.mentor.id,
         id: mentorAssignment.mentor.id,
-        name: mentorAssignment.mentor.fullName,
+        name: mentorAssignment.mentor.name,
         email: mentorAssignment.mentor.email,
         phone: mentorAssignment.mentor.phone
       };
@@ -587,7 +587,7 @@ export const getStudentById = asyncHandler(async (req, res) => {
     student.mentor = mentorDetails;
   }
 
-  const { passwordHash, tempPassword, studentHostels, studentParents, ...sanitizedStudent } = student;
+  const { password, tempPassword, studentHostels, studentParents, ...sanitizedStudent } = student;
   sanitizedStudent._id = sanitizedStudent.id;
 
   return sendSuccess(res, 200, "Student details fetched successfully", sanitizedStudent);

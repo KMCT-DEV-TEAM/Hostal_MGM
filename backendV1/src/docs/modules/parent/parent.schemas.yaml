@@ -1,0 +1,257 @@
+components:
+  schemas:
+    Parent_CreateRequest:
+      type: object
+      required:
+        - studentId
+        - parentName
+        - phone
+        - relationship
+        - email
+        - parentOtp
+      properties:
+        studentId:
+          type: string
+          description: Unique identifier of the student.
+          example: "e9b5f4d3-1a2c-4b5d-9c8e-7f6a5b4c3d2e"
+        parentName:
+          type: string
+          description: Full name of the parent/guardian.
+          example: "John Doe"
+        phone:
+          type: string
+          description: Contact phone number.
+          example: "+919876543210"
+        relationship:
+          type: string
+          description: Relationship to the student (e.g., Father, Mother, Guardian).
+          example: "Father"
+        email:
+          type: string
+          format: email
+          description: Email address for OTP verification.
+          example: "johndoe@example.com"
+        parentOtp:
+          type: string
+          description: The 6-digit OTP sent to the parent's email.
+          example: "123456"
+
+    Parent_ConflictResolveRequest:
+      type: object
+      required:
+        - studentId
+        - parentName
+        - phone
+        - relationship
+        - email
+        - resolutionAction
+      properties:
+        studentId:
+          type: string
+          description: Unique identifier of the student.
+          example: "e9b5f4d3-1a2c-4b5d-9c8e-7f6a5b4c3d2e"
+        parentName:
+          type: string
+          example: "John Doe"
+        phone:
+          type: string
+          example: "+919876543210"
+        relationship:
+          type: string
+          example: "Father"
+        email:
+          type: string
+          format: email
+          example: "johndoe@example.com"
+        resolutionAction:
+          type: string
+          enum: ["use_existing", "update_existing"]
+          description: Action to take when a conflict is detected.
+          example: "update_existing"
+
+    Parent_Response:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            parentId:
+              type: string
+              example: "64f1b2c3d4e5f6a7b8c9d0e1"
+            studentId:
+              type: string
+              example: "e9b5f4d3-1a2c-4b5d-9c8e-7f6a5b4c3d2e"
+            parentName:
+              type: string
+              example: "John Doe"
+            email:
+              type: string
+              example: "johndoe@example.com"
+            defaultGuardian:
+              type: boolean
+              example: true
+
+    Parent_UpdateRequest:
+      type: object
+      properties:
+        parentName:
+          type: string
+          description: Full name of the parent/guardian.
+          example: "Jane Doe"
+        email:
+          type: string
+          format: email
+          description: New email address.
+          example: "janedoe@example.com"
+        phone:
+          type: string
+          description: Contact phone number.
+          example: "+919876543211"
+        relationship:
+          type: string
+          description: Relationship to the student.
+          example: "Mother"
+        defaultGuardian:
+          type: boolean
+          description: Whether this parent is the primary contact.
+          example: true
+
+    Parent_ChangeEmailRequest:
+      type: object
+      required:
+        - oldEmail
+        - newEmail
+        - otp
+      properties:
+        oldEmail:
+          type: string
+          format: email
+          description: The current email address of the parent.
+          example: "oldemail@example.com"
+        newEmail:
+          type: string
+          format: email
+          description: The new email address for the parent.
+          example: "newemail@example.com"
+        otp:
+          type: string
+          description: The 6-digit OTP sent to the new email address.
+          example: "123456"
+
+    Parent_ListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Parents fetched successfully"
+        data:
+          type: object
+          properties:
+            parents:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  parentName:
+                    type: string
+                  relationship:
+                    type: string
+                  phone:
+                    type: string
+                  email:
+                    type: string
+                  defaultGuardian:
+                    type: boolean
+                  isActive:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  student:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                      admissionNo:
+                        type: string
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      organizationId:
+                        type: string
+                  organization:
+                    type: object
+                    nullable: true
+                    properties:
+                      _id:
+                        type: string
+                      name:
+                        type: string
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                limit:
+                  type: integer
+                totalRecords:
+                  type: integer
+                totalPages:
+                  type: integer
+
+    Parent_StudentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+                format: uuid
+              studentId:
+                type: string
+              name:
+                type: string
+              roomNumber:
+                type: string
+                nullable: true
+              hostelId:
+                type: string
+                format: uuid
+                nullable: true
+              hostelName:
+                type: string
+                nullable: true
+              courseId:
+                type: string
+                format: uuid
+                nullable: true
+              courseName:
+                type: string
+                nullable: true
+              departmentId:
+                type: string
+                format: uuid
+                nullable: true
+              departmentName:
+                type: string
+                nullable: true
+              batchId:
+                type: string
+                format: uuid
+                nullable: true
+              batchName:
+                type: string
+                nullable: true

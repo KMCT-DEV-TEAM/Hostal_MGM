@@ -4,40 +4,39 @@ const studentApi = {
   getStudentDashboardStats: (params) => api.get("/student/dashboard/student/stats", { params }),
 
   createStudent: (payload) =>
-    api.post("/admin/students", payload),
+    api.post("/students/", payload),
 
   updateStudent: (id, payload) =>
-    api.put(`/admin/students/${id}`, payload),
+    api.put(`/students/${id}`, payload),
 
   updateStudentByAdmin: (id, payload) =>
-    api.put(`/admin/students/${id}`, payload),
+    api.put(`/students/${id}`, payload),
 
   updateStudentBySuperAdmin: (id, payload) =>
-    api.put(`/super-admin/students/${id}`, payload),
+    api.put(`/students/${id}`, payload),
 
   changeStudentEmailByAdmin: (id, payload) =>
-    api.patch(`/admin/students/${id}/change-email`, payload),
+    api.patch(`/students/${id}/change-email`, payload),
 
   changeStudentEmailBySuperAdmin: (id, payload) =>
-    api.patch(`/super-admin/students/${id}/change-email`, payload),
+    api.patch(`/students/${id}/change-email`, payload),
 
-  getStudentByIdByAdmin: (id) => api.get(`/admin/students/${id}`),
+  getStudentByIdByAdmin: (id) => api.get(`/students/${id}`),
 
   getStudentsByAdmin: (params) =>
-    api.get("/admin/students/admin", { params })
-  ,
+    api.get("/students/admin", { params }),
 
   getStudentFilterOptionsByAdmin: (params) =>
-    api.get("/admin/students/filters", { params }),
+    api.get("/students/filters", { params }),
 
   getStudentFurnituresByAdmin: (id) =>
-    api.get(`/admin/students/${id}/furnitures`),
+    api.get(`/students/${id}/furnitures`),
 
   toggleStatusByAdmin: (id) =>
-    api.patch(`/admin/students/${id}/toggle-status`),
+    api.patch(`/students/${id}/toggle-status`),
 
   bulkStatusByAdmin: ({ ids, isActive }) =>
-    api.patch(`/admin/students/bulk-status`, { ids, isActive }),
+    api.patch(`/students/bulk-status`, { ids, isActive }),
 
   //----super admin 
   getStudentByIdBySuperAdmin: (id) => api.get(`/students/${id}`),
@@ -46,32 +45,32 @@ const studentApi = {
     api.get("/students/super-admin", { params }),
 
   getStudentFilterOptionsBySuperAdmin: (params) =>
-    api.get("/super-admin/students/filters", { params }),
+    api.get("/students/filters", { params }),
 
   getStudentFurnituresBySuperAdmin: (id) =>
-    api.get(`/super-admin/students/${id}/furnitures`),
+    api.get(`/students/${id}/furnitures`),
 
   toggleStatusBySuperAdmin: (id) =>
-    api.patch(`/super-admin/students/${id}/toggle-status`),
+    api.patch(`/students/${id}/toggle-status`),
 
   bulkStatusBySuperAdmin: ({ ids, isActive }) =>
-    api.patch(`/super-admin/students/bulk-status`, { ids, isActive }),
+    api.patch(`/students/bulk-status`, { ids, isActive }),
 
-  getStudentByIdByWarden: (id) => api.get(`/warden/students/${id}`),
+  getStudentByIdByWarden: (id) => api.get(`/students/${id}`),
 
   getStudentsByWarden: (params) =>
-    api.get("/warden/students/warden", { params }),
+    api.get("/students/warden", { params }),
 
   getStudentFilterOptionsByWarden: (params) =>
-    api.get("/warden/students/filters", { params }),
+    api.get("/students/filters", { params }),
 
   getStudentFurnituresByWarden: (id) =>
-    api.get(`/warden/students/${id}/furnitures`),
+    api.get(`/students/${id}/furnitures`),
 
   //---- mentor ----
   getStudentsByMentor: (params) =>
-    api.get("/admin/students/mentor", { params }),
-  getStudentByIdByMentor: (id) => api.get(`/admin/students/${id}`),
+    api.get("/students/mentor", { params }),
+  getStudentByIdByMentor: (id) => api.get(`/students/${id}`),
 
 };
 

@@ -121,8 +121,8 @@ export const getHostelHistory = asyncHandler(async (req, res) => {
     remarks: item.remarks,
     student: item.student ? {
       id: item.student.id,
-      name: item.student.fullName,
-      studentId: item.student.studentCode,
+      name: item.student.name,
+      admissionNo: item.student.admissionNo,
       email: item.student.email
     } : null,
     hostel: item.hostel ? {
@@ -137,11 +137,11 @@ export const getHostelHistory = asyncHandler(async (req, res) => {
     } : null,
     allocatedBy: item.allocatedBy ? {
       id: item.allocatedBy.id,
-      name: item.allocatedBy.fullName
+      name: item.allocatedBy.name
     } : null,
     vacatedBy: item.vacatedBy ? {
       id: item.vacatedBy.id,
-      name: item.vacatedBy.fullName
+      name: item.vacatedBy.name
     } : null
   }));
 
@@ -176,11 +176,11 @@ export const getStudentHostelTimeline = asyncHandler(async (req, res) => {
     } : null,
     allocatedBy: item.allocatedBy ? {
       id: item.allocatedBy.id,
-      name: item.allocatedBy.fullName
+      name: item.allocatedBy.name
     } : null,
     vacatedBy: item.vacatedBy ? {
       id: item.vacatedBy.id,
-      name: item.vacatedBy.fullName
+      name: item.vacatedBy.name
     } : null
   }));
 

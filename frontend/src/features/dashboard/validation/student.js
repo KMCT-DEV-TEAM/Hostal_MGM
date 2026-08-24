@@ -28,7 +28,7 @@ const dobSchema = z.string().min(1, "Date of birth is required").refine((dateStr
 }, { message: "Student must be at least 10 years old" });
 
 export const createStudentSchema = z.object({
-  studentId: z.string().min(1, "Admission number is required"),
+  admissionNo: z.string().min(1, "Admission number is required"),
 
   name: z.string().min(2, "Name is required").regex(/^[a-zA-Z0-9\s]+$/, "Special characters are not allowed"),
 
@@ -69,6 +69,8 @@ export const createStudentSchema = z.object({
 export const updateStudentSchema = z
   .object({
     name: z.string().min(2, "Name is required").regex(/^[a-zA-Z0-9\s]+$/, "Special characters are not allowed").optional(),
+    
+    admissionNo: z.string().min(1, "Admission number is required").optional(),
 
     phone: phoneSchema.optional(),
 

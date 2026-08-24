@@ -9,7 +9,7 @@ const generateRandomPassword = () => {
 const checkParentConflict = async (existingParent, { parentName, phone, tx }) => {
   if (!existingParent) return;
 
-  const nameDiffers = existingParent.fullName !== parentName;
+  const nameDiffers = existingParent.name !== parentName;
   const phoneDiffers = existingParent.phone !== phone;
 
   if (nameDiffers || phoneDiffers) {
@@ -17,7 +17,7 @@ const checkParentConflict = async (existingParent, { parentName, phone, tx }) =>
       where: { parentId: existingParent.id },
       include: {
         student: {
-          select: { name: true, courseId: true, batchId: true, academicYear: true } // Note: fullName in schema, adapting this
+          select: { name: true, courseId: true, batchId: true, academicYear: true } // Note: name in schema, adapting this
         }
       }
     });
@@ -29,7 +29,7 @@ const checkParentConflict = async (existingParent, { parentName, phone, tx }) =>
     conflictError.statusCode = 409;
     conflictError.conflictData = {
       existing: {
-        name: existingParent.fullName,
+        name: existingParent.name,
         phone: existingParent.phone,
         email: existingParent.email,
         linkedStudents: linkedStudents
@@ -46,7 +46,7 @@ const checkParentConflict = async (existingParent, { parentName, phone, tx }) =>
 
 export const createStudentWithParentDb = async (data, tx) => {
   const {
-    studentCode,
+    admissionNo,
     organizationId,
     name,
     gender,
@@ -72,9 +72,9 @@ export const createStudentWithParentDb = async (data, tx) => {
 
   const student = await tx.student.create({
     data: {
-      studentCode,
+      admissionNo,
       organizationId,
-      fullName: name,
+      name: name,
       gender,
       dob: dob ? new Date(dob) : null,
       courseId: courseId || null,
@@ -83,7 +83,7 @@ export const createStudentWithParentDb = async (data, tx) => {
       academicYear,
       phone,
       email,
-      passwordHash: hashedStudentPassword,
+      password: hashedStudentPassword,
       tempPassword: true,
       isVerified: true,
       address,
@@ -105,14 +105,14 @@ export const createStudentWithParentDb = async (data, tx) => {
       await checkParentConflict(existingParent, { parentName, phone: parentPhone, tx });
     }
 
-    const nameDiffers = existingParent.fullName !== parentName;
+    const nameDiffers = existingParent.parentName !== parentName;
     const phoneDiffers = existingParent.phone !== parentPhone;
 
     if (resolutionAction === 'update_existing' || (!resolutionAction && !nameDiffers && !phoneDiffers)) {
       existingParent = await tx.parent.update({
         where: { id: existingParent.id },
         data: {
-          fullName: parentName || existingParent.fullName,
+          parentName: parentName || existingParent.parentName,
           email: parentEmail || existingParent.email,
           phone: parentPhone || existingParent.phone
         }
@@ -122,10 +122,10 @@ export const createStudentWithParentDb = async (data, tx) => {
   } else {
     parentRecord = await tx.parent.create({
       data: {
-        fullName: parentName,
+        parentName: parentName,
         phone: parentPhone,
         email: parentEmail,
-        passwordHash: hashedParentPassword,
+        password: hashedParentPassword,
         tempPassword: true,
         isVerified: true,
       }
@@ -146,7 +146,7 @@ export const createStudentWithParentDb = async (data, tx) => {
     student: {
       ...student,
       _id: student.id,
-      name: student.fullName
+      name: student.name
     },
     parent: {
       ...parentRecord,
@@ -183,8 +183,8 @@ export const updateStudentDb = async (studentId, data) => {
   }
 
   const allowedFieldsMap = {
-    studentCode: "studentCode",
-    name: "fullName",
+    admissionNo: "admissionNo",
+    name: "name",
     email: "email",
     phone: "phone",
     gender: "gender",
@@ -214,7 +214,7 @@ export const updateStudentDb = async (studentId, data) => {
   return {
     ...updatedStudent,
     _id: updatedStudent.id,
-    name: updatedStudent.fullName
+    name: updatedStudent.name
   };
 };
 
@@ -286,10 +286,10 @@ export const getStudentsService = async ({
 
   if (search) {
     where.OR = [
-      { fullName: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
       { phone: { contains: search, mode: 'insensitive' } },
-      { studentCode: { contains: search, mode: 'insensitive' } },
+      { admissionNo: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -314,9 +314,9 @@ export const getStudentsService = async ({
 
   const students = studentsRecords.map(student => ({
     _id: student.id,
-    studentId: student.studentCode,
+    admissionNo: student.admissionNo,
     organizationId: student.organizationId,
-    name: student.fullName,
+    name: student.name,
     email: student.email,
     isActive: student.isActive,
     createdAt: student.createdAt,

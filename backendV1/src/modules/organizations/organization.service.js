@@ -16,7 +16,7 @@ export const getAggregateOrganizationDataDb = async (organizationId) => {
       students: {
         select: {
           id: true,
-          fullName: true,
+          name: true,
           email: true,
           phone: true,
           isActive: true,
@@ -25,7 +25,7 @@ export const getAggregateOrganizationDataDb = async (organizationId) => {
               parent: {
                 select: {
                   id: true,
-                  fullName: true,
+                  name: true,
                   email: true,
                   phone: true,
                   isActive: true
@@ -52,13 +52,13 @@ export const getAggregateOrganizationDataDb = async (organizationId) => {
       // Create a clean object without studentParents to match frontend expectation
       const mappedStudent = {
         _id: student.id,
-        name: student.fullName,
+        name: student.name,
         email: student.email,
         phone: student.phone,
         isActive: student.isActive,
         parentsList: student.studentParents.map(sp => ({
           _id: sp.parent.id,
-          name: sp.parent.fullName,
+          name: sp.parent.name,
           email: sp.parent.email,
           phone: sp.parent.phone,
           isActive: sp.parent.isActive

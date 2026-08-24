@@ -24,19 +24,19 @@ const authMiddleware = async (req, res, next) => {
     if (roleLower === "student") {
       user = await prisma.student.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, isActive: true, fullName: true },
+        select: { id: true, email: true, isActive: true, name: true },
       });
       if (user) user.role = "student";
     } else if (roleLower === "parent") {
       user = await prisma.parent.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, isActive: true, fullName: true },
+        select: { id: true, email: true, isActive: true, parentName: true },
       });
       if (user) user.role = "parent";
     } else {
       user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, isActive: true, fullName: true, role: true, organizationId: true },
+        select: { id: true, email: true, isActive: true, name: true, role: true, organizationId: true },
       });
       if (user) {
         user.organization = user.organizationId;

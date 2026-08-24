@@ -1,6 +1,7 @@
 import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
+import { ROLES } from "../../constants/roles.js";
 
 import {
   createFurnitureType,
@@ -35,56 +36,56 @@ const router = express.Router();
 router.get(
   "/dashboard/summary",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getDashboardSummary
 );
 
 router.get(
   "/assets/dashboard/summary",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getAssetsDashboardSummary
 );
 
 router.get(
   "/types/active",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getActiveFurnitureTypesList
 );
 
 router.get(
   "/types",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getFurnitureTypes
 );
 
 router.get(
   "/types/:typeId",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getFurnitureTypeDetails
 );
 
 router.get(
   "/types/:typeId/assets",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getFurnitureAssetsByType
 );
 
 router.get(
   "/types/:typeId/available-assets",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getAvailableFurnitureAssetsList
 );
 
 router.post(
   "/types",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN),
   validateCreateFurnitureType,
   createFurnitureType
 );
@@ -92,7 +93,7 @@ router.post(
 router.put(
   "/types/:typeId",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN),
   validateUpdateFurnitureType,
   updateFurnitureType
 );
@@ -100,14 +101,14 @@ router.put(
 router.delete(
   "/types/:typeId",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN),
   deleteFurnitureType
 );
 
 router.patch(
   "/types/:typeId/assets-count",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN),
   validateAdjustAssetCount,
   adjustAssetCount
 );
@@ -115,7 +116,7 @@ router.patch(
 router.post(
   "/assets/allocate",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
   validateAllocate,
   allocateFurniture
 );
@@ -123,7 +124,7 @@ router.post(
 router.post(
   "/students/:studentId/assets/:assetId/return",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden", "assistant_warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
   validateReturn,
   returnFurniture
 );
@@ -131,21 +132,21 @@ router.post(
 router.get(
   "/assets/all-hostel",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getAllHostelFurnitureAssets
 );
 
 router.get(
   "/assets/:assetId",
   authMiddleware,
-  roleMiddleware("super_admin", "admin", "warden"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   getFurnitureAssetDetails
 );
 
 router.patch(
   "/assets/:assetId/status",
   authMiddleware,
-  roleMiddleware("super_admin", "admin"),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN),
   validateManualStatusChange,
   changeAssetStatus
 );

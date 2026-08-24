@@ -81,7 +81,7 @@ export const testBroadcast = asyncHandler(async (req, res, next) => {
         target,
         data: data || {},
         channels,
-        sender: sender || { id: req.user.id, role: req.user.role, snapshot: { name: req.user.fullName } }
+        sender: sender || { id: req.user.id, role: req.user.role, snapshot: { name: req.user.name } }
     });
 
     res.status(200).json({

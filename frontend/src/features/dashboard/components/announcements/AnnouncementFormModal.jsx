@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Building, Building2 } from 'lucide-react';
+import { Loader2, Building, Building2, Bell } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import AnnouncementService from '@/services/announcement.service';
@@ -7,6 +7,9 @@ import OrganizationService from '@/services/organization.service';
 import HostelService from '@/services/hostel.service';
 import Dropdown from '@/components/ui/Dropdown';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import Modal from '@/components/ui/Modal';
+import DateInput from '@/components/ui/DateInput';
+import TimeInput from '@/components/ui/TimeInput';
 
 const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit = null }) => {
     const { user } = useAuthStore();
@@ -16,8 +19,12 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
     const [targetOrganization, setTargetOrganization] = useState('');
     const [targetHostel, setTargetHostel] = useState('');
     const [sendOption, setSendOption] = useState('instant');
-    const [scheduledAt, setScheduledAt] = useState('');
-    const [expiresAt, setExpiresAt] = useState('');
+    
+    const [scheduledDate, setScheduledDate] = useState('');
+    const [scheduledTime, setScheduledTime] = useState('');
+    const [expiresDate, setExpiresDate] = useState('');
+    const [expiresTime, setExpiresTime] = useState('');
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -39,12 +46,13 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
                 setTargetOrganization(announcementToEdit.targetOrganizations?.[0]?._id || announcementToEdit.targetOrganizations?.[0] || '');
                 setTargetHostel(announcementToEdit.targetHostels?.[0]?._id || announcementToEdit.targetHostels?.[0] || '');
                 
-                if (announcementToEdit.status === 'scheduled') {
+                if (announcementToEdit.status === 'scheduled' || announcementToEdit.status === 'SCHEDULED') {
                     setSendOption('schedule');
-                    // Format date for datetime-local input (YYYY-MM-DDThh:mm)
                     if (announcementToEdit.scheduledAt) {
                         const d = new Date(announcementToEdit.scheduledAt);
-                        setScheduledAt(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16));
+                        const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+                        setScheduledDate(iso.slice(0, 10));
+                        setScheduledTime(iso.slice(11, 16));
                     }
                 } else {
                     setSendOption('instant');
@@ -52,7 +60,9 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
 
                 if (announcementToEdit.expiresAt) {
                     const d = new Date(announcementToEdit.expiresAt);
-                    setExpiresAt(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16));
+                    const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+                    setExpiresDate(iso.slice(0, 10));
+                    setExpiresTime(iso.slice(11, 16));
                 }
             } else {
                 resetForm();
@@ -79,8 +89,10 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
         setTargetOrganization('');
         setTargetHostel('');
         setSendOption('instant');
-        setScheduledAt('');
-        setExpiresAt('');
+        setScheduledDate('');
+        setScheduledTime('');
+        setExpiresDate('');
+        setExpiresTime('');
     };
 
     const handleSubmit = async (e) => {
@@ -98,7 +110,7 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
             }
         }
 
-        if (sendOption === 'schedule' && !scheduledAt) {
+        if (sendOption === 'schedule' && (!scheduledDate || !scheduledTime)) {
             showErrorToast("Please select a date and time to schedule the announcement");
             return;
         }
@@ -112,33 +124,36 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
         try {
             const payload = { title, message };
 
-            if (sendOption === 'schedule' && scheduledAt) {
-                payload.scheduledAt = new Date(scheduledAt).toISOString();
+            if (sendOption === 'schedule' && scheduledDate && scheduledTime) {
+                payload.scheduledAt = new Date(`${scheduledDate}T${scheduledTime}:00`).toISOString();
             }
-            if (expiresAt) {
-                payload.expiresAt = new Date(expiresAt).toISOString();
+            
+            if (expiresDate && expiresTime) {
+                payload.expiresAt = new Date(`${expiresDate}T${expiresTime}:00`).toISOString();
+            } else if (expiresDate && !expiresTime) {
+                 payload.expiresAt = new Date(`${expiresDate}T23:59:59`).toISOString();
             }
 
             if (isSuperAdmin) {
                 if (targetType === 'selected') {
                     if (targetOrganization) {
-                        payload.targetType = 'organization';
+                        payload.targetType = 'ORGANIZATION';
                         payload.targetOrganizations = [targetOrganization];
                     } else if (targetHostel) {
-                        payload.targetType = 'hostel';
+                        payload.targetType = 'HOSTEL';
                         payload.targetHostels = [targetHostel];
                     }
                 } else {
-                    payload.targetType = 'general';
+                    payload.targetType = 'GENERAL';
                 }
             } else if (user?.role === 'admin') {
-                payload.targetType = 'organization';
-            } else if (user?.role === 'warden') {
-                payload.targetType = 'hostel';
+                payload.targetType = 'ORGANIZATION';
+            } else if (user?.role === 'warden' || user?.role === 'assistant_warden') {
+                payload.targetType = 'HOSTEL';
             }
 
             if (announcementToEdit) {
-                await AnnouncementService.updateAnnouncement(announcementToEdit._id, payload);
+                await AnnouncementService.updateAnnouncement(announcementToEdit._id || announcementToEdit.id, payload);
                 showSuccessToast('Announcement Updated', 'Announcement has been updated successfully');
             } else {
                 await AnnouncementService.createAnnouncement(payload);
@@ -154,192 +169,221 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-slide-up sm:animate-none">
-                <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50/50">
-                    <h2 className="text-lg font-semibold text-gray-900">{announcementToEdit ? 'Edit Announcement' : 'Create Announcement'}</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-gray-500" />
-                    </button>
-                </div>
+        <>
+            <Modal
+                isOpen={isOpen}
+                onClose={onClose}
+                title={announcementToEdit ? 'Edit Announcement' : 'Create Announcement'}
+                subtitle={announcementToEdit ? 'Modify the details of your announcement' : 'Broadcast a message to your users'}
+                icon={<Bell size={24} />}
+                asForm={true}
+                onSubmit={handleSubmit}
+                maxWidth="max-w-xl"
+                bottomSheetOnMobile={true}
+                footer={
+                    <>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex items-center justify-center min-w-[140px] px-4 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? (
+                                <Loader2 size={14} className="animate-spin mx-auto" />
+                            ) : (
+                                announcementToEdit 
+                                    ? (sendOption === 'schedule' ? 'Update Schedule' : 'Update Announcement') 
+                                    : (sendOption === 'schedule' ? 'Schedule Announcement' : 'Send Announcement')
+                            )}
+                        </button>
+                    </>
+                }
+            >
+                <div className="space-y-6">
+                    <section>
+                        <h3 className="text-xs font-semibold text-[#0A437A] mb-1">Message Details</h3>
+                        <h5 className="text-xs text-[#777777] mb-4">Provide the main content for the announcement</h5>
+                        <div className="border-b border-gray-100 mb-4" />
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-medium text-black mb-1">Announcement Title <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                    placeholder="Enter title"
+                                    required
+                                />
+                            </div>
 
-                <div className="p-6 overflow-y-auto flex-1">
-                    <form id="announcement-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Announcement Title <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                placeholder="Enter title"
-                                required
-                            />
+                            <div>
+                                <label className="block text-[10px] font-medium text-black mb-1">Message <span className="text-red-500">*</span></label>
+                                <textarea
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    rows={4}
+                                    className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A] resize-none"
+                                    placeholder="Write the announcement message..."
+                                    required
+                                />
+                            </div>
                         </div>
+                    </section>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Message <span className="text-red-500">*</span></label>
-                            <textarea
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                rows={4}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
-                                placeholder="Write the announcement message..."
-                                required
-                            />
-                        </div>
+                    <section>
+                        <h3 className="text-xs font-semibold text-[#0A437A] mb-1">Timing Options</h3>
+                        <h5 className="text-xs text-[#777777] mb-4">Choose when the announcement will be sent and expire</h5>
+                        <div className="border-b border-gray-100 mb-4" />
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Send Option</label>
-                            <div className="flex flex-wrap gap-4 mb-4">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={sendOption === 'instant'}
-                                        onChange={() => {
-                                            setSendOption('instant');
-                                            setScheduledAt('');
-                                        }}
-                                        className="text-primary focus:ring-primary"
-                                    />
-                                    <span className="text-sm text-gray-700">Send Instantly</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={sendOption === 'schedule'}
-                                        onChange={() => setSendOption('schedule')}
-                                        className="text-primary focus:ring-primary"
-                                    />
-                                    <span className="text-sm text-gray-700">Schedule</span>
-                                </label>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-medium text-black mb-2">Send Option</label>
+                                <div className="flex flex-wrap gap-4 mb-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            checked={sendOption === 'instant'}
+                                            onChange={() => {
+                                                setSendOption('instant');
+                                                setScheduledDate('');
+                                                setScheduledTime('');
+                                            }}
+                                            className="text-[#0A437A] focus:ring-[#0A437A]"
+                                        />
+                                        <span className="text-[10px] text-gray-700">Send Instantly</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            checked={sendOption === 'schedule'}
+                                            onChange={() => setSendOption('schedule')}
+                                            className="text-[#0A437A] focus:ring-[#0A437A]"
+                                        />
+                                        <span className="text-[10px] text-gray-700">Schedule</span>
+                                    </label>
+                                </div>
                             </div>
 
                             {sendOption === 'schedule' && (
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Schedule Date & Time <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="datetime-local"
-                                        value={scheduledAt}
-                                        onChange={(e) => setScheduledAt(e.target.value)}
-                                        min={new Date().toISOString().slice(0, 16)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                        required={sendOption === 'schedule'}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <DateInput
+                                        label="Schedule Date"
+                                        required
+                                        value={scheduledDate}
+                                        onChange={(e) => setScheduledDate(e.target.value)}
+                                        min={new Date().toISOString().slice(0, 10)}
+                                    />
+                                    <TimeInput
+                                        label="Schedule Time"
+                                        required
+                                        value={scheduledTime}
+                                        onChange={(e) => setScheduledTime(e.target.value)}
+                                        labelClassName="block mb-1.5 text-xs font-medium text-text-primary"
                                     />
                                 </div>
                             )}
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date & Time (Optional)</label>
-                            <input
-                                type="datetime-local"
-                                value={expiresAt}
-                                onChange={(e) => setExpiresAt(e.target.value)}
-                                min={scheduledAt ? new Date(scheduledAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">After this time, the announcement will move to history.</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <DateInput
+                                    label="Expiry Date (Optional)"
+                                    value={expiresDate}
+                                    onChange={(e) => setExpiresDate(e.target.value)}
+                                    min={scheduledDate || new Date().toISOString().slice(0, 10)}
+                                />
+                                <TimeInput
+                                    label="Expiry Time (Optional)"
+                                    value={expiresTime}
+                                    onChange={(e) => setExpiresTime(e.target.value)}
+                                    labelClassName="block mb-1.5 text-xs font-medium text-text-primary"
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1 leading-tight">After the expiry date, the announcement will move to history.</p>
                         </div>
+                    </section>
 
-                        {isSuperAdmin && (
-                            <>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Target Audience</label>
-                                    <div className="flex flex-wrap gap-4">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                checked={targetType === 'general'}
-                                                onChange={() => setTargetType('general')}
-                                                className="text-primary focus:ring-primary"
-                                            />
-                                            <span className="text-sm text-gray-700">General (All Users)</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                checked={targetType === 'selected'}
-                                                onChange={() => setTargetType('selected')}
-                                                className="text-primary focus:ring-primary"
-                                            />
-                                            <span className="text-sm text-gray-700">Selected targets</span>
-                                        </label>
-                                    </div>
+                    {isSuperAdmin && (
+                        <section>
+                            <h3 className="text-xs font-semibold text-[#0A437A] mb-1">Target Audience</h3>
+                            <h5 className="text-xs text-[#777777] mb-4">Select who will receive this announcement</h5>
+                            <div className="border-b border-gray-100 mb-4" />
+
+                            <div className="space-y-4">
+                                <div className="flex flex-wrap gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            checked={targetType === 'general' || targetType === 'GENERAL'}
+                                            onChange={() => setTargetType('general')}
+                                            className="text-[#0A437A] focus:ring-[#0A437A]"
+                                        />
+                                        <span className="text-[10px] text-gray-700">General (All Users)</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            checked={targetType === 'selected' || targetType === 'ORGANIZATION' || targetType === 'HOSTEL'}
+                                            onChange={() => setTargetType('selected')}
+                                            className="text-[#0A437A] focus:ring-[#0A437A]"
+                                        />
+                                        <span className="text-[10px] text-gray-700">Selected targets</span>
+                                    </label>
                                 </div>
 
-                                {targetType === 'selected' && (
-                                    <div className="p-4 bg-gray-50 rounded-lg space-y-4 border border-gray-100">
-                                        <p className="text-xs text-gray-500 mb-2">Select either organizations OR hostels to target.</p>
+                                {(targetType === 'selected' || targetType === 'ORGANIZATION' || targetType === 'HOSTEL') && (
+                                    <div className="p-4 bg-gray-50/50 rounded-lg space-y-4 border border-gray-100">
+                                        <p className="text-[10px] text-gray-500 mb-2">Select either organizations OR hostels to target.</p>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                                                <Building2 className="w-4 h-4 text-gray-400" /> Organizations
+                                            <label className="block text-[10px] font-medium text-black mb-1 flex items-center gap-1.5">
+                                                <Building2 className="w-3.5 h-3.5 text-gray-400" /> Organizations
                                             </label>
                                             <Dropdown
-                                                options={organizations.map(org => ({ label: org.name, value: org._id }))}
+                                                options={organizations.map(org => ({ label: org.name, value: org._id || org.id }))}
                                                 value={targetOrganization}
                                                 onChange={(val) => {
                                                     setTargetOrganization(val);
                                                     if (val) setTargetHostel('');
                                                 }}
                                                 placeholder="Select an organization..."
-                                                className="w-full"
+                                                minWidth="w-full"
+                                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
                                             />
                                         </div>
 
-                                        <div className="text-center text-sm text-gray-400 font-medium my-2">OR</div>
+                                        <div className="text-center text-[10px] text-gray-400 font-medium">OR</div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                                                <Building className="w-4 h-4 text-gray-400" /> Hostels
+                                            <label className="block text-[10px] font-medium text-black mb-1 flex items-center gap-1.5">
+                                                <Building className="w-3.5 h-3.5 text-gray-400" /> Hostels
                                             </label>
                                             <Dropdown
-                                                options={hostels.map(h => ({ label: h.name, value: h._id }))}
+                                                options={hostels.map(h => ({ label: h.name, value: h._id || h.id }))}
                                                 value={targetHostel}
                                                 onChange={(val) => {
                                                     setTargetHostel(val);
                                                     if (val) setTargetOrganization('');
                                                 }}
                                                 placeholder="Select a hostel..."
-                                                className="w-full"
+                                                minWidth="w-full"
+                                                triggerClassName="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
                                             />
                                         </div>
                                     </div>
                                 )}
-                            </>
-                        )}
-                    </form>
+                            </div>
+                        </section>
+                    )}
                 </div>
-
-                <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        form="announcement-form"
-                        disabled={isSubmitting}
-                        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors min-w-[120px]"
-                    >
-                        {isSubmitting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            announcementToEdit 
-                                ? (sendOption === 'schedule' ? 'Update Schedule' : 'Update Announcement') 
-                                : (sendOption === 'schedule' ? 'Schedule Announcement' : 'Send Announcement')
-                        )}
-                    </button>
-                </div>
-            </div>
+            </Modal>
 
             <ConfirmationModal
                 isOpen={isConfirmOpen}
@@ -351,7 +395,7 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
                 cancelText="Cancel"
                 isSubmitting={isSubmitting}
             />
-        </div>
+        </>
     );
 };
 
