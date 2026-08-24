@@ -6,7 +6,10 @@ import {
   updateParentDb,
   changeParentEmailDb,
   toggleParentStatusDb,
-  setDefaultGuardianDb
+  setDefaultGuardianDb,
+  getParentsService,
+  exportParentsService,
+  getParentStudentsService
 } from "./parent.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { checkStudentAccess, checkParentAccess } from "./parent.scope.js";
@@ -313,4 +316,135 @@ export const setDefaultGuardian = asyncHandler(async (req, res) => {
       defaultGuardian: result.parentProfile.defaultGuardian,
     }
   });
+});
+
+export const getParentsByAdmin = asyncHandler(async (req, res) => {
+  const admin = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { organizationId: true }
+  });
+
+  if (!admin?.organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const result = await getParentsService({
+    organizationId: admin.organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
+export const getParentsBySuperAdmin = asyncHandler(async (req, res) => {
+  const { organizationId } = req.query;
+
+  const result = await getParentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
+export const getParentsByWarden = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const wardenHostels = await prisma.hostel.findMany({
+    where: {
+      wardens: {
+        some: { id: wardenId }
+      }
+    },
+    select: { id: true }
+  });
+
+  if (!wardenHostels.length) {
+    return sendSuccess(res, 200, "Parents fetched successfully", {
+      parents: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: parseInt(req.query.limit) || 10 }
+    });
+  }
+
+  const hostelIds = wardenHostels.map(h => h.id);
+
+  const result = await getParentsService({
+    hostelIds,
+    query: { ...req.query, isActive: 'true' },
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
+export const getParentsByMentor = asyncHandler(async (req, res) => {
+  const mentorId = req.user.id;
+
+  const activeAssignments = await prisma.mentorAssignment.findMany({
+    where: {
+      mentorId,
+      status: "active",
+    },
+    select: { batchId: true }
+  });
+
+  if (!activeAssignments.length) {
+    return sendSuccess(res, 200, "Parents fetched successfully", {
+      parents: [],
+      pagination: { totalRecords: 0, page: 1, totalPages: 0, limit: parseInt(req.query.limit) || 10 }
+    });
+  }
+
+  const batchIds = activeAssignments.map(a => a.batchId);
+
+  const result = await getParentsService({
+    batchIds,
+    query: { ...req.query, isActive: 'true' },
+  });
+
+  return sendSuccess(res, 200, "Parents fetched successfully", result);
+});
+
+export const exportParentsByAdmin = asyncHandler(async (req, res) => {
+  const admin = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { organizationId: true }
+  });
+
+  if (!admin?.organizationId) {
+    return sendError(res, 400, "Admin is not assigned to any organization");
+  }
+
+  const result = await exportParentsService({
+    organizationId: admin.organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents exported successfully", result);
+});
+
+export const exportParentsBySuperAdmin = asyncHandler(async (req, res) => {
+  const { organizationId } = req.query;
+
+  const result = await exportParentsService({
+    organizationId,
+    query: req.query,
+  });
+
+  return sendSuccess(res, 200, "Parents exported successfully", result);
+});
+
+export const getParentStudents = asyncHandler(async (req, res) => {
+  const parentId = req.user.id;
+  // Enforce parent access (handled by roleMiddleware, but keeping for exact 1:1 legacy logic parity)
+  if (req.user.role !== "parent") {
+    return sendError(res, 403, "Access denied. Only parents can access this resource.");
+  }
+
+  const students = await getParentStudentsService(parentId, req.query);
+  
+  return sendSuccess(
+    res,
+    200,
+    "Students retrieved successfully.",
+    students
+  );
 });

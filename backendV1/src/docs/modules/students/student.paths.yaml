@@ -1,0 +1,352 @@
+paths:
+  /students:
+    post:
+      tags:
+        - Students
+      summary: Create a new student
+      description: Admins and Super Admins can create a new student
+      operationId: createStudent
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                admissionNo:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                gender:
+                  type: string
+                dob:
+                  type: string
+                  format: date
+                academicYear:
+                  type: string
+                organizationId:
+                  type: string
+                  format: uuid
+                courseId:
+                  type: string
+                  format: uuid
+                departmentId:
+                  type: string
+                  format: uuid
+                batchId:
+                  type: string
+                  format: uuid
+                parentName:
+                  type: string
+                parentEmail:
+                  type: string
+                parentPhone:
+                  type: string
+                relationship:
+                  type: string
+                studentOtp:
+                  type: string
+                parentOtp:
+                  type: string
+      responses:
+        '201':
+          description: Student created successfully
+
+  /students/admin:
+    get:
+      tags:
+        - Students
+      summary: Get students for Admin
+      description: Retrieve paginated list of students scoped to the admin's organization. Supports search, course, department, batch, and status filters.
+      operationId: getStudentsByAdmin
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: courseId
+          schema:
+            type: string
+        - in: query
+          name: departmentId
+          schema:
+            type: string
+        - in: query
+          name: batchId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of students
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_ListResponse'
+
+  /students/super-admin:
+    get:
+      tags:
+        - Students
+      summary: Get students for Super Admin
+      description: Retrieve paginated list of all students globally.
+      operationId: getStudentsBySuperAdmin
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: organizationId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of students
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_ListResponse'
+
+  /students/warden:
+    get:
+      tags:
+        - Students
+      summary: Get students for Warden
+      description: Retrieve paginated list of students residing in the warden's hostels.
+      operationId: getStudentsByWarden
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of students
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_ListResponse'
+
+  /students/mentor:
+    get:
+      tags:
+        - Students
+      summary: Get students for Mentor
+      description: Retrieve paginated list of students residing in the mentor's assigned batches.
+      operationId: getStudentsByMentor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of students
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_ListResponse'
+
+  /students/filters:
+    get:
+      tags:
+        - Students
+      summary: Get student filter options
+      description: Fetch available courses, departments, batches (and organizations for super-admin) to populate dropdowns.
+      operationId: getStudentFilterOptions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_FilterOptionsResponse'
+
+  /students/organization-data:
+    get:
+      tags:
+        - Students
+      summary: Get admin organization data
+      description: Fetch courses, departments, and batches associated with the admin's organization.
+      operationId: getAdminOrganizationData
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Organization data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_OrganizationDataResponse'
+
+  /students/admin-stats:
+    get:
+      tags:
+        - Students
+      summary: Get admin dashboard stats
+      description: Returns counts of total students, students in hostel, outside hostel, and on active leave.
+      operationId: getAdminStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student_AdminStatsResponse'
+
+  /students/{id}:
+    get:
+      tags:
+        - Students
+      summary: Get student by ID
+      description: Fetch detailed profile information for a single student
+      operationId: getStudentById
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Student profile data
+    put:
+      tags:
+        - Students
+      summary: Update student profile
+      operationId: updateStudent
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                admissionNo:
+                  type: string
+      responses:
+        '200':
+          description: Student updated successfully
+
+  /students/{id}/change-email:
+    patch:
+      tags:
+        - Students
+      summary: Change student email
+      operationId: changeStudentEmail
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newEmail:
+                  type: string
+      responses:
+        '200':
+          description: Email changed successfully
+
+  /students/{id}/furnitures:
+    get:
+      tags:
+        - Students
+      summary: Get student furnitures
+      description: Fetch furniture assets currently allocated to the student
+      operationId: getStudentFurnitures
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Furniture assets list

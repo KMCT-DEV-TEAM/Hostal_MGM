@@ -14,11 +14,67 @@ import {
   resolveParentConflict,
   updateParent,
   changeParentEmail,
-  setDefaultGuardian
+  setDefaultGuardian,
+  getParentsByMentor,
+  getParentsByWarden,
+  getParentsByAdmin,
+  getParentsBySuperAdmin,
+  exportParentsByAdmin,
+  exportParentsBySuperAdmin,
+  getParentStudents
 } from "./parent.controller.js";
 import { toggleParentStatusDb } from "./parent.service.js";
 
 const router = express.Router();
+
+router.get(
+  "/admin",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN),
+  getParentsByAdmin
+);
+
+router.get(
+  "/students",
+  authMiddleware,
+  roleMiddleware(ROLES.PARENT),
+  getParentStudents
+);
+
+router.get(
+  "/mentor",
+  authMiddleware,
+  roleMiddleware(ROLES.MENTOR),
+  getParentsByMentor
+);
+
+router.get(
+  "/warden",
+  authMiddleware,
+  roleMiddleware(ROLES.WARDEN),
+  getParentsByWarden
+);
+
+router.get(
+  "/super-admin",
+  authMiddleware,
+  roleMiddleware(ROLES.SUPER_ADMIN),
+  getParentsBySuperAdmin
+);
+
+router.get(
+  "/export/admin",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN),
+  exportParentsByAdmin
+);
+
+router.get(
+  "/export/super-admin",
+  authMiddleware,
+  roleMiddleware(ROLES.SUPER_ADMIN),
+  exportParentsBySuperAdmin
+);
 
 router.post(
   "/",

@@ -1,0 +1,144 @@
+components:
+  schemas:
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        admissionNo:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        gender:
+          type: string
+        dob:
+          type: string
+          format: date
+        academicYear:
+          type: string
+        courseId:
+          type: string
+          format: uuid
+        departmentId:
+          type: string
+          format: uuid
+        batchId:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Student_ListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            students:
+              type: array
+              items:
+                $ref: '#/components/schemas/Student'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                limit:
+                  type: integer
+                totalRecords:
+                  type: integer
+                totalPages:
+                  type: integer
+
+    Student_FilterOptionsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            organizations:
+              type: array
+              items:
+                type: object
+            courses:
+              type: array
+              items:
+                type: object
+            departments:
+              type: array
+              items:
+                type: object
+            batches:
+              type: array
+              items:
+                type: object
+
+    Student_OrganizationDataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            organization:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+            courses:
+              type: array
+              items:
+                type: object
+            departments:
+              type: array
+              items:
+                type: object
+            batches:
+              type: array
+              items:
+                type: object
+
+    Student_AdminStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            totalStudents:
+              type: integer
+            inHostel:
+              type: integer
+            outside:
+              type: integer
+            activeLeaves:
+              type: integer

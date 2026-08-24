@@ -137,3 +137,121 @@ components:
           type: string
           description: The 6-digit OTP sent to the new email address.
           example: "123456"
+
+    Parent_ListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Parents fetched successfully"
+        data:
+          type: object
+          properties:
+            parents:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  parentName:
+                    type: string
+                  relationship:
+                    type: string
+                  phone:
+                    type: string
+                  email:
+                    type: string
+                  defaultGuardian:
+                    type: boolean
+                  isActive:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  student:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                      admissionNo:
+                        type: string
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      organizationId:
+                        type: string
+                  organization:
+                    type: object
+                    nullable: true
+                    properties:
+                      _id:
+                        type: string
+                      name:
+                        type: string
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                limit:
+                  type: integer
+                totalRecords:
+                  type: integer
+                totalPages:
+                  type: integer
+
+    Parent_StudentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+                format: uuid
+              studentId:
+                type: string
+              name:
+                type: string
+              roomNumber:
+                type: string
+                nullable: true
+              hostelId:
+                type: string
+                format: uuid
+                nullable: true
+              hostelName:
+                type: string
+                nullable: true
+              courseId:
+                type: string
+                format: uuid
+                nullable: true
+              courseName:
+                type: string
+                nullable: true
+              departmentId:
+                type: string
+                format: uuid
+                nullable: true
+              departmentName:
+                type: string
+                nullable: true
+              batchId:
+                type: string
+                format: uuid
+                nullable: true
+              batchName:
+                type: string
+                nullable: true
