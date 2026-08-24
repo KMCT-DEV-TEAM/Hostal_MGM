@@ -10,9 +10,15 @@ export const sendOtp = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Email is required");
   }
 
-  const { otpCode, isExisting } = await getOrCreateOtp(email);
+  const { otpCode, isExisting, remainingSeconds } = await getOrCreateOtp(email);
   if (isExisting) {
-    return sendError(res, 400, "OTP already sent. Please wait for it to expire before requesting a new one.");
+    const remainingMinutes = Math.ceil(remainingSeconds / 60);
+    return sendError(
+      res,
+      400,
+      `An active OTP already exists for this email. Please check your inbox or wait ${remainingSeconds}s (${remainingMinutes} min) before requesting a new one.`,
+      { isExisting: true, remainingSeconds }
+    );
   }
 
   const subject = "Your OTP Code for Verification";
