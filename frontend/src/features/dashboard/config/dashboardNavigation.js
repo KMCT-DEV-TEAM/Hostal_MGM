@@ -11,7 +11,6 @@ import {
     CalendarX,
     UtensilsCrossed,
     BarChart2,
-    KeyRound,
     BookOpen,
     Layers,
     Tags,
@@ -209,11 +208,6 @@ export const DASHBOARD_NAV = {
         {
             section: 'SUPPORT',
             items: [
-                {
-                    icon: KeyRound,
-                    label: 'Password Request',
-                    path: '/dashboard/password-request'
-                },
                 {
                     icon: ClipboardList,
                     label: 'Logs',

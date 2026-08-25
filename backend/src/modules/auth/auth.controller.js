@@ -53,8 +53,8 @@ const login = asyncHandler(async (req, res) => {
     return sendError(res, 401, "You are not authorized to login as Super Admin. Check URL");
   }
 
-  // Admin portal → allow admin + warden
-  if (role === 'admin' && !['admin', 'warden', 'mentor'].includes(user.role)) {
+  // Admin portal → allow admin + warden + assistant_warden
+  if (role === 'admin' && !['admin', 'warden', 'assistant_warden', 'mentor'].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login from here. Check URL");
   }
 

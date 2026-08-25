@@ -7,15 +7,24 @@ export const useAuthStore = create((set) => ({
   user: null,
   loading: true,
   authenticated: false,
-  updateUser: (user) => set({ user }),
-
-  updateUser: (user) => set({ user }),
+  updateUser: (updatedUser) => set((state) => {
+    if (!state.user && !updatedUser) return { user: null };
+    const merged = { ...state.user, ...updatedUser };
+    if (merged.role) {
+      merged.role = merged.role.toLowerCase();
+    }
+    return { user: merged };
+  }),
 
   init: async () => {
     try {
       if (tokenStorage.getAccessToken()) {
         const profile = await authService.getProfile();
-        set({ user: profile.user, authenticated: true });
+        const userObj = profile.user ? {
+          ...profile.user,
+          role: (profile.user.role || '').toLowerCase()
+        } : null;
+        set({ user: userObj, authenticated: Boolean(userObj) });
       } else {
         set({ user: null, authenticated: false });
       }

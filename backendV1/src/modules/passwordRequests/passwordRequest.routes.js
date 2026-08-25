@@ -1,24 +1,17 @@
 import express from 'express';
 import { protect } from '../auth/auth.middleware.js';
 import {
-  createPasswordRequest,
   getPasswordRequests,
-  getPasswordRequestById,
-  updatePasswordRequest,
-  deletePasswordRequest
+  approvePasswordRequest,
+  rejectPasswordRequest,
 } from './passwordRequest.controller.js';
 
 const router = express.Router();
 
-router.use(protect); // Apply protect middleware to all routes
+router.use(protect);
 
-router.route('/')
-  .post(createPasswordRequest)
-  .get(getPasswordRequests);
-
-router.route('/:id')
-  .get(getPasswordRequestById)
-  .put(updatePasswordRequest)
-  .delete(deletePasswordRequest);
+router.get('/', getPasswordRequests);
+router.patch('/:id/approve', approvePasswordRequest);
+router.patch('/:id/reject', rejectPasswordRequest);
 
 export default router;
