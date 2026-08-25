@@ -188,6 +188,7 @@ const me = asyncHandler(async (req, res) => {
     return sendError(res, 401, "User not found or deactivated");
   }
   user.temppass = Boolean(user.tempPassword);
+  delete user.password;
   delete user.passwordHash;
 
   return sendSuccess(res, 200, "Token is valid", { user });
@@ -223,7 +224,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     return sendError(res, 404, "User not found");
   }
 
-  const isMatch = await comparePassword(oldPassword, user.passwordHash);
+  const isMatch = await comparePassword(oldPassword, user.password || user.passwordHash);
   if (!isMatch) {
     return sendError(res, 401, "Invalid current password");
   }
@@ -234,7 +235,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     await prisma.student.update({
       where: { id: userId },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         tempPassword: false,
         failedLoginAttempts: 0,
         lockUntil: null
@@ -244,7 +245,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     await prisma.parent.update({
       where: { id: userId },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         tempPassword: false,
         failedLoginAttempts: 0,
         lockUntil: null
@@ -254,7 +255,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         tempPassword: false,
         failedLoginAttempts: 0,
         lockUntil: null

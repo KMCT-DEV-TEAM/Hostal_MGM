@@ -31,7 +31,7 @@ export default function StudentComplaintsTable({
     totalItems
 }) {
     const categoryOptions = categories.map(cat => ({
-        value: cat._id,
+        value: cat.id || cat._id,
         label: cat.name
     }));
 
