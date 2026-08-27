@@ -497,8 +497,9 @@ export const getStudentById = asyncHandler(async (req, res) => {
   }
 
   // Handle manual mappings from relations
-  student.activeAllocation = student.studentHostels[0] || null;
+  student.activeAllocation = student.studentHostels?.[0] || null;
   student.hostel = student.activeAllocation?.hostel || null;
+  student.hostelStatus = student.activeAllocation ? "active" : "vacated";
 
   // Access control
   if (user.role === "admin") {

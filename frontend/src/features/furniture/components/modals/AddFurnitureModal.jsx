@@ -9,6 +9,7 @@ import { getSelectionHostels } from '@/services/hostel.service';
 import { getOrganizations } from '@/services/organization.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
+import { showErrorToast } from '@/utils/toast';
 
 const FURNITURE_OPTIONS = [
     { label: 'Bed', value: 'Bed' },
@@ -33,6 +34,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
         organizationId: '',
         isActive: true
     });
+    const [errors, setErrors] = useState({});
 
     const role = useAuthStore(s => s.user?.role);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,8 +48,8 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
 
             const options = data.map(h => ({
                 label: h.name,
-                value: h._id,
-                organizationId: h.organizations?.[0]?._id || h.organizations?.[0]
+                value: h.id || h._id,
+                organizationId: h.organizations?.[0]?.id || h.organizations?.[0]?._id || h.organizations?.[0]
             }));
 
             setHostelMap(prev => {
@@ -71,7 +73,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
 
             const options = data.map(o => ({
                 label: o.name,
-                value: o._id,
+                value: o.id || o._id,
             }));
 
             return { options, hasMore: page < totalPages };
@@ -82,6 +84,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
     }, []);
 
     useEffect(() => {
+        setErrors({});
         if (initialData) {
             setFormData({
                 name: FURNITURE_OPTIONS.find(o => o.value === initialData.name) ? initialData.name : 'Other',
@@ -113,13 +116,30 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
             ...prev,
             [name]: name === 'prefix' ? value.toUpperCase() : (type === 'checkbox' ? checked : value)
         }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        const finalName = formData.name === 'Other' ? formData.customName : formData.name;
+        const newErrors = {};
+
+        if (!formData.name) newErrors.name = "Furniture name is required";
+        else if (formData.name === 'Other' && !formData.customName) newErrors.customName = "Custom name is required";
+        
+        if (role === ROLES.SUPER_ADMIN && !formData.organizationId) newErrors.organizationId = "Organization is required";
+        if (!formData.hostelId) newErrors.hostelId = "Hostel is required";
+        if (!formData.prefix) newErrors.prefix = "Prefix is required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            showErrorToast("Please fill all required fields");
+            return;
+        }
+
         setIsSubmitting(true);
         try {
-            const finalName = formData.name === 'Other' ? formData.customName : formData.name;
 
             let organizationId = undefined;
             if (role === ROLES.SUPER_ADMIN) {
@@ -154,9 +174,13 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                         <Dropdown
                             options={FURNITURE_OPTIONS}
                             value={formData.name}
-                            onChange={(val) => setFormData(prev => ({ ...prev, name: val }))}
+                            onChange={(val) => {
+                                setFormData(prev => ({ ...prev, name: val }));
+                                if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
+                            }}
                             placeholder="Select"
                             triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
+                            error={errors.name}
                         />
                         {formData.name === 'Other' && (
                             <Input
@@ -166,6 +190,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                                 required
                                 placeholder="Enter custom name"
                                 containerClassName="mt-3"
+                                error={errors.customName}
                             />
                         )}
                     </div>
@@ -191,12 +216,16 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                         <AsyncDropdown
                             fetchOptions={fetchOrganizationOptions}
                             value={formData.organizationId}
-                            onChange={(val) => setFormData(prev => ({ ...prev, organizationId: val }))}
+                            onChange={(val) => {
+                                setFormData(prev => ({ ...prev, organizationId: val }));
+                                if (errors.organizationId) setErrors(prev => ({ ...prev, organizationId: undefined }));
+                            }}
                             placeholder="Select Organization"
                             triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
                             lookup={initialData && initialData.organization ? {
                                 [initialData.organization._id || initialData.organizationId]: { label: initialData.organization.name }
                             } : {}}
+                            error={errors.organizationId}
                         />
                     </div>
                 )}
@@ -206,12 +235,16 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     <AsyncDropdown
                         fetchOptions={fetchHostelOptions}
                         value={formData.hostelId}
-                        onChange={(val) => setFormData(prev => ({ ...prev, hostelId: val }))}
+                        onChange={(val) => {
+                            setFormData(prev => ({ ...prev, hostelId: val }));
+                            if (errors.hostelId) setErrors(prev => ({ ...prev, hostelId: undefined }));
+                        }}
                         placeholder="Select Hostel"
                         triggerClassName="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between"
                         lookup={initialData && initialData.hostel ? {
                             [initialData.hostel._id || initialData.hostelId]: { label: initialData.hostel.name }
                         } : {}}
+                        error={errors.hostelId}
                     />
                 </div>
 
@@ -221,6 +254,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     value={formData.prefix}
                     onChange={handleChange}
                     placeholder="e.g. BD"
+                    error={errors.prefix}
                 />
 
                 <Input
@@ -252,7 +286,7 @@ export default function AddFurnitureModal({ isOpen, onClose, onSave, initialData
                     fullWidth={false}
                     size="md"
                     type="submit"
-                    disabled={isSubmitting || !formData.name || !formData.prefix || !formData.hostelId || (role === ROLES.SUPER_ADMIN && !formData.organizationId)}
+                    disabled={isSubmitting}
                     className="min-w-[120px] order-2 bg-[#0a3a6a] hover:bg-[#0a3a6a]/90 capitalize"
                 >
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'save'}

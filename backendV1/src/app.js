@@ -73,7 +73,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/student-hostels', studentHostelRoutes);
 app.use('/api/parents', parentRoutes);
-app.use('/api/furnitures', furnitureRoutes);
+app.use('/api/furniture', furnitureRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/passes', passRoutes);
 
