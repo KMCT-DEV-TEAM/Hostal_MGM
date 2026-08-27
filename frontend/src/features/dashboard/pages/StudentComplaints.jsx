@@ -72,24 +72,24 @@ export default function StudentComplaints() {
             const typeParam = isMobile ? (activeTab === 'History' ? 'history' : 'current') : 'all';
             const response = await ComplaintService.getMyComplaints(typeParam);
             
-            const fetchedComplaints = response.data?.complaints || response.data || [];
-            if (response.data?.stats) {
-                setApiStats(response.data.stats);
+            const fetchedComplaints = response?.complaints || response?.data?.complaints || response?.data || (Array.isArray(response) ? response : []);
+            if (response?.stats || response?.data?.stats) {
+                setApiStats(response.stats || response.data.stats);
             }
 
             // Transform to UI format
             const formatted = fetchedComplaints.map(c => ({
-                id: c.id,
-                category: c.category?.name || 'Unknown',
-                categoryId: c.category?.id,
+                id: c.id || c._id,
+                category: typeof c.category === 'object' ? c.category?.name : (c.category || 'Unknown'),
+                categoryId: typeof c.category === 'object' ? (c.category?.id || c.category?._id) : (c.categoryId || c.category),
                 subject: c.subject,
                 description: c.description,
-                roomNo: c.roomNo,
+                roomNo: c.roomNo || 'N/A',
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
                 createdAt: c.createdAt,
                 status: c.status,
                 priority: c.priority,
-                hostelName: c.hostelId?.name || 'Unknown',
+                hostelName: typeof c.hostelId === 'object' ? c.hostelId?.name : (c.hostel?.name || 'Unknown'),
                 timeline: c.timeline || [],
                 resolutionNotes: c.resolutionNotes,
                 materialsUsed: c.materialsUsed
@@ -106,7 +106,7 @@ export default function StudentComplaints() {
         fetchComplaints(true);
         // Load categories for the dropdown in the table
         ComplaintCategoryService.getComplaintCategories().then(res => {
-            setCategories(res.data || []);
+            setCategories(res.data || res.categories || (Array.isArray(res) ? res : []));
         });
 
         // Socket.IO real-time updates
@@ -143,12 +143,12 @@ export default function StudentComplaints() {
 
     const handleCategoryChange = (id, newCategory) => {
         // Find category object to get name and ID
-        const catObj = categories.find(c => c.id === newCategory || c.name === newCategory);
+        const catObj = categories.find(c => (c.id || c._id) === newCategory || c.name === newCategory);
         setConfirmCategoryChange({
             isOpen: true,
             complaintId: id,
             newCategoryName: catObj ? catObj.name : newCategory,
-            newCategoryId: catObj ? catObj.id : newCategory
+            newCategoryId: catObj ? (catObj.id || catObj._id) : newCategory
         });
     };
 

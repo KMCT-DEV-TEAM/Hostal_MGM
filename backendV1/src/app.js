@@ -57,9 +57,12 @@ import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.j
 import parentRoutes from './modules/parent/parent.routes.js';
 import attendanceRoutes from './modules/attendance/attendance.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
+import profileRoutes from './modules/profile/profile.routes.js';
+
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/courses', courseRoutes);

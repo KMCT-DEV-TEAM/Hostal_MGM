@@ -99,7 +99,7 @@ const ComplaintCategories = () => {
             await ComplaintCategoryService.toggleStatus(statusToUpdate.id);
             setComplaintCategories((prev) =>
                 prev.map((c) =>
-                    c.id === statusToUpdate.id ? { ...c, isActive: !c.isActive } : c
+                    (c.id || c._id) === statusToUpdate.id ? { ...c, isActive: !c.isActive } : c
                 )
             );
             setIsStatusConfirmOpen(false);
@@ -116,7 +116,7 @@ const ComplaintCategories = () => {
     const openModal = (mode, category = null) => {
         setIsEditMode(mode === 'edit');
         if (mode === 'edit' && category) {
-            setEditingId(category.id);
+            setEditingId(category.id || category._id);
             setFormData({
                 name: category.name || '',
                 description: category.description || '',
@@ -184,7 +184,7 @@ const ComplaintCategories = () => {
     };
 
     const handleSelectAll = () => {
-        const currentVisibleIds = complaintCategories.map(c => c.id);
+        const currentVisibleIds = complaintCategories.map(c => c.id || c._id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -462,5 +462,3 @@ const ComplaintCategories = () => {
 };
 
 export default ComplaintCategories;
-
-

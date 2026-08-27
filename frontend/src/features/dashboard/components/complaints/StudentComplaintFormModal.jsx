@@ -27,7 +27,7 @@ export default function StudentComplaintFormModal({
                 const fetchedCategories = response.data || [];
                 setCategories(fetchedCategories);
                 if (fetchedCategories.length > 0 && !editingComplaint) {
-                    setFormData(prev => ({ ...prev, category: fetchedCategories[0].id }));
+                    setFormData(prev => ({ ...prev, category: fetchedCategories[0].id || fetchedCategories[0]._id }));
                 }
             } catch (error) {
                 console.error("Failed to load categories:", error);
@@ -42,7 +42,7 @@ export default function StudentComplaintFormModal({
         if (editingComplaint) {
             setFormData({
                 // Use categoryId from the formatted complaint, or fallback to first category's ID
-                category: editingComplaint.categoryId || editingComplaint.category?.id || (categories.length > 0 ? categories[0].id : ''),
+                category: editingComplaint.categoryId || editingComplaint.category?.id || editingComplaint.category?._id || (categories.length > 0 ? (categories[0].id || categories[0]._id) : ''),
                 subject: editingComplaint.subject || '',
                 description: editingComplaint.description || ''
             });
@@ -121,7 +121,7 @@ export default function StudentComplaintFormModal({
                                     </div>
                                 ) : (
                                     <Dropdown
-                                        options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                                        options={categories.map(cat => ({ value: cat.id || cat._id, label: cat.name }))}
                                         value={formData.category}
                                         onChange={(val) => setFormData({ ...formData, category: val })}
                                         placeholder="Select category"

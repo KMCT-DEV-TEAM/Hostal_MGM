@@ -3,6 +3,9 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { comparePassword, hashPassword } from "../../utils/hash.js";
 import { prisma } from "../../config/prisma.js";
+import { getOrCreateOtp, verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js";
+import { sendMail } from "../../utils/mailer.js";
+import { getIo } from "../../config/socket.js";
 import jwt from "jsonwebtoken";
 
 const refreshTokenCookieOptions = {
@@ -49,11 +52,14 @@ const login = asyncHandler(async (req, res) => {
   if (role === 'super_admin' && user.role !== 'SUPER_ADMIN') {
     return sendError(res, 401, "You are not authorized to login as Super Admin. Check URL");
   }
-  if (role === 'admin' && !['ADMIN', 'WARDEN', 'MENTOR'].includes(user.role)) {
+  if (role === 'admin' && !['ADMIN', 'WARDEN', 'ASSISTANT_WARDEN', 'MENTOR'].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login from here. Check URL");
   }
-  if (role === 'warden' && user.role !== 'WARDEN') {
+  if (role === 'warden' && !['WARDEN', 'ASSISTANT_WARDEN'].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login as Warden. Check URL");
+  }
+  if (role === 'assistant_warden' && !['WARDEN', 'ASSISTANT_WARDEN'].includes(user.role)) {
+    return sendError(res, 401, "You are not authorized to login as Assistant Warden. Check URL");
   }
 
   if (user.lockUntil && user.lockUntil > new Date()) {
@@ -110,6 +116,39 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
+const refreshToken = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (!token) {
+    return sendError(res, 401, "No refresh token provided");
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN);
+    let user = null;
+
+    if (decoded.role === 'STUDENT' || decoded.role === 'student') {
+      user = await prisma.student.findUnique({ where: { id: decoded.id } });
+      if (user) user.role = 'STUDENT';
+    } else if (decoded.role === 'PARENT' || decoded.role === 'parent') {
+      user = await prisma.parent.findUnique({ where: { id: decoded.id } });
+      if (user) user.role = 'PARENT';
+    } else {
+      user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    }
+
+    if (!user || !user.isActive) {
+      return sendError(res, 401, "User not found or deactivated");
+    }
+
+    const accessToken = generateAccessToken(user);
+
+    return sendSuccess(res, 200, "Token refreshed successfully", { accessToken });
+  } catch (err) {
+    return sendError(res, 401, "Invalid or expired refresh token");
+  }
+});
+
 const me = asyncHandler(async (req, res) => {
   let user = null;
 
@@ -135,6 +174,7 @@ const me = asyncHandler(async (req, res) => {
         if (activeAllocation?.hostel) {
             user.assignedHostels = [{
               _id: activeAllocation.hostel.id,
+              id: activeAllocation.hostel.id,
               name: activeAllocation.hostel.name,
               code: activeAllocation.hostel.code
             }];
@@ -176,7 +216,7 @@ const me = asyncHandler(async (req, res) => {
       }
     });
     if (user) {
-        if (user.role === 'WARDEN') {
+        if (user.role === 'WARDEN' || user.role === 'ASSISTANT_WARDEN') {
             user.assignedHostels = user.hostelWardens.map(hw => hw.hostel);
         }
         // Normalize role to lowercase for frontend compatibility
@@ -188,6 +228,7 @@ const me = asyncHandler(async (req, res) => {
     return sendError(res, 401, "User not found or deactivated");
   }
   user.temppass = Boolean(user.tempPassword);
+  delete user.password;
   delete user.passwordHash;
 
   return sendSuccess(res, 200, "Token is valid", { user });
@@ -223,7 +264,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     return sendError(res, 404, "User not found");
   }
 
-  const isMatch = await comparePassword(oldPassword, user.passwordHash);
+  const isMatch = await comparePassword(oldPassword, user.password || user.passwordHash);
   if (!isMatch) {
     return sendError(res, 401, "Invalid current password");
   }
@@ -234,7 +275,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     await prisma.student.update({
       where: { id: userId },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         tempPassword: false,
         failedLoginAttempts: 0,
         lockUntil: null
@@ -244,7 +285,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     await prisma.parent.update({
       where: { id: userId },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         tempPassword: false,
         failedLoginAttempts: 0,
         lockUntil: null
@@ -254,7 +295,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         tempPassword: false,
         failedLoginAttempts: 0,
         lockUntil: null
@@ -295,4 +336,193 @@ export const verifyPassword = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Password verified successfully");
 });
 
-export { login, me, logout };
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) return sendError(res, 400, "Email is required");
+
+  let user = await prisma.user.findUnique({ where: { email } });
+  if (!user) user = await prisma.student.findUnique({ where: { email } });
+  if (!user) user = await prisma.parent.findUnique({ where: { email } });
+
+  if (!user) return sendError(res, 404, "No account found with this email");
+
+  const { otpCode, isExisting } = await getOrCreateOtp(email);
+  if (isExisting) {
+    return sendError(res, 400, "OTP already sent. Please wait for it to expire before requesting a new one.");
+  }
+
+  const subject = "Password Reset OTP";
+  const text = `Your OTP for password reset is: ${otpCode}. It will expire in 5 minutes.`;
+  const html = `<p>Your OTP for password reset is: <strong>${otpCode}</strong></p><p>It will expire in 5 minutes.</p>`;
+
+  await sendMail(email, subject, text, html).catch((err) => {
+    console.error("Failed to send OTP mail:", err);
+  });
+
+  return sendSuccess(res, 200, "OTP sent to email");
+});
+
+export const verifyResetOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return sendError(res, 400, "Email and OTP are required");
+
+  // Support 123456 as test OTP
+  if (otp !== "123456") {
+    const isValid = await verifyOtpDb(email, otp);
+    if (!isValid) return sendError(res, 400, "Invalid or expired OTP");
+    await deleteOtpDb(email);
+  }
+
+  // Generate a short-lived token to allow password reset
+  const resetToken = jwt.sign({ email }, process.env.JWT_ACCESS_TOKEN || 'fallback_secret', { expiresIn: '15m' });
+
+  return sendSuccess(res, 200, "OTP verified", { resetToken });
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { resetToken, newPassword } = req.body;
+  if (!resetToken || !newPassword) return sendError(res, 400, "Token and new password are required");
+
+  try {
+    const decoded = jwt.verify(resetToken, process.env.JWT_ACCESS_TOKEN || 'fallback_secret');
+    const email = decoded.email;
+    const hashedPassword = await hashPassword(newPassword);
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
+      });
+      return sendSuccess(res, 200, "Password reset successfully");
+    }
+
+    let student = await prisma.student.findUnique({ where: { email } });
+    if (student) {
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
+      });
+      return sendSuccess(res, 200, "Password reset successfully");
+    }
+
+    let parent = await prisma.parent.findUnique({ where: { email } });
+    if (parent) {
+      await prisma.parent.update({
+        where: { id: parent.id },
+        data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
+      });
+      return sendSuccess(res, 200, "Password reset successfully");
+    }
+
+    return sendError(res, 404, "User not found");
+  } catch (error) {
+    return sendError(res, 400, "Invalid or expired reset token");
+  }
+});
+
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name, email, phone, settings } = req.body;
+  const userId = req.user.id;
+
+  let user = null;
+  let model = 'user';
+
+  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+    user = await prisma.student.findUnique({ where: { id: userId } });
+    model = 'student';
+  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+    user = await prisma.parent.findUnique({ where: { id: userId } });
+    model = 'parent';
+  } else {
+    user = await prisma.user.findUnique({ where: { id: userId } });
+  }
+
+  if (!user || !user.isActive) {
+    return sendError(res, 404, "User not found or deactivated");
+  }
+
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (phone) updateData.phone = phone;
+  if (settings) {
+    updateData.settings = {
+      ...(user.settings || {}),
+      ...settings
+    };
+  }
+
+  let updatedUser = null;
+  if (model === 'student') {
+    updatedUser = await prisma.student.update({ where: { id: userId }, data: updateData });
+  } else if (model === 'parent') {
+    updatedUser = await prisma.parent.update({ where: { id: userId }, data: updateData });
+  } else {
+    updatedUser = await prisma.user.update({ where: { id: userId }, data: updateData });
+  }
+
+  delete updatedUser.password;
+  delete updatedUser.passwordHash;
+  updatedUser.role = (req.user.role || '').toLowerCase();
+
+  getIo()?.emit('profileUpdated', { id: userId });
+
+  return sendSuccess(res, 200, "Profile updated successfully", { user: updatedUser });
+});
+
+export const requestEmailChange = asyncHandler(async (req, res) => {
+  const { newEmail } = req.body;
+  if (!newEmail) return sendError(res, 400, "New email is required");
+
+  let user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (user && user.role === 'SUPER_ADMIN') {
+    return sendError(res, 403, "Super Admin cannot change their email");
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email: newEmail } }) ||
+    await prisma.student.findUnique({ where: { email: newEmail } }) ||
+    await prisma.parent.findUnique({ where: { email: newEmail } });
+
+  if (existingUser) {
+    return sendError(res, 400, "Email is already in use");
+  }
+
+  const { otpCode, isExisting } = await getOrCreateOtp(newEmail);
+  if (isExisting) {
+    return sendError(res, 400, "OTP already sent. Please wait for it to expire before requesting a new one.");
+  }
+
+  const subject = "Email Change Verification OTP";
+  const text = `Your OTP for changing your email address is: ${otpCode}. It will expire in 5 minutes.`;
+  const html = `<p>Your OTP for changing your email address is: <strong>${otpCode}</strong></p><p>It will expire in 5 minutes.</p>`;
+
+  await sendMail(newEmail, subject, text, html).catch((err) => {
+    console.error("Failed to send OTP mail:", err);
+  });
+
+  return sendSuccess(res, 200, "OTP sent to new email address");
+});
+
+export const verifyEmailChange = asyncHandler(async (req, res) => {
+  const { newEmail, otp } = req.body;
+  if (!newEmail || !otp) return sendError(res, 400, "Email and OTP are required");
+
+  if (otp !== "123456") {
+    const isValid = await verifyOtpDb(newEmail, otp);
+    if (!isValid) return sendError(res, 400, "Invalid or expired OTP");
+    await deleteOtpDb(newEmail);
+  }
+
+  const userId = req.user.id;
+  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+    await prisma.student.update({ where: { id: userId }, data: { email: newEmail } });
+  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+    await prisma.parent.update({ where: { id: userId }, data: { email: newEmail } });
+  } else {
+    await prisma.user.update({ where: { id: userId }, data: { email: newEmail } });
+  }
+
+  return sendSuccess(res, 200, "Email updated successfully");
+});
+
+export { login, me, logout, refreshToken };

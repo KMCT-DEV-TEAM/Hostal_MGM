@@ -37,7 +37,7 @@ export default function WardenComplaintsTable({
     const { t } = useTranslation();
 
     const categoryOptions = categories.map(cat => ({
-        value: cat.id,
+        value: cat.id || cat._id,
         label: cat.name
     }));
 
