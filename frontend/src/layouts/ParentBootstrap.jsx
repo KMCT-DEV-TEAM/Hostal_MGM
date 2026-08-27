@@ -21,8 +21,12 @@ const ParentBootstrap = () => {
     useEffect(() => {
         if (user && user.role === ROLES.PARENT) {
             syncUser(user);
+            // Auto-select if there is exactly one student
+            if (user.students?.length === 1 && !useParentStore.getState().activeStudentId) {
+                setActiveStudent(user.students[0].id || user.students[0]._id);
+            }
         }
-    }, [user, syncUser]);
+    }, [user, syncUser, setActiveStudent]);
 
     // Prevent flashing: wait for both auth and Zustand persistence to load
     if (authLoading || !isHydrated) {
@@ -43,10 +47,13 @@ const ParentBootstrap = () => {
         );
     }
 
-    // If no active student is selected, force the selection modal to appear.
-    const needsSelection = !activeStudentId;
+    // If no active student is selected, check if we need the selection modal
+    if (!activeStudentId) {
+        // If they only have one student, wait for the useEffect above to set it
+        if (students.length === 1) {
+            return <Loading />;
+        }
 
-    if (needsSelection) {
         return (
             <div className="flex-1 w-full h-full bg-gray-50 relative z-50">
                 <StudentSelectionModal

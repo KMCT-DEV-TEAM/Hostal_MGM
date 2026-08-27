@@ -10,10 +10,10 @@ export const useActiveStudent = () => {
         return { activeStudent: null, activeStudentId: null };
     }
 
-    const activeStudent = user.students.find(s => s._id === activeStudentId) || null;
+    const activeStudent = user.students.find(s => (s.id || s._id) === activeStudentId) || null;
     
     return {
         activeStudent,
-        activeStudentId: activeStudent?._id || null
+        activeStudentId: activeStudent?.id || activeStudent?._id || null
     };
 };
